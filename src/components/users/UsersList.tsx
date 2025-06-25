@@ -11,18 +11,20 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Plus, UserPlus, Building2, RefreshCw, AlertCircle } from 'lucide-react';
+import { Plus, UserPlus, Building2, RefreshCw, AlertCircle, Edit } from 'lucide-react';
 
 interface UsersListProps {
   onCreateUser: () => void;
   onAssignRole: (userId: string) => void;
   onAssignFacility: (userId: string) => void;
+  onEditUser: (user: any) => void;
 }
 
 const UsersList: React.FC<UsersListProps> = ({
   onCreateUser,
   onAssignRole,
-  onAssignFacility
+  onAssignFacility,
+  onEditUser
 }) => {
   const { users, isLoading, error, refetch } = useUsers();
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -118,20 +120,27 @@ const UsersList: React.FC<UsersListProps> = ({
               <TableCell>
                 <div>
                   <div className="font-medium">
-                    {user.first_name} {user.last_name}
+                    {user.first_name || user.last_name 
+                      ? `${user.first_name || ''} ${user.last_name || ''}`.trim()
+                      : <span className="text-gray-400 italic">No name set</span>
+                    }
                   </div>
-                  <div className="text-sm text-gray-500">{user.phone}</div>
+                  <div className="text-sm text-gray-500">{user.phone || 'No phone'}</div>
                 </div>
               </TableCell>
               <TableCell>{user.email}</TableCell>
               <TableCell>{user.department || '-'}</TableCell>
               <TableCell>
                 <div className="flex flex-wrap gap-1">
-                  {user.user_roles?.map((userRole, index) => (
-                    <Badge key={index} variant="secondary">
-                      {userRole.roles.name}
-                    </Badge>
-                  )) || <span className="text-gray-400">No roles</span>}
+                  {user.user_roles?.length > 0 ? (
+                    user.user_roles.map((userRole, index) => (
+                      <Badge key={index} variant="secondary">
+                        {userRole.roles.name}
+                      </Badge>
+                    ))
+                  ) : (
+                    <span className="text-gray-400">No roles</span>
+                  )}
                 </div>
               </TableCell>
               <TableCell>
@@ -149,7 +158,16 @@ const UsersList: React.FC<UsersListProps> = ({
                   <Button
                     size="sm"
                     variant="outline"
+                    onClick={() => onEditUser(user)}
+                    title="Edit User"
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
                     onClick={() => onAssignRole(user.id)}
+                    title="Assign Role"
                   >
                     <UserPlus className="h-4 w-4" />
                   </Button>
@@ -157,6 +175,7 @@ const UsersList: React.FC<UsersListProps> = ({
                     size="sm"
                     variant="outline"
                     onClick={() => onAssignFacility(user.id)}
+                    title="Assign Facility"
                   >
                     <Building2 className="h-4 w-4" />
                   </Button>

@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.2';
 
@@ -71,14 +70,51 @@ const handler = async (req: Request): Promise<Response> => {
           }
         }
 
-        result = await supabase
+        console.log('🔄 Updating profile for user:', targetUserId, profile_data);
+
+        // First, check if profile exists
+        const { data: existingProfile } = await supabase
           .from('profiles')
-          .update({
-            ...profile_data,
-            updated_at: new Date().toISOString()
-          })
+          .select('id')
           .eq('id', targetUserId)
-          .select();
+          .single();
+
+        if (existingProfile) {
+          // Update existing profile
+          console.log('✅ Profile exists, updating...');
+          result = await supabase
+            .from('profiles')
+            .update({
+              ...profile_data,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', targetUserId)
+            .select();
+        } else {
+          // Create new profile - get user email first
+          console.log('⚠️ Profile does not exist, creating new one...');
+          const { data: authUser } = await supabase.auth.admin.getUserById(targetUserId);
+          
+          if (!authUser.user) {
+            return new Response(JSON.stringify({ error: 'User not found' }), {
+              status: 404,
+              headers: { 'Content-Type': 'application/json', ...corsHeaders },
+            });
+          }
+
+          result = await supabase
+            .from('profiles')
+            .insert({
+              id: targetUserId,
+              email: authUser.user.email,
+              ...profile_data,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            })
+            .select();
+        }
+
+        console.log('✅ Profile update/create result:', result);
         break;
 
       case 'get':
