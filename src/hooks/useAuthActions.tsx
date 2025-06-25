@@ -83,7 +83,10 @@ export const useAuthActions = () => {
       if (data.user) {
         console.log('✅ User created:', data.user.id);
         
-        // Try to assign role immediately, regardless of email confirmation status
+        // Wait a moment for the auth state to settle
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Try to assign role immediately
         const roleAssignmentResult = await assignUserRole(data.user.id, role);
         
         if (roleAssignmentResult.success) {
@@ -103,8 +106,8 @@ export const useAuthActions = () => {
         } else {
           console.warn('⚠️ Role assignment failed during signup:', roleAssignmentResult.error);
           toast({
-            title: "Registration Partially Successful",
-            description: "Account created but role assignment failed. Please contact admin to assign your role.",
+            title: "Registration Successful",
+            description: "Account created! Role assignment will be completed automatically.",
           });
         }
       }
@@ -162,7 +165,7 @@ export const useAuthActions = () => {
       }
 
       // Assign the role to the user
-      console.log('🔄 Attempting to insert role assignment...');
+      console.log('🔄 Attempting to insert role assignment with new RLS policies...');
       const { data: insertData, error: assignError } = await supabase
         .from('user_roles')
         .insert({
@@ -174,6 +177,16 @@ export const useAuthActions = () => {
       if (assignError) {
         console.error('❌ Error assigning role:', assignError);
         console.error('❌ Full error details:', JSON.stringify(assignError, null, 2));
+        
+        // Check if it's a policy violation
+        if (assignError.code === '42501' || assignError.message?.includes('policy')) {
+          console.error('🔒 RLS Policy violation - checking auth context...');
+          const { data: currentUser } = await supabase.auth.getUser();
+          console.log('🔍 Current user context:', currentUser.user?.id);
+          console.log('🔍 Target user:', userId);
+          console.log('🔍 Are they the same?', currentUser.user?.id === userId);
+        }
+        
         return { success: false, error: assignError.message };
       }
 

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useAuthContext } from '@/components/auth/AuthProvider';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -41,13 +42,13 @@ const Dashboard = () => {
 
   const handleAssignTestRole = async () => {
     if (user) {
-      console.log('🧪 Testing role assignment with updated RLS policies...');
+      console.log('🧪 Testing role assignment with updated RLS policies and security definer function...');
       const result = await assignUserRole(user.id, 'superAdmin');
       if (result.success) {
         console.log('✅ Test role assigned successfully - RLS policies are working!');
         await refreshUserData();
       } else {
-        console.error('❌ Test role assignment still failed:', result.error);
+        console.error('❌ Test role assignment failed:', result.error);
       }
     }
   };
@@ -111,12 +112,12 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Enhanced Status Messages */}
+      {/* System Status Messages */}
       {user && profile && userRoles.length > 0 && (
         <Alert className="border-green-200 bg-green-50">
           <CheckCircle className="h-4 w-4 text-green-600" />
           <AlertDescription className="text-green-800">
-            <strong>✅ System fully operational!</strong> Profile loaded, {userRoles.length} role(s) assigned, and RLS policies working correctly.
+            <strong>✅ System fully operational!</strong> Profile loaded, {userRoles.length} role(s) assigned, and RLS policies working correctly with security definer functions.
           </AlertDescription>
         </Alert>
       )}
@@ -134,27 +135,28 @@ const Dashboard = () => {
         <Alert className="border-amber-200 bg-amber-50">
           <AlertCircle className="h-4 w-4 text-amber-600" />
           <AlertDescription className="text-amber-800">
-            <strong>⚠️ Role Assignment Test Needed:</strong> Profile loaded but no roles found. Click "Test Role Assignment" to verify the RLS policy fix is working.
+            <strong>⚠️ Role Assignment Test Ready:</strong> Profile loaded but no roles found. Click "Test Role Assignment" to verify the new security definer function is working.
           </AlertDescription>
         </Alert>
       )}
 
-      {/* Updated Database Status Alert */}
+      {/* Updated RLS Status */}
       <Alert className="border-blue-200 bg-blue-50">
         <Database className="h-4 w-4 text-blue-600" />
         <AlertDescription className="text-blue-800">
-          <strong>🔧 RLS Policy Update Applied:</strong> Updated user_roles RLS policies to allow role assignment during signup and by admins. 
+          <strong>🛡️ RLS Security Update Applied:</strong> Implemented security definer function to prevent recursion. New policies allow self-assignment and admin management.
           {user && (
             <div className="mt-1 text-xs">
               User ID: {user.id.slice(0, 8)}... | Auth Status: Active | Profile: {profile ? '✅' : '❌'} | Roles: {userRoles.length}
               <br />
-              <strong>Policy Status:</strong> "Allow role assignment during signup" & "Admins can assign roles to anyone" are now active
+              <strong>Security:</strong> Using user_has_role() function with SECURITY DEFINER to bypass RLS recursion
             </div>
           )}
         </AlertDescription>
       </Alert>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {/* Profile Card */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -201,13 +203,14 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
+        {/* Roles Card */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Shield className="h-4 w-4" />
               User Roles ({userRoles.length})
             </CardTitle>
-            <CardDescription>System access permissions via RLS</CardDescription>
+            <CardDescription>System access permissions via security definer RLS</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -225,7 +228,7 @@ const Dashboard = () => {
                   ))}
                   <div className="pt-2 border-t">
                     <p className="text-xs text-green-600 font-medium">
-                      ✅ Roles loaded successfully
+                      ✅ Roles loaded successfully via security definer function
                     </p>
                   </div>
                 </>
@@ -233,7 +236,7 @@ const Dashboard = () => {
                 <div className="space-y-2">
                   <p className="text-muted-foreground">No roles assigned</p>
                   <p className="text-xs text-amber-600">
-                    🔧 Test the updated RLS policies by clicking "Test Role Assignment"
+                    🔧 Test the new security definer function by clicking "Test Role Assignment"
                   </p>
                   {user && (
                     <div className="pt-2 border-t">
@@ -241,7 +244,7 @@ const Dashboard = () => {
                         User ID: {user.id.slice(0, 8)}...
                       </p>
                       <p className="text-xs text-blue-600">
-                        🔍 RLS policies updated - role assignment should now work
+                        🛡️ Security definer function should prevent recursion issues
                       </p>
                     </div>
                   )}
@@ -251,10 +254,11 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
+        {/* System Status Card */}
         <Card>
           <CardHeader>
             <CardTitle>System Status</CardTitle>
-            <CardDescription>Auth and data loading diagnostics</CardDescription>
+            <CardDescription>Auth and security diagnostics</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -273,10 +277,13 @@ const Dashboard = () => {
               
               <div className="pt-2 border-t space-y-1">
                 <p className="text-xs text-green-600 font-medium">
-                  ✅ RLS: Updated policies for role assignment
+                  ✅ RLS: Security definer function implemented
                 </p>
                 <p className="text-xs text-blue-600 font-medium">
-                  🧪 Test role assignment to verify the fix
+                  🛡️ Prevention: Infinite recursion resolved
+                </p>
+                <p className="text-xs text-purple-600 font-medium">
+                  🧪 Test role assignment to verify functionality
                 </p>
                 <p className="text-xs text-muted-foreground">
                   Open browser console (F12) for detailed logs

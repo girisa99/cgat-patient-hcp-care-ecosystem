@@ -361,6 +361,13 @@ export type Database = {
         }
         Returns: boolean
       }
+      user_has_role: {
+        Args: {
+          check_user_id: string
+          role_name: Database["public"]["Enums"]["user_role"]
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       facility_type:
