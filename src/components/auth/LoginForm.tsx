@@ -7,24 +7,25 @@ import { HealthcareCard, HealthcareCardContent, HealthcareCardDescription, Healt
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuthActions } from '@/hooks/useAuthActions';
 import { Eye, EyeOff, Mail, Lock, UserPlus } from 'lucide-react';
+import { Database } from '@/integrations/supabase/types';
+
+type UserRole = Database['public']['Enums']['user_role'];
 
 const LoginForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [selectedRole, setSelectedRole] = useState('');
+  const [selectedRole, setSelectedRole] = useState<UserRole | ''>('');
   const [showPassword, setShowPassword] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const { signIn, signUp, loading } = useAuthActions();
 
   const roleOptions = [
-    { value: 'patient', label: 'Patient' },
-    { value: 'physician', label: 'Physician' },
-    { value: 'nurse', label: 'Nurse' },
-    { value: 'admin', label: 'Administrator' },
-    { value: 'pharmacist', label: 'Pharmacist' },
-    { value: 'therapist', label: 'Therapist' },
-    { value: 'technician', label: 'Lab Technician' },
-    { value: 'coordinator', label: 'Care Coordinator' }
+    { value: 'superAdmin' as UserRole, label: 'Super Administrator' },
+    { value: 'healthcareProvider' as UserRole, label: 'Healthcare Provider (HCP)' },
+    { value: 'nurse' as UserRole, label: 'Nurse' },
+    { value: 'caseManager' as UserRole, label: 'Care Manager' },
+    { value: 'onboardingTeam' as UserRole, label: 'Onboarding Team' },
+    { value: 'patientCaregiver' as UserRole, label: 'Patient/Caregiver' }
   ];
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -101,7 +102,7 @@ const LoginForm = () => {
               <HealthcareLabel htmlFor="role">Select Your Role</HealthcareLabel>
               <div className="relative">
                 <UserPlus className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-500 z-10" />
-                <Select value={selectedRole} onValueChange={setSelectedRole} required>
+                <Select value={selectedRole} onValueChange={(value: UserRole) => setSelectedRole(value)} required>
                   <SelectTrigger className="pl-10 h-11 border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-1">
                     <SelectValue placeholder="Choose your healthcare role" />
                   </SelectTrigger>

@@ -2,6 +2,9 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { Database } from '@/integrations/supabase/types';
+
+type UserRole = Database['public']['Enums']['user_role'];
 
 export interface AuthResult {
   success: boolean;
@@ -48,7 +51,7 @@ export const useAuthActions = () => {
     }
   };
 
-  const signUp = async (email: string, password: string, role: string): Promise<AuthResult> => {
+  const signUp = async (email: string, password: string, role: UserRole): Promise<AuthResult> => {
     setLoading(true);
     
     try {
@@ -103,7 +106,7 @@ export const useAuthActions = () => {
     }
   };
 
-  const assignUserRole = async (userId: string, roleName: string) => {
+  const assignUserRole = async (userId: string, roleName: UserRole) => {
     try {
       // Get the role ID from the roles table
       const { data: role, error: roleError } = await supabase
