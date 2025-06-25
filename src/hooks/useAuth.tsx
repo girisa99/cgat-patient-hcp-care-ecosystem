@@ -38,7 +38,12 @@ export const useAuth = (): AuthContextType => {
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        loadUserData(session.user.id);
+        // Use setTimeout to defer data loading and prevent potential deadlocks
+        setTimeout(() => {
+          if (mounted) {
+            loadUserData(session.user.id);
+          }
+        }, 100);
       } else {
         setLoading(false);
       }
@@ -54,12 +59,12 @@ export const useAuth = (): AuthContextType => {
         setUser(session?.user ?? null);
         
         if (event === 'SIGNED_IN' && session?.user) {
-          // Small delay to ensure RLS policies are ready
+          // Use setTimeout to defer data loading and prevent potential deadlocks
           setTimeout(() => {
             if (mounted) {
               loadUserData(session.user.id);
             }
-          }, 100);
+          }, 200);
         } else if (event === 'SIGNED_OUT') {
           setProfile(null);
           setUserRoles([]);
@@ -79,7 +84,7 @@ export const useAuth = (): AuthContextType => {
     setLoading(true);
     
     try {
-      // Load profile with basic RLS policy (users can only see their own profile)
+      // Load profile - with the simplified RLS policy, this should work
       console.log('👤 Fetching profile...');
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
@@ -98,7 +103,7 @@ export const useAuth = (): AuthContextType => {
         setProfile(null);
       }
 
-      // Load user roles with basic RLS policy (users can only see their own roles)
+      // Load user roles - using the simplified approach
       console.log('🔐 Fetching user roles...');
       const { data: rolesData, error: rolesError } = await supabase
         .from('user_roles')
@@ -111,7 +116,7 @@ export const useAuth = (): AuthContextType => {
 
       if (rolesError) {
         console.error('❌ Roles error:', rolesError);
-        console.error('❌ Detailed roles error:', JSON.stringify(rolesError));
+        console.error('❌ Detailed roles error:', JSON.stringify(rolesError, null, 2));
         logAuthError('loadRoles', rolesError, userId);
         setUserRoles([]);
       } else {
@@ -156,17 +161,32 @@ export const useAuth = (): AuthContextType => {
     if (!user) return false;
     
     try {
-      const { data, error } = await supabase.rpc('has_permission', {
-        user_id: user.id,
-        permission_name: permission
-      });
+      // For now, we'll use a simple approach since we disabled RLS on some tables
+      // This can be enhanced later with proper security definer functions
+      const { data, error } = await supabase
+        .from('role_permissions')
+        .select(`
+          permissions!inner (
+            name
+          )
+        `)
+        .in('role_id', 
+          userRoles.length > 0 
+            // If we have roles cached, use them to get role IDs
+            ? await supabase
+                .from('roles')
+                .select('id')
+                .in('name', userRoles)
+                .then(({ data }) => data?.map(r => r.id) || [])
+            : []
+        );
       
       if (error) {
         logAuthError('hasPermission', error, user.id);
         return false;
       }
       
-      return data || false;
+      return data?.some((rp: any) => rp.permissions.name === permission) || false;
     } catch (error) {
       logAuthError('hasPermission', error, user.id);
       return false;
