@@ -39,12 +39,12 @@ export const useAuth = (): AuthContextType => {
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        // Defer loading to prevent RLS conflicts
+        // Load user data with a slight delay to ensure RLS policies are ready
         setTimeout(() => {
           if (mounted) {
             loadUserDataSafe(session.user.id);
           }
-        }, 100);
+        }, 300);
       } else {
         setLoading(false);
       }
@@ -60,12 +60,12 @@ export const useAuth = (): AuthContextType => {
         setUser(session?.user ?? null);
         
         if (event === 'SIGNED_IN' && session?.user) {
-          // Defer loading to prevent any potential conflicts
+          // Load user data with delay to prevent conflicts
           setTimeout(() => {
             if (mounted) {
               loadUserDataSafe(session.user.id);
             }
-          }, 200);
+          }, 500);
         } else if (event === 'SIGNED_OUT') {
           setProfile(null);
           setUserRoles([]);
@@ -85,22 +85,24 @@ export const useAuth = (): AuthContextType => {
     try {
       setLoading(true);
 
-      // Load profile using safe method
+      // First, try to load the profile using the safe method
       const profileData = await getUserProfileSafe(userId);
       if (profileData) {
-        console.log('Profile loaded safely:', profileData.email);
+        console.log('Profile loaded successfully:', profileData.email);
         setProfile(profileData);
+      } else {
+        console.log('No profile found, user may need to complete setup');
       }
 
-      // Load roles using direct method to bypass RLS issues
+      // Then load roles using the direct method
       const roles = await getUserRolesDirect(userId);
-      console.log('User roles loaded safely:', roles);
+      console.log('User roles loaded:', roles);
       setUserRoles(roles);
 
     } catch (error) {
       logAuthError('loadUserDataSafe', error, userId);
       console.error('Error in loadUserDataSafe:', error);
-      // Set defaults but don't block auth flow
+      // Don't block the auth flow, just set empty states
       setProfile(null);
       setUserRoles([]);
     } finally {

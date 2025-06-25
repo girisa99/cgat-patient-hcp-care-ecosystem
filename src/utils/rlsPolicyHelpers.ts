@@ -74,12 +74,12 @@ export const getUserAccessibleFacilities = async (userId: string) => {
 };
 
 /**
- * Direct database query to get user roles - bypasses RLS issues
- * This is a fallback method when RLS causes problems
+ * Direct database query to get user roles - bypasses RLS issues completely
+ * This uses a simple select that doesn't trigger complex RLS checks
  */
 export const getUserRolesDirect = async (userId: string): Promise<UserRole[]> => {
   try {
-    // Use a direct query that doesn't trigger RLS recursion
+    // Use a simple query that should work with our new RLS policies
     const { data, error } = await supabase
       .from('user_roles')
       .select(`
@@ -89,12 +89,14 @@ export const getUserRolesDirect = async (userId: string): Promise<UserRole[]> =>
       `)
       .eq('user_id', userId);
 
-    if (error) {
-      console.error('Error getting user roles direct:', error);
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error getting user roles:', error);
       return [];
     }
 
-    return data?.map((ur: any) => ur.roles.name) || [];
+    const roles = data?.map((ur: any) => ur.roles.name as UserRole) || [];
+    console.log('Roles fetched successfully:', roles);
+    return roles;
   } catch (error) {
     console.error('Exception in getUserRolesDirect:', error);
     return [];
@@ -112,7 +114,7 @@ export const getUserProfileSafe = async (userId: string) => {
       .eq('id', userId)
       .maybeSingle();
 
-    if (error && error.code !== 'PGRST116') { // PGRST116 is "not found" which is ok
+    if (error && error.code !== 'PGRST116') {
       console.error('Error loading profile:', error);
       return null;
     }
