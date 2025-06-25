@@ -28,24 +28,100 @@ export const useUsers = () => {
   const {
     data: users,
     isLoading,
-    error
+    error,
+    refetch
   } = useQuery({
     queryKey: ['users'],
     queryFn: async () => {
       console.log('🔍 Fetching users list...');
       
-      const { data, error } = await supabase.functions.invoke('manage-user-profiles', {
-        body: { action: 'list' }
-      });
+      try {
+        const { data, error } = await supabase.functions.invoke('manage-user-profiles', {
+          body: { action: 'list' }
+        });
 
-      if (error) {
-        console.error('❌ Error fetching users:', error);
-        throw error;
+        if (error) {
+          console.error('❌ Edge function error:', error);
+          throw new Error(`Edge function error: ${error.message || 'Unknown error'}`);
+        }
+
+        if (!data || !data.success) {
+          console.error('❌ Invalid response from edge function:', data);
+          throw new Error(data?.error || 'Invalid response from server');
+        }
+
+        console.log('✅ Users fetched successfully via edge function:', data.data);
+        return data.data as UserWithRoles[];
+      } catch (err) {
+        console.error('❌ Network or parsing error:', err);
+        
+        // Fallback: try direct database queries if edge function fails
+        console.log('🔄 Attempting direct database queries as fallback...');
+        
+        try {
+          // First get all profiles with facilities
+          const { data: profiles, error: profilesError } = await supabase
+            .from('profiles')
+            .select(`
+              *,
+              facilities (
+                id,
+                name,
+                facility_type
+              )
+            `)
+            .order('last_name');
+
+          if (profilesError) {
+            console.error('❌ Fallback profiles query failed:', profilesError);
+            throw new Error(`Database error: ${profilesError.message}`);
+          }
+
+          console.log('✅ Fallback profiles query successful:', profiles);
+
+          // Then get user roles for each profile
+          const profilesWithRoles = await Promise.all(
+            profiles.map(async (profile) => {
+              const { data: userRoles, error: rolesError } = await supabase
+                .from('user_roles')
+                .select(`
+                  id,
+                  role_id,
+                  roles!inner (
+                    name,
+                    description
+                  )
+                `)
+                .eq('user_id', profile.id);
+
+              if (rolesError) {
+                console.error('❌ Error fetching roles for user:', profile.id, rolesError);
+                // Continue without roles if there's an error
+                return {
+                  ...profile,
+                  user_roles: []
+                };
+              }
+
+              return {
+                ...profile,
+                user_roles: userRoles || []
+              };
+            })
+          );
+
+          console.log('✅ Fallback query with roles completed successfully:', profilesWithRoles);
+          return profilesWithRoles as UserWithRoles[];
+        } catch (fallbackError) {
+          console.error('❌ Fallback queries also failed:', fallbackError);
+          throw new Error(`Both edge function and direct database queries failed: ${fallbackError.message}`);
+        }
       }
-
-      console.log('✅ Users fetched successfully:', data);
-      return data.data as UserWithRoles[];
-    }
+    },
+    retry: 2,
+    retryDelay: 1000,
+    staleTime: 30000, // Consider data stale after 30 seconds
+    gcTime: 300000, // Keep in cache for 5 minutes
   });
 
   const createUserMutation = useMutation({
@@ -60,22 +136,28 @@ export const useUsers = () => {
     }) => {
       console.log('🔄 Creating new user:', userData);
       
-      const { data, error } = await supabase.functions.invoke('onboarding-workflow', {
-        body: {
-          action: 'complete_user_setup',
-          user_data: userData
+      try {
+        const { data, error } = await supabase.functions.invoke('onboarding-workflow', {
+          body: {
+            action: 'complete_user_setup',
+            user_data: userData
+          }
+        });
+
+        if (error) {
+          console.error('❌ Error creating user via edge function:', error);
+          throw error;
         }
-      });
 
-      if (error) {
-        console.error('❌ Error creating user:', error);
-        throw error;
+        console.log('✅ User created successfully via edge function:', data);
+        return data;
+      } catch (err) {
+        console.error('❌ Edge function failed, this operation requires the edge function to work properly');
+        throw new Error(`User creation failed: ${err.message}`);
       }
-
-      console.log('✅ User created successfully:', data);
-      return data;
     },
     onSuccess: () => {
+      console.log('🔄 Invalidating users cache after creation...');
       queryClient.invalidateQueries({ queryKey: ['users'] });
       toast({
         title: "User Created",
@@ -96,23 +178,29 @@ export const useUsers = () => {
     mutationFn: async ({ userId, roleName }: { userId: string; roleName: UserRole }) => {
       console.log('🔄 Assigning role:', roleName, 'to user:', userId);
       
-      const { data, error } = await supabase.functions.invoke('manage-user-roles', {
-        body: {
-          user_id: userId,
-          role_name: roleName,
-          action: 'assign'
+      try {
+        const { data, error } = await supabase.functions.invoke('manage-user-roles', {
+          body: {
+            user_id: userId,
+            role_name: roleName,
+            action: 'assign'
+          }
+        });
+
+        if (error) {
+          console.error('❌ Error assigning role via edge function:', error);
+          throw error;
         }
-      });
 
-      if (error) {
-        console.error('❌ Error assigning role:', error);
-        throw error;
+        console.log('✅ Role assigned successfully via edge function:', data);
+        return data;
+      } catch (err) {
+        console.error('❌ Edge function failed, this operation requires the edge function to work properly');
+        throw new Error(`Role assignment failed: ${err.message}`);
       }
-
-      console.log('✅ Role assigned successfully:', data);
-      return data;
     },
     onSuccess: () => {
+      console.log('🔄 Invalidating users cache after role assignment...');
       queryClient.invalidateQueries({ queryKey: ['users'] });
       toast({
         title: "Role Assigned",
@@ -141,24 +229,30 @@ export const useUsers = () => {
     }) => {
       console.log('🔄 Assigning facility access:', { userId, facilityId, accessLevel });
       
-      const { data, error } = await supabase.functions.invoke('user-facility-access', {
-        body: {
-          action: 'grant_access',
-          user_id: userId,
-          facility_id: facilityId,
-          access_level: accessLevel
+      try {
+        const { data, error } = await supabase.functions.invoke('user-facility-access', {
+          body: {
+            action: 'grant_access',
+            user_id: userId,
+            facility_id: facilityId,
+            access_level: accessLevel
+          }
+        });
+
+        if (error) {
+          console.error('❌ Error assigning facility access via edge function:', error);
+          throw error;
         }
-      });
 
-      if (error) {
-        console.error('❌ Error assigning facility access:', error);
-        throw error;
+        console.log('✅ Facility access assigned successfully via edge function:', data);
+        return data;
+      } catch (err) {
+        console.error('❌ Edge function failed, this operation requires the edge function to work properly');
+        throw new Error(`Facility assignment failed: ${err.message}`);
       }
-
-      console.log('✅ Facility access assigned successfully:', data);
-      return data;
     },
     onSuccess: () => {
+      console.log('🔄 Invalidating users cache after facility assignment...');
       queryClient.invalidateQueries({ queryKey: ['users'] });
       toast({
         title: "Facility Access Granted",
@@ -179,6 +273,7 @@ export const useUsers = () => {
     users,
     isLoading,
     error,
+    refetch,
     createUser: createUserMutation.mutate,
     assignRole: assignRoleMutation.mutate,
     assignFacility: assignFacilityMutation.mutate,

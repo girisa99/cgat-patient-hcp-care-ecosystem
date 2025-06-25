@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useUsers } from '@/hooks/useUsers';
 import {
   Table,
@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Plus, UserPlus, Building2 } from 'lucide-react';
+import { Plus, UserPlus, Building2, RefreshCw, AlertCircle } from 'lucide-react';
 
 interface UsersListProps {
   onCreateUser: () => void;
@@ -24,7 +24,21 @@ const UsersList: React.FC<UsersListProps> = ({
   onAssignRole,
   onAssignFacility
 }) => {
-  const { users, isLoading, error } = useUsers();
+  const { users, isLoading, error, refetch } = useUsers();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    console.log('🔄 Manual refresh triggered by user...');
+    try {
+      await refetch();
+      console.log('✅ Manual refresh completed successfully');
+    } catch (error) {
+      console.error('❌ Manual refresh failed:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -37,7 +51,19 @@ const UsersList: React.FC<UsersListProps> = ({
   if (error) {
     return (
       <div className="text-center p-8">
-        <p className="text-red-600">Error loading users: {error.message}</p>
+        <div className="flex flex-col items-center gap-4">
+          <AlertCircle className="h-12 w-12 text-red-500" />
+          <div>
+            <p className="text-red-600 font-medium">Error loading users</p>
+            <p className="text-sm text-gray-500 mt-1">
+              {error.message || 'Failed to fetch users'}
+            </p>
+          </div>
+          <Button onClick={handleRefresh} variant="outline" disabled={isRefreshing}>
+            <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            Try Again
+          </Button>
+        </div>
       </div>
     );
   }
@@ -57,7 +83,18 @@ const UsersList: React.FC<UsersListProps> = ({
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h3 className="text-lg font-semibold">All Users</h3>
+        <div className="flex items-center gap-4">
+          <h3 className="text-lg font-semibold">All Users</h3>
+          <Button 
+            onClick={handleRefresh} 
+            variant="outline" 
+            size="sm"
+            disabled={isRefreshing}
+          >
+            <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        </div>
         <Button onClick={onCreateUser}>
           <Plus className="mr-2 h-4 w-4" />
           Add New User
