@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useFacilities } from '@/hooks/useFacilities';
 import FacilitiesLoadingSkeleton from './FacilitiesLoadingSkeleton';
@@ -39,8 +38,12 @@ const FacilitiesList: React.FC<FacilitiesListProps> = ({
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
+    console.log('🔄 Manual refresh triggered by user...');
     try {
       await refetch();
+      console.log('✅ Manual refresh completed successfully');
+    } catch (error) {
+      console.error('❌ Manual refresh failed:', error);
     } finally {
       setIsRefreshing(false);
     }
