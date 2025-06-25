@@ -9,21 +9,60 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      facilities: {
+        Row: {
+          address: string | null
+          created_at: string | null
+          email: string | null
+          facility_type: Database["public"]["Enums"]["facility_type"]
+          id: string
+          is_active: boolean | null
+          license_number: string | null
+          name: string
+          phone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string | null
+          email?: string | null
+          facility_type: Database["public"]["Enums"]["facility_type"]
+          id?: string
+          is_active?: boolean | null
+          license_number?: string | null
+          name: string
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string | null
+          email?: string | null
+          facility_type?: Database["public"]["Enums"]["facility_type"]
+          id?: string
+          is_active?: boolean | null
+          license_number?: string | null
+          name?: string
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       permissions: {
         Row: {
-          created_at: string
+          created_at: string | null
           description: string | null
           id: string
           name: string
         }
         Insert: {
-          created_at?: string
+          created_at?: string | null
           description?: string | null
           id?: string
           name: string
         }
         Update: {
-          created_at?: string
+          created_at?: string | null
           description?: string | null
           id?: string
           name?: string
@@ -33,9 +72,10 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
-          created_at: string
+          created_at: string | null
           department: string | null
           email: string | null
+          facility_id: string | null
           first_name: string | null
           has_mfa_enabled: boolean | null
           id: string
@@ -43,13 +83,14 @@ export type Database = {
           last_login: string | null
           last_name: string | null
           phone: string | null
-          updated_at: string
+          updated_at: string | null
         }
         Insert: {
           avatar_url?: string | null
-          created_at?: string
+          created_at?: string | null
           department?: string | null
           email?: string | null
+          facility_id?: string | null
           first_name?: string | null
           has_mfa_enabled?: boolean | null
           id: string
@@ -57,13 +98,14 @@ export type Database = {
           last_login?: string | null
           last_name?: string | null
           phone?: string | null
-          updated_at?: string
+          updated_at?: string | null
         }
         Update: {
           avatar_url?: string | null
-          created_at?: string
+          created_at?: string | null
           department?: string | null
           email?: string | null
+          facility_id?: string | null
           first_name?: string | null
           has_mfa_enabled?: boolean | null
           id?: string
@@ -71,28 +113,36 @@ export type Database = {
           last_login?: string | null
           last_name?: string | null
           phone?: string | null
-          updated_at?: string
+          updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       role_permissions: {
         Row: {
-          created_at: string
+          created_at: string | null
           id: string
-          permission_id: string
-          role_id: string
+          permission_id: string | null
+          role_id: string | null
         }
         Insert: {
-          created_at?: string
+          created_at?: string | null
           id?: string
-          permission_id: string
-          role_id: string
+          permission_id?: string | null
+          role_id?: string | null
         }
         Update: {
-          created_at?: string
+          created_at?: string | null
           id?: string
-          permission_id?: string
-          role_id?: string
+          permission_id?: string | null
+          role_id?: string | null
         }
         Relationships: [
           {
@@ -113,19 +163,19 @@ export type Database = {
       }
       roles: {
         Row: {
-          created_at: string
+          created_at: string | null
           description: string | null
           id: string
           name: Database["public"]["Enums"]["user_role"]
         }
         Insert: {
-          created_at?: string
+          created_at?: string | null
           description?: string | null
           id?: string
           name: Database["public"]["Enums"]["user_role"]
         }
         Update: {
-          created_at?: string
+          created_at?: string | null
           description?: string | null
           id?: string
           name?: Database["public"]["Enums"]["user_role"]
@@ -135,24 +185,24 @@ export type Database = {
       user_roles: {
         Row: {
           assigned_by: string | null
-          created_at: string
+          created_at: string | null
           id: string
-          role_id: string
-          user_id: string
+          role_id: string | null
+          user_id: string | null
         }
         Insert: {
           assigned_by?: string | null
-          created_at?: string
+          created_at?: string | null
           id?: string
-          role_id: string
-          user_id: string
+          role_id?: string | null
+          user_id?: string | null
         }
         Update: {
           assigned_by?: string | null
-          created_at?: string
+          created_at?: string | null
           id?: string
-          role_id?: string
-          user_id?: string
+          role_id?: string | null
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -182,13 +232,17 @@ export type Database = {
       }
     }
     Enums: {
+      facility_type:
+        | "treatmentFacility"
+        | "referralFacility"
+        | "prescriberFacility"
       user_role:
         | "superAdmin"
         | "healthcareProvider"
         | "nurse"
-        | "labTechnician"
-        | "csInternal"
-        | "csExternal"
+        | "caseManager"
+        | "onboardingTeam"
+        | "patientCaregiver"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -304,13 +358,18 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      facility_type: [
+        "treatmentFacility",
+        "referralFacility",
+        "prescriberFacility",
+      ],
       user_role: [
         "superAdmin",
         "healthcareProvider",
         "nurse",
-        "labTechnician",
-        "csInternal",
-        "csExternal",
+        "caseManager",
+        "onboardingTeam",
+        "patientCaregiver",
       ],
     },
   },
