@@ -23,6 +23,26 @@ const Header = () => {
     return user?.email?.[0]?.toUpperCase() || 'U';
   };
 
+  const getPortalType = () => {
+    if (userRoles.includes('superAdmin')) return 'Admin Portal';
+    if (userRoles.includes('healthcareProvider')) return 'HCP Portal';
+    if (userRoles.includes('nurse')) return 'Nurse Portal';
+    if (userRoles.includes('caseManager')) return 'Care Manager Portal';
+    if (userRoles.includes('onboardingTeam')) return 'Onboarding Portal';
+    if (userRoles.includes('patientCaregiver')) return 'Patient Portal';
+    return 'Healthcare Portal';
+  };
+
+  const getPortalColor = () => {
+    if (userRoles.includes('superAdmin')) return 'text-red-600';
+    if (userRoles.includes('healthcareProvider')) return 'text-blue-600';
+    if (userRoles.includes('nurse')) return 'text-green-600';
+    if (userRoles.includes('caseManager')) return 'text-purple-600';
+    if (userRoles.includes('onboardingTeam')) return 'text-orange-600';
+    if (userRoles.includes('patientCaregiver')) return 'text-pink-600';
+    return 'text-slate-600';
+  };
+
   const getRoleDisplay = () => {
     if (userRoles.length === 0) return 'No Role Assigned';
     return userRoles.map(role => {
@@ -53,7 +73,20 @@ const Header = () => {
           </div>
         </div>
         
-        <div className="ml-auto flex items-center space-x-4">
+        {/* Portal Type and User Name Display */}
+        <div className="ml-auto flex items-center space-x-6">
+          <div className="text-right">
+            <div className={`text-sm font-semibold ${getPortalColor()}`}>
+              {getPortalType()}
+            </div>
+            <div className="text-sm text-slate-700">
+              {profile?.first_name && profile?.last_name 
+                ? `${profile.first_name} ${profile.last_name}`
+                : user?.email
+              }
+            </div>
+          </div>
+          
           <Button
             variant="outline"
             size="sm"
