@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -33,10 +32,10 @@ export const useUsers = () => {
   } = useQuery({
     queryKey: ['users'],
     queryFn: async () => {
-      console.log('🔍 Fetching users with direct database queries...');
+      console.log('🔍 Fetching users with separate queries approach...');
       
       try {
-        // Primary approach: Direct database queries for reliability
+        // First, get all profiles with facilities
         const { data: profiles, error: profilesError } = await supabase
           .from('profiles')
           .select(`
@@ -45,25 +44,57 @@ export const useUsers = () => {
               id,
               name,
               facility_type
-            ),
-            user_roles (
-              id,
-              role_id,
-              roles!inner (
-                name,
-                description
-              )
             )
           `)
           .order('last_name');
 
         if (profilesError) {
-          console.error('❌ Direct query failed:', profilesError);
-          throw new Error(`Database error: ${profilesError.message}`);
+          console.error('❌ Error fetching profiles:', profilesError);
+          throw new Error(`Failed to fetch profiles: ${profilesError.message}`);
         }
 
-        console.log('✅ Users fetched successfully via direct queries:', profiles);
-        return profiles as UserWithRoles[];
+        if (!profiles || profiles.length === 0) {
+          console.log('ℹ️ No profiles found');
+          return [];
+        }
+
+        console.log('✅ Profiles fetched:', profiles.length);
+
+        // Then, get all user roles with role details
+        const { data: userRoles, error: userRolesError } = await supabase
+          .from('user_roles')
+          .select(`
+            user_id,
+            roles (
+              name,
+              description
+            )
+          `);
+
+        if (userRolesError) {
+          console.warn('⚠️ Error fetching user roles:', userRolesError);
+          // Continue without roles if there's an error
+        }
+
+        console.log('✅ User roles fetched:', userRoles?.length || 0);
+
+        // Combine the data
+        const usersWithRoles: UserWithRoles[] = profiles.map(profile => {
+          const userRolesForProfile = userRoles?.filter(ur => ur.user_id === profile.id) || [];
+          
+          return {
+            ...profile,
+            user_roles: userRolesForProfile.map(ur => ({
+              roles: {
+                name: ur.roles?.name || 'patientCaregiver' as UserRole,
+                description: ur.roles?.description || null
+              }
+            }))
+          };
+        });
+
+        console.log('✅ Users with roles prepared:', usersWithRoles.length);
+        return usersWithRoles;
       } catch (err) {
         console.error('❌ Error fetching users:', err);
         throw err;
