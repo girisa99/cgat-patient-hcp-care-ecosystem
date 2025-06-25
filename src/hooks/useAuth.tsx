@@ -40,6 +40,7 @@ export const useAuth = (): AuthContextType => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state change:', event, session?.user?.id);
         setSession(session);
         setUser(session?.user ?? null);
         
@@ -59,25 +60,31 @@ export const useAuth = (): AuthContextType => {
   }, []);
 
   const loadUserData = async (userId: string) => {
+    console.log('Loading user data for:', userId);
     try {
-      // Load user profile
+      // Load user profile with better error handling
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
-      if (profileError && profileError.code !== 'PGRST116') {
+      if (profileError) {
         console.error('Error loading profile:', profileError);
-      } else {
+        // Don't fail completely if profile doesn't exist
+        if (profileError.code !== 'PGRST116') {
+          throw profileError;
+        }
+      } else if (profileData) {
+        console.log('Profile loaded:', profileData);
         setProfile(profileData);
       }
 
-      // Load user roles
+      // Load user roles with improved query
       const { data: rolesData, error: rolesError } = await supabase
         .from('user_roles')
         .select(`
-          roles (
+          roles!inner (
             name
           )
         `)
@@ -85,12 +92,18 @@ export const useAuth = (): AuthContextType => {
 
       if (rolesError) {
         console.error('Error loading roles:', rolesError);
+        // Don't fail completely if roles query fails
+        setUserRoles([]);
       } else {
         const roles = rolesData?.map((ur: any) => ur.roles.name) || [];
+        console.log('User roles loaded:', roles);
         setUserRoles(roles);
       }
     } catch (error) {
       console.error('Error loading user data:', error);
+      // Set defaults on error but don't block the auth flow
+      setProfile(null);
+      setUserRoles([]);
     } finally {
       setLoading(false);
     }
@@ -98,6 +111,7 @@ export const useAuth = (): AuthContextType => {
 
   const signOut = async () => {
     try {
+      console.log('Signing out user');
       await supabase.auth.signOut();
       setProfile(null);
       setUserRoles([]);
