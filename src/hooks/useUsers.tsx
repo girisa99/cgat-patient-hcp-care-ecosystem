@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -40,6 +39,14 @@ export const useUsers = () => {
         const { data: { user }, error: authError } = await supabase.auth.getUser();
         console.log('🔍 Current authenticated user:', user?.id, authError);
         
+        // Debug: Check if there are users in auth.users that don't have profiles
+        const { data: authUsers, error: authUsersError } = await supabase.auth.admin.listUsers();
+        console.log('🔍 Auth users count:', authUsers?.users?.length, 'Auth error:', authUsersError);
+        
+        if (authUsers?.users) {
+          console.log('🔍 Auth users emails:', authUsers.users.map(u => ({ id: u.id, email: u.email })));
+        }
+        
         // Debug: Try to get profile count first
         const { count, error: countError } = await supabase
           .from('profiles')
@@ -56,7 +63,7 @@ export const useUsers = () => {
         console.log('🔍 All profiles (limited query):', allProfiles?.length, 'Error:', allProfilesError);
         console.log('🔍 Profile data sample:', allProfiles?.slice(0, 3));
 
-        // First, get all profiles with facilities
+        // First, get all profiles with facilities - ORDER BY EMAIL instead of last_name
         const { data: profiles, error: profilesError } = await supabase
           .from('profiles')
           .select(`
@@ -67,7 +74,7 @@ export const useUsers = () => {
               facility_type
             )
           `)
-          .order('last_name');
+          .order('email', { nullsLast: true });
 
         if (profilesError) {
           console.error('❌ Error fetching profiles:', profilesError);
@@ -77,6 +84,13 @@ export const useUsers = () => {
         if (!profiles || profiles.length === 0) {
           console.log('ℹ️ No profiles found in main query');
           console.log('🔍 This suggests either no profiles exist or RLS is blocking access');
+          
+          // If auth users exist but no profiles, suggest profile creation issue
+          if (authUsers?.users && authUsers.users.length > 0) {
+            console.log('⚠️ Found auth users but no profiles - profile creation trigger may have failed');
+            console.log('🔍 Missing profiles for users:', authUsers.users.map(u => u.email));
+          }
+          
           return [];
         }
 
@@ -121,7 +135,7 @@ export const useUsers = () => {
         console.log('🔍 Final user data:', usersWithRoles.map(u => ({ 
           id: u.id, 
           email: u.email, 
-          name: `${u.first_name} ${u.last_name}`,
+          name: `${u.first_name || 'No First Name'} ${u.last_name || 'No Last Name'}`,
           roles: u.user_roles.map(ur => ur.roles.name)
         })));
         
