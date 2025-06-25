@@ -15,7 +15,7 @@ interface AuthContextType {
   loading: boolean;
   signOut: () => Promise<void>;
   hasRole: (role: UserRole) => boolean;
-  hasPermission: (permission: string) => boolean;
+  hasPermission: (permission: string) => Promise<boolean>;
 }
 
 export const useAuth = (): AuthContextType => {
