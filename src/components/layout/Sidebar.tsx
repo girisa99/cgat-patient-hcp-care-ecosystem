@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuthContext } from '@/components/auth/AuthProvider';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -18,6 +19,7 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ className }) => {
   const { userRoles, hasRole } = useAuthContext();
+  const location = useLocation();
 
   const menuItems = [
     {
@@ -70,14 +72,14 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
             {visibleItems.map((item) => (
               <Button
                 key={item.href}
-                variant="ghost"
+                variant={location.pathname === item.href ? "default" : "ghost"}
                 className="w-full justify-start"
                 asChild
               >
-                <a href={item.href}>
+                <Link to={item.href}>
                   <item.icon className="mr-2 h-4 w-4" />
                   {item.title}
-                </a>
+                </Link>
               </Button>
             ))}
           </div>
