@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -32,7 +33,7 @@ export const useUsers = () => {
   } = useQuery({
     queryKey: ['users'],
     queryFn: async () => {
-      console.log('🔍 Fetching users with comprehensive table analysis...');
+      console.log('🔍 Fetching users - focusing on profiles table...');
       
       try {
         // Debug: Check current user and auth state
@@ -46,20 +47,31 @@ export const useUsers = () => {
         
         console.log('📊 PROFILES TABLE - Total count:', profileCount, 'Error:', profileCountError);
         
-        // Get sample profiles data
+        // Get all profiles data with detailed info
         const { data: allProfiles, error: allProfilesError } = await supabase
           .from('profiles')
-          .select('id, email, first_name, last_name, created_at, facility_id')
-          .limit(20);
+          .select(`
+            id, 
+            email, 
+            first_name, 
+            last_name, 
+            created_at, 
+            facility_id,
+            department,
+            phone
+          `);
         
-        console.log('📊 PROFILES TABLE - Sample data:', allProfiles?.length, 'Error:', allProfilesError);
+        console.log('📊 PROFILES TABLE - All profiles fetched:', allProfiles?.length, 'Error:', allProfilesError);
         if (allProfiles) {
-          console.log('📊 PROFILES TABLE - All profiles:', allProfiles.map(p => ({ 
-            id: p.id, 
-            email: p.email, 
-            name: `${p.first_name || 'No First'} ${p.last_name || 'No Last'}`,
-            facility_id: p.facility_id
-          })));
+          console.log('📊 PROFILES TABLE - Complete profile list:');
+          allProfiles.forEach((profile, index) => {
+            console.log(`  ${index + 1}. ID: ${profile.id}`);
+            console.log(`     Email: ${profile.email}`);
+            console.log(`     Name: ${profile.first_name || 'N/A'} ${profile.last_name || 'N/A'}`);
+            console.log(`     Created: ${profile.created_at}`);
+            console.log(`     Facility: ${profile.facility_id || 'None'}`);
+            console.log('     ---');
+          });
         }
 
         // Debug: Check user_roles table
@@ -74,19 +86,22 @@ export const useUsers = () => {
           .select(`
             user_id,
             role_id,
+            created_at,
             roles (
               name,
               description
             )
-          `)
-          .limit(20);
+          `);
         
-        console.log('📊 USER_ROLES TABLE - Sample data:', allUserRoles?.length, 'Error:', userRolesError);
+        console.log('📊 USER_ROLES TABLE - All roles fetched:', allUserRoles?.length, 'Error:', userRolesError);
         if (allUserRoles) {
-          console.log('📊 USER_ROLES TABLE - All roles:', allUserRoles.map(ur => ({
-            user_id: ur.user_id,
-            role: ur.roles?.name
-          })));
+          console.log('📊 USER_ROLES TABLE - Complete roles list:');
+          allUserRoles.forEach((userRole, index) => {
+            console.log(`  ${index + 1}. User ID: ${userRole.user_id}`);
+            console.log(`     Role: ${userRole.roles?.name}`);
+            console.log(`     Created: ${userRole.created_at}`);
+            console.log('     ---');
+          });
         }
 
         // Debug: Check facilities table
@@ -95,22 +110,6 @@ export const useUsers = () => {
           .select('*', { count: 'exact', head: true });
         
         console.log('📊 FACILITIES TABLE - Total count:', facilitiesCount, 'Error:', facilitiesCountError);
-
-        // Try to get auth users count (this will likely fail due to permissions)
-        try {
-          const { data: authUsers, error: authUsersError } = await supabase.auth.admin.listUsers();
-          console.log('📊 AUTH.USERS TABLE - Count:', authUsers?.users?.length, 'Error:', authUsersError);
-          
-          if (authUsers?.users) {
-            console.log('📊 AUTH.USERS TABLE - Users:', authUsers.users.map(u => ({ 
-              id: u.id, 
-              email: u.email,
-              created_at: u.created_at
-            })));
-          }
-        } catch (authError) {
-          console.log('📊 AUTH.USERS TABLE - Cannot access (expected due to permissions):', authError);
-        }
 
         // Main query: Get all profiles with facilities
         const { data: profiles, error: profilesError } = await supabase
@@ -136,6 +135,11 @@ export const useUsers = () => {
           console.log('   2. RLS policies are blocking access');
           console.log('   3. Profile creation trigger failed when users were created');
           console.log('   4. Profiles were deleted somehow');
+          console.log('');
+          console.log('💡 RECOMMENDED ACTIONS:');
+          console.log('   1. Check if the handle_new_user() trigger is working');
+          console.log('   2. Verify RLS policies on profiles table');
+          console.log('   3. Try creating users through the UI to see if profiles are created');
           
           return [];
         }
