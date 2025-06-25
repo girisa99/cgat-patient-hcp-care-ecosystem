@@ -84,45 +84,46 @@ const Dashboard = () => {
         </Button>
       </div>
 
-      {/* Success message when everything is loaded properly */}
+      {/* Enhanced Success/Status Messages */}
       {user && profile && userRoles.length > 0 && (
         <Alert className="border-green-200 bg-green-50">
           <CheckCircle className="h-4 w-4 text-green-600" />
           <AlertDescription className="text-green-800">
-            <strong>✅ System operational!</strong> Profile and {userRoles.length} role(s) loaded successfully with basic RLS policies.
+            <strong>✅ System operational!</strong> Profile loaded and {userRoles.length} role(s) assigned with simplified RLS policies.
           </AlertDescription>
         </Alert>
       )}
 
-      {/* Show specific alerts based on what's missing */}
       {user && !profile && (
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            <strong>Profile Missing:</strong> Your profile could not be loaded. This might indicate that your profile hasn't been created yet. Contact your administrator to set up your profile.
+            <strong>Profile Status:</strong> No profile found. This may be normal for new accounts. Check browser console for detailed logs.
           </AlertDescription>
         </Alert>
       )}
 
       {user && profile && userRoles.length === 0 && (
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            <strong>No Roles Assigned:</strong> Your account doesn't have any roles assigned. Contact your administrator to have roles assigned to enable portal features.
+        <Alert className="border-amber-200 bg-amber-50">
+          <AlertCircle className="h-4 w-4 text-amber-600" />
+          <AlertDescription className="text-amber-800">
+            <strong>Roles Status:</strong> Profile loaded but no roles found. Check browser console for detailed error logs, or contact admin to assign roles.
           </AlertDescription>
         </Alert>
       )}
 
-      {/* Authentication Status Alert */}
-      {user && (
-        <Alert className="border-blue-200 bg-blue-50">
-          <Database className="h-4 w-4 text-blue-600" />
-          <AlertDescription className="text-blue-800">
-            <strong>Database Connection:</strong> Successfully connected to Supabase with simplified RLS policies. 
-            Authentication is working properly.
-          </AlertDescription>
-        </Alert>
-      )}
+      {/* Database Status Alert */}
+      <Alert className="border-blue-200 bg-blue-50">
+        <Database className="h-4 w-4 text-blue-600" />
+        <AlertDescription className="text-blue-800">
+          <strong>Database Connection:</strong> Using simplified RLS policies (basic level). Check browser console (F12) for detailed loading logs.
+          {user && (
+            <div className="mt-1 text-xs">
+              User ID: {user.id.slice(0, 8)}... | Auth Status: Active
+            </div>
+          )}
+        </AlertDescription>
+      </Alert>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card>
@@ -147,7 +148,7 @@ const Dashboard = () => {
                   </div>
                   <div className="pt-2 border-t">
                     <p className="text-xs text-green-600 font-medium">
-                      ✅ Profile loaded successfully
+                      ✅ Profile loaded via RLS policy
                     </p>
                   </div>
                 </>
@@ -155,11 +156,12 @@ const Dashboard = () => {
                 <>
                   <div className="space-y-2">
                     <p><strong>Email:</strong> {user.email}</p>
-                    <p className="text-sm text-amber-600">⚠ Profile not found in database</p>
+                    <p className="text-sm text-amber-600">⚠ Profile not found</p>
+                    <p className="text-xs text-muted-foreground">Check console for error details</p>
                   </div>
                   <div className="pt-2 border-t">
                     <p className="text-xs text-muted-foreground">
-                      User ID: {user.id.slice(0, 8)}... (for admin reference)
+                      User ID: {user.id.slice(0, 8)}...
                     </p>
                   </div>
                 </>
@@ -174,9 +176,9 @@ const Dashboard = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Shield className="h-4 w-4" />
-              Your Roles ({userRoles.length})
+              User Roles ({userRoles.length})
             </CardTitle>
-            <CardDescription>System access permissions and capabilities</CardDescription>
+            <CardDescription>System access permissions via RLS</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -194,20 +196,23 @@ const Dashboard = () => {
                   ))}
                   <div className="pt-2 border-t">
                     <p className="text-xs text-green-600 font-medium">
-                      ✅ Roles loaded successfully
+                      ✅ Roles loaded via simplified RLS
                     </p>
                   </div>
                 </>
               ) : (
                 <div className="space-y-2">
-                  <p className="text-muted-foreground">No roles assigned to your account</p>
-                  <p className="text-xs text-muted-foreground">
-                    Contact your administrator to have roles assigned to access portal features.
+                  <p className="text-muted-foreground">No roles assigned</p>
+                  <p className="text-xs text-amber-600">
+                    Check browser console (F12) for detailed error logs
                   </p>
                   {user && (
                     <div className="pt-2 border-t">
                       <p className="text-xs text-muted-foreground">
-                        User ID: {user.id.slice(0, 8)}... (for admin reference)
+                        User ID: {user.id.slice(0, 8)}...
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        🔍 Role query target: user_roles.user_id = {user.id.slice(0, 8)}...
                       </p>
                     </div>
                   )}
@@ -220,7 +225,7 @@ const Dashboard = () => {
         <Card>
           <CardHeader>
             <CardTitle>System Status</CardTitle>
-            <CardDescription>Authentication and data loading status</CardDescription>
+            <CardDescription>Auth and data loading diagnostics</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -233,20 +238,20 @@ const Dashboard = () => {
                 <span className="text-sm">Profile: {profile ? 'Loaded' : 'Missing'}</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${userRoles.length > 0 ? 'bg-green-500' : 'bg-amber-500'}`}></div>
-                <span className="text-sm">Roles: {userRoles.length > 0 ? `${userRoles.length} assigned` : 'None'}</span>
+                <div className={`w-2 h-2 rounded-full ${userRoles.length > 0 ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                <span className="text-sm">Roles: {userRoles.length > 0 ? `${userRoles.length} found` : 'None found'}</span>
               </div>
               
               <div className="pt-2 border-t space-y-1">
-                <p className="text-xs text-green-600 font-medium">
-                  🔧 RLS Policies: Basic (simplified)
+                <p className="text-xs text-blue-600 font-medium">
+                  🔧 RLS: Simplified policies active
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Using non-recursive policies to prevent infinite loops
+                  Open browser console (F12) for detailed logs
                 </p>
                 {user && (
                   <p className="text-xs text-muted-foreground">
-                    User ID: {user.id.slice(0, 8)}...
+                    Session: {user.id.slice(0, 8)}...
                   </p>
                 )}
               </div>

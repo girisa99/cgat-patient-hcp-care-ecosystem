@@ -59,7 +59,7 @@ export const useAuth = (): AuthContextType => {
             if (mounted) {
               loadUserData(session.user.id);
             }
-          }, 200);
+          }, 100);
         } else if (event === 'SIGNED_OUT') {
           setProfile(null);
           setUserRoles([]);
@@ -79,7 +79,7 @@ export const useAuth = (): AuthContextType => {
     setLoading(true);
     
     try {
-      // Load profile with the new simplified RLS policy (users can only see their own profile)
+      // Load profile with basic RLS policy (users can only see their own profile)
       console.log('👤 Fetching profile...');
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
@@ -95,11 +95,10 @@ export const useAuth = (): AuthContextType => {
         setProfile(profileData);
       } else {
         console.log('ℹ️ No profile found for user:', userId);
-        // Profile might not exist - this is normal for new users
         setProfile(null);
       }
 
-      // Load user roles with the new simplified RLS policy (users can only see their own roles)
+      // Load user roles with basic RLS policy (users can only see their own roles)
       console.log('🔐 Fetching user roles...');
       const { data: rolesData, error: rolesError } = await supabase
         .from('user_roles')
@@ -112,15 +111,19 @@ export const useAuth = (): AuthContextType => {
 
       if (rolesError) {
         console.error('❌ Roles error:', rolesError);
+        console.error('❌ Detailed roles error:', JSON.stringify(rolesError));
         logAuthError('loadRoles', rolesError, userId);
         setUserRoles([]);
-      } else if (rolesData && rolesData.length > 0) {
-        const roles = rolesData.map((ur: any) => ur.roles.name as UserRole);
-        console.log('✅ User roles loaded successfully:', roles);
-        setUserRoles(roles);
       } else {
-        console.log('ℹ️ No roles found for user:', userId);
-        setUserRoles([]);
+        console.log('🔐 Raw roles data:', rolesData);
+        if (rolesData && rolesData.length > 0) {
+          const roles = rolesData.map((ur: any) => ur.roles.name as UserRole);
+          console.log('✅ User roles loaded successfully:', roles);
+          setUserRoles(roles);
+        } else {
+          console.log('ℹ️ No roles found for user:', userId);
+          setUserRoles([]);
+        }
       }
 
     } catch (error) {
