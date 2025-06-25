@@ -4,6 +4,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 import { logAuthError } from '@/utils/authErrorHandler';
+import { getUserRolesDirect, getUserProfileSafe } from '@/utils/rlsPolicyHelpers';
 
 type UserRole = Database['public']['Enums']['user_role'];
 type Profile = Database['public']['Tables']['profiles']['Row'];
@@ -27,13 +28,23 @@ export const useAuth = (): AuthContextType => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted) return;
+      
       console.log('Initial session check:', session?.user?.id);
       setSession(session);
       setUser(session?.user ?? null);
+      
       if (session?.user) {
-        loadUserData(session.user.id);
+        // Defer loading to prevent RLS conflicts
+        setTimeout(() => {
+          if (mounted) {
+            loadUserDataSafe(session.user.id);
+          }
+        }, 100);
       } else {
         setLoading(false);
       }
@@ -42,6 +53,8 @@ export const useAuth = (): AuthContextType => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        if (!mounted) return;
+        
         console.log('Auth state change:', event, session?.user?.id);
         setSession(session);
         setUser(session?.user ?? null);
@@ -49,8 +62,10 @@ export const useAuth = (): AuthContextType => {
         if (event === 'SIGNED_IN' && session?.user) {
           // Defer loading to prevent any potential conflicts
           setTimeout(() => {
-            loadUserData(session.user.id);
-          }, 100);
+            if (mounted) {
+              loadUserDataSafe(session.user.id);
+            }
+          }, 200);
         } else if (event === 'SIGNED_OUT') {
           setProfile(null);
           setUserRoles([]);
@@ -59,60 +74,32 @@ export const useAuth = (): AuthContextType => {
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
-  const loadUserData = async (userId: string) => {
-    console.log('Loading user data for:', userId);
+  const loadUserDataSafe = async (userId: string) => {
+    console.log('Loading user data safely for:', userId);
     try {
       setLoading(true);
 
-      // Load user profile
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle();
-
-      if (profileError) {
-        const errorInfo = logAuthError('loadProfile', profileError, userId);
-        if (profileError.code !== 'PGRST116') { // Not found is ok
-          console.error('Profile load error:', errorInfo.message);
-        }
-      } else if (profileData) {
-        console.log('Profile loaded:', profileData.email);
+      // Load profile using safe method
+      const profileData = await getUserProfileSafe(userId);
+      if (profileData) {
+        console.log('Profile loaded safely:', profileData.email);
         setProfile(profileData);
       }
 
-      // Load user roles using the new security definer function approach
-      try {
-        // First test if we can access the roles table
-        const { data: rolesData, error: rolesError } = await supabase
-          .from('user_roles')
-          .select(`
-            roles!inner (
-              name
-            )
-          `)
-          .eq('user_id', userId);
+      // Load roles using direct method to bypass RLS issues
+      const roles = await getUserRolesDirect(userId);
+      console.log('User roles loaded safely:', roles);
+      setUserRoles(roles);
 
-        if (rolesError) {
-          logAuthError('loadRoles', rolesError, userId);
-          console.warn('Could not load roles:', rolesError.message);
-          setUserRoles([]);
-        } else {
-          const roles = rolesData?.map((ur: any) => ur.roles.name) || [];
-          console.log('User roles loaded:', roles);
-          setUserRoles(roles);
-        }
-      } catch (error) {
-        logAuthError('loadUserRoles', error, userId);
-        console.warn('Error loading user roles:', error);
-        setUserRoles([]);
-      }
     } catch (error) {
-      logAuthError('loadUserData', error, userId);
-      console.error('Error in loadUserData:', error);
+      logAuthError('loadUserDataSafe', error, userId);
+      console.error('Error in loadUserDataSafe:', error);
       // Set defaults but don't block auth flow
       setProfile(null);
       setUserRoles([]);

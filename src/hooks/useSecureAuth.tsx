@@ -26,7 +26,7 @@ export const useSecureAuth = () => {
     return false;
   }, [user, userRoles]);
 
-  // Async role checking for when we need to verify against database using the new security definer function
+  // Async role checking for when we need to verify against database using the security definer function
   const verifyRole = useCallback(async (roleName: UserRole): Promise<boolean> => {
     if (!user) return false;
     

@@ -3,9 +3,11 @@ import React from 'react';
 import { useAuthContext } from '@/components/auth/AuthProvider';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { User, Shield, AlertCircle } from 'lucide-react';
 
 const Dashboard = () => {
-  const { profile, userRoles } = useAuthContext();
+  const { profile, userRoles, loading, user } = useAuthContext();
 
   const getRoleColor = (role: string) => {
     switch (role) {
@@ -31,6 +33,32 @@ const Dashboard = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
+          <p className="text-muted-foreground">Loading your healthcare portal...</p>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3].map((i) => (
+            <Card key={i}>
+              <CardHeader>
+                <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="h-3 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="h-3 bg-gray-200 rounded animate-pulse w-3/4"></div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -40,24 +68,53 @@ const Dashboard = () => {
         </p>
       </div>
 
+      {/* Show alert if there are issues loading user data */}
+      {user && (!profile || userRoles.length === 0) && (
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            {!profile && "Profile information is still loading. "}
+            {userRoles.length === 0 && "User roles are still loading or haven't been assigned. "}
+            Please contact your administrator if this persists.
+          </AlertDescription>
+        </Alert>
+      )}
+
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader>
-            <CardTitle>Profile Information</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <User className="h-4 w-4" />
+              Profile Information
+            </CardTitle>
             <CardDescription>Your account details</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              <p><strong>Name:</strong> {profile?.first_name} {profile?.last_name}</p>
-              <p><strong>Email:</strong> {profile?.email}</p>
-              <p><strong>Department:</strong> {profile?.department || 'Not specified'}</p>
+              {profile ? (
+                <>
+                  <p><strong>Name:</strong> {profile.first_name} {profile.last_name}</p>
+                  <p><strong>Email:</strong> {profile.email}</p>
+                  <p><strong>Department:</strong> {profile.department || 'Not specified'}</p>
+                </>
+              ) : user ? (
+                <>
+                  <p><strong>Email:</strong> {user.email}</p>
+                  <p className="text-sm text-muted-foreground">Profile details are loading...</p>
+                </>
+              ) : (
+                <p className="text-muted-foreground">No profile information available</p>
+              )}
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Your Roles</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Shield className="h-4 w-4" />
+              Your Roles
+            </CardTitle>
             <CardDescription>System access permissions</CardDescription>
           </CardHeader>
           <CardContent>
@@ -74,7 +131,12 @@ const Dashboard = () => {
                   </div>
                 ))
               ) : (
-                <p className="text-muted-foreground">No roles assigned</p>
+                <div className="space-y-2">
+                  <p className="text-muted-foreground">No roles assigned or roles are loading</p>
+                  <p className="text-xs text-muted-foreground">
+                    Contact your administrator to have roles assigned to your account.
+                  </p>
+                </div>
               )}
             </div>
           </CardContent>
@@ -87,9 +149,15 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">
-                Available actions will appear here based on your role permissions.
-              </p>
+              {userRoles.length > 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Available actions will appear here based on your role permissions.
+                </p>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Actions will be available once your roles are loaded and assigned.
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
