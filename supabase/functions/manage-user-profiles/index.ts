@@ -118,7 +118,8 @@ const handler = async (req: Request): Promise<Response> => {
           }
         }
 
-        result = await supabase
+        // First get all profiles with facilities
+        const { data: profiles, error: profilesError } = await supabase
           .from('profiles')
           .select(`
             *,
@@ -126,15 +127,50 @@ const handler = async (req: Request): Promise<Response> => {
               id,
               name,
               facility_type
-            ),
-            user_roles (
-              roles (
-                name,
-                description
-              )
             )
           `)
           .order('last_name');
+
+        if (profilesError) {
+          console.error('Error fetching profiles:', profilesError);
+          return new Response(JSON.stringify({ error: profilesError.message }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json', ...corsHeaders },
+          });
+        }
+
+        // Then get user roles for each profile
+        const profilesWithRoles = await Promise.all(
+          profiles.map(async (profile) => {
+            const { data: userRoles, error: rolesError } = await supabase
+              .from('user_roles')
+              .select(`
+                id,
+                role_id,
+                roles!inner (
+                  name,
+                  description
+                )
+              `)
+              .eq('user_id', profile.id);
+
+            if (rolesError) {
+              console.error('Error fetching roles for user:', profile.id, rolesError);
+              // Continue without roles if there's an error
+              return {
+                ...profile,
+                user_roles: []
+              };
+            }
+
+            return {
+              ...profile,
+              user_roles: userRoles || []
+            };
+          })
+        );
+
+        result = { data: profilesWithRoles };
         break;
 
       default:
