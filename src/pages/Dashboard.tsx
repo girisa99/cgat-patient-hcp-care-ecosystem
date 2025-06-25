@@ -4,7 +4,7 @@ import { useAuthContext } from '@/components/auth/AuthProvider';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { User, Shield, AlertCircle, CheckCircle, RefreshCw } from 'lucide-react';
+import { User, Shield, AlertCircle, CheckCircle, RefreshCw, Database } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const Dashboard = () => {
@@ -89,7 +89,7 @@ const Dashboard = () => {
         <Alert className="border-green-200 bg-green-50">
           <CheckCircle className="h-4 w-4 text-green-600" />
           <AlertDescription className="text-green-800">
-            ✅ System operational! Profile and {userRoles.length} role(s) loaded successfully with simplified RLS policies.
+            <strong>✅ System operational!</strong> Profile and {userRoles.length} role(s) loaded successfully with basic RLS policies.
           </AlertDescription>
         </Alert>
       )}
@@ -99,7 +99,7 @@ const Dashboard = () => {
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            Profile information could not be loaded. This might indicate a database setup issue or missing profile data.
+            <strong>Profile Missing:</strong> Your profile could not be loaded. This might indicate that your profile hasn't been created yet. Contact your administrator to set up your profile.
           </AlertDescription>
         </Alert>
       )}
@@ -108,7 +108,18 @@ const Dashboard = () => {
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            No user roles have been assigned to your account. Contact your administrator to have roles assigned.
+            <strong>No Roles Assigned:</strong> Your account doesn't have any roles assigned. Contact your administrator to have roles assigned to enable portal features.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Authentication Status Alert */}
+      {user && (
+        <Alert className="border-blue-200 bg-blue-50">
+          <Database className="h-4 w-4 text-blue-600" />
+          <AlertDescription className="text-blue-800">
+            <strong>Database Connection:</strong> Successfully connected to Supabase with simplified RLS policies. 
+            Authentication is working properly.
           </AlertDescription>
         </Alert>
       )}
@@ -120,26 +131,37 @@ const Dashboard = () => {
               <User className="h-4 w-4" />
               Profile Information
             </CardTitle>
-            <CardDescription>Your account details</CardDescription>
+            <CardDescription>Your account details and status</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
+            <div className="space-y-3">
               {profile ? (
                 <>
-                  <p><strong>Name:</strong> {profile.first_name || 'Not set'} {profile.last_name || ''}</p>
-                  <p><strong>Email:</strong> {profile.email || user?.email || 'Not available'}</p>
-                  <p><strong>Department:</strong> {profile.department || 'Not specified'}</p>
-                  <p className="text-xs text-green-600">
-                    ✅ Profile loaded successfully
-                  </p>
+                  <div className="space-y-2">
+                    <p><strong>Name:</strong> {profile.first_name || 'Not set'} {profile.last_name || ''}</p>
+                    <p><strong>Email:</strong> {profile.email || user?.email || 'Not available'}</p>
+                    <p><strong>Department:</strong> {profile.department || 'Not specified'}</p>
+                    {profile.facility_id && (
+                      <p><strong>Facility ID:</strong> {profile.facility_id.slice(0, 8)}...</p>
+                    )}
+                  </div>
+                  <div className="pt-2 border-t">
+                    <p className="text-xs text-green-600 font-medium">
+                      ✅ Profile loaded successfully
+                    </p>
+                  </div>
                 </>
               ) : user ? (
                 <>
-                  <p><strong>Email:</strong> {user.email}</p>
-                  <p className="text-sm text-amber-600">⚠ Profile setup may be required</p>
-                  <p className="text-xs text-muted-foreground">
-                    User ID: {user.id.slice(0, 8)}...
-                  </p>
+                  <div className="space-y-2">
+                    <p><strong>Email:</strong> {user.email}</p>
+                    <p className="text-sm text-amber-600">⚠ Profile not found in database</p>
+                  </div>
+                  <div className="pt-2 border-t">
+                    <p className="text-xs text-muted-foreground">
+                      User ID: {user.id.slice(0, 8)}... (for admin reference)
+                    </p>
+                  </div>
                 </>
               ) : (
                 <p className="text-muted-foreground">No profile information available</p>
@@ -154,31 +176,40 @@ const Dashboard = () => {
               <Shield className="h-4 w-4" />
               Your Roles ({userRoles.length})
             </CardTitle>
-            <CardDescription>System access permissions</CardDescription>
+            <CardDescription>System access permissions and capabilities</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               {userRoles.length > 0 ? (
-                userRoles.map((role) => (
-                  <div key={role} className="space-y-1">
-                    <Badge variant="outline" className={getRoleColor(role)}>
-                      {role}
-                    </Badge>
-                    <p className="text-xs text-muted-foreground">
-                      {getRoleDescription(role)}
+                <>
+                  {userRoles.map((role) => (
+                    <div key={role} className="space-y-1">
+                      <Badge variant="outline" className={getRoleColor(role)}>
+                        {role}
+                      </Badge>
+                      <p className="text-xs text-muted-foreground">
+                        {getRoleDescription(role)}
+                      </p>
+                    </div>
+                  ))}
+                  <div className="pt-2 border-t">
+                    <p className="text-xs text-green-600 font-medium">
+                      ✅ Roles loaded successfully
                     </p>
                   </div>
-                ))
+                </>
               ) : (
                 <div className="space-y-2">
-                  <p className="text-muted-foreground">No roles assigned</p>
+                  <p className="text-muted-foreground">No roles assigned to your account</p>
                   <p className="text-xs text-muted-foreground">
-                    Contact your administrator to have roles assigned to your account.
+                    Contact your administrator to have roles assigned to access portal features.
                   </p>
                   {user && (
-                    <p className="text-xs text-muted-foreground">
-                      User ID: {user.id.slice(0, 8)}... (for admin reference)
-                    </p>
+                    <div className="pt-2 border-t">
+                      <p className="text-xs text-muted-foreground">
+                        User ID: {user.id.slice(0, 8)}... (for admin reference)
+                      </p>
+                    </div>
                   )}
                 </div>
               )}
@@ -189,32 +220,36 @@ const Dashboard = () => {
         <Card>
           <CardHeader>
             <CardTitle>System Status</CardTitle>
-            <CardDescription>Authentication and data loading</CardDescription>
+            <CardDescription>Authentication and data loading status</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
+            <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <div className={`w-2 h-2 rounded-full ${user ? 'bg-green-500' : 'bg-red-500'}`}></div>
                 <span className="text-sm">Authentication: {user ? 'Active' : 'Inactive'}</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className={`w-2 h-2 rounded-full ${profile ? 'bg-green-500' : 'bg-amber-500'}`}></div>
-                <span className="text-sm">Profile: {profile ? 'Loaded' : 'Pending'}</span>
+                <span className="text-sm">Profile: {profile ? 'Loaded' : 'Missing'}</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className={`w-2 h-2 rounded-full ${userRoles.length > 0 ? 'bg-green-500' : 'bg-amber-500'}`}></div>
                 <span className="text-sm">Roles: {userRoles.length > 0 ? `${userRoles.length} assigned` : 'None'}</span>
               </div>
-              {user && (
-                <div className="pt-2 border-t">
+              
+              <div className="pt-2 border-t space-y-1">
+                <p className="text-xs text-green-600 font-medium">
+                  🔧 RLS Policies: Basic (simplified)
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Using non-recursive policies to prevent infinite loops
+                </p>
+                {user && (
                   <p className="text-xs text-muted-foreground">
                     User ID: {user.id.slice(0, 8)}...
                   </p>
-                  <p className="text-xs text-green-600 mt-1">
-                    ✅ Using simplified RLS policies - should load data properly now
-                  </p>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>

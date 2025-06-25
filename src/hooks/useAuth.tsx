@@ -33,7 +33,7 @@ export const useAuth = (): AuthContextType => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!mounted) return;
       
-      console.log('Initial session check:', session?.user?.id);
+      console.log('🔍 Initial session check:', session?.user?.id || 'No user');
       setSession(session);
       setUser(session?.user ?? null);
       
@@ -49,17 +49,17 @@ export const useAuth = (): AuthContextType => {
       async (event, session) => {
         if (!mounted) return;
         
-        console.log('Auth state change:', event, session?.user?.id);
+        console.log('🔄 Auth state change:', event, session?.user?.id || 'No user');
         setSession(session);
         setUser(session?.user ?? null);
         
         if (event === 'SIGNED_IN' && session?.user) {
-          // Small delay to ensure everything is ready
+          // Small delay to ensure RLS policies are ready
           setTimeout(() => {
             if (mounted) {
               loadUserData(session.user.id);
             }
-          }, 100);
+          }, 200);
         } else if (event === 'SIGNED_OUT') {
           setProfile(null);
           setUserRoles([]);
@@ -75,12 +75,12 @@ export const useAuth = (): AuthContextType => {
   }, []);
 
   const loadUserData = async (userId: string) => {
-    console.log('Loading user data for:', userId);
+    console.log('📊 Loading user data for:', userId);
     setLoading(true);
     
     try {
-      // Load profile data with the new simplified RLS policies
-      console.log('Fetching profile...');
+      // Load profile with the new simplified RLS policy (users can only see their own profile)
+      console.log('👤 Fetching profile...');
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
@@ -88,17 +88,19 @@ export const useAuth = (): AuthContextType => {
         .maybeSingle();
 
       if (profileError) {
-        console.error('Profile error:', profileError);
+        console.error('❌ Profile error:', profileError);
         logAuthError('loadProfile', profileError, userId);
       } else if (profileData) {
-        console.log('Profile loaded successfully:', profileData);
+        console.log('✅ Profile loaded successfully:', profileData);
         setProfile(profileData);
       } else {
-        console.log('No profile found for user:', userId);
+        console.log('ℹ️ No profile found for user:', userId);
+        // Profile might not exist - this is normal for new users
+        setProfile(null);
       }
 
-      // Load user roles with the new simplified RLS policies
-      console.log('Fetching user roles...');
+      // Load user roles with the new simplified RLS policy (users can only see their own roles)
+      console.log('🔐 Fetching user roles...');
       const { data: rolesData, error: rolesError } = await supabase
         .from('user_roles')
         .select(`
@@ -109,31 +111,32 @@ export const useAuth = (): AuthContextType => {
         .eq('user_id', userId);
 
       if (rolesError) {
-        console.error('Roles error:', rolesError);
+        console.error('❌ Roles error:', rolesError);
         logAuthError('loadRoles', rolesError, userId);
         setUserRoles([]);
       } else if (rolesData && rolesData.length > 0) {
         const roles = rolesData.map((ur: any) => ur.roles.name as UserRole);
-        console.log('User roles loaded successfully:', roles);
+        console.log('✅ User roles loaded successfully:', roles);
         setUserRoles(roles);
       } else {
-        console.log('No roles found for user:', userId);
+        console.log('ℹ️ No roles found for user:', userId);
         setUserRoles([]);
       }
 
     } catch (error) {
-      console.error('Error in loadUserData:', error);
+      console.error('💥 Error in loadUserData:', error);
       logAuthError('loadUserData', error, userId);
       setProfile(null);
       setUserRoles([]);
     } finally {
+      console.log('🏁 User data loading complete');
       setLoading(false);
     }
   };
 
   const signOut = async () => {
     try {
-      console.log('Signing out user');
+      console.log('👋 Signing out user');
       await supabase.auth.signOut();
       setProfile(null);
       setUserRoles([]);
