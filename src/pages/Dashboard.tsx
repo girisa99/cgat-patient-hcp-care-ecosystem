@@ -1,14 +1,15 @@
-
 import React from 'react';
 import { useAuthContext } from '@/components/auth/AuthProvider';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { User, Shield, AlertCircle, CheckCircle, RefreshCw, Database } from 'lucide-react';
+import { User, Shield, AlertCircle, CheckCircle, RefreshCw, Database, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useAuthActions } from '@/hooks/useAuthActions';
 
 const Dashboard = () => {
-  const { profile, userRoles, loading, user } = useAuthContext();
+  const { profile, userRoles, loading, user, refreshUserData } = useAuthContext();
+  const { assignUserRole } = useAuthActions();
 
   const getRoleColor = (role: string) => {
     switch (role) {
@@ -34,8 +35,20 @@ const Dashboard = () => {
     }
   };
 
-  const handleRefresh = () => {
-    window.location.reload();
+  const handleRefresh = async () => {
+    await refreshUserData();
+  };
+
+  const handleAssignTestRole = async () => {
+    if (user) {
+      const result = await assignUserRole(user.id, 'superAdmin');
+      if (result.success) {
+        console.log('✅ Test role assigned successfully');
+        await refreshUserData();
+      } else {
+        console.error('❌ Test role assignment failed:', result.error);
+      }
+    }
   };
 
   if (loading) {
@@ -73,15 +86,28 @@ const Dashboard = () => {
             Welcome to your healthcare portal dashboard
           </p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleRefresh}
-          className="flex items-center gap-2"
-        >
-          <RefreshCw className="h-4 w-4" />
-          Refresh
-        </Button>
+        <div className="flex space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Refresh Data
+          </Button>
+          {user && userRoles.length === 0 && (
+            <Button
+              variant="default"
+              size="sm"
+              onClick={handleAssignTestRole}
+              className="flex items-center gap-2"
+            >
+              <UserPlus className="h-4 w-4" />
+              Assign Test Role
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Enhanced Success/Status Messages */}
@@ -89,7 +115,7 @@ const Dashboard = () => {
         <Alert className="border-green-200 bg-green-50">
           <CheckCircle className="h-4 w-4 text-green-600" />
           <AlertDescription className="text-green-800">
-            <strong>✅ System operational!</strong> Profile loaded and {userRoles.length} role(s) assigned with simplified RLS policies.
+            <strong>✅ System operational!</strong> Profile loaded and {userRoles.length} role(s) assigned successfully.
           </AlertDescription>
         </Alert>
       )}
@@ -107,7 +133,7 @@ const Dashboard = () => {
         <Alert className="border-amber-200 bg-amber-50">
           <AlertCircle className="h-4 w-4 text-amber-600" />
           <AlertDescription className="text-amber-800">
-            <strong>Roles Status:</strong> Profile loaded but no roles found. Check browser console for detailed error logs, or contact admin to assign roles.
+            <strong>⚠️ Role Assignment Issue:</strong> Profile loaded but no roles found. This indicates a role assignment problem during signup. Click "Assign Test Role" to test the fix, or contact admin.
           </AlertDescription>
         </Alert>
       )}
@@ -116,10 +142,10 @@ const Dashboard = () => {
       <Alert className="border-blue-200 bg-blue-50">
         <Database className="h-4 w-4 text-blue-600" />
         <AlertDescription className="text-blue-800">
-          <strong>Database Connection:</strong> Using simplified RLS policies (basic level). Check browser console (F12) for detailed loading logs.
+          <strong>Database Connection:</strong> Updated RLS policies for role assignment. Check browser console (F12) for detailed loading and assignment logs.
           {user && (
             <div className="mt-1 text-xs">
-              User ID: {user.id.slice(0, 8)}... | Auth Status: Active
+              User ID: {user.id.slice(0, 8)}... | Auth Status: Active | Profile: {profile ? '✅' : '❌'} | Roles: {userRoles.length}
             </div>
           )}
         </AlertDescription>
@@ -196,7 +222,7 @@ const Dashboard = () => {
                   ))}
                   <div className="pt-2 border-t">
                     <p className="text-xs text-green-600 font-medium">
-                      ✅ Roles loaded via simplified RLS
+                      ✅ Roles loaded successfully
                     </p>
                   </div>
                 </>
@@ -204,7 +230,7 @@ const Dashboard = () => {
                 <div className="space-y-2">
                   <p className="text-muted-foreground">No roles assigned</p>
                   <p className="text-xs text-amber-600">
-                    Check browser console (F12) for detailed error logs
+                    🔍 Role assignment issue detected - check console logs for details
                   </p>
                   {user && (
                     <div className="pt-2 border-t">
@@ -212,7 +238,7 @@ const Dashboard = () => {
                         User ID: {user.id.slice(0, 8)}...
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        🔍 Role query target: user_roles.user_id = {user.id.slice(0, 8)}...
+                        🔍 Searching user_roles table for: user_id = {user.id.slice(0, 8)}...
                       </p>
                     </div>
                   )}
@@ -244,7 +270,7 @@ const Dashboard = () => {
               
               <div className="pt-2 border-t space-y-1">
                 <p className="text-xs text-blue-600 font-medium">
-                  🔧 RLS: Simplified policies active
+                  🔧 RLS: Updated policies for role assignment
                 </p>
                 <p className="text-xs text-muted-foreground">
                   Open browser console (F12) for detailed logs

@@ -17,6 +17,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   hasRole: (role: UserRole) => boolean;
   hasPermission: (permission: string) => Promise<boolean>;
+  refreshUserData: () => Promise<void>;
 }
 
 export const useAuth = (): AuthContextType => {
@@ -103,30 +104,54 @@ export const useAuth = (): AuthContextType => {
         setProfile(null);
       }
 
-      // Load user roles - using the simplified approach
-      console.log('🔐 Fetching user roles...');
+      // Load user roles - with detailed debugging
+      console.log('🔐 Fetching user roles for user:', userId);
+      
+      // First, let's check if there are any user_roles records for this user
+      const { data: userRolesCheck, error: userRolesCheckError } = await supabase
+        .from('user_roles')
+        .select('id, role_id')
+        .eq('user_id', userId);
+
+      console.log('🔍 Raw user_roles check:', userRolesCheck, 'Error:', userRolesCheckError);
+
+      if (userRolesCheckError) {
+        console.error('❌ User roles check error:', userRolesCheckError);
+      }
+
+      // Now fetch with the role names
       const { data: rolesData, error: rolesError } = await supabase
         .from('user_roles')
         .select(`
+          id,
+          role_id,
           roles!inner (
+            id,
             name
           )
         `)
         .eq('user_id', userId);
 
       if (rolesError) {
-        console.error('❌ Roles error:', rolesError);
+        console.error('❌ Roles fetch error:', rolesError);
         console.error('❌ Detailed roles error:', JSON.stringify(rolesError, null, 2));
         logAuthError('loadRoles', rolesError, userId);
         setUserRoles([]);
       } else {
-        console.log('🔐 Raw roles data:', rolesData);
+        console.log('🔐 Raw roles data with joins:', rolesData);
         if (rolesData && rolesData.length > 0) {
-          const roles = rolesData.map((ur: any) => ur.roles.name as UserRole);
+          const roles = rolesData.map((ur: any) => {
+            console.log('🔍 Processing role record:', ur);
+            return ur.roles.name as UserRole;
+          });
           console.log('✅ User roles loaded successfully:', roles);
           setUserRoles(roles);
         } else {
-          console.log('ℹ️ No roles found for user:', userId);
+          console.log('⚠️ No roles found for user:', userId);
+          console.log('🔍 This could mean:');
+          console.log('  1. No roles were assigned during signup');
+          console.log('  2. RLS policies are blocking the query');
+          console.log('  3. The roles table doesn\'t have the expected data');
           setUserRoles([]);
         }
       }
@@ -139,6 +164,12 @@ export const useAuth = (): AuthContextType => {
     } finally {
       console.log('🏁 User data loading complete');
       setLoading(false);
+    }
+  };
+
+  const refreshUserData = async () => {
+    if (user) {
+      await loadUserData(user.id);
     }
   };
 
@@ -201,6 +232,7 @@ export const useAuth = (): AuthContextType => {
     loading,
     signOut,
     hasRole,
-    hasPermission
+    hasPermission,
+    refreshUserData
   };
 };

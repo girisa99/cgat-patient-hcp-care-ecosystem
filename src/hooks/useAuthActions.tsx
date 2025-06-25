@@ -57,6 +57,8 @@ export const useAuthActions = () => {
     try {
       const redirectUrl = `${window.location.origin}/`;
       
+      console.log('🚀 Starting signup process for role:', role);
+      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -69,6 +71,7 @@ export const useAuthActions = () => {
       });
 
       if (error) {
+        console.error('❌ Signup error:', error);
         toast({
           title: "Registration Failed",
           description: error.message,
@@ -77,23 +80,38 @@ export const useAuthActions = () => {
         return { success: false, error: error.message };
       }
 
-      // If user is created and confirmed, assign the role
-      if (data.user && !data.user.email_confirmed_at) {
-        toast({
-          title: "Registration Successful",
-          description: "Please check your email to verify your account. Your selected role will be assigned upon verification.",
-        });
-      } else if (data.user && data.user.email_confirmed_at) {
-        // User is immediately confirmed, assign role now
-        await assignUserRole(data.user.id, role);
-        toast({
-          title: "Registration Successful",
-          description: `Account created successfully with ${role} role!`,
-        });
+      if (data.user) {
+        console.log('✅ User created:', data.user.id);
+        
+        // Try to assign role immediately, regardless of email confirmation status
+        const roleAssignmentResult = await assignUserRole(data.user.id, role);
+        
+        if (roleAssignmentResult.success) {
+          console.log('✅ Role assigned successfully during signup');
+          
+          if (!data.user.email_confirmed_at) {
+            toast({
+              title: "Registration Successful",
+              description: `Account created with ${role} role! Please check your email to verify your account.`,
+            });
+          } else {
+            toast({
+              title: "Registration Successful",
+              description: `Account created and verified with ${role} role!`,
+            });
+          }
+        } else {
+          console.warn('⚠️ Role assignment failed during signup:', roleAssignmentResult.error);
+          toast({
+            title: "Registration Partially Successful",
+            description: "Account created but role assignment failed. Please contact admin to assign your role.",
+          });
+        }
       }
 
       return { success: true };
     } catch (error) {
+      console.error('💥 Signup exception:', error);
       const errorMessage = "An unexpected error occurred during registration";
       toast({
         title: "Error",
@@ -106,9 +124,11 @@ export const useAuthActions = () => {
     }
   };
 
-  const assignUserRole = async (userId: string, roleName: UserRole) => {
+  const assignUserRole = async (userId: string, roleName: UserRole): Promise<{ success: boolean; error?: string }> => {
     try {
-      // Get the role ID from the roles table
+      console.log('🔐 Assigning role:', roleName, 'to user:', userId);
+      
+      // First, get the role ID from the roles table
       const { data: role, error: roleError } = await supabase
         .from('roles')
         .select('id')
@@ -116,8 +136,28 @@ export const useAuthActions = () => {
         .single();
 
       if (roleError || !role) {
-        console.error('Role not found:', roleName);
-        return;
+        console.error('❌ Role not found:', roleName, roleError);
+        return { success: false, error: `Role '${roleName}' not found` };
+      }
+
+      console.log('✅ Found role ID:', role.id, 'for role:', roleName);
+
+      // Check if user already has this role
+      const { data: existingRole, error: checkError } = await supabase
+        .from('user_roles')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('role_id', role.id)
+        .maybeSingle();
+
+      if (checkError) {
+        console.error('❌ Error checking existing role:', checkError);
+        return { success: false, error: 'Error checking existing role assignment' };
+      }
+
+      if (existingRole) {
+        console.log('ℹ️ User already has this role assigned');
+        return { success: true };
       }
 
       // Assign the role to the user
@@ -129,16 +169,22 @@ export const useAuthActions = () => {
         });
 
       if (assignError) {
-        console.error('Error assigning role:', assignError);
+        console.error('❌ Error assigning role:', assignError);
+        return { success: false, error: assignError.message };
       }
+
+      console.log('✅ Role assigned successfully:', roleName, 'to user:', userId);
+      return { success: true };
     } catch (error) {
-      console.error('Error in role assignment:', error);
+      console.error('💥 Exception in role assignment:', error);
+      return { success: false, error: 'Unexpected error during role assignment' };
     }
   };
 
   return {
     signIn,
     signUp,
+    assignUserRole,
     loading
   };
 };
