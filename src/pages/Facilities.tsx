@@ -1,8 +1,18 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import FacilitiesList from '@/components/facilities/FacilitiesList';
+import CreateFacilityDialog from '@/components/facilities/CreateFacilityDialog';
 
 const Facilities = () => {
+  const [createFacilityOpen, setCreateFacilityOpen] = useState(false);
+  const [selectedFacilityId, setSelectedFacilityId] = useState<string | null>(null);
+
+  const handleEditFacility = (facilityId: string) => {
+    setSelectedFacilityId(facilityId);
+    // TODO: Implement edit facility dialog
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -14,14 +24,20 @@ const Facilities = () => {
       
       <Card>
         <CardHeader>
-          <CardTitle>Facilities</CardTitle>
+          <CardTitle>Healthcare Facilities</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground">
-            Facility management functionality will be implemented here.
-          </p>
+          <FacilitiesList
+            onCreateFacility={() => setCreateFacilityOpen(true)}
+            onEditFacility={handleEditFacility}
+          />
         </CardContent>
       </Card>
+
+      <CreateFacilityDialog
+        open={createFacilityOpen}
+        onOpenChange={setCreateFacilityOpen}
+      />
     </div>
   );
 };
