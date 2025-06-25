@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -61,7 +60,7 @@ export const useFacilities = () => {
     retry: 2,
     retryDelay: 1000,
     staleTime: 30000, // Consider data stale after 30 seconds
-    cacheTime: 300000, // Keep in cache for 5 minutes
+    gcTime: 300000, // Keep in cache for 5 minutes
   });
 
   const createFacilityMutation = useMutation({
