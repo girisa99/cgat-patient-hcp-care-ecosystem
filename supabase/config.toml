@@ -47,6 +47,7 @@ additional_redirect_urls = ["https://ithspbabhmdntioslfqe.supabase.co"]
 jwt_expiry = 3600
 enable_signup = true
 enable_confirmations = false
+enable_captcha = false
 
 [auth.email]
 enable_signup = true
