@@ -89,7 +89,7 @@ const Dashboard = () => {
         <Alert className="border-green-200 bg-green-50">
           <CheckCircle className="h-4 w-4 text-green-600" />
           <AlertDescription className="text-green-800">
-            Your profile and permissions have been loaded successfully. You have {userRoles.length} role(s) assigned.
+            ✅ All systems operational! Profile and {userRoles.length} role(s) loaded successfully with updated RLS policies.
           </AlertDescription>
         </Alert>
       )}
@@ -101,7 +101,7 @@ const Dashboard = () => {
           <AlertDescription>
             {!profile && "Profile information could not be loaded. "}
             {userRoles.length === 0 && "No user roles have been assigned to your account. "}
-            Please contact your administrator if this persists, or try refreshing the page.
+            If this persists, please contact your administrator or try refreshing the page.
           </AlertDescription>
         </Alert>
       )}
@@ -123,7 +123,7 @@ const Dashboard = () => {
                   <p><strong>Email:</strong> {profile.email || user?.email || 'Not available'}</p>
                   <p><strong>Department:</strong> {profile.department || 'Not specified'}</p>
                   <p className="text-xs text-green-600">
-                    ✓ Profile loaded successfully
+                    ✅ Profile loaded successfully
                   </p>
                 </>
               ) : user ? (
@@ -196,7 +196,7 @@ const Dashboard = () => {
                     User ID: {user.id.slice(0, 8)}...
                   </p>
                   <p className="text-xs text-green-600 mt-1">
-                    ✓ RLS policies updated - no more recursion errors
+                    ✅ RLS policies fixed - data loading should work properly now
                   </p>
                 </div>
               )}

@@ -79,7 +79,7 @@ export const useAuth = (): AuthContextType => {
     setLoading(true);
     
     try {
-      // Load profile data with simplified query
+      // Load profile data - now works with the updated RLS policies
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
@@ -96,7 +96,7 @@ export const useAuth = (): AuthContextType => {
         console.log('No profile found for user:', userId);
       }
 
-      // Load user roles with a simpler approach that works with the new RLS policies
+      // Load user roles - now works with the updated RLS policies
       const { data: rolesData, error: rolesError } = await supabase
         .from('user_roles')
         .select(`
