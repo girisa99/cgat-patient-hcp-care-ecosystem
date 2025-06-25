@@ -65,7 +65,18 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
 
-    const { action, facility_id, facility_data }: FacilityRequest = await req.json();
+    let requestBody: FacilityRequest;
+    try {
+      requestBody = await req.json();
+    } catch (parseError) {
+      console.error('Error parsing request body:', parseError);
+      return new Response(JSON.stringify({ error: 'Invalid JSON in request body' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      });
+    }
+
+    const { action, facility_id, facility_data } = requestBody;
     console.log('Processing facility action:', action, { facility_id, facility_data });
 
     let result;
