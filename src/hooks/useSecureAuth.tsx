@@ -6,17 +6,20 @@ import { useState, useCallback } from 'react';
 import { useAuthContext } from '@/components/auth/AuthProvider';
 import { checkUserRole, checkUserPermission, getUserAccessibleFacilities } from '@/utils/rlsPolicyHelpers';
 import { logAuthError } from '@/utils/authErrorHandler';
+import { Database } from '@/integrations/supabase/types';
+
+type UserRole = Database['public']['Enums']['user_role'];
 
 export const useSecureAuth = () => {
   const { user, userRoles } = useAuthContext();
   const [loading, setLoading] = useState(false);
 
   // Safe role checking with caching from context first
-  const hasRole = useCallback((roleName: string): boolean => {
+  const hasRole = useCallback((roleName: UserRole): boolean => {
     if (!user) return false;
     
     // First check the cached roles from context
-    if (userRoles.includes(roleName as any)) {
+    if (userRoles.includes(roleName)) {
       return true;
     }
     
@@ -24,7 +27,7 @@ export const useSecureAuth = () => {
   }, [user, userRoles]);
 
   // Async role checking for when we need to verify against database
-  const verifyRole = useCallback(async (roleName: string): Promise<boolean> => {
+  const verifyRole = useCallback(async (roleName: UserRole): Promise<boolean> => {
     if (!user) return false;
     
     try {
