@@ -118,7 +118,31 @@ const handler = async (req: Request): Promise<Response> => {
           }
         }
 
-        // First get all profiles with facilities
+        console.log('🔍 Fetching all users from auth.users table...');
+        
+        // Use admin API to fetch all users from auth.users
+        const { data: authUsers, error: authUsersError } = await supabase.auth.admin.listUsers();
+        
+        if (authUsersError) {
+          console.error('❌ Error fetching auth users:', authUsersError);
+          return new Response(JSON.stringify({ error: authUsersError.message }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json', ...corsHeaders },
+          });
+        }
+
+        console.log('✅ Auth users fetched:', authUsers.users.length);
+        console.log('📊 Auth users list:');
+        authUsers.users.forEach((authUser, index) => {
+          console.log(`  ${index + 1}. ID: ${authUser.id}`);
+          console.log(`     Email: ${authUser.email}`);
+          console.log(`     Created: ${authUser.created_at}`);
+          console.log(`     Confirmed: ${authUser.email_confirmed_at || 'Not confirmed'}`);
+          console.log('     ---');
+        });
+
+        // Now get profiles for each auth user (if they exist)
+        const userIds = authUsers.users.map(u => u.id);
         const { data: profiles, error: profilesError } = await supabase
           .from('profiles')
           .select(`
@@ -129,48 +153,68 @@ const handler = async (req: Request): Promise<Response> => {
               facility_type
             )
           `)
-          .order('last_name');
+          .in('id', userIds);
 
         if (profilesError) {
-          console.error('Error fetching profiles:', profilesError);
-          return new Response(JSON.stringify({ error: profilesError.message }), {
-            status: 400,
-            headers: { 'Content-Type': 'application/json', ...corsHeaders },
-          });
+          console.error('❌ Error fetching profiles:', profilesError);
+        } else {
+          console.log('✅ Profiles fetched:', profiles?.length || 0);
         }
 
-        // Then get user roles for each profile
-        const profilesWithRoles = await Promise.all(
-          profiles.map(async (profile) => {
-            const { data: userRoles, error: rolesError } = await supabase
-              .from('user_roles')
-              .select(`
-                id,
-                role_id,
-                roles!inner (
-                  name,
-                  description
-                )
-              `)
-              .eq('user_id', profile.id);
+        // Get user roles for all users
+        const { data: userRoles, error: rolesError } = await supabase
+          .from('user_roles')
+          .select(`
+            user_id,
+            roles (
+              name,
+              description
+            )
+          `)
+          .in('user_id', userIds);
 
-            if (rolesError) {
-              console.error('Error fetching roles for user:', profile.id, rolesError);
-              // Continue without roles if there's an error
-              return {
-                ...profile,
-                user_roles: []
-              };
-            }
+        if (rolesError) {
+          console.error('❌ Error fetching roles:', rolesError);
+        } else {
+          console.log('✅ User roles fetched:', userRoles?.length || 0);
+        }
 
-            return {
-              ...profile,
-              user_roles: userRoles || []
-            };
-          })
-        );
+        // Combine auth users with their profiles and roles
+        const combinedUsers = authUsers.users.map(authUser => {
+          const profile = profiles?.find(p => p.id === authUser.id);
+          const roles = userRoles?.filter(ur => ur.user_id === authUser.id) || [];
+          
+          return {
+            // Use auth user data as base
+            id: authUser.id,
+            email: authUser.email,
+            created_at: authUser.created_at,
+            // Merge profile data if it exists, otherwise use auth metadata or defaults
+            first_name: profile?.first_name || authUser.user_metadata?.firstName || authUser.user_metadata?.first_name || null,
+            last_name: profile?.last_name || authUser.user_metadata?.lastName || authUser.user_metadata?.last_name || null,
+            phone: profile?.phone || authUser.user_metadata?.phone || null,
+            department: profile?.department || null,
+            facility_id: profile?.facility_id || null,
+            avatar_url: profile?.avatar_url || null,
+            updated_at: profile?.updated_at || authUser.updated_at,
+            last_login: profile?.last_login || authUser.last_sign_in_at,
+            has_mfa_enabled: profile?.has_mfa_enabled || false,
+            is_email_verified: profile?.is_email_verified || !!authUser.email_confirmed_at,
+            // Include facility info if profile exists
+            facilities: profile?.facilities || null,
+            // Include roles
+            user_roles: roles.map(ur => ({
+              roles: {
+                name: ur.roles?.name || 'patientCaregiver',
+                description: ur.roles?.description || null
+              }
+            }))
+          };
+        });
 
-        result = { data: profilesWithRoles };
+        console.log('✅ Combined users prepared:', combinedUsers.length);
+        
+        result = { data: combinedUsers };
         break;
 
       default:

@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -6,6 +5,16 @@ import { Database } from '@/integrations/supabase/types';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type UserRole = Database['public']['Enums']['user_role'];
+
+interface AuthUser {
+  id: string;
+  email: string;
+  created_at: string;
+  email_confirmed_at?: string;
+  last_sign_in_at?: string;
+  user_metadata?: any;
+  app_metadata?: any;
+}
 
 interface UserWithRoles extends Profile {
   user_roles: {
@@ -33,174 +42,112 @@ export const useUsers = () => {
   } = useQuery({
     queryKey: ['users'],
     queryFn: async () => {
-      console.log('🔍 Fetching users - focusing on profiles table...');
+      console.log('🔍 Fetching users - checking both auth.users and profiles tables...');
       
       try {
         // Debug: Check current user and auth state
         const { data: { user }, error: authError } = await supabase.auth.getUser();
         console.log('🔍 Current authenticated user:', user?.id, authError);
         
-        // Debug: Check profiles table count and sample data
-        const { count: profileCount, error: profileCountError } = await supabase
-          .from('profiles')
-          .select('*', { count: 'exact', head: true });
+        // First, let's try to get all users from auth.users using the admin API
+        console.log('🔍 Attempting to fetch all users from auth.users table...');
         
-        console.log('📊 PROFILES TABLE - Total count:', profileCount, 'Error:', profileCountError);
-        
-        // Get all profiles data with detailed info
-        const { data: allProfiles, error: allProfilesError } = await supabase
-          .from('profiles')
-          .select(`
-            id, 
-            email, 
-            first_name, 
-            last_name, 
-            created_at, 
-            facility_id,
-            department,
-            phone
-          `);
-        
-        console.log('📊 PROFILES TABLE - All profiles fetched:', allProfiles?.length, 'Error:', allProfilesError);
-        if (allProfiles) {
-          console.log('📊 PROFILES TABLE - Complete profile list:');
-          allProfiles.forEach((profile, index) => {
-            console.log(`  ${index + 1}. ID: ${profile.id}`);
-            console.log(`     Email: ${profile.email}`);
-            console.log(`     Name: ${profile.first_name || 'N/A'} ${profile.last_name || 'N/A'}`);
-            console.log(`     Created: ${profile.created_at}`);
-            console.log(`     Facility: ${profile.facility_id || 'None'}`);
-            console.log('     ---');
-          });
-        }
+        // Use the manage-user-profiles edge function to get all users
+        const { data: authUsersResponse, error: authUsersError } = await supabase.functions.invoke('manage-user-profiles', {
+          body: {
+            action: 'list'
+          }
+        });
 
-        // Debug: Check user_roles table
-        const { count: rolesCount, error: rolesCountError } = await supabase
-          .from('user_roles')
-          .select('*', { count: 'exact', head: true });
-        
-        console.log('📊 USER_ROLES TABLE - Total count:', rolesCount, 'Error:', rolesCountError);
-        
-        const { data: allUserRoles, error: userRolesError } = await supabase
-          .from('user_roles')
-          .select(`
-            user_id,
-            role_id,
-            created_at,
-            roles (
-              name,
-              description
-            )
-          `);
-        
-        console.log('📊 USER_ROLES TABLE - All roles fetched:', allUserRoles?.length, 'Error:', userRolesError);
-        if (allUserRoles) {
-          console.log('📊 USER_ROLES TABLE - Complete roles list:');
-          allUserRoles.forEach((userRole, index) => {
-            console.log(`  ${index + 1}. User ID: ${userRole.user_id}`);
-            console.log(`     Role: ${userRole.roles?.name}`);
-            console.log(`     Created: ${userRole.created_at}`);
-            console.log('     ---');
-          });
-        }
-
-        // Debug: Check facilities table
-        const { count: facilitiesCount, error: facilitiesCountError } = await supabase
-          .from('facilities')
-          .select('*', { count: 'exact', head: true });
-        
-        console.log('📊 FACILITIES TABLE - Total count:', facilitiesCount, 'Error:', facilitiesCountError);
-
-        // Main query: Get all profiles with facilities
-        const { data: profiles, error: profilesError } = await supabase
-          .from('profiles')
-          .select(`
-            *,
-            facilities (
-              id,
-              name,
-              facility_type
-            )
-          `)
-          .order('email', { ascending: true });
-
-        if (profilesError) {
-          console.error('❌ Error fetching profiles:', profilesError);
-          throw new Error(`Failed to fetch profiles: ${profilesError.message}`);
-        }
-
-        if (!profiles || profiles.length === 0) {
-          console.log('⚠️ NO PROFILES FOUND - This means either:');
-          console.log('   1. No user profiles exist in the profiles table');
-          console.log('   2. RLS policies are blocking access');
-          console.log('   3. Profile creation trigger failed when users were created');
-          console.log('   4. Profiles were deleted somehow');
-          console.log('');
-          console.log('💡 RECOMMENDED ACTIONS:');
-          console.log('   1. Check if the handle_new_user() trigger is working');
-          console.log('   2. Verify RLS policies on profiles table');
-          console.log('   3. Try creating users through the UI to see if profiles are created');
+        if (authUsersError) {
+          console.error('❌ Error fetching users from edge function:', authUsersError);
+          console.log('⚠️ Falling back to profiles table only...');
           
+          // Fallback to profiles table
+          const { data: profiles, error: profilesError } = await supabase
+            .from('profiles')
+            .select(`
+              *,
+              facilities (
+                id,
+                name,
+                facility_type
+              )
+            `)
+            .order('email', { ascending: true });
+
+          if (profilesError) {
+            console.error('❌ Error fetching profiles:', profilesError);
+            throw new Error(`Failed to fetch profiles: ${profilesError.message}`);
+          }
+
+          console.log('📊 FALLBACK - Profiles fetched:', profiles?.length || 0);
+          
+          if (!profiles || profiles.length === 0) {
+            console.log('⚠️ NO PROFILES FOUND');
+            return [];
+          }
+
+          // Get user roles for profiles
+          const profileIds = profiles.map(p => p.id);
+          const { data: userRoles, error: userRolesError } = await supabase
+            .from('user_roles')
+            .select(`
+              user_id,
+              roles (
+                name,
+                description
+              )
+            `)
+            .in('user_id', profileIds);
+
+          if (userRolesError) {
+            console.warn('⚠️ Error fetching user roles:', userRolesError);
+          }
+
+          console.log('✅ User roles fetched:', userRoles?.length || 0);
+
+          // Combine the data
+          const usersWithRoles: UserWithRoles[] = profiles.map(profile => {
+            const userRolesForProfile = userRoles?.filter(ur => ur.user_id === profile.id) || [];
+            
+            return {
+              ...profile,
+              user_roles: userRolesForProfile.map(ur => ({
+                roles: {
+                  name: ur.roles?.name || 'patientCaregiver' as UserRole,
+                  description: ur.roles?.description || null
+                }
+              }))
+            };
+          });
+
+          console.log('✅ Final users with roles prepared (fallback):', usersWithRoles.length);
+          return usersWithRoles;
+        }
+
+        console.log('✅ Edge function response:', authUsersResponse);
+
+        if (!authUsersResponse.success || !authUsersResponse.data) {
+          console.log('⚠️ No users data returned from edge function');
           return [];
         }
 
-        console.log('✅ Profiles fetched successfully:', profiles.length);
-        console.log('📊 Profile IDs found:', profiles.map(p => ({ 
-          id: p.id, 
-          email: p.email,
-          created_at: p.created_at
-        })));
-
-        // Get user roles for all found profiles
-        const profileIds = profiles.map(p => p.id);
-        const { data: userRoles, error: userRolesQueryError } = await supabase
-          .from('user_roles')
-          .select(`
-            user_id,
-            roles (
-              name,
-              description
-            )
-          `)
-          .in('user_id', profileIds);
-
-        if (userRolesQueryError) {
-          console.warn('⚠️ Error fetching user roles:', userRolesQueryError);
-        }
-
-        console.log('✅ User roles fetched:', userRoles?.length || 0);
-        if (userRoles) {
-          console.log('📊 User roles mapping:', userRoles.map(ur => ({ 
-            user_id: ur.user_id, 
-            role: ur.roles?.name 
-          })));
-        }
-
-        // Combine the data
-        const usersWithRoles: UserWithRoles[] = profiles.map(profile => {
-          const userRolesForProfile = userRoles?.filter(ur => ur.user_id === profile.id) || [];
-          
-          return {
-            ...profile,
-            user_roles: userRolesForProfile.map(ur => ({
-              roles: {
-                name: ur.roles?.name || 'patientCaregiver' as UserRole,
-                description: ur.roles?.description || null
-              }
-            }))
-          };
+        const allUsersData = authUsersResponse.data;
+        console.log('📊 EDGE FUNCTION - All users fetched:', allUsersData.length);
+        console.log('📊 EDGE FUNCTION - User details:');
+        allUsersData.forEach((userData, index) => {
+          console.log(`  ${index + 1}. ID: ${userData.id}`);
+          console.log(`     Email: ${userData.email}`);
+          console.log(`     Name: ${userData.first_name || 'N/A'} ${userData.last_name || 'N/A'}`);
+          console.log(`     Created: ${userData.created_at}`);
+          console.log(`     Roles: ${userData.user_roles?.map(ur => ur.roles?.name).join(', ') || 'None'}`);
+          console.log('     ---');
         });
 
-        console.log('✅ Final users with roles prepared:', usersWithRoles.length);
-        console.log('📊 Final user data:', usersWithRoles.map(u => ({ 
-          id: u.id, 
-          email: u.email, 
-          name: `${u.first_name || 'No First Name'} ${u.last_name || 'No Last Name'}`,
-          roles: u.user_roles.map(ur => ur.roles.name),
-          facility: u.facilities?.name || 'No facility'
-        })));
+        console.log('✅ Final users with roles prepared from edge function:', allUsersData.length);
+        return allUsersData;
         
-        return usersWithRoles;
       } catch (err) {
         console.error('❌ Error fetching users:', err);
         throw err;
