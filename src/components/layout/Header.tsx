@@ -3,6 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuthContext } from '@/components/auth/AuthProvider';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { LogOut } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,13 +39,31 @@ const Header = () => {
   };
 
   return (
-    <header className="border-b bg-background">
+    <header className="border-b bg-background shadow-sm">
       <div className="flex h-16 items-center px-4 md:px-6">
         <div className="flex items-center space-x-4">
-          <h1 className="text-xl font-semibold">Healthcare Portal</h1>
+          <img 
+            src="/lovable-uploads/7b3ce1dc-c275-46ae-a0ca-f70f73094f01.png" 
+            alt="GENIE Logo" 
+            className="h-10 w-10"
+          />
+          <div>
+            <h1 className="text-xl font-bold text-slate-800">GENIE</h1>
+            <p className="text-sm text-slate-600">Cell, Gene Technology Navigator</p>
+          </div>
         </div>
         
         <div className="ml-auto flex items-center space-x-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={signOut}
+            className="flex items-center space-x-2"
+          >
+            <LogOut className="h-4 w-4" />
+            <span>Logout</span>
+          </Button>
+          
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-8 w-8 rounded-full">
@@ -73,6 +92,7 @@ const Header = () => {
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={signOut}>
+                <LogOut className="mr-2 h-4 w-4" />
                 Sign out
               </DropdownMenuItem>
             </DropdownMenuContent>

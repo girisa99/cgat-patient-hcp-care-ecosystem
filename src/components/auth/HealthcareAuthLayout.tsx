@@ -20,14 +20,21 @@ const HealthcareAuthLayout: React.FC<HealthcareAuthLayoutProps> = ({ children })
         
         {/* Logo Section */}
         <div className="relative z-10">
-          <div className="flex items-center space-x-3 mb-8">
-            <div className="bg-white bg-opacity-20 p-3 rounded-lg">
-              <Heart className="h-8 w-8" />
+          <div className="flex items-center space-x-4 mb-8">
+            <div className="bg-white p-3 rounded-lg">
+              <img 
+                src="/lovable-uploads/7b3ce1dc-c275-46ae-a0ca-f70f73094f01.png" 
+                alt="GENIE Logo" 
+                className="h-12 w-12"
+              />
             </div>
-            <h1 className="text-2xl font-bold">Healthcare Portal</h1>
+            <div>
+              <h1 className="text-3xl font-bold">GENIE</h1>
+              <p className="text-lg text-blue-100">Cell, Gene Technology Navigator</p>
+            </div>
           </div>
           <p className="text-xl text-blue-100 leading-relaxed">
-            Secure access to comprehensive healthcare management system
+            Secure access to comprehensive cell and gene therapy management system
           </p>
         </div>
 
@@ -58,21 +65,34 @@ const HealthcareAuthLayout: React.FC<HealthcareAuthLayoutProps> = ({ children })
               <Heart className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="font-semibold mb-1">Patient-Centered Care</h3>
-              <p className="text-blue-100 text-sm">Comprehensive tools for effective patient management</p>
+              <h3 className="font-semibold mb-1">Advanced Therapies</h3>
+              <p className="text-blue-100 text-sm">Specialized tools for cell and gene therapy management</p>
             </div>
           </div>
         </div>
 
         {/* Footer */}
         <div className="relative z-10 text-blue-200 text-sm">
-          © 2024 Healthcare Portal. All rights reserved.
+          © 2024 GENIE - Cell, Gene Technology Navigator. All rights reserved.
         </div>
       </div>
 
       {/* Right side - Auth Form */}
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-md">
+          <div className="text-center mb-8 lg:hidden">
+            <div className="flex items-center justify-center space-x-3 mb-4">
+              <img 
+                src="/lovable-uploads/7b3ce1dc-c275-46ae-a0ca-f70f73094f01.png" 
+                alt="GENIE Logo" 
+                className="h-12 w-12"
+              />
+              <div>
+                <h1 className="text-2xl font-bold text-slate-800">GENIE</h1>
+                <p className="text-sm text-slate-600">Cell, Gene Technology Navigator</p>
+              </div>
+            </div>
+          </div>
           {children}
         </div>
       </div>

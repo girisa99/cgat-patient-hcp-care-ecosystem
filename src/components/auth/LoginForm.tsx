@@ -50,8 +50,8 @@ const LoginForm = () => {
         </HealthcareCardTitle>
         <HealthcareCardDescription>
           {isSignUp 
-            ? 'Register for secure access to the healthcare portal' 
-            : 'Sign in to access your healthcare portal'
+            ? 'Register for secure access to GENIE platform' 
+            : 'Sign in to access your GENIE portal'
           }
         </HealthcareCardDescription>
       </HealthcareCardHeader>
@@ -104,7 +104,7 @@ const LoginForm = () => {
                 <UserPlus className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-500 z-10" />
                 <Select value={selectedRole} onValueChange={(value: UserRole) => setSelectedRole(value)} required>
                   <SelectTrigger className="pl-10 h-11 border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-1">
-                    <SelectValue placeholder="Choose your healthcare role" />
+                    <SelectValue placeholder="Choose your role in cell & gene therapy" />
                   </SelectTrigger>
                   <SelectContent className="bg-white border border-slate-200 shadow-lg">
                     {roleOptions.map((role) => (
