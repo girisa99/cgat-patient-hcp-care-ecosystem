@@ -32,38 +32,87 @@ export const useUsers = () => {
   } = useQuery({
     queryKey: ['users'],
     queryFn: async () => {
-      console.log('🔍 Fetching users with separate queries approach...');
+      console.log('🔍 Fetching users with comprehensive table analysis...');
       
       try {
         // Debug: Check current user and auth state
         const { data: { user }, error: authError } = await supabase.auth.getUser();
         console.log('🔍 Current authenticated user:', user?.id, authError);
         
-        // Debug: Check if there are users in auth.users that don't have profiles
-        const { data: authUsers, error: authUsersError } = await supabase.auth.admin.listUsers();
-        console.log('🔍 Auth users count:', authUsers?.users?.length, 'Auth error:', authUsersError);
-        
-        if (authUsers?.users) {
-          console.log('🔍 Auth users emails:', authUsers.users.map(u => ({ id: u.id, email: u.email })));
-        }
-        
-        // Debug: Try to get profile count first
-        const { count, error: countError } = await supabase
+        // Debug: Check profiles table count and sample data
+        const { count: profileCount, error: profileCountError } = await supabase
           .from('profiles')
           .select('*', { count: 'exact', head: true });
         
-        console.log('🔍 Total profiles count:', count, 'Count error:', countError);
+        console.log('📊 PROFILES TABLE - Total count:', profileCount, 'Error:', profileCountError);
         
-        // Debug: Try without RLS first to see if data exists
+        // Get sample profiles data
         const { data: allProfiles, error: allProfilesError } = await supabase
           .from('profiles')
-          .select('id, email, first_name, last_name, created_at')
+          .select('id, email, first_name, last_name, created_at, facility_id')
           .limit(20);
         
-        console.log('🔍 All profiles (limited query):', allProfiles?.length, 'Error:', allProfilesError);
-        console.log('🔍 Profile data sample:', allProfiles?.slice(0, 3));
+        console.log('📊 PROFILES TABLE - Sample data:', allProfiles?.length, 'Error:', allProfilesError);
+        if (allProfiles) {
+          console.log('📊 PROFILES TABLE - All profiles:', allProfiles.map(p => ({ 
+            id: p.id, 
+            email: p.email, 
+            name: `${p.first_name || 'No First'} ${p.last_name || 'No Last'}`,
+            facility_id: p.facility_id
+          })));
+        }
 
-        // First, get all profiles with facilities - ORDER BY EMAIL instead of last_name
+        // Debug: Check user_roles table
+        const { count: rolesCount, error: rolesCountError } = await supabase
+          .from('user_roles')
+          .select('*', { count: 'exact', head: true });
+        
+        console.log('📊 USER_ROLES TABLE - Total count:', rolesCount, 'Error:', rolesCountError);
+        
+        const { data: allUserRoles, error: userRolesError } = await supabase
+          .from('user_roles')
+          .select(`
+            user_id,
+            role_id,
+            roles (
+              name,
+              description
+            )
+          `)
+          .limit(20);
+        
+        console.log('📊 USER_ROLES TABLE - Sample data:', allUserRoles?.length, 'Error:', userRolesError);
+        if (allUserRoles) {
+          console.log('📊 USER_ROLES TABLE - All roles:', allUserRoles.map(ur => ({
+            user_id: ur.user_id,
+            role: ur.roles?.name
+          })));
+        }
+
+        // Debug: Check facilities table
+        const { count: facilitiesCount, error: facilitiesCountError } = await supabase
+          .from('facilities')
+          .select('*', { count: 'exact', head: true });
+        
+        console.log('📊 FACILITIES TABLE - Total count:', facilitiesCount, 'Error:', facilitiesCountError);
+
+        // Try to get auth users count (this will likely fail due to permissions)
+        try {
+          const { data: authUsers, error: authUsersError } = await supabase.auth.admin.listUsers();
+          console.log('📊 AUTH.USERS TABLE - Count:', authUsers?.users?.length, 'Error:', authUsersError);
+          
+          if (authUsers?.users) {
+            console.log('📊 AUTH.USERS TABLE - Users:', authUsers.users.map(u => ({ 
+              id: u.id, 
+              email: u.email,
+              created_at: u.created_at
+            })));
+          }
+        } catch (authError) {
+          console.log('📊 AUTH.USERS TABLE - Cannot access (expected due to permissions):', authError);
+        }
+
+        // Main query: Get all profiles with facilities
         const { data: profiles, error: profilesError } = await supabase
           .from('profiles')
           .select(`
@@ -74,7 +123,7 @@ export const useUsers = () => {
               facility_type
             )
           `)
-          .order('email', { nullsLast: true });
+          .order('email', { ascending: true });
 
         if (profilesError) {
           console.error('❌ Error fetching profiles:', profilesError);
@@ -82,23 +131,25 @@ export const useUsers = () => {
         }
 
         if (!profiles || profiles.length === 0) {
-          console.log('ℹ️ No profiles found in main query');
-          console.log('🔍 This suggests either no profiles exist or RLS is blocking access');
-          
-          // If auth users exist but no profiles, suggest profile creation issue
-          if (authUsers?.users && authUsers.users.length > 0) {
-            console.log('⚠️ Found auth users but no profiles - profile creation trigger may have failed');
-            console.log('🔍 Missing profiles for users:', authUsers.users.map(u => u.email));
-          }
+          console.log('⚠️ NO PROFILES FOUND - This means either:');
+          console.log('   1. No user profiles exist in the profiles table');
+          console.log('   2. RLS policies are blocking access');
+          console.log('   3. Profile creation trigger failed when users were created');
+          console.log('   4. Profiles were deleted somehow');
           
           return [];
         }
 
-        console.log('✅ Profiles fetched:', profiles.length);
-        console.log('🔍 Profile IDs:', profiles.map(p => ({ id: p.id, email: p.email })));
+        console.log('✅ Profiles fetched successfully:', profiles.length);
+        console.log('📊 Profile IDs found:', profiles.map(p => ({ 
+          id: p.id, 
+          email: p.email,
+          created_at: p.created_at
+        })));
 
-        // Then, get all user roles with role details
-        const { data: userRoles, error: userRolesError } = await supabase
+        // Get user roles for all found profiles
+        const profileIds = profiles.map(p => p.id);
+        const { data: userRoles, error: userRolesQueryError } = await supabase
           .from('user_roles')
           .select(`
             user_id,
@@ -106,15 +157,20 @@ export const useUsers = () => {
               name,
               description
             )
-          `);
+          `)
+          .in('user_id', profileIds);
 
-        if (userRolesError) {
-          console.warn('⚠️ Error fetching user roles:', userRolesError);
-          // Continue without roles if there's an error
+        if (userRolesQueryError) {
+          console.warn('⚠️ Error fetching user roles:', userRolesQueryError);
         }
 
         console.log('✅ User roles fetched:', userRoles?.length || 0);
-        console.log('🔍 User roles data:', userRoles?.map(ur => ({ user_id: ur.user_id, role: ur.roles?.name })));
+        if (userRoles) {
+          console.log('📊 User roles mapping:', userRoles.map(ur => ({ 
+            user_id: ur.user_id, 
+            role: ur.roles?.name 
+          })));
+        }
 
         // Combine the data
         const usersWithRoles: UserWithRoles[] = profiles.map(profile => {
@@ -131,12 +187,13 @@ export const useUsers = () => {
           };
         });
 
-        console.log('✅ Users with roles prepared:', usersWithRoles.length);
-        console.log('🔍 Final user data:', usersWithRoles.map(u => ({ 
+        console.log('✅ Final users with roles prepared:', usersWithRoles.length);
+        console.log('📊 Final user data:', usersWithRoles.map(u => ({ 
           id: u.id, 
           email: u.email, 
           name: `${u.first_name || 'No First Name'} ${u.last_name || 'No Last Name'}`,
-          roles: u.user_roles.map(ur => ur.roles.name)
+          roles: u.user_roles.map(ur => ur.roles.name),
+          facility: u.facilities?.name || 'No facility'
         })));
         
         return usersWithRoles;
