@@ -37,6 +37,7 @@ const handler = async (req: Request): Promise<Response> => {
     const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader);
     
     if (authError || !user) {
+      console.error('Authentication error:', authError);
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: { 'Content-Type': 'application/json', ...corsHeaders },
@@ -56,6 +57,7 @@ const handler = async (req: Request): Promise<Response> => {
       });
       
       if (!hasOnboardingRole) {
+        console.error('Insufficient permissions for user:', user.id);
         return new Response(JSON.stringify({ error: 'Insufficient permissions' }), {
           status: 403,
           headers: { 'Content-Type': 'application/json', ...corsHeaders },
@@ -64,6 +66,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const { action, facility_id, facility_data }: FacilityRequest = await req.json();
+    console.log('Processing facility action:', action, { facility_id, facility_data });
 
     let result;
     switch (action) {
@@ -74,6 +77,7 @@ const handler = async (req: Request): Promise<Response> => {
             headers: { 'Content-Type': 'application/json', ...corsHeaders },
           });
         }
+        console.log('Creating facility:', facility_data);
         result = await supabase
           .from('facilities')
           .insert({
@@ -81,6 +85,12 @@ const handler = async (req: Request): Promise<Response> => {
             is_active: true
           })
           .select();
+        
+        if (result.error) {
+          console.error('Error creating facility:', result.error);
+        } else {
+          console.log('Facility created successfully:', result.data);
+        }
         break;
 
       case 'update':
@@ -90,6 +100,7 @@ const handler = async (req: Request): Promise<Response> => {
             headers: { 'Content-Type': 'application/json', ...corsHeaders },
           });
         }
+        console.log('Updating facility:', facility_id, facility_data);
         result = await supabase
           .from('facilities')
           .update({
@@ -107,6 +118,7 @@ const handler = async (req: Request): Promise<Response> => {
             headers: { 'Content-Type': 'application/json', ...corsHeaders },
           });
         }
+        console.log('Deactivating facility:', facility_id);
         result = await supabase
           .from('facilities')
           .update({ 
@@ -118,11 +130,15 @@ const handler = async (req: Request): Promise<Response> => {
         break;
 
       case 'list':
+        console.log('Fetching facilities list...');
+        // Get all active facilities, ordered by name
         result = await supabase
           .from('facilities')
           .select('*')
           .eq('is_active', true)
           .order('name');
+        
+        console.log('Facilities query result:', result);
         break;
 
       default:
@@ -140,6 +156,7 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
+    console.log('Operation completed successfully:', { action, dataCount: result.data?.length });
     return new Response(JSON.stringify({ success: true, data: result.data }), {
       status: 200,
       headers: { 'Content-Type': 'application/json', ...corsHeaders },

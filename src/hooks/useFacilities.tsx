@@ -61,7 +61,8 @@ export const useFacilities = () => {
       console.log('✅ Facility created successfully:', data);
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('🔄 Invalidating facilities cache after creation...');
       queryClient.invalidateQueries({ queryKey: ['facilities'] });
       toast({
         title: "Facility Created",
@@ -105,6 +106,7 @@ export const useFacilities = () => {
       return data;
     },
     onSuccess: () => {
+      console.log('🔄 Invalidating facilities cache after update...');
       queryClient.invalidateQueries({ queryKey: ['facilities'] });
       toast({
         title: "Facility Updated",
