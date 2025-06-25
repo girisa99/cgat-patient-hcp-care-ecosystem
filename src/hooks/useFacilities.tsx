@@ -14,24 +14,54 @@ export const useFacilities = () => {
   const {
     data: facilities,
     isLoading,
-    error
+    error,
+    refetch
   } = useQuery({
     queryKey: ['facilities'],
     queryFn: async () => {
       console.log('🔍 Fetching facilities list...');
       
-      const { data, error } = await supabase.functions.invoke('manage-facilities', {
-        body: { action: 'list' }
-      });
+      try {
+        const { data, error } = await supabase.functions.invoke('manage-facilities', {
+          body: { action: 'list' }
+        });
 
-      if (error) {
-        console.error('❌ Error fetching facilities:', error);
-        throw error;
+        if (error) {
+          console.error('❌ Edge function error:', error);
+          throw new Error(`Edge function error: ${error.message || 'Unknown error'}`);
+        }
+
+        if (!data || !data.success) {
+          console.error('❌ Invalid response from edge function:', data);
+          throw new Error(data?.error || 'Invalid response from server');
+        }
+
+        console.log('✅ Facilities fetched successfully:', data.data);
+        return data.data as Facility[];
+      } catch (err) {
+        console.error('❌ Network or parsing error:', err);
+        
+        // Fallback: try direct database query if edge function fails
+        console.log('🔄 Attempting direct database query as fallback...');
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('facilities')
+          .select('*')
+          .eq('is_active', true)
+          .order('name');
+        
+        if (fallbackError) {
+          console.error('❌ Fallback query failed:', fallbackError);
+          throw new Error(`Database error: ${fallbackError.message}`);
+        }
+        
+        console.log('✅ Fallback query successful:', fallbackData);
+        return fallbackData as Facility[];
       }
-
-      console.log('✅ Facilities fetched successfully:', data);
-      return data.data as Facility[];
-    }
+    },
+    retry: 2,
+    retryDelay: 1000,
+    staleTime: 30000, // Consider data stale after 30 seconds
+    cacheTime: 300000, // Keep in cache for 5 minutes
   });
 
   const createFacilityMutation = useMutation({
@@ -127,6 +157,7 @@ export const useFacilities = () => {
     facilities,
     isLoading,
     error,
+    refetch,
     createFacility: createFacilityMutation.mutate,
     updateFacility: updateFacilityMutation.mutate,
     isCreatingFacility: createFacilityMutation.isPending,
