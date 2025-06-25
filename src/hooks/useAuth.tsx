@@ -4,7 +4,6 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 import { logAuthError } from '@/utils/authErrorHandler';
-import { getUserRolesDirect, getUserProfileSafe } from '@/utils/rlsPolicyHelpers';
 
 type UserRole = Database['public']['Enums']['user_role'];
 type Profile = Database['public']['Tables']['profiles']['Row'];
@@ -39,12 +38,7 @@ export const useAuth = (): AuthContextType => {
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        // Load user data with a slight delay to ensure RLS policies are ready
-        setTimeout(() => {
-          if (mounted) {
-            loadUserDataSafe(session.user.id);
-          }
-        }, 300);
+        loadUserData(session.user.id);
       } else {
         setLoading(false);
       }
@@ -60,12 +54,12 @@ export const useAuth = (): AuthContextType => {
         setUser(session?.user ?? null);
         
         if (event === 'SIGNED_IN' && session?.user) {
-          // Load user data with delay to prevent conflicts
+          // Small delay to ensure everything is ready
           setTimeout(() => {
             if (mounted) {
-              loadUserDataSafe(session.user.id);
+              loadUserData(session.user.id);
             }
-          }, 500);
+          }, 100);
         } else if (event === 'SIGNED_OUT') {
           setProfile(null);
           setUserRoles([]);
@@ -80,29 +74,49 @@ export const useAuth = (): AuthContextType => {
     };
   }, []);
 
-  const loadUserDataSafe = async (userId: string) => {
-    console.log('Loading user data safely for:', userId);
+  const loadUserData = async (userId: string) => {
+    console.log('Loading user data for:', userId);
+    setLoading(true);
+    
     try {
-      setLoading(true);
+      // Load profile data
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
 
-      // First, try to load the profile using the safe method
-      const profileData = await getUserProfileSafe(userId);
-      if (profileData) {
-        console.log('Profile loaded successfully:', profileData.email);
+      if (profileError && profileError.code !== 'PGRST116') {
+        console.error('Profile error:', profileError);
+        logAuthError('loadProfile', profileError, userId);
+      } else if (profileData) {
+        console.log('Profile loaded:', profileData.email);
         setProfile(profileData);
-      } else {
-        console.log('No profile found, user may need to complete setup');
       }
 
-      // Then load roles using the direct method
-      const roles = await getUserRolesDirect(userId);
-      console.log('User roles loaded:', roles);
-      setUserRoles(roles);
+      // Load user roles using a direct query with join
+      const { data: rolesData, error: rolesError } = await supabase
+        .from('user_roles')
+        .select(`
+          roles!inner (
+            name
+          )
+        `)
+        .eq('user_id', userId);
+
+      if (rolesError && rolesError.code !== 'PGRST116') {
+        console.error('Roles error:', rolesError);
+        logAuthError('loadRoles', rolesError, userId);
+        setUserRoles([]);
+      } else {
+        const roles = rolesData?.map((ur: any) => ur.roles.name as UserRole) || [];
+        console.log('User roles loaded:', roles);
+        setUserRoles(roles);
+      }
 
     } catch (error) {
-      logAuthError('loadUserDataSafe', error, userId);
-      console.error('Error in loadUserDataSafe:', error);
-      // Don't block the auth flow, just set empty states
+      console.error('Error in loadUserData:', error);
+      logAuthError('loadUserData', error, userId);
       setProfile(null);
       setUserRoles([]);
     } finally {

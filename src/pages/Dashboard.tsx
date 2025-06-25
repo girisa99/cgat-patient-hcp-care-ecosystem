@@ -4,7 +4,8 @@ import { useAuthContext } from '@/components/auth/AuthProvider';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { User, Shield, AlertCircle, CheckCircle } from 'lucide-react';
+import { User, Shield, AlertCircle, CheckCircle, RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const Dashboard = () => {
   const { profile, userRoles, loading, user } = useAuthContext();
@@ -31,6 +32,10 @@ const Dashboard = () => {
       case 'patientCaregiver': return 'Limited access to personal health information';
       default: return 'Role-specific access permissions';
     }
+  };
+
+  const handleRefresh = () => {
+    window.location.reload();
   };
 
   if (loading) {
@@ -61,11 +66,22 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
-        <p className="text-muted-foreground">
-          Welcome to your healthcare portal dashboard
-        </p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
+          <p className="text-muted-foreground">
+            Welcome to your healthcare portal dashboard
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleRefresh}
+          className="flex items-center gap-2"
+        >
+          <RefreshCw className="h-4 w-4" />
+          Refresh
+        </Button>
       </div>
 
       {/* Show success message when everything is loaded */}
@@ -73,7 +89,7 @@ const Dashboard = () => {
         <Alert className="border-green-200 bg-green-50">
           <CheckCircle className="h-4 w-4 text-green-600" />
           <AlertDescription className="text-green-800">
-            Your profile and permissions have been loaded successfully.
+            Your profile and permissions have been loaded successfully. You have {userRoles.length} role(s) assigned.
           </AlertDescription>
         </Alert>
       )}
@@ -85,7 +101,7 @@ const Dashboard = () => {
           <AlertDescription>
             {!profile && "Profile information could not be loaded. "}
             {userRoles.length === 0 && "No user roles have been assigned to your account. "}
-            Please contact your administrator if this persists.
+            Please contact your administrator if this persists, or try refreshing the page.
           </AlertDescription>
         </Alert>
       )}
@@ -106,14 +122,14 @@ const Dashboard = () => {
                   <p><strong>Name:</strong> {profile.first_name || 'Not set'} {profile.last_name || ''}</p>
                   <p><strong>Email:</strong> {profile.email || user?.email || 'Not available'}</p>
                   <p><strong>Department:</strong> {profile.department || 'Not specified'}</p>
-                  <p className="text-xs text-muted-foreground">
-                    Profile loaded successfully
+                  <p className="text-xs text-green-600">
+                    ✓ Profile loaded successfully
                   </p>
                 </>
               ) : user ? (
                 <>
                   <p><strong>Email:</strong> {user.email}</p>
-                  <p className="text-sm text-amber-600">Profile setup may be required</p>
+                  <p className="text-sm text-amber-600">⚠ Profile setup may be required</p>
                 </>
               ) : (
                 <p className="text-muted-foreground">No profile information available</p>
@@ -126,7 +142,7 @@ const Dashboard = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Shield className="h-4 w-4" />
-              Your Roles
+              Your Roles ({userRoles.length})
             </CardTitle>
             <CardDescription>System access permissions</CardDescription>
           </CardHeader>
@@ -174,6 +190,13 @@ const Dashboard = () => {
                 <div className={`w-2 h-2 rounded-full ${userRoles.length > 0 ? 'bg-green-500' : 'bg-amber-500'}`}></div>
                 <span className="text-sm">Roles: {userRoles.length > 0 ? `${userRoles.length} assigned` : 'None'}</span>
               </div>
+              {user && (
+                <div className="pt-2 border-t">
+                  <p className="text-xs text-muted-foreground">
+                    User ID: {user.id.slice(0, 8)}...
+                  </p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
