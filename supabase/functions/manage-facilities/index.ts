@@ -17,6 +17,7 @@ interface FacilityRequest {
     phone?: string;
     email?: string;
     license_number?: string;
+    npi_number?: string;
   };
 }
 

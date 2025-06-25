@@ -94,7 +94,7 @@ const FacilitiesList: React.FC<FacilitiesListProps> = ({
             <TableHead>Name</TableHead>
             <TableHead>Type</TableHead>
             <TableHead>Contact</TableHead>
-            <TableHead>License</TableHead>
+            <TableHead>License/NPI</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Actions</TableHead>
           </TableRow>
@@ -119,7 +119,13 @@ const FacilitiesList: React.FC<FacilitiesListProps> = ({
                   {facility.email && <div className="text-sm text-gray-500">{facility.email}</div>}
                 </div>
               </TableCell>
-              <TableCell>{facility.license_number || '-'}</TableCell>
+              <TableCell>
+                <div>
+                  {facility.license_number && <div className="text-sm">License: {facility.license_number}</div>}
+                  {facility.npi_number && <div className="text-sm text-gray-500">NPI: {facility.npi_number}</div>}
+                  {!facility.license_number && !facility.npi_number && <span className="text-gray-400">-</span>}
+                </div>
+              </TableCell>
               <TableCell>
                 <Badge variant={facility.is_active ? 'default' : 'secondary'}>
                   {facility.is_active ? 'Active' : 'Inactive'}

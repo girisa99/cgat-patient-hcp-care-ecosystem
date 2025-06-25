@@ -58,6 +58,7 @@ export type Database = {
           is_active: boolean | null
           license_number: string | null
           name: string
+          npi_number: string | null
           phone: string | null
           updated_at: string | null
         }
@@ -70,6 +71,7 @@ export type Database = {
           is_active?: boolean | null
           license_number?: string | null
           name: string
+          npi_number?: string | null
           phone?: string | null
           updated_at?: string | null
         }
@@ -82,6 +84,7 @@ export type Database = {
           is_active?: boolean | null
           license_number?: string | null
           name?: string
+          npi_number?: string | null
           phone?: string | null
           updated_at?: string | null
         }

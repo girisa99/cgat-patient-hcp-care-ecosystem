@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useFacilities } from '@/hooks/useFacilities';
 import {
   Dialog,
@@ -21,10 +21,12 @@ import {
 import { Database } from '@/integrations/supabase/types';
 
 type FacilityType = Database['public']['Enums']['facility_type'];
+type Facility = Database['public']['Tables']['facilities']['Row'];
 
-interface CreateFacilityDialogProps {
+interface EditFacilityDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  facility: Facility | null;
 }
 
 const facilityTypeOptions: { value: FacilityType; label: string }[] = [
@@ -33,11 +35,12 @@ const facilityTypeOptions: { value: FacilityType; label: string }[] = [
   { value: 'prescriberFacility', label: 'Prescriber Facility' },
 ];
 
-const CreateFacilityDialog: React.FC<CreateFacilityDialogProps> = ({
+const EditFacilityDialog: React.FC<EditFacilityDialogProps> = ({
   open,
-  onOpenChange
+  onOpenChange,
+  facility
 }) => {
-  const { createFacility, isCreatingFacility } = useFacilities();
+  const { updateFacility, isUpdatingFacility } = useFacilities();
   
   const [formData, setFormData] = useState({
     name: '',
@@ -49,31 +52,37 @@ const CreateFacilityDialog: React.FC<CreateFacilityDialogProps> = ({
     npi_number: ''
   });
 
+  useEffect(() => {
+    if (facility && open) {
+      setFormData({
+        name: facility.name || '',
+        facility_type: facility.facility_type,
+        address: facility.address || '',
+        phone: facility.phone || '',
+        email: facility.email || '',
+        license_number: facility.license_number || '',
+        npi_number: facility.npi_number || ''
+      });
+    }
+  }, [facility, open]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.facility_type) {
+    if (!facility || !formData.name || !formData.facility_type) {
       return;
     }
 
-    createFacility({
-      ...formData,
-      address: formData.address || undefined,
-      phone: formData.phone || undefined,
-      email: formData.email || undefined,
-      license_number: formData.license_number || undefined,
-      npi_number: formData.npi_number || undefined
-    });
-    
-    // Reset form
-    setFormData({
-      name: '',
-      facility_type: '' as FacilityType,
-      address: '',
-      phone: '',
-      email: '',
-      license_number: '',
-      npi_number: ''
+    updateFacility({
+      facilityId: facility.id,
+      facilityData: {
+        ...formData,
+        address: formData.address || null,
+        phone: formData.phone || null,
+        email: formData.email || null,
+        license_number: formData.license_number || null,
+        npi_number: formData.npi_number || null
+      }
     });
     
     onOpenChange(false);
@@ -83,7 +92,7 @@ const CreateFacilityDialog: React.FC<CreateFacilityDialogProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Create New Facility</DialogTitle>
+          <DialogTitle>Edit Facility</DialogTitle>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -173,8 +182,8 @@ const CreateFacilityDialog: React.FC<CreateFacilityDialogProps> = ({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isCreatingFacility}>
-              {isCreatingFacility ? 'Creating...' : 'Create Facility'}
+            <Button type="submit" disabled={isUpdatingFacility}>
+              {isUpdatingFacility ? 'Updating...' : 'Update Facility'}
             </Button>
           </div>
         </form>
@@ -183,4 +192,4 @@ const CreateFacilityDialog: React.FC<CreateFacilityDialogProps> = ({
   );
 };
 
-export default CreateFacilityDialog;
+export default EditFacilityDialog;
