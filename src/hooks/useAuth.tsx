@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
+import { logAuthError } from '@/utils/authErrorHandler';
 
 type UserRole = Database['public']['Enums']['user_role'];
 type Profile = Database['public']['Tables']['profiles']['Row'];
@@ -70,37 +71,52 @@ export const useAuth = (): AuthContextType => {
         .maybeSingle();
 
       if (profileError) {
-        console.error('Error loading profile:', profileError);
+        const errorInfo = logAuthError('loadProfile', profileError, userId);
         // Don't fail completely if profile doesn't exist
         if (profileError.code !== 'PGRST116') {
-          throw profileError;
+          console.error('Profile load error:', errorInfo.message);
         }
       } else if (profileData) {
         console.log('Profile loaded:', profileData);
         setProfile(profileData);
       }
 
-      // Load user roles with improved query
-      const { data: rolesData, error: rolesError } = await supabase
-        .from('user_roles')
-        .select(`
-          roles!inner (
-            name
-          )
-        `)
-        .eq('user_id', userId);
+      // Load user roles using the safe database function
+      try {
+        const { data: hasRoleData, error: roleError } = await supabase.rpc('has_role', {
+          user_id: userId,
+          role_name: 'superAdmin'
+        });
 
-      if (rolesError) {
-        console.error('Error loading roles:', rolesError);
-        // Don't fail completely if roles query fails
+        // If the function works, load all roles safely
+        if (!roleError) {
+          const { data: rolesData, error: rolesError } = await supabase
+            .from('user_roles')
+            .select(`
+              roles!inner (
+                name
+              )
+            `)
+            .eq('user_id', userId);
+
+          if (rolesError) {
+            logAuthError('loadRoles', rolesError, userId);
+            setUserRoles([]);
+          } else {
+            const roles = rolesData?.map((ur: any) => ur.roles.name) || [];
+            console.log('User roles loaded:', roles);
+            setUserRoles(roles);
+          }
+        } else {
+          logAuthError('roleCheck', roleError, userId);
+          setUserRoles([]);
+        }
+      } catch (error) {
+        logAuthError('loadUserRoles', error, userId);
         setUserRoles([]);
-      } else {
-        const roles = rolesData?.map((ur: any) => ur.roles.name) || [];
-        console.log('User roles loaded:', roles);
-        setUserRoles(roles);
       }
     } catch (error) {
-      console.error('Error loading user data:', error);
+      logAuthError('loadUserData', error, userId);
       // Set defaults on error but don't block the auth flow
       setProfile(null);
       setUserRoles([]);
@@ -116,7 +132,7 @@ export const useAuth = (): AuthContextType => {
       setProfile(null);
       setUserRoles([]);
     } catch (error) {
-      console.error('Error signing out:', error);
+      logAuthError('signOut', error, user?.id);
     }
   };
 
@@ -134,13 +150,13 @@ export const useAuth = (): AuthContextType => {
       });
       
       if (error) {
-        console.error('Error checking permission:', error);
+        logAuthError('hasPermission', error, user.id);
         return false;
       }
       
       return data || false;
     } catch (error) {
-      console.error('Error checking permission:', error);
+      logAuthError('hasPermission', error, user.id);
       return false;
     }
   };
