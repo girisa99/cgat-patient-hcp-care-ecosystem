@@ -29,6 +29,7 @@ export const useAuth = (): AuthContextType => {
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Initial session check:', session?.user?.id);
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
@@ -46,9 +47,10 @@ export const useAuth = (): AuthContextType => {
         setUser(session?.user ?? null);
         
         if (event === 'SIGNED_IN' && session?.user) {
+          // Defer loading to prevent any potential conflicts
           setTimeout(() => {
             loadUserData(session.user.id);
-          }, 0);
+          }, 100);
         } else if (event === 'SIGNED_OUT') {
           setProfile(null);
           setUserRoles([]);
@@ -63,7 +65,9 @@ export const useAuth = (): AuthContextType => {
   const loadUserData = async (userId: string) => {
     console.log('Loading user data for:', userId);
     try {
-      // Load user profile with better error handling
+      setLoading(true);
+
+      // Load user profile
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
@@ -72,52 +76,44 @@ export const useAuth = (): AuthContextType => {
 
       if (profileError) {
         const errorInfo = logAuthError('loadProfile', profileError, userId);
-        // Don't fail completely if profile doesn't exist
-        if (profileError.code !== 'PGRST116') {
+        if (profileError.code !== 'PGRST116') { // Not found is ok
           console.error('Profile load error:', errorInfo.message);
         }
       } else if (profileData) {
-        console.log('Profile loaded:', profileData);
+        console.log('Profile loaded:', profileData.email);
         setProfile(profileData);
       }
 
-      // Load user roles using the safe database function
+      // Load user roles using the new security definer function approach
       try {
-        const { data: hasRoleData, error: roleError } = await supabase.rpc('has_role', {
-          user_id: userId,
-          role_name: 'superAdmin'
-        });
+        // First test if we can access the roles table
+        const { data: rolesData, error: rolesError } = await supabase
+          .from('user_roles')
+          .select(`
+            roles!inner (
+              name
+            )
+          `)
+          .eq('user_id', userId);
 
-        // If the function works, load all roles safely
-        if (!roleError) {
-          const { data: rolesData, error: rolesError } = await supabase
-            .from('user_roles')
-            .select(`
-              roles!inner (
-                name
-              )
-            `)
-            .eq('user_id', userId);
-
-          if (rolesError) {
-            logAuthError('loadRoles', rolesError, userId);
-            setUserRoles([]);
-          } else {
-            const roles = rolesData?.map((ur: any) => ur.roles.name) || [];
-            console.log('User roles loaded:', roles);
-            setUserRoles(roles);
-          }
-        } else {
-          logAuthError('roleCheck', roleError, userId);
+        if (rolesError) {
+          logAuthError('loadRoles', rolesError, userId);
+          console.warn('Could not load roles:', rolesError.message);
           setUserRoles([]);
+        } else {
+          const roles = rolesData?.map((ur: any) => ur.roles.name) || [];
+          console.log('User roles loaded:', roles);
+          setUserRoles(roles);
         }
       } catch (error) {
         logAuthError('loadUserRoles', error, userId);
+        console.warn('Error loading user roles:', error);
         setUserRoles([]);
       }
     } catch (error) {
       logAuthError('loadUserData', error, userId);
-      // Set defaults on error but don't block the auth flow
+      console.error('Error in loadUserData:', error);
+      // Set defaults but don't block auth flow
       setProfile(null);
       setUserRoles([]);
     } finally {

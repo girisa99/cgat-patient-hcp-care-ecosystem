@@ -335,6 +335,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_user_has_role: {
+        Args: {
+          check_user_id: string
+          role_name: Database["public"]["Enums"]["user_role"]
+        }
+        Returns: boolean
+      }
       get_user_accessible_facilities: {
         Args: { user_id: string }
         Returns: {

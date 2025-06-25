@@ -9,12 +9,12 @@ type UserRole = Database['public']['Enums']['user_role'];
 
 /**
  * Safely check if a user has a specific role without causing RLS recursion
- * This function uses the existing has_role database function which is SECURITY DEFINER
+ * This function uses the new check_user_has_role database function which is SECURITY DEFINER
  */
 export const checkUserRole = async (userId: string, roleName: UserRole): Promise<boolean> => {
   try {
-    const { data, error } = await supabase.rpc('has_role', {
-      user_id: userId,
+    const { data, error } = await supabase.rpc('check_user_has_role', {
+      check_user_id: userId,
       role_name: roleName
     });
 
