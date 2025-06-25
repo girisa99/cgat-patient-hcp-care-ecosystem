@@ -84,24 +84,31 @@ const Dashboard = () => {
         </Button>
       </div>
 
-      {/* Show success message when everything is loaded */}
+      {/* Success message when everything is loaded properly */}
       {user && profile && userRoles.length > 0 && (
         <Alert className="border-green-200 bg-green-50">
           <CheckCircle className="h-4 w-4 text-green-600" />
           <AlertDescription className="text-green-800">
-            ✅ All systems operational! Profile and {userRoles.length} role(s) loaded successfully with updated RLS policies.
+            ✅ System operational! Profile and {userRoles.length} role(s) loaded successfully with simplified RLS policies.
           </AlertDescription>
         </Alert>
       )}
 
-      {/* Show alert if there are issues loading user data */}
-      {user && (!profile || userRoles.length === 0) && (
+      {/* Show specific alerts based on what's missing */}
+      {user && !profile && (
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            {!profile && "Profile information could not be loaded. "}
-            {userRoles.length === 0 && "No user roles have been assigned to your account. "}
-            If this persists, please contact your administrator or try refreshing the page.
+            Profile information could not be loaded. This might indicate a database setup issue or missing profile data.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {user && profile && userRoles.length === 0 && (
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            No user roles have been assigned to your account. Contact your administrator to have roles assigned.
           </AlertDescription>
         </Alert>
       )}
@@ -130,6 +137,9 @@ const Dashboard = () => {
                 <>
                   <p><strong>Email:</strong> {user.email}</p>
                   <p className="text-sm text-amber-600">⚠ Profile setup may be required</p>
+                  <p className="text-xs text-muted-foreground">
+                    User ID: {user.id.slice(0, 8)}...
+                  </p>
                 </>
               ) : (
                 <p className="text-muted-foreground">No profile information available</p>
@@ -165,6 +175,11 @@ const Dashboard = () => {
                   <p className="text-xs text-muted-foreground">
                     Contact your administrator to have roles assigned to your account.
                   </p>
+                  {user && (
+                    <p className="text-xs text-muted-foreground">
+                      User ID: {user.id.slice(0, 8)}... (for admin reference)
+                    </p>
+                  )}
                 </div>
               )}
             </div>
@@ -174,7 +189,7 @@ const Dashboard = () => {
         <Card>
           <CardHeader>
             <CardTitle>System Status</CardTitle>
-            <CardDescription>Authentication and permissions</CardDescription>
+            <CardDescription>Authentication and data loading</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
@@ -196,7 +211,7 @@ const Dashboard = () => {
                     User ID: {user.id.slice(0, 8)}...
                   </p>
                   <p className="text-xs text-green-600 mt-1">
-                    ✅ RLS policies fixed - data loading should work properly now
+                    ✅ Using simplified RLS policies - should load data properly now
                   </p>
                 </div>
               )}
