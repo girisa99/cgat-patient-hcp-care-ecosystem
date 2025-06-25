@@ -9,6 +9,45 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string | null
+          id: string
+          ip_address: unknown | null
+          new_values: Json | null
+          old_values: Json | null
+          record_id: string | null
+          table_name: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          new_values?: Json | null
+          old_values?: Json | null
+          record_id?: string | null
+          table_name?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          new_values?: Json | null
+          old_values?: Json | null
+          record_id?: string | null
+          table_name?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       facilities: {
         Row: {
           address: string | null
@@ -44,6 +83,42 @@ export type Database = {
           license_number?: string | null
           name?: string
           phone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      feature_flags: {
+        Row: {
+          configuration: Json | null
+          created_at: string | null
+          description: string | null
+          id: string
+          is_enabled: boolean | null
+          name: string
+          target_facilities: string[] | null
+          target_roles: Database["public"]["Enums"]["user_role"][] | null
+          updated_at: string | null
+        }
+        Insert: {
+          configuration?: Json | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          name: string
+          target_facilities?: string[] | null
+          target_roles?: Database["public"]["Enums"]["user_role"][] | null
+          updated_at?: string | null
+        }
+        Update: {
+          configuration?: Json | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          name?: string
+          target_facilities?: string[] | null
+          target_roles?: Database["public"]["Enums"]["user_role"][] | null
           updated_at?: string | null
         }
         Relationships: []
@@ -182,6 +257,47 @@ export type Database = {
         }
         Relationships: []
       }
+      user_facility_access: {
+        Row: {
+          access_level: string
+          expires_at: string | null
+          facility_id: string | null
+          granted_at: string | null
+          granted_by: string | null
+          id: string
+          is_active: boolean | null
+          user_id: string | null
+        }
+        Insert: {
+          access_level: string
+          expires_at?: string | null
+          facility_id?: string | null
+          granted_at?: string | null
+          granted_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          user_id?: string | null
+        }
+        Update: {
+          access_level?: string
+          expires_at?: string | null
+          facility_id?: string | null
+          granted_at?: string | null
+          granted_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_facility_access_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           assigned_by: string | null
@@ -219,6 +335,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_user_accessible_facilities: {
+        Args: { user_id: string }
+        Returns: {
+          facility_id: string
+          facility_name: string
+          access_level: string
+        }[]
+      }
       has_permission: {
         Args: { user_id: string; permission_name: string }
         Returns: boolean
