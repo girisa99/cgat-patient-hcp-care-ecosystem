@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -35,6 +36,26 @@ export const useUsers = () => {
       console.log('🔍 Fetching users with separate queries approach...');
       
       try {
+        // Debug: Check current user and auth state
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        console.log('🔍 Current authenticated user:', user?.id, authError);
+        
+        // Debug: Try to get profile count first
+        const { count, error: countError } = await supabase
+          .from('profiles')
+          .select('*', { count: 'exact', head: true });
+        
+        console.log('🔍 Total profiles count:', count, 'Count error:', countError);
+        
+        // Debug: Try without RLS first to see if data exists
+        const { data: allProfiles, error: allProfilesError } = await supabase
+          .from('profiles')
+          .select('id, email, first_name, last_name, created_at')
+          .limit(20);
+        
+        console.log('🔍 All profiles (limited query):', allProfiles?.length, 'Error:', allProfilesError);
+        console.log('🔍 Profile data sample:', allProfiles?.slice(0, 3));
+
         // First, get all profiles with facilities
         const { data: profiles, error: profilesError } = await supabase
           .from('profiles')
@@ -54,11 +75,13 @@ export const useUsers = () => {
         }
 
         if (!profiles || profiles.length === 0) {
-          console.log('ℹ️ No profiles found');
+          console.log('ℹ️ No profiles found in main query');
+          console.log('🔍 This suggests either no profiles exist or RLS is blocking access');
           return [];
         }
 
         console.log('✅ Profiles fetched:', profiles.length);
+        console.log('🔍 Profile IDs:', profiles.map(p => ({ id: p.id, email: p.email })));
 
         // Then, get all user roles with role details
         const { data: userRoles, error: userRolesError } = await supabase
@@ -77,6 +100,7 @@ export const useUsers = () => {
         }
 
         console.log('✅ User roles fetched:', userRoles?.length || 0);
+        console.log('🔍 User roles data:', userRoles?.map(ur => ({ user_id: ur.user_id, role: ur.roles?.name })));
 
         // Combine the data
         const usersWithRoles: UserWithRoles[] = profiles.map(profile => {
@@ -94,6 +118,13 @@ export const useUsers = () => {
         });
 
         console.log('✅ Users with roles prepared:', usersWithRoles.length);
+        console.log('🔍 Final user data:', usersWithRoles.map(u => ({ 
+          id: u.id, 
+          email: u.email, 
+          name: `${u.first_name} ${u.last_name}`,
+          roles: u.user_roles.map(ur => ur.roles.name)
+        })));
+        
         return usersWithRoles;
       } catch (err) {
         console.error('❌ Error fetching users:', err);
