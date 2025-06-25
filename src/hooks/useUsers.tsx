@@ -33,97 +33,49 @@ export const useUsers = () => {
   } = useQuery({
     queryKey: ['users'],
     queryFn: async () => {
-      console.log('🔍 Fetching users list...');
+      console.log('🔍 Fetching users with direct database queries...');
       
       try {
-        const { data, error } = await supabase.functions.invoke('manage-user-profiles', {
-          body: { action: 'list' }
-        });
-
-        if (error) {
-          console.error('❌ Edge function error:', error);
-          throw new Error(`Edge function error: ${error.message || 'Unknown error'}`);
-        }
-
-        if (!data || !data.success) {
-          console.error('❌ Invalid response from edge function:', data);
-          throw new Error(data?.error || 'Invalid response from server');
-        }
-
-        console.log('✅ Users fetched successfully via edge function:', data.data);
-        return data.data as UserWithRoles[];
-      } catch (err) {
-        console.error('❌ Network or parsing error:', err);
-        
-        // Fallback: try direct database queries if edge function fails
-        console.log('🔄 Attempting direct database queries as fallback...');
-        
-        try {
-          // First get all profiles with facilities
-          const { data: profiles, error: profilesError } = await supabase
-            .from('profiles')
-            .select(`
-              *,
-              facilities (
-                id,
+        // Primary approach: Direct database queries for reliability
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select(`
+            *,
+            facilities (
+              id,
+              name,
+              facility_type
+            ),
+            user_roles (
+              id,
+              role_id,
+              roles!inner (
                 name,
-                facility_type
+                description
               )
-            `)
-            .order('last_name');
+            )
+          `)
+          .order('last_name');
 
-          if (profilesError) {
-            console.error('❌ Fallback profiles query failed:', profilesError);
-            throw new Error(`Database error: ${profilesError.message}`);
-          }
-
-          console.log('✅ Fallback profiles query successful:', profiles);
-
-          // Then get user roles for each profile
-          const profilesWithRoles = await Promise.all(
-            profiles.map(async (profile) => {
-              const { data: userRoles, error: rolesError } = await supabase
-                .from('user_roles')
-                .select(`
-                  id,
-                  role_id,
-                  roles!inner (
-                    name,
-                    description
-                  )
-                `)
-                .eq('user_id', profile.id);
-
-              if (rolesError) {
-                console.error('❌ Error fetching roles for user:', profile.id, rolesError);
-                // Continue without roles if there's an error
-                return {
-                  ...profile,
-                  user_roles: []
-                };
-              }
-
-              return {
-                ...profile,
-                user_roles: userRoles || []
-              };
-            })
-          );
-
-          console.log('✅ Fallback query with roles completed successfully:', profilesWithRoles);
-          return profilesWithRoles as UserWithRoles[];
-        } catch (fallbackError) {
-          console.error('❌ Fallback queries also failed:', fallbackError);
-          throw new Error(`Both edge function and direct database queries failed: ${fallbackError.message}`);
+        if (profilesError) {
+          console.error('❌ Direct query failed:', profilesError);
+          throw new Error(`Database error: ${profilesError.message}`);
         }
+
+        console.log('✅ Users fetched successfully via direct queries:', profiles);
+        return profiles as UserWithRoles[];
+      } catch (err) {
+        console.error('❌ Error fetching users:', err);
+        throw err;
       }
     },
     retry: 2,
     retryDelay: 1000,
-    staleTime: 30000, // Consider data stale after 30 seconds
-    gcTime: 300000, // Keep in cache for 5 minutes
+    staleTime: 30000,
+    gcTime: 300000,
   });
 
+  // For user creation, we still use edge functions as they handle complex business logic
   const createUserMutation = useMutation({
     mutationFn: async (userData: {
       email: string;
@@ -149,10 +101,10 @@ export const useUsers = () => {
           throw error;
         }
 
-        console.log('✅ User created successfully via edge function:', data);
+        console.log('✅ User created successfully:', data);
         return data;
       } catch (err) {
-        console.error('❌ Edge function failed, this operation requires the edge function to work properly');
+        console.error('❌ User creation failed:', err);
         throw new Error(`User creation failed: ${err.message}`);
       }
     },
@@ -174,29 +126,52 @@ export const useUsers = () => {
     }
   });
 
+  // For role assignment, use direct database operations for reliability
   const assignRoleMutation = useMutation({
     mutationFn: async ({ userId, roleName }: { userId: string; roleName: UserRole }) => {
       console.log('🔄 Assigning role:', roleName, 'to user:', userId);
       
       try {
-        const { data, error } = await supabase.functions.invoke('manage-user-roles', {
-          body: {
-            user_id: userId,
-            role_name: roleName,
-            action: 'assign'
-          }
-        });
+        // First get the role ID
+        const { data: role, error: roleError } = await supabase
+          .from('roles')
+          .select('id')
+          .eq('name', roleName)
+          .single();
 
-        if (error) {
-          console.error('❌ Error assigning role via edge function:', error);
-          throw error;
+        if (roleError || !role) {
+          throw new Error('Role not found');
         }
 
-        console.log('✅ Role assigned successfully via edge function:', data);
-        return data;
+        // Check if user already has this role
+        const { data: existingRole } = await supabase
+          .from('user_roles')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('role_id', role.id)
+          .single();
+
+        if (existingRole) {
+          throw new Error('User already has this role');
+        }
+
+        // Assign the role
+        const { error: assignError } = await supabase
+          .from('user_roles')
+          .insert({
+            user_id: userId,
+            role_id: role.id
+          });
+
+        if (assignError) {
+          throw assignError;
+        }
+
+        console.log('✅ Role assigned successfully');
+        return { success: true };
       } catch (err) {
-        console.error('❌ Edge function failed, this operation requires the edge function to work properly');
-        throw new Error(`Role assignment failed: ${err.message}`);
+        console.error('❌ Role assignment failed:', err);
+        throw err;
       }
     },
     onSuccess: () => {
@@ -217,6 +192,7 @@ export const useUsers = () => {
     }
   });
 
+  // For facility assignment, use direct database operations
   const assignFacilityMutation = useMutation({
     mutationFn: async ({ 
       userId, 
@@ -230,25 +206,52 @@ export const useUsers = () => {
       console.log('🔄 Assigning facility access:', { userId, facilityId, accessLevel });
       
       try {
-        const { data, error } = await supabase.functions.invoke('user-facility-access', {
-          body: {
-            action: 'grant_access',
-            user_id: userId,
-            facility_id: facilityId,
-            access_level: accessLevel
-          }
-        });
+        // Check if user already has access to this facility
+        const { data: existingAccess } = await supabase
+          .from('user_facility_access')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('facility_id', facilityId)
+          .eq('is_active', true)
+          .single();
 
-        if (error) {
-          console.error('❌ Error assigning facility access via edge function:', error);
-          throw error;
+        if (existingAccess) {
+          // Update existing access
+          const { error: updateError } = await supabase
+            .from('user_facility_access')
+            .update({ access_level: accessLevel })
+            .eq('id', existingAccess.id);
+
+          if (updateError) throw updateError;
+        } else {
+          // Create new access
+          const { error: insertError } = await supabase
+            .from('user_facility_access')
+            .insert({
+              user_id: userId,
+              facility_id: facilityId,
+              access_level: accessLevel,
+              is_active: true
+            });
+
+          if (insertError) throw insertError;
         }
 
-        console.log('✅ Facility access assigned successfully via edge function:', data);
-        return data;
+        // Also update the user's primary facility if needed
+        const { error: profileUpdateError } = await supabase
+          .from('profiles')
+          .update({ facility_id: facilityId })
+          .eq('id', userId);
+
+        if (profileUpdateError) {
+          console.warn('⚠️ Could not update primary facility:', profileUpdateError);
+        }
+
+        console.log('✅ Facility access assigned successfully');
+        return { success: true };
       } catch (err) {
-        console.error('❌ Edge function failed, this operation requires the edge function to work properly');
-        throw new Error(`Facility assignment failed: ${err.message}`);
+        console.error('❌ Facility assignment failed:', err);
+        throw err;
       }
     },
     onSuccess: () => {
