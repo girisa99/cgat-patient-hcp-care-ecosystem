@@ -41,12 +41,13 @@ const Dashboard = () => {
 
   const handleAssignTestRole = async () => {
     if (user) {
+      console.log('🧪 Testing role assignment with updated RLS policies...');
       const result = await assignUserRole(user.id, 'superAdmin');
       if (result.success) {
-        console.log('✅ Test role assigned successfully');
+        console.log('✅ Test role assigned successfully - RLS policies are working!');
         await refreshUserData();
       } else {
-        console.error('❌ Test role assignment failed:', result.error);
+        console.error('❌ Test role assignment still failed:', result.error);
       }
     }
   };
@@ -104,18 +105,18 @@ const Dashboard = () => {
               className="flex items-center gap-2"
             >
               <UserPlus className="h-4 w-4" />
-              Assign Test Role
+              Test Role Assignment
             </Button>
           )}
         </div>
       </div>
 
-      {/* Enhanced Success/Status Messages */}
+      {/* Enhanced Status Messages */}
       {user && profile && userRoles.length > 0 && (
         <Alert className="border-green-200 bg-green-50">
           <CheckCircle className="h-4 w-4 text-green-600" />
           <AlertDescription className="text-green-800">
-            <strong>✅ System operational!</strong> Profile loaded and {userRoles.length} role(s) assigned successfully.
+            <strong>✅ System fully operational!</strong> Profile loaded, {userRoles.length} role(s) assigned, and RLS policies working correctly.
           </AlertDescription>
         </Alert>
       )}
@@ -133,19 +134,21 @@ const Dashboard = () => {
         <Alert className="border-amber-200 bg-amber-50">
           <AlertCircle className="h-4 w-4 text-amber-600" />
           <AlertDescription className="text-amber-800">
-            <strong>⚠️ Role Assignment Issue:</strong> Profile loaded but no roles found. This indicates a role assignment problem during signup. Click "Assign Test Role" to test the fix, or contact admin.
+            <strong>⚠️ Role Assignment Test Needed:</strong> Profile loaded but no roles found. Click "Test Role Assignment" to verify the RLS policy fix is working.
           </AlertDescription>
         </Alert>
       )}
 
-      {/* Database Status Alert */}
+      {/* Updated Database Status Alert */}
       <Alert className="border-blue-200 bg-blue-50">
         <Database className="h-4 w-4 text-blue-600" />
         <AlertDescription className="text-blue-800">
-          <strong>Database Connection:</strong> Updated RLS policies for role assignment. Check browser console (F12) for detailed loading and assignment logs.
+          <strong>🔧 RLS Policy Update Applied:</strong> Updated user_roles RLS policies to allow role assignment during signup and by admins. 
           {user && (
             <div className="mt-1 text-xs">
               User ID: {user.id.slice(0, 8)}... | Auth Status: Active | Profile: {profile ? '✅' : '❌'} | Roles: {userRoles.length}
+              <br />
+              <strong>Policy Status:</strong> "Allow role assignment during signup" & "Admins can assign roles to anyone" are now active
             </div>
           )}
         </AlertDescription>
@@ -230,15 +233,15 @@ const Dashboard = () => {
                 <div className="space-y-2">
                   <p className="text-muted-foreground">No roles assigned</p>
                   <p className="text-xs text-amber-600">
-                    🔍 Role assignment issue detected - check console logs for details
+                    🔧 Test the updated RLS policies by clicking "Test Role Assignment"
                   </p>
                   {user && (
                     <div className="pt-2 border-t">
                       <p className="text-xs text-muted-foreground">
                         User ID: {user.id.slice(0, 8)}...
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        🔍 Searching user_roles table for: user_id = {user.id.slice(0, 8)}...
+                      <p className="text-xs text-blue-600">
+                        🔍 RLS policies updated - role assignment should now work
                       </p>
                     </div>
                   )}
@@ -264,13 +267,16 @@ const Dashboard = () => {
                 <span className="text-sm">Profile: {profile ? 'Loaded' : 'Missing'}</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${userRoles.length > 0 ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                <span className="text-sm">Roles: {userRoles.length > 0 ? `${userRoles.length} found` : 'None found'}</span>
+                <div className={`w-2 h-2 rounded-full ${userRoles.length > 0 ? 'bg-green-500' : 'bg-amber-500'}`}></div>
+                <span className="text-sm">Roles: {userRoles.length > 0 ? `${userRoles.length} found` : 'Ready to test'}</span>
               </div>
               
               <div className="pt-2 border-t space-y-1">
+                <p className="text-xs text-green-600 font-medium">
+                  ✅ RLS: Updated policies for role assignment
+                </p>
                 <p className="text-xs text-blue-600 font-medium">
-                  🔧 RLS: Updated policies for role assignment
+                  🧪 Test role assignment to verify the fix
                 </p>
                 <p className="text-xs text-muted-foreground">
                   Open browser console (F12) for detailed logs

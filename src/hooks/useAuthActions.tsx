@@ -127,6 +127,7 @@ export const useAuthActions = () => {
   const assignUserRole = async (userId: string, roleName: UserRole): Promise<{ success: boolean; error?: string }> => {
     try {
       console.log('🔐 Assigning role:', roleName, 'to user:', userId);
+      console.log('🔍 Current auth user:', (await supabase.auth.getUser()).data.user?.id);
       
       // First, get the role ID from the roles table
       const { data: role, error: roleError } = await supabase
@@ -161,18 +162,22 @@ export const useAuthActions = () => {
       }
 
       // Assign the role to the user
-      const { error: assignError } = await supabase
+      console.log('🔄 Attempting to insert role assignment...');
+      const { data: insertData, error: assignError } = await supabase
         .from('user_roles')
         .insert({
           user_id: userId,
           role_id: role.id
-        });
+        })
+        .select();
 
       if (assignError) {
         console.error('❌ Error assigning role:', assignError);
+        console.error('❌ Full error details:', JSON.stringify(assignError, null, 2));
         return { success: false, error: assignError.message };
       }
 
+      console.log('✅ Role assignment successful! Insert result:', insertData);
       console.log('✅ Role assigned successfully:', roleName, 'to user:', userId);
       return { success: true };
     } catch (error) {
