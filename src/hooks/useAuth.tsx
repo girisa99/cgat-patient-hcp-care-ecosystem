@@ -79,22 +79,24 @@ export const useAuth = (): AuthContextType => {
     setLoading(true);
     
     try {
-      // Load profile data
+      // Load profile data with simplified query
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .maybeSingle();
 
-      if (profileError && profileError.code !== 'PGRST116') {
+      if (profileError) {
         console.error('Profile error:', profileError);
         logAuthError('loadProfile', profileError, userId);
       } else if (profileData) {
-        console.log('Profile loaded:', profileData.email);
+        console.log('Profile loaded successfully:', profileData.email);
         setProfile(profileData);
+      } else {
+        console.log('No profile found for user:', userId);
       }
 
-      // Load user roles using a direct query with join
+      // Load user roles with a simpler approach that works with the new RLS policies
       const { data: rolesData, error: rolesError } = await supabase
         .from('user_roles')
         .select(`
@@ -104,14 +106,17 @@ export const useAuth = (): AuthContextType => {
         `)
         .eq('user_id', userId);
 
-      if (rolesError && rolesError.code !== 'PGRST116') {
+      if (rolesError) {
         console.error('Roles error:', rolesError);
         logAuthError('loadRoles', rolesError, userId);
         setUserRoles([]);
-      } else {
-        const roles = rolesData?.map((ur: any) => ur.roles.name as UserRole) || [];
-        console.log('User roles loaded:', roles);
+      } else if (rolesData && rolesData.length > 0) {
+        const roles = rolesData.map((ur: any) => ur.roles.name as UserRole);
+        console.log('User roles loaded successfully:', roles);
         setUserRoles(roles);
+      } else {
+        console.log('No roles found for user:', userId);
+        setUserRoles([]);
       }
 
     } catch (error) {

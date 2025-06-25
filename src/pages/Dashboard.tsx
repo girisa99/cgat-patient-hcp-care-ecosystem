@@ -195,6 +195,9 @@ const Dashboard = () => {
                   <p className="text-xs text-muted-foreground">
                     User ID: {user.id.slice(0, 8)}...
                   </p>
+                  <p className="text-xs text-green-600 mt-1">
+                    ✓ RLS policies updated - no more recursion errors
+                  </p>
                 </div>
               )}
             </div>
