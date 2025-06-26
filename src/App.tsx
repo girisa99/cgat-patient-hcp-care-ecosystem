@@ -15,6 +15,7 @@ import Onboarding from '@/pages/Onboarding';
 import NotFound from '@/pages/NotFound';
 import Modules from '@/pages/Modules';
 import AuditLog from '@/pages/AuditLog';
+import ApiIntegrations from '@/pages/ApiIntegrations';
 
 const queryClient = new QueryClient();
 
@@ -102,6 +103,16 @@ function App() {
                   <ProtectedRoute>
                     <DashboardLayout>
                       <AuditLog />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/api-integrations"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout>
+                      <ApiIntegrations />
                     </DashboardLayout>
                   </ProtectedRoute>
                 }
