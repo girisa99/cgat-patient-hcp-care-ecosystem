@@ -1,8 +1,6 @@
 
 /**
- * Auto Module Manager Component
- * 
- * Main component that orchestrates the auto-detection and management of modules
+ * Auto Module Manager Component - Enhanced with Security
  */
 
 import React, { useState, useEffect } from 'react';
@@ -13,6 +11,9 @@ import { DetectedModulesList } from './DetectedModulesList';
 import { detectNewModules } from '@/utils/schema/moduleDetector';
 import { generateHookCode, generateComponentCode } from '@/utils/schema/codeGenerator';
 import { autoRegisterModules, autoModuleWatcher } from '@/utils/autoModuleRegistration';
+import { validateModuleSecurity, sanitizeModuleConfig } from '@/utils/security/moduleSecurityValidator';
+import { validateModulePermission } from '@/utils/security/authSecurityHelpers';
+import { useAuthContext } from '@/components/auth/AuthProvider';
 import { AutoModuleConfig } from '@/utils/schema/types';
 
 interface RegistrationStats {
@@ -31,6 +32,7 @@ export const AutoModuleManager = () => {
     totalScanned: 0
   });
   const { toast } = useToast();
+  const { user } = useAuthContext();
 
   useEffect(() => {
     handleScanModules();
@@ -55,13 +57,43 @@ export const AutoModuleManager = () => {
   }, []);
 
   const handleScanModules = async () => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to scan modules",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check permission
+    const hasPermission = await validateModulePermission(user.id, 'read', 'AutoModuleManager');
+    if (!hasPermission) {
+      toast({
+        title: "Access Denied",
+        description: "You don't have permission to scan modules",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsScanning(true);
     try {
       const modules = await detectNewModules();
-      setDetectedModules(modules);
+      
+      // Apply security validation and sanitization
+      const secureModules = modules.map(module => {
+        const validation = validateModuleSecurity(module);
+        if (!validation.isSecure) {
+          console.warn('⚠️ Security issues found:', validation.securityIssues);
+        }
+        return sanitizeModuleConfig(module);
+      });
+      
+      setDetectedModules(secureModules);
       toast({
         title: "Schema Scan Complete",
-        description: `Detected ${modules.length} potential modules`,
+        description: `Detected ${secureModules.length} potential modules`,
       });
     } catch (error) {
       toast({
@@ -75,6 +107,26 @@ export const AutoModuleManager = () => {
   };
 
   const handleAutoRegister = async () => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to register modules",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check permission
+    const hasPermission = await validateModulePermission(user.id, 'create', 'AutoModuleManager');
+    if (!hasPermission) {
+      toast({
+        title: "Access Denied",
+        description: "You don't have permission to register modules",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const result = await autoRegisterModules();
       const stats: RegistrationStats = {
@@ -114,16 +166,37 @@ export const AutoModuleManager = () => {
     }
   };
 
-  const downloadGeneratedCode = (module: AutoModuleConfig) => {
-    const hookCode = generateHookCode(module);
-    const componentCode = generateComponentCode(module);
+  const downloadGeneratedCode = async (module: AutoModuleConfig) => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to download code",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Security validation before code generation
+    const validation = validateModuleSecurity(module);
+    if (!validation.isSecure) {
+      toast({
+        title: "Security Warning",
+        description: `Cannot generate code: ${validation.securityIssues.join(', ')}`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const sanitizedModule = sanitizeModuleConfig(module);
+    const hookCode = generateHookCode(sanitizedModule);
+    const componentCode = generateComponentCode(sanitizedModule);
     
     // Create and download hook file
     const hookBlob = new Blob([hookCode], { type: 'text/typescript' });
     const hookUrl = URL.createObjectURL(hookBlob);
     const hookLink = document.createElement('a');
     hookLink.href = hookUrl;
-    hookLink.download = `use${module.moduleName}.tsx`;
+    hookLink.download = `use${sanitizedModule.moduleName}.tsx`;
     hookLink.click();
     
     // Create and download component file
@@ -131,12 +204,12 @@ export const AutoModuleManager = () => {
     const componentUrl = URL.createObjectURL(componentBlob);
     const componentLink = document.createElement('a');
     componentLink.href = componentUrl;
-    componentLink.download = `${module.moduleName}Module.tsx`;
+    componentLink.download = `${sanitizedModule.moduleName}Module.tsx`;
     componentLink.click();
     
     toast({
       title: "Code Downloaded",
-      description: `Generated files for ${module.moduleName}`,
+      description: `Generated secure files for ${sanitizedModule.moduleName}`,
     });
   };
 
