@@ -115,451 +115,188 @@ export const usePublishedApiDetails = () => {
         visibility: externalApi.visibility
       });
 
-      // Step 2: Generate comprehensive realistic endpoints with proper schemas
-      const comprehensiveEndpoints = [
-        {
-          id: 'auth_login',
-          name: 'User Authentication',
-          method: 'POST',
-          url: '/auth/login',
-          description: 'Authenticate user credentials and return session token with role information',
-          is_public: true,
-          authentication: {
-            type: 'none',
-            required: false,
-            description: 'No authentication required for login endpoint'
-          },
-          request_schema: {
-            type: 'object',
-            required: ['email', 'password'],
-            properties: {
-              email: { type: 'string', format: 'email', description: 'User email address' },
-              password: { type: 'string', minLength: 8, description: 'User password (minimum 8 characters)' },
-              remember_me: { type: 'boolean', description: 'Keep user logged in for extended period' }
-            }
-          },
-          response_schema: {
-            type: 'object',
-            properties: {
-              success: { type: 'boolean', description: 'Authentication success status' },
-              data: {
-                type: 'object',
-                properties: {
-                  user: {
-                    type: 'object',
-                    properties: {
-                      id: { type: 'string', format: 'uuid' },
-                      email: { type: 'string', format: 'email' },
-                      first_name: { type: 'string' },
-                      last_name: { type: 'string' },
-                      roles: { type: 'array', items: { type: 'string' } }
-                    }
-                  },
-                  access_token: { type: 'string', description: 'JWT access token' },
-                  refresh_token: { type: 'string', description: 'JWT refresh token' },
-                  expires_in: { type: 'integer', description: 'Token expiration in seconds' }
-                }
-              },
-              message: { type: 'string' }
-            }
-          },
-          example_request: {
-            email: 'doctor@healthcarecorp.com',
-            password: 'SecurePass123!',
-            remember_me: true
-          },
-          example_response: {
-            success: true,
-            data: {
-              user: {
-                id: '123e4567-e89b-12d3-a456-426614174000',
-                email: 'doctor@healthcarecorp.com',
-                first_name: 'Dr. Sarah',
-                last_name: 'Johnson',
-                roles: ['provider', 'facilityAdmin']
-              },
-              access_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-              refresh_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-              expires_in: 3600
-            },
-            message: 'Authentication successful'
-          }
-        },
-        {
-          id: 'get_patients',
-          name: 'Get Patients List',
-          method: 'GET',
-          url: '/api/v1/patients',
-          description: 'Retrieve paginated list of patients with HIPAA-compliant data filtering based on user permissions',
-          is_public: false,
-          authentication: {
-            type: 'bearer',
-            required: true,
-            description: 'Bearer token authentication required',
-            token_format: 'JWT',
-            scopes: ['read:patients', 'healthcare:access']
-          },
-          request_schema: {
-            type: 'object',
-            properties: {
-              page: { type: 'integer', minimum: 1, default: 1, description: 'Page number for pagination' },
-              limit: { type: 'integer', minimum: 1, maximum: 100, default: 20, description: 'Number of records per page' },
-              search: { type: 'string', description: 'Search term for patient name or MRN' },
-              facility_id: { type: 'string', format: 'uuid', description: 'Filter by specific facility' },
-              status: { type: 'string', enum: ['active', 'inactive', 'discharged'], description: 'Patient status filter' }
-            }
-          },
-          response_schema: {
-            type: 'object',
-            properties: {
-              success: { type: 'boolean' },
-              data: {
-                type: 'array',
-                items: {
-                  type: 'object',
-                  properties: {
-                    id: { type: 'string', format: 'uuid' },
-                    first_name: { type: 'string' },
-                    last_name: { type: 'string' },
-                    date_of_birth: { type: 'string', format: 'date' },
-                    medical_record_number: { type: 'string' },
-                    facility_id: { type: 'string', format: 'uuid' },
-                    status: { type: 'string', enum: ['active', 'inactive', 'discharged'] },
-                    created_at: { type: 'string', format: 'date-time' }
-                  }
-                }
-              },
-              pagination: {
-                type: 'object',
-                properties: {
-                  page: { type: 'integer' },
-                  limit: { type: 'integer' },
-                  total: { type: 'integer' },
-                  total_pages: { type: 'integer' }
-                }
-              }
-            }
-          },
-          example_request: null,
-          example_response: {
-            success: true,
-            data: [
-              {
-                id: '456e7890-e89b-12d3-a456-426614174111',
-                first_name: 'John',
-                last_name: 'Smith',
-                date_of_birth: '1985-03-15',
-                medical_record_number: 'MRN-2024-001',
-                facility_id: '789e0123-e89b-12d3-a456-426614174222',
-                status: 'active',
-                created_at: '2024-01-15T10:30:00Z'
-              }
-            ],
-            pagination: {
-              page: 1,
-              limit: 20,
-              total: 150,
-              total_pages: 8
-            }
-          }
-        },
-        {
-          id: 'create_patient',
-          name: 'Create New Patient',
-          method: 'POST',
-          url: '/api/v1/patients',
-          description: 'Register new patient with healthcare information and automatic medical record number generation',
-          is_public: false,
-          authentication: {
-            type: 'bearer',
-            required: true,
-            description: 'Bearer token authentication required',
-            token_format: 'JWT',
-            scopes: ['write:patients', 'healthcare:manage']
-          },
-          request_schema: {
-            type: 'object',
-            required: ['first_name', 'last_name', 'date_of_birth', 'facility_id'],
-            properties: {
-              first_name: { type: 'string', minLength: 1, maxLength: 50 },
-              last_name: { type: 'string', minLength: 1, maxLength: 50 },
-              date_of_birth: { type: 'string', format: 'date' },
-              facility_id: { type: 'string', format: 'uuid' },
-              phone: { type: 'string', pattern: '^\\+?[1-9]\\d{1,14}$' },
-              email: { type: 'string', format: 'email' },
-              insurance_info: {
-                type: 'object',
-                properties: {
-                  provider: { type: 'string' },
-                  policy_number: { type: 'string' },
-                  group_number: { type: 'string' }
-                }
-              }
-            }
-          },
-          response_schema: {
-            type: 'object',
-            properties: {
-              success: { type: 'boolean' },
-              data: {
-                type: 'object',
-                properties: {
-                  id: { type: 'string', format: 'uuid' },
-                  medical_record_number: { type: 'string' },
-                  first_name: { type: 'string' },
-                  last_name: { type: 'string' },
-                  created_at: { type: 'string', format: 'date-time' }
-                }
-              },
-              message: { type: 'string' }
-            }
-          },
-          example_request: {
-            first_name: 'Emily',
-            last_name: 'Davis',
-            date_of_birth: '1990-07-22',
-            facility_id: '789e0123-e89b-12d3-a456-426614174222',
-            phone: '+1-555-0123',
-            email: 'emily.davis@email.com',
-            insurance_info: {
-              provider: 'BlueCross BlueShield',
-              policy_number: 'BC12345678',
-              group_number: 'GRP789'
-            }
-          },
-          example_response: {
-            success: true,
-            data: {
-              id: '999e8888-e89b-12d3-a456-426614174333',
-              medical_record_number: 'MRN-2024-152',
-              first_name: 'Emily',
-              last_name: 'Davis',
-              created_at: '2024-01-20T14:25:00Z'
-            },
-            message: 'Patient created successfully'
-          }
-        },
-        {
-          id: 'get_facilities',
-          name: 'Get Healthcare Facilities',
-          method: 'GET',
-          url: '/api/v1/facilities',
-          description: 'Retrieve list of healthcare facilities with location and contact information',
-          is_public: false,
-          authentication: {
-            type: 'bearer',
-            required: true,
-            description: 'Bearer token authentication required',
-            scopes: ['read:facilities']
-          },
-          request_schema: {
-            type: 'object',
-            properties: {
-              page: { type: 'integer', minimum: 1, default: 1 },
-              limit: { type: 'integer', minimum: 1, maximum: 50, default: 10 },
-              facility_type: { type: 'string', enum: ['hospital', 'clinic', 'pharmacy', 'laboratory'] },
-              is_active: { type: 'boolean', default: true }
-            }
-          },
-          response_schema: {
-            type: 'object',
-            properties: {
-              success: { type: 'boolean' },
-              data: {
-                type: 'array',
-                items: {
-                  type: 'object',
-                  properties: {
-                    id: { type: 'string', format: 'uuid' },
-                    name: { type: 'string' },
-                    facility_type: { type: 'string' },
-                    address: { type: 'string' },
-                    phone: { type: 'string' },
-                    email: { type: 'string', format: 'email' },
-                    npi_number: { type: 'string' },
-                    is_active: { type: 'boolean' }
-                  }
-                }
-              }
-            }
-          },
-          example_request: null,
-          example_response: {
-            success: true,
-            data: [
-              {
-                id: '789e0123-e89b-12d3-a456-426614174222',
-                name: 'General Hospital',
-                facility_type: 'hospital',
-                address: '123 Healthcare Ave, Medical City, MC 12345',
-                phone: '+1-555-0100',
-                email: 'info@generalhospital.com',
-                npi_number: '1234567890',
-                is_active: true
-              }
-            ]
-          }
-        }
-      ];
+      // Step 2: Fetch actual external API endpoints from the external_api_endpoints table
+      console.log('📋 Step 2: Fetching external API endpoints...');
+      const { data: endpoints, error: endpointsError } = await supabase
+        .from('external_api_endpoints')
+        .select('*')
+        .eq('external_api_id', apiId);
 
-      // Generate comprehensive RLS policies
-      const comprehensiveRlsPolicies = [
-        {
-          id: 'profiles_select_policy',
-          policy_name: 'profiles_select_policy',
-          table_name: 'profiles',
-          operation: 'SELECT',
-          condition: 'auth.uid() = id OR has_role(auth.uid(), \'admin\') OR has_role(auth.uid(), \'superAdmin\')',
-          description: 'Users can view their own profile, or admins can view all profiles'
+      if (endpointsError) {
+        console.warn('⚠️ Error fetching external API endpoints:', endpointsError);
+      }
+
+      // Transform the endpoints data to match our interface
+      const transformedEndpoints = (endpoints || []).map(endpoint => ({
+        id: endpoint.id,
+        name: endpoint.summary || endpoint.external_path,
+        method: endpoint.method,
+        url: endpoint.external_path,
+        description: endpoint.description || `${endpoint.method} ${endpoint.external_path}`,
+        is_public: endpoint.is_public || false,
+        authentication: endpoint.requires_authentication ? {
+          type: 'bearer',
+          required: true,
+          description: 'Bearer token authentication required',
+          token_format: 'JWT'
+        } : {
+          type: 'none',
+          required: false,
+          description: 'No authentication required'
         },
+        request_schema: endpoint.request_schema || generateDefaultRequestSchema(endpoint.method),
+        response_schema: endpoint.response_schema || generateDefaultResponseSchema(),
+        example_request: endpoint.example_request || generateExampleRequest(endpoint.method, endpoint.external_path),
+        example_response: endpoint.example_response || generateExampleResponse(),
+        rate_limit_override: endpoint.rate_limit_override
+      }));
+
+      // Step 3: Generate comprehensive realistic RLS policies for external API context
+      const externalRlsPolicies = [
         {
-          id: 'profiles_update_policy',
-          policy_name: 'profiles_update_policy',
-          table_name: 'profiles',
-          operation: 'UPDATE',
-          condition: 'auth.uid() = id OR has_role(auth.uid(), \'admin\')',
-          description: 'Users can update their own profile, or admins can update any profile'
-        },
-        {
-          id: 'facilities_select_policy',
-          policy_name: 'facilities_select_policy',
-          table_name: 'facilities',
-          operation: 'SELECT',
-          condition: 'auth.uid() IN (SELECT user_id FROM user_facility_access WHERE facility_id = id AND is_active = true)',
-          description: 'Users can only view facilities they have active access to'
-        },
-        {
-          id: 'facilities_manage_policy',
-          policy_name: 'facilities_manage_policy',
-          table_name: 'facilities',
+          id: 'external_api_access_policy',
+          policy_name: 'external_api_access_policy',
+          table_name: 'api_access_logs',
           operation: 'INSERT',
-          condition: 'has_role(auth.uid(), \'facilityAdmin\') OR has_role(auth.uid(), \'superAdmin\')',
-          description: 'Only facility administrators or super admins can create new facilities'
+          condition: 'api_key IS NOT NULL AND rate_limit_check(api_key) = true',
+          description: 'External API calls must have valid API keys and pass rate limiting checks'
         },
         {
-          id: 'audit_logs_select_policy',
-          policy_name: 'audit_logs_select_policy',
-          table_name: 'audit_logs',
+          id: 'external_api_usage_tracking',
+          policy_name: 'external_api_usage_tracking',
+          table_name: 'api_usage_analytics',
           operation: 'SELECT',
-          condition: 'has_role(auth.uid(), \'auditor\') OR has_role(auth.uid(), \'admin\') OR has_role(auth.uid(), \'superAdmin\')',
-          description: 'Only auditors, admins, and super admins can view audit logs for compliance'
+          condition: 'user_owns_api_key(auth.uid(), api_key_id)',
+          description: 'Users can only view usage analytics for their own API keys'
+        },
+        {
+          id: 'external_api_rate_limiting',
+          policy_name: 'external_api_rate_limiting',
+          table_name: 'api_rate_limits',
+          operation: 'SELECT',
+          condition: 'api_key_belongs_to_user(auth.uid(), api_key)',
+          description: 'Rate limit information is only accessible to API key owners'
         }
       ];
 
-      // Generate data mappings
-      const comprehensiveDataMappings = [
+      // Step 4: Generate data mappings for external API integration
+      const externalDataMappings = [
         {
-          id: 'external_user_mapping',
-          source_field: 'external_user_id',
-          target_field: 'user_id',
-          target_table: 'profiles',
-          transformation: 'uuid_conversion_with_validation',
-          validation: 'required|uuid|exists:auth.users,id'
+          id: 'external_request_mapping',
+          source_field: 'external_user_reference',
+          target_field: 'internal_user_id',
+          target_table: 'user_mappings',
+          transformation: 'external_id_to_internal_uuid',
+          validation: 'required|string|max:255'
         },
         {
-          id: 'external_patient_mapping',
-          source_field: 'external_patient_mrn',
-          target_field: 'medical_record_number',
-          target_table: 'patients',
-          transformation: 'mrn_format_standardization',
-          validation: 'required|string|max:50|unique:patients,medical_record_number'
-        },
-        {
-          id: 'external_facility_mapping',
-          source_field: 'external_facility_code',
-          target_field: 'facility_id',
-          target_table: 'facilities',
-          transformation: 'facility_code_to_uuid',
-          validation: 'required|uuid|exists:facilities,id'
+          id: 'external_response_mapping',
+          source_field: 'internal_data_format',
+          target_field: 'external_api_response',
+          target_table: 'response_transformations',
+          transformation: 'internal_to_external_format',
+          validation: 'valid_json_structure'
         }
       ];
 
-      // Get comprehensive database schema
-      const comprehensiveDatabaseSchema = await getComprehensiveDatabaseSchema();
+      // Step 5: Generate external API database schema (what external consumers would see)
+      const externalDatabaseSchema = {
+        tables: [
+          {
+            name: 'api_responses',
+            columns: [
+              { name: 'id', type: 'uuid', nullable: false, description: 'Unique response identifier', default: 'gen_random_uuid()' },
+              { name: 'timestamp', type: 'timestamp', nullable: false, description: 'Response generation time', default: 'now()' },
+              { name: 'status', type: 'string', nullable: false, description: 'Response status (success, error)', default: null },
+              { name: 'data', type: 'jsonb', nullable: true, description: 'Response payload data', default: null }
+            ],
+            foreign_keys: [],
+            indexes: [
+              { name: 'api_responses_timestamp_idx', columns: ['timestamp'], unique: false }
+            ]
+          },
+          {
+            name: 'api_errors',
+            columns: [
+              { name: 'id', type: 'uuid', nullable: false, description: 'Unique error identifier', default: 'gen_random_uuid()' },
+              { name: 'error_code', type: 'string', nullable: false, description: 'API error code', default: null },
+              { name: 'error_message', type: 'string', nullable: false, description: 'Human-readable error message', default: null },
+              { name: 'details', type: 'jsonb', nullable: true, description: 'Additional error context', default: null }
+            ],
+            foreign_keys: [],
+            indexes: []
+          }
+        ]
+      };
 
       // Build complete security configuration
       const completeSecurityConfig = {
         encryption_methods: [
           'TLS 1.3 for data in transit',
-          'AES-256 encryption for data at rest',
-          'Database-level encryption with Supabase',
-          'Field-level encryption for PII/PHI data',
-          'JWT token encryption for authentication'
+          'API key encryption for authentication',
+          'Request/response payload encryption',
+          'Header-based security tokens'
         ],
-        authentication_methods: externalApi.authentication_methods || ['bearer_token', 'api_key', 'oauth2'],
+        authentication_methods: externalApi.authentication_methods || ['api_key', 'bearer_token'],
         authorization_policies: [
-          'Row-Level Security (RLS) policies for data isolation',
-          'Role-based access control (RBAC) with hierarchical permissions',
-          'Facility-level data access control',
-          'Multi-factor authentication (MFA) enforcement',
-          'Session management with automatic timeout',
-          'API rate limiting and throttling'
+          'API key-based access control',
+          'Rate limiting per API key',
+          'IP-based access restrictions',
+          'Scope-based permission system'
         ],
         data_protection: [
-          'HIPAA compliance for healthcare data handling',
-          'Data anonymization for analytics and reporting',
-          'Comprehensive audit trail for all data access',
-          'Automated data retention and purging policies',
-          'PII/PHI data masking in application logs',
-          'Secure data backup and disaster recovery'
+          'Request/response data sanitization',
+          'PII data masking in logs',
+          'Secure API key storage and rotation',
+          'Audit trail for all API access'
         ],
         access_control: {
-          rls_enabled: true,
-          role_based_access: true,
-          facility_level_access: true,
+          rls_enabled: false, // External APIs don't use internal RLS
+          role_based_access: true, // But they have their own access control
+          facility_level_access: false, // External APIs are not facility-specific
           audit_logging: true
         }
       };
 
-      // Enhanced architecture information
+      // Enhanced architecture information for external API
       const completeArchitecture = {
         design_principles: [
-          'Healthcare-first API design with HIPAA compliance',
-          'Microservices architecture for modularity',
-          'RESTful API standards with OpenAPI specification',
-          'Event-driven architecture for real-time updates',
-          'Domain-driven design (DDD) for complex healthcare workflows',
-          'API-first development approach'
+          'RESTful API design with clear resource endpoints',
+          'Stateless architecture for scalability',
+          'Consistent error handling and status codes',
+          'Comprehensive API documentation and examples',
+          'Rate limiting and throttling for fair usage'
         ],
         patterns: [
-          'Repository pattern for data access abstraction',
-          'Authentication & authorization middleware pipeline',
-          'Request/response validation and transformation',
-          'Comprehensive audit logging interceptors',
-          'Rate limiting and throttling middleware',
-          'Circuit breaker patterns for external service calls'
+          'Request/response transformation middleware',
+          'API key authentication and validation',
+          'Comprehensive logging and monitoring',
+          'Circuit breaker patterns for resilience',
+          'Caching strategies for performance optimization'
         ],
         scalability: [
-          'Horizontal scaling with Supabase cloud infrastructure',
-          'Database connection pooling and optimization',
-          'Redis caching for frequently accessed data',
-          'Load balancing with automatic failover',
-          'Auto-scaling based on traffic patterns',
-          'CDN integration for static content delivery'
+          'Horizontal scaling with load balancers',
+          'Database connection pooling',
+          'Response caching for frequently accessed data',
+          'Auto-scaling based on API usage patterns'
         ],
         reliability: [
-          '99.9% uptime SLA with healthcare-grade availability',
-          'Real-time health monitoring and alerting',
-          'Automated disaster recovery procedures',
-          'Incremental backups every 15 minutes',
-          'Multi-region deployment with data replication',
-          'Comprehensive error handling and recovery mechanisms'
+          '99.9% uptime SLA with monitoring',
+          'Automated health checks and alerts',
+          'Graceful error handling and recovery',
+          'Backup and disaster recovery procedures'
         ],
         technology_stack: [
-          'React + TypeScript for type-safe frontend development',
-          'Supabase PostgreSQL for robust data persistence',
-          'Supabase Edge Functions (Deno) for serverless computing',
-          'Row-Level Security (RLS) for data protection',
-          'Real-time subscriptions for live updates',
-          'Tailwind CSS for responsive UI design'
+          'RESTful API with JSON responses',
+          'API gateway for routing and security',
+          'Database abstraction layer',
+          'Monitoring and analytics dashboard'
         ],
         deployment: [
-          'Supabase cloud hosting with global CDN',
-          'CI/CD pipeline with GitHub Actions',
-          'Environment-based deployments (dev/staging/prod)',
-          'Automated database migration management',
-          'Edge function deployments with rollback capabilities',
-          'Comprehensive monitoring and logging infrastructure'
+          'Cloud-hosted API infrastructure',
+          'CI/CD pipeline for updates',
+          'Environment-based deployments',
+          'Automated testing and validation'
         ]
       };
 
@@ -568,26 +305,26 @@ export const usePublishedApiDetails = () => {
       const defaultRequests = 1000;
       const requestsPerHour = rateLimitsData?.requests || defaultRequests;
 
-      console.log('📊 Final comprehensive API details:', {
+      console.log('📊 Final external API details:', {
         api_id: externalApi.id,
         api_name: externalApi.external_name,
-        endpoints_count: comprehensiveEndpoints.length,
-        rls_policies_count: comprehensiveRlsPolicies.length,
-        data_mappings_count: comprehensiveDataMappings.length,
-        database_tables_count: comprehensiveDatabaseSchema.tables.length
+        endpoints_count: transformedEndpoints.length,
+        rls_policies_count: externalRlsPolicies.length,
+        data_mappings_count: externalDataMappings.length,
+        database_tables_count: externalDatabaseSchema.tables.length
       });
 
       return {
         id: externalApi.id,
         name: externalApi.external_name,
-        description: externalApi.external_description || 'Comprehensive healthcare administration platform API with HIPAA-compliant patient management, user administration, facility operations, and real-time data synchronization.',
-        base_url: externalApi.base_url || `${window.location.origin}/api/v1`,
+        description: externalApi.external_description || 'External API integration for healthcare data exchange and interoperability.',
+        base_url: externalApi.base_url || `${window.location.origin}/external-api/v1`,
         version: externalApi.version,
-        category: externalApi.category || 'healthcare',
-        endpoints: comprehensiveEndpoints,
-        rls_policies: comprehensiveRlsPolicies,
-        data_mappings: comprehensiveDataMappings,
-        database_schema: comprehensiveDatabaseSchema,
+        category: externalApi.category || 'external-integration',
+        endpoints: transformedEndpoints,
+        rls_policies: externalRlsPolicies,
+        data_mappings: externalDataMappings,
+        database_schema: externalDatabaseSchema,
         security_config: completeSecurityConfig,
         rate_limits: {
           requests_per_hour: requestsPerHour,
@@ -606,121 +343,68 @@ export const usePublishedApiDetails = () => {
   return { getApiDetails };
 };
 
-// Get real database schema information with comprehensive table details
-async function getComprehensiveDatabaseSchema() {
-  console.log('📋 Fetching comprehensive database schema...');
-  
-  const healthcareTables = [
-    'profiles', 'facilities', 'external_api_registry', 'modules', 
-    'permissions', 'user_roles', 'roles', 'audit_logs', 'api_keys',
-    'user_facility_access', 'role_permissions', 'user_permissions'
-  ];
-  
-  const tables = [];
-  
-  for (const tableName of healthcareTables) {
-    try {
-      console.log(`🔍 Fetching schema for table: ${tableName}`);
-      const { data: response, error } = await supabase.functions.invoke('get-table-info', {
-        body: { tableName }
-      });
-      
-      if (response && response.columns && Array.isArray(response.columns)) {
-        tables.push({
-          name: tableName,
-          columns: response.columns.map((col: any) => ({
-            name: col.column_name || col.name,
-            type: col.data_type || col.type,
-            nullable: col.is_nullable === 'YES',
-            description: getColumnDescription(tableName, col.column_name || col.name),
-            default: col.column_default || col.default
-          })),
-          foreign_keys: getForeignKeys(tableName),
-          indexes: getIndexes(tableName)
-        });
+// Helper functions to generate default schemas and examples
+function generateDefaultRequestSchema(method: string) {
+  if (method === 'GET') {
+    return {
+      type: 'object',
+      properties: {
+        page: { type: 'integer', minimum: 1, default: 1, description: 'Page number for pagination' },
+        limit: { type: 'integer', minimum: 1, maximum: 100, default: 20, description: 'Number of records per page' },
+        filters: { type: 'object', description: 'Optional filters for the request' }
       }
-    } catch (tableError) {
-      console.log(`❌ Error fetching table ${tableName}:`, tableError);
-    }
+    };
   }
-
-  return { tables };
-}
-
-// Enhanced column descriptions for better API documentation
-function getColumnDescription(tableName: string, columnName: string): string {
-  const descriptions: Record<string, Record<string, string>> = {
-    profiles: {
-      id: 'Unique user identifier linked to auth.users',
-      first_name: 'User\'s first name for display purposes',
-      last_name: 'User\'s last name for display purposes',
-      email: 'User\'s primary email address for communication',
-      facility_id: 'Primary facility association for the user',
-      phone: 'Contact phone number with international format support',
-      created_at: 'Account creation timestamp',
-      updated_at: 'Last profile modification timestamp'
-    },
-    facilities: {
-      id: 'Unique facility identifier',
-      name: 'Official facility name for display and reporting',
-      facility_type: 'Type of healthcare facility (hospital, clinic, etc.)',
-      address: 'Physical address of the healthcare facility',
-      phone: 'Primary contact phone number',
-      email: 'Primary contact email address',
-      npi_number: 'National Provider Identifier for healthcare compliance',
-      license_number: 'State/federal license number for legal operations',
-      is_active: 'Facility operational status indicator'
-    },
-    external_api_registry: {
-      id: 'Unique external API registration identifier',
-      external_name: 'Public-facing name of the API for developers',
-      external_description: 'Detailed description of API capabilities and use cases',
-      version: 'API version following semantic versioning (semver)',
-      status: 'API lifecycle status (draft, published, deprecated)',
-      base_url: 'Base URL for all API endpoints',
-      created_at: 'API registration timestamp',
-      updated_at: 'Last API configuration update timestamp'
+  
+  return {
+    type: 'object',
+    required: ['data'],
+    properties: {
+      data: { type: 'object', description: 'Request payload data' },
+      metadata: { type: 'object', description: 'Optional request metadata' }
     }
   };
-
-  return descriptions[tableName]?.[columnName] || `${tableName} field: ${columnName}`;
 }
 
-// Foreign key relationships for database schema documentation
-function getForeignKeys(tableName: string): Array<{column: string, references_table: string, references_column: string}> {
-  const foreignKeys: Record<string, Array<{column: string, references_table: string, references_column: string}>> = {
-    profiles: [
-      { column: 'facility_id', references_table: 'facilities', references_column: 'id' }
-    ],
-    user_roles: [
-      { column: 'user_id', references_table: 'profiles', references_column: 'id' },
-      { column: 'role_id', references_table: 'roles', references_column: 'id' }
-    ],
-    user_facility_access: [
-      { column: 'user_id', references_table: 'profiles', references_column: 'id' },
-      { column: 'facility_id', references_table: 'facilities', references_column: 'id' }
-    ]
+function generateDefaultResponseSchema() {
+  return {
+    type: 'object',
+    properties: {
+      success: { type: 'boolean', description: 'Request success status' },
+      data: { type: 'object', description: 'Response data payload' },
+      message: { type: 'string', description: 'Response message' },
+      timestamp: { type: 'string', format: 'date-time', description: 'Response timestamp' }
+    }
   };
-
-  return foreignKeys[tableName] || [];
 }
 
-// Index information for performance optimization documentation
-function getIndexes(tableName: string): Array<{name: string, columns: string[], unique: boolean}> {
-  const indexes: Record<string, Array<{name: string, columns: string[], unique: boolean}>> = {
-    profiles: [
-      { name: 'profiles_email_idx', columns: ['email'], unique: true },
-      { name: 'profiles_facility_id_idx', columns: ['facility_id'], unique: false }
-    ],
-    facilities: [
-      { name: 'facilities_name_idx', columns: ['name'], unique: false },
-      { name: 'facilities_npi_idx', columns: ['npi_number'], unique: true }
-    ],
-    external_api_registry: [
-      { name: 'external_api_status_idx', columns: ['status'], unique: false },
-      { name: 'external_api_name_idx', columns: ['external_name'], unique: false }
-    ]
+function generateExampleRequest(method: string, path: string) {
+  if (method === 'GET') {
+    return null; // GET requests typically don't have request bodies
+  }
+  
+  return {
+    data: {
+      example_field: 'example_value',
+      numeric_field: 123,
+      boolean_field: true
+    },
+    metadata: {
+      request_id: 'req_123456789',
+      client_version: '1.0.0'
+    }
   };
+}
 
-  return indexes[tableName] || [];
+function generateExampleResponse() {
+  return {
+    success: true,
+    data: {
+      id: 'example_id_123',
+      status: 'processed',
+      created_at: new Date().toISOString()
+    },
+    message: 'Request processed successfully',
+    timestamp: new Date().toISOString()
+  };
 }
