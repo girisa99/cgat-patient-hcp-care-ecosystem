@@ -22,6 +22,7 @@ import {
   Eye
 } from 'lucide-react';
 import { useApiIntegrations } from '@/hooks/useApiIntegrations';
+import { apiIntegrationManager } from '@/utils/api/ApiIntegrationManager';
 import { CreateIntegrationDialog } from './CreateIntegrationDialog';
 import { IntegrationDetailView } from './IntegrationDetailView';
 

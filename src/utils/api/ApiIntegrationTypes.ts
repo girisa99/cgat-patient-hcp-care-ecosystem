@@ -86,3 +86,62 @@ export interface WebhookConfig {
   secret: string;
   retryAttempts: number;
 }
+
+export interface PostmanCollection {
+  info: {
+    name: string;
+    description: string;
+    version: string;
+    schema: string;
+  };
+  item: PostmanItem[];
+  variable?: Array<{
+    key: string;
+    value: string;
+    type: string;
+  }>;
+  auth?: {
+    type: string;
+    bearer?: Array<{
+      key: string;
+      value: string;
+      type: string;
+    }>;
+    apikey?: Array<{
+      key: string;
+      value: string;
+      type: string;
+    }>;
+  };
+}
+
+export interface PostmanItem {
+  name: string;
+  request: {
+    method: string;
+    header: Array<{
+      key: string;
+      value: string;
+      type: string;
+    }>;
+    url: {
+      raw: string;
+      host: string[];
+      path: string[];
+      query?: Array<{
+        key: string;
+        value: string;
+      }>;
+    };
+    body?: {
+      mode: string;
+      raw: string;
+      options?: {
+        raw: {
+          language: string;
+        };
+      };
+    };
+  };
+  response: any[];
+}

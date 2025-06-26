@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useApiIntegrations } from '@/hooks/useApiIntegrations';
-import { ApiEndpoint } from '@/utils/api/ApiIntegrationManager';
+import { ApiEndpoint } from '@/utils/api/ApiIntegrationTypes';
 
 interface CreateIntegrationDialogProps {
   open: boolean;
@@ -23,21 +23,31 @@ export const CreateIntegrationDialog: React.FC<CreateIntegrationDialogProps> = (
     name: '',
     description: '',
     baseUrl: '',
-    version: '1.0.0'
+    version: '1.0.0',
+    category: 'integration' as 'healthcare' | 'auth' | 'data' | 'integration' | 'utility',
+    status: 'active' as 'active' | 'inactive' | 'deprecated'
   });
   const [endpoints, setEndpoints] = useState<Partial<ApiEndpoint>[]>([
     {
       name: '',
       method: 'GET',
       url: '',
-      headers: {}
+      headers: {},
+      isPublic: false
     }
   ]);
 
   const handleSubmit = () => {
     const integration = {
       ...formData,
-      endpoints: endpoints as ApiEndpoint[],
+      type: 'external' as const,
+      endpoints: endpoints.map(endpoint => ({
+        ...endpoint,
+        id: `endpoint_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        description: endpoint.description || endpoint.name || '',
+        headers: endpoint.headers || {},
+        isPublic: endpoint.isPublic || false
+      })) as ApiEndpoint[],
       schemas: {},
       mappings: [],
       rlsPolicies: []
@@ -51,13 +61,16 @@ export const CreateIntegrationDialog: React.FC<CreateIntegrationDialogProps> = (
       name: '',
       description: '',
       baseUrl: '',
-      version: '1.0.0'
+      version: '1.0.0',
+      category: 'integration',
+      status: 'active'
     });
     setEndpoints([{
       name: '',
       method: 'GET',
       url: '',
-      headers: {}
+      headers: {},
+      isPublic: false
     }]);
   };
 
@@ -66,7 +79,8 @@ export const CreateIntegrationDialog: React.FC<CreateIntegrationDialogProps> = (
       name: '',
       method: 'GET',
       url: '',
-      headers: {}
+      headers: {},
+      isPublic: false
     }]);
   };
 
@@ -102,6 +116,43 @@ export const CreateIntegrationDialog: React.FC<CreateIntegrationDialogProps> = (
                 onChange={(e) => setFormData({...formData, version: e.target.value})}
                 placeholder="1.0.0"
               />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="category">Category</Label>
+              <Select
+                value={formData.category}
+                onValueChange={(value) => setFormData({...formData, category: value as any})}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="healthcare">Healthcare</SelectItem>
+                  <SelectItem value="auth">Authentication</SelectItem>
+                  <SelectItem value="data">Data</SelectItem>
+                  <SelectItem value="integration">Integration</SelectItem>
+                  <SelectItem value="utility">Utility</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="status">Status</Label>
+              <Select
+                value={formData.status}
+                onValueChange={(value) => setFormData({...formData, status: value as any})}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="deprecated">Deprecated</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
