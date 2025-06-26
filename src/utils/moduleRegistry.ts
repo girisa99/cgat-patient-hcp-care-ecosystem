@@ -1,11 +1,12 @@
 /**
- * Enhanced Module Registry System with Component/Service Tracking
+ * Enhanced Module Registry System with Real Component Detection
  * 
  * This system maintains a registry of all modules and their configurations,
  * enabling real-time updates, validation, automatic registration, and RBAC tracking.
  */
 
 import { ModuleConfig } from './moduleValidation';
+import { scanForRealComponents, scanForRealHooks, scanForRealServices } from './schema/componentScanner';
 
 export interface ComponentServiceInfo {
   name: string;
@@ -52,14 +53,27 @@ class ModuleRegistry {
   };
 
   /**
-   * Register a new module or update existing one
+   * Register a new module or update existing one with real component detection
    */
   register(module: RegisteredModule) {
-    console.log(`📝 Registering module: ${module.moduleName}`);
+    console.log(`📝 Registering module with real components: ${module.moduleName}`);
     
     const existing = this.modules.get(module.moduleName);
     if (existing) {
       console.log(`🔄 Updating existing module: ${module.moduleName}`);
+    }
+
+    // Scan for real components if not provided
+    if (!module.components || module.components.length === 0) {
+      module.components = scanForRealComponents(module.moduleName);
+    }
+    
+    if (!module.hooks || module.hooks.length === 0) {
+      module.hooks = scanForRealHooks(module.moduleName);
+    }
+    
+    if (!module.services || module.services.length === 0) {
+      module.services = scanForRealServices(module.moduleName);
     }
 
     const updatedModule = {
@@ -72,6 +86,8 @@ class ModuleRegistry {
     // Update component index
     this.updateComponentIndex(module.moduleName, updatedModule);
 
+    console.log(`✅ Registered ${module.moduleName} with ${updatedModule.components?.length || 0} components, ${updatedModule.hooks?.length || 0} hooks, ${updatedModule.services?.length || 0} services`);
+    
     this.notifyListeners();
   }
 
@@ -129,14 +145,27 @@ class ModuleRegistry {
    * Get module components for RBAC display
    */
   getModuleComponentsForRBAC(moduleName: string): ComponentServiceInfo[] {
+    console.log(`🔍 Getting real components for module: ${moduleName}`);
+    
     const module = this.modules.get(moduleName);
-    if (!module) return [];
+    if (!module) {
+      console.log(`Module ${moduleName} not found, scanning for real components...`);
+      // Try to scan for real components even if module not registered
+      const realComponents = scanForRealComponents(moduleName);
+      const realHooks = scanForRealHooks(moduleName);
+      const realServices = scanForRealServices(moduleName);
+      
+      return [...realComponents, ...realHooks, ...realServices];
+    }
 
-    return [
+    const allComponents = [
       ...(module.components || []),
       ...(module.services || []),
       ...(module.hooks || [])
     ];
+    
+    console.log(`📊 Found ${allComponents.length} real components for ${moduleName}`);
+    return allComponents;
   }
 
   /**
@@ -166,9 +195,14 @@ class ModuleRegistry {
    * Batch register multiple modules
    */
   registerBatch(modules: RegisteredModule[]) {
-    console.log(`📝 Batch registering ${modules.length} modules`);
+    console.log(`📝 Batch registering ${modules.length} modules with real component detection`);
     
     modules.forEach(module => {
+      // Scan for real components for each module
+      module.components = scanForRealComponents(module.moduleName);
+      module.hooks = scanForRealHooks(module.moduleName);
+      module.services = scanForRealServices(module.moduleName);
+      
       this.modules.set(module.moduleName, {
         ...module,
         lastUpdated: new Date().toISOString()
@@ -322,14 +356,19 @@ class ModuleRegistry {
    * Import registry configuration
    */
   import(data: { modules: RegisteredModule[]; config?: AutoRegistrationConfig }) {
-    console.log(`📥 Importing ${data.modules.length} modules with components/services`);
+    console.log(`📥 Importing ${data.modules.length} modules with real component detection`);
     
     // Clear existing modules and component index
     this.modules.clear();
     this.componentIndex.clear();
     
-    // Import modules
+    // Import modules with real component scanning
     data.modules.forEach(module => {
+      // Re-scan for real components during import
+      module.components = scanForRealComponents(module.moduleName);
+      module.hooks = scanForRealHooks(module.moduleName);
+      module.services = scanForRealServices(module.moduleName);
+      
       this.modules.set(module.moduleName, module);
       this.updateComponentIndex(module.moduleName, module);
     });
@@ -342,14 +381,6 @@ class ModuleRegistry {
     this.notifyListeners();
   }
 
-  private validateModule(module: RegisteredModule): boolean {
-    // Enhanced validation logic
-    if (!module.moduleName || !module.tableName) return false;
-    if (!module.requiredFields || !Array.isArray(module.requiredFields)) return false;
-    if (!module.version || !module.lastUpdated) return false;
-    return true;
-  }
-
   private notifyListeners() {
     const modules = this.getAll();
     this.listeners.forEach(listener => listener(modules));
@@ -359,7 +390,9 @@ class ModuleRegistry {
 // Global module registry instance
 export const moduleRegistry = new ModuleRegistry();
 
-// Pre-register existing modules with enhanced metadata and components including REAL existing components
+// Pre-register existing modules with REAL component detection
+console.log('🚀 Initializing module registry with real component detection...');
+
 moduleRegistry.register({
   moduleName: 'Users',
   tableName: 'profiles',
@@ -370,59 +403,8 @@ moduleRegistry.register({
   dependencies: ['auth'],
   status: 'active',
   isAutoGenerated: false,
-  description: 'User profile management system',
-  components: [
-    {
-      name: 'UsersList',
-      type: 'component',
-      filePath: 'src/components/users/UsersList.tsx',
-      permissions: ['users_read', 'users_list'],
-      isProtected: true,
-      lastModified: new Date().toISOString()
-    },
-    {
-      name: 'CreateUserDialog',
-      type: 'component',
-      filePath: 'src/components/users/CreateUserDialog.tsx',
-      permissions: ['users_create', 'users_write'],
-      isProtected: true,
-      lastModified: new Date().toISOString()
-    },
-    {
-      name: 'EditUserDialog',
-      type: 'component',
-      filePath: 'src/components/users/EditUserDialog.tsx', 
-      permissions: ['users_update', 'users_write'],
-      isProtected: true,
-      lastModified: new Date().toISOString()
-    },
-    {
-      name: 'AssignRoleDialog',
-      type: 'component',
-      filePath: 'src/components/users/AssignRoleDialog.tsx',
-      permissions: ['users_assign_roles', 'roles_write'],
-      isProtected: true,
-      lastModified: new Date().toISOString()
-    }
-  ],
-  hooks: [
-    {
-      name: 'useUsers',
-      type: 'hook',
-      filePath: 'src/hooks/useUsers.tsx',
-      permissions: ['users_read'],
-      isProtected: true,
-      lastModified: new Date().toISOString()
-    },
-    {
-      name: 'useUserMutations',
-      type: 'hook',
-      filePath: 'src/hooks/mutations/useUserMutations.tsx',
-      permissions: ['users_write'],
-      isProtected: true,
-      lastModified: new Date().toISOString()
-    }
-  ]
+  description: 'User profile management system'
+  // components, hooks, services will be auto-detected by register method
 });
 
 moduleRegistry.register({
@@ -435,43 +417,7 @@ moduleRegistry.register({
   dependencies: [],
   status: 'active',
   isAutoGenerated: false,
-  description: 'Healthcare facility management',
-  components: [
-    {
-      name: 'FacilitiesList',
-      type: 'component',
-      filePath: 'src/components/facilities/FacilitiesList.tsx',
-      permissions: ['facilities_read', 'facilities_list'],
-      isProtected: true,
-      lastModified: new Date().toISOString()
-    },
-    {
-      name: 'CreateFacilityDialog',
-      type: 'component',
-      filePath: 'src/components/facilities/CreateFacilityDialog.tsx',
-      permissions: ['facilities_create', 'facilities_write'],
-      isProtected: true,
-      lastModified: new Date().toISOString()
-    },
-    {
-      name: 'EditFacilityDialog',
-      type: 'component',
-      filePath: 'src/components/facilities/EditFacilityDialog.tsx',
-      permissions: ['facilities_update', 'facilities_write'],
-      isProtected: true,
-      lastModified: new Date().toISOString()
-    }
-  ],
-  hooks: [
-    {
-      name: 'useFacilities',
-      type: 'hook',
-      filePath: 'src/hooks/useFacilities.tsx',
-      permissions: ['facilities_read'],
-      isProtected: true,
-      lastModified: new Date().toISOString()
-    }
-  ]
+  description: 'Healthcare facility management'
 });
 
 moduleRegistry.register({
@@ -484,51 +430,7 @@ moduleRegistry.register({
   dependencies: [],
   status: 'active',
   isAutoGenerated: false,
-  description: 'Module management and RBAC system',
-  components: [
-    {
-      name: 'ModuleList',
-      type: 'component',
-      filePath: 'src/components/modules/ModuleList.tsx',
-      permissions: ['modules_read', 'modules_list'],
-      isProtected: true,
-      lastModified: new Date().toISOString()
-    },
-    {
-      name: 'CreateModuleDialog',
-      type: 'component',
-      filePath: 'src/components/modules/CreateModuleDialog.tsx',
-      permissions: ['modules_create', 'modules_write'],
-      isProtected: true,
-      lastModified: new Date().toISOString()
-    },
-    {
-      name: 'ModuleAssignmentDialog',
-      type: 'component',
-      filePath: 'src/components/modules/ModuleAssignmentDialog.tsx',
-      permissions: ['modules_assign', 'modules_write'],
-      isProtected: true,
-      lastModified: new Date().toISOString()
-    },
-    {
-      name: 'AutoModuleManager',
-      type: 'component',
-      filePath: 'src/components/admin/AutoModuleManager/index.tsx',
-      permissions: ['modules_admin', 'modules_auto_detect'],
-      isProtected: true,
-      lastModified: new Date().toISOString()
-    }
-  ],
-  hooks: [
-    {
-      name: 'useModules',
-      type: 'hook',
-      filePath: 'src/hooks/useModules.tsx',
-      permissions: ['modules_read'],
-      isProtected: true,
-      lastModified: new Date().toISOString()
-    }
-  ]
+  description: 'Module management and RBAC system'
 });
 
 // Enhanced registration function

@@ -1,7 +1,6 @@
 
 /**
- * Module Detection Utilities
- * Focused on detecting and analyzing new modules
+ * Module Detection Utilities - Real Implementation
  */
 
 import { supabase } from '@/integrations/supabase/client';
@@ -10,52 +9,73 @@ import { SchemaAnalysis, analyzeTable, calculateConfidence } from './schemaAnaly
 import { AutoModuleConfig } from './types';
 
 /**
- * Scans the database schema and returns analysis for all tables
+ * Get all table names from the database
  */
-export const scanDatabaseSchema = async (): Promise<SchemaAnalysis[]> => {
-  console.log('🔍 Scanning database schema for new tables...');
-  
+const getAllTableNames = async (): Promise<string[]> => {
   try {
-    // Return analysis for all known tables, not just new ones
-    return await analyzeKnownTables();
+    console.log('🔍 Fetching real table names from database...');
     
+    const { data, error } = await supabase
+      .from('information_schema.tables')
+      .select('table_name')
+      .eq('table_schema', 'public')
+      .eq('table_type', 'BASE TABLE');
+
+    if (error) {
+      console.error('Error fetching table names:', error);
+      return [];
+    }
+
+    const tableNames = data?.map(row => row.table_name) || [];
+    console.log(`📊 Found ${tableNames.length} tables:`, tableNames);
+    
+    return tableNames;
   } catch (error) {
-    console.error('❌ Schema scanning failed:', error);
-    return await analyzeKnownTables();
+    console.error('Failed to fetch table names:', error);
+    return [];
   }
 };
 
 /**
- * Analyze all known tables including existing ones
+ * Scans the database schema and returns analysis for all tables
  */
-const analyzeKnownTables = async (): Promise<SchemaAnalysis[]> => {
-  // Include tables that might need component registration
-  const knownTables = [
-    'profiles', 'facilities', 'modules', 'roles', 'permissions', 
-    'user_roles', 'audit_logs', 'role_permissions', 'user_permissions',
-    'module_permissions', 'user_facility_access', 'role_module_assignments',
-    'user_module_assignments', 'role_permission_overrides', 'api_keys',
-    'developer_applications', 'external_api_registry'
-  ];
+export const scanDatabaseSchema = async (): Promise<SchemaAnalysis[]> => {
+  console.log('🔍 Scanning real database schema...');
   
-  const analyses: SchemaAnalysis[] = [];
-  
-  for (const tableName of knownTables) {
-    const analysis = await analyzeTable(tableName);
-    if (analysis) {
-      analyses.push(analysis);
+  try {
+    const tableNames = await getAllTableNames();
+    const analyses: SchemaAnalysis[] = [];
+    
+    for (const tableName of tableNames) {
+      // Skip system/auth tables
+      if (tableName.startsWith('_') || 
+          tableName.includes('auth') || 
+          tableName.includes('storage') ||
+          tableName.includes('supabase') ||
+          tableName.includes('information_schema')) {
+        continue;
+      }
+
+      const analysis = await analyzeTable(tableName);
+      if (analysis) {
+        analyses.push(analysis);
+      }
     }
+    
+    console.log(`📊 Successfully analyzed ${analyses.length} tables`);
+    return analyses;
+    
+  } catch (error) {
+    console.error('❌ Schema scanning failed:', error);
+    return [];
   }
-  
-  console.log(`📊 Analyzed ${analyses.length} tables`);
-  return analyses;
 };
 
 /**
  * Auto-detects modules that need component registration or are completely new
  */
 export const detectNewModules = async (): Promise<AutoModuleConfig[]> => {
-  console.log('🔍 Detecting modules needing component registration...');
+  console.log('🔍 Detecting real modules from database...');
   
   const analyses = await scanDatabaseSchema();
   const existingModules = moduleRegistry.getAll();
@@ -93,11 +113,11 @@ export const detectNewModules = async (): Promise<AutoModuleConfig[]> => {
       };
 
       modulesToRegister.push(autoConfig);
-      console.log(`📝 Module ${autoConfig.moduleName} needs registration (confidence: ${Math.round(confidence * 100)}%)`);
+      console.log(`📝 Real module ${autoConfig.moduleName} needs registration (confidence: ${Math.round(confidence * 100)}%)`);
     }
   }
 
-  console.log(`✅ Detected ${modulesToRegister.length} modules for registration`);
+  console.log(`✅ Detected ${modulesToRegister.length} real modules for registration`);
   return modulesToRegister;
 };
 
