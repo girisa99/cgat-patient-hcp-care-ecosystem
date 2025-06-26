@@ -30,42 +30,38 @@ export const usePatients = () => {
   } = useQuery({
     queryKey: ['patients'],
     queryFn: async () => {
-      console.log('🔍 Fetching patients with patientCaregiver role...');
+      console.log('🔍 Fetching patients with patientCaregiver role from user table...');
       
       try {
-        // Fetch only profiles that have the patientCaregiver role
-        const { data, error } = await supabase
-          .from('profiles')
-          .select(`
-            id,
-            first_name,
-            last_name,
-            email,
-            phone,
-            created_at,
-            facility_id,
-            facilities:facility_id (
-              id,
-              name,
-              facility_type
-            ),
-            user_roles!inner (
-              roles (
-                name
-              )
-            )
-          `)
-          .eq('user_roles.roles.name', 'patientCaregiver')
-          .order('created_at', { ascending: false });
+        // Use the edge function to fetch all users and filter for patientCaregiver role
+        const { data: response, error } = await supabase.functions.invoke('manage-user-profiles', {
+          body: { action: 'list' }
+        });
 
         if (error) {
-          console.error('❌ Error fetching patients:', error);
+          console.error('❌ Error calling manage-user-profiles function:', error);
           throw error;
         }
 
-        console.log('✅ Patients fetched successfully:', data?.length || 0);
-        console.log('🔍 Patient data:', data);
-        return data || [];
+        if (!response?.success) {
+          console.error('❌ Function returned error:', response?.error);
+          throw new Error(response?.error || 'Failed to fetch users');
+        }
+
+        const allUsers = response.data || [];
+        console.log('✅ All users fetched:', allUsers.length);
+
+        // Filter for users with patientCaregiver role
+        const patientUsers = allUsers.filter(user => {
+          const hasPatientRole = user.user_roles?.some(ur => ur.roles?.name === 'patientCaregiver');
+          console.log(`🔍 User ${user.email} has patientCaregiver role:`, hasPatientRole);
+          return hasPatientRole;
+        });
+
+        console.log('✅ Patients with patientCaregiver role:', patientUsers.length);
+        console.log('🔍 Patient data:', patientUsers);
+        
+        return patientUsers;
       } catch (err) {
         console.error('❌ Error in patient fetch:', err);
         throw err;
