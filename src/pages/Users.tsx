@@ -1,19 +1,16 @@
 
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Shield } from 'lucide-react';
 import UsersList from '@/components/users/UsersList';
-import CreateUserDialog from '@/components/users/CreateUserDialog';
-import EditUserDialog from '@/components/users/EditUserDialog';
-import AssignRoleDialog from '@/components/users/AssignRoleDialog';
-import RemoveRoleDialog from '@/components/users/RemoveRoleDialog';
-import AssignFacilityDialog from '@/components/users/AssignFacilityDialog';
 import RoleAssignmentDebugger from '@/components/users/RoleAssignmentDebugger';
 import BulkRoleAssignment from '@/components/users/BulkRoleAssignment';
 import DatabaseHealthCheck from '@/components/users/DatabaseHealthCheck';
+import { UserManagementHeader } from '@/components/admin/UserManagement/UserManagementHeader';
+import { PermissionSystemCard } from '@/components/admin/UserManagement/PermissionSystemCard';
+import { RoleStatisticsCard } from '@/components/admin/UserManagement/RoleStatisticsCard';
+import { UserManagementDialogs } from '@/components/admin/UserManagement/UserManagementDialogs';
 import { useConsistentUsers } from '@/hooks/useConsistentUsers';
-import { AlertTriangle, Bug, Shield, Key } from 'lucide-react';
 
 const Users = () => {
   const { users, isLoading, meta } = useConsistentUsers();
@@ -26,7 +23,6 @@ const Users = () => {
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [debugMode, setDebugMode] = useState(false);
 
-  // Memoize calculations to prevent unnecessary re-renders
   const userStats = useMemo(() => {
     if (!users) return { totalUsers: 0, usersWithRoles: 0, usersWithoutRoles: 0 };
     
@@ -68,105 +64,16 @@ const Users = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">Users Management</h2>
-        <p className="text-muted-foreground">
-          Manage user accounts, roles, permissions, and facility assignments
-        </p>
-      </div>
-
-      {/* Data Source Verification */}
-      <Card className="border-green-200 bg-green-50/50">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-green-900">
-            <Shield className="h-5 w-5" />
-            ✅ Using Unified Data Source
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-sm text-green-800">
-            <p><strong>Data Source:</strong> {meta.dataSource}</p>
-            <p><strong>Total Users:</strong> {meta.totalUsers}</p>
-            <p><strong>Patients:</strong> {meta.patientCount}</p>
-            <p><strong>Staff:</strong> {meta.staffCount}</p>
-            <p><strong>Admins:</strong> {meta.adminCount}</p>
-            <p><strong>Last Updated:</strong> {new Date(meta.lastFetch).toLocaleString()}</p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Permission System Feature Card */}
-      <Card className="border-blue-200 bg-blue-50/50">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-blue-900">
-            <Key className="h-5 w-5" />
-            Enhanced Permission System
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3 text-sm">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <h4 className="font-medium text-blue-900">New Features Available:</h4>
-                <ul className="text-blue-800 space-y-1">
-                  <li>• Individual user permission grants</li>
-                  <li>• Role-based permission inheritance</li>
-                  <li>• Permission expiration dates</li>
-                  <li>• Granular access control</li>
-                </ul>
-              </div>
-              <div className="space-y-2">
-                <h4 className="font-medium text-blue-900">How to Use:</h4>
-                <ul className="text-blue-800 space-y-1">
-                  <li>• Click the <Key className="h-3 w-3 inline mx-1" /> button next to any user</li>
-                  <li style={{ marginLeft: '0.5rem' }}>to manage their permissions</li>
-                  <li>• View effective permissions from all sources</li>
-                  <li>• Grant or revoke individual permissions</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Database Health Check */}
+      <UserManagementHeader meta={meta} />
+      <PermissionSystemCard />
       <DatabaseHealthCheck />
+      
+      <RoleStatisticsCard
+        userStats={userStats}
+        debugMode={debugMode}
+        onToggleDebug={() => setDebugMode(!debugMode)}
+      />
 
-      {/* Role Assignment Statistics */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5" />
-            Role Assignment Status
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-4 items-center mb-4">
-            <Badge variant="outline">
-              Total Users: {userStats.totalUsers}
-            </Badge>
-            <Badge variant="default">
-              With Roles: {userStats.usersWithRoles}
-            </Badge>
-            <Badge variant="destructive">
-              Without Roles: {userStats.usersWithoutRoles}
-            </Badge>
-          </div>
-          
-          <div className="flex gap-2">
-            <Button 
-              onClick={() => setDebugMode(!debugMode)}
-              variant="outline"
-              size="sm"
-            >
-              <Bug className="mr-2 h-4 w-4" />
-              {debugMode ? 'Hide' : 'Show'} Role Debug Info
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Bulk Role Assignment */}
       <BulkRoleAssignment />
       
       <Card>
@@ -187,7 +94,6 @@ const Users = () => {
         </CardContent>
       </Card>
 
-      {/* Debug Panel */}
       {debugMode && selectedUserId && (
         <RoleAssignmentDebugger
           userId={selectedUserId}
@@ -195,37 +101,20 @@ const Users = () => {
         />
       )}
 
-      {/* Dialogs */}
-      <CreateUserDialog
-        open={createUserOpen}
-        onOpenChange={setCreateUserOpen}
-      />
-
-      <EditUserDialog
-        open={editUserOpen}
-        onOpenChange={setEditUserOpen}
-        user={selectedUser}
-      />
-
-      <AssignRoleDialog
-        open={assignRoleOpen}
-        onOpenChange={setAssignRoleOpen}
-        userId={selectedUserId}
-        userName={selectedUserName}
-      />
-
-      <RemoveRoleDialog
-        open={removeRoleOpen}
-        onOpenChange={setRemoveRoleOpen}
-        userId={selectedUserId}
-        userName={selectedUserName}
-      />
-
-      <AssignFacilityDialog
-        open={assignFacilityOpen}
-        onOpenChange={setAssignFacilityOpen}
-        userId={selectedUserId}
-        userName={selectedUserName}
+      <UserManagementDialogs
+        createUserOpen={createUserOpen}
+        setCreateUserOpen={setCreateUserOpen}
+        editUserOpen={editUserOpen}
+        setEditUserOpen={setEditUserOpen}
+        assignRoleOpen={assignRoleOpen}
+        setAssignRoleOpen={setAssignRoleOpen}
+        removeRoleOpen={removeRoleOpen}
+        setRemoveRoleOpen={setRemoveRoleOpen}
+        assignFacilityOpen={assignFacilityOpen}
+        setAssignFacilityOpen={setAssignFacilityOpen}
+        selectedUserId={selectedUserId}
+        selectedUser={selectedUser}
+        selectedUserName={selectedUserName}
       />
     </div>
   );
