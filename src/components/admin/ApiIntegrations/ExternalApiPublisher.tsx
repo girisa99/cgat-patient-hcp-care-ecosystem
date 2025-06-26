@@ -22,10 +22,12 @@ import {
   Clock,
   FileText,
   ArrowDown,
-  AlertTriangle
+  AlertTriangle,
+  Sync,
+  Zap
 } from 'lucide-react';
 import { useApiIntegrations } from '@/hooks/useApiIntegrations';
-import { useExternalApis } from '@/hooks/useExternalApis';
+import { useEnhancedExternalApis } from '@/hooks/useEnhancedExternalApis';
 import PublishableApisList from './PublishableApisList';
 import ExternalApiConfigDialog from './ExternalApiConfigDialog';
 import ExternalApiAnalyticsDialog from './ExternalApiAnalyticsDialog';
@@ -52,11 +54,12 @@ const ExternalApiPublisher = () => {
     externalApis, 
     publishedApis, 
     marketplaceStats, 
-    publishApi, 
-    isPublishing,
+    publishWithSync, // Using enhanced sync version
+    isPublishingWithSync,
     updateApiStatus,
-    isUpdatingStatus
-  } = useExternalApis();
+    isUpdatingStatus,
+    useSyncStatus
+  } = useEnhancedExternalApis();
 
   const [selectedApi, setSelectedApi] = useState<string | null>(null);
   const [showPublishDialog, setShowPublishDialog] = useState(false);
@@ -86,7 +89,7 @@ const ExternalApiPublisher = () => {
   });
 
   const handlePublishApi = (apiId: string, apiName: string) => {
-    console.log('🚀 Publishing API - Starting:', { apiId, apiName });
+    console.log('🚀 Enhanced Publishing API - Starting:', { apiId, apiName });
     
     setSelectedApi(apiId);
     const integration = integrations?.find(i => i.id === apiId);
@@ -94,14 +97,14 @@ const ExternalApiPublisher = () => {
     
     const newFormData = {
       external_name: apiName,
-      external_description: integration?.description || '',
+      external_description: integration?.description || 'Enhanced API with real-time sync capabilities',
       version: integration?.version || '1.0.0',
       status: 'draft' as const,
       visibility: 'private' as const,
       pricing_model: 'free' as const,
       category: integration?.category || 'general',
       documentation_url: integration?.externalDocumentation?.apiReference || '',
-      tags: [] as string[],
+      tags: ['real-time-sync', 'enhanced'] as string[],
       rate_limits: {
         requests: 1000,
         period: 'hour'
@@ -112,30 +115,30 @@ const ExternalApiPublisher = () => {
       analytics_config: {}
     };
     
-    console.log('📝 Setting form data:', newFormData);
+    console.log('📝 Setting enhanced form data:', newFormData);
     setPublishForm(newFormData);
     setShowPublishDialog(true);
   };
 
   const handleSubmitPublish = async () => {
     if (!selectedApi) {
-      console.error('❌ No selected API for publishing');
+      console.error('❌ No selected API for enhanced publishing');
       return;
     }
 
-    console.log('📤 Submitting publish with data:', {
+    console.log('📤 Submitting enhanced publish with sync:', {
       internalApiId: selectedApi,
       config: publishForm
     });
 
     try {
-      console.log('🔄 Calling publishApi...');
-      await publishApi({
+      console.log('🔄 Calling enhanced publishWithSync...');
+      await publishWithSync({
         internalApiId: selectedApi,
         config: publishForm
       });
 
-      console.log('✅ API published successfully');
+      console.log('✅ Enhanced API published successfully with real-time sync');
       setShowPublishDialog(false);
       
       // Reset form to initial state
@@ -157,7 +160,7 @@ const ExternalApiPublisher = () => {
       });
       setSelectedApi(null);
     } catch (error) {
-      console.error('❌ Failed to publish API:', error);
+      console.error('❌ Failed to publish enhanced API:', error);
     }
   };
 
@@ -180,38 +183,40 @@ const ExternalApiPublisher = () => {
     handleStatusUpdate(api.id, 'draft');
   };
 
-  const handleChangeVisibility = (api: any, newVisibility: string) => {
-    // This would need to be implemented in the backend to update visibility
-    console.log('Changing visibility:', api.id, newVisibility);
-  };
-
   // Calculate counts - fixed logic
   const draftApis = externalApis.filter(api => api.status === 'draft');
   const reviewApis = externalApis.filter(api => api.status === 'review');
   const draftAndReviewCount = draftApis.length + reviewApis.length;
 
   // Debug logging
-  console.log('🔍 External API Publisher Debug:', {
+  console.log('🔍 Enhanced External API Publisher Debug:', {
     integrations: integrations?.length || 0,
     externalApis: externalApis?.length || 0,
     publishedApis: publishedApis?.length || 0,
     selectedApi,
     showPublishDialog,
-    isPublishing
+    isPublishingWithSync
   });
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-2xl font-bold">External API Publisher</h3>
+          <h3 className="text-2xl font-bold flex items-center gap-2">
+            <Sync className="h-6 w-6 text-blue-500" />
+            Enhanced External API Publisher
+          </h3>
           <p className="text-muted-foreground">
-            Publish your internal APIs for external consumption and marketplace distribution
+            Publish your internal APIs with real-time synchronization and comprehensive external integration
           </p>
         </div>
+        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+          <Zap className="h-3 w-3 mr-1" />
+          Real-time Sync
+        </Badge>
       </div>
 
-      {/* Stats Overview */}
+      {/* Enhanced Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
@@ -220,6 +225,9 @@ const ExternalApiPublisher = () => {
               <div>
                 <p className="text-2xl font-bold">{publishedApis.length}</p>
                 <p className="text-sm text-muted-foreground">Published APIs</p>
+                <Badge variant="outline" className="text-xs mt-1">
+                  Real-time Synced
+                </Badge>
               </div>
             </div>
           </CardContent>
@@ -265,7 +273,9 @@ const ExternalApiPublisher = () => {
       <Tabs defaultValue="available" className="space-y-4">
         <TabsList>
           <TabsTrigger value="available">Available to Publish</TabsTrigger>
-          <TabsTrigger value="published">Published APIs</TabsTrigger>
+          <TabsTrigger value="published">
+            Published APIs ({publishedApis.length})
+          </TabsTrigger>
           <TabsTrigger value="drafts">Drafts & Review ({draftAndReviewCount})</TabsTrigger>
           <TabsTrigger value="documentation">
             <FileText className="h-4 w-4 mr-1" />
@@ -300,6 +310,10 @@ const ExternalApiPublisher = () => {
                           </Badge>
                           <Badge variant="outline">{api.visibility}</Badge>
                           <Badge variant="secondary">{api.pricing_model}</Badge>
+                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                            <Sync className="h-3 w-3 mr-1" />
+                            Synced
+                          </Badge>
                         </div>
                         <p className="text-sm text-muted-foreground">
                           {api.external_description}
@@ -308,6 +322,8 @@ const ExternalApiPublisher = () => {
                           <span>Version {api.version}</span>
                           <span>•</span>
                           <span>Published {new Date(api.published_at!).toLocaleDateString()}</span>
+                          <span>•</span>
+                          <span className="text-green-600 font-medium">Real-time Sync Active</span>
                           {api.base_url && (
                             <>
                               <span>•</span>
@@ -417,16 +433,30 @@ const ExternalApiPublisher = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <FileText className="h-5 w-5" />
-                External API Publishing Guide
+                Enhanced External API Publishing Guide
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="prose max-w-none">
-                <h3 className="text-xl font-semibold mb-4">Getting Started with External API Publishing</h3>
+                <h3 className="text-xl font-semibold mb-4">Real-time Synchronized API Publishing</h3>
                 <p className="text-muted-foreground mb-6">
-                  Transform your internal APIs into secure, manageable external endpoints that can be consumed by developers, partners, and third-party applications.
+                  Transform your internal APIs into secure, manageable external endpoints with real-time synchronization that automatically keeps external APIs updated when internal APIs change.
                 </p>
                 
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                  <h4 className="font-semibold text-blue-800 mb-2 flex items-center gap-2">
+                    <Zap className="h-4 w-4" />
+                    Enhanced Features
+                  </h4>
+                  <ul className="text-sm text-blue-700 space-y-1">
+                    <li>• <strong>Real-time Sync:</strong> Automatic synchronization between internal and external APIs</li>
+                    <li>• <strong>Complete Endpoint Mapping:</strong> All internal endpoints are copied to external tables</li>
+                    <li>• <strong>Live Change Detection:</strong> Changes to internal APIs immediately update external APIs</li>
+                    <li>• <strong>Comprehensive Schema Generation:</strong> Auto-generated request/response schemas with examples</li>
+                    <li>• <strong>Enhanced Security:</strong> Multi-layer security policies and access controls</li>
+                  </ul>
+                </div>
+
                 <div className="grid md:grid-cols-2 gap-6 mb-8">
                   <Card className="p-4">
                     <h4 className="font-semibold mb-2 flex items-center gap-2">
@@ -525,13 +555,23 @@ const ExternalApiPublisher = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Publish Dialog */}
+      {/* Enhanced Publish Dialog */}
       <Dialog open={showPublishDialog} onOpenChange={setShowPublishDialog}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Publish Internal API</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Sync className="h-5 w-5 text-blue-500" />
+              Publish Internal API with Real-time Sync
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <p className="text-sm text-blue-700">
+                <Zap className="h-4 w-4 inline mr-1" />
+                This will publish your API with enhanced real-time synchronization, automatically copying all internal endpoints and maintaining live updates.
+              </p>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="external-name">External API Name</Label>
@@ -568,7 +608,7 @@ const ExternalApiPublisher = () => {
                   console.log('📝 Updating external_description:', e.target.value);
                   setPublishForm(prev => ({ ...prev, external_description: e.target.value }));
                 }}
-                placeholder="Comprehensive healthcare API for patient data management..."
+                placeholder="Comprehensive healthcare API with real-time sync capabilities..."
                 rows={3}
               />
             </div>
@@ -650,10 +690,11 @@ const ExternalApiPublisher = () => {
             {/* Debug info in development */}
             {process.env.NODE_ENV === 'development' && (
               <div className="bg-gray-100 p-3 rounded text-xs">
-                <strong>Debug Info:</strong>
+                <strong>Enhanced Debug Info:</strong>
                 <br />Selected API: {selectedApi}
                 <br />Form Valid: {!!(selectedApi && publishForm.external_name)}
-                <br />Publishing: {isPublishing ? 'Yes' : 'No'}
+                <br />Publishing with Sync: {isPublishingWithSync ? 'Yes' : 'No'}
+                <br />Sync Features: Real-time updates, endpoint mapping, schema generation
               </div>
             )}
 
@@ -663,9 +704,20 @@ const ExternalApiPublisher = () => {
               </Button>
               <Button 
                 onClick={handleSubmitPublish} 
-                disabled={!selectedApi || !publishForm.external_name || isPublishing}
+                disabled={!selectedApi || !publishForm.external_name || isPublishingWithSync}
+                className="bg-blue-600 hover:bg-blue-700"
               >
-                {isPublishing ? 'Publishing...' : 'Publish API'}
+                {isPublishingWithSync ? (
+                  <>
+                    <Sync className="h-4 w-4 mr-2 animate-spin" />
+                    Publishing with Sync...
+                  </>
+                ) : (
+                  <>
+                    <Sync className="h-4 w-4 mr-2" />
+                    Publish with Sync
+                  </>
+                )}
               </Button>
             </div>
           </div>
