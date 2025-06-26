@@ -125,7 +125,8 @@ class AdvancedSearchManager {
     console.log(`🔍 Executing advanced search for ${config.tableName}`);
     
     try {
-      let query = supabase.from(config.tableName).select('*', { count: 'exact' });
+      // Use type assertion to handle dynamic table names
+      let query = (supabase as any).from(config.tableName).select('*', { count: 'exact' });
 
       // Apply filters
       for (const filter of config.filters) {
@@ -155,7 +156,7 @@ class AdvancedSearchManager {
       const totalPages = Math.ceil(totalCount / (config.limit || 50));
 
       const result: SearchResult<T> = {
-        data: data || [],
+        data: (data || []) as T[],
         count: totalCount,
         totalPages,
         currentPage,
