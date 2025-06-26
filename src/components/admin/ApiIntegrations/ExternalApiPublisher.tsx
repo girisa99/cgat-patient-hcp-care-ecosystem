@@ -63,13 +63,17 @@ const ExternalApiPublisher = () => {
     status: 'draft' as const,
     visibility: 'private' as const,
     pricing_model: 'free' as const,
+    category: 'general',
     documentation_url: '',
     tags: [] as string[],
     rate_limits: {
       requests: 1000,
       period: 'hour'
     },
-    authentication_methods: ['api_key']
+    authentication_methods: ['api_key'],
+    supported_formats: ['json'],
+    marketplace_config: {},
+    analytics_config: {}
   });
 
   const handlePublishApi = (apiId: string, apiName: string) => {
@@ -81,7 +85,8 @@ const ExternalApiPublisher = () => {
       external_name: apiName,
       external_description: integration?.description || '',
       version: integration?.version || '1.0.0',
-      category: integration?.category || 'general'
+      category: integration?.category || 'general',
+      documentation_url: integration?.documentation_url || ''
     }));
     setShowPublishDialog(true);
   };
@@ -97,12 +102,7 @@ const ExternalApiPublisher = () => {
     try {
       await publishApi({
         internalApiId: selectedApi,
-        config: {
-          ...publishForm,
-          marketplace_config: {},
-          analytics_config: {},
-          supported_formats: ['json']
-        }
+        config: publishForm
       });
 
       setShowPublishDialog(false);
@@ -113,10 +113,14 @@ const ExternalApiPublisher = () => {
         status: 'draft',
         visibility: 'private',
         pricing_model: 'free',
+        category: 'general',
         documentation_url: '',
         tags: [],
         rate_limits: { requests: 1000, period: 'hour' },
-        authentication_methods: ['api_key']
+        authentication_methods: ['api_key'],
+        supported_formats: ['json'],
+        marketplace_config: {},
+        analytics_config: {}
       });
       setSelectedApi(null);
     } catch (error) {
