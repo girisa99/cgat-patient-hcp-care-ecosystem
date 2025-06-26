@@ -77,35 +77,59 @@ const ExternalApiPublisher = () => {
   });
 
   const handlePublishApi = (apiId: string, apiName: string) => {
-    console.log('Publishing API:', { apiId, apiName });
+    console.log('🚀 Publishing API - Starting:', { apiId, apiName });
+    
     setSelectedApi(apiId);
     const integration = integrations?.find(i => i.id === apiId);
-    setPublishForm(prev => ({
-      ...prev,
+    console.log('📋 Found integration:', integration);
+    
+    const newFormData = {
       external_name: apiName,
       external_description: integration?.description || '',
       version: integration?.version || '1.0.0',
+      status: 'draft' as const,
+      visibility: 'private' as const,
+      pricing_model: 'free' as const,
       category: integration?.category || 'general',
-      documentation_url: integration?.externalDocumentation?.apiReference || ''
-    }));
+      documentation_url: integration?.externalDocumentation?.apiReference || '',
+      tags: [] as string[],
+      rate_limits: {
+        requests: 1000,
+        period: 'hour'
+      },
+      authentication_methods: ['api_key'],
+      supported_formats: ['json'],
+      marketplace_config: {},
+      analytics_config: {}
+    };
+    
+    console.log('📝 Setting form data:', newFormData);
+    setPublishForm(newFormData);
     setShowPublishDialog(true);
   };
 
   const handleSubmitPublish = async () => {
-    if (!selectedApi) return;
+    if (!selectedApi) {
+      console.error('❌ No selected API for publishing');
+      return;
+    }
 
-    console.log('Submitting publish with data:', {
+    console.log('📤 Submitting publish with data:', {
       internalApiId: selectedApi,
       config: publishForm
     });
 
     try {
+      console.log('🔄 Calling publishApi...');
       await publishApi({
         internalApiId: selectedApi,
         config: publishForm
       });
 
+      console.log('✅ API published successfully');
       setShowPublishDialog(false);
+      
+      // Reset form to initial state
       setPublishForm({
         external_name: '',
         external_description: '',
@@ -124,11 +148,12 @@ const ExternalApiPublisher = () => {
       });
       setSelectedApi(null);
     } catch (error) {
-      console.error('Failed to publish API:', error);
+      console.error('❌ Failed to publish API:', error);
     }
   };
 
   const handleStatusUpdate = (externalApiId: string, newStatus: any) => {
+    console.log('🔄 Updating API status:', { externalApiId, newStatus });
     updateApiStatus({ externalApiId, status: newStatus });
   };
 
@@ -136,6 +161,16 @@ const ExternalApiPublisher = () => {
   const draftApis = externalApis.filter(api => api.status === 'draft');
   const reviewApis = externalApis.filter(api => api.status === 'review');
   const draftAndReviewCount = draftApis.length + reviewApis.length;
+
+  // Debug logging
+  console.log('🔍 External API Publisher Debug:', {
+    integrations: integrations?.length || 0,
+    externalApis: externalApis?.length || 0,
+    publishedApis: publishedApis?.length || 0,
+    selectedApi,
+    showPublishDialog,
+    isPublishing
+  });
 
   return (
     <div className="space-y-6">
@@ -454,7 +489,10 @@ const ExternalApiPublisher = () => {
                 <Input
                   id="external-name"
                   value={publishForm.external_name}
-                  onChange={(e) => setPublishForm(prev => ({ ...prev, external_name: e.target.value }))}
+                  onChange={(e) => {
+                    console.log('📝 Updating external_name:', e.target.value);
+                    setPublishForm(prev => ({ ...prev, external_name: e.target.value }));
+                  }}
                   placeholder="Healthcare API v1"
                 />
               </div>
@@ -463,7 +501,10 @@ const ExternalApiPublisher = () => {
                 <Input
                   id="version"
                   value={publishForm.version}
-                  onChange={(e) => setPublishForm(prev => ({ ...prev, version: e.target.value }))}
+                  onChange={(e) => {
+                    console.log('📝 Updating version:', e.target.value);
+                    setPublishForm(prev => ({ ...prev, version: e.target.value }));
+                  }}
                   placeholder="1.0.0"
                 />
               </div>
@@ -474,7 +515,10 @@ const ExternalApiPublisher = () => {
               <Textarea
                 id="description"
                 value={publishForm.external_description}
-                onChange={(e) => setPublishForm(prev => ({ ...prev, external_description: e.target.value }))}
+                onChange={(e) => {
+                  console.log('📝 Updating external_description:', e.target.value);
+                  setPublishForm(prev => ({ ...prev, external_description: e.target.value }));
+                }}
                 placeholder="Comprehensive healthcare API for patient data management..."
                 rows={3}
               />
@@ -485,7 +529,10 @@ const ExternalApiPublisher = () => {
                 <Label>Status</Label>
                 <Select 
                   value={publishForm.status} 
-                  onValueChange={(value: any) => setPublishForm(prev => ({ ...prev, status: value }))}
+                  onValueChange={(value: any) => {
+                    console.log('📝 Updating status:', value);
+                    setPublishForm(prev => ({ ...prev, status: value }));
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -501,7 +548,10 @@ const ExternalApiPublisher = () => {
                 <Label>Visibility</Label>
                 <Select 
                   value={publishForm.visibility} 
-                  onValueChange={(value: any) => setPublishForm(prev => ({ ...prev, visibility: value }))}
+                  onValueChange={(value: any) => {
+                    console.log('📝 Updating visibility:', value);
+                    setPublishForm(prev => ({ ...prev, visibility: value }));
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -517,7 +567,10 @@ const ExternalApiPublisher = () => {
                 <Label>Pricing Model</Label>
                 <Select 
                   value={publishForm.pricing_model} 
-                  onValueChange={(value: any) => setPublishForm(prev => ({ ...prev, pricing_model: value }))}
+                  onValueChange={(value: any) => {
+                    console.log('📝 Updating pricing_model:', value);
+                    setPublishForm(prev => ({ ...prev, pricing_model: value }));
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -537,10 +590,23 @@ const ExternalApiPublisher = () => {
               <Input
                 id="documentation-url"
                 value={publishForm.documentation_url}
-                onChange={(e) => setPublishForm(prev => ({ ...prev, documentation_url: e.target.value }))}
+                onChange={(e) => {
+                  console.log('📝 Updating documentation_url:', e.target.value);
+                  setPublishForm(prev => ({ ...prev, documentation_url: e.target.value }));
+                }}
                 placeholder="https://docs.yourapi.com"
               />
             </div>
+
+            {/* Debug info in development */}
+            {process.env.NODE_ENV === 'development' && (
+              <div className="bg-gray-100 p-3 rounded text-xs">
+                <strong>Debug Info:</strong>
+                <br />Selected API: {selectedApi}
+                <br />Form Valid: {!!(selectedApi && publishForm.external_name)}
+                <br />Publishing: {isPublishing ? 'Yes' : 'No'}
+              </div>
+            )}
 
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setShowPublishDialog(false)}>
