@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -22,6 +22,7 @@ import { Shield } from 'lucide-react';
 interface ModuleRoleAssignmentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  selectedModule?: any;
 }
 
 const roles = [
@@ -35,25 +36,30 @@ const roles = [
 const ModuleRoleAssignmentDialog: React.FC<ModuleRoleAssignmentDialogProps> = ({
   open,
   onOpenChange,
+  selectedModule
 }) => {
-  const [selectedModuleId, setSelectedModuleId] = useState<string>('');
   const [selectedRole, setSelectedRole] = useState<string>('');
   
-  const { modules, assignModuleToRole, isAssigningToRole } = useModules();
+  const { assignModuleToRole, isAssigningToRole } = useModules();
+
+  // Reset form when dialog opens/closes or module changes
+  useEffect(() => {
+    if (!open) {
+      setSelectedRole('');
+    }
+  }, [open, selectedModule]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedModuleId || !selectedRole) return;
+    if (!selectedModule || !selectedRole) return;
     
-    assignModuleToRole({
+    await assignModuleToRole({
       roleId: selectedRole,
-      moduleId: selectedModuleId
+      moduleId: selectedModule.id
     });
     
     onOpenChange(false);
-    setSelectedModuleId('');
-    setSelectedRole('');
   };
 
   return (
@@ -66,6 +72,8 @@ const ModuleRoleAssignmentDialog: React.FC<ModuleRoleAssignmentDialogProps> = ({
           </DialogTitle>
           <DialogDescription>
             Grant module access to all users with a specific role.
+            <br />
+            Module: <strong>{selectedModule?.name}</strong>
           </DialogDescription>
         </DialogHeader>
         
@@ -86,26 +94,14 @@ const ModuleRoleAssignmentDialog: React.FC<ModuleRoleAssignmentDialogProps> = ({
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="module-role">Module</Label>
-            <Select value={selectedModuleId} onValueChange={setSelectedModuleId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a module" />
-              </SelectTrigger>
-              <SelectContent>
-                {modules?.map((module) => (
-                  <SelectItem key={module.id} value={module.id}>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{module.name}</span>
-                      <span className="text-xs text-gray-500">
-                        {module.description}
-                      </span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {selectedModule && (
+            <div className="p-3 bg-muted rounded-lg">
+              <h4 className="font-medium">{selectedModule.name}</h4>
+              <p className="text-sm text-muted-foreground">
+                {selectedModule.description || 'No description available'}
+              </p>
+            </div>
+          )}
 
           <div className="flex gap-2 pt-4">
             <Button
@@ -118,7 +114,7 @@ const ModuleRoleAssignmentDialog: React.FC<ModuleRoleAssignmentDialogProps> = ({
             </Button>
             <Button
               type="submit"
-              disabled={!selectedModuleId || !selectedRole || isAssigningToRole}
+              disabled={!selectedModule || !selectedRole || isAssigningToRole}
               className="flex-1"
             >
               {isAssigningToRole ? 'Assigning...' : 'Assign Module'}

@@ -14,6 +14,7 @@ const Modules = () => {
   const [moduleAssignmentOpen, setModuleAssignmentOpen] = useState(false);
   const [createModuleOpen, setCreateModuleOpen] = useState(false);
   const [roleAssignmentOpen, setRoleAssignmentOpen] = useState(false);
+  const [selectedModule, setSelectedModule] = useState<any>(null);
 
   if (isLoadingModules || isLoadingUserModules) {
     return (
@@ -22,6 +23,16 @@ const Modules = () => {
       </div>
     );
   }
+
+  const handleAssignToUser = (module: any) => {
+    setSelectedModule(module);
+    setModuleAssignmentOpen(true);
+  };
+
+  const handleAssignToRole = (module: any) => {
+    setSelectedModule(module);
+    setRoleAssignmentOpen(true);
+  };
 
   return (
     <div className="space-y-6">
@@ -47,36 +58,40 @@ const Modules = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {modules?.map((module) => (
-              <Card key={module.id} className="border-2">
+              <Card key={module.id} className="border-2 h-full">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center justify-between">
-                    {module.name}
-                    <Badge variant="secondary">
+                  <div className="flex items-start justify-between gap-2">
+                    <CardTitle className="text-base leading-tight break-words">
+                      {module.name}
+                    </CardTitle>
+                    <Badge variant="secondary" className="shrink-0">
                       {module.is_active ? 'Active' : 'Inactive'}
                     </Badge>
-                  </CardTitle>
+                  </div>
                 </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground mb-4">
+                <CardContent className="space-y-4">
+                  <p className="text-sm text-muted-foreground leading-relaxed min-h-[2.5rem]">
                     {module.description || 'No description available'}
                   </p>
-                  <div className="flex gap-2">
+                  <div className="flex flex-col gap-2">
                     <Button 
                       size="sm" 
                       variant="outline"
-                      onClick={() => setModuleAssignmentOpen(true)}
+                      onClick={() => handleAssignToUser(module)}
+                      className="w-full"
                     >
-                      <Users className="h-3 w-3 mr-1" />
+                      <Users className="h-3 w-3 mr-2" />
                       Assign to User
                     </Button>
                     <Button 
                       size="sm" 
                       variant="outline"
-                      onClick={() => setRoleAssignmentOpen(true)}
+                      onClick={() => handleAssignToRole(module)}
+                      className="w-full"
                     >
-                      <Shield className="h-3 w-3 mr-1" />
+                      <Shield className="h-3 w-3 mr-2" />
                       Assign to Role
                     </Button>
                   </div>
@@ -84,6 +99,11 @@ const Modules = () => {
               </Card>
             ))}
           </div>
+          {(!modules || modules.length === 0) && (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">No modules available. Create your first module to get started.</p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -97,15 +117,15 @@ const Modules = () => {
         </CardHeader>
         <CardContent>
           {userModules && userModules.length > 0 ? (
-            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {userModules.map((module) => (
-                <div key={module.module_id} className="p-3 border rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-medium">{module.module_name}</h4>
-                    <Badge variant="outline">{module.source}</Badge>
+                <div key={module.module_id} className="p-4 border rounded-lg space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <h4 className="font-medium leading-tight break-words">{module.module_name}</h4>
+                    <Badge variant="outline" className="shrink-0">{module.source}</Badge>
                   </div>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    {module.module_description}
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {module.module_description || 'No description available'}
                   </p>
                   {module.expires_at && (
                     <p className="text-xs text-amber-600">
@@ -125,6 +145,7 @@ const Modules = () => {
       <ModuleAssignmentDialog
         open={moduleAssignmentOpen}
         onOpenChange={setModuleAssignmentOpen}
+        selectedModule={selectedModule}
       />
 
       <CreateModuleDialog
@@ -135,6 +156,7 @@ const Modules = () => {
       <ModuleRoleAssignmentDialog
         open={roleAssignmentOpen}
         onOpenChange={setRoleAssignmentOpen}
+        selectedModule={selectedModule}
       />
     </div>
   );

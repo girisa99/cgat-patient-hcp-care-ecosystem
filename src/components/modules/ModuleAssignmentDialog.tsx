@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -18,40 +18,51 @@ import {
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { useModules } from '@/hooks/useModules';
-import { CalendarIcon, UserIcon, Shield } from 'lucide-react';
+import { CalendarIcon, Shield } from 'lucide-react';
 
 interface ModuleAssignmentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  userId?: string;
-  userName?: string;
+  selectedModule?: any;
 }
+
+// Mock users data - in a real app, this would come from a useUsers hook
+const mockUsers = [
+  { id: '1', name: 'John Doe', email: 'john@example.com' },
+  { id: '2', name: 'Jane Smith', email: 'jane@example.com' },
+  { id: '3', name: 'Bob Johnson', email: 'bob@example.com' },
+];
 
 const ModuleAssignmentDialog: React.FC<ModuleAssignmentDialogProps> = ({
   open,
   onOpenChange,
-  userId,
-  userName
+  selectedModule
 }) => {
-  const [selectedModuleId, setSelectedModuleId] = useState<string>('');
+  const [selectedUserId, setSelectedUserId] = useState<string>('');
   const [expiresAt, setExpiresAt] = useState<string>('');
   
-  const { modules, assignModule, isAssigning } = useModules();
+  const { assignModule, isAssigning } = useModules();
+
+  // Reset form when dialog opens/closes or module changes
+  useEffect(() => {
+    if (!open) {
+      setSelectedUserId('');
+      setExpiresAt('');
+    }
+  }, [open, selectedModule]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!userId || !selectedModuleId) return;
+    if (!selectedUserId || !selectedModule) return;
     
-    assignModule({
-      userId,
-      moduleId: selectedModuleId,
+    await assignModule({
+      userId: selectedUserId,
+      moduleId: selectedModule.id,
       expiresAt: expiresAt || null
     });
     
     onOpenChange(false);
-    setSelectedModuleId('');
-    setExpiresAt('');
   };
 
   return (
@@ -63,25 +74,23 @@ const ModuleAssignmentDialog: React.FC<ModuleAssignmentDialogProps> = ({
             Assign Module Access
           </DialogTitle>
           <DialogDescription>
-            Grant module access to <strong>{userName}</strong>
+            Grant access to module: <strong>{selectedModule?.name}</strong>
           </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="module">Module</Label>
-            <Select value={selectedModuleId} onValueChange={setSelectedModuleId}>
+            <Label htmlFor="user">Select User</Label>
+            <Select value={selectedUserId} onValueChange={setSelectedUserId}>
               <SelectTrigger>
-                <SelectValue placeholder="Select a module" />
+                <SelectValue placeholder="Select a user" />
               </SelectTrigger>
               <SelectContent>
-                {modules?.map((module) => (
-                  <SelectItem key={module.id} value={module.id}>
+                {mockUsers.map((user) => (
+                  <SelectItem key={user.id} value={user.id}>
                     <div className="flex flex-col">
-                      <span className="font-medium">{module.name}</span>
-                      <span className="text-xs text-gray-500">
-                        {module.description}
-                      </span>
+                      <span className="font-medium">{user.name}</span>
+                      <span className="text-xs text-gray-500">{user.email}</span>
                     </div>
                   </SelectItem>
                 ))}
@@ -114,7 +123,7 @@ const ModuleAssignmentDialog: React.FC<ModuleAssignmentDialogProps> = ({
             </Button>
             <Button
               type="submit"
-              disabled={!selectedModuleId || isAssigning}
+              disabled={!selectedUserId || !selectedModule || isAssigning}
               className="flex-1"
             >
               {isAssigning ? 'Assigning...' : 'Assign Module'}
