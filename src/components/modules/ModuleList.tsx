@@ -1,12 +1,15 @@
 
 /**
- * Module List Component
+ * Enhanced Module List Component with Component/Service Display for RBAC
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { ChevronDown, ChevronRight, Component, Settings, Lock, Unlock } from 'lucide-react';
+import { moduleRegistry, type ComponentServiceInfo } from '@/utils/moduleRegistry';
 
 interface Module {
   id: string;
@@ -28,50 +31,185 @@ export const ModuleList: React.FC<ModuleListProps> = ({
   onAssignRoles,
   onDeleteModule
 }) => {
+  const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
+
+  const toggleModuleExpansion = (moduleId: string) => {
+    const newExpanded = new Set(expandedModules);
+    if (newExpanded.has(moduleId)) {
+      newExpanded.delete(moduleId);
+    } else {
+      newExpanded.add(moduleId);
+    }
+    setExpandedModules(newExpanded);
+  };
+
+  const getModuleComponents = (moduleName: string): ComponentServiceInfo[] => {
+    return moduleRegistry.getModuleComponentsForRBAC(moduleName);
+  };
+
+  const getComponentIcon = (type: 'component' | 'service' | 'hook') => {
+    switch (type) {
+      case 'component':
+        return <Component className="h-3 w-3" />;
+      case 'service':
+        return <Settings className="h-3 w-3" />;
+      case 'hook':
+        return <div className="h-3 w-3 rounded-full bg-blue-500" />;
+      default:
+        return <Component className="h-3 w-3" />;
+    }
+  };
+
+  const ComponentServiceItem: React.FC<{ item: ComponentServiceInfo; moduleName: string }> = ({ item, moduleName }) => (
+    <div className="flex items-center justify-between p-2 border rounded-md bg-gray-50">
+      <div className="flex items-center space-x-2">
+        {getComponentIcon(item.type)}
+        <div>
+          <div className="text-sm font-medium">{item.name}</div>
+          <div className="text-xs text-gray-500">{item.filePath}</div>
+        </div>
+      </div>
+      <div className="flex items-center space-x-2">
+        {item.isProtected ? (
+          <Lock className="h-3 w-3 text-red-500" title="Protected" />
+        ) : (
+          <Unlock className="h-3 w-3 text-green-500" title="Public" />
+        )}
+        <div className="flex flex-wrap gap-1">
+          {item.permissions.slice(0, 2).map((permission) => (
+            <Badge key={permission} variant="outline" className="text-xs">
+              {permission}
+            </Badge>
+          ))}
+          {item.permissions.length > 2 && (
+            <Badge variant="outline" className="text-xs">
+              +{item.permissions.length - 2}
+            </Badge>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>All Modules</CardTitle>
+        <CardTitle>All Modules with Components & Services</CardTitle>
+        <p className="text-sm text-gray-600">
+          Manage modules and their associated components for granular RBAC permissions
+        </p>
       </CardHeader>
       <CardContent>
         {modules && modules.length > 0 ? (
           <div className="space-y-4">
-            {modules.map((module) => (
-              <div key={module.id} className="border rounded-lg p-4">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="font-semibold text-lg">{module.name}</h3>
-                    <p className="text-sm text-gray-600 mt-1">{module.description}</p>
+            {modules.map((module) => {
+              const components = getModuleComponents(module.name);
+              const isExpanded = expandedModules.has(module.id);
+              
+              return (
+                <Collapsible key={module.id} open={isExpanded} onOpenChange={() => toggleModuleExpansion(module.id)}>
+                  <div className="border rounded-lg p-4">
+                    <CollapsibleTrigger className="w-full">
+                      <div className="flex justify-between items-start">
+                        <div className="flex items-center space-x-2">
+                          {isExpanded ? (
+                            <ChevronDown className="h-4 w-4" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4" />
+                          )}
+                          <div className="text-left">
+                            <h3 className="font-semibold text-lg">{module.name}</h3>
+                            <p className="text-sm text-gray-600 mt-1">{module.description}</p>
+                            {components.length > 0 && (
+                              <div className="flex items-center space-x-2 mt-2">
+                                <Badge variant="secondary" className="text-xs">
+                                  {components.filter(c => c.type === 'component').length} Components
+                                </Badge>
+                                <Badge variant="secondary" className="text-xs">
+                                  {components.filter(c => c.type === 'service').length} Services
+                                </Badge>
+                                <Badge variant="secondary" className="text-xs">
+                                  {components.filter(c => c.type === 'hook').length} Hooks
+                                </Badge>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Badge variant={module.is_active ? "default" : "secondary"}>
+                            {module.is_active ? "Active" : "Inactive"}
+                          </Badge>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onAssignUsers(module);
+                            }}
+                          >
+                            Assign Users
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onAssignRoles(module);
+                            }}
+                          >
+                            Assign Roles
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDeleteModule(module.id);
+                            }}
+                          >
+                            Delete
+                          </Button>
+                        </div>
+                      </div>
+                    </CollapsibleTrigger>
+                    
+                    <CollapsibleContent>
+                      <div className="mt-4 space-y-3">
+                        {components.length > 0 ? (
+                          <>
+                            <div className="flex items-center space-x-2">
+                              <Component className="h-4 w-4" />
+                              <h4 className="font-medium">Components & Services</h4>
+                              <Badge variant="outline" className="text-xs">
+                                {components.length} items
+                              </Badge>
+                            </div>
+                            <div className="grid gap-2">
+                              {components.map((component) => (
+                                <ComponentServiceItem
+                                  key={component.name}
+                                  item={component}
+                                  moduleName={module.name}
+                                />
+                              ))}
+                            </div>
+                            <div className="text-xs text-gray-500 mt-2">
+                              💡 Each component/service can be assigned specific permissions for granular access control
+                            </div>
+                          </>
+                        ) : (
+                          <div className="text-center py-4 text-gray-500">
+                            <Component className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                            <p>No components or services detected for this module</p>
+                            <p className="text-xs mt-1">Components will appear here when auto-detected</p>
+                          </div>
+                        )}
+                      </div>
+                    </CollapsibleContent>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Badge variant={module.is_active ? "default" : "secondary"}>
-                      {module.is_active ? "Active" : "Inactive"}
-                    </Badge>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => onAssignUsers(module)}
-                    >
-                      Assign Users
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => onAssignRoles(module)}
-                    >
-                      Assign Roles
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => onDeleteModule(module.id)}
-                    >
-                      Delete
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ))}
+                </Collapsible>
+              );
+            })}
           </div>
         ) : (
           <div className="text-center py-8 text-gray-500">

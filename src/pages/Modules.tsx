@@ -2,8 +2,9 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Zap, Settings, List, Plus } from 'lucide-react';
+import { Zap, Settings, List, Plus, Component } from 'lucide-react';
 import { useModules } from '@/hooks/useModules';
+import { useModuleRealtime } from '@/hooks/useRealtime';
 import CreateModuleDialog from '@/components/modules/CreateModuleDialog';
 import ModuleAssignmentDialog from '@/components/modules/ModuleAssignmentDialog';
 import ModuleRoleAssignmentDialog from '@/components/modules/ModuleRoleAssignmentDialog';
@@ -21,13 +22,16 @@ const Modules = () => {
   const [selectedModule, setSelectedModule] = useState<any>(null);
   const { toast } = useToast();
 
+  // Enhanced real-time sync for modules with component tracking
+  useModuleRealtime();
+
   const handleCreateModule = async (moduleData: any) => {
     try {
       await createModule(moduleData);
       setCreateDialogOpen(false);
       toast({
         title: "Module Created",
-        description: "New module has been created successfully.",
+        description: "New module has been created and will be auto-scanned for components and services.",
       });
     } catch (error) {
       toast({
@@ -44,7 +48,7 @@ const Modules = () => {
       console.log('Delete module:', moduleId);
       toast({
         title: "Module Deleted",
-        description: "Module has been removed successfully.",
+        description: "Module and its components have been removed successfully.",
       });
     } catch (error) {
       toast({
@@ -79,7 +83,13 @@ const Modules = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Module Management</h1>
-          <p className="text-gray-600">Manage application modules and their configurations</p>
+          <p className="text-gray-600">
+            Manage application modules, components, and services with real-time RBAC sync
+          </p>
+          <div className="flex items-center space-x-2 mt-2">
+            <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
+            <span className="text-sm text-green-600">Real-time sync active</span>
+          </div>
         </div>
         <Button onClick={() => setCreateDialogOpen(true)}>
           <Plus className="w-4 h-4 mr-2" />

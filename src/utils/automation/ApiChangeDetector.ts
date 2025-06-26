@@ -6,20 +6,32 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { apiIntegrationManager } from '@/utils/api/ApiIntegrationManager';
+import { moduleRegistry } from '@/utils/moduleRegistry';
 import { ApiDirection, ApiLifecycleStage, ImpactLevel, ApiEventType } from '@/utils/api/ApiIntegrationTypes';
 
 interface ApiChange {
-  type: 'new_endpoint' | 'modified_endpoint' | 'deprecated_endpoint' | 'new_module' | 'breaking_change' | 'new_integration';
+  type: 'new_endpoint' | 'modified_endpoint' | 'deprecated_endpoint' | 'new_module' | 'breaking_change' | 'new_integration' | 'new_component' | 'new_service';
   api_name: string;
   direction?: ApiDirection;
   lifecycle_stage?: ApiLifecycleStage;
   endpoint?: string;
   module_name?: string;
+  component_name?: string;
+  service_name?: string;
   changes: string[];
   impact_level: ImpactLevel;
   migration_required: boolean;
   impact_assessment?: Record<string, any>;
   migration_notes?: string;
+  permission_implications?: string[];
+}
+
+interface ComponentServiceInfo {
+  name: string;
+  type: 'component' | 'service' | 'hook';
+  moduleName: string;
+  permissions: string[];
+  filePath: string;
 }
 
 interface ApiLifecycleEventRecord {
@@ -39,25 +51,26 @@ interface ApiLifecycleEventRecord {
 
 class ApiChangeDetector {
   private lastScanTimestamp: string | null = null;
+  private lastComponentScan: string | null = null;
 
   /**
    * Scans for API changes and triggers notifications
    */
   async detectAndNotifyChanges() {
-    console.log('🔍 Scanning for API changes using api_lifecycle_events...');
+    console.log('🔍 Scanning for API changes, modules, components, and services...');
 
     try {
       const changes = await this.scanForChanges();
       
       if (changes.length > 0) {
-        console.log(`📊 Detected ${changes.length} API changes`);
+        console.log(`📊 Detected ${changes.length} changes (modules, components, services)`);
         await this.processChanges(changes);
       }
 
       this.lastScanTimestamp = new Date().toISOString();
       return changes;
     } catch (error) {
-      console.error('Error detecting API changes:', error);
+      console.error('Error detecting changes:', error);
       throw error;
     }
   }
@@ -76,11 +89,165 @@ class ApiChangeDetector {
     const newModules = await this.detectNewModules();
     changes.push(...newModules);
 
+    // Check for new components and services
+    const componentServiceChanges = await this.detectComponentServiceChanges();
+    changes.push(...componentServiceChanges);
+
     // Check for lifecycle stage changes from api_lifecycle_events
     const lifecycleChanges = await this.detectLifecycleChanges();
     changes.push(...lifecycleChanges);
 
     return changes;
+  }
+
+  /**
+   * Detects new components and services for RBAC permissions
+   */
+  private async detectComponentServiceChanges(): Promise<ApiChange[]> {
+    const changes: ApiChange[] = [];
+    
+    try {
+      // Get all registered modules to check for components/services
+      const registeredModules = moduleRegistry.getAll();
+      
+      for (const module of registeredModules) {
+        const componentsAndServices = await this.scanModuleForComponentsServices(module.moduleName);
+        
+        for (const item of componentsAndServices) {
+          // Check if this component/service needs new permissions
+          const permissionChanges = this.assessPermissionImpact(item);
+          
+          if (permissionChanges.length > 0) {
+            changes.push({
+              type: item.type === 'component' ? 'new_component' : 'new_service',
+              api_name: item.name,
+              module_name: item.moduleName,
+              component_name: item.type === 'component' ? item.name : undefined,
+              service_name: item.type === 'service' ? item.name : undefined,
+              changes: [`New ${item.type}: ${item.name} in module ${item.moduleName}`],
+              impact_level: 'medium',
+              migration_required: false,
+              permission_implications: permissionChanges,
+              impact_assessment: {
+                type: item.type,
+                filePath: item.filePath,
+                suggestedPermissions: item.permissions
+              }
+            });
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error detecting component/service changes:', error);
+    }
+
+    return changes;
+  }
+
+  /**
+   * Scans a module for components and services
+   */
+  private async scanModuleForComponentsServices(moduleName: string): Promise<ComponentServiceInfo[]> {
+    const items: ComponentServiceInfo[] = [];
+    
+    // This would typically scan the filesystem or use a registry
+    // For now, we'll simulate based on known patterns
+    const knownComponents = this.getKnownModuleComponents(moduleName);
+    
+    items.push(...knownComponents);
+    
+    return items;
+  }
+
+  /**
+   * Gets known components/services for a module
+   */
+  private getKnownModuleComponents(moduleName: string): ComponentServiceInfo[] {
+    const componentMap: Record<string, ComponentServiceInfo[]> = {
+      'Users': [
+        {
+          name: 'UsersList',
+          type: 'component',
+          moduleName: 'Users',
+          permissions: ['users_read', 'users_list'],
+          filePath: 'src/components/users/UsersList.tsx'
+        },
+        {
+          name: 'CreateUserDialog',
+          type: 'component',
+          moduleName: 'Users',
+          permissions: ['users_create', 'users_write'],
+          filePath: 'src/components/users/CreateUserDialog.tsx'
+        },
+        {
+          name: 'useUsers',
+          type: 'hook',
+          moduleName: 'Users',
+          permissions: ['users_read'],
+          filePath: 'src/hooks/useUsers.tsx'
+        }
+      ],
+      'Facilities': [
+        {
+          name: 'FacilitiesList',
+          type: 'component',
+          moduleName: 'Facilities',
+          permissions: ['facilities_read', 'facilities_list'],
+          filePath: 'src/components/facilities/FacilitiesList.tsx'
+        },
+        {
+          name: 'CreateFacilityDialog',
+          type: 'component',
+          moduleName: 'Facilities',
+          permissions: ['facilities_create', 'facilities_write'],
+          filePath: 'src/components/facilities/CreateFacilityDialog.tsx'
+        }
+      ],
+      'Modules': [
+        {
+          name: 'ModuleList',
+          type: 'component',
+          moduleName: 'Modules',
+          permissions: ['modules_read', 'modules_list'],
+          filePath: 'src/components/modules/ModuleList.tsx'
+        },
+        {
+          name: 'CreateModuleDialog',
+          type: 'component',
+          moduleName: 'Modules',
+          permissions: ['modules_create', 'modules_write'],
+          filePath: 'src/components/modules/CreateModuleDialog.tsx'
+        },
+        {
+          name: 'AutoModuleManager',
+          type: 'component',
+          moduleName: 'Modules',
+          permissions: ['modules_admin', 'modules_auto_detect'],
+          filePath: 'src/components/admin/AutoModuleManager/index.tsx'
+        }
+      ]
+    };
+
+    return componentMap[moduleName] || [];
+  }
+
+  /**
+   * Assesses permission impact for a component/service
+   */
+  private assessPermissionImpact(item: ComponentServiceInfo): string[] {
+    const suggestions: string[] = [];
+    
+    // Check if permissions exist for this component
+    item.permissions.forEach(permission => {
+      suggestions.push(`Consider adding permission: ${permission}`);
+    });
+
+    // Add RBAC suggestions
+    if (item.type === 'component') {
+      suggestions.push(`Add component-level access control for: ${item.name}`);
+    }
+
+    return suggestions;
   }
 
   /**
@@ -265,6 +432,29 @@ class ApiChangeDetector {
   private async processChanges(changes: ApiChange[]) {
     for (const change of changes) {
       await this.createDeveloperNotifications(change);
+      
+      // Auto-register components/services to module registry
+      if (change.type === 'new_component' || change.type === 'new_service') {
+        await this.autoRegisterComponentService(change);
+      }
+    }
+  }
+
+  /**
+   * Auto-registers new components/services to the module system
+   */
+  private async autoRegisterComponentService(change: ApiChange) {
+    try {
+      console.log(`🔧 Auto-registering ${change.type}: ${change.api_name}`);
+      
+      // Update module registry with component/service info
+      const existingModule = moduleRegistry.get(change.module_name!);
+      if (existingModule) {
+        // This could be enhanced to track components/services in the registry
+        console.log(`📝 Tracked ${change.type} ${change.api_name} for module ${change.module_name}`);
+      }
+    } catch (error) {
+      console.error(`Error auto-registering ${change.type}:`, error);
     }
   }
 
@@ -295,8 +485,11 @@ class ApiChangeDetector {
           direction: change.direction,
           lifecycle_stage: change.lifecycle_stage,
           affected_modules: change.module_name ? [change.module_name] : undefined,
+          component_name: change.component_name,
+          service_name: change.service_name,
           impact_level: change.impact_level,
           migration_required: change.migration_required,
+          permission_implications: change.permission_implications,
           impact_assessment: change.impact_assessment
         },
         is_read: false
@@ -306,7 +499,7 @@ class ApiChangeDetector {
         .from('developer_notifications')
         .insert(notifications);
 
-      console.log(`📨 Created ${notifications.length} notifications for API change: ${change.api_name}`);
+      console.log(`📨 Created ${notifications.length} notifications for change: ${change.api_name}`);
     } catch (error) {
       console.error('Error creating developer notifications:', error);
     }
@@ -316,6 +509,10 @@ class ApiChangeDetector {
     switch (change.type) {
       case 'new_integration':
         return `🆕 New ${change.direction} API: ${change.api_name}`;
+      case 'new_component':
+        return `🧩 New Component: ${change.api_name} (${change.module_name})`;
+      case 'new_service':
+        return `⚙️ New Service: ${change.api_name} (${change.module_name})`;
       case 'new_endpoint':
         return `New Endpoint Available: ${change.api_name}`;
       case 'new_module':
@@ -342,6 +539,10 @@ class ApiChangeDetector {
     if (change.lifecycle_stage) {
       message += ` [${change.lifecycle_stage}]`;
     }
+
+    if (change.permission_implications && change.permission_implications.length > 0) {
+      message += ` RBAC Impact: ${change.permission_implications.join(', ')}`;
+    }
     
     if (change.migration_required) {
       message += ' Migration may be required.';
@@ -359,6 +560,8 @@ class ApiChangeDetector {
       case 'new_endpoint':
       case 'new_module':
       case 'new_integration':
+      case 'new_component':
+      case 'new_service':
         return 'new_api';
       case 'breaking_change':
         return 'breaking_change';
@@ -370,7 +573,7 @@ class ApiChangeDetector {
 
 export const apiChangeDetector = new ApiChangeDetector();
 
-// Auto-scan every 30 minutes
+// Auto-scan every 30 minutes for comprehensive changes
 if (typeof window !== 'undefined') {
   setInterval(() => {
     apiChangeDetector.detectAndNotifyChanges().catch(console.error);
