@@ -133,10 +133,10 @@ class ExternalApiManagerClass {
         .from('api_integration_registry')
         .select('id, name')
         .eq('name', internalApiId)
-        .single();
+        .maybeSingle();
 
       if (searchError) {
-        console.log('⚠️ No existing API found, will create new one:', searchError.message);
+        console.log('⚠️ Error searching for existing API:', searchError.message);
       }
 
       if (existingApi) {
@@ -146,7 +146,6 @@ class ExternalApiManagerClass {
         console.log('📝 Creating new API integration registry entry');
         
         // Create a new entry in the api_integration_registry if it doesn't exist
-        // Using valid constraint values based on the ApiPurpose type
         const { data: newApi, error: createError } = await supabase
           .from('api_integration_registry')
           .insert({
@@ -154,7 +153,7 @@ class ExternalApiManagerClass {
             type: 'internal',
             category: publishConfig.category || 'healthcare',
             direction: 'outbound',
-            purpose: 'hybrid', // Using hybrid as it covers both consuming and publishing
+            purpose: 'publishing', // Using publishing as purpose for external APIs
             description: publishConfig.external_description || 'Internal API for external publishing',
             status: 'active',
             lifecycle_stage: 'production',
@@ -179,7 +178,7 @@ class ExternalApiManagerClass {
       .from('api_integration_registry')
       .select('category, name')
       .eq('id', actualInternalApiId)
-      .single();
+      .maybeSingle();
 
     if (fetchError) {
       console.error('❌ Error fetching internal API:', fetchError);
