@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Edit, UserPlus, Building, Minus, Key } from 'lucide-react';
+import { Edit, UserPlus, Building, Minus, Key, Shield } from 'lucide-react';
 
 interface UserActionsProps {
   user: any;
@@ -10,6 +10,7 @@ interface UserActionsProps {
   onRemoveRole?: (userId: string) => void;
   onAssignFacility: (userId: string) => void;
   onManagePermissions: (userId: string, userName: string) => void;
+  onAssignModule?: (userId: string, userName: string) => void;
 }
 
 const UserActions: React.FC<UserActionsProps> = ({
@@ -18,7 +19,8 @@ const UserActions: React.FC<UserActionsProps> = ({
   onAssignRole,
   onRemoveRole,
   onAssignFacility,
-  onManagePermissions
+  onManagePermissions,
+  onAssignModule
 }) => {
   const userName = user.first_name || user.last_name 
     ? `${user.first_name || ''} ${user.last_name || ''}`.trim()
@@ -27,6 +29,13 @@ const UserActions: React.FC<UserActionsProps> = ({
   const handleManagePermissions = () => {
     console.log('Opening permission management for user:', user.id, userName);
     onManagePermissions(user.id, userName);
+  };
+
+  const handleAssignModule = () => {
+    if (onAssignModule) {
+      console.log('Opening module assignment for user:', user.id, userName);
+      onAssignModule(user.id, userName);
+    }
   };
 
   return (
@@ -78,6 +87,18 @@ const UserActions: React.FC<UserActionsProps> = ({
       >
         <Key className="h-3 w-3" />
       </Button>
+
+      {onAssignModule && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleAssignModule}
+          title="Assign Modules"
+          className="bg-purple-50 hover:bg-purple-100 border-purple-200"
+        >
+          <Shield className="h-3 w-3" />
+        </Button>
+      )}
     </div>
   );
 };

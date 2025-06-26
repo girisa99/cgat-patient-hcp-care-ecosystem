@@ -14,6 +14,7 @@ import {
 import { Plus, Shield } from 'lucide-react';
 import UserActions from './UserActions';
 import PermissionManagementDialog from './PermissionManagementDialog';
+import ModuleAssignmentDialog from '@/components/modules/ModuleAssignmentDialog';
 
 interface UsersListProps {
   onCreateUser: () => void;
@@ -32,6 +33,7 @@ const UsersList: React.FC<UsersListProps> = ({
 }) => {
   const { users, isLoading } = useUsers();
   const [permissionDialogOpen, setPermissionDialogOpen] = useState(false);
+  const [moduleDialogOpen, setModuleDialogOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [selectedUserName, setSelectedUserName] = useState<string>('');
 
@@ -40,6 +42,13 @@ const UsersList: React.FC<UsersListProps> = ({
     setSelectedUserId(userId);
     setSelectedUserName(userName);
     setPermissionDialogOpen(true);
+  };
+
+  const handleAssignModule = (userId: string, userName: string) => {
+    console.log('Assigning module for:', userId, userName);
+    setSelectedUserId(userId);
+    setSelectedUserName(userName);
+    setModuleDialogOpen(true);
   };
 
   if (isLoading) {
@@ -134,6 +143,7 @@ const UsersList: React.FC<UsersListProps> = ({
                     onRemoveRole={onRemoveRole}
                     onAssignFacility={onAssignFacility}
                     onManagePermissions={handleManagePermissions}
+                    onAssignModule={handleAssignModule}
                   />
                 </TableCell>
               </TableRow>
@@ -146,6 +156,14 @@ const UsersList: React.FC<UsersListProps> = ({
       <PermissionManagementDialog
         open={permissionDialogOpen}
         onOpenChange={setPermissionDialogOpen}
+        userId={selectedUserId}
+        userName={selectedUserName}
+      />
+
+      {/* Module Assignment Dialog */}
+      <ModuleAssignmentDialog
+        open={moduleDialogOpen}
+        onOpenChange={setModuleDialogOpen}
         userId={selectedUserId}
         userName={selectedUserName}
       />

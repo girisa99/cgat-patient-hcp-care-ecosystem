@@ -126,6 +126,69 @@ export type Database = {
         }
         Relationships: []
       }
+      module_permissions: {
+        Row: {
+          created_at: string | null
+          id: string
+          module_id: string | null
+          permission_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          module_id?: string | null
+          permission_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          module_id?: string | null
+          permission_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "module_permissions_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "modules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "module_permissions_permission_id_fkey"
+            columns: ["permission_id"]
+            isOneToOne: false
+            referencedRelation: "permissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      modules: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       permissions: {
         Row: {
           created_at: string | null
@@ -199,6 +262,48 @@ export type Database = {
             columns: ["facility_id"]
             isOneToOne: false
             referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      role_module_assignments: {
+        Row: {
+          assigned_at: string | null
+          assigned_by: string | null
+          id: string
+          is_active: boolean | null
+          module_id: string | null
+          role_id: string | null
+        }
+        Insert: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          module_id?: string | null
+          role_id?: string | null
+        }
+        Update: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          module_id?: string | null
+          role_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_module_assignments_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "modules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "role_module_assignments_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "roles"
             referencedColumns: ["id"]
           },
         ]
@@ -353,6 +458,44 @@ export type Database = {
           },
         ]
       }
+      user_module_assignments: {
+        Row: {
+          assigned_at: string | null
+          assigned_by: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          module_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          module_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          module_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_module_assignments_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_permissions: {
         Row: {
           expires_at: string | null
@@ -441,6 +584,16 @@ export type Database = {
           facility_id: string
           facility_name: string
           access_level: string
+        }[]
+      }
+      get_user_effective_modules: {
+        Args: { check_user_id: string }
+        Returns: {
+          module_id: string
+          module_name: string
+          module_description: string
+          source: string
+          expires_at: string
         }[]
       }
       get_user_effective_permissions: {

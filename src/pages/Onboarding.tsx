@@ -2,9 +2,10 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Building2, UserPlus, CheckCircle, ArrowRight } from 'lucide-react';
+import { Building2, UserPlus, CheckCircle, ArrowRight, Shield } from 'lucide-react';
 import CreateFacilityDialog from '@/components/facilities/CreateFacilityDialog';
 import CreateUserDialog from '@/components/users/CreateUserDialog';
+import ModuleGuard from '@/components/modules/ModuleGuard';
 
 const Onboarding = () => {
   const [facilityDialogOpen, setFacilityDialogOpen] = useState(false);
@@ -20,77 +21,86 @@ const Onboarding = () => {
       </div>
       
       <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Building2 className="h-5 w-5" />
-              Facility Onboarding
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-muted-foreground">
-              Complete facility setup including registration, licensing, and initial configuration.
-            </p>
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                Register facility details
+        {/* Facility Onboarding - Protected by module access */}
+        <ModuleGuard moduleName="onboarding_workflow">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Building2 className="h-5 w-5" />
+                Facility Onboarding
+                <Shield className="h-4 w-4 text-green-600" title="Module Protected" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-muted-foreground">
+                Complete facility setup including registration, licensing, and initial configuration.
+              </p>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  Register facility details
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  Set facility type and licensing
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  Configure facility settings
+                </div>
               </div>
-              <div className="flex items-center gap-2 text-sm">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                Set facility type and licensing
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                Configure facility settings
-              </div>
-            </div>
-            <Button 
-              className="w-full"
-              onClick={() => setFacilityDialogOpen(true)}
-            >
-              Start New Facility Onboarding
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </CardContent>
-        </Card>
+              <Button 
+                className="w-full"
+                onClick={() => setFacilityDialogOpen(true)}
+              >
+                Start New Facility Onboarding
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </CardContent>
+          </Card>
+        </ModuleGuard>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <UserPlus className="h-5 w-5" />
-              User Onboarding
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-muted-foreground">
-              Onboard new users with role assignment and facility access setup.
-            </p>
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                Create user accounts
+        {/* User Onboarding - Protected by module access */}
+        <ModuleGuard moduleName="onboarding_workflow">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <UserPlus className="h-5 w-5" />
+                User Onboarding
+                <Shield className="h-4 w-4 text-green-600" title="Module Protected" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-muted-foreground">
+                Onboard new users with role assignment and facility access setup.
+              </p>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  Create user accounts
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  Assign appropriate roles
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  Grant facility access
+                </div>
               </div>
-              <div className="flex items-center gap-2 text-sm">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                Assign appropriate roles
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                Grant facility access
-              </div>
-            </div>
-            <Button 
-              className="w-full"
-              onClick={() => setUserDialogOpen(true)}
-            >
-              Start User Onboarding
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </CardContent>
-        </Card>
+              <Button 
+                className="w-full"
+                onClick={() => setUserDialogOpen(true)}
+              >
+                Start User Onboarding
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </CardContent>
+          </Card>
+        </ModuleGuard>
       </div>
 
+      {/* Overview section - always visible */}
       <Card>
         <CardHeader>
           <CardTitle>Onboarding Overview</CardTitle>
@@ -124,16 +134,18 @@ const Onboarding = () => {
         </CardContent>
       </Card>
 
-      {/* Dialogs */}
-      <CreateFacilityDialog 
-        open={facilityDialogOpen}
-        onOpenChange={setFacilityDialogOpen}
-      />
-      
-      <CreateUserDialog 
-        open={userDialogOpen}
-        onOpenChange={setUserDialogOpen}
-      />
+      {/* Module-protected dialogs */}
+      <ModuleGuard moduleName="onboarding_workflow" showAccessDenied={false}>
+        <CreateFacilityDialog 
+          open={facilityDialogOpen}
+          onOpenChange={setFacilityDialogOpen}
+        />
+        
+        <CreateUserDialog 
+          open={userDialogOpen}
+          onOpenChange={setUserDialogOpen}
+        />
+      </ModuleGuard>
     </div>
   );
 };
