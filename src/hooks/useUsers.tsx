@@ -7,16 +7,6 @@ import { Database } from '@/integrations/supabase/types';
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type UserRole = Database['public']['Enums']['user_role'];
 
-interface AuthUser {
-  id: string;
-  email: string;
-  created_at: string;
-  email_confirmed_at?: string;
-  last_sign_in_at?: string;
-  user_metadata?: any;
-  app_metadata?: any;
-}
-
 interface UserWithRoles extends Profile {
   user_roles: {
     roles: {
@@ -43,10 +33,9 @@ export const useUsers = () => {
   } = useQuery({
     queryKey: ['users'],
     queryFn: async () => {
-      console.log('🔍 Fetching users - using manage-user-profiles edge function...');
+      console.log('🔍 Fetching users - using optimized edge function...');
       
       try {
-        // Use the manage-user-profiles edge function to get all users with roles
         const { data: response, error: functionError } = await supabase.functions.invoke('manage-user-profiles', {
           body: {
             action: 'list'
@@ -66,6 +55,17 @@ export const useUsers = () => {
         const allUsersData = response.data;
         console.log('📊 All users fetched successfully:', allUsersData.length);
         
+        // Log role assignment status for debugging
+        const usersWithRoles = allUsersData.filter(user => user.user_roles && user.user_roles.length > 0);
+        const usersWithoutRoles = allUsersData.filter(user => !user.user_roles || user.user_roles.length === 0);
+        
+        console.log('👥 Users with roles:', usersWithRoles.length);
+        console.log('❌ Users without roles:', usersWithoutRoles.length);
+        
+        if (usersWithoutRoles.length > 0) {
+          console.log('📝 Users missing roles:', usersWithoutRoles.map(u => u.email));
+        }
+        
         return allUsersData;
         
       } catch (err) {
@@ -73,13 +73,12 @@ export const useUsers = () => {
         throw err;
       }
     },
-    retry: 2,
+    retry: 1,
     retryDelay: 1000,
-    staleTime: 30000,
+    staleTime: 60000, // Increased cache time to reduce requests
     gcTime: 300000,
   });
 
-  // For user creation, we still use edge functions as they handle complex business logic
   const createUserMutation = useMutation({
     mutationFn: async (userData: {
       email: string;
@@ -130,7 +129,6 @@ export const useUsers = () => {
     }
   });
 
-  // REFACTORED: Use direct database operations for role assignment
   const assignRoleMutation = useMutation({
     mutationFn: async ({ userId, roleName }: { userId: string; roleName: UserRole }) => {
       console.log('🔄 Assigning role via database operations:', roleName, 'to user:', userId);
@@ -208,7 +206,6 @@ export const useUsers = () => {
     }
   });
 
-  // For facility assignment, use direct database operations
   const assignFacilityMutation = useMutation({
     mutationFn: async ({ 
       userId, 

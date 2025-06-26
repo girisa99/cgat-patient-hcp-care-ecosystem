@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,11 +9,12 @@ import EditUserDialog from '@/components/users/EditUserDialog';
 import AssignRoleDialog from '@/components/users/AssignRoleDialog';
 import AssignFacilityDialog from '@/components/users/AssignFacilityDialog';
 import RoleAssignmentDebugger from '@/components/users/RoleAssignmentDebugger';
+import BulkRoleAssignment from '@/components/users/BulkRoleAssignment';
 import { useUsers } from '@/hooks/useUsers';
 import { AlertTriangle, Bug } from 'lucide-react';
 
 const Users = () => {
-  const { users } = useUsers();
+  const { users, isLoading } = useUsers();
   const [createUserOpen, setCreateUserOpen] = useState(false);
   const [editUserOpen, setEditUserOpen] = useState(false);
   const [assignRoleOpen, setAssignRoleOpen] = useState(false);
@@ -22,10 +23,25 @@ const Users = () => {
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [debugMode, setDebugMode] = useState(false);
 
-  const selectedUserForRole = users?.find(u => u.id === selectedUserId);
-  const selectedUserName = selectedUserForRole 
-    ? `${selectedUserForRole.first_name || ''} ${selectedUserForRole.last_name || ''}`.trim() || selectedUserForRole.email
-    : '';
+  // Memoize calculations to prevent unnecessary re-renders
+  const userStats = useMemo(() => {
+    if (!users) return { totalUsers: 0, usersWithRoles: 0, usersWithoutRoles: 0 };
+    
+    const totalUsers = users.length;
+    const usersWithRoles = users.filter(user => user.user_roles && user.user_roles.length > 0).length;
+    const usersWithoutRoles = totalUsers - usersWithRoles;
+    
+    return { totalUsers, usersWithRoles, usersWithoutRoles };
+  }, [users]);
+
+  const selectedUserForRole = useMemo(() => {
+    return users?.find(u => u.id === selectedUserId);
+  }, [users, selectedUserId]);
+
+  const selectedUserName = useMemo(() => {
+    if (!selectedUserForRole) return '';
+    return `${selectedUserForRole.first_name || ''} ${selectedUserForRole.last_name || ''}`.trim() || selectedUserForRole.email;
+  }, [selectedUserForRole]);
 
   const handleAssignRole = (userId: string) => {
     setSelectedUserId(userId);
@@ -41,11 +57,6 @@ const Users = () => {
     setSelectedUser(user);
     setEditUserOpen(true);
   };
-
-  // Calculate role assignment statistics
-  const totalUsers = users?.length || 0;
-  const usersWithRoles = users?.filter(user => user.user_roles && user.user_roles.length > 0).length || 0;
-  const usersWithoutRoles = totalUsers - usersWithRoles;
 
   return (
     <div className="space-y-6">
@@ -67,13 +78,13 @@ const Users = () => {
         <CardContent>
           <div className="flex gap-4 items-center mb-4">
             <Badge variant="outline">
-              Total Users: {totalUsers}
+              Total Users: {userStats.totalUsers}
             </Badge>
             <Badge variant="default">
-              With Roles: {usersWithRoles}
+              With Roles: {userStats.usersWithRoles}
             </Badge>
             <Badge variant="destructive">
-              Without Roles: {usersWithoutRoles}
+              Without Roles: {userStats.usersWithoutRoles}
             </Badge>
           </div>
           
@@ -88,13 +99,13 @@ const Users = () => {
             </Button>
           </div>
 
-          {debugMode && usersWithoutRoles > 0 && (
+          {debugMode && userStats.usersWithoutRoles > 0 && (
             <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
               <p className="text-sm text-yellow-800 mb-2">
                 <strong>Diagnostic Information:</strong>
               </p>
               <p className="text-sm text-yellow-700">
-                {usersWithoutRoles} users don't have roles assigned. This could be due to:
+                {userStats.usersWithoutRoles} users don't have roles assigned. This could be due to:
               </p>
               <ul className="text-sm text-yellow-700 ml-4 mt-2 list-disc">
                 <li>Users created before role assignment was implemented</li>
@@ -106,6 +117,9 @@ const Users = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Bulk Role Assignment */}
+      <BulkRoleAssignment />
       
       <Card>
         <CardHeader>
@@ -121,7 +135,7 @@ const Users = () => {
         </CardContent>
       </Card>
 
-      {/* Debug Panel */}
+      {/* Debug Panel - Only render when in debug mode and user is selected */}
       {debugMode && selectedUserId && (
         <RoleAssignmentDebugger
           userId={selectedUserId}
