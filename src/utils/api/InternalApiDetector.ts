@@ -19,6 +19,7 @@ export interface InternalEndpoint {
 export class InternalApiDetector {
   /**
    * Detect only CORE CRITICAL healthcare business APIs (16 endpoints)
+   * This is the PRIMARY detection method that should be used throughout the system
    */
   static detectInternalApis(): InternalEndpoint[] {
     const coreHealthcareApis: InternalEndpoint[] = [
@@ -190,7 +191,84 @@ export class InternalApiDetector {
     ];
 
     console.log(`🎯 REFINED CORE HEALTHCARE API: Detected ${coreHealthcareApis.length} critical business endpoints`);
+    console.log('🔍 Core Healthcare Endpoints:', coreHealthcareApis.map(api => `${api.method} ${api.path}`));
     return coreHealthcareApis;
+  }
+
+  /**
+   * Generate mock internal API integration based on refined core endpoints
+   * This method should be used by the hooks to generate the API integration data
+   */
+  static generateMockInternalIntegration() {
+    const coreEndpoints = this.detectInternalApis();
+    
+    return {
+      id: 'core_healthcare_api',
+      name: 'Core Healthcare Business API',
+      description: 'Refined core healthcare business functions - 16 critical endpoints only',
+      type: 'internal' as const,
+      version: '1.0.0',
+      baseUrl: 'https://api.healthcare-admin.com/core',
+      status: 'active' as const,
+      endpoints: coreEndpoints.map(endpoint => ({
+        id: `${endpoint.method.toLowerCase()}_${endpoint.path.replace(/[^a-zA-Z0-9]/g, '_')}`,
+        name: endpoint.name,
+        method: endpoint.method,
+        url: endpoint.path,
+        description: endpoint.description,
+        isPublic: endpoint.isPublic,
+        authentication: endpoint.authentication === 'bearer' ? {
+          type: 'bearer' as const,
+          required: true
+        } : {
+          type: 'none' as const,
+          required: false
+        },
+        parameters: endpoint.parameters || [],
+        responses: endpoint.responses || { 200: 'Success' },
+        fullUrl: `https://api.healthcare-admin.com/core${endpoint.path}`
+      })),
+      schemas: {
+        HealthcareUser: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', format: 'uuid' },
+            email: { type: 'string', format: 'email' },
+            first_name: { type: 'string' },
+            last_name: { type: 'string' },
+            roles: { type: 'array', items: { type: 'string' } }
+          }
+        },
+        HealthcareFacility: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', format: 'uuid' },
+            name: { type: 'string' },
+            facility_type: { type: 'string' },
+            address: { type: 'string' }
+          }
+        },
+        HealthcareRole: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', format: 'uuid' },
+            name: { type: 'string' },
+            permissions: { type: 'array', items: { type: 'string' } }
+          }
+        }
+      },
+      rlsPolicies: [
+        { table: 'profiles', policy: 'Users can view own profile', type: 'SELECT' },
+        { table: 'profiles', policy: 'Users can update own profile', type: 'UPDATE' },
+        { table: 'facilities', policy: 'Users can view assigned facilities', type: 'SELECT' },
+        { table: 'user_roles', policy: 'Users can view own roles', type: 'SELECT' }
+      ],
+      mappings: [
+        { internal: 'profiles', external: 'users', type: 'table' },
+        { internal: 'facilities', external: 'facilities', type: 'table' },
+        { internal: 'user_roles', external: 'roles', type: 'table' }
+      ]
+    };
   }
 
   /**
