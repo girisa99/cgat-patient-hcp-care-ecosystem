@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { 
   Plus, 
   Download, 
@@ -19,7 +20,8 @@ import {
   Server,
   Copy,
   Share,
-  Eye
+  Eye,
+  TestTube
 } from 'lucide-react';
 import { useApiIntegrations } from '@/hooks/useApiIntegrations';
 import { useRealtime } from '@/hooks/useRealtime';
@@ -27,8 +29,12 @@ import { apiIntegrationManager } from '@/utils/api/ApiIntegrationManager';
 import { CreateIntegrationDialog } from './CreateIntegrationDialog';
 import { IntegrationDetailView } from './IntegrationDetailView';
 import { ApiOverviewSection } from './ApiOverviewSection';
+import { ApiDocumentationViewer } from './ApiDocumentationViewer';
+import { ApiTestingInterface } from './ApiTestingInterface';
+import { useToast } from '@/hooks/use-toast';
 
 const ApiIntegrationsManager = () => {
+  const { toast } = useToast();
   const {
     integrations,
     isLoading,
@@ -48,14 +54,13 @@ const ApiIntegrationsManager = () => {
   });
 
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showDocumentationViewer, setShowDocumentationViewer] = useState(false);
+  const [showTestingInterface, setShowTestingInterface] = useState(false);
+  const [selectedIntegrationForDocs, setSelectedIntegrationForDocs] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
 
   const internalApis = integrations?.filter(i => i.type === 'internal') || [];
   const externalApis = integrations?.filter(i => i.type === 'external') || [];
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-  };
 
   const handleDownloadCollection = (integrationId: string) => {
     downloadPostmanCollection(integrationId);
@@ -65,9 +70,44 @@ const ApiIntegrationsManager = () => {
     setSelectedIntegration(integrationId);
   };
 
-  const handleCopyUrl = (url: string) => {
-    copyToClipboard(url);
+  const handleViewDocumentation = (integrationId: string) => {
+    setSelectedIntegrationForDocs(integrationId);
+    setShowDocumentationViewer(true);
   };
+
+  const handleOpenTesting = (integrationId: string) => {
+    setSelectedIntegrationForDocs(integrationId);
+    setShowTestingInterface(true);
+  };
+
+  const handleTestEndpoint = (endpointId: string) => {
+    // Logic for testing specific endpoint
+    console.log('Testing endpoint:', endpointId);
+    toast({
+      title: "Endpoint Test",
+      description: "Opening endpoint test interface...",
+    });
+  };
+
+  const handleCopyCode = (code: string) => {
+    navigator.clipboard.writeText(code);
+    toast({
+      title: "Code Copied",
+      description: "Code has been copied to clipboard",
+    });
+  };
+
+  const handleCopyUrl = (url: string) => {
+    navigator.clipboard.writeText(url);
+    toast({
+      title: "URL Copied",
+      description: "URL has been copied to clipboard",
+    });
+  };
+
+  const selectedIntegrationData = selectedIntegrationForDocs 
+    ? integrations?.find(i => i.id === selectedIntegrationForDocs)
+    : null;
 
   if (isLoading) {
     return (
@@ -90,7 +130,7 @@ const ApiIntegrationsManager = () => {
         <div>
           <h2 className="text-3xl font-bold tracking-tight">API Integration Center</h2>
           <p className="text-muted-foreground">
-            Comprehensive view of internal platform APIs and external integrations with real-time updates
+            Comprehensive API management with documentation, testing, and real-time monitoring
           </p>
         </div>
         <div className="flex gap-2">
@@ -102,12 +142,12 @@ const ApiIntegrationsManager = () => {
               const url = URL.createObjectURL(blob);
               const a = document.createElement('a');
               a.href = url;
-              a.download = 'api-documentation.json';
+              a.download = 'complete-api-documentation.json';
               a.click();
             }}
           >
             <FileText className="h-4 w-4 mr-2" />
-            Export Docs
+            Export Complete Docs
           </Button>
           <Button onClick={() => setShowCreateDialog(true)}>
             <Plus className="h-4 w-4 mr-2" />
@@ -117,7 +157,7 @@ const ApiIntegrationsManager = () => {
       </div>
 
       {/* Enhanced Overview Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
@@ -159,10 +199,24 @@ const ApiIntegrationsManager = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <FileText className="h-4 w-4 text-orange-500" />
+              <Shield className="h-4 w-4 text-red-500" />
+              <div>
+                <p className="text-2xl font-bold">
+                  {integrations?.reduce((acc, i) => acc + i.rlsPolicies.length, 0) || 0}
+                </p>
+                <p className="text-sm text-muted-foreground">RLS Policies</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <TestTube className="h-4 w-4 text-orange-500" />
               <div>
                 <p className="text-2xl font-bold">{integrations?.length || 0}</p>
-                <p className="text-sm text-muted-foreground">Collections Available</p>
+                <p className="text-sm text-muted-foreground">Test Collections</p>
               </div>
             </div>
           </CardContent>
@@ -171,8 +225,9 @@ const ApiIntegrationsManager = () => {
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
-          <TabsTrigger value="overview">Enhanced Overview</TabsTrigger>
+          <TabsTrigger value="overview">API Overview</TabsTrigger>
           <TabsTrigger value="monitoring">Real-time Monitoring</TabsTrigger>
+          <TabsTrigger value="testing">Testing Hub</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -181,6 +236,7 @@ const ApiIntegrationsManager = () => {
             externalApis={externalApis}
             onDownloadCollection={handleDownloadCollection}
             onViewDetails={handleViewDetails}
+            onViewDocumentation={handleViewDocumentation}
             onCopyUrl={handleCopyUrl}
           />
         </TabsContent>
@@ -209,10 +265,10 @@ const ApiIntegrationsManager = () => {
                   <div className="p-4 bg-blue-50 rounded-lg">
                     <div className="flex items-center gap-2 mb-2">
                       <Shield className="h-4 w-4 text-blue-500" />
-                      <span className="font-medium">Auto-sync Policies</span>
+                      <span className="font-medium">Security Policies</span>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      RLS policies and mappings updated automatically
+                      RLS policies and data mappings automatically synchronized
                     </p>
                   </div>
                   
@@ -222,7 +278,7 @@ const ApiIntegrationsManager = () => {
                       <span className="font-medium">Documentation Sync</span>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      OpenAPI specs and collections auto-generated
+                      OpenAPI specs and test collections auto-generated
                     </p>
                   </div>
                 </div>
@@ -231,17 +287,92 @@ const ApiIntegrationsManager = () => {
                   <h4 className="font-medium mb-2">Latest Updates</h4>
                   <div className="space-y-2 text-sm">
                     <div className="flex items-center justify-between">
-                      <span>Internal API schemas refreshed</span>
+                      <span>API schemas refreshed</span>
                       <Badge variant="secondary">Just now</Badge>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span>Postman collections updated</span>
+                      <span>RLS policies synchronized</span>
                       <Badge variant="secondary">2 mins ago</Badge>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span>RLS policies synchronized</span>
+                      <span>Test collections updated</span>
                       <Badge variant="secondary">5 mins ago</Badge>
                     </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="testing" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TestTube className="h-5 w-5" />
+                API Testing Hub
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <h4 className="font-medium">Quick Testing</h4>
+                  <div className="space-y-2">
+                    {[...internalApis, ...externalApis].slice(0, 5).map((integration) => (
+                      <div key={integration.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div>
+                          <div className="font-medium">{integration.name}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {integration.endpoints.length} endpoints
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          onClick={() => handleOpenTesting(integration.id)}
+                        >
+                          <Play className="h-3 w-3 mr-1" />
+                          Test
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  <h4 className="font-medium">Documentation & Testing Tools</h4>
+                  <div className="space-y-2">
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start"
+                      onClick={() => window.open('https://web.postman.co/', '_blank')}
+                    >
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Open Postman Web
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start"
+                      onClick={() => window.open('https://swagger.io/tools/swagger-ui/', '_blank')}
+                    >
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Swagger UI
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start"
+                      onClick={() => {
+                        const allDocs = apiIntegrationManager.exportApiDocumentation();
+                        const blob = new Blob([JSON.stringify(allDocs, null, 2)], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'api-testing-suite.json';
+                        a.click();
+                      }}
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Export Testing Suite
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -261,6 +392,35 @@ const ApiIntegrationsManager = () => {
           onClose={() => setSelectedIntegration(null)}
         />
       )}
+
+      <Dialog open={showDocumentationViewer} onOpenChange={setShowDocumentationViewer}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>API Documentation</DialogTitle>
+          </DialogHeader>
+          {selectedIntegrationData && (
+            <ApiDocumentationViewer
+              integration={selectedIntegrationData}
+              onTestEndpoint={handleTestEndpoint}
+              onCopyCode={handleCopyCode}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showTestingInterface} onOpenChange={setShowTestingInterface}>
+        <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>API Testing Interface</DialogTitle>
+          </DialogHeader>
+          {selectedIntegrationData && (
+            <ApiTestingInterface
+              integration={selectedIntegrationData}
+              onClose={() => setShowTestingInterface(false)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

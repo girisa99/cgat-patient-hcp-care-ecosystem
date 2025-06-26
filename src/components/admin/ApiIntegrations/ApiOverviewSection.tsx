@@ -15,7 +15,9 @@ import {
   Shield,
   Code,
   Eye,
-  Copy
+  Copy,
+  TestTube,
+  BookOpen
 } from 'lucide-react';
 import { ApiIntegration } from '@/utils/api/ApiIntegrationTypes';
 import { InternalApiEndpointsList } from './InternalApiEndpointsList';
@@ -26,6 +28,7 @@ interface ApiOverviewSectionProps {
   externalApis: ApiIntegration[];
   onDownloadCollection: (integrationId: string) => void;
   onViewDetails: (integrationId: string) => void;
+  onViewDocumentation: (integrationId: string) => void;
   onCopyUrl: (url: string) => void;
 }
 
@@ -34,6 +37,7 @@ export const ApiOverviewSection: React.FC<ApiOverviewSectionProps> = ({
   externalApis,
   onDownloadCollection,
   onViewDetails,
+  onViewDocumentation,
   onCopyUrl
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -57,6 +61,14 @@ export const ApiOverviewSection: React.FC<ApiOverviewSectionProps> = ({
 
   const totalEndpoints = [...internalApis, ...externalApis].reduce(
     (acc, api) => acc + api.endpoints.length, 0
+  );
+
+  const totalRlsPolicies = [...internalApis, ...externalApis].reduce(
+    (acc, api) => acc + api.rlsPolicies.length, 0
+  );
+
+  const totalMappings = [...internalApis, ...externalApis].reduce(
+    (acc, api) => acc + api.mappings.length, 0
   );
 
   return (
@@ -86,6 +98,10 @@ export const ApiOverviewSection: React.FC<ApiOverviewSectionProps> = ({
               <Database className="h-3 w-3" />
               {totalEndpoints} Endpoints
             </Badge>
+            <Badge variant="outline" className="flex items-center gap-1">
+              <Shield className="h-3 w-3" />
+              {totalRlsPolicies} RLS Policies
+            </Badge>
           </div>
         </div>
       </div>
@@ -103,7 +119,7 @@ export const ApiOverviewSection: React.FC<ApiOverviewSectionProps> = ({
           </TabsTrigger>
           <TabsTrigger value="documentation" className="flex items-center gap-2">
             <FileText className="h-4 w-4" />
-            Documentation
+            Documentation Hub
           </TabsTrigger>
         </TabsList>
 
@@ -113,6 +129,7 @@ export const ApiOverviewSection: React.FC<ApiOverviewSectionProps> = ({
             searchTerm={searchTerm}
             onDownloadCollection={onDownloadCollection}
             onViewDetails={onViewDetails}
+            onViewDocumentation={onViewDocumentation}
             onCopyUrl={onCopyUrl}
           />
         </TabsContent>
@@ -123,124 +140,135 @@ export const ApiOverviewSection: React.FC<ApiOverviewSectionProps> = ({
             searchTerm={searchTerm}
             onDownloadCollection={onDownloadCollection}
             onViewDetails={onViewDetails}
+            onViewDocumentation={onViewDocumentation}
             onCopyUrl={onCopyUrl}
           />
         </TabsContent>
 
         <TabsContent value="documentation" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Auto-Generated Documentation
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Server className="h-5 w-5 text-blue-500" />
+                  Internal API Documentation
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
                 <div className="space-y-4">
-                  <h4 className="font-semibold flex items-center gap-2">
-                    <Server className="h-4 w-4 text-blue-500" />
-                    Internal API Documentation
-                  </h4>
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div className="text-center p-3 bg-blue-50 rounded-lg">
+                      <div className="text-2xl font-bold text-blue-600">{internalApis.length}</div>
+                      <div className="text-sm text-blue-600">Internal APIs</div>
+                    </div>
+                    <div className="text-center p-3 bg-green-50 rounded-lg">
+                      <div className="text-2xl font-bold text-green-600">
+                        {internalApis.reduce((acc, api) => acc + api.endpoints.length, 0)}
+                      </div>
+                      <div className="text-sm text-green-600">Endpoints</div>
+                    </div>
+                  </div>
+                  
                   <div className="space-y-2">
-                    <Button 
-                      variant="outline" 
-                      className="w-full justify-start"
-                      onClick={() => {
-                        // Generate OpenAPI spec
-                        const spec = {
-                          openapi: '3.0.0',
-                          info: {
-                            title: 'Healthcare Admin Internal API',
-                            version: '1.0.0',
-                            description: 'HIPAA-compliant healthcare administration platform APIs'
-                          },
-                          servers: [{ url: window.location.origin }],
-                          paths: internalApis.reduce((acc, api) => {
-                            api.endpoints.forEach(endpoint => {
-                              acc[endpoint.url] = {
-                                [endpoint.method.toLowerCase()]: {
-                                  summary: endpoint.name,
-                                  description: endpoint.description,
-                                  responses: {
-                                    '200': { description: 'Success' }
-                                  }
-                                }
-                              };
-                            });
-                            return acc;
-                          }, {} as any)
-                        };
-                        
-                        const blob = new Blob([JSON.stringify(spec, null, 2)], { type: 'application/json' });
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = 'internal-api-openapi.json';
-                        a.click();
-                      }}
-                    >
-                      <Code className="h-4 w-4 mr-2" />
-                      OpenAPI Specification
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className="w-full justify-start"
-                      onClick={() => {
-                        if (internalApis[0]) {
-                          onDownloadCollection(internalApis[0].id);
-                        }
-                      }}
-                    >
-                      <Download className="h-4 w-4 mr-2" />
-                      Postman Collection
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className="w-full justify-start"
-                      onClick={() => {
-                        const schemas = internalApis.reduce((acc, api) => {
-                          return { ...acc, ...api.schemas };
-                        }, {});
-                        
-                        const blob = new Blob([JSON.stringify(schemas, null, 2)], { type: 'application/json' });
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = 'internal-api-schemas.json';
-                        a.click();
-                      }}
-                    >
-                      <Database className="h-4 w-4 mr-2" />
-                      Data Schemas
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className="w-full justify-start"
-                      onClick={() => {
-                        const policies = internalApis.reduce((acc, api) => {
-                          return [...acc, ...api.rlsPolicies];
-                        }, [] as any[]);
-                        
-                        const blob = new Blob([JSON.stringify(policies, null, 2)], { type: 'application/json' });
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = 'internal-api-rls-policies.json';
-                        a.click();
-                      }}
-                    >
-                      <Shield className="h-4 w-4 mr-2" />
-                      RLS Policies
-                    </Button>
+                    {internalApis.map((api) => (
+                      <div key={api.id} className="p-3 border rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-medium">{api.name}</span>
+                          <Badge variant="outline">v{api.version}</Badge>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => onViewDocumentation(api.id)}
+                          >
+                            <BookOpen className="h-3 w-3 mr-1" />
+                            View Docs
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => onDownloadCollection(api.id)}
+                          >
+                            <Download className="h-3 w-3 mr-1" />
+                            Collection
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => onViewDetails(api.id)}
+                          >
+                            <TestTube className="h-3 w-3 mr-1" />
+                            Test
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                    
+                    <div className="mt-4 space-y-2">
+                      <Button 
+                        variant="outline" 
+                        className="w-full justify-start"
+                        onClick={() => {
+                          // Generate comprehensive internal API documentation
+                          const internalDocs = {
+                            info: {
+                              title: 'Healthcare Admin Internal API',
+                              version: '1.0.0',
+                              description: 'Complete internal API documentation with RLS policies and data mapping',
+                            },
+                            apis: internalApis.map(api => ({
+                              name: api.name,
+                              endpoints: api.endpoints,
+                              rlsPolicies: api.rlsPolicies,
+                              mappings: api.mappings,
+                              schemas: api.schemas
+                            })),
+                            metadata: {
+                              totalEndpoints: internalApis.reduce((acc, api) => acc + api.endpoints.length, 0),
+                              totalRlsPolicies: internalApis.reduce((acc, api) => acc + api.rlsPolicies.length, 0),
+                              totalMappings: internalApis.reduce((acc, api) => acc + api.mappings.length, 0),
+                              generatedAt: new Date().toISOString()
+                            }
+                          };
+                          
+                          const blob = new Blob([JSON.stringify(internalDocs, null, 2)], { type: 'application/json' });
+                          const url = URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = 'internal-api-complete-documentation.json';
+                          a.click();
+                        }}
+                      >
+                        <FileText className="h-4 w-4 mr-2" />
+                        Complete Internal API Documentation
+                      </Button>
+                    </div>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
 
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Globe className="h-5 w-5 text-green-500" />
+                  External API Documentation
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
                 <div className="space-y-4">
-                  <h4 className="font-semibold flex items-center gap-2">
-                    <Globe className="h-4 w-4 text-green-500" />
-                    External API Documentation
-                  </h4>
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div className="text-center p-3 bg-green-50 rounded-lg">
+                      <div className="text-2xl font-bold text-green-600">{externalApis.length}</div>
+                      <div className="text-sm text-green-600">External APIs</div>
+                    </div>
+                    <div className="text-center p-3 bg-purple-50 rounded-lg">
+                      <div className="text-2xl font-bold text-purple-600">{totalMappings}</div>
+                      <div className="text-sm text-purple-600">Data Mappings</div>
+                    </div>
+                  </div>
+                  
                   <div className="space-y-2">
                     {externalApis.map((api) => (
                       <div key={api.id} className="p-3 border rounded-lg">
@@ -249,6 +277,14 @@ export const ApiOverviewSection: React.FC<ApiOverviewSectionProps> = ({
                           <Badge variant="outline">v{api.version}</Badge>
                         </div>
                         <div className="flex gap-2">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => onViewDocumentation(api.id)}
+                          >
+                            <BookOpen className="h-3 w-3 mr-1" />
+                            View Docs
+                          </Button>
                           <Button 
                             variant="ghost" 
                             size="sm"
@@ -276,9 +312,9 @@ export const ApiOverviewSection: React.FC<ApiOverviewSectionProps> = ({
                     )}
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
     </div>
