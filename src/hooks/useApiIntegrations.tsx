@@ -1,11 +1,12 @@
 
 /**
- * Hook for managing API integrations
+ * Enhanced hook for managing API integrations with internal/external differentiation
  */
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiIntegrationManager, ApiIntegration, PostmanCollection } from '@/utils/api/ApiIntegrationManager';
+import { apiIntegrationManager } from '@/utils/api/ApiIntegrationManager';
+import { ApiIntegration } from '@/utils/api/ApiIntegrationTypes';
 import { useToast } from '@/hooks/use-toast';
 
 export const useApiIntegrations = () => {
@@ -23,11 +24,20 @@ export const useApiIntegrations = () => {
     staleTime: 30000
   });
 
+  const {
+    data: integrationStats
+  } = useQuery({
+    queryKey: ['api-integration-stats'],
+    queryFn: () => apiIntegrationManager.getIntegrationStats(),
+    staleTime: 60000
+  });
+
   const registerIntegrationMutation = useMutation({
     mutationFn: (config: Omit<ApiIntegration, 'id' | 'createdAt' | 'updatedAt'>) =>
       apiIntegrationManager.registerIntegration(config),
     onSuccess: (integration) => {
       queryClient.invalidateQueries({ queryKey: ['api-integrations'] });
+      queryClient.invalidateQueries({ queryKey: ['api-integration-stats'] });
       toast({
         title: "Integration Registered",
         description: `${integration.name} has been successfully registered with auto-generated schemas and Postman collection.`,
@@ -48,10 +58,10 @@ export const useApiIntegrations = () => {
       operation: 'sync' | 'webhook' | 'manual';
       data?: any;
     }) => apiIntegrationManager.executeIntegration(integrationId, operation, data),
-    onSuccess: () => {
+    onSuccess: (result) => {
       toast({
         title: "Integration Executed",
-        description: "API integration completed successfully.",
+        description: `API integration completed successfully. Processed ${Object.keys(result.data).length} data fields.`,
       });
     },
     onError: (error: any) => {
@@ -80,7 +90,7 @@ export const useApiIntegrations = () => {
 
       toast({
         title: "Collection Downloaded",
-        description: "Postman collection has been downloaded successfully.",
+        description: `Postman collection for ${integration?.name} has been downloaded successfully.`,
       });
     } catch (error: any) {
       toast({
@@ -91,8 +101,39 @@ export const useApiIntegrations = () => {
     }
   };
 
+  const getIntegrationsByType = (type: 'internal' | 'external') => {
+    return integrations?.filter(integration => integration.type === type) || [];
+  };
+
+  const exportApiDocumentation = () => {
+    try {
+      const docs = apiIntegrationManager.exportApiDocumentation();
+      const blob = new Blob([JSON.stringify(docs, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'complete-api-documentation.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "Documentation Exported",
+        description: "Complete API documentation has been exported successfully.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Export Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   return {
     integrations,
+    integrationStats,
     isLoading,
     error,
     selectedIntegration,
@@ -101,6 +142,10 @@ export const useApiIntegrations = () => {
     isRegistering: registerIntegrationMutation.isPending,
     executeIntegration: executeIntegrationMutation.mutate,
     isExecuting: executeIntegrationMutation.isPending,
-    downloadPostmanCollection
+    downloadPostmanCollection,
+    getIntegrationsByType,
+    exportApiDocumentation,
+    internalApis: getIntegrationsByType('internal'),
+    externalApis: getIntegrationsByType('external')
   };
 };
