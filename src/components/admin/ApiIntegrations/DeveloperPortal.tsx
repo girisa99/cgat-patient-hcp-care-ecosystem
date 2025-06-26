@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,7 +7,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { 
   Key, 
@@ -28,79 +26,56 @@ import {
   CheckCircle,
   AlertCircle
 } from 'lucide-react';
+import { useApiKeys } from '@/hooks/useApiKeys';
+import { useDeveloperApplications } from '@/hooks/useDeveloperApplications';
 import { useToast } from '@/hooks/use-toast';
 
 interface ApiKey {
   id: string;
   name: string;
   key: string;
+  key_prefix: string;
   type: 'development' | 'production' | 'sandbox';
   permissions: string[];
   modules: string[];
-  rateLimit: {
-    requests: number;
-    period: string;
-  };
+  rate_limit_requests: number;
+  rate_limit_period: string;
+  usage_count: number;
   status: 'active' | 'inactive' | 'pending';
-  createdAt: string;
-  expiresAt?: string;
-  lastUsed?: string;
+  created_at: string;
+  expires_at?: string;
+  last_used?: string;
 }
 
 interface DeveloperApplication {
   id: string;
-  companyName: string;
+  company_name: string;
   email: string;
   description: string;
-  requestedModules: string[];
+  requested_modules: string[];
   status: 'pending' | 'approved' | 'rejected';
-  submittedAt: string;
+  created_at: string;
 }
 
 const DeveloperPortal = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('overview');
-  const [showApiKey, setShowApiKey] = useState<string | null>(null);
   const [showApplicationDialog, setShowApplicationDialog] = useState(false);
 
-  // Mock data - in real implementation, this would come from your backend
-  const [apiKeys] = useState<ApiKey[]>([
-    {
-      id: '1',
-      name: 'Healthcare App Dev',
-      key: 'hc_dev_1a2b3c4d5e6f7g8h9i0j',
-      type: 'development',
-      permissions: ['read', 'write'],
-      modules: ['patients', 'facilities', 'users'],
-      rateLimit: { requests: 1000, period: 'hour' },
-      status: 'active',
-      createdAt: '2024-01-15T10:00:00Z',
-      lastUsed: '2024-01-20T14:30:00Z'
-    },
-    {
-      id: '2',
-      name: 'Mobile App Sandbox',
-      key: 'hc_sandbox_k1l2m3n4o5p6q7r8s9t0',
-      type: 'sandbox',
-      permissions: ['read'],
-      modules: ['patients', 'facilities'],
-      rateLimit: { requests: 500, period: 'hour' },
-      status: 'active',
-      createdAt: '2024-01-10T09:00:00Z'
-    }
-  ]);
+  const {
+    apiKeys,
+    isLoading: isLoadingKeys,
+    visibleKeys,
+    toggleKeyVisibility,
+    handleCopyKey
+  } = useApiKeys();
 
-  const [applications] = useState<DeveloperApplication[]>([
-    {
-      id: '1',
-      companyName: 'HealthTech Solutions',
-      email: 'dev@healthtech.com',
-      description: 'Building a patient management mobile app',
-      requestedModules: ['patients', 'facilities', 'appointments'],
-      status: 'pending',
-      submittedAt: '2024-01-18T11:00:00Z'
-    }
-  ]);
+  const {
+    applications,
+    isLoading: isLoadingApps,
+    createApplication,
+    isCreating
+  } = useDeveloperApplications();
 
   const availableModules = [
     { id: 'patients', name: 'Patient Management', description: 'Access patient data and records' },
@@ -110,16 +85,8 @@ const DeveloperPortal = () => {
     { id: 'billing', name: 'Billing', description: 'Handle billing and payments' },
   ];
 
-  const handleCopyApiKey = (key: string) => {
-    navigator.clipboard.writeText(key);
-    toast({
-      title: "API Key Copied",
-      description: "The API key has been copied to your clipboard.",
-    });
-  };
-
-  const handleGenerateTestUrl = (apiKey: ApiKey) => {
-    const testUrl = `${window.location.origin}/api/sandbox?key=${apiKey.key}&modules=${apiKey.modules.join(',')}`;
+  const handleGenerateTestUrl = (apiKey: any) => {
+    const testUrl = `${window.location.origin}/api/sandbox?key=${apiKey.key_prefix}&modules=${apiKey.modules.join(',')}`;
     navigator.clipboard.writeText(testUrl);
     toast({
       title: "Test URL Generated",
@@ -137,11 +104,23 @@ const DeveloperPortal = () => {
 
     const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
-      toast({
-        title: "Application Submitted",
-        description: "Your API access request has been submitted for review.",
-      });
+      if (!formData.companyName || !formData.email || !formData.description || formData.requestedModules.length === 0) {
+        toast({
+          title: "Validation Error",
+          description: "Please fill in all fields and select at least one module.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      createApplication(formData);
       setShowApplicationDialog(false);
+      setFormData({
+        companyName: '',
+        email: '',
+        description: '',
+        requestedModules: []
+      });
     };
 
     return (
@@ -209,12 +188,27 @@ const DeveloperPortal = () => {
           </div>
         </div>
         
-        <Button type="submit" className="w-full">
-          Submit Application
+        <Button type="submit" className="w-full" disabled={isCreating}>
+          {isCreating ? 'Submitting...' : 'Submit Application'}
         </Button>
       </form>
     );
   };
+
+  if (isLoadingKeys || isLoadingApps) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h2 className="text-3xl font-bold tracking-tight">Developer Portal</h2>
+        </div>
+        <Card>
+          <CardContent className="p-6 text-center">
+            Loading developer portal data...
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -259,7 +253,7 @@ const DeveloperPortal = () => {
               <CardContent>
                 <div className="text-2xl font-bold">{apiKeys.filter(k => k.status === 'active').length}</div>
                 <p className="text-xs text-muted-foreground">
-                  +1 from last month
+                  Total: {apiKeys.length}
                 </p>
               </CardContent>
             </Card>
@@ -270,9 +264,11 @@ const DeveloperPortal = () => {
                 <Zap className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">24,567</div>
+                <div className="text-2xl font-bold">
+                  {apiKeys.reduce((acc, key) => acc + key.usage_count, 0)}
+                </div>
                 <p className="text-xs text-muted-foreground">
-                  +20.1% from last month
+                  Across all keys
                 </p>
               </CardContent>
             </Card>
@@ -342,7 +338,7 @@ const DeveloperPortal = () => {
         <TabsContent value="api-keys" className="space-y-6">
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-medium">Your API Keys</h3>
-            <Button variant="outline">
+            <Button variant="outline" disabled>
               <Plus className="h-4 w-4 mr-2" />
               Generate New Key
             </Button>
@@ -364,25 +360,29 @@ const DeveloperPortal = () => {
                         </Badge>
                       </div>
                       <div className="flex items-center gap-2 font-mono text-sm">
-                        {showApiKey === apiKey.id ? (
+                        {visibleKeys.has(apiKey.id) && apiKey.key ? (
                           <span>{apiKey.key}</span>
                         ) : (
-                          <span>{'*'.repeat(20)}</span>
+                          <span>{apiKey.key_prefix}</span>
                         )}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setShowApiKey(showApiKey === apiKey.id ? null : apiKey.id)}
-                        >
-                          {showApiKey === apiKey.id ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleCopyApiKey(apiKey.key)}
-                        >
-                          <Copy className="h-4 w-4" />
-                        </Button>
+                        {apiKey.key && (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => toggleKeyVisibility(apiKey.id)}
+                            >
+                              {visibleKeys.has(apiKey.id) ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleCopyKey(apiKey.key!)}
+                            >
+                              <Copy className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </div>
                     <div className="flex gap-2">
@@ -403,7 +403,7 @@ const DeveloperPortal = () => {
                   <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                     <div>
                       <p className="text-muted-foreground">Rate Limit</p>
-                      <p className="font-medium">{apiKey.rateLimit.requests}/{apiKey.rateLimit.period}</p>
+                      <p className="font-medium">{apiKey.rate_limit_requests}/{apiKey.rate_limit_period}</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Modules</p>
@@ -411,12 +411,12 @@ const DeveloperPortal = () => {
                     </div>
                     <div>
                       <p className="text-muted-foreground">Created</p>
-                      <p className="font-medium">{new Date(apiKey.createdAt).toLocaleDateString()}</p>
+                      <p className="font-medium">{new Date(apiKey.created_at).toLocaleDateString()}</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Last Used</p>
                       <p className="font-medium">
-                        {apiKey.lastUsed ? new Date(apiKey.lastUsed).toLocaleDateString() : 'Never'}
+                        {apiKey.last_used ? new Date(apiKey.last_used).toLocaleDateString() : 'Never'}
                       </p>
                     </div>
                   </div>
@@ -432,6 +432,16 @@ const DeveloperPortal = () => {
                 </CardContent>
               </Card>
             ))}
+            
+            {apiKeys.length === 0 && (
+              <Card>
+                <CardContent className="p-6 text-center">
+                  <div className="text-muted-foreground">
+                    No API keys found. Submit an application to get started.
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </TabsContent>
 
@@ -510,7 +520,7 @@ const DeveloperPortal = () => {
                   <div className="flex items-center justify-between">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <h4 className="font-medium">{app.companyName}</h4>
+                        <h4 className="font-medium">{app.company_name}</h4>
                         <Badge variant={
                           app.status === 'approved' ? 'secondary' : 
                           app.status === 'pending' ? 'outline' : 'destructive'
@@ -525,7 +535,7 @@ const DeveloperPortal = () => {
                     </div>
                     <div className="text-right">
                       <p className="text-sm text-muted-foreground">Submitted</p>
-                      <p className="text-sm font-medium">{new Date(app.submittedAt).toLocaleDateString()}</p>
+                      <p className="text-sm font-medium">{new Date(app.created_at).toLocaleDateString()}</p>
                     </div>
                   </div>
                   
@@ -537,7 +547,7 @@ const DeveloperPortal = () => {
                   <div className="mt-4">
                     <p className="text-sm font-medium mb-2">Requested Modules:</p>
                     <div className="flex flex-wrap gap-2">
-                      {app.requestedModules.map((module) => (
+                      {app.requested_modules.map((module) => (
                         <Badge key={module} variant="outline">{module}</Badge>
                       ))}
                     </div>
@@ -545,6 +555,16 @@ const DeveloperPortal = () => {
                 </CardContent>
               </Card>
             ))}
+            
+            {applications.length === 0 && (
+              <Card>
+                <CardContent className="p-6 text-center">
+                  <div className="text-muted-foreground">
+                    No applications submitted yet. Click "Request API Access" to get started.
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </TabsContent>
       </Tabs>

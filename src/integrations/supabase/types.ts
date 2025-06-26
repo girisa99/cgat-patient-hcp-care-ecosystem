@@ -9,6 +9,110 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      api_keys: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          ip_whitelist: string[] | null
+          key_hash: string
+          key_prefix: string
+          last_used: string | null
+          modules: string[]
+          name: string
+          permissions: string[]
+          rate_limit_period: string
+          rate_limit_requests: number
+          status: string
+          type: string
+          updated_at: string
+          usage_count: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          ip_whitelist?: string[] | null
+          key_hash: string
+          key_prefix: string
+          last_used?: string | null
+          modules?: string[]
+          name: string
+          permissions?: string[]
+          rate_limit_period?: string
+          rate_limit_requests?: number
+          status?: string
+          type: string
+          updated_at?: string
+          usage_count?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          ip_whitelist?: string[] | null
+          key_hash?: string
+          key_prefix?: string
+          last_used?: string | null
+          modules?: string[]
+          name?: string
+          permissions?: string[]
+          rate_limit_period?: string
+          rate_limit_requests?: number
+          status?: string
+          type?: string
+          updated_at?: string
+          usage_count?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      api_usage_logs: {
+        Row: {
+          api_key_id: string
+          created_at: string
+          endpoint: string
+          id: string
+          ip_address: unknown | null
+          method: string
+          response_time_ms: number | null
+          status_code: number
+          user_agent: string | null
+        }
+        Insert: {
+          api_key_id: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          ip_address?: unknown | null
+          method: string
+          response_time_ms?: number | null
+          status_code: number
+          user_agent?: string | null
+        }
+        Update: {
+          api_key_id?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          ip_address?: unknown | null
+          method?: string
+          response_time_ms?: number | null
+          status_code?: number
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_usage_logs_api_key_id_fkey"
+            columns: ["api_key_id"]
+            isOneToOne: false
+            referencedRelation: "api_keys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
@@ -45,6 +149,48 @@ export type Database = {
           table_name?: string | null
           user_agent?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      developer_applications: {
+        Row: {
+          company_name: string
+          created_at: string
+          description: string
+          email: string
+          id: string
+          requested_modules: string[]
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company_name: string
+          created_at?: string
+          description: string
+          email: string
+          id?: string
+          requested_modules?: string[]
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company_name?: string
+          created_at?: string
+          description?: string
+          email?: string
+          id?: string
+          requested_modules?: string[]
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -578,6 +724,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      generate_api_key: {
+        Args: { key_type: string }
+        Returns: string
+      }
       get_user_accessible_facilities: {
         Args: { user_id: string }
         Returns: {
@@ -614,6 +764,10 @@ export type Database = {
           role_name: Database["public"]["Enums"]["user_role"]
         }
         Returns: boolean
+      }
+      update_api_key_usage: {
+        Args: { key_hash: string }
+        Returns: undefined
       }
       user_has_permission: {
         Args: {

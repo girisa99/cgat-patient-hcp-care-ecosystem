@@ -20,6 +20,7 @@ import {
   Shield,
   AlertTriangle
 } from 'lucide-react';
+import { useApiKeys } from '@/hooks/useApiKeys';
 import { useToast } from '@/hooks/use-toast';
 
 interface ApiKeyConfig {
@@ -35,27 +36,21 @@ interface ApiKeyConfig {
   ipWhitelist?: string[];
 }
 
-interface ApiKey {
-  id: string;
-  name: string;
-  key: string;
-  type: 'development' | 'production' | 'sandbox';
-  modules: string[];
-  permissions: string[];
-  rateLimit: {
-    requests: number;
-    period: 'minute' | 'hour' | 'day';
-  };
-  status: 'active' | 'inactive';
-  createdAt: string;
-  lastUsed?: string;
-  usageCount: number;
-}
-
 const ApiKeyManager = () => {
   const { toast } = useToast();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [visibleKeys, setVisibleKeys] = useState<Set<string>>(new Set());
+  
+  const {
+    apiKeys,
+    isLoading,
+    visibleKeys,
+    createApiKey,
+    isCreating,
+    updateApiKey,
+    deleteApiKey,
+    toggleKeyVisibility,
+    handleCopyKey
+  } = useApiKeys();
 
   const availableModules = [
     { id: 'patients', name: 'Patient Management' },
@@ -72,68 +67,9 @@ const ApiKeyManager = () => {
     { id: 'admin', name: 'Admin Access' },
   ];
 
-  const [apiKeys, setApiKeys] = useState<ApiKey[]>([
-    {
-      id: '1',
-      name: 'Healthcare App Dev',
-      key: 'hc_dev_1a2b3c4d5e6f7g8h9i0j',
-      type: 'development',
-      modules: ['patients', 'facilities'],
-      permissions: ['read', 'write'],
-      rateLimit: { requests: 1000, period: 'hour' },
-      status: 'active',
-      createdAt: '2024-01-15T10:00:00Z',
-      lastUsed: '2024-01-20T14:30:00Z',
-      usageCount: 2450
-    }
-  ]);
-
-  const generateApiKey = (type: string): string => {
-    const prefix = type === 'production' ? 'hc_prod_' : type === 'sandbox' ? 'hc_sandbox_' : 'hc_dev_';
-    const randomStr = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-    return prefix + randomStr;
-  };
-
   const handleCreateApiKey = (config: ApiKeyConfig) => {
-    const newKey: ApiKey = {
-      id: Date.now().toString(),
-      name: config.name,
-      key: generateApiKey(config.type),
-      type: config.type,
-      modules: config.modules,
-      permissions: config.permissions,
-      rateLimit: config.rateLimit,
-      status: 'active',
-      createdAt: new Date().toISOString(),
-      lastUsed: undefined,
-      usageCount: 0
-    };
-
-    setApiKeys([...apiKeys, newKey]);
+    createApiKey(config);
     setShowCreateDialog(false);
-    
-    toast({
-      title: "API Key Created",
-      description: `${config.name} has been created successfully.`,
-    });
-  };
-
-  const handleCopyKey = (key: string) => {
-    navigator.clipboard.writeText(key);
-    toast({
-      title: "API Key Copied",
-      description: "The API key has been copied to your clipboard.",
-    });
-  };
-
-  const toggleKeyVisibility = (keyId: string) => {
-    const newVisible = new Set(visibleKeys);
-    if (newVisible.has(keyId)) {
-      newVisible.delete(keyId);
-    } else {
-      newVisible.add(keyId);
-    }
-    setVisibleKeys(newVisible);
   };
 
   const CreateApiKeyDialog = () => {
@@ -267,13 +203,26 @@ const ApiKeyManager = () => {
           <Button type="button" variant="outline" onClick={() => setShowCreateDialog(false)}>
             Cancel
           </Button>
-          <Button type="submit">
-            Create API Key
+          <Button type="submit" disabled={isCreating}>
+            {isCreating ? 'Creating...' : 'Create API Key'}
           </Button>
         </div>
       </form>
     );
   };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h3 className="text-lg font-medium">API Key Management</h3>
+            <p className="text-sm text-muted-foreground">Loading API keys...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -321,7 +270,7 @@ const ApiKeyManager = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {apiKeys.reduce((acc, key) => acc + key.usageCount, 0)}
+              {apiKeys.reduce((acc, key) => acc + key.usage_count, 0)}
             </div>
             <p className="text-xs text-muted-foreground">
               Across all keys
@@ -359,32 +308,47 @@ const ApiKeyManager = () => {
                     </Badge>
                   </div>
                   <div className="flex items-center gap-2 font-mono text-sm">
-                    {visibleKeys.has(apiKey.id) ? (
+                    {visibleKeys.has(apiKey.id) && apiKey.key ? (
                       <span className="bg-gray-100 px-2 py-1 rounded">{apiKey.key}</span>
                     ) : (
-                      <span className="bg-gray-100 px-2 py-1 rounded">{'*'.repeat(20)}</span>
+                      <span className="bg-gray-100 px-2 py-1 rounded">{apiKey.key_prefix}</span>
                     )}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => toggleKeyVisibility(apiKey.id)}
-                    >
-                      {visibleKeys.has(apiKey.id) ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleCopyKey(apiKey.key)}
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
+                    {apiKey.key && (
+                      <>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => toggleKeyVisibility(apiKey.id)}
+                        >
+                          {visibleKeys.has(apiKey.id) ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleCopyKey(apiKey.key!)}
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => updateApiKey({ 
+                      id: apiKey.id, 
+                      updates: { status: apiKey.status === 'active' ? 'inactive' : 'active' }
+                    })}
+                  >
                     <Settings className="h-4 w-4" />
                   </Button>
-                  <Button variant="outline" size="sm">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => deleteApiKey(apiKey.id)}
+                  >
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
@@ -393,11 +357,11 @@ const ApiKeyManager = () => {
               <div className="mt-4 grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
                 <div>
                   <p className="text-muted-foreground">Rate Limit</p>
-                  <p className="font-medium">{apiKey.rateLimit.requests}/{apiKey.rateLimit.period}</p>
+                  <p className="font-medium">{apiKey.rate_limit_requests}/{apiKey.rate_limit_period}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Usage</p>
-                  <p className="font-medium">{apiKey.usageCount} calls</p>
+                  <p className="font-medium">{apiKey.usage_count} calls</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Modules</p>
@@ -405,12 +369,12 @@ const ApiKeyManager = () => {
                 </div>
                 <div>
                   <p className="text-muted-foreground">Created</p>
-                  <p className="font-medium">{new Date(apiKey.createdAt).toLocaleDateString()}</p>
+                  <p className="font-medium">{new Date(apiKey.created_at).toLocaleDateString()}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Last Used</p>
                   <p className="font-medium">
-                    {apiKey.lastUsed ? new Date(apiKey.lastUsed).toLocaleDateString() : 'Never'}
+                    {apiKey.last_used ? new Date(apiKey.last_used).toLocaleDateString() : 'Never'}
                   </p>
                 </div>
               </div>
@@ -437,6 +401,16 @@ const ApiKeyManager = () => {
             </CardContent>
           </Card>
         ))}
+        
+        {apiKeys.length === 0 && (
+          <Card>
+            <CardContent className="p-6 text-center">
+              <div className="text-muted-foreground">
+                No API keys created yet. Click "Create API Key" to get started.
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
