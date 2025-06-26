@@ -20,11 +20,17 @@ import {
 } from '@/utils/schemaScanner';
 import { autoRegisterModules, autoModuleWatcher } from '@/utils/autoModuleRegistration';
 
+interface RegistrationStats {
+  autoRegistered: number;
+  needsReview: number;
+  totalScanned: number;
+}
+
 export const AutoModuleManager = () => {
   const [detectedModules, setDetectedModules] = useState<AutoModuleConfig[]>([]);
   const [isScanning, setIsScanning] = useState(false);
   const [autoRegistrationEnabled, setAutoRegistrationEnabled] = useState(false);
-  const [registrationStats, setRegistrationStats] = useState({
+  const [registrationStats, setRegistrationStats] = useState<RegistrationStats>({
     autoRegistered: 0,
     needsReview: 0,
     totalScanned: 0
@@ -37,10 +43,15 @@ export const AutoModuleManager = () => {
     
     // Set up auto-registration watcher
     const unsubscribe = autoModuleWatcher.onUpdate((result) => {
-      setRegistrationStats(result);
+      const stats: RegistrationStats = {
+        autoRegistered: result.autoRegistered?.length || 0,
+        needsReview: result.needsReview?.length || 0,
+        totalScanned: result.totalScanned || 0
+      };
+      setRegistrationStats(stats);
       toast({
         title: "Auto-Registration Update",
-        description: `Auto-registered ${result.autoRegistered.length} modules`,
+        description: `Auto-registered ${stats.autoRegistered} modules`,
       });
     });
 
@@ -73,10 +84,15 @@ export const AutoModuleManager = () => {
   const handleAutoRegister = async () => {
     try {
       const result = await autoRegisterModules();
-      setRegistrationStats(result);
+      const stats: RegistrationStats = {
+        autoRegistered: result.autoRegistered?.length || 0,
+        needsReview: result.needsReview?.length || 0,
+        totalScanned: result.totalScanned || 0
+      };
+      setRegistrationStats(stats);
       toast({
         title: "Auto-Registration Complete",
-        description: `Registered ${result.autoRegistered.length} modules automatically`,
+        description: `Registered ${stats.autoRegistered} modules automatically`,
       });
     } catch (error) {
       toast({
