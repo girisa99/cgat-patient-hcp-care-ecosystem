@@ -1,6 +1,6 @@
 
 /**
- * Enhanced Published API Details Hook with Real Database Schema Analysis
+ * Enhanced Published API Details Hook with Core Business Schema Analysis
  */
 
 import { useQuery } from '@tanstack/react-query';
@@ -12,10 +12,10 @@ export type { ApiIntegrationDetails } from './usePublishedApiDetails';
 
 export const useEnhancedPublishedApiDetails = () => {
   const getEnhancedApiDetails = async (apiId: string): Promise<ApiIntegrationDetails | null> => {
-    console.log('🔍 ENHANCED: Fetching API details with REAL DATABASE ANALYSIS for:', apiId);
+    console.log('🔍 ENHANCED: Fetching API details with CORE BUSINESS ANALYSIS for:', apiId);
 
     try {
-      // Step 1: Get the external API registry entry with fresh data
+      // Step 1: Get the external API registry entry
       console.log('📋 Step 1: Fetching external API registry entry...');
       const { data: externalApi, error: externalError } = await supabase
         .from('external_api_registry')
@@ -36,12 +36,12 @@ export const useEnhancedPublishedApiDetails = () => {
         visibility: externalApi.visibility
       });
 
-      // Step 2: Analyze REAL database schema
-      console.log('📋 Step 2: Analyzing REAL database schema...');
-      const databaseTables = await databaseSchemaAnalyzer.getAllTables();
-      console.log(`🔍 Real database analysis: Found ${databaseTables.length} tables`);
+      // Step 2: Analyze CORE BUSINESS database schema only
+      console.log('📋 Step 2: Analyzing CORE BUSINESS database schema...');
+      const coreBusinessTables = await databaseSchemaAnalyzer.getAllTables();
+      console.log(`🔍 Core business analysis: Found ${coreBusinessTables.length} relevant tables`);
 
-      // Step 3: Fetch synced external API endpoints with forced refresh
+      // Step 3: Fetch synced external API endpoints
       console.log('📋 Step 3: Fetching synced external API endpoints...');
       const { data: endpoints, error: endpointsError } = await supabase
         .from('external_api_endpoints')
@@ -55,38 +55,26 @@ export const useEnhancedPublishedApiDetails = () => {
 
       console.log(`📊 Found ${endpoints?.length || 0} synced endpoints`);
 
-      // Step 4: If no endpoints found or count is low, trigger real database sync
+      // Step 4: If no endpoints found, trigger core business sync
       let finalEndpoints = endpoints || [];
-      const expectedEndpointCount = databaseTables.length * 4; // 4 CRUD operations per table
+      const expectedEndpointCount = coreBusinessTables.length * 3; // ~3 core endpoints per table
       
       if (!finalEndpoints || finalEndpoints.length < expectedEndpointCount) {
-        console.log(`🔄 Found ${finalEndpoints.length} endpoints but expected ~${expectedEndpointCount} based on ${databaseTables.length} tables. Triggering real database sync...`);
-        await triggerRealDatabaseSync(apiId, externalApi.internal_api_id, databaseTables);
+        console.log(`🔄 Found ${finalEndpoints.length} endpoints but expected ~${expectedEndpointCount} based on ${coreBusinessTables.length} core tables. Triggering core business sync...`);
+        await triggerCoreBusinessSync(apiId, externalApi.internal_api_id, coreBusinessTables);
         
-        // Retry fetching endpoints after real sync
+        // Retry fetching endpoints after sync
         const { data: retryEndpoints } = await supabase
           .from('external_api_endpoints')
           .select('*')
           .eq('external_api_id', apiId)
           .order('external_path');
         
-        console.log(`📊 After REAL DATABASE sync: Found ${retryEndpoints?.length || 0} endpoints`);
+        console.log(`📊 After CORE BUSINESS sync: Found ${retryEndpoints?.length || 0} endpoints`);
         
-        // Use the retry results if available
         if (retryEndpoints && retryEndpoints.length > 0) {
           finalEndpoints = retryEndpoints;
         }
-      }
-
-      // Log endpoint details for debugging
-      if (finalEndpoints && finalEndpoints.length > 0) {
-        console.log('🔍 Real synced endpoint details:', finalEndpoints.slice(0, 5).map(ep => ({
-          id: ep.id,
-          method: ep.method,
-          path: ep.external_path,
-          summary: ep.summary,
-          tags: ep.tags
-        })));
       }
 
       // Transform the endpoints data with proper structure
@@ -111,14 +99,14 @@ export const useEnhancedPublishedApiDetails = () => {
         request_schema: endpoint.request_schema || {
           type: 'object',
           properties: {
-            message: { type: 'string', description: 'Request schema generated from real database analysis' }
+            message: { type: 'string', description: 'Request schema generated from core business analysis' }
           }
         },
         response_schema: endpoint.response_schema || {
           type: 'object',
           properties: {
             success: { type: 'boolean', description: 'Operation success status' },
-            data: { type: 'object', description: 'Response data payload from real database' },
+            data: { type: 'object', description: 'Response data payload from core business tables' },
             message: { type: 'string', description: 'Response message' }
           }
         },
@@ -127,20 +115,20 @@ export const useEnhancedPublishedApiDetails = () => {
         rate_limit_override: endpoint.rate_limit_override
       }));
 
-      // Generate comprehensive RLS policies from real database analysis
-      const realRlsPolicies = databaseTables.flatMap(table => 
+      // Generate core business RLS policies only
+      const coreRlsPolicies = coreBusinessTables.flatMap(table => 
         table.rls_policies.map(policy => ({
           id: `${table.table_name}_${policy.policy_name}`,
           policy_name: policy.policy_name,
           table_name: policy.table_name,
           operation: policy.command,
           condition: policy.expression,
-          description: `RLS policy for ${policy.table_name} - ${policy.command} operations`
+          description: `Core business RLS policy for ${policy.table_name} - ${policy.command} operations`
         }))
       );
 
-      // Generate comprehensive data mappings from real database relationships
-      const realDataMappings = databaseTables.flatMap(table =>
+      // Generate core business data mappings only
+      const coreDataMappings = coreBusinessTables.flatMap(table =>
         table.foreign_keys.map(fk => ({
           id: `${table.table_name}_${fk.column_name}_mapping`,
           source_field: fk.column_name,
@@ -151,15 +139,15 @@ export const useEnhancedPublishedApiDetails = () => {
         }))
       );
 
-      // Generate real database schema from analysis
-      const realDatabaseSchema = {
-        tables: databaseTables.map(table => ({
+      // Generate core business database schema
+      const coreBusinessSchema = {
+        tables: coreBusinessTables.map(table => ({
           name: table.table_name,
           columns: table.columns.map(col => ({
             name: col.column_name,
             type: col.data_type,
             nullable: col.is_nullable,
-            description: `${col.column_name} field from real database schema`,
+            description: `${col.column_name} field from core business schema`,
             default: col.column_default,
             is_primary_key: col.is_primary_key
           })),
@@ -174,54 +162,54 @@ export const useEnhancedPublishedApiDetails = () => {
         }))
       };
 
-      // Rate limits configuration with proper type handling
+      // Rate limits configuration
       const rateLimitsData = externalApi.rate_limits as any;
       const defaultRequests = 1000;
       const requestsPerHour = (rateLimitsData && typeof rateLimitsData === 'object' && rateLimitsData.requests) 
         ? Number(rateLimitsData.requests) 
         : defaultRequests;
 
-      console.log('📊 Final enhanced external API details with REAL DATABASE ANALYSIS:', {
+      console.log('📊 Final enhanced external API details with CORE BUSINESS ANALYSIS:', {
         api_id: externalApi.id,
         api_name: externalApi.external_name,
-        real_database_tables: databaseTables.length,
+        core_business_tables: coreBusinessTables.length,
         synced_endpoints_count: transformedEndpoints.length,
-        real_rls_policies_count: realRlsPolicies.length,
-        real_data_mappings_count: realDataMappings.length,
-        database_tables_count: realDatabaseSchema.tables.length,
-        sync_status: 'real_database_sync_active'
+        core_rls_policies_count: coreRlsPolicies.length,
+        core_data_mappings_count: coreDataMappings.length,
+        database_tables_count: coreBusinessSchema.tables.length,
+        sync_status: 'core_business_sync_active'
       });
 
       return {
         id: externalApi.id,
         name: externalApi.external_name,
-        description: externalApi.external_description || `Comprehensive external API integration with real database sync for ${databaseTables.length} tables including profiles, facilities, modules, permissions, roles, and more.`,
+        description: externalApi.external_description || `Core business API integration for healthcare with ${coreBusinessTables.length} essential tables: profiles, facilities, modules, roles, and user_roles.`,
         base_url: externalApi.base_url || `${window.location.origin}/external-api/v1`,
         version: externalApi.version,
-        category: externalApi.category || 'healthcare-integration',
+        category: externalApi.category || 'healthcare-core',
         endpoints: transformedEndpoints,
-        rls_policies: realRlsPolicies,
-        data_mappings: realDataMappings,
-        database_schema: realDatabaseSchema,
+        rls_policies: coreRlsPolicies,
+        data_mappings: coreDataMappings,
+        database_schema: coreBusinessSchema,
         security_config: {
           encryption_methods: [
             'TLS 1.3 for all data in transit',
-            'Real database field-level encryption for sensitive data',
+            'Core business data field-level encryption',
             'API key encryption using industry-standard algorithms',
             'Request/response payload encryption for PII data'
           ],
-          authentication_methods: externalApi.authentication_methods || ['api_key', 'bearer_token', 'oauth2'],
+          authentication_methods: externalApi.authentication_methods || ['api_key', 'bearer_token'],
           authorization_policies: [
-            `Granular API key-based access control for ${databaseTables.length} database tables`,
+            `Role-based access control for ${coreBusinessTables.length} core business tables`,
             'Dynamic rate limiting per API key with burst allowance',
-            'Real database RLS policy enforcement',
+            'Core business RLS policy enforcement',
             'Table-level access restrictions based on user roles and permissions'
           ],
           data_protection: [
-            'Real database schema-based request/response validation',
+            'Core business schema-based request/response validation',
             'PII data masking for profiles and user information',
             'Secure API key storage with automatic rotation',
-            `Complete audit trail for all ${transformedEndpoints.length} API endpoints`
+            `Complete audit trail for all ${transformedEndpoints.length} core API endpoints`
           ],
           access_control: {
             rls_enabled: true,
@@ -238,65 +226,65 @@ export const useEnhancedPublishedApiDetails = () => {
         },
         architecture: {
           design_principles: [
-            'RESTful API design based on real database table structure',
-            `Stateless architecture supporting ${databaseTables.length} database tables`,
-            'Real-time database schema synchronization',
-            'Consistent error handling with database constraint validation',
-            'Comprehensive API documentation generated from real schema'
+            'RESTful API design based on core business table structure',
+            `Stateless architecture supporting ${coreBusinessTables.length} core business tables`,
+            'Real-time core business schema synchronization',
+            'Consistent error handling with business constraint validation',
+            'Comprehensive API documentation generated from core business schema'
           ],
           patterns: [
-            'Real database schema-driven endpoint generation',
-            'Multi-layer authentication with database user/role validation',
-            'Real-time logging and monitoring with database audit trails',
-            'Circuit breaker patterns with database connection pooling',
-            'Intelligent caching based on real table relationships'
+            'Core business schema-driven endpoint generation',
+            'Multi-layer authentication with user/role validation',
+            'Real-time logging and monitoring with business audit trails',
+            'Circuit breaker patterns with optimized connection pooling',
+            'Intelligent caching based on core business relationships'
           ],
           scalability: [
-            'Auto-scaling infrastructure with database connection pooling',
-            `Support for ${databaseTables.length} concurrent table operations`,
-            'Multi-tier response caching for frequently accessed tables',
-            'Dynamic resource allocation based on real database usage patterns'
+            'Auto-scaling infrastructure with optimized connection pooling',
+            `Support for ${coreBusinessTables.length} concurrent core business operations`,
+            'Multi-tier response caching for frequently accessed business data',
+            'Dynamic resource allocation based on core business usage patterns'
           ],
           reliability: [
-            '99.9% uptime SLA with database failover support',
-            'Real database health checks with proactive alerting',
-            'Database constraint-based error handling',
-            'Multi-region database backup and disaster recovery'
+            '99.9% uptime SLA with core business failover support',
+            'Core business health checks with proactive alerting',
+            'Business constraint-based error handling',
+            'Multi-region core business backup and disaster recovery'
           ],
           technology_stack: [
-            'Modern RESTful API with real database integration',
-            'Enterprise-grade API gateway with database security',
-            'Direct database layer with real-time constraint validation',
-            'Real-time monitoring and analytics for all database operations'
+            'Modern RESTful API with core business integration',
+            'Enterprise-grade API gateway with business security',
+            'Direct core business layer with real-time constraint validation',
+            'Real-time monitoring and analytics for all core business operations'
           ],
           deployment: [
-            'Cloud-native infrastructure with database clustering',
-            'Real database schema change detection and deployment',
-            'Multi-environment deployments with database migration support',
-            'Automated testing and validation against real database constraints'
+            'Cloud-native infrastructure with business clustering',
+            'Core business schema change detection and deployment',
+            'Multi-environment deployments with business migration support',
+            'Automated testing and validation against core business constraints'
           ]
         }
       };
     } catch (error) {
-      console.error('❌ Critical error in enhanced getApiDetails with real database analysis:', error);
+      console.error('❌ Critical error in enhanced getApiDetails with core business analysis:', error);
       return null;
     }
   };
 
-  // Method to trigger real database sync when missing or incomplete
-  const triggerRealDatabaseSync = async (externalApiId: string, internalApiId?: string, databaseTables?: any[]) => {
-    console.log('🔄 Triggering REAL DATABASE sync for external API:', externalApiId);
+  // Method to trigger core business sync when missing or incomplete
+  const triggerCoreBusinessSync = async (externalApiId: string, internalApiId?: string, coreBusinessTables?: any[]) => {
+    console.log('🔄 Triggering CORE BUSINESS sync for external API:', externalApiId);
     
     try {
-      // If no database tables provided, analyze them
-      const tables = databaseTables || await databaseSchemaAnalyzer.getAllTables();
-      console.log(`📊 Using ${tables.length} real database tables for sync`);
+      // If no core business tables provided, analyze them
+      const tables = coreBusinessTables || await databaseSchemaAnalyzer.getAllTables();
+      console.log(`📊 Using ${tables.length} core business tables for sync`);
 
-      // Generate real endpoints based on actual database structure
-      const realEndpoints = databaseSchemaAnalyzer.generateEndpointsFromTables(tables);
+      // Generate core business endpoints based on actual table structure
+      const coreEndpoints = databaseSchemaAnalyzer.generateEndpointsFromTables(tables);
       
       // Convert to external endpoint format
-      const externalEndpoints = realEndpoints.map((endpoint, index) => ({
+      const externalEndpoints = coreEndpoints.map((endpoint, index) => ({
         external_api_id: externalApiId,
         internal_endpoint_id: `${internalApiId}_${endpoint.method}_${index}`,
         external_path: endpoint.external_path,
@@ -310,28 +298,28 @@ export const useEnhancedPublishedApiDetails = () => {
         example_request: null,
         example_response: {
           success: true,
-          data: { id: 'uuid', message: 'Real database operation completed' },
+          data: { id: 'uuid', message: 'Core business operation completed' },
           timestamp: new Date().toISOString()
         },
         rate_limit_override: null,
-        tags: [endpoint.method.toLowerCase(), 'real-database-sync', 'auto-generated'],
+        tags: [endpoint.method.toLowerCase(), 'core-business-sync', 'auto-generated'],
         deprecated: false
       }));
 
-      // Insert the real endpoints
+      // Insert the core business endpoints
       const { error } = await supabase
         .from('external_api_endpoints')
         .insert(externalEndpoints);
 
       if (error) {
-        console.error('❌ Error inserting real database sync endpoints:', error);
+        console.error('❌ Error inserting core business sync endpoints:', error);
         throw error;
       }
 
-      console.log(`✅ Successfully synced ${externalEndpoints.length} endpoints from ${tables.length} real database tables`);
+      console.log(`✅ Successfully synced ${externalEndpoints.length} endpoints from ${tables.length} core business tables`);
       return externalEndpoints;
     } catch (error) {
-      console.error('❌ Error triggering real database sync:', error);
+      console.error('❌ Error triggering core business sync:', error);
       throw error;
     }
   };
@@ -352,6 +340,6 @@ export const useEnhancedPublishedApiDetails = () => {
   return { 
     getEnhancedApiDetails,
     useApiDetailsQuery,
-    triggerRealDatabaseSync: triggerRealDatabaseSync
+    triggerRealDatabaseSync: triggerCoreBusinessSync
   };
 };

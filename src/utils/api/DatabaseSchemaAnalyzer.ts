@@ -1,5 +1,6 @@
 /**
  * Database Schema Analyzer - Analyzes real database structure for API sync
+ * Focused on core business tables only
  */
 
 import { supabase } from '@/integrations/supabase/client';
@@ -37,53 +38,52 @@ export interface RLSPolicy {
 
 class DatabaseSchemaAnalyzerClass {
   /**
-   * Get all tables from the database schema
-   * Uses known table structure instead of querying information_schema
+   * Get only core business tables that are relevant for external API consumers
    */
   async getAllTables(): Promise<DatabaseTable[]> {
-    console.log('🔍 Analyzing database schema from known structure...');
+    console.log('🔍 Analyzing CORE BUSINESS TABLES for external API...');
 
     try {
-      // Get main application tables that we know exist
-      const knownTables = [
-        'profiles', 'facilities', 'modules', 'permissions', 'roles', 
-        'user_roles', 'user_permissions', 'api_integration_registry',
-        'external_api_registry', 'external_api_endpoints', 'api_keys',
-        'audit_logs', 'developer_applications', 'marketplace_listings'
+      // Only include core business tables that external APIs would need
+      const coreBusinessTables = [
+        'profiles',    // User profiles - core business entity
+        'facilities',  // Healthcare facilities - core business entity  
+        'modules',     // System modules - needed for access control
+        'roles',       // User roles - needed for permissions
+        'user_roles'   // Role assignments - needed for access control
       ];
 
-      console.log(`📊 Processing ${knownTables.length} known tables`);
+      console.log(`📊 Processing ${coreBusinessTables.length} core business tables only`);
 
       const analyzedTables: DatabaseTable[] = [];
 
-      // Analyze each known table
-      for (const tableName of knownTables) {
+      // Analyze each core business table
+      for (const tableName of coreBusinessTables) {
         const tableAnalysis = await this.analyzeTable(tableName);
         if (tableAnalysis) {
           analyzedTables.push(tableAnalysis);
         }
       }
 
-      console.log(`✅ Analyzed ${analyzedTables.length} tables successfully`);
+      console.log(`✅ Analyzed ${analyzedTables.length} core business tables for external API`);
       return analyzedTables;
 
     } catch (error) {
-      console.error('❌ Error in database schema analysis:', error);
-      return this.getFallbackTableStructure();
+      console.error('❌ Error in core business table analysis:', error);
+      return this.getFallbackCoreTableStructure();
     }
   }
 
   /**
-   * Analyze a specific table structure
+   * Analyze a specific core business table
    */
   private async analyzeTable(tableName: string): Promise<DatabaseTable | null> {
     try {
-      console.log(`🔍 Analyzing table: ${tableName}`);
+      console.log(`🔍 Analyzing core table: ${tableName}`);
 
-      // Get column information from our known schema
-      const columns = this.getKnownTableColumns(tableName);
-      const foreignKeys = this.getKnownForeignKeys(tableName);
-      const rlsPolicies = this.generateStandardRLSPolicies(tableName);
+      const columns = this.getCoreTableColumns(tableName);
+      const foreignKeys = this.getCoreForeignKeys(tableName);
+      const rlsPolicies = this.generateCoreRLSPolicies(tableName);
 
       // Verify table exists by attempting a simple query
       const { error: tableError } = await supabase
@@ -92,8 +92,7 @@ class DatabaseSchemaAnalyzerClass {
         .limit(1);
 
       if (tableError) {
-        console.warn(`⚠️ Table ${tableName} may not be accessible:`, tableError.message);
-        // Continue anyway with known structure
+        console.warn(`⚠️ Core table ${tableName} may not be accessible:`, tableError.message);
       }
 
       return {
@@ -105,16 +104,16 @@ class DatabaseSchemaAnalyzerClass {
       };
 
     } catch (error) {
-      console.error(`❌ Error analyzing table ${tableName}:`, error);
+      console.error(`❌ Error analyzing core table ${tableName}:`, error);
       return null;
     }
   }
 
   /**
-   * Get known column structures from our database schema
+   * Get core business table column structures only
    */
-  private getKnownTableColumns(tableName: string): DatabaseColumn[] {
-    const columnMappings: Record<string, DatabaseColumn[]> = {
+  private getCoreTableColumns(tableName: string): DatabaseColumn[] {
+    const coreColumnMappings: Record<string, DatabaseColumn[]> = {
       profiles: [
         { column_name: 'id', data_type: 'uuid', is_nullable: false, column_default: null, is_primary_key: true },
         { column_name: 'first_name', data_type: 'character varying', is_nullable: true, column_default: null, is_primary_key: false },
@@ -140,11 +139,6 @@ class DatabaseSchemaAnalyzerClass {
         { column_name: 'description', data_type: 'text', is_nullable: true, column_default: null, is_primary_key: false },
         { column_name: 'is_active', data_type: 'boolean', is_nullable: true, column_default: 'true', is_primary_key: false }
       ],
-      permissions: [
-        { column_name: 'id', data_type: 'uuid', is_nullable: false, column_default: 'gen_random_uuid()', is_primary_key: true },
-        { column_name: 'name', data_type: 'character varying', is_nullable: false, column_default: null, is_primary_key: false },
-        { column_name: 'description', data_type: 'text', is_nullable: true, column_default: null, is_primary_key: false }
-      ],
       roles: [
         { column_name: 'id', data_type: 'uuid', is_nullable: false, column_default: 'gen_random_uuid()', is_primary_key: true },
         { column_name: 'name', data_type: 'USER-DEFINED', is_nullable: false, column_default: null, is_primary_key: false },
@@ -153,174 +147,121 @@ class DatabaseSchemaAnalyzerClass {
       user_roles: [
         { column_name: 'id', data_type: 'uuid', is_nullable: false, column_default: 'gen_random_uuid()', is_primary_key: true },
         { column_name: 'user_id', data_type: 'uuid', is_nullable: true, column_default: null, is_primary_key: false },
-        { column_name: 'role_id', data_type: 'uuid', is_nullable: true, column_default: null, is_primary_key: false }
-      ],
-      user_permissions: [
-        { column_name: 'id', data_type: 'uuid', is_nullable: false, column_default: 'gen_random_uuid()', is_primary_key: true },
-        { column_name: 'user_id', data_type: 'uuid', is_nullable: true, column_default: null, is_primary_key: false },
-        { column_name: 'permission_id', data_type: 'uuid', is_nullable: true, column_default: null, is_primary_key: false }
-      ],
-      api_integration_registry: [
-        { column_name: 'id', data_type: 'uuid', is_nullable: false, column_default: 'gen_random_uuid()', is_primary_key: true },
-        { column_name: 'name', data_type: 'text', is_nullable: false, column_default: null, is_primary_key: false },
-        { column_name: 'description', data_type: 'text', is_nullable: true, column_default: null, is_primary_key: false },
-        { column_name: 'type', data_type: 'text', is_nullable: false, column_default: null, is_primary_key: false },
-        { column_name: 'direction', data_type: 'text', is_nullable: false, column_default: null, is_primary_key: false }
-      ],
-      external_api_registry: [
-        { column_name: 'id', data_type: 'uuid', is_nullable: false, column_default: 'gen_random_uuid()', is_primary_key: true },
-        { column_name: 'external_name', data_type: 'character varying', is_nullable: false, column_default: null, is_primary_key: false },
-        { column_name: 'internal_api_id', data_type: 'uuid', is_nullable: false, column_default: null, is_primary_key: false },
-        { column_name: 'status', data_type: 'character varying', is_nullable: false, column_default: 'draft', is_primary_key: false }
-      ],
-      external_api_endpoints: [
-        { column_name: 'id', data_type: 'uuid', is_nullable: false, column_default: 'gen_random_uuid()', is_primary_key: true },
-        { column_name: 'external_api_id', data_type: 'uuid', is_nullable: false, column_default: null, is_primary_key: false },
-        { column_name: 'external_path', data_type: 'character varying', is_nullable: false, column_default: null, is_primary_key: false },
-        { column_name: 'method', data_type: 'character varying', is_nullable: false, column_default: null, is_primary_key: false }
-      ],
-      api_keys: [
-        { column_name: 'id', data_type: 'uuid', is_nullable: false, column_default: 'gen_random_uuid()', is_primary_key: true },
-        { column_name: 'user_id', data_type: 'uuid', is_nullable: false, column_default: null, is_primary_key: false },
-        { column_name: 'name', data_type: 'character varying', is_nullable: false, column_default: null, is_primary_key: false },
-        { column_name: 'key_hash', data_type: 'text', is_nullable: false, column_default: null, is_primary_key: false }
-      ],
-      audit_logs: [
-        { column_name: 'id', data_type: 'uuid', is_nullable: false, column_default: 'gen_random_uuid()', is_primary_key: true },
-        { column_name: 'user_id', data_type: 'uuid', is_nullable: true, column_default: null, is_primary_key: false },
-        { column_name: 'action', data_type: 'character varying', is_nullable: false, column_default: null, is_primary_key: false },
-        { column_name: 'table_name', data_type: 'character varying', is_nullable: true, column_default: null, is_primary_key: false }
-      ],
-      developer_applications: [
-        { column_name: 'id', data_type: 'uuid', is_nullable: false, column_default: 'gen_random_uuid()', is_primary_key: true },
-        { column_name: 'user_id', data_type: 'uuid', is_nullable: false, column_default: null, is_primary_key: false },
-        { column_name: 'company_name', data_type: 'character varying', is_nullable: false, column_default: null, is_primary_key: false },
-        { column_name: 'status', data_type: 'character varying', is_nullable: false, column_default: 'pending', is_primary_key: false }
-      ],
-      marketplace_listings: [
-        { column_name: 'id', data_type: 'uuid', is_nullable: false, column_default: 'gen_random_uuid()', is_primary_key: true },
-        { column_name: 'external_api_id', data_type: 'uuid', is_nullable: false, column_default: null, is_primary_key: false },
-        { column_name: 'title', data_type: 'character varying', is_nullable: false, column_default: null, is_primary_key: false },
-        { column_name: 'listing_status', data_type: 'character varying', is_nullable: false, column_default: 'draft', is_primary_key: false }
+        { column_name: 'role_id', data_type: 'uuid', is_nullable: true, column_default: null, is_primary_key: false },
+        { column_name: 'created_at', data_type: 'timestamp with time zone', is_nullable: true, column_default: 'now()', is_primary_key: false }
       ]
     };
 
-    return columnMappings[tableName] || [];
+    return coreColumnMappings[tableName] || [];
   }
 
   /**
-   * Get known foreign key relationships
+   * Get core business table foreign key relationships only
    */
-  private getKnownForeignKeys(tableName: string): ForeignKey[] {
-    const foreignKeyMappings: Record<string, ForeignKey[]> = {
+  private getCoreForeignKeys(tableName: string): ForeignKey[] {
+    const coreForeignKeyMappings: Record<string, ForeignKey[]> = {
       profiles: [
         { column_name: 'facility_id', foreign_table_schema: 'public', foreign_table_name: 'facilities', foreign_column_name: 'id' }
       ],
       user_roles: [
         { column_name: 'role_id', foreign_table_schema: 'public', foreign_table_name: 'roles', foreign_column_name: 'id' }
-      ],
-      user_permissions: [
-        { column_name: 'permission_id', foreign_table_schema: 'public', foreign_table_name: 'permissions', foreign_column_name: 'id' }
-      ],
-      external_api_registry: [
-        { column_name: 'internal_api_id', foreign_table_schema: 'public', foreign_table_name: 'api_integration_registry', foreign_column_name: 'id' }
-      ],
-      external_api_endpoints: [
-        { column_name: 'external_api_id', foreign_table_schema: 'public', foreign_table_name: 'external_api_registry', foreign_column_name: 'id' }
-      ],
-      marketplace_listings: [
-        { column_name: 'external_api_id', foreign_table_schema: 'public', foreign_table_name: 'external_api_registry', foreign_column_name: 'id' }
       ]
     };
 
-    return foreignKeyMappings[tableName] || [];
+    return coreForeignKeyMappings[tableName] || [];
   }
 
   /**
-   * Generate standard RLS policies for a table
+   * Generate core business RLS policies only (relevant for external API access)
    */
-  private generateStandardRLSPolicies(tableName: string): RLSPolicy[] {
-    const hasUserIdColumn = this.getKnownTableColumns(tableName).some(col => col.column_name === 'user_id');
-    
-    if (hasUserIdColumn) {
-      return [
+  private generateCoreRLSPolicies(tableName: string): RLSPolicy[] {
+    // Only generate essential RLS policies for core business operations
+    const coreRlsPolicies: Record<string, RLSPolicy[]> = {
+      profiles: [
         {
-          policy_name: `${tableName}_user_access`,
-          table_name: tableName,
-          command: 'ALL',
-          expression: 'auth.uid() = user_id',
-          with_check: 'auth.uid() = user_id'
+          policy_name: 'profiles_authenticated_read',
+          table_name: 'profiles',
+          command: 'SELECT',
+          expression: 'auth.role() = \'authenticated\'',
+          with_check: null
         }
-      ];
-    }
+      ],
+      facilities: [
+        {
+          policy_name: 'facilities_authenticated_read',
+          table_name: 'facilities',
+          command: 'SELECT',
+          expression: 'auth.role() = \'authenticated\' AND is_active = true',
+          with_check: null
+        }
+      ],
+      roles: [
+        {
+          policy_name: 'roles_authenticated_read',
+          table_name: 'roles',
+          command: 'SELECT',
+          expression: 'auth.role() = \'authenticated\'',
+          with_check: null
+        }
+      ],
+      user_roles: [
+        {
+          policy_name: 'user_roles_own_data',
+          table_name: 'user_roles',
+          command: 'SELECT',
+          expression: 'auth.uid() = user_id',
+          with_check: null
+        }
+      ],
+      modules: [
+        {
+          policy_name: 'modules_authenticated_read',
+          table_name: 'modules',
+          command: 'SELECT',
+          expression: 'auth.role() = \'authenticated\' AND is_active = true',
+          with_check: null
+        }
+      ]
+    };
 
-    // For tables without user_id, create general access policies
-    return [
-      {
-        policy_name: `${tableName}_authenticated_access`,
-        table_name: tableName,
-        command: 'SELECT',
-        expression: 'auth.role() = \'authenticated\'',
-        with_check: null
-      }
-    ];
+    return coreRlsPolicies[tableName] || [];
   }
 
   /**
-   * Fallback table structure if analysis fails
+   * Fallback core table structure if analysis fails
    */
-  private getFallbackTableStructure(): DatabaseTable[] {
-    const mainTables = [
-      'profiles', 'facilities', 'modules', 'permissions', 'roles', 
-      'user_roles', 'user_permissions', 'api_integration_registry',
-      'external_api_registry', 'external_api_endpoints'
-    ];
+  private getFallbackCoreTableStructure(): DatabaseTable[] {
+    const coreTableNames = ['profiles', 'facilities', 'modules', 'roles', 'user_roles'];
 
-    return mainTables.map(tableName => ({
+    return coreTableNames.map(tableName => ({
       table_name: tableName,
       table_schema: 'public',
-      columns: this.getKnownTableColumns(tableName),
-      foreign_keys: this.getKnownForeignKeys(tableName),
-      rls_policies: this.generateStandardRLSPolicies(tableName)
+      columns: this.getCoreTableColumns(tableName),
+      foreign_keys: this.getCoreForeignKeys(tableName),
+      rls_policies: this.generateCoreRLSPolicies(tableName)
     }));
   }
 
   /**
-   * Generate endpoints from database tables
+   * Generate endpoints from core business tables only
    */
   generateEndpointsFromTables(tables: DatabaseTable[]): any[] {
     const endpoints: any[] = [];
 
     for (const table of tables) {
-      // Skip system/internal tables
-      if (this.shouldSkipTable(table.table_name)) {
-        continue;
-      }
-
-      // Generate CRUD endpoints for each table
-      const tableEndpoints = this.generateCRUDEndpoints(table);
+      // Generate CRUD endpoints for core business tables only
+      const tableEndpoints = this.generateCoreBusinessEndpoints(table);
       endpoints.push(...tableEndpoints);
     }
 
-    console.log(`📊 Generated ${endpoints.length} endpoints from ${tables.length} tables`);
+    console.log(`📊 Generated ${endpoints.length} core business endpoints from ${tables.length} tables`);
     return endpoints;
   }
 
   /**
-   * Check if table should be skipped for API generation
+   * Generate CRUD endpoints for core business tables
    */
-  private shouldSkipTable(tableName: string): boolean {
-    const skipTables = [
-      'audit_logs', 'api_usage_logs', 'api_consumption_logs',
-      'developer_notifications', 'api_lifecycle_events'
-    ];
-    return skipTables.includes(tableName);
-  }
-
-  /**
-   * Generate CRUD endpoints for a table
-   */
-  private generateCRUDEndpoints(table: DatabaseTable): any[] {
+  private generateCoreBusinessEndpoints(table: DatabaseTable): any[] {
     const tableName = table.table_name;
     const endpoints = [];
 
@@ -329,7 +270,7 @@ class DatabaseSchemaAnalyzerClass {
       external_path: `/api/v1/${tableName}`,
       method: 'GET',
       summary: `Get ${tableName} list`,
-      description: `Retrieve paginated list of ${tableName} with optional filtering`,
+      description: `Retrieve paginated list of ${tableName} records`,
       request_schema: this.generateListRequestSchema(),
       response_schema: this.generateListResponseSchema(table),
       requires_authentication: true
@@ -346,27 +287,31 @@ class DatabaseSchemaAnalyzerClass {
       requires_authentication: true
     });
 
-    // POST create endpoint
-    endpoints.push({
-      external_path: `/api/v1/${tableName}`,
-      method: 'POST',
-      summary: `Create ${tableName}`,
-      description: `Create a new ${tableName} record`,
-      request_schema: this.generateCreateRequestSchema(table),
-      response_schema: this.generateSingleResponseSchema(table),
-      requires_authentication: true
-    });
+    // POST create endpoint (only for appropriate tables)
+    if (['profiles', 'facilities', 'user_roles'].includes(tableName)) {
+      endpoints.push({
+        external_path: `/api/v1/${tableName}`,
+        method: 'POST',
+        summary: `Create ${tableName}`,
+        description: `Create a new ${tableName} record`,
+        request_schema: this.generateCreateRequestSchema(table),
+        response_schema: this.generateSingleResponseSchema(table),
+        requires_authentication: true
+      });
+    }
 
-    // PUT update endpoint
-    endpoints.push({
-      external_path: `/api/v1/${tableName}/{id}`,
-      method: 'PUT',
-      summary: `Update ${tableName}`,
-      description: `Update an existing ${tableName} record`,
-      request_schema: this.generateUpdateRequestSchema(table),
-      response_schema: this.generateSingleResponseSchema(table),
-      requires_authentication: true
-    });
+    // PUT update endpoint (only for appropriate tables)
+    if (['profiles', 'facilities'].includes(tableName)) {
+      endpoints.push({
+        external_path: `/api/v1/${tableName}/{id}`,
+        method: 'PUT',
+        summary: `Update ${tableName}`,
+        description: `Update an existing ${tableName} record`,
+        request_schema: this.generateUpdateRequestSchema(table),
+        response_schema: this.generateSingleResponseSchema(table),
+        requires_authentication: true
+      });
+    }
 
     return endpoints;
   }

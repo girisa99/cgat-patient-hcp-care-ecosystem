@@ -1,6 +1,6 @@
 
 /**
- * Real API Scanner - Detects actual APIs, RLS policies, and data mappings
+ * Real API Scanner - Detects core business APIs, RLS policies, and data mappings
  */
 
 import { supabase } from '@/integrations/supabase/client';
@@ -8,81 +8,80 @@ import { ApiIntegration, RLSPolicy, DataMapping, ApiEndpoint } from './ApiIntegr
 
 export class RealApiScanner {
   /**
-   * Scan and detect real RLS policies from the database
+   * Scan and detect core business RLS policies only
    */
   static async scanRLSPolicies(): Promise<RLSPolicy[]> {
     try {
-      // Since get_table_policies doesn't exist, we'll use schema detection
-      console.log('Using schema-based RLS detection');
-      return this.detectRLSFromSchema();
+      console.log('Detecting core business RLS policies');
+      return this.detectCoreBusinessRLS();
     } catch (error) {
-      console.log('Falling back to schema-based RLS detection');
-      return this.detectRLSFromSchema();
+      console.log('Using core business RLS detection');
+      return this.detectCoreBusinessRLS();
     }
   }
 
   /**
-   * Detect RLS policies from known schema structure
+   * Detect core business RLS policies from known schema structure
    */
-  static detectRLSFromSchema(): RLSPolicy[] {
-    const tables = [
-      'profiles', 'facilities', 'user_roles', 'role_permissions', 
-      'permissions', 'modules', 'user_module_assignments', 
-      'role_module_assignments', 'audit_logs', 'user_facility_access',
-      'user_permissions', 'role_permission_overrides', 'feature_flags'
+  static detectCoreBusinessRLS(): RLSPolicy[] {
+    // Only include core business tables that external APIs need to know about
+    const coreBusinessTables = [
+      'profiles',    // User profiles - essential for any healthcare API
+      'facilities',  // Healthcare facilities - core business entity
+      'modules',     // System modules - needed for access control
+      'roles',       // User roles - essential for permissions
+      'user_roles'   // Role assignments - needed for access control
     ];
 
     const policies: RLSPolicy[] = [];
 
-    tables.forEach(table => {
-      // Standard CRUD policies for each table
+    coreBusinessTables.forEach(table => {
+      // Essential policies for core business operations
       policies.push(
         {
           tableName: table,
-          policyName: `${table}_select_policy`,
+          policyName: `${table}_authenticated_read`,
           operation: 'SELECT',
-          condition: 'auth.uid() IS NOT NULL',
-          roles: ['authenticated']
-        },
-        {
-          tableName: table,
-          policyName: `${table}_insert_policy`,
-          operation: 'INSERT',
-          condition: 'auth.uid() IS NOT NULL',
-          roles: ['authenticated']
-        },
-        {
-          tableName: table,
-          policyName: `${table}_update_policy`,
-          operation: 'UPDATE',
           condition: 'auth.uid() IS NOT NULL',
           roles: ['authenticated']
         }
       );
 
-      // Role-based policies for sensitive tables
-      if (['user_roles', 'role_permissions', 'permissions'].includes(table)) {
+      // User-specific policies for profile and role data
+      if (['profiles', 'user_roles'].includes(table)) {
         policies.push({
           tableName: table,
-          policyName: `${table}_admin_policy`,
+          policyName: `${table}_user_own_data`,
           operation: 'SELECT',
-          condition: 'user_has_role(auth.uid(), \'superAdmin\')',
-          roles: ['superAdmin']
+          condition: 'auth.uid() = user_id',
+          roles: ['authenticated']
+        });
+      }
+
+      // Active record policies for business entities
+      if (['facilities', 'modules'].includes(table)) {
+        policies.push({
+          tableName: table,
+          policyName: `${table}_active_records`,
+          operation: 'SELECT',
+          condition: 'is_active = true',
+          roles: ['authenticated']
         });
       }
     });
 
+    console.log(`Generated ${policies.length} core business RLS policies`);
     return policies;
   }
 
   /**
-   * Scan actual data mappings from database relationships
+   * Scan core business data mappings from database relationships
    */
   static async scanDataMappings(): Promise<DataMapping[]> {
-    const mappings: DataMapping[] = [];
+    const coreBusinessMappings: DataMapping[] = [];
 
-    // User profile mappings
-    mappings.push(
+    // Core user profile mappings
+    coreBusinessMappings.push(
       {
         sourceField: 'auth.users.email',
         targetTable: 'profiles',
@@ -103,8 +102,8 @@ export class RealApiScanner {
       }
     );
 
-    // Role assignment mappings
-    mappings.push(
+    // Core role assignment mappings
+    coreBusinessMappings.push(
       {
         sourceField: 'user_roles.user_id',
         targetTable: 'profiles',
@@ -119,114 +118,61 @@ export class RealApiScanner {
       }
     );
 
-    // Module assignment mappings
-    mappings.push(
+    // Core facility access mappings
+    coreBusinessMappings.push(
       {
-        sourceField: 'user_module_assignments.user_id',
-        targetTable: 'profiles',
-        targetField: 'id',
-        transformation: 'foreign_key_relation'
-      },
-      {
-        sourceField: 'user_module_assignments.module_id',
-        targetTable: 'modules',
-        targetField: 'id',
-        transformation: 'foreign_key_relation'
-      }
-    );
-
-    // Facility access mappings
-    mappings.push(
-      {
-        sourceField: 'user_facility_access.user_id',
-        targetTable: 'profiles',
-        targetField: 'id',
-        transformation: 'foreign_key_relation'
-      },
-      {
-        sourceField: 'user_facility_access.facility_id',
+        sourceField: 'profiles.facility_id',
         targetTable: 'facilities',
         targetField: 'id',
         transformation: 'foreign_key_relation'
       }
     );
 
-    return mappings;
+    console.log(`Generated ${coreBusinessMappings.length} core business data mappings`);
+    return coreBusinessMappings;
   }
 
   /**
-   * Scan actual API endpoints from the application
+   * Scan core business API endpoints from the application
    */
   static scanApiEndpoints(): ApiEndpoint[] {
-    const endpoints: ApiEndpoint[] = [
-      // User Management Endpoints
+    const coreBusinessEndpoints: ApiEndpoint[] = [
+      // Core User Profile Endpoints
       {
-        id: 'users_list',
-        name: 'List Users',
+        id: 'profiles_list',
+        name: 'List User Profiles',
         method: 'GET',
-        url: '/api/users',
-        description: 'Retrieve list of all users with pagination and filtering',
+        url: '/api/profiles',
+        description: 'Retrieve user profiles with pagination and filtering',
         headers: { 'Authorization': 'Bearer {token}' },
         isPublic: false,
         authentication: { type: 'bearer' }
       },
       {
-        id: 'users_create',
-        name: 'Create User',
-        method: 'POST',
-        url: '/api/users',
-        description: 'Create a new user profile',
-        headers: { 'Authorization': 'Bearer {token}', 'Content-Type': 'application/json' },
+        id: 'profiles_get',
+        name: 'Get User Profile',
+        method: 'GET',
+        url: '/api/profiles/{id}',
+        description: 'Retrieve a specific user profile by ID',
+        headers: { 'Authorization': 'Bearer {token}' },
         isPublic: false,
         authentication: { type: 'bearer' }
       },
       {
-        id: 'users_update',
-        name: 'Update User',
+        id: 'profiles_update',
+        name: 'Update User Profile',
         method: 'PUT',
-        url: '/api/users/{id}',
+        url: '/api/profiles/{id}',
         description: 'Update user profile information',
         headers: { 'Authorization': 'Bearer {token}', 'Content-Type': 'application/json' },
         isPublic: false,
         authentication: { type: 'bearer' }
       },
-      {
-        id: 'users_delete',
-        name: 'Delete User',
-        method: 'DELETE',
-        url: '/api/users/{id}',
-        description: 'Delete user profile',
-        headers: { 'Authorization': 'Bearer {token}' },
-        isPublic: false,
-        authentication: { type: 'bearer' }
-      },
 
-      // Role Management Endpoints
-      {
-        id: 'roles_list',
-        name: 'List Roles',
-        method: 'GET',
-        url: '/api/roles',
-        description: 'Retrieve available roles',
-        headers: { 'Authorization': 'Bearer {token}' },
-        isPublic: false,
-        authentication: { type: 'bearer' }
-      },
-      {
-        id: 'roles_assign',
-        name: 'Assign Role',
-        method: 'POST',
-        url: '/api/users/{userId}/roles',
-        description: 'Assign role to user',
-        headers: { 'Authorization': 'Bearer {token}', 'Content-Type': 'application/json' },
-        isPublic: false,
-        authentication: { type: 'bearer' }
-      },
-
-      // Facility Management Endpoints
+      // Core Facility Management Endpoints
       {
         id: 'facilities_list',
-        name: 'List Facilities',
+        name: 'List Healthcare Facilities',
         method: 'GET',
         url: '/api/facilities',
         description: 'Retrieve list of healthcare facilities',
@@ -235,30 +181,42 @@ export class RealApiScanner {
         authentication: { type: 'bearer' }
       },
       {
-        id: 'facilities_create',
-        name: 'Create Facility',
-        method: 'POST',
-        url: '/api/facilities',
-        description: 'Create new healthcare facility',
-        headers: { 'Authorization': 'Bearer {token}', 'Content-Type': 'application/json' },
-        isPublic: false,
-        authentication: { type: 'bearer' }
-      },
-      {
-        id: 'facilities_update',
-        name: 'Update Facility',
-        method: 'PUT',
+        id: 'facilities_get',
+        name: 'Get Facility Details',
+        method: 'GET',
         url: '/api/facilities/{id}',
-        description: 'Update facility information',
-        headers: { 'Authorization': 'Bearer {token}', 'Content-Type': 'application/json' },
+        description: 'Retrieve detailed information about a specific facility',
+        headers: { 'Authorization': 'Bearer {token}' },
         isPublic: false,
         authentication: { type: 'bearer' }
       },
 
-      // Module Management Endpoints
+      // Core Role Management Endpoints
+      {
+        id: 'roles_list',
+        name: 'List Available Roles',
+        method: 'GET',
+        url: '/api/roles',
+        description: 'Retrieve available user roles',
+        headers: { 'Authorization': 'Bearer {token}' },
+        isPublic: false,
+        authentication: { type: 'bearer' }
+      },
+      {
+        id: 'user_roles_list',
+        name: 'List User Role Assignments',
+        method: 'GET',
+        url: '/api/user-roles',
+        description: 'Retrieve user role assignments',
+        headers: { 'Authorization': 'Bearer {token}' },
+        isPublic: false,
+        authentication: { type: 'bearer' }
+      },
+
+      // Core Module Access Endpoints
       {
         id: 'modules_list',
-        name: 'List Modules',
+        name: 'List Available Modules',
         method: 'GET',
         url: '/api/modules',
         description: 'Retrieve available system modules',
@@ -266,133 +224,26 @@ export class RealApiScanner {
         isPublic: false,
         authentication: { type: 'bearer' }
       },
-      {
-        id: 'modules_assign',
-        name: 'Assign Module',
-        method: 'POST',
-        url: '/api/users/{userId}/modules',
-        description: 'Assign module access to user',
-        headers: { 'Authorization': 'Bearer {token}', 'Content-Type': 'application/json' },
-        isPublic: false,
-        authentication: { type: 'bearer' }
-      },
 
-      // Patient Management Endpoints
+      // Core Authentication Endpoints
       {
-        id: 'patients_list',
-        name: 'List Patients',
+        id: 'auth_verify',
+        name: 'Verify Authentication',
         method: 'GET',
-        url: '/api/patients',
-        description: 'Retrieve patient records with filtering',
+        url: '/api/auth/verify',
+        description: 'Verify user authentication status',
         headers: { 'Authorization': 'Bearer {token}' },
         isPublic: false,
         authentication: { type: 'bearer' }
-      },
-      {
-        id: 'patients_create',
-        name: 'Create Patient',
-        method: 'POST',
-        url: '/api/patients',
-        description: 'Create new patient record',
-        headers: { 'Authorization': 'Bearer {token}', 'Content-Type': 'application/json' },
-        isPublic: false,
-        authentication: { type: 'bearer' }
-      },
-      {
-        id: 'patients_update',
-        name: 'Update Patient',
-        method: 'PUT',
-        url: '/api/patients/{id}',
-        description: 'Update patient record',
-        headers: { 'Authorization': 'Bearer {token}', 'Content-Type': 'application/json' },
-        isPublic: false,
-        authentication: { type: 'bearer' }
-      },
-
-      // Audit and Monitoring Endpoints
-      {
-        id: 'audit_logs',
-        name: 'Audit Logs',
-        method: 'GET',
-        url: '/api/audit/logs',
-        description: 'Retrieve system audit logs',
-        headers: { 'Authorization': 'Bearer {token}' },
-        isPublic: false,
-        authentication: { type: 'bearer' }
-      },
-
-      // Permission Management Endpoints
-      {
-        id: 'permissions_list',
-        name: 'List Permissions',
-        method: 'GET',
-        url: '/api/permissions',
-        description: 'Retrieve available permissions',
-        headers: { 'Authorization': 'Bearer {token}' },
-        isPublic: false,
-        authentication: { type: 'bearer' }
-      },
-      {
-        id: 'permissions_grant',
-        name: 'Grant Permission',
-        method: 'POST',
-        url: '/api/users/{userId}/permissions',
-        description: 'Grant permission to user',
-        headers: { 'Authorization': 'Bearer {token}', 'Content-Type': 'application/json' },
-        isPublic: false,
-        authentication: { type: 'bearer' }
-      },
-
-      // Dashboard and Analytics Endpoints
-      {
-        id: 'dashboard_stats',
-        name: 'Dashboard Statistics',
-        method: 'GET',
-        url: '/api/dashboard/stats',
-        description: 'Retrieve dashboard statistics and metrics',
-        headers: { 'Authorization': 'Bearer {token}' },
-        isPublic: false,
-        authentication: { type: 'bearer' }
-      },
-
-      // Authentication Endpoints
-      {
-        id: 'auth_login',
-        name: 'User Login',
-        method: 'POST',
-        url: '/api/auth/login',
-        description: 'Authenticate user and return access token',
-        headers: { 'Content-Type': 'application/json' },
-        isPublic: true,
-        authentication: { type: 'none' }
-      },
-      {
-        id: 'auth_logout',
-        name: 'User Logout',
-        method: 'POST',
-        url: '/api/auth/logout',
-        description: 'Logout user and invalidate token',
-        headers: { 'Authorization': 'Bearer {token}' },
-        isPublic: false,
-        authentication: { type: 'bearer' }
-      },
-      {
-        id: 'auth_refresh',
-        name: 'Refresh Token',
-        method: 'POST',
-        url: '/api/auth/refresh',
-        description: 'Refresh authentication token',
-        headers: { 'Content-Type': 'application/json' },
-        isPublic: true,
-        authentication: { type: 'oauth2' }
       }
     ];
 
-    return endpoints;
+    console.log(`Generated ${coreBusinessEndpoints.length} core business API endpoints`);
+    return coreBusinessEndpoints;
   }
 
   /**
-   * Generate complete internal API integration with real data
+   * Generate complete core business API integration
    */
   static async generateRealInternalApi(): Promise<ApiIntegration> {
     const [rlsPolicies, dataMappings] = await Promise.all([
@@ -403,29 +254,29 @@ export class RealApiScanner {
     const endpoints = this.scanApiEndpoints();
 
     return {
-      id: 'internal_healthcare_api',
-      name: 'Healthcare Admin Internal API',
-      description: 'Complete internal API for healthcare administration with real RLS policies and data mappings',
+      id: 'core_healthcare_api',
+      name: 'Core Healthcare Business API',
+      description: 'Essential healthcare business API with core tables: profiles, facilities, modules, roles, and user_roles',
       type: 'internal',
       baseUrl: window.location.origin,
       version: '1.0.0',
       status: 'active',
-      category: 'healthcare',
+      category: 'healthcare-core',
       endpoints,
       rlsPolicies,
       mappings: dataMappings,
-      schemas: this.generateApiSchemas(),
+      schemas: this.generateCoreBusinessSchemas(),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
   }
 
   /**
-   * Generate API schemas based on database structure
+   * Generate core business API schemas
    */
-  static generateApiSchemas(): Record<string, any> {
+  static generateCoreBusinessSchemas(): Record<string, any> {
     return {
-      User: {
+      UserProfile: {
         type: 'object',
         properties: {
           id: { type: 'string', format: 'uuid' },
@@ -433,7 +284,6 @@ export class RealApiScanner {
           first_name: { type: 'string' },
           last_name: { type: 'string' },
           phone: { type: 'string' },
-          department: { type: 'string' },
           facility_id: { type: 'string', format: 'uuid' },
           created_at: { type: 'string', format: 'date-time' },
           updated_at: { type: 'string', format: 'date-time' }
@@ -448,8 +298,6 @@ export class RealApiScanner {
           address: { type: 'string' },
           phone: { type: 'string' },
           email: { type: 'string', format: 'email' },
-          npi_number: { type: 'string' },
-          license_number: { type: 'string' },
           is_active: { type: 'boolean' }
         }
       },
@@ -461,6 +309,15 @@ export class RealApiScanner {
           description: { type: 'string' }
         }
       },
+      UserRole: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', format: 'uuid' },
+          user_id: { type: 'string', format: 'uuid' },
+          role_id: { type: 'string', format: 'uuid' },
+          created_at: { type: 'string', format: 'date-time' }
+        }
+      },
       Module: {
         type: 'object',
         properties: {
@@ -468,14 +325,6 @@ export class RealApiScanner {
           name: { type: 'string' },
           description: { type: 'string' },
           is_active: { type: 'boolean' }
-        }
-      },
-      Permission: {
-        type: 'object',
-        properties: {
-          id: { type: 'string', format: 'uuid' },
-          name: { type: 'string' },
-          description: { type: 'string' }
         }
       }
     };
