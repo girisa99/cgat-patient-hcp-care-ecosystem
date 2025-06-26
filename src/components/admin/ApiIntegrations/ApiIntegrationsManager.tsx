@@ -24,7 +24,7 @@ import { ApiOverviewSection } from './ApiOverviewSection';
 import { InternalApiEndpointsList } from './InternalApiEndpointsList';
 import { ExternalApiEndpointsList } from './ExternalApiEndpointsList';
 import { CreateIntegrationDialog } from './CreateIntegrationDialog';
-import { IntegrationDetailView } from './IntegrationDetailView';
+import IntegrationDetailView from './IntegrationDetailView';
 import ExternalApiPublisher from './ExternalApiPublisher';
 import DeveloperPortal from './DeveloperPortal';
 import { ArchitectureDocumentation } from './ArchitectureDocumentation';
