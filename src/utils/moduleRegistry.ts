@@ -1,4 +1,3 @@
-
 /**
  * Enhanced Module Registry System with Component/Service Tracking
  * 
@@ -360,7 +359,7 @@ class ModuleRegistry {
 // Global module registry instance
 export const moduleRegistry = new ModuleRegistry();
 
-// Pre-register existing modules with enhanced metadata and components
+// Pre-register existing modules with enhanced metadata and components including REAL existing components
 moduleRegistry.register({
   moduleName: 'Users',
   tableName: 'profiles',
@@ -388,6 +387,22 @@ moduleRegistry.register({
       permissions: ['users_create', 'users_write'],
       isProtected: true,
       lastModified: new Date().toISOString()
+    },
+    {
+      name: 'EditUserDialog',
+      type: 'component',
+      filePath: 'src/components/users/EditUserDialog.tsx', 
+      permissions: ['users_update', 'users_write'],
+      isProtected: true,
+      lastModified: new Date().toISOString()
+    },
+    {
+      name: 'AssignRoleDialog',
+      type: 'component',
+      filePath: 'src/components/users/AssignRoleDialog.tsx',
+      permissions: ['users_assign_roles', 'roles_write'],
+      isProtected: true,
+      lastModified: new Date().toISOString()
     }
   ],
   hooks: [
@@ -396,6 +411,14 @@ moduleRegistry.register({
       type: 'hook',
       filePath: 'src/hooks/useUsers.tsx',
       permissions: ['users_read'],
+      isProtected: true,
+      lastModified: new Date().toISOString()
+    },
+    {
+      name: 'useUserMutations',
+      type: 'hook',
+      filePath: 'src/hooks/mutations/useUserMutations.tsx',
+      permissions: ['users_write'],
       isProtected: true,
       lastModified: new Date().toISOString()
     }
@@ -429,6 +452,24 @@ moduleRegistry.register({
       permissions: ['facilities_create', 'facilities_write'],
       isProtected: true,
       lastModified: new Date().toISOString()
+    },
+    {
+      name: 'EditFacilityDialog',
+      type: 'component',
+      filePath: 'src/components/facilities/EditFacilityDialog.tsx',
+      permissions: ['facilities_update', 'facilities_write'],
+      isProtected: true,
+      lastModified: new Date().toISOString()
+    }
+  ],
+  hooks: [
+    {
+      name: 'useFacilities',
+      type: 'hook',
+      filePath: 'src/hooks/useFacilities.tsx',
+      permissions: ['facilities_read'],
+      isProtected: true,
+      lastModified: new Date().toISOString()
     }
   ]
 });
@@ -454,10 +495,36 @@ moduleRegistry.register({
       lastModified: new Date().toISOString()
     },
     {
+      name: 'CreateModuleDialog',
+      type: 'component',
+      filePath: 'src/components/modules/CreateModuleDialog.tsx',
+      permissions: ['modules_create', 'modules_write'],
+      isProtected: true,
+      lastModified: new Date().toISOString()
+    },
+    {
+      name: 'ModuleAssignmentDialog',
+      type: 'component',
+      filePath: 'src/components/modules/ModuleAssignmentDialog.tsx',
+      permissions: ['modules_assign', 'modules_write'],
+      isProtected: true,
+      lastModified: new Date().toISOString()
+    },
+    {
       name: 'AutoModuleManager',
       type: 'component',
       filePath: 'src/components/admin/AutoModuleManager/index.tsx',
       permissions: ['modules_admin', 'modules_auto_detect'],
+      isProtected: true,
+      lastModified: new Date().toISOString()
+    }
+  ],
+  hooks: [
+    {
+      name: 'useModules',
+      type: 'hook',
+      filePath: 'src/hooks/useModules.tsx',
+      permissions: ['modules_read'],
       isProtected: true,
       lastModified: new Date().toISOString()
     }

@@ -1,101 +1,122 @@
 
 /**
  * Code Generation Utilities
- * Focused on generating boilerplate code for modules
  */
 
-import { AutoModuleConfig } from './types';
-
-/**
- * Generates boilerplate hook code
- */
-export const generateHookCode = (config: AutoModuleConfig): string => {
+export const generateHookCode = (module: any): string => {
   return `/**
- * Auto-generated hook for ${config.moduleName}
- * Generated from table: ${config.tableName}
- * Confidence: ${(config.confidence * 100).toFixed(0)}%
+ * ${module.moduleName} Hook - Auto-generated
  */
 
-import { useTypeSafeModuleTemplate } from '@/templates/hooks/useTypeSafeModuleTemplate';
-import { ModuleConfig } from '@/utils/moduleValidation';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
-const ${config.moduleName.toLowerCase()}Config: ModuleConfig = {
-  tableName: '${config.tableName}',
-  moduleName: '${config.moduleName}',
-  requiredFields: [${config.requiredFields.map(f => `'${f}'`).join(', ')}],
-  optionalFields: [${config.optionalFields?.map(f => `'${f}'`).join(', ') || ''}],
-};
+export const use${module.moduleName} = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
 
-export const use${config.moduleName} = () => {
-  return useTypeSafeModuleTemplate(${config.moduleName.toLowerCase()}Config);
+  // Fetch all ${module.moduleName.toLowerCase()}
+  const { data: ${module.moduleName.toLowerCase()}, isLoading, error } = useQuery({
+    queryKey: ['${module.tableName}'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('${module.tableName}')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  // Create mutation
+  const createMutation = useMutation({
+    mutationFn: async (newItem: any) => {
+      const { data, error } = await supabase
+        .from('${module.tableName}')
+        .insert([newItem])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['${module.tableName}'] });
+      toast({
+        title: "Success",
+        description: "${module.moduleName} created successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: \`Failed to create ${module.moduleName.toLowerCase()}: \${error.message}\`,
+        variant: "destructive",
+      });
+    }
+  });
+
+  return {
+    ${module.moduleName.toLowerCase()},
+    isLoading,
+    error,
+    create: createMutation.mutate,
+    isCreating: createMutation.isPending
+  };
 };
 `;
 };
 
-/**
- * Generates boilerplate component code
- */
-export const generateComponentCode = (config: AutoModuleConfig): string => {
-  const customColumns = config.suggestedCustomColumns || [];
-  
+export const generateComponentCode = (module: any): string => {
   return `/**
- * Auto-generated component for ${config.moduleName}
- * Generated from table: ${config.tableName}
- * Confidence: ${(config.confidence * 100).toFixed(0)}%
+ * ${module.moduleName} Module Component - Auto-generated
  */
 
 import React from 'react';
-import { ExtensibleModuleTemplate } from '@/templates/components/ExtensibleModuleTemplate';
-import { use${config.moduleName} } from '@/hooks/use${config.moduleName}';
-import { StatusBadge } from '@/components/shared/StatusBadge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { use${module.moduleName} } from '@/hooks/use${module.moduleName}';
 
-export const ${config.moduleName}Module = () => {
-  const { items, isLoading, createItem, updateItem } = use${config.moduleName}();
+export const ${module.moduleName}Module = () => {
+  const { ${module.moduleName.toLowerCase()}, isLoading } = use${module.moduleName}();
 
-  const customColumns = [
-    ${customColumns.map(col => `{
-      key: '${col.key}',
-      header: '${col.header}',
-      render: (item: any) => ${generateColumnRender(col)}
-    }`).join(',\n    ')}
-  ];
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   return (
-    <ExtensibleModuleTemplate
-      config={{
-        tableName: '${config.tableName}',
-        moduleName: '${config.moduleName}',
-        requiredFields: [${config.requiredFields.map(f => `'${f}'`).join(', ')}]
-      }}
-      data={items}
-      isLoading={isLoading}
-      customColumns={customColumns}
-      onAdd={() => {
-        // TODO: Implement add functionality
-        console.log('Add new ${config.moduleName.toLowerCase()}');
-      }}
-      onEdit={(item) => {
-        // TODO: Implement edit functionality
-        console.log('Edit ${config.moduleName.toLowerCase()}:', item);
-      }}
-    />
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold">${module.moduleName} Management</h1>
+        <Button>Add New</Button>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>${module.moduleName} List</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {${module.moduleName.toLowerCase()} && ${module.moduleName.toLowerCase()}.length > 0 ? (
+            <div className="space-y-2">
+              {${module.moduleName.toLowerCase()}.map((item: any) => (
+                <div key={item.id} className="p-4 border rounded-lg">
+                  <pre>{JSON.stringify(item, null, 2)}</pre>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p>No ${module.moduleName.toLowerCase()} found.</p>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 `;
-};
-
-/**
- * Generates column render code based on column type
- */
-const generateColumnRender = (column: { key: string; type: string }): string => {
-  switch (column.type) {
-    case 'status':
-      return `<StatusBadge status={item.${column.key}} />`;
-    case 'date':
-      return `item.${column.key} ? new Date(item.${column.key}).toLocaleDateString() : 'N/A'`;
-    case 'boolean':
-      return `item.${column.key} ? 'Yes' : 'No'`;
-    default:
-      return `<span className="font-medium">{item.${column.key} || 'N/A'}</span>`;
-  }
 };
