@@ -1,4 +1,3 @@
-
 /**
  * Hook for managing external API publishing and marketplace functionality
  */
@@ -60,10 +59,13 @@ export const useExternalApis = () => {
       internalApiId: string;
       config: Omit<ExternalApiRegistry, 'id' | 'internal_api_id' | 'created_at' | 'updated_at' | 'created_by'>;
     }) => {
+      console.log('Publishing API with config:', { internalApiId, config });
       return await externalApiManager.publishInternalApi(internalApiId, config);
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('API published successfully:', data);
       queryClient.invalidateQueries({ queryKey: ['external-apis'] });
+      queryClient.invalidateQueries({ queryKey: ['published-external-apis'] });
       toast({
         title: "API Published",
         description: "Your internal API has been successfully published as an external API.",
@@ -73,7 +75,7 @@ export const useExternalApis = () => {
       console.error('API publishing failed:', error);
       toast({
         title: "Publishing Failed",
-        description: error.message,
+        description: error.message || "Failed to publish API. Please try again.",
         variant: "destructive",
       });
     }
@@ -130,9 +132,11 @@ export const useExternalApis = () => {
       externalApiId: string;
       status: ExternalApiRegistry['status'];
     }) => {
+      console.log('Updating API status:', { externalApiId, status });
       return await externalApiManager.updateExternalApiStatus(externalApiId, status);
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('API status updated successfully:', data);
       queryClient.invalidateQueries({ queryKey: ['external-apis'] });
       queryClient.invalidateQueries({ queryKey: ['published-external-apis'] });
       toast({
@@ -144,7 +148,7 @@ export const useExternalApis = () => {
       console.error('Status update failed:', error);
       toast({
         title: "Update Failed",
-        description: error.message,
+        description: error.message || "Failed to update status. Please try again.",
         variant: "destructive",
       });
     }

@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -58,53 +58,54 @@ const ExternalApiPublisher = () => {
   });
 
   const handlePublishApi = (apiId: string, apiName: string) => {
+    console.log('Publishing API:', { apiId, apiName });
     setSelectedApi(apiId);
     const integration = integrations?.find(i => i.id === apiId);
     setPublishForm(prev => ({
       ...prev,
       external_name: apiName,
       external_description: integration?.description || '',
-      version: integration?.version || '1.0.0'
+      version: integration?.version || '1.0.0',
+      category: integration?.category || 'general'
     }));
     setShowPublishDialog(true);
   };
 
-  const handleSubmitPublish = () => {
+  const handleSubmitPublish = async () => {
     if (!selectedApi) return;
 
-    publishApi({
+    console.log('Submitting publish with data:', {
       internalApiId: selectedApi,
-      config: {
-        ...publishForm,
-        marketplace_config: {},
-        analytics_config: {},
-        supported_formats: ['json']
-      }
+      config: publishForm
     });
 
-    setShowPublishDialog(false);
-    setPublishForm({
-      external_name: '',
-      external_description: '',
-      version: '1.0.0',
-      status: 'draft',
-      visibility: 'private',
-      pricing_model: 'free',
-      documentation_url: '',
-      tags: [],
-      rate_limits: { requests: 1000, period: 'hour' },
-      authentication_methods: ['api_key']
-    });
-    setSelectedApi(null);
-  };
+    try {
+      await publishApi({
+        internalApiId: selectedApi,
+        config: {
+          ...publishForm,
+          marketplace_config: {},
+          analytics_config: {},
+          supported_formats: ['json']
+        }
+      });
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'published': return 'bg-green-500';
-      case 'review': return 'bg-yellow-500';
-      case 'draft': return 'bg-gray-500';
-      case 'deprecated': return 'bg-red-500';
-      default: return 'bg-gray-500';
+      setShowPublishDialog(false);
+      setPublishForm({
+        external_name: '',
+        external_description: '',
+        version: '1.0.0',
+        status: 'draft',
+        visibility: 'private',
+        pricing_model: 'free',
+        documentation_url: '',
+        tags: [],
+        rate_limits: { requests: 1000, period: 'hour' },
+        authentication_methods: ['api_key']
+      });
+      setSelectedApi(null);
+    } catch (error) {
+      console.error('Failed to publish API:', error);
     }
   };
 

@@ -116,19 +116,60 @@ class ExternalApiManagerClass {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
+    // Generate a proper UUID for the internal API reference if it's a string identifier
+    let actualInternalApiId = internalApiId;
+    
+    // If the ID is not in UUID format, we need to find or create a proper reference
+    if (!internalApiId.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+      // Check if we have an existing API with this identifier
+      const { data: existingApi } = await supabase
+        .from('api_integration_registry')
+        .select('id, name')
+        .eq('name', internalApiId)
+        .single();
+
+      if (existingApi) {
+        actualInternalApiId = existingApi.id;
+      } else {
+        // Create a new entry in the api_integration_registry if it doesn't exist
+        const { data: newApi, error: createError } = await supabase
+          .from('api_integration_registry')
+          .insert({
+            name: internalApiId,
+            type: 'internal',
+            category: publishConfig.category || 'general',
+            direction: 'outbound',
+            purpose: 'External API Publishing',
+            description: publishConfig.external_description || '',
+            status: 'active',
+            lifecycle_stage: 'production',
+            created_by: user.id
+          })
+          .select('id')
+          .single();
+
+        if (createError) {
+          console.error('Error creating internal API reference:', createError);
+          throw createError;
+        }
+
+        actualInternalApiId = newApi.id;
+      }
+    }
+
     // Get the internal API details to extract category
     const { data: internalApi } = await supabase
       .from('api_integration_registry')
       .select('category, name')
-      .eq('id', internalApiId)
+      .eq('id', actualInternalApiId)
       .single();
 
     const { data, error } = await supabase
       .from('external_api_registry')
       .insert({
-        internal_api_id: internalApiId,
+        internal_api_id: actualInternalApiId,
         created_by: user.id,
-        category: internalApi?.category || 'general',
+        category: internalApi?.category || publishConfig.category || 'general',
         ...publishConfig
       })
       .select()
