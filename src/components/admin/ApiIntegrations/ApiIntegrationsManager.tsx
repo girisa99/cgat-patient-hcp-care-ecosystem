@@ -15,7 +15,8 @@ import {
   Globe,
   Server,
   ArrowDownCircle,
-  ArrowUpCircle
+  ArrowUpCircle,
+  Bug
 } from 'lucide-react';
 import { useApiIntegrations } from '@/hooks/useApiIntegrations';
 import { useExternalApis } from '@/hooks/useExternalApis';
@@ -38,6 +39,7 @@ const ApiIntegrationsManager = () => {
   const [selectedView, setSelectedView] = useState<'overview' | 'internal' | 'external' | 'publishing' | 'developer' | 'docs'>('overview');
   const [selectedIntegration, setSelectedIntegration] = useState<string | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [debugMode, setDebugMode] = useState(false);
 
   // Filter integrations based on search term
   const filteredIntegrations = integrations?.filter(integration =>
@@ -105,6 +107,15 @@ const ApiIntegrationsManager = () => {
           </p>
         </div>
         <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setDebugMode(!debugMode)}
+            className="bg-yellow-50 hover:bg-yellow-100 border-yellow-200"
+          >
+            <Bug className="h-4 w-4 mr-2" />
+            Global Debug: {debugMode ? 'ON' : 'OFF'}
+          </Button>
           <Button 
             variant="outline" 
             onClick={handleRefreshDetection}
@@ -119,6 +130,22 @@ const ApiIntegrationsManager = () => {
           </Button>
         </div>
       </div>
+
+      {/* Global Debug Panel */}
+      {debugMode && (
+        <Card className="border-yellow-200 bg-yellow-50">
+          <CardContent className="p-4">
+            <div className="space-y-2 text-sm">
+              <div><strong>Current View:</strong> {selectedView}</div>
+              <div><strong>Total Integrations:</strong> {integrations?.length || 0}</div>
+              <div><strong>Internal APIs:</strong> {internalApis.length}</div>
+              <div><strong>External APIs (Consuming):</strong> {consumingExternalApis.length}</div>
+              <div><strong>Published External APIs:</strong> {publishedExternalApis?.length || 0}</div>
+              <div><strong>Search Term:</strong> "{searchTerm}"</div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Search and Filter Controls */}
       <div className="flex items-center gap-4">

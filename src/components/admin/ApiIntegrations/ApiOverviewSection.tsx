@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -251,30 +252,10 @@ export const ApiOverviewSection = ({
     }
   };
 
-  if (apis.length === 0) {
-    return (
-      <Card>
-        <CardContent className="p-8 text-center">
-          <div className="flex flex-col items-center gap-4">
-            {icon}
-            <div>
-              <h4 className="text-lg font-medium mb-2">No {title}</h4>
-              <p className="text-muted-foreground">
-                {type === 'internal' && "No internal APIs detected yet."}
-                {type === 'external' && "No external APIs configured yet."}
-                {type === 'published' && "No APIs published yet."}
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <>
       <div className="space-y-4">
-        {/* Debug Toggle */}
+        {/* Debug Toggle - Always Visible */}
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold">{title}</h3>
           <Button
@@ -296,6 +277,7 @@ export const ApiOverviewSection = ({
                 <div><strong>Section Type:</strong> {type}</div>
                 <div><strong>API Count:</strong> {apis.length}</div>
                 <div><strong>Title:</strong> {title}</div>
+                <div><strong>Should Show Management Buttons for {type}:</strong> {(type === 'published' || type === 'external') ? '✅ YES' : '❌ NO'}</div>
                 <details className="mt-2">
                   <summary className="cursor-pointer font-medium">View Raw API Data</summary>
                   <pre className="mt-2 text-xs bg-white p-2 rounded border overflow-auto max-h-40">
@@ -307,242 +289,261 @@ export const ApiOverviewSection = ({
           </Card>
         )}
 
-        <div className="grid gap-4">
-          {apis.slice(0, 3).map((api) => {
-            const debugInfo = debugButtonVisibility(api);
-            
-            return (
-              <Card key={api.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-2 flex-1">
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-semibold">{api.external_name || api.name}</h4>
-                        {api.status && (
-                          <Badge variant={api.status === 'published' ? 'default' : 'secondary'}>
-                            {api.status}
-                          </Badge>
-                        )}
-                        {(type === 'published' || type === 'external') && (
-                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                            <RefreshCw className="h-3 w-3 mr-1" />
-                            Synced
-                          </Badge>
-                        )}
-                        {debugMode && (
-                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                            DEBUG: {type}
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="text-sm text-muted-foreground line-clamp-2">
-                        {api.external_description || api.description || 'No description available'}
-                      </p>
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                        <span>Version {api.version || '1.0.0'}</span>
-                        {api.endpoints?.length && (
-                          <>
-                            <span>•</span>
-                            <span>{api.endpoints.length} endpoints</span>
-                          </>
-                        )}
-                        {(type === 'published' || type === 'external') && api.published_at && (
-                          <>
-                            <span>•</span>
-                            <span>Published {new Date(api.published_at).toLocaleDateString()}</span>
-                          </>
-                        )}
-                      </div>
-
-                      {/* Debug Info Panel */}
-                      {debugMode && (
-                        <div className="mt-2 p-2 bg-gray-50 border rounded text-xs">
-                          <div className="font-medium mb-1">Button Visibility Logic:</div>
-                          <div className="grid grid-cols-2 gap-1">
-                            <div>Type: {type}</div>
-                            <div>Status: {api.status}</div>
-                            <div>Show Manage: {debugInfo.shouldShowManageButtons ? '✅' : '❌'}</div>
-                            <div>Show Publish: {debugInfo.shouldShowPublishButton ? '✅' : '❌'}</div>
-                            <div>Show Internal Publish: {debugInfo.shouldShowInternalPublish ? '✅' : '❌'}</div>
-                            <div>Is Draft/Review: {debugInfo.isDraftOrReview ? '✅' : '❌'}</div>
-                          </div>
+        {/* Empty State */}
+        {apis.length === 0 ? (
+          <Card>
+            <CardContent className="p-8 text-center">
+              <div className="flex flex-col items-center gap-4">
+                {icon}
+                <div>
+                  <h4 className="text-lg font-medium mb-2">No {title}</h4>
+                  <p className="text-muted-foreground">
+                    {type === 'internal' && "No internal APIs detected yet."}
+                    {type === 'external' && "No external APIs configured yet."}
+                    {type === 'published' && "No APIs published yet."}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-4">
+            {apis.slice(0, 3).map((api) => {
+              const debugInfo = debugButtonVisibility(api);
+              
+              return (
+                <Card key={api.id} className="hover:shadow-md transition-shadow">
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-2 flex-1">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-semibold">{api.external_name || api.name}</h4>
+                          {api.status && (
+                            <Badge variant={api.status === 'published' ? 'default' : 'secondary'}>
+                              {api.status}
+                            </Badge>
+                          )}
+                          {(type === 'published' || type === 'external') && (
+                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                              <RefreshCw className="h-3 w-3 mr-1" />
+                              Synced
+                            </Badge>
+                          )}
+                          {debugMode && (
+                            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                              DEBUG: {type}
+                            </Badge>
+                          )}
                         </div>
-                      )}
-                    </div>
-                    <div className="flex gap-1 ml-4">
-                      {/* Internal API Publish Button */}
-                      {type === 'internal' && (
-                        <>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => handlePublishClick(api)}
-                            className="bg-blue-50 hover:bg-blue-100"
-                            disabled={isProcessing !== null}
-                          >
-                            {isProcessing === `publish-${api.id}` ? (
-                              <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
-                            ) : (
-                              <ArrowUpCircle className="h-3 w-3 mr-1" />
-                            )}
-                            Publish
-                          </Button>
-                          {debugMode && (
-                            <Badge variant="outline" className="text-xs">INT-PUB</Badge>
+                        <p className="text-sm text-muted-foreground line-clamp-2">
+                          {api.external_description || api.description || 'No description available'}
+                        </p>
+                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                          <span>Version {api.version || '1.0.0'}</span>
+                          {api.endpoints?.length && (
+                            <>
+                              <span>•</span>
+                              <span>{api.endpoints.length} endpoints</span>
+                            </>
                           )}
-                        </>
-                      )}
-                      
-                      {/* Published/External API Management Buttons */}
-                      {(type === 'published' || type === 'external') && (
-                        <>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => handleConfigureApi(api)}
-                            disabled={isProcessing !== null}
-                            className="bg-gray-50 hover:bg-gray-100"
-                          >
-                            {isProcessing !== null ? (
-                              <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
-                            ) : (
-                              <Settings className="h-3 w-3 mr-1" />
+                          {(type === 'published' || type === 'external') && api.published_at && (
+                            <>
+                              <span>•</span>
+                              <span>Published {new Date(api.published_at).toLocaleDateString()}</span>
+                            </>
+                          )}
+                        </div>
+
+                        {/* Debug Info Panel */}
+                        {debugMode && (
+                          <div className="mt-2 p-2 bg-gray-50 border rounded text-xs">
+                            <div className="font-medium mb-1">Button Visibility Logic:</div>
+                            <div className="grid grid-cols-2 gap-1">
+                              <div>Type: {type}</div>
+                              <div>Status: {api.status}</div>
+                              <div>Show Manage: {debugInfo.shouldShowManageButtons ? '✅' : '❌'}</div>
+                              <div>Show Publish: {debugInfo.shouldShowPublishButton ? '✅' : '❌'}</div>
+                              <div>Show Internal Publish: {debugInfo.shouldShowInternalPublish ? '✅' : '❌'}</div>
+                              <div>Is Draft/Review: {debugInfo.isDraftOrReview ? '✅' : '❌'}</div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex gap-1 ml-4">
+                        {/* Internal API Publish Button */}
+                        {type === 'internal' && (
+                          <>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handlePublishClick(api)}
+                              className="bg-blue-50 hover:bg-blue-100"
+                              disabled={isProcessing !== null}
+                            >
+                              {isProcessing === `publish-${api.id}` ? (
+                                <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                              ) : (
+                                <ArrowUpCircle className="h-3 w-3 mr-1" />
+                              )}
+                              Publish
+                            </Button>
+                            {debugMode && (
+                              <Badge variant="outline" className="text-xs">INT-PUB</Badge>
                             )}
-                            Manage
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => handleViewAnalytics(api)}
-                            disabled={isProcessing !== null}
-                            className="bg-blue-50 hover:bg-blue-100"
-                          >
-                            <TrendingUp className="h-3 w-3 mr-1" />
-                            Analytics
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                disabled={isProcessing !== null}
-                                className="bg-orange-50 hover:bg-orange-100"
-                              >
-                                {isProcessing === `revert-${api.id}` ? (
-                                  <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
-                                ) : (
-                                  <RotateCcw className="h-3 w-3 mr-1" />
-                                )}
-                                Revert
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Revert to Draft?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  This will change the status back to draft and unpublish the API. 
-                                  The API will no longer be accessible to external developers.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleRevertToDraft(api)}>
-                                  Revert to Draft
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button 
-                                size="sm" 
-                                variant="destructive"
-                                disabled={isProcessing !== null}
-                              >
-                                {isProcessing === `cancel-${api.id}` ? (
-                                  <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
-                                ) : (
-                                  <Trash2 className="h-3 w-3 mr-1" />
-                                )}
-                                Cancel
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Cancel Publication?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  This will permanently delete the external API and all its data. 
-                                  This action cannot be undone.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Keep API</AlertDialogCancel>
-                                <AlertDialogAction 
-                                  onClick={() => handleCancelPublication(api)}
-                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          </>
+                        )}
+                        
+                        {/* Published/External API Management Buttons */}
+                        {(type === 'published' || type === 'external') && (
+                          <>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleConfigureApi(api)}
+                              disabled={isProcessing !== null}
+                              className="bg-gray-50 hover:bg-gray-100"
+                            >
+                              {isProcessing !== null ? (
+                                <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                              ) : (
+                                <Settings className="h-3 w-3 mr-1" />
+                              )}
+                              Manage
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleViewAnalytics(api)}
+                              disabled={isProcessing !== null}
+                              className="bg-blue-50 hover:bg-blue-100"
+                            >
+                              <TrendingUp className="h-3 w-3 mr-1" />
+                              Analytics
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  disabled={isProcessing !== null}
+                                  className="bg-orange-50 hover:bg-orange-100"
                                 >
-                                  Delete Permanently
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                          {debugMode && (
-                            <Badge variant="outline" className="text-xs">PUB-MGMT</Badge>
-                          )}
-                        </>
-                      )}
-                      
-                      {/* External API Publish Button (for draft/review status) */}
-                      {(type === 'external' && (api.status === 'draft' || api.status === 'review')) && (
-                        <>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => handleStatusUpdate(api.id, 'published')}
-                            disabled={isProcessing !== null || isUpdatingStatus}
-                            className="bg-green-50 hover:bg-green-100"
-                          >
-                            {isProcessing === `status-${api.id}` || isUpdatingStatus ? (
-                              <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
-                            ) : (
-                              <Rocket className="h-3 w-3 mr-1" />
+                                  {isProcessing === `revert-${api.id}` ? (
+                                    <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                                  ) : (
+                                    <RotateCcw className="h-3 w-3 mr-1" />
+                                  )}
+                                  Revert
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Revert to Draft?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This will change the status back to draft and unpublish the API. 
+                                    The API will no longer be accessible to external developers.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => handleRevertToDraft(api)}>
+                                    Revert to Draft
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button 
+                                  size="sm" 
+                                  variant="destructive"
+                                  disabled={isProcessing !== null}
+                                >
+                                  {isProcessing === `cancel-${api.id}` ? (
+                                    <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                                  ) : (
+                                    <Trash2 className="h-3 w-3 mr-1" />
+                                  )}
+                                  Cancel
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Cancel Publication?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This will permanently delete the external API and all its data. 
+                                    This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Keep API</AlertDialogCancel>
+                                  <AlertDialogAction 
+                                    onClick={() => handleCancelPublication(api)}
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
+                                    Delete Permanently
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                            {debugMode && (
+                              <Badge variant="outline" className="text-xs">PUB-MGMT</Badge>
                             )}
-                            Publish
-                          </Button>
-                          {debugMode && (
-                            <Badge variant="outline" className="text-xs">EXT-PUB</Badge>
-                          )}
-                        </>
-                      )}
-                      
-                      {/* View Details Button */}
-                      <Button 
-                        size="sm" 
-                        variant="ghost"
-                        onClick={() => onViewDetails?.(api.id)}
-                        disabled={isProcessing !== null}
-                      >
-                        <Eye className="h-3 w-3 mr-1" />
-                        View
-                      </Button>
-                      {debugMode && (
-                        <Badge variant="outline" className="text-xs">VIEW</Badge>
-                      )}
+                          </>
+                        )}
+                        
+                        {/* External API Publish Button (for draft/review status) */}
+                        {(type === 'external' && (api.status === 'draft' || api.status === 'review')) && (
+                          <>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleStatusUpdate(api.id, 'published')}
+                              disabled={isProcessing !== null || isUpdatingStatus}
+                              className="bg-green-50 hover:bg-green-100"
+                            >
+                              {isProcessing === `status-${api.id}` || isUpdatingStatus ? (
+                                <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                              ) : (
+                                <Rocket className="h-3 w-3 mr-1" />
+                              )}
+                              Publish
+                            </Button>
+                            {debugMode && (
+                              <Badge variant="outline" className="text-xs">EXT-PUB</Badge>
+                            )}
+                          </>
+                        )}
+                        
+                        {/* View Details Button */}
+                        <Button 
+                          size="sm" 
+                          variant="ghost"
+                          onClick={() => onViewDetails?.(api.id)}
+                          disabled={isProcessing !== null}
+                        >
+                          <Eye className="h-3 w-3 mr-1" />
+                          View
+                        </Button>
+                        {debugMode && (
+                          <Badge variant="outline" className="text-xs">VIEW</Badge>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-          
-          {apis.length > 3 && (
-            <div className="text-center py-4">
-              <p className="text-sm text-muted-foreground">
-                +{apis.length - 3} more {title.toLowerCase()}
-              </p>
-            </div>
-          )}
-        </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+            
+            {apis.length > 3 && (
+              <div className="text-center py-4">
+                <p className="text-sm text-muted-foreground">
+                  +{apis.length - 3} more {title.toLowerCase()}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Duplicate Detection Dialog */}
