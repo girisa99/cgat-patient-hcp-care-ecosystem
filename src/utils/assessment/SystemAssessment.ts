@@ -525,16 +525,84 @@ class SystemAssessmentClass {
   // Helper methods
   private async getTableRecordCount(tableName: string): Promise<number> {
     try {
-      const { count, error } = await supabase
-        .from(tableName)
-        .select('*', { count: 'exact', head: true });
-      
-      if (error) {
-        console.warn(`Could not get count for table ${tableName}:`, error);
-        return 0;
+      // Handle specific tables with proper type checking
+      switch (tableName) {
+        case 'profiles':
+          const { count: profilesCount, error: profilesError } = await supabase
+            .from('profiles')
+            .select('*', { count: 'exact', head: true });
+          return profilesError ? 0 : (profilesCount || 0);
+          
+        case 'facilities':
+          const { count: facilitiesCount, error: facilitiesError } = await supabase
+            .from('facilities')
+            .select('*', { count: 'exact', head: true });
+          return facilitiesError ? 0 : (facilitiesCount || 0);
+          
+        case 'modules':
+          const { count: modulesCount, error: modulesError } = await supabase
+            .from('modules')
+            .select('*', { count: 'exact', head: true });
+          return modulesError ? 0 : (modulesCount || 0);
+          
+        case 'roles':
+          const { count: rolesCount, error: rolesError } = await supabase
+            .from('roles')
+            .select('*', { count: 'exact', head: true });
+          return rolesError ? 0 : (rolesCount || 0);
+          
+        case 'user_roles':
+          const { count: userRolesCount, error: userRolesError } = await supabase
+            .from('user_roles')
+            .select('*', { count: 'exact', head: true });
+          return userRolesError ? 0 : (userRolesCount || 0);
+          
+        case 'permissions':
+          const { count: permissionsCount, error: permissionsError } = await supabase
+            .from('permissions')
+            .select('*', { count: 'exact', head: true });
+          return permissionsError ? 0 : (permissionsCount || 0);
+          
+        case 'api_integration_registry':
+          const { count: apiIntegrationCount, error: apiIntegrationError } = await supabase
+            .from('api_integration_registry')
+            .select('*', { count: 'exact', head: true });
+          return apiIntegrationError ? 0 : (apiIntegrationCount || 0);
+          
+        case 'external_api_registry':
+          const { count: externalApiCount, error: externalApiError } = await supabase
+            .from('external_api_registry')
+            .select('*', { count: 'exact', head: true });
+          return externalApiError ? 0 : (externalApiCount || 0);
+          
+        case 'api_change_tracking':
+          const { count: changeTrackingCount, error: changeTrackingError } = await supabase
+            .from('api_change_tracking')
+            .select('*', { count: 'exact', head: true });
+          return changeTrackingError ? 0 : (changeTrackingCount || 0);
+          
+        case 'feature_flags':
+          const { count: featureFlagsCount, error: featureFlagsError } = await supabase
+            .from('feature_flags')
+            .select('*', { count: 'exact', head: true });
+          return featureFlagsError ? 0 : (featureFlagsCount || 0);
+          
+        case 'developer_notification_preferences':
+          const { count: devNotifPrefCount, error: devNotifPrefError } = await supabase
+            .from('developer_notification_preferences')
+            .select('*', { count: 'exact', head: true });
+          return devNotifPrefError ? 0 : (devNotifPrefCount || 0);
+          
+        case 'marketplace_listings':
+          const { count: marketplaceCount, error: marketplaceError } = await supabase
+            .from('marketplace_listings')
+            .select('*', { count: 'exact', head: true });
+          return marketplaceError ? 0 : (marketplaceCount || 0);
+          
+        default:
+          console.warn(`Unknown table name: ${tableName}`);
+          return 0;
       }
-      
-      return count || 0;
     } catch (error) {
       console.warn(`Error getting count for table ${tableName}:`, error);
       return 0;
@@ -543,19 +611,77 @@ class SystemAssessmentClass {
 
   private async getTableLastActivity(tableName: string): Promise<string | null> {
     try {
-      const { data, error } = await supabase
-        .from(tableName)
-        .select('created_at, updated_at')
-        .order('updated_at', { ascending: false })
-        .limit(1)
-        .single();
+      // Handle tables that have updated_at and created_at columns
+      const tablesWithTimestamps = [
+        'profiles', 'facilities', 'modules', 'api_integration_registry', 
+        'external_api_registry', 'api_change_tracking', 'feature_flags',
+        'developer_notification_preferences', 'marketplace_listings'
+      ];
       
-      if (error || !data) {
-        return null;
+      const tablesWithCreatedAt = [
+        'roles', 'permissions', 'user_roles', 'role_permissions'
+      ];
+
+      if (tablesWithTimestamps.includes(tableName)) {
+        switch (tableName) {
+          case 'profiles':
+            const { data: profileData, error: profileError } = await supabase
+              .from('profiles')
+              .select('created_at, updated_at')
+              .order('updated_at', { ascending: false })
+              .limit(1)
+              .maybeSingle();
+            return profileError || !profileData ? null : (profileData.updated_at || profileData.created_at);
+            
+          case 'facilities':
+            const { data: facilityData, error: facilityError } = await supabase
+              .from('facilities')
+              .select('created_at, updated_at')
+              .order('updated_at', { ascending: false })
+              .limit(1)
+              .maybeSingle();
+            return facilityError || !facilityData ? null : (facilityData.updated_at || facilityData.created_at);
+            
+          case 'modules':
+            const { data: moduleData, error: moduleError } = await supabase
+              .from('modules')
+              .select('created_at, updated_at')
+              .order('updated_at', { ascending: false })
+              .limit(1)
+              .maybeSingle();
+            return moduleError || !moduleData ? null : (moduleData.updated_at || moduleData.created_at);
+            
+          default:
+            return null;
+        }
+      } else if (tablesWithCreatedAt.includes(tableName)) {
+        switch (tableName) {
+          case 'roles':
+            const { data: roleData, error: roleError } = await supabase
+              .from('roles')
+              .select('created_at')
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .maybeSingle();
+            return roleError || !roleData ? null : roleData.created_at;
+            
+          case 'permissions':
+            const { data: permissionData, error: permissionError } = await supabase
+              .from('permissions')
+              .select('created_at')
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .maybeSingle();
+            return permissionError || !permissionData ? null : permissionData.created_at;
+            
+          default:
+            return null;
+        }
       }
       
-      return data.updated_at || data.created_at || null;
+      return null;
     } catch (error) {
+      console.warn(`Error getting last activity for table ${tableName}:`, error);
       return null;
     }
   }
