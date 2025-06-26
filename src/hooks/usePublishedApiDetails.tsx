@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -86,7 +85,7 @@ export const usePublishedApiDetails = () => {
     console.log('🔍 Fetching real API details for:', apiId);
 
     try {
-      // Get the external API registry entry with its endpoints
+      // Get the external API registry entry with its endpoints (limited to 10)
       const { data: externalApi, error: externalError } = await supabase
         .from('external_api_registry')
         .select(`
@@ -103,8 +102,11 @@ export const usePublishedApiDetails = () => {
 
       console.log('✅ External API data:', externalApi);
 
+      // Limit endpoints to first 10 to keep UI manageable
+      const limitedEndpoints = (externalApi.external_api_endpoints || []).slice(0, 10);
+      
       // Get real endpoints from the database
-      const realEndpoints = externalApi.external_api_endpoints?.map((endpoint: any) => ({
+      const realEndpoints = limitedEndpoints.map((endpoint: any) => ({
         id: endpoint.id,
         name: endpoint.summary || endpoint.external_path,
         method: endpoint.method.toUpperCase(),
@@ -125,15 +127,15 @@ export const usePublishedApiDetails = () => {
         example_request: endpoint.example_request || null,
         example_response: endpoint.example_response || null,
         rate_limit_override: endpoint.rate_limit_override || null
-      })) || [];
+      }));
 
-      // Get real database schema from known tables
-      const realDatabaseSchema = getRealDatabaseSchema();
+      // Get real database schema from most important tables only (limit to 3)
+      const realDatabaseSchema = await getRealDatabaseSchema();
 
-      // Get real RLS policies
-      const realRLSPolicies = getRealRLSPolicies();
+      // Get real RLS policies (limit to 8 most important ones)
+      const realRLSPolicies = await getRealRLSPolicies();
 
-      // Get real data mappings
+      // Get real data mappings (limit to 5)
       const realDataMappings = getRealDataMappings();
 
       // Get real security configuration
@@ -169,176 +171,71 @@ export const usePublishedApiDetails = () => {
   return { getApiDetails };
 };
 
-// Get real database schema from known tables structure
-function getRealDatabaseSchema() {
-  return {
-    tables: [
-      {
-        name: 'profiles',
-        columns: [
-          { name: 'id', type: 'uuid', nullable: false, description: 'Primary key, references auth.users', default: 'gen_random_uuid()' },
-          { name: 'first_name', type: 'varchar', nullable: true, description: 'User first name' },
-          { name: 'last_name', type: 'varchar', nullable: true, description: 'User last name' },
-          { name: 'email', type: 'varchar', nullable: true, description: 'User email address' },
-          { name: 'phone', type: 'varchar', nullable: true, description: 'User phone number' },
-          { name: 'department', type: 'varchar', nullable: true, description: 'User department' },
-          { name: 'facility_id', type: 'uuid', nullable: true, description: 'Associated facility' },
-          { name: 'avatar_url', type: 'text', nullable: true, description: 'Profile picture URL' },
-          { name: 'is_email_verified', type: 'boolean', nullable: true, description: 'Email verification status', default: 'false' },
-          { name: 'has_mfa_enabled', type: 'boolean', nullable: true, description: 'MFA enabled status', default: 'false' },
-          { name: 'last_login', type: 'timestamp', nullable: true, description: 'Last login timestamp' },
-          { name: 'created_at', type: 'timestamp', nullable: true, description: 'Record creation time', default: 'now()' },
-          { name: 'updated_at', type: 'timestamp', nullable: true, description: 'Record last update time', default: 'now()' }
-        ],
-        foreign_keys: [
-          { column: 'facility_id', references_table: 'facilities', references_column: 'id' }
-        ],
-        indexes: [
-          { name: 'profiles_pkey', columns: ['id'], unique: true },
-          { name: 'profiles_email_idx', columns: ['email'], unique: false }
-        ]
-      },
-      {
-        name: 'facilities',
-        columns: [
-          { name: 'id', type: 'uuid', nullable: false, description: 'Primary key', default: 'gen_random_uuid()' },
-          { name: 'name', type: 'varchar', nullable: false, description: 'Facility name' },
-          { name: 'facility_type', type: 'facility_type_enum', nullable: false, description: 'Type of facility' },
-          { name: 'address', type: 'text', nullable: true, description: 'Facility address' },
-          { name: 'phone', type: 'varchar', nullable: true, description: 'Facility phone' },
-          { name: 'email', type: 'varchar', nullable: true, description: 'Facility email' },
-          { name: 'npi_number', type: 'varchar', nullable: true, description: 'National Provider Identifier' },
-          { name: 'license_number', type: 'varchar', nullable: true, description: 'Facility license number' },
-          { name: 'is_active', type: 'boolean', nullable: true, description: 'Active status', default: 'true' },
-          { name: 'created_at', type: 'timestamp', nullable: true, description: 'Record creation time', default: 'now()' },
-          { name: 'updated_at', type: 'timestamp', nullable: true, description: 'Record last update time', default: 'now()' }
-        ],
-        foreign_keys: [],
-        indexes: [
-          { name: 'facilities_pkey', columns: ['id'], unique: true },
-          { name: 'facilities_name_idx', columns: ['name'], unique: false }
-        ]
-      },
-      {
-        name: 'user_roles',
-        columns: [
-          { name: 'id', type: 'uuid', nullable: false, description: 'Primary key', default: 'gen_random_uuid()' },
-          { name: 'user_id', type: 'uuid', nullable: true, description: 'Reference to user profile' },
-          { name: 'role_id', type: 'uuid', nullable: true, description: 'Reference to role' },
-          { name: 'assigned_by', type: 'uuid', nullable: true, description: 'User who assigned the role' },
-          { name: 'created_at', type: 'timestamp', nullable: true, description: 'Assignment time', default: 'now()' }
-        ],
-        foreign_keys: [
-          { column: 'user_id', references_table: 'profiles', references_column: 'id' },
-          { column: 'role_id', references_table: 'roles', references_column: 'id' }
-        ],
-        indexes: [
-          { name: 'user_roles_pkey', columns: ['id'], unique: true },
-          { name: 'user_roles_user_id_role_id_idx', columns: ['user_id', 'role_id'], unique: true }
-        ]
-      },
-      {
-        name: 'roles',
-        columns: [
-          { name: 'id', type: 'uuid', nullable: false, description: 'Primary key', default: 'gen_random_uuid()' },
-          { name: 'name', type: 'user_role_enum', nullable: false, description: 'Role name' },
-          { name: 'description', type: 'text', nullable: true, description: 'Role description' },
-          { name: 'created_at', type: 'timestamp', nullable: true, description: 'Record creation time', default: 'now()' }
-        ],
-        foreign_keys: [],
-        indexes: [
-          { name: 'roles_pkey', columns: ['id'], unique: true },
-          { name: 'roles_name_unique', columns: ['name'], unique: true }
-        ]
-      },
-      {
-        name: 'permissions',
-        columns: [
-          { name: 'id', type: 'uuid', nullable: false, description: 'Primary key', default: 'gen_random_uuid()' },
-          { name: 'name', type: 'varchar', nullable: false, description: 'Permission name' },
-          { name: 'description', type: 'text', nullable: true, description: 'Permission description' },
-          { name: 'created_at', type: 'timestamp', nullable: true, description: 'Record creation time', default: 'now()' }
-        ],
-        foreign_keys: [],
-        indexes: [
-          { name: 'permissions_pkey', columns: ['id'], unique: true },
-          { name: 'permissions_name_unique', columns: ['name'], unique: true }
-        ]
-      },
-      {
-        name: 'modules',
-        columns: [
-          { name: 'id', type: 'uuid', nullable: false, description: 'Primary key', default: 'gen_random_uuid()' },
-          { name: 'name', type: 'varchar', nullable: false, description: 'Module name' },
-          { name: 'description', type: 'text', nullable: true, description: 'Module description' },
-          { name: 'is_active', type: 'boolean', nullable: true, description: 'Active status', default: 'true' },
-          { name: 'created_at', type: 'timestamp', nullable: true, description: 'Record creation time', default: 'now()' },
-          { name: 'updated_at', type: 'timestamp', nullable: true, description: 'Record last update time', default: 'now()' }
-        ],
-        foreign_keys: [],
-        indexes: [
-          { name: 'modules_pkey', columns: ['id'], unique: true },
-          { name: 'modules_name_unique', columns: ['name'], unique: true }
-        ]
-      },
-      {
-        name: 'api_keys',
-        columns: [
-          { name: 'id', type: 'uuid', nullable: false, description: 'Primary key', default: 'gen_random_uuid()' },
-          { name: 'user_id', type: 'uuid', nullable: false, description: 'API key owner' },
-          { name: 'name', type: 'varchar', nullable: false, description: 'API key name' },
-          { name: 'key_hash', type: 'text', nullable: false, description: 'Hashed API key' },
-          { name: 'key_prefix', type: 'varchar', nullable: false, description: 'API key prefix' },
-          { name: 'type', type: 'varchar', nullable: false, description: 'Key type (production, sandbox, dev)' },
-          { name: 'status', type: 'varchar', nullable: false, description: 'Key status', default: 'active' },
-          { name: 'permissions', type: 'text[]', nullable: false, description: 'Key permissions', default: '{}' },
-          { name: 'modules', type: 'text[]', nullable: false, description: 'Accessible modules', default: '{}' },
-          { name: 'rate_limit_requests', type: 'integer', nullable: false, description: 'Rate limit requests', default: '1000' },
-          { name: 'rate_limit_period', type: 'varchar', nullable: false, description: 'Rate limit period', default: 'hour' },
-          { name: 'usage_count', type: 'integer', nullable: false, description: 'Usage count', default: '0' },
-          { name: 'last_used', type: 'timestamp', nullable: true, description: 'Last used timestamp' },
-          { name: 'expires_at', type: 'timestamp', nullable: true, description: 'Expiration time' },
-          { name: 'ip_whitelist', type: 'text[]', nullable: true, description: 'IP whitelist' },
-          { name: 'created_at', type: 'timestamp', nullable: false, description: 'Record creation time', default: 'now()' },
-          { name: 'updated_at', type: 'timestamp', nullable: false, description: 'Record last update time', default: 'now()' }
-        ],
-        foreign_keys: [
-          { column: 'user_id', references_table: 'profiles', references_column: 'id' }
-        ],
-        indexes: [
-          { name: 'api_keys_pkey', columns: ['id'], unique: true },
-          { name: 'api_keys_key_hash_unique', columns: ['key_hash'], unique: true }
-        ]
-      },
-      {
-        name: 'audit_logs',
-        columns: [
-          { name: 'id', type: 'uuid', nullable: false, description: 'Primary key', default: 'gen_random_uuid()' },
-          { name: 'user_id', type: 'uuid', nullable: true, description: 'User who performed action' },
-          { name: 'action', type: 'varchar', nullable: false, description: 'Action performed' },
-          { name: 'table_name', type: 'varchar', nullable: true, description: 'Affected table' },
-          { name: 'record_id', type: 'uuid', nullable: true, description: 'Affected record ID' },
-          { name: 'old_values', type: 'jsonb', nullable: true, description: 'Previous values' },
-          { name: 'new_values', type: 'jsonb', nullable: true, description: 'New values' },
-          { name: 'ip_address', type: 'inet', nullable: true, description: 'Client IP address' },
-          { name: 'user_agent', type: 'text', nullable: true, description: 'Client user agent' },
-          { name: 'created_at', type: 'timestamp', nullable: true, description: 'Action timestamp', default: 'now()' }
-        ],
-        foreign_keys: [
-          { column: 'user_id', references_table: 'profiles', references_column: 'id' }
-        ],
-        indexes: [
-          { name: 'audit_logs_pkey', columns: ['id'], unique: true },
-          { name: 'audit_logs_user_id_idx', columns: ['user_id'], unique: false },
-          { name: 'audit_logs_created_at_idx', columns: ['created_at'], unique: false }
-        ]
+// Get real database schema from most important tables (limited to 3)
+async function getRealDatabaseSchema() {
+  try {
+    // Get table information from information_schema for key tables only
+    const keyTables = ['profiles', 'facilities', 'external_api_registry'];
+    
+    const tablesData = [];
+    
+    for (const tableName of keyTables) {
+      // Get column information
+      const { data: columns } = await supabase
+        .rpc('get_table_columns', { table_name: tableName })
+        .limit(10); // Limit columns per table
+      
+      if (columns && columns.length > 0) {
+        tablesData.push({
+          name: tableName,
+          columns: columns.map((col: any) => ({
+            name: col.column_name,
+            type: col.data_type,
+            nullable: col.is_nullable === 'YES',
+            description: col.column_comment || `${tableName} ${col.column_name}`,
+            default: col.column_default
+          })),
+          foreign_keys: [], // Simplified for performance
+          indexes: [] // Simplified for performance
+        });
       }
-    ]
-  };
+    }
+
+    // Fallback to known structure if RPC fails
+    if (tablesData.length === 0) {
+      return getKnownSchemaStructure();
+    }
+
+    return { tables: tablesData };
+  } catch (error) {
+    console.log('Using known schema structure due to error:', error);
+    return getKnownSchemaStructure();
+  }
 }
 
-// Get real RLS policies from database
-function getRealRLSPolicies() {
+// Get real RLS policies from database (limited to 8 most important)
+async function getRealRLSPolicies() {
+  try {
+    // Query actual RLS policies from pg_policies view
+    const { data: policies } = await supabase
+      .rpc('get_rls_policies')
+      .limit(8); // Limit to 8 most important policies
+    
+    if (policies && policies.length > 0) {
+      return policies.map((policy: any, index: number) => ({
+        id: `policy-${index}`,
+        policy_name: policy.policyname,
+        table_name: policy.tablename,
+        operation: policy.cmd,
+        condition: policy.qual || 'Custom condition',
+        description: `RLS policy for ${policy.tablename} table`
+      }));
+    }
+  } catch (error) {
+    console.log('Using default RLS policies due to error:', error);
+  }
+
+  // Fallback to essential RLS policies
   return [
     {
       id: 'profiles-select-own',
@@ -361,16 +258,8 @@ function getRealRLSPolicies() {
       policy_name: 'Users can view associated facilities',
       table_name: 'facilities',
       operation: 'SELECT',
-      condition: 'EXISTS (SELECT 1 FROM profiles WHERE profiles.facility_id = facilities.id AND profiles.id = auth.uid()) OR user_has_role(auth.uid(), \'superAdmin\')',
-      description: 'Users can view facilities they are associated with or if they are super admin'
-    },
-    {
-      id: 'user-roles-select-own',
-      policy_name: 'Users can view own roles',
-      table_name: 'user_roles',
-      operation: 'SELECT',
-      condition: 'user_id = auth.uid() OR user_has_role(auth.uid(), \'superAdmin\')',
-      description: 'Users can view their own roles or admin can view all'
+      condition: 'user_has_facility_access(auth.uid(), id)',
+      description: 'Users can view facilities they have access to'
     },
     {
       id: 'api-keys-select-own',
@@ -381,25 +270,17 @@ function getRealRLSPolicies() {
       description: 'Users can only view their own API keys'
     },
     {
-      id: 'api-keys-insert-own',
-      policy_name: 'Users can create own API keys',
-      table_name: 'api_keys',
-      operation: 'INSERT',
-      condition: 'user_id = auth.uid()',
-      description: 'Users can only create API keys for themselves'
-    },
-    {
-      id: 'audit-logs-select-admin',
-      policy_name: 'Admins can view audit logs',
-      table_name: 'audit_logs',
+      id: 'external-api-select-published',
+      policy_name: 'Users can view published APIs',
+      table_name: 'external_api_registry',
       operation: 'SELECT',
-      condition: 'user_has_role(auth.uid(), \'superAdmin\') OR user_has_role(auth.uid(), \'admin\')',
-      description: 'Only admins can view audit logs'
+      condition: 'status = \'published\'',
+      description: 'Only published APIs are visible to users'
     }
   ];
 }
 
-// Get real data mappings
+// Get real data mappings (limited to 5)
 function getRealDataMappings() {
   return [
     {
@@ -411,22 +292,6 @@ function getRealDataMappings() {
       validation: 'NOT NULL, UUID format, must exist in auth.users'
     },
     {
-      id: 'auth-metadata-firstname-mapping',
-      source_field: 'auth.users.raw_user_meta_data.firstName',
-      target_field: 'first_name',
-      target_table: 'profiles',
-      transformation: 'Extract firstName from user metadata',
-      validation: 'Optional string, max 255 characters'
-    },
-    {
-      id: 'auth-metadata-lastname-mapping',
-      source_field: 'auth.users.raw_user_meta_data.lastName',
-      target_field: 'last_name',
-      target_table: 'profiles',
-      transformation: 'Extract lastName from user metadata',
-      validation: 'Optional string, max 255 characters'
-    },
-    {
       id: 'auth-email-mapping',
       source_field: 'auth.users.email',
       target_field: 'email',
@@ -435,15 +300,7 @@ function getRealDataMappings() {
       validation: 'Valid email format, unique per user'
     },
     {
-      id: 'user-role-assignment-mapping',
-      source_field: 'user_roles.user_id',
-      target_field: 'id',
-      target_table: 'profiles',
-      transformation: 'Map user role assignments to profiles',
-      validation: 'Must reference valid profile ID'
-    },
-    {
-      id: 'facility-user-association-mapping',
+      id: 'facility-user-association',
       source_field: 'profiles.facility_id',
       target_field: 'id',
       target_table: 'facilities',
@@ -457,6 +314,14 @@ function getRealDataMappings() {
       target_table: 'profiles',
       transformation: 'Associate API keys with users',
       validation: 'Must reference valid profile ID'
+    },
+    {
+      id: 'external-api-endpoints-mapping',
+      source_field: 'external_api_endpoints.external_api_id',
+      target_field: 'id',
+      target_table: 'external_api_registry',
+      transformation: 'Map endpoints to their parent API',
+      validation: 'Must reference valid external API ID'
     }
   ];
 }
@@ -467,30 +332,22 @@ function getRealSecurityConfig() {
     encryption_methods: [
       'AES-256-GCM for data at rest',
       'TLS 1.3 for data in transit',
-      'bcrypt for password hashing',
-      'HMAC-SHA256 for API key generation',
-      'JWT with RS256 for token signing'
+      'HMAC-SHA256 for API key generation'
     ],
     authentication_methods: [
       'Bearer Token (API Key)',
       'JWT (JSON Web Token)',
-      'OAuth 2.0',
-      'Multi-Factor Authentication (MFA)',
-      'Session-based authentication'
+      'OAuth 2.0'
     ],
     authorization_policies: [
       'Role-Based Access Control (RBAC)',
       'Row-Level Security (RLS)',
-      'Attribute-Based Access Control (ABAC)',
-      'Facility-based access control',
-      'Module-based permissions'
+      'Facility-based access control'
     ],
     data_protection: [
       'HIPAA compliance for healthcare data',
-      'SOC 2 Type II certified infrastructure',
       'Data encryption at rest and in transit',
-      'Regular security audits and penetration testing',
-      'Zero-trust network architecture'
+      'Regular security audits'
     ]
   };
 }
@@ -505,8 +362,7 @@ function getRealRateLimits(externalApi: any) {
     rate_limit_headers: [
       'X-RateLimit-Limit',
       'X-RateLimit-Remaining',
-      'X-RateLimit-Reset',
-      'X-RateLimit-Used'
+      'X-RateLimit-Reset'
     ]
   };
 }
@@ -515,32 +371,77 @@ function getRealRateLimits(externalApi: any) {
 function getRealArchitecture() {
   return {
     design_principles: [
-      'RESTful API design with OpenAPI 3.0 specification',
-      'Microservices architecture with service mesh',
-      'Event-driven architecture with real-time updates',
-      'Domain-driven design (DDD) principles',
-      'SOLID principles and clean architecture'
+      'RESTful API design with OpenAPI 3.0',
+      'Microservices architecture',
+      'Event-driven architecture'
     ],
     patterns: [
       'Repository pattern for data access',
-      'Command Query Responsibility Segregation (CQRS)',
-      'Event sourcing for audit trails',
       'Circuit breaker pattern for resilience',
-      'Saga pattern for distributed transactions'
+      'Event sourcing for audit trails'
     ],
     scalability: [
       'Horizontal scaling with load balancers',
-      'Database read replicas for query optimization',
-      'Redis caching for improved performance',
-      'CDN for static asset delivery',
-      'Auto-scaling based on demand metrics'
+      'Database read replicas',
+      'Redis caching for performance'
     ],
     reliability: [
-      '99.9% uptime SLA with monitoring',
+      '99.9% uptime SLA',
       'Automated backups every 6 hours',
-      'Multi-region deployment for disaster recovery',
-      'Health checks and failover mechanisms',
-      'Comprehensive logging and alerting'
+      'Multi-region deployment'
+    ]
+  };
+}
+
+// Fallback known schema structure (limited to 3 key tables)
+function getKnownSchemaStructure() {
+  return {
+    tables: [
+      {
+        name: 'profiles',
+        columns: [
+          { name: 'id', type: 'uuid', nullable: false, description: 'Primary key, references auth.users', default: 'gen_random_uuid()' },
+          { name: 'first_name', type: 'varchar', nullable: true, description: 'User first name' },
+          { name: 'last_name', type: 'varchar', nullable: true, description: 'User last name' },
+          { name: 'email', type: 'varchar', nullable: true, description: 'User email address' },
+          { name: 'facility_id', type: 'uuid', nullable: true, description: 'Associated facility' },
+          { name: 'created_at', type: 'timestamp', nullable: true, description: 'Record creation time', default: 'now()' }
+        ],
+        foreign_keys: [
+          { column: 'facility_id', references_table: 'facilities', references_column: 'id' }
+        ],
+        indexes: [
+          { name: 'profiles_pkey', columns: ['id'], unique: true }
+        ]
+      },
+      {
+        name: 'facilities',
+        columns: [
+          { name: 'id', type: 'uuid', nullable: false, description: 'Primary key', default: 'gen_random_uuid()' },
+          { name: 'name', type: 'varchar', nullable: false, description: 'Facility name' },
+          { name: 'facility_type', type: 'facility_type_enum', nullable: false, description: 'Type of facility' },
+          { name: 'is_active', type: 'boolean', nullable: true, description: 'Active status', default: 'true' },
+          { name: 'created_at', type: 'timestamp', nullable: true, description: 'Record creation time', default: 'now()' }
+        ],
+        foreign_keys: [],
+        indexes: [
+          { name: 'facilities_pkey', columns: ['id'], unique: true }
+        ]
+      },
+      {
+        name: 'external_api_registry',
+        columns: [
+          { name: 'id', type: 'uuid', nullable: false, description: 'Primary key', default: 'gen_random_uuid()' },
+          { name: 'external_name', type: 'varchar', nullable: false, description: 'API name' },
+          { name: 'status', type: 'varchar', nullable: false, description: 'Publication status' },
+          { name: 'version', type: 'varchar', nullable: false, description: 'API version' },
+          { name: 'created_at', type: 'timestamp', nullable: false, description: 'Record creation time', default: 'now()' }
+        ],
+        foreign_keys: [],
+        indexes: [
+          { name: 'external_api_registry_pkey', columns: ['id'], unique: true }
+        ]
+      }
     ]
   };
 }
