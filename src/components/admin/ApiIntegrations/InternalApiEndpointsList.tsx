@@ -26,6 +26,7 @@ interface InternalApiEndpointsListProps {
   searchTerm: string;
   onDownloadCollection: (integrationId: string) => void;
   onViewDetails: (integrationId: string) => void;
+  onViewDocumentation: (integrationId: string) => void;
   onCopyUrl: (url: string) => void;
 }
 
@@ -75,6 +76,7 @@ export const InternalApiEndpointsList: React.FC<InternalApiEndpointsListProps> =
   searchTerm,
   onDownloadCollection,
   onViewDetails,
+  onViewDocumentation,
   onCopyUrl
 }) => {
   const [expandedTopics, setExpandedTopics] = React.useState<Record<string, boolean>>({});

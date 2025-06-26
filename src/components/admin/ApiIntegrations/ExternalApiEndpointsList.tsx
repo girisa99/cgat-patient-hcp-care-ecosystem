@@ -24,6 +24,7 @@ interface ExternalApiEndpointsListProps {
   searchTerm: string;
   onDownloadCollection: (integrationId: string) => void;
   onViewDetails: (integrationId: string) => void;
+  onViewDocumentation: (integrationId: string) => void;
   onCopyUrl: (url: string) => void;
 }
 
@@ -32,6 +33,7 @@ export const ExternalApiEndpointsList: React.FC<ExternalApiEndpointsListProps> =
   searchTerm,
   onDownloadCollection,
   onViewDetails,
+  onViewDocumentation,
   onCopyUrl
 }) => {
   const [expandedApis, setExpandedApis] = React.useState<Record<string, boolean>>({});
