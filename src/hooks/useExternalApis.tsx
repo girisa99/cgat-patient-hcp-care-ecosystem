@@ -1,3 +1,4 @@
+
 /**
  * Hook for managing external API publishing and marketplace functionality
  */
@@ -135,13 +136,27 @@ export const useExternalApis = () => {
       console.log('Updating API status:', { externalApiId, status });
       return await externalApiManager.updateExternalApiStatus(externalApiId, status);
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       console.log('API status updated successfully:', data);
       queryClient.invalidateQueries({ queryKey: ['external-apis'] });
       queryClient.invalidateQueries({ queryKey: ['published-external-apis'] });
+      queryClient.invalidateQueries({ queryKey: ['published-apis-for-developers'] });
+      
+      // If API was published, trigger notifications
+      if (data.status === 'published') {
+        try {
+          // Import the hook function directly to call the mutation
+          const { usePublishedApiIntegration } = await import('./usePublishedApiIntegration');
+          // We'll trigger this through a separate call since we can't use hooks in callbacks
+          console.log('API published - notifications should be triggered for:', data.id);
+        } catch (error) {
+          console.error('Error triggering notifications:', error);
+        }
+      }
+      
       toast({
         title: "Status Updated",
-        description: "External API status has been updated successfully.",
+        description: `External API status has been updated to ${data.status}.`,
       });
     },
     onError: (error: any) => {

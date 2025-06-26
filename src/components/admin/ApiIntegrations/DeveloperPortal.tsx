@@ -28,7 +28,10 @@ import {
 } from 'lucide-react';
 import { useApiKeys } from '@/hooks/useApiKeys';
 import { useDeveloperApplications } from '@/hooks/useDeveloperApplications';
+import { usePublishedApiIntegration } from '@/hooks/usePublishedApiIntegration';
 import { useToast } from '@/hooks/use-toast';
+import PublishedApisSection from './PublishedApisSection';
+import DeveloperNotificationBanner from './DeveloperNotificationBanner';
 
 interface ApiKey {
   id: string;
@@ -76,6 +79,11 @@ const DeveloperPortal = () => {
     createApplication,
     isCreating
   } = useDeveloperApplications();
+
+  const {
+    publishedApisForDevelopers,
+    isLoadingPublishedApis
+  } = usePublishedApiIntegration();
 
   const availableModules = [
     { id: 'patients', name: 'Patient Management', description: 'Access patient data and records' },
@@ -195,7 +203,7 @@ const DeveloperPortal = () => {
     );
   };
 
-  if (isLoadingKeys || isLoadingApps) {
+  if (isLoadingKeys || isLoadingApps || isLoadingPublishedApis) {
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
@@ -235,16 +243,33 @@ const DeveloperPortal = () => {
         </Dialog>
       </div>
 
+      {/* Add notification banner */}
+      <DeveloperNotificationBanner />
+
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="apis">Available APIs</TabsTrigger>
           <TabsTrigger value="api-keys">API Keys</TabsTrigger>
           <TabsTrigger value="sandbox">Sandbox</TabsTrigger>
           <TabsTrigger value="applications">Applications</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Available APIs</CardTitle>
+                <Globe className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{publishedApisForDevelopers.length}</div>
+                <p className="text-xs text-muted-foreground">
+                  Ready for integration
+                </p>
+              </CardContent>
+            </Card>
+            
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Active API Keys</CardTitle>
@@ -275,13 +300,13 @@ const DeveloperPortal = () => {
             
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Available Modules</CardTitle>
+                <CardTitle className="text-sm font-medium">Applications</CardTitle>
                 <Settings className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{availableModules.length}</div>
+                <div className="text-2xl font-bold">{applications.length}</div>
                 <p className="text-xs text-muted-foreground">
-                  Healthcare APIs
+                  Submitted requests
                 </p>
               </CardContent>
             </Card>
@@ -333,6 +358,10 @@ const DeveloperPortal = () => {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="apis" className="space-y-6">
+          <PublishedApisSection showInDeveloperPortal={true} />
         </TabsContent>
 
         <TabsContent value="api-keys" className="space-y-6">
