@@ -86,7 +86,7 @@ const ExternalApiPublisher = () => {
       external_description: integration?.description || '',
       version: integration?.version || '1.0.0',
       category: integration?.category || 'general',
-      documentation_url: integration?.documentation_url || ''
+      documentation_url: integration?.externalDocumentation?.apiReference || ''
     }));
     setShowPublishDialog(true);
   };
