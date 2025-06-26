@@ -362,6 +362,13 @@ export type Database = {
             referencedRelation: "external_api_registry"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_api_usage_analytics_api_key_id"
+            columns: ["api_key_id"]
+            isOneToOne: false
+            referencedRelation: "api_keys"
+            referencedColumns: ["id"]
+          },
         ]
       }
       api_usage_logs: {
@@ -771,6 +778,7 @@ export type Database = {
           analytics_config: Json | null
           authentication_methods: string[] | null
           base_url: string | null
+          category: string | null
           created_at: string
           created_by: string | null
           documentation_url: string | null
@@ -795,6 +803,7 @@ export type Database = {
           analytics_config?: Json | null
           authentication_methods?: string[] | null
           base_url?: string | null
+          category?: string | null
           created_at?: string
           created_by?: string | null
           documentation_url?: string | null
@@ -819,6 +828,7 @@ export type Database = {
           analytics_config?: Json | null
           authentication_methods?: string[] | null
           base_url?: string | null
+          category?: string | null
           created_at?: string
           created_by?: string | null
           documentation_url?: string | null
@@ -842,6 +852,13 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "external_api_registry_internal_api_id_fkey"
+            columns: ["internal_api_id"]
+            isOneToOne: false
+            referencedRelation: "api_integration_registry"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_external_api_registry_internal_api_id"
             columns: ["internal_api_id"]
             isOneToOne: false
             referencedRelation: "api_integration_registry"

@@ -15,6 +15,7 @@ export interface ExternalApiRegistry {
   status: 'draft' | 'review' | 'published' | 'deprecated';
   visibility: 'private' | 'public' | 'marketplace';
   pricing_model: 'free' | 'freemium' | 'paid' | 'enterprise';
+  category?: string;
   base_url?: string;
   documentation_url?: string;
   sandbox_url?: string;
@@ -115,11 +116,19 @@ class ExternalApiManagerClass {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
+    // Get the internal API details to extract category
+    const { data: internalApi } = await supabase
+      .from('api_integration_registry')
+      .select('category, name')
+      .eq('id', internalApiId)
+      .single();
+
     const { data, error } = await supabase
       .from('external_api_registry')
       .insert({
         internal_api_id: internalApiId,
         created_by: user.id,
+        category: internalApi?.category || 'general',
         ...publishConfig
       })
       .select()

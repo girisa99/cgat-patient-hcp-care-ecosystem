@@ -58,11 +58,12 @@ const ExternalApiPublisher = () => {
 
   const handlePublishApi = (apiId: string, apiName: string) => {
     setSelectedApi(apiId);
+    const integration = integrations?.find(i => i.id === apiId);
     setPublishForm(prev => ({
       ...prev,
       external_name: apiName,
-      external_description: integrations?.find(i => i.id === apiId)?.description || '',
-      version: integrations?.find(i => i.id === apiId)?.version || '1.0.0'
+      external_description: integration?.description || '',
+      version: integration?.version || '1.0.0'
     }));
     setShowPublishDialog(true);
   };

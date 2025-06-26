@@ -44,9 +44,9 @@ const PublishableApisList: React.FC<PublishableApisListProps> = ({ onPublishApi 
 
   const getReadinessScore = (api: any) => {
     let score = 0;
-    if (api.endpoints.length > 0) score += 25;
-    if (api.rlsPolicies.length > 0) score += 25;
-    if (api.mappings.length > 0) score += 25;
+    if (api.endpoints?.length > 0) score += 25;
+    if (api.rlsPolicies?.length > 0) score += 25;
+    if (api.mappings?.length > 0) score += 25;
     if (api.description && api.description.length > 50) score += 25;
     return score;
   };
@@ -135,17 +135,17 @@ const PublishableApisList: React.FC<PublishableApisListProps> = ({ onPublishApi 
                           <div className="flex items-center gap-6 text-sm">
                             <div className="flex items-center gap-1">
                               <Code className="h-4 w-4 text-blue-500" />
-                              <span className="font-medium">{api.endpoints.length}</span>
+                              <span className="font-medium">{api.endpoints?.length || 0}</span>
                               <span className="text-muted-foreground">endpoints</span>
                             </div>
                             <div className="flex items-center gap-1">
                               <Shield className="h-4 w-4 text-green-500" />
-                              <span className="font-medium">{api.rlsPolicies.length}</span>
+                              <span className="font-medium">{api.rlsPolicies?.length || 0}</span>
                               <span className="text-muted-foreground">policies</span>
                             </div>
                             <div className="flex items-center gap-1">
                               <Database className="h-4 w-4 text-purple-500" />
-                              <span className="font-medium">{api.mappings.length}</span>
+                              <span className="font-medium">{api.mappings?.length || 0}</span>
                               <span className="text-muted-foreground">mappings</span>
                             </div>
                             <div className="flex items-center gap-1">
@@ -155,11 +155,11 @@ const PublishableApisList: React.FC<PublishableApisListProps> = ({ onPublishApi 
                           </div>
 
                           {/* Key Endpoints Preview */}
-                          {api.endpoints.length > 0 && (
+                          {api.endpoints && api.endpoints.length > 0 && (
                             <div className="mt-3">
                               <h5 className="text-sm font-medium mb-2">Key Endpoints:</h5>
                               <div className="flex flex-wrap gap-2">
-                                {api.endpoints.slice(0, 3).map((endpoint, idx) => (
+                                {api.endpoints.slice(0, 3).map((endpoint: any, idx: number) => (
                                   <Badge key={idx} variant="secondary" className="text-xs">
                                     {endpoint.method} {endpoint.url}
                                   </Badge>
@@ -213,19 +213,19 @@ const PublishableApisList: React.FC<PublishableApisListProps> = ({ onPublishApi 
                             Publishing Readiness Checklist:
                           </h5>
                           <div className="space-y-1 text-sm">
-                            {api.endpoints.length === 0 && (
+                            {(!api.endpoints || api.endpoints.length === 0) && (
                               <div className="flex items-center gap-2 text-red-600">
                                 <span>•</span>
                                 <span>Add at least one endpoint</span>
                               </div>
                             )}
-                            {api.rlsPolicies.length === 0 && (
+                            {(!api.rlsPolicies || api.rlsPolicies.length === 0) && (
                               <div className="flex items-center gap-2 text-red-600">
                                 <span>•</span>
                                 <span>Configure security policies</span>
                               </div>
                             )}
-                            {api.mappings.length === 0 && (
+                            {(!api.mappings || api.mappings.length === 0) && (
                               <div className="flex items-center gap-2 text-red-600">
                                 <span>•</span>
                                 <span>Define data mappings</span>
@@ -285,7 +285,7 @@ const PublishableApisList: React.FC<PublishableApisListProps> = ({ onPublishApi 
               <Code className="h-4 w-4 text-blue-500" />
               <div>
                 <p className="text-2xl font-bold">
-                  {unpublishedApis.reduce((acc, api) => acc + api.endpoints.length, 0)}
+                  {unpublishedApis.reduce((acc, api) => acc + (api.endpoints?.length || 0), 0)}
                 </p>
                 <p className="text-sm text-muted-foreground">Total Endpoints</p>
               </div>
@@ -299,7 +299,7 @@ const PublishableApisList: React.FC<PublishableApisListProps> = ({ onPublishApi 
               <Shield className="h-4 w-4 text-purple-500" />
               <div>
                 <p className="text-2xl font-bold">
-                  {unpublishedApis.reduce((acc, api) => acc + api.rlsPolicies.length, 0)}
+                  {unpublishedApis.reduce((acc, api) => acc + (api.rlsPolicies?.length || 0), 0)}
                 </p>
                 <p className="text-sm text-muted-foreground">Security Policies</p>
               </div>
