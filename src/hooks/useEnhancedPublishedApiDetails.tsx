@@ -50,9 +50,10 @@ export const useEnhancedPublishedApiDetails = () => {
       console.log(`📊 Found ${endpoints?.length || 0} synced endpoints`);
 
       // Step 3: If no endpoints found, try to trigger a sync
-      if (!endpoints || endpoints.length === 0) {
+      let finalEndpoints = endpoints || [];
+      if (!finalEndpoints || finalEndpoints.length === 0) {
         console.log('🔄 No endpoints found, attempting to trigger sync...');
-        await this.triggerEndpointSync(apiId, externalApi.internal_api_id);
+        await triggerEndpointSync(apiId, externalApi.internal_api_id);
         
         // Retry fetching endpoints after sync
         const { data: retryEndpoints } = await supabase
@@ -63,15 +64,15 @@ export const useEnhancedPublishedApiDetails = () => {
         
         console.log(`📊 After sync: Found ${retryEndpoints?.length || 0} endpoints`);
         
-        // Use the retry results
+        // Use the retry results if available
         if (retryEndpoints && retryEndpoints.length > 0) {
-          endpoints = retryEndpoints;
+          finalEndpoints = retryEndpoints;
         }
       }
 
       // Log endpoint details for debugging
-      if (endpoints && endpoints.length > 0) {
-        console.log('🔍 Endpoint details:', endpoints.map(ep => ({
+      if (finalEndpoints && finalEndpoints.length > 0) {
+        console.log('🔍 Endpoint details:', finalEndpoints.map(ep => ({
           id: ep.id,
           method: ep.method,
           path: ep.external_path,
@@ -80,7 +81,7 @@ export const useEnhancedPublishedApiDetails = () => {
       }
 
       // Transform the endpoints data with proper structure
-      const transformedEndpoints = (endpoints || []).map(endpoint => ({
+      const transformedEndpoints = (finalEndpoints || []).map(endpoint => ({
         id: endpoint.id,
         name: endpoint.summary || `${endpoint.method} ${endpoint.external_path}`,
         method: endpoint.method,
@@ -239,7 +240,7 @@ export const useEnhancedPublishedApiDetails = () => {
           'Complete audit trail for all API access with retention policies'
         ],
         access_control: {
-          rls_enabled: true, // External APIs use their own RLS system
+          rls_enabled: true,
           role_based_access: true,
           facility_level_access: true,
           audit_logging: true
