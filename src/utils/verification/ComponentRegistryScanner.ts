@@ -8,7 +8,7 @@ import { moduleRegistry } from '@/utils/moduleRegistry';
 
 export interface ComponentInventory {
   hooks: HookInventory[];
-  components: ComponentInventory[];
+  components: ComponentInfo[];
   templates: TemplateInventory[];
   utilities: UtilityInventory[];
 }
@@ -21,7 +21,7 @@ export interface HookInventory {
   location: string;
 }
 
-export interface ComponentInventory {
+export interface ComponentInfo {
   name: string;
   type: 'module' | 'dialog' | 'list' | 'form' | 'template';
   functionality: string[];
@@ -130,8 +130,8 @@ export class ComponentRegistryScanner {
   /**
    * Scan existing components
    */
-  private static scanExistingComponents(): ComponentInventory[] {
-    const components: ComponentInventory[] = [];
+  private static scanExistingComponents(): ComponentInfo[] {
+    const components: ComponentInfo[] = [];
 
     // Template components
     components.push({
@@ -153,6 +153,7 @@ export class ComponentRegistryScanner {
 
     components.push(...adminComponents.map(comp => ({
       ...comp,
+      type: comp.type as 'module' | 'dialog' | 'list' | 'form' | 'template',
       reusable: true,
       dependencies: ['DataTable', 'StatusBadge', 'Button'],
       location: `src/components/admin/${comp.name}.tsx`

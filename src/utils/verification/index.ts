@@ -7,16 +7,29 @@
  */
 
 // Main pre-implementation checker
-export { PreImplementationChecker, validateModuleCreation, validateComponentCreation, validateHookCreation } from './PreImplementationChecker';
-export type { PreImplementationCheckResult, ComponentScanResult, TypeScriptValidationResult, DatabaseAlignmentResult } from './PreImplementationChecker';
+import { PreImplementationChecker } from './PreImplementationChecker';
+import { validateModuleCreation, validateComponentCreation, validateHookCreation } from './PreImplementationChecker';
+import type { PreImplementationCheckResult, ComponentScanResult, TypeScriptValidationResult, DatabaseAlignmentResult } from './PreImplementationChecker';
 
 // Component registry scanner
-export { ComponentRegistryScanner } from './ComponentRegistryScanner';
-export type { ComponentInventory, HookInventory, ComponentInventory as ComponentInventoryType, TemplateInventory, UtilityInventory } from './ComponentRegistryScanner';
+import { ComponentRegistryScanner } from './ComponentRegistryScanner';
+import type { ComponentInventory, HookInventory, ComponentInfo, TemplateInventory, UtilityInventory } from './ComponentRegistryScanner';
 
 // TypeScript-Database validator
-export { TypeScriptDatabaseValidator, validateTableSchema, ensureTypescriptDatabaseAlignment } from './TypeScriptDatabaseValidator';
-export type { TypeScriptDatabaseAlignment, TypeConflict } from './TypeScriptDatabaseValidator';
+import { TypeScriptDatabaseValidator, validateTableSchema, ensureTypescriptDatabaseAlignment } from './TypeScriptDatabaseValidator';
+import type { TypeScriptDatabaseAlignment, TypeConflict } from './TypeScriptDatabaseValidator';
+
+// Export main pre-implementation checker
+export { PreImplementationChecker, validateModuleCreation, validateComponentCreation, validateHookCreation };
+export type { PreImplementationCheckResult, ComponentScanResult, TypeScriptValidationResult, DatabaseAlignmentResult };
+
+// Export component registry scanner
+export { ComponentRegistryScanner };
+export type { ComponentInventory, HookInventory, ComponentInfo, TemplateInventory, UtilityInventory };
+
+// Export TypeScript-Database validator
+export { TypeScriptDatabaseValidator, validateTableSchema, ensureTypescriptDatabaseAlignment };
+export type { TypeScriptDatabaseAlignment, TypeConflict };
 
 /**
  * Quick validation function - runs all pre-implementation checks
