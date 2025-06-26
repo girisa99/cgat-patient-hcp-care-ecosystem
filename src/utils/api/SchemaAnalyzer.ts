@@ -1,6 +1,6 @@
-
 /**
  * Schema Analysis and Data Generation Utilities
+ * REFINED: Only core healthcare business schemas (3 essential schemas)
  */
 
 import { ApiEndpoint, ApiIntegration } from './ApiIntegrationTypes';
@@ -160,62 +160,90 @@ export class SchemaAnalyzer {
   }
 
   /**
-   * Generates internal API schemas
+   * Generate only CORE CRITICAL healthcare schemas (3 essential schemas)
    */
   static generateInternalSchemas(): Record<string, any> {
     return {
-      User: {
+      // Core Schema 1: Healthcare User Profile
+      HealthcareUser: {
         type: 'object',
+        description: 'Core healthcare user profile schema',
         properties: {
-          id: { type: 'string', format: 'uuid' },
-          email: { type: 'string', format: 'email' },
-          first_name: { type: 'string' },
-          last_name: { type: 'string' },
-          phone: { type: 'string' },
-          department: { type: 'string' },
-          facility_id: { type: 'string', format: 'uuid' },
-          created_at: { type: 'string', format: 'date-time' },
-          updated_at: { type: 'string', format: 'date-time' }
-        }
+          id: { type: 'string', format: 'uuid', description: 'Unique healthcare user identifier' },
+          email: { type: 'string', format: 'email', description: 'Healthcare user email address' },
+          first_name: { type: 'string', description: 'Healthcare user first name' },
+          last_name: { type: 'string', description: 'Healthcare user last name' },
+          phone: { type: 'string', description: 'Healthcare user phone number' },
+          department: { type: 'string', description: 'Healthcare department assignment' },
+          facility_id: { type: 'string', format: 'uuid', description: 'Primary healthcare facility ID' },
+          roles: { 
+            type: 'array', 
+            items: { type: 'string' },
+            description: 'Assigned healthcare roles'
+          },
+          created_at: { type: 'string', format: 'date-time', description: 'User creation timestamp' },
+          updated_at: { type: 'string', format: 'date-time', description: 'Last profile update timestamp' }
+        },
+        required: ['id', 'email', 'first_name', 'last_name']
       },
-      Facility: {
+
+      // Core Schema 2: Healthcare Facility
+      HealthcareFacility: {
         type: 'object',
+        description: 'Core healthcare facility schema',
         properties: {
-          id: { type: 'string', format: 'uuid' },
-          name: { type: 'string' },
-          facility_type: { type: 'string' },
-          address: { type: 'string' },
-          phone: { type: 'string' },
-          email: { type: 'string', format: 'email' },
-          npi_number: { type: 'string' },
-          license_number: { type: 'string' },
-          is_active: { type: 'boolean' }
-        }
+          id: { type: 'string', format: 'uuid', description: 'Unique healthcare facility identifier' },
+          name: { type: 'string', description: 'Healthcare facility name' },
+          facility_type: { 
+            type: 'string', 
+            enum: ['hospital', 'clinic', 'private_practice', 'urgent_care', 'specialty_center'],
+            description: 'Type of healthcare facility'
+          },
+          address: { type: 'string', description: 'Physical address of facility' },
+          phone: { type: 'string', description: 'Facility contact phone number' },
+          email: { type: 'string', format: 'email', description: 'Facility contact email' },
+          npi_number: { type: 'string', description: 'National Provider Identifier' },
+          license_number: { type: 'string', description: 'State healthcare license number' },
+          is_active: { type: 'boolean', description: 'Facility operational status' }
+        },
+        required: ['id', 'name', 'facility_type']
       },
-      Role: {
+
+      // Core Schema 3: Healthcare Role & Permission
+      HealthcareRole: {
         type: 'object',
+        description: 'Core healthcare role and permission schema',
         properties: {
-          id: { type: 'string', format: 'uuid' },
-          name: { type: 'string' },
-          description: { type: 'string' }
-        }
-      },
-      Module: {
-        type: 'object',
-        properties: {
-          id: { type: 'string', format: 'uuid' },
-          name: { type: 'string' },
-          description: { type: 'string' },
-          is_active: { type: 'boolean' }
-        }
-      },
-      Permission: {
-        type: 'object',
-        properties: {
-          id: { type: 'string', format: 'uuid' },
-          name: { type: 'string' },
-          description: { type: 'string' }
-        }
+          id: { type: 'string', format: 'uuid', description: 'Unique healthcare role identifier' },
+          name: { 
+            type: 'string',
+            enum: ['superAdmin', 'admin', 'manager', 'staff', 'viewer', 'patientCaregiver'],
+            description: 'Healthcare role name'
+          },
+          description: { type: 'string', description: 'Role description and responsibilities' },
+          permissions: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Granted healthcare permissions'
+          },
+          module_access: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Accessible healthcare modules'
+          },
+          facility_access: {
+            type: 'array',
+            items: { 
+              type: 'object',
+              properties: {
+                facility_id: { type: 'string', format: 'uuid' },
+                access_level: { type: 'string', enum: ['read', 'write', 'admin'] }
+              }
+            },
+            description: 'Facility-specific access levels'
+          }
+        },
+        required: ['id', 'name', 'permissions']
       }
     };
   }
