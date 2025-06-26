@@ -14,7 +14,7 @@ import { useExternalApis } from '@/hooks/useExternalApis';
 import { Loader2, Globe, Lock, Zap, Settings, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 
 const ExternalApiPublisher = () => {
-  const { internalApis, isLoading: isLoadingInternal } = useApiIntegrations();
+  const { integrations, isLoading: isLoadingInternal } = useApiIntegrations();
   const { externalApis, isLoadingExternalApis, updateApiStatus } = useExternalApis();
   const {
     createDraft,
@@ -159,7 +159,7 @@ const ExternalApiPublisher = () => {
                         <SelectValue placeholder="Choose an API to publish" />
                       </SelectTrigger>
                       <SelectContent>
-                        {internalApis.map((api) => (
+                        {integrations.map((api) => (
                           <SelectItem key={api.id} value={api.id}>
                             {api.name} - {api.endpoints.length} endpoints
                           </SelectItem>
@@ -378,7 +378,7 @@ const ExternalApiPublisher = () => {
                     </div>
                     <div className="flex gap-2">
                       <Button
-                        onClick={() => updateApiStatus(api.id, 'draft')}
+                        onClick={() => updateApiStatus({ externalApiId: api.id, status: 'draft' })}
                         variant="outline"
                         size="sm"
                       >
@@ -426,7 +426,7 @@ const ExternalApiPublisher = () => {
                     </div>
                     <div className="flex gap-2">
                       <Button
-                        onClick={() => updateApiStatus(api.id, 'deprecated')}
+                        onClick={() => updateApiStatus({ externalApiId: api.id, status: 'deprecated' })}
                         variant="outline"
                         size="sm"
                       >

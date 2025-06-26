@@ -58,7 +58,7 @@ class ExternalApiPublishingWorkflowClass {
         };
       }
 
-      // Create new draft API
+      // Create new draft API with all required properties
       const draftApi = await externalApiManager.publishInternalApi(internalApiId, {
         ...config,
         status: 'draft', // Explicitly set to draft
@@ -66,7 +66,9 @@ class ExternalApiPublishingWorkflowClass {
         rate_limits: config.rate_limits || { requests: 1000, period: 'hour' },
         authentication_methods: config.authentication_methods || ['api_key'],
         supported_formats: config.supported_formats || ['json'],
-        tags: config.tags || []
+        tags: config.tags || [],
+        analytics_config: {},
+        marketplace_config: {}
       });
 
       console.log('✅ Draft API created successfully:', draftApi);
