@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { useApiIntegrations } from '@/hooks/useApiIntegrations';
 import { useExternalApis } from '@/hooks/useExternalApis';
+import PublishableApisList from './PublishableApisList';
 
 const ExternalApiPublisher = () => {
   const { integrations } = useApiIntegrations();
@@ -55,12 +56,18 @@ const ExternalApiPublisher = () => {
     authentication_methods: ['api_key']
   });
 
-  const internalApis = integrations?.filter(api => api.type === 'internal') || [];
-  const unpublishedApis = internalApis.filter(api => 
-    !externalApis.some(extApi => extApi.internal_api_id === api.id)
-  );
+  const handlePublishApi = (apiId: string, apiName: string) => {
+    setSelectedApi(apiId);
+    setPublishForm(prev => ({
+      ...prev,
+      external_name: apiName,
+      external_description: integrations?.find(i => i.id === apiId)?.description || '',
+      version: integrations?.find(i => i.id === apiId)?.version || '1.0.0'
+    }));
+    setShowPublishDialog(true);
+  };
 
-  const handlePublishApi = () => {
+  const handleSubmitPublish = () => {
     if (!selectedApi) return;
 
     publishApi({
@@ -112,142 +119,6 @@ const ExternalApiPublisher = () => {
             Publish your internal APIs for external consumption and marketplace distribution
           </p>
         </div>
-        <Dialog open={showPublishDialog} onOpenChange={setShowPublishDialog}>
-          <DialogTrigger asChild>
-            <Button disabled={unpublishedApis.length === 0}>
-              <Rocket className="h-4 w-4 mr-2" />
-              Publish New API
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Publish Internal API</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="api-select">Select Internal API</Label>
-                <Select value={selectedApi || ''} onValueChange={setSelectedApi}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose an API to publish" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {unpublishedApis.map((api) => (
-                      <SelectItem key={api.id} value={api.id}>
-                        {api.name} ({api.endpoints.length} endpoints)
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="external-name">External API Name</Label>
-                  <Input
-                    id="external-name"
-                    value={publishForm.external_name}
-                    onChange={(e) => setPublishForm(prev => ({ ...prev, external_name: e.target.value }))}
-                    placeholder="Healthcare API v1"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="version">Version</Label>
-                  <Input
-                    id="version"
-                    value={publishForm.version}
-                    onChange={(e) => setPublishForm(prev => ({ ...prev, version: e.target.value }))}
-                    placeholder="1.0.0"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={publishForm.external_description}
-                  onChange={(e) => setPublishForm(prev => ({ ...prev, external_description: e.target.value }))}
-                  placeholder="Comprehensive healthcare API for patient data management..."
-                  rows={3}
-                />
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <Label>Status</Label>
-                  <Select 
-                    value={publishForm.status} 
-                    onValueChange={(value: any) => setPublishForm(prev => ({ ...prev, status: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="draft">Draft</SelectItem>
-                      <SelectItem value="review">Review</SelectItem>
-                      <SelectItem value="published">Published</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Visibility</Label>
-                  <Select 
-                    value={publishForm.visibility} 
-                    onValueChange={(value: any) => setPublishForm(prev => ({ ...prev, visibility: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="private">Private</SelectItem>
-                      <SelectItem value="public">Public</SelectItem>
-                      <SelectItem value="marketplace">Marketplace</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Pricing Model</Label>
-                  <Select 
-                    value={publishForm.pricing_model} 
-                    onValueChange={(value: any) => setPublishForm(prev => ({ ...prev, pricing_model: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="free">Free</SelectItem>
-                      <SelectItem value="freemium">Freemium</SelectItem>
-                      <SelectItem value="paid">Paid</SelectItem>
-                      <SelectItem value="enterprise">Enterprise</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="documentation-url">Documentation URL</Label>
-                <Input
-                  id="documentation-url"
-                  value={publishForm.documentation_url}
-                  onChange={(e) => setPublishForm(prev => ({ ...prev, documentation_url: e.target.value }))}
-                  placeholder="https://docs.yourapi.com"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setShowPublishDialog(false)}>
-                  Cancel
-                </Button>
-                <Button 
-                  onClick={handlePublishApi} 
-                  disabled={!selectedApi || !publishForm.external_name || isPublishing}
-                >
-                  {isPublishing ? 'Publishing...' : 'Publish API'}
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
       </div>
 
       {/* Stats Overview */}
@@ -301,12 +172,16 @@ const ExternalApiPublisher = () => {
         </Card>
       </div>
 
-      <Tabs defaultValue="published" className="space-y-4">
+      <Tabs defaultValue="available" className="space-y-4">
         <TabsList>
+          <TabsTrigger value="available">Available to Publish</TabsTrigger>
           <TabsTrigger value="published">Published APIs</TabsTrigger>
           <TabsTrigger value="drafts">Drafts & Review</TabsTrigger>
-          <TabsTrigger value="available">Available to Publish</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="available" className="space-y-4">
+          <PublishableApisList onPublishApi={handlePublishApi} />
+        </TabsContent>
 
         <TabsContent value="published" className="space-y-4">
           <div className="grid gap-4">
@@ -401,49 +276,123 @@ const ExternalApiPublisher = () => {
             ))}
           </div>
         </TabsContent>
-
-        <TabsContent value="available" className="space-y-4">
-          <div className="grid gap-4">
-            {unpublishedApis.map((api) => (
-              <Card key={api.id}>
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-2">
-                      <h4 className="font-semibold">{api.name}</h4>
-                      <p className="text-sm text-muted-foreground">
-                        {api.description}
-                      </p>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span>{api.endpoints.length} endpoints</span>
-                        <span>•</span>
-                        <span>{api.rlsPolicies.length} RLS policies</span>
-                        <span>•</span>
-                        <span>Version {api.version}</span>
-                      </div>
-                    </div>
-                    <Button 
-                      size="sm"
-                      onClick={() => {
-                        setSelectedApi(api.id);
-                        setPublishForm(prev => ({
-                          ...prev,
-                          external_name: api.name,
-                          external_description: api.description,
-                          version: api.version
-                        }));
-                        setShowPublishDialog(true);
-                      }}
-                    >
-                      <Plus className="h-3 w-3 mr-1" />
-                      Publish
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
       </Tabs>
+
+      {/* Publish Dialog */}
+      <Dialog open={showPublishDialog} onOpenChange={setShowPublishDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Publish Internal API</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="external-name">External API Name</Label>
+                <Input
+                  id="external-name"
+                  value={publishForm.external_name}
+                  onChange={(e) => setPublishForm(prev => ({ ...prev, external_name: e.target.value }))}
+                  placeholder="Healthcare API v1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="version">Version</Label>
+                <Input
+                  id="version"
+                  value={publishForm.version}
+                  onChange={(e) => setPublishForm(prev => ({ ...prev, version: e.target.value }))}
+                  placeholder="1.0.0"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={publishForm.external_description}
+                onChange={(e) => setPublishForm(prev => ({ ...prev, external_description: e.target.value }))}
+                placeholder="Comprehensive healthcare API for patient data management..."
+                rows={3}
+              />
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label>Status</Label>
+                <Select 
+                  value={publishForm.status} 
+                  onValueChange={(value: any) => setPublishForm(prev => ({ ...prev, status: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="draft">Draft</SelectItem>
+                    <SelectItem value="review">Review</SelectItem>
+                    <SelectItem value="published">Published</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Visibility</Label>
+                <Select 
+                  value={publishForm.visibility} 
+                  onValueChange={(value: any) => setPublishForm(prev => ({ ...prev, visibility: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="private">Private</SelectItem>
+                    <SelectItem value="public">Public</SelectItem>
+                    <SelectItem value="marketplace">Marketplace</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Pricing Model</Label>
+                <Select 
+                  value={publishForm.pricing_model} 
+                  onValueChange={(value: any) => setPublishForm(prev => ({ ...prev, pricing_model: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="free">Free</SelectItem>
+                    <SelectItem value="freemium">Freemium</SelectItem>
+                    <SelectItem value="paid">Paid</SelectItem>
+                    <SelectItem value="enterprise">Enterprise</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="documentation-url">Documentation URL</Label>
+              <Input
+                id="documentation-url"
+                value={publishForm.documentation_url}
+                onChange={(e) => setPublishForm(prev => ({ ...prev, documentation_url: e.target.value }))}
+                placeholder="https://docs.yourapi.com"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowPublishDialog(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleSubmitPublish} 
+                disabled={!selectedApi || !publishForm.external_name || isPublishing}
+              >
+                {isPublishing ? 'Publishing...' : 'Publish API'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
