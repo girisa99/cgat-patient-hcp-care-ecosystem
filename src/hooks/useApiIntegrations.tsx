@@ -1,9 +1,8 @@
-
 /**
  * Enhanced hook for managing API integrations with real data detection
  */
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiIntegrationManager } from '@/utils/api/ApiIntegrationManager';
 import { ApiIntegration } from '@/utils/api/ApiIntegrationTypes';
