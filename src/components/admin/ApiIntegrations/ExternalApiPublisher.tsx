@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -7,929 +8,452 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { 
-  Globe, 
-  Rocket, 
-  Settings, 
-  Eye, 
-  Users, 
-  TrendingUp,
-  Plus,
-  Edit,
-  CheckCircle,
-  XCircle,
-  Clock,
-  FileText,
-  ArrowDown,
-  AlertTriangle,
-  RefreshCw,
-  Zap,
-  RotateCcw,
-  Trash2
-} from 'lucide-react';
 import { useApiIntegrations } from '@/hooks/useApiIntegrations';
-import { useEnhancedExternalApis } from '@/hooks/useEnhancedExternalApis';
-import { externalApiSyncManager } from '@/utils/api/ExternalApiSyncManager';
-import { useToast } from '@/hooks/use-toast';
-import PublishableApisList from './PublishableApisList';
-import ExternalApiConfigDialog from './ExternalApiConfigDialog';
-import ExternalApiAnalyticsDialog from './ExternalApiAnalyticsDialog';
-
-// Helper function to get status color
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case 'published':
-      return 'bg-green-100 text-green-800 border-green-200';
-    case 'review':
-      return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-    case 'draft':
-      return 'bg-gray-100 text-gray-800 border-gray-200';
-    case 'deprecated':
-      return 'bg-red-100 text-red-800 border-red-200';
-    default:
-      return 'bg-gray-100 text-gray-800 border-gray-200';
-  }
-};
+import { useExternalApiPublishing } from '@/hooks/useExternalApiPublishing';
+import { useExternalApis } from '@/hooks/useExternalApis';
+import { Loader2, Globe, Lock, Zap, Settings, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 
 const ExternalApiPublisher = () => {
-  const { toast } = useToast();
-  const { integrations } = useApiIntegrations();
-  const { 
-    externalApis, 
-    publishedApis, 
-    marketplaceStats, 
-    publishWithSync,
-    isPublishingWithSync,
-    updateApiStatus,
-    isUpdatingStatus,
-    useSyncStatus
-  } = useEnhancedExternalApis();
+  const { internalApis, isLoading: isLoadingInternal } = useApiIntegrations();
+  const { externalApis, isLoadingExternalApis, updateApiStatus } = useExternalApis();
+  const {
+    createDraft,
+    isCreatingDraft,
+    moveToReview,
+    isMovingToReview,
+    publishApi,
+    isPublishing,
+    completeWorkflow,
+    isCompletingWorkflow,
+    isAnyActionPending
+  } = useExternalApiPublishing();
 
-  const [selectedApi, setSelectedApi] = useState<string | null>(null);
-  const [showPublishDialog, setShowPublishDialog] = useState(false);
-  const [showConfigDialog, setShowConfigDialog] = useState(false);
-  const [showAnalyticsDialog, setShowAnalyticsDialog] = useState(false);
-  const [configApi, setConfigApi] = useState<any>(null);
-  const [analyticsApi, setAnalyticsApi] = useState<any>(null);
-  const [isDuplicateDialogOpen, setIsDuplicateDialogOpen] = useState(false);
-  const [duplicateInfo, setDuplicateInfo] = useState<any>(null);
-  
-  const [publishForm, setPublishForm] = useState({
+  const [selectedApiId, setSelectedApiId] = useState<string>('');
+  const [publishingConfig, setPublishingConfig] = useState({
     external_name: '',
     external_description: '',
     version: '1.0.0',
-    status: 'draft' as const,
-    visibility: 'private' as const,
-    pricing_model: 'free' as const,
-    category: 'general',
+    category: 'healthcare',
+    visibility: 'private' as 'private' | 'public' | 'marketplace',
+    pricing_model: 'free' as 'free' | 'freemium' | 'paid' | 'enterprise',
+    base_url: '',
     documentation_url: '',
-    tags: [] as string[],
-    rate_limits: {
-      requests: 1000,
-      period: 'hour'
-    },
+    sandbox_url: '',
     authentication_methods: ['api_key'],
     supported_formats: ['json'],
-    marketplace_config: {},
-    analytics_config: {}
+    tags: []
   });
 
-  const handlePublishApi = async (apiId: string, apiName: string) => {
-    console.log('🚀 Enhanced Publishing API - Starting:', { apiId, apiName });
-    
-    // Check for duplicates first
-    try {
-      const existingApi = await externalApiSyncManager.checkForDuplicateApi(apiId, apiName);
-      
-      if (existingApi) {
-        console.log('⚠️ Duplicate detected, showing dialog:', existingApi);
-        setDuplicateInfo({
-          existingApi,
-          internalApiId: apiId,
-          proposedName: apiName
-        });
-        setIsDuplicateDialogOpen(true);
-        return;
-      }
-    } catch (error) {
-      console.error('❌ Error checking duplicates:', error);
-    }
-    
-    // If no duplicate, proceed with normal publishing
-    proceedWithPublishing(apiId, apiName);
-  };
-
-  const proceedWithPublishing = (apiId: string, apiName: string) => {
-    setSelectedApi(apiId);
-    const integration = integrations?.find(i => i.id === apiId);
-    
-    const getDocumentationUrl = () => {
-      if (typeof integration?.externalDocumentation === 'string') {
-        return integration.externalDocumentation;
-      }
-      if (typeof integration?.externalDocumentation === 'object' && integration.externalDocumentation?.apiReference) {
-        return integration.externalDocumentation.apiReference;
-      }
-      return '';
-    };
-    
-    const newFormData = {
-      external_name: apiName,
-      external_description: integration?.description || 'Enhanced API with real-time sync capabilities',
-      version: integration?.version || '1.0.0',
-      status: 'draft' as const,
-      visibility: 'private' as const,
-      pricing_model: 'free' as const,
-      category: integration?.category || 'general',
-      documentation_url: getDocumentationUrl(),
-      tags: ['real-time-sync', 'enhanced'] as string[],
-      rate_limits: { requests: 1000, period: 'hour' },
-      authentication_methods: ['api_key'],
-      supported_formats: ['json'],
-      marketplace_config: {},
-      analytics_config: {}
-    };
-    
-    setPublishForm(newFormData);
-    setShowPublishDialog(true);
-  };
-
-  const handleDuplicateSync = async () => {
-    if (!duplicateInfo) return;
-    
-    try {
-      const result = await externalApiSyncManager.syncEndpointsOnly(
-        duplicateInfo.existingApi.id,
-        duplicateInfo.internalApiId
-      );
-      
-      toast({
-        title: "Endpoints Synchronized",
-        description: `${result.new_endpoints} new endpoints added to existing API.`,
-      });
-      
-      setIsDuplicateDialogOpen(false);
-      setDuplicateInfo(null);
-    } catch (error: any) {
-      console.error('❌ Sync failed:', error);
-      toast({
-        title: "Sync Failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleForceRepublish = () => {
-    if (!duplicateInfo) return;
-    
-    proceedWithPublishing(duplicateInfo.internalApiId, duplicateInfo.proposedName);
-    setIsDuplicateDialogOpen(false);
-    setDuplicateInfo(null);
-  };
-
-  const handleSubmitPublish = async () => {
-    if (!selectedApi) {
-      console.error('❌ No selected API for enhanced publishing');
+  const handleCreateDraft = () => {
+    if (!selectedApiId || !publishingConfig.external_name) {
       return;
     }
 
-    console.log('📤 Submitting enhanced publish with sync:', {
-      internalApiId: selectedApi,
-      config: publishForm
+    console.log('🚀 Creating draft with config:', { selectedApiId, publishingConfig });
+    
+    createDraft({
+      internalApiId: selectedApiId,
+      config: publishingConfig
     });
+  };
 
-    try {
-      console.log('🔄 Calling enhanced publishWithSync...');
-      await publishWithSync({
-        internalApiId: selectedApi,
-        config: publishForm
-      });
+  const handleCompleteWorkflow = () => {
+    if (!selectedApiId || !publishingConfig.external_name) {
+      return;
+    }
 
-      console.log('✅ Enhanced API published successfully with real-time sync');
-      setShowPublishDialog(false);
-      
-      // Reset form to initial state
-      setPublishForm({
-        external_name: '',
-        external_description: '',
-        version: '1.0.0',
-        status: 'draft',
-        visibility: 'private',
-        pricing_model: 'free',
-        category: 'general',
-        documentation_url: '',
-        tags: [],
-        rate_limits: { requests: 1000, period: 'hour' },
-        authentication_methods: ['api_key'],
-        supported_formats: ['json'],
-        marketplace_config: {},
-        analytics_config: {}
-      });
-      setSelectedApi(null);
-    } catch (error) {
-      console.error('❌ Failed to publish enhanced API:', error);
+    console.log('🚀 Starting complete workflow:', { selectedApiId, publishingConfig });
+    
+    completeWorkflow({
+      internalApiId: selectedApiId,
+      config: publishingConfig
+    });
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'draft':
+        return <Settings className="h-4 w-4 text-yellow-500" />;
+      case 'review':
+        return <Clock className="h-4 w-4 text-blue-500" />;
+      case 'published':
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case 'deprecated':
+        return <AlertCircle className="h-4 w-4 text-red-500" />;
+      default:
+        return <Settings className="h-4 w-4 text-gray-500" />;
     }
   };
 
-  const handleStatusUpdate = (externalApiId: string, newStatus: any) => {
-    console.log('🔄 Updating API status:', { externalApiId, newStatus });
-    updateApiStatus({ externalApiId, status: newStatus });
-  };
-
-  const handleConfigureApi = (api: any) => {
-    console.log('⚙️ Configuring API:', api);
-    setConfigApi(api);
-    setShowConfigDialog(true);
-  };
-
-  const handleViewAnalytics = (api: any) => {
-    console.log('📊 Viewing analytics for API:', api);
-    setAnalyticsApi(api);
-    setShowAnalyticsDialog(true);
-  };
-
-  const handleRevertToDraft = async (api: any) => {
-    try {
-      await externalApiSyncManager.revertPublication(api.id);
-      toast({
-        title: "API Reverted",
-        description: `${api.external_name} has been reverted to draft status.`,
-      });
-    } catch (error: any) {
-      console.error('❌ Revert failed:', error);
-      toast({
-        title: "Revert Failed",
-        description: error.message,
-        variant: "destructive",
-      });
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'draft':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'review':
+        return 'bg-blue-100 text-blue-800';
+      case 'published':
+        return 'bg-green-100 text-green-800';
+      case 'deprecated':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const handleCancelPublication = async (api: any) => {
-    try {
-      await externalApiSyncManager.cancelPublication(api.id);
-      toast({
-        title: "Publication Canceled",
-        description: `${api.external_name} has been completely removed.`,
-      });
-    } catch (error: any) {
-      console.error('❌ Cancel failed:', error);
-      toast({
-        title: "Cancel Failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Calculate counts - fixed logic
   const draftApis = externalApis.filter(api => api.status === 'draft');
   const reviewApis = externalApis.filter(api => api.status === 'review');
-  const draftAndReviewCount = draftApis.length + reviewApis.length;
+  const publishedApis = externalApis.filter(api => api.status === 'published');
 
-  // Debug logging
-  console.log('🔍 Enhanced External API Publisher Debug:', {
-    integrations: integrations?.length || 0,
-    externalApis: externalApis?.length || 0,
-    publishedApis: publishedApis?.length || 0,
-    selectedApi,
-    showPublishDialog,
-    isPublishingWithSync
-  });
+  if (isLoadingInternal || isLoadingExternalApis) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="ml-2">Loading API integrations...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-2xl font-bold flex items-center gap-2">
-            <RefreshCw className="h-6 w-6 text-blue-500" />
-            Enhanced External API Publisher
-          </h3>
+          <h2 className="text-2xl font-bold">External API Publisher</h2>
           <p className="text-muted-foreground">
-            Publish your internal APIs with real-time synchronization and comprehensive external integration
+            Manage the complete publishing workflow for your APIs
           </p>
         </div>
-        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-          <Zap className="h-3 w-3 mr-1" />
-          Real-time Sync
-        </Badge>
       </div>
 
-      {/* Enhanced Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Globe className="h-4 w-4 text-blue-500" />
-              <div>
-                <p className="text-2xl font-bold">{publishedApis.length}</p>
-                <p className="text-sm text-muted-foreground">Published APIs</p>
-                <Badge variant="outline" className="text-xs mt-1">
-                  Real-time Synced
-                </Badge>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-green-500" />
-              <div>
-                <p className="text-2xl font-bold">{marketplaceStats?.approvedApplications || 0}</p>
-                <p className="text-sm text-muted-foreground">Developer Apps</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-purple-500" />
-              <div>
-                <p className="text-2xl font-bold">{marketplaceStats?.approvedListings || 0}</p>
-                <p className="text-sm text-muted-foreground">Marketplace</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-orange-500" />
-              <div>
-                <p className="text-2xl font-bold">{(externalApis.filter(api => api.status === 'draft').length + externalApis.filter(api => api.status === 'review').length)}</p>
-                <p className="text-sm text-muted-foreground">Drafts & Review</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Tabs defaultValue="available" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="available">Available to Publish</TabsTrigger>
-          <TabsTrigger value="published">
-            Published APIs ({publishedApis.length})
+      <Tabs defaultValue="publish" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="publish">Publish New API</TabsTrigger>
+          <TabsTrigger value="drafts">
+            Drafts ({draftApis.length})
           </TabsTrigger>
-          <TabsTrigger value="drafts">Drafts & Review ({(externalApis.filter(api => api.status === 'draft').length + externalApis.filter(api => api.status === 'review').length)})</TabsTrigger>
-          <TabsTrigger value="documentation">
-            <FileText className="h-4 w-4 mr-1" />
-            Documentation
+          <TabsTrigger value="review">
+            Review ({reviewApis.length})
+          </TabsTrigger>
+          <TabsTrigger value="published">
+            Published ({publishedApis.length})
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="available" className="space-y-4">
-          <PublishableApisList onPublishApi={handlePublishApi} />
-        </TabsContent>
-
-        <TabsContent value="published" className="space-y-4">
-          <div className="grid gap-4">
-            {publishedApis.length === 0 ? (
-              <Card>
-                <CardContent className="p-8 text-center">
-                  <Globe className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h4 className="text-lg font-medium mb-2">No Published APIs</h4>
-                  <p className="text-muted-foreground">No APIs have been published externally yet.</p>
-                </CardContent>
-              </Card>
-            ) : (
-              publishedApis.map((api) => (
-                <Card key={api.id}>
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-semibold">{api.external_name}</h4>
-                          <Badge className={getStatusColor(api.status)}>
-                            {api.status}
-                          </Badge>
-                          <Badge variant="outline">{api.visibility}</Badge>
-                          <Badge variant="secondary">{api.pricing_model}</Badge>
-                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                            <RefreshCw className="h-3 w-3 mr-1" />
-                            Synced
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          {api.external_description}
-                        </p>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span>Version {api.version}</span>
-                          <span>•</span>
-                          <span>Published {new Date(api.published_at!).toLocaleDateString()}</span>
-                          <span>•</span>
-                          <span className="text-green-600 font-medium">Real-time Sync Active</span>
-                          {api.base_url && (
-                            <>
-                              <span>•</span>
-                              <a href={api.base_url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
-                                View API
-                              </a>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => handleConfigureApi(api)}
-                        >
-                          <Settings className="h-3 w-3 mr-1" />
-                          Configure
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => handleViewAnalytics(api)}
-                        >
-                          <TrendingUp className="h-3 w-3 mr-1" />
-                          Analytics
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              disabled={isUpdatingStatus}
-                            >
-                              <RotateCcw className="h-3 w-3 mr-1" />
-                              Revert
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Revert to Draft?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This will change the status back to draft and unpublish the API. 
-                                The API will no longer be accessible to external developers.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleRevertToDraft(api)}>
-                                Revert to Draft
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button 
-                              size="sm" 
-                              variant="destructive"
-                              disabled={isUpdatingStatus}
-                            >
-                              <Trash2 className="h-3 w-3 mr-1" />
-                              Cancel
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Cancel Publication?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This will permanently delete the external API and all its data. 
-                                This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Keep API</AlertDialogCancel>
-                              <AlertDialogAction 
-                                onClick={() => handleCancelPublication(api)}
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                              >
-                                Delete Permanently
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="drafts" className="space-y-4">
-          <div className="grid gap-4">
-            {draftAndReviewCount === 0 ? (
-              <Card>
-                <CardContent className="p-8 text-center">
-                  <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h4 className="text-lg font-medium mb-2">No Draft or Review APIs</h4>
-                  <p className="text-muted-foreground">No APIs are currently in draft or review status.</p>
-                </CardContent>
-              </Card>
-            ) : (
-              [...draftApis, ...reviewApis].map((api) => (
-                <Card key={api.id}>
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-semibold">{api.external_name}</h4>
-                          <Badge className={getStatusColor(api.status)}>
-                            {api.status}
-                          </Badge>
-                          <Badge variant="outline">{api.visibility}</Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          {api.external_description}
-                        </p>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span>Version {api.version}</span>
-                          <span>•</span>
-                          <span>Created {new Date(api.created_at).toLocaleDateString()}</span>
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => handleStatusUpdate(api.id, 'published')}
-                          disabled={isUpdatingStatus}
-                        >
-                          <CheckCircle className="h-3 w-3 mr-1" />
-                          Publish
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => handleConfigureApi(api)}
-                        >
-                          <Edit className="h-3 w-3 mr-1" />
-                          Edit
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="documentation" className="space-y-6">
+        <TabsContent value="publish" className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Enhanced External API Publishing Guide
+                <Globe className="h-5 w-5" />
+                Publish Internal API
               </CardTitle>
+              <CardDescription>
+                Configure and publish your internal API for external consumption
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="prose max-w-none">
-                <h3 className="text-xl font-semibold mb-4">Real-time Synchronized API Publishing</h3>
-                <p className="text-muted-foreground mb-6">
-                  Transform your internal APIs into secure, manageable external endpoints with real-time synchronization that automatically keeps external APIs updated when internal APIs change.
-                </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="api-select">Select Internal API</Label>
+                    <Select value={selectedApiId} onValueChange={setSelectedApiId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose an API to publish" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {internalApis.map((api) => (
+                          <SelectItem key={api.id} value={api.id}>
+                            {api.name} - {api.endpoints.length} endpoints
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="external-name">External API Name</Label>
+                    <Input
+                      id="external-name"
+                      value={publishingConfig.external_name}
+                      onChange={(e) => setPublishingConfig(prev => ({
+                        ...prev,
+                        external_name: e.target.value
+                      }))}
+                      placeholder="Enter external API name"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea
+                      id="description"
+                      value={publishingConfig.external_description}
+                      onChange={(e) => setPublishingConfig(prev => ({
+                        ...prev,
+                        external_description: e.target.value
+                      }))}
+                      placeholder="Describe your API"
+                      rows={3}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="version">Version</Label>
+                    <Input
+                      id="version"
+                      value={publishingConfig.version}
+                      onChange={(e) => setPublishingConfig(prev => ({
+                        ...prev,
+                        version: e.target.value
+                      }))}
+                      placeholder="1.0.0"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="category">Category</Label>
+                    <Select
+                      value={publishingConfig.category}
+                      onValueChange={(value) => setPublishingConfig(prev => ({
+                        ...prev,
+                        category: value
+                      }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="healthcare">Healthcare</SelectItem>
+                        <SelectItem value="finance">Finance</SelectItem>
+                        <SelectItem value="education">Education</SelectItem>
+                        <SelectItem value="general">General</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="visibility">Visibility</Label>
+                    <Select
+                      value={publishingConfig.visibility}
+                      onValueChange={(value: 'private' | 'public' | 'marketplace') => 
+                        setPublishingConfig(prev => ({
+                          ...prev,
+                          visibility: value
+                        }))
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="private">
+                          <div className="flex items-center gap-2">
+                            <Lock className="h-4 w-4" />
+                            Private
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="public">
+                          <div className="flex items-center gap-2">
+                            <Globe className="h-4 w-4" />
+                            Public
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="marketplace">
+                          <div className="flex items-center gap-2">
+                            <Zap className="h-4 w-4" />
+                            Marketplace
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="pricing">Pricing Model</Label>
+                    <Select
+                      value={publishingConfig.pricing_model}
+                      onValueChange={(value: 'free' | 'freemium' | 'paid' | 'enterprise') => 
+                        setPublishingConfig(prev => ({
+                          ...prev,
+                          pricing_model: value
+                        }))
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="free">Free</SelectItem>
+                        <SelectItem value="freemium">Freemium</SelectItem>
+                        <SelectItem value="paid">Paid</SelectItem>
+                        <SelectItem value="enterprise">Enterprise</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-4 pt-4 border-t">
+                <Button
+                  onClick={handleCreateDraft}
+                  disabled={!selectedApiId || !publishingConfig.external_name || isAnyActionPending}
+                  className="flex-1"
+                >
+                  {isCreatingDraft ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <Settings className="h-4 w-4 mr-2" />
+                  )}
+                  Create Draft
+                </Button>
                 
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                  <h4 className="font-semibold text-blue-800 mb-2 flex items-center gap-2">
-                    <Zap className="h-4 w-4" />
-                    Enhanced Features
-                  </h4>
-                  <ul className="text-sm text-blue-700 space-y-1">
-                    <li>• <strong>Real-time Sync:</strong> Automatic synchronization between internal and external APIs</li>
-                    <li>• <strong>Complete Endpoint Mapping:</strong> All internal endpoints are copied to external tables</li>
-                    <li>• <strong>Live Change Detection:</strong> Changes to internal APIs immediately update external APIs</li>
-                    <li>• <strong>Comprehensive Schema Generation:</strong> Auto-generated request/response schemas with examples</li>
-                    <li>• <strong>Enhanced Security:</strong> Multi-layer security policies and access controls</li>
-                  </ul>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-6 mb-8">
-                  <Card className="p-4">
-                    <h4 className="font-semibold mb-2 flex items-center gap-2">
-                      <Rocket className="h-4 w-4 text-blue-500" />
-                      Quick Publishing Process
-                    </h4>
-                    <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
-                      <li>Select an internal API from the "Available to Publish" tab</li>
-                      <li>Configure external settings (name, description, visibility)</li>
-                      <li>Set authentication and rate limiting preferences</li>
-                      <li>Review and publish to make it available externally</li>
-                    </ol>
-                  </Card>
-
-                  <Card className="p-4">
-                    <h4 className="font-semibold mb-2 flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-green-500" />
-                      Readiness Checklist
-                    </h4>
-                    <ul className="space-y-2 text-sm text-muted-foreground">
-                      <li>✓ At least 1 endpoint defined (30 points)</li>
-                      <li>✓ Security policies configured (25 points)</li>
-                      <li>✓ Data mappings established (25 points)</li>
-                      <li>✓ Detailed description (20+ chars) (20 points)</li>
-                      <li className="text-xs text-amber-600">Need 40+ points to review, 70+ to publish</li>
-                    </ul>
-                  </Card>
-                </div>
-
-                <div className="space-y-6">
-                  <div>
-                    <h4 className="text-lg font-semibold mb-3">API Visibility Options</h4>
-                    <div className="grid md:grid-cols-3 gap-4">
-                      <div className="border rounded-lg p-3">
-                        <h5 className="font-medium text-blue-600">Private</h5>
-                        <p className="text-sm text-muted-foreground">Only accessible with direct API key invitation</p>
-                      </div>
-                      <div className="border rounded-lg p-3">
-                        <h5 className="font-medium text-green-600">Public</h5>
-                        <p className="text-sm text-muted-foreground">Listed in public developer directory</p>
-                      </div>
-                      <div className="border rounded-lg p-3">
-                        <h5 className="font-medium text-purple-600">Marketplace</h5>
-                        <p className="text-sm text-muted-foreground">Featured in developer marketplace with enhanced discovery</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h4 className="text-lg font-semibold mb-3">Pricing Models</h4>
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div className="border rounded-lg p-3">
-                        <h5 className="font-medium text-green-600">Free</h5>
-                        <p className="text-sm text-muted-foreground">No cost to developers, great for community APIs</p>
-                      </div>
-                      <div className="border rounded-lg p-3">
-                        <h5 className="font-medium text-blue-600">Freemium</h5>
-                        <p className="text-sm text-muted-foreground">Free tier with premium features available</p>
-                      </div>
-                      <div className="border rounded-lg p-3">
-                        <h5 className="font-medium text-orange-600">Paid</h5>
-                        <p className="text-sm text-muted-foreground">Subscription-based access with usage tiers</p>
-                      </div>
-                      <div className="border rounded-lg p-3">
-                        <h5 className="font-medium text-purple-600">Enterprise</h5>
-                        <p className="text-sm text-muted-foreground">Custom pricing for large organizations</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <h4 className="font-semibold text-blue-800 mb-2">💡 Best Practices</h4>
-                    <ul className="text-sm text-blue-700 space-y-1">
-                      <li>• Provide comprehensive API documentation with examples</li>
-                      <li>• Set appropriate rate limits to prevent abuse</li>
-                      <li>• Use semantic versioning for API updates</li>
-                      <li>• Monitor usage analytics to understand developer needs</li>
-                      <li>• Maintain backward compatibility when possible</li>
-                    </ul>
-                  </div>
-
-                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                    <h4 className="font-semibold text-amber-800 mb-2">⚠️ Security Considerations</h4>
-                    <ul className="text-sm text-amber-700 space-y-1">
-                      <li>• Always require authentication for sensitive endpoints</li>
-                      <li>• Implement proper rate limiting and throttling</li>
-                      <li>• Validate all input data and sanitize responses</li>
-                      <li>• Use HTTPS for all external API communications</li>
-                      <li>• Log API usage for security monitoring</li>
-                    </ul>
-                  </div>
-                </div>
+                <Button
+                  onClick={handleCompleteWorkflow}
+                  disabled={!selectedApiId || !publishingConfig.external_name || isAnyActionPending}
+                  variant="default"
+                  className="flex-1"
+                >
+                  {isCompletingWorkflow ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <Globe className="h-4 w-4 mr-2" />
+                  )}
+                  Complete Publishing Workflow
+                </Button>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
-      </Tabs>
 
-      {/* Duplicate Detection Dialog */}
-      <AlertDialog open={isDuplicateDialogOpen} onOpenChange={setIsDuplicateDialogOpen}>
-        <AlertDialogContent className="max-w-2xl">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-amber-500" />
-              Duplicate API Detected
-            </AlertDialogTitle>
-            <AlertDialogDescription className="space-y-4">
-              <p>
-                An API with similar properties already exists:
-              </p>
-              {duplicateInfo && (
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-2">
-                  <div><strong>Existing API:</strong> {duplicateInfo.existingApi.external_name}</div>
-                  <div><strong>Version:</strong> {duplicateInfo.existingApi.version}</div>
-                  <div><strong>Status:</strong> {duplicateInfo.existingApi.status}</div>
-                  <div><strong>Created:</strong> {new Date(duplicateInfo.existingApi.created_at).toLocaleDateString()}</div>
-                </div>
-              )}
-              <p>
-                You can either sync new endpoints to the existing API or force republish as a new API.
-              </p>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <Button 
-              variant="outline" 
-              onClick={handleDuplicateSync}
-              className="bg-blue-50 hover:bg-blue-100"
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Sync Endpoints Only
-            </Button>
-            <AlertDialogAction onClick={handleForceRepublish}>
-              <Rocket className="h-4 w-4 mr-2" />
-              Force Republish
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Enhanced Publish Dialog */}
-      <Dialog open={showPublishDialog} onOpenChange={setShowPublishDialog}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <RefreshCw className="h-5 w-5 text-blue-500" />
-              Publish Internal API with Real-time Sync
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-              <p className="text-sm text-blue-700">
-                <Zap className="h-4 w-4 inline mr-1" />
-                This will publish your API with enhanced real-time synchronization, automatically copying all internal endpoints and maintaining live updates.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="external-name">External API Name</Label>
-                <Input
-                  id="external-name"
-                  value={publishForm.external_name}
-                  onChange={(e) => {
-                    console.log('📝 Updating external_name:', e.target.value);
-                    setPublishForm(prev => ({ ...prev, external_name: e.target.value }));
-                  }}
-                  placeholder="Healthcare API v1"
-                />
-              </div>
-              <div>
-                <Label htmlFor="version">Version</Label>
-                <Input
-                  id="version"
-                  value={publishForm.version}
-                  onChange={(e) => {
-                    console.log('📝 Updating version:', e.target.value);
-                    setPublishForm(prev => ({ ...prev, version: e.target.value }));
-                  }}
-                  placeholder="1.0.0"
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={publishForm.external_description}
-                onChange={(e) => {
-                  console.log('📝 Updating external_description:', e.target.value);
-                  setPublishForm(prev => ({ ...prev, external_description: e.target.value }));
-                }}
-                placeholder="Comprehensive healthcare API with real-time sync capabilities..."
-                rows={3}
-              />
-            </div>
-
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <Label>Status</Label>
-                <Select 
-                  value={publishForm.status} 
-                  onValueChange={(value: any) => {
-                    console.log('📝 Updating status:', value);
-                    setPublishForm(prev => ({ ...prev, status: value }));
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="review">Review</SelectItem>
-                    <SelectItem value="published">Published</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Visibility</Label>
-                <Select 
-                  value={publishForm.visibility} 
-                  onValueChange={(value: any) => {
-                    console.log('📝 Updating visibility:', value);
-                    setPublishForm(prev => ({ ...prev, visibility: value }));
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="private">Private</SelectItem>
-                    <SelectItem value="public">Public</SelectItem>
-                    <SelectItem value="marketplace">Marketplace</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Pricing Model</Label>
-                <Select 
-                  value={publishForm.pricing_model} 
-                  onValueChange={(value: any) => {
-                    console.log('📝 Updating pricing_model:', value);
-                    setPublishForm(prev => ({ ...prev, pricing_model: value }));
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="free">Free</SelectItem>
-                    <SelectItem value="freemium">Freemium</SelectItem>
-                    <SelectItem value="paid">Paid</SelectItem>
-                    <SelectItem value="enterprise">Enterprise</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="documentation-url">Documentation URL</Label>
-              <Input
-                id="documentation-url"
-                value={publishForm.documentation_url}
-                onChange={(e) => {
-                  console.log('📝 Updating documentation_url:', e.target.value);
-                  setPublishForm(prev => ({ ...prev, documentation_url: e.target.value }));
-                }}
-                placeholder="https://docs.yourapi.com"
-              />
-            </div>
-
-            {/* Debug info in development */}
-            {process.env.NODE_ENV === 'development' && (
-              <div className="bg-gray-100 p-3 rounded text-xs">
-                <strong>Enhanced Debug Info:</strong>
-                <br />Selected API: {selectedApi}
-                <br />Form Valid: {!!(selectedApi && publishForm.external_name)}
-                <br />Publishing with Sync: {isPublishingWithSync ? 'Yes' : 'No'}
-                <br />Sync Features: Real-time updates, endpoint mapping, schema generation
+        <TabsContent value="drafts" className="space-y-4">
+          <div className="grid gap-4">
+            {draftApis.map((api) => (
+              <Card key={api.id}>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <CardTitle className="text-lg">{api.external_name}</CardTitle>
+                      <Badge className={getStatusColor(api.status)}>
+                        {getStatusIcon(api.status)}
+                        {api.status}
+                      </Badge>
+                    </div>
+                    <Button
+                      onClick={() => moveToReview(api.id)}
+                      disabled={isMovingToReview}
+                      size="sm"
+                    >
+                      {isMovingToReview ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      ) : (
+                        <Clock className="h-4 w-4 mr-2" />
+                      )}
+                      Move to Review
+                    </Button>
+                  </div>
+                  <CardDescription>{api.external_description}</CardDescription>
+                </CardHeader>
+              </Card>
+            ))}
+            {draftApis.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                No draft APIs found. Create a new draft above.
               </div>
             )}
-
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setShowPublishDialog(false)}>
-                Cancel
-              </Button>
-              <Button 
-                onClick={handleSubmitPublish} 
-                disabled={!selectedApi || !publishForm.external_name || isPublishingWithSync}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                {isPublishingWithSync ? (
-                  <>
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                    Publishing with Sync...
-                  </>
-                ) : (
-                  <>
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    Publish with Sync
-                  </>
-                )}
-              </Button>
-            </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        </TabsContent>
 
-      {/* Configuration Dialog */}
-      <ExternalApiConfigDialog
-        open={showConfigDialog}
-        onOpenChange={setShowConfigDialog}
-        api={configApi}
-      />
+        <TabsContent value="review" className="space-y-4">
+          <div className="grid gap-4">
+            {reviewApis.map((api) => (
+              <Card key={api.id}>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <CardTitle className="text-lg">{api.external_name}</CardTitle>
+                      <Badge className={getStatusColor(api.status)}>
+                        {getStatusIcon(api.status)}
+                        {api.status}
+                      </Badge>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => updateApiStatus(api.id, 'draft')}
+                        variant="outline"
+                        size="sm"
+                      >
+                        <Settings className="h-4 w-4 mr-2" />
+                        Back to Draft
+                      </Button>
+                      <Button
+                        onClick={() => publishApi(api.id)}
+                        disabled={isPublishing}
+                        size="sm"
+                      >
+                        {isPublishing ? (
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        ) : (
+                          <CheckCircle className="h-4 w-4 mr-2" />
+                        )}
+                        Publish
+                      </Button>
+                    </div>
+                  </div>
+                  <CardDescription>{api.external_description}</CardDescription>
+                </CardHeader>
+              </Card>
+            ))}
+            {reviewApis.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                No APIs in review. Move drafts to review first.
+              </div>
+            )}
+          </div>
+        </TabsContent>
 
-      {/* Analytics Dialog */}
-      <ExternalApiAnalyticsDialog
-        open={showAnalyticsDialog}
-        onOpenChange={setShowAnalyticsDialog}
-        api={analyticsApi}
-      />
+        <TabsContent value="published" className="space-y-4">
+          <div className="grid gap-4">
+            {publishedApis.map((api) => (
+              <Card key={api.id}>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <CardTitle className="text-lg">{api.external_name}</CardTitle>
+                      <Badge className={getStatusColor(api.status)}>
+                        {getStatusIcon(api.status)}
+                        {api.status}
+                      </Badge>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => updateApiStatus(api.id, 'deprecated')}
+                        variant="outline"
+                        size="sm"
+                      >
+                        <AlertCircle className="h-4 w-4 mr-2" />
+                        Deprecate
+                      </Button>
+                    </div>
+                  </div>
+                  <CardDescription>
+                    {api.external_description}
+                    {api.published_at && (
+                      <div className="text-sm text-muted-foreground mt-1">
+                        Published: {new Date(api.published_at).toLocaleDateString()}
+                      </div>
+                    )}
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            ))}
+            {publishedApis.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                No published APIs found. Complete the publishing workflow above.
+              </div>
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
