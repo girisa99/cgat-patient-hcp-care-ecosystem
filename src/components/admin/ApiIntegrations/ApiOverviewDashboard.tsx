@@ -303,7 +303,7 @@ const ApiOverviewDashboard = () => {
                   {consumedApis.slice(0, 3).map((api) => (
                     <div key={api.id} className="flex items-center justify-between text-sm">
                       <span>{api.name}</span>
-                      <Badge variant="outline" size="sm">{api.status}</Badge>
+                      <Badge variant="outline">{api.status}</Badge>
                     </div>
                   ))}
                   {consumedApis.length > 3 && (
@@ -331,7 +331,7 @@ const ApiOverviewDashboard = () => {
                   {publishedInternalApis.slice(0, 3).map((api) => (
                     <div key={api.id} className="flex items-center justify-between text-sm">
                       <span>{api.external_name}</span>
-                      <Badge variant="outline" size="sm">{api.status}</Badge>
+                      <Badge variant="outline">{api.status}</Badge>
                     </div>
                   ))}
                   {publishedInternalApis.length > 3 && (

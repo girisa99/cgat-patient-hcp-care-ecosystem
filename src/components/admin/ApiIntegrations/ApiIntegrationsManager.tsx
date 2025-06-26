@@ -20,19 +20,19 @@ import {
 import { useApiIntegrations } from '@/hooks/useApiIntegrations';
 import { useExternalApis } from '@/hooks/useExternalApis';
 import ApiOverviewDashboard from './ApiOverviewDashboard';
-import ApiOverviewSection from './ApiOverviewSection';
-import InternalApiEndpointsList from './InternalApiEndpointsList';
-import ExternalApiEndpointsList from './ExternalApiEndpointsList';
-import CreateIntegrationDialog from './CreateIntegrationDialog';
-import IntegrationDetailView from './IntegrationDetailView';
+import { ApiOverviewSection } from './ApiOverviewSection';
+import { InternalApiEndpointsList } from './InternalApiEndpointsList';
+import { ExternalApiEndpointsList } from './ExternalApiEndpointsList';
+import { CreateIntegrationDialog } from './CreateIntegrationDialog';
+import { IntegrationDetailView } from './IntegrationDetailView';
 import ExternalApiPublisher from './ExternalApiPublisher';
 import DeveloperPortal from './DeveloperPortal';
-import ArchitectureDocumentation from './ArchitectureDocumentation';
+import { ArchitectureDocumentation } from './ArchitectureDocumentation';
 
 const ApiIntegrationsManager = () => {
   const { toast } = useToast();
-  const { integrations, isLoading, refreshDetection } = useApiIntegrations();
-  const { externalApis } = useExternalApis();
+  const { integrations, isLoading } = useApiIntegrations();
+  const { externalApis: publishedExternalApis } = useExternalApis();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedView, setSelectedView] = useState<'overview' | 'internal' | 'external' | 'publishing' | 'developer' | 'docs'>('overview');
@@ -47,7 +47,7 @@ const ApiIntegrationsManager = () => {
 
   // Separate internal and external APIs
   const internalApis = filteredIntegrations.filter(api => api.type === 'internal');
-  const externalApis = filteredIntegrations.filter(api => api.type === 'external');
+  const consumingExternalApis = filteredIntegrations.filter(api => api.type === 'external');
 
   const handleDownloadCollection = (integrationId: string) => {
     const integration = integrations?.find(i => i.id === integrationId);
@@ -65,8 +65,8 @@ const ApiIntegrationsManager = () => {
 
   const handleViewDocumentation = (integrationId: string) => {
     const integration = integrations?.find(i => i.id === integrationId);
-    if (integration?.documentationUrl) {
-      window.open(integration.documentationUrl, '_blank');
+    if (integration?.baseUrl) {
+      window.open(`${integration.baseUrl}/docs`, '_blank');
     }
   };
 
@@ -79,7 +79,7 @@ const ApiIntegrationsManager = () => {
   };
 
   const handleRefreshDetection = async () => {
-    await refreshDetection();
+    // Refresh functionality would be implemented here
     toast({
       title: "Detection Refreshed",
       description: "API detection has been refreshed successfully.",
@@ -137,7 +137,7 @@ const ApiIntegrationsManager = () => {
         </Badge>
         <Badge variant="outline" className="flex items-center gap-1">
           <Globe className="h-3 w-3" />
-          {externalApis.length} External
+          {consumingExternalApis.length} External
         </Badge>
       </div>
 
@@ -150,7 +150,7 @@ const ApiIntegrationsManager = () => {
           </TabsTrigger>
           <TabsTrigger value="external" className="flex items-center gap-1">
             <ArrowDownCircle className="h-3 w-3" />
-            Consuming ({externalApis.length})
+            Consuming ({consumingExternalApis.length})
           </TabsTrigger>
           <TabsTrigger value="publishing" className="flex items-center gap-1">
             <ArrowUpCircle className="h-3 w-3" />
@@ -202,7 +202,7 @@ const ApiIntegrationsManager = () => {
               </div>
             </div>
             <ExternalApiEndpointsList
-              apis={externalApis}
+              apis={consumingExternalApis}
               searchTerm={searchTerm}
               onDownloadCollection={handleDownloadCollection}
               onViewDetails={handleViewDetails}
