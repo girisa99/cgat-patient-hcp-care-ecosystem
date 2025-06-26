@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { 
   Globe, 
   Clock, 
@@ -11,7 +12,12 @@ import {
   Bell,
   BookOpen,
   TestTube,
-  RefreshCw
+  RefreshCw,
+  Settings,
+  TrendingUp,
+  RotateCcw,
+  Trash2,
+  Bug
 } from 'lucide-react';
 import { usePublishedApiIntegration, PublishedApiForDevelopers } from '@/hooks/usePublishedApiIntegration';
 import { useEnhancedPublishedApiDetails, ApiIntegrationDetails } from '@/hooks/useEnhancedPublishedApiDetails';
@@ -19,6 +25,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { externalApiSyncManager } from '@/utils/api/ExternalApiSyncManager';
 import ApiDetailsDialog from './ApiDetailsDialog';
+import ExternalApiConfigDialog from './ExternalApiConfigDialog';
+import ExternalApiAnalyticsDialog from './ExternalApiAnalyticsDialog';
 
 interface PublishedApisSectionProps {
   showInDeveloperPortal?: boolean;
@@ -31,6 +39,12 @@ const PublishedApisSection = ({ showInDeveloperPortal = false }: PublishedApisSe
   const [showApiDialog, setShowApiDialog] = useState(false);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   const [isForceRefreshing, setIsForceRefreshing] = useState(false);
+  const [debugMode, setDebugMode] = useState(false);
+  const [isProcessing, setIsProcessing] = useState<string | null>(null);
+  const [showConfigDialog, setShowConfigDialog] = useState<boolean>(false);
+  const [showAnalyticsDialog, setShowAnalyticsDialog] = useState<boolean>(false);
+  const [configApi, setConfigApi] = useState<any>(null);
+  const [analyticsApi, setAnalyticsApi] = useState<any>(null);
 
   const {
     publishedApisForDevelopers,
@@ -72,6 +86,74 @@ const PublishedApisSection = ({ showInDeveloperPortal = false }: PublishedApisSe
       });
     } finally {
       setIsLoadingDetails(false);
+    }
+  };
+
+  const handleConfigureApi = (api: PublishedApiForDevelopers) => {
+    console.log('⚙️ Configuring API from published section:', api);
+    setConfigApi(api);
+    setShowConfigDialog(true);
+  };
+
+  const handleViewAnalytics = (api: PublishedApiForDevelopers) => {
+    console.log('📊 Viewing analytics from published section:', api);
+    setAnalyticsApi(api);
+    setShowAnalyticsDialog(true);
+  };
+
+  const handleRevertToDraft = async (api: PublishedApiForDevelopers) => {
+    try {
+      setIsProcessing(`revert-${api.id}`);
+      await externalApiSyncManager.revertPublication(api.id);
+      toast({
+        title: "API Reverted",
+        description: `${api.external_name} has been reverted to draft status.`,
+      });
+      
+      // Force a refresh of the data
+      await queryClient.invalidateQueries({ queryKey: ['published-apis-for-developers'] });
+      await queryClient.invalidateQueries({ queryKey: ['external-apis'] });
+      
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } catch (error: any) {
+      console.error('❌ Revert failed:', error);
+      toast({
+        title: "Revert Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(null);
+    }
+  };
+
+  const handleCancelPublication = async (api: PublishedApiForDevelopers) => {
+    try {
+      setIsProcessing(`cancel-${api.id}`);
+      await externalApiSyncManager.cancelPublication(api.id);
+      toast({
+        title: "Publication Canceled",
+        description: `${api.external_name} has been completely removed.`,
+      });
+      
+      // Force a refresh of the data
+      await queryClient.invalidateQueries({ queryKey: ['published-apis-for-developers'] });
+      await queryClient.invalidateQueries({ queryKey: ['external-apis'] });
+      
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } catch (error: any) {
+      console.error('❌ Cancel failed:', error);
+      toast({
+        title: "Cancel Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(null);
     }
   };
 
@@ -165,12 +247,46 @@ const PublishedApisSection = ({ showInDeveloperPortal = false }: PublishedApisSe
         </div>
         <div className="flex items-center gap-2">
           <Badge variant="secondary">{publishedApisForDevelopers.length} APIs</Badge>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setDebugMode(!debugMode)}
+            className="bg-yellow-50 hover:bg-yellow-100 border-yellow-200"
+          >
+            <Bug className="h-4 w-4 mr-2" />
+            Debug: {debugMode ? 'ON' : 'OFF'}
+          </Button>
           <Button variant="outline" size="sm" onClick={handleRefreshData}>
             <RefreshCw className="h-4 w-4 mr-1" />
             Refresh
           </Button>
         </div>
       </div>
+
+      {/* Debug Panel */}
+      {debugMode && (
+        <Card className="border-yellow-200 bg-yellow-50">
+          <CardContent className="p-4">
+            <div className="space-y-2 text-sm">
+              <div><strong>Component:</strong> PublishedApisSection</div>
+              <div><strong>Show In Developer Portal:</strong> {showInDeveloperPortal ? 'YES' : 'NO'}</div>
+              <div><strong>Total Published APIs:</strong> {publishedApisForDevelopers.length}</div>
+              <div><strong>Loading:</strong> {isLoadingPublishedApis ? 'YES' : 'NO'}</div>
+              <div><strong>Processing:</strong> {isProcessing || 'None'}</div>
+              <details className="mt-2">
+                <summary className="cursor-pointer font-medium">View APIs Data</summary>
+                <pre className="mt-2 text-xs bg-white p-2 rounded border overflow-auto max-h-40">
+                  {JSON.stringify(publishedApisForDevelopers.map(api => ({
+                    id: api.id,
+                    name: api.external_name,
+                    endpoints: api.endpoints?.length || 0
+                  })), null, 2)}
+                </pre>
+              </details>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {publishedApisForDevelopers.map((api) => (
@@ -237,13 +353,121 @@ const PublishedApisSection = ({ showInDeveloperPortal = false }: PublishedApisSe
                 )}
               </div>
 
-              <div className="flex gap-2 pt-2">
-                <Button size="sm" onClick={() => handleViewApi(api)} className="flex-1 bg-blue-600 hover:bg-blue-700">
+              {/* Debug Info Panel */}
+              {debugMode && (
+                <div className="mt-2 p-2 bg-gray-50 border rounded text-xs">
+                  <div className="font-medium mb-1">API Debug Info:</div>
+                  <div className="grid grid-cols-2 gap-1">
+                    <div>ID: {api.id}</div>
+                    <div>Endpoints: {api.endpoints?.length || 0}</div>
+                    <div>Published: {api.published_at ? 'YES' : 'NO'}</div>
+                    <div>Category: {api.category || 'None'}</div>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex flex-wrap gap-1 pt-2">
+                <Button size="sm" onClick={() => handleViewApi(api)} className="bg-blue-600 hover:bg-blue-700">
                   <Globe className="h-3 w-3 mr-1" />
-                  View Enhanced Details
+                  Details
                 </Button>
+                
                 {!showInDeveloperPortal && (
                   <>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleConfigureApi(api)}
+                      disabled={isProcessing !== null}
+                      className="bg-gray-50 hover:bg-gray-100"
+                    >
+                      {isProcessing !== null ? (
+                        <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                      ) : (
+                        <Settings className="h-3 w-3 mr-1" />
+                      )}
+                      Manage
+                    </Button>
+                    
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleViewAnalytics(api)}
+                      disabled={isProcessing !== null}
+                      className="bg-blue-50 hover:bg-blue-100"
+                    >
+                      <TrendingUp className="h-3 w-3 mr-1" />
+                      Analytics
+                    </Button>
+                    
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={isProcessing !== null}
+                          className="bg-orange-50 hover:bg-orange-100"
+                        >
+                          {isProcessing === `revert-${api.id}` ? (
+                            <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                          ) : (
+                            <RotateCcw className="h-3 w-3 mr-1" />
+                          )}
+                          Revert
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Revert to Draft?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will change the status back to draft and unpublish the API. 
+                            The API will no longer be accessible to external developers.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleRevertToDraft(api)}>
+                            Revert to Draft
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                    
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          disabled={isProcessing !== null}
+                        >
+                          {isProcessing === `cancel-${api.id}` ? (
+                            <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-3 w-3 mr-1" />
+                          )}
+                          Cancel
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Cancel Publication?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will permanently delete the external API and all its data. 
+                            This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Keep API</AlertDialogCancel>
+                          <AlertDialogAction 
+                            onClick={() => handleCancelPublication(api)}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            Delete Permanently
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+
                     <Button
                       size="sm"
                       variant="outline"
@@ -252,6 +476,7 @@ const PublishedApisSection = ({ showInDeveloperPortal = false }: PublishedApisSe
                     >
                       <BookOpen className="h-3 w-3" />
                     </Button>
+                    
                     <Button
                       size="sm"
                       variant="outline"
@@ -260,6 +485,7 @@ const PublishedApisSection = ({ showInDeveloperPortal = false }: PublishedApisSe
                     >
                       <Bell className="h-3 w-3" />
                     </Button>
+                    
                     <Button
                       size="sm"
                       variant="outline"
@@ -298,6 +524,20 @@ const PublishedApisSection = ({ showInDeveloperPortal = false }: PublishedApisSe
         onOpenChange={setShowApiDialog}
         apiDetails={selectedApiDetails}
         isLoading={isLoadingDetails}
+      />
+
+      {/* Configuration Dialog */}
+      <ExternalApiConfigDialog
+        open={showConfigDialog}
+        onOpenChange={setShowConfigDialog}
+        api={configApi}
+      />
+
+      {/* Analytics Dialog */}
+      <ExternalApiAnalyticsDialog
+        open={showAnalyticsDialog}
+        onOpenChange={setShowAnalyticsDialog}
+        api={analyticsApi}
       />
     </div>
   );
