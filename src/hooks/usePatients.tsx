@@ -30,10 +30,10 @@ export const usePatients = () => {
   } = useQuery({
     queryKey: ['patients'],
     queryFn: async () => {
-      console.log('🔍 Fetching patients from profiles table...');
+      console.log('🔍 Fetching patients with patientCaregiver role...');
       
       try {
-        // Fetch all profiles (patients) with their associated facilities
+        // Fetch only profiles that have the patientCaregiver role
         const { data, error } = await supabase
           .from('profiles')
           .select(`
@@ -48,8 +48,14 @@ export const usePatients = () => {
               id,
               name,
               facility_type
+            ),
+            user_roles!inner (
+              roles (
+                name
+              )
             )
           `)
+          .eq('user_roles.roles.name', 'patientCaregiver')
           .order('created_at', { ascending: false });
 
         if (error) {
@@ -58,6 +64,7 @@ export const usePatients = () => {
         }
 
         console.log('✅ Patients fetched successfully:', data?.length || 0);
+        console.log('🔍 Patient data:', data);
         return data || [];
       } catch (err) {
         console.error('❌ Error in patient fetch:', err);
