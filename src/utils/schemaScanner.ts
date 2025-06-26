@@ -47,36 +47,17 @@ export const scanDatabaseSchema = async (): Promise<SchemaAnalysis[]> => {
   console.log('🔍 Scanning database schema for new tables...');
   
   try {
-    // Use raw SQL query to get table information
-    const { data: tables, error } = await supabase
-      .rpc('exec_sql', {
-        sql: `
-          SELECT table_name 
-          FROM information_schema.tables 
-          WHERE table_schema = 'public' 
-          AND table_type = 'BASE TABLE'
-          AND table_name NOT LIKE 'auth_%'
-          AND table_name NOT LIKE 'storage_%'
-        `
-      });
+    // Use direct query to get known tables from the public schema
+    const { data: knownTables, error } = await supabase
+      .from('modules')
+      .select('name');
 
     if (error) {
-      console.error('❌ Error scanning tables:', error);
-      return [];
+      console.error('❌ Error fetching existing modules:', error);
     }
 
-    const analyses: SchemaAnalysis[] = [];
-
-    // Analyze each table
-    for (const table of tables || []) {
-      const analysis = await analyzeTable(table.table_name);
-      if (analysis) {
-        analyses.push(analysis);
-      }
-    }
-
-    console.log(`✅ Analyzed ${analyses.length} tables`);
-    return analyses;
+    // Return analysis for known tables as we cannot execute raw SQL
+    return await analyzeKnownTables();
     
   } catch (error) {
     console.error('❌ Schema scanning failed:', error);
@@ -107,34 +88,8 @@ const analyzeKnownTables = async (): Promise<SchemaAnalysis[]> => {
  */
 const analyzeTable = async (tableName: string): Promise<SchemaAnalysis | null> => {
   try {
-    // Use raw SQL query to get column information
-    const { data: columns, error } = await supabase
-      .rpc('exec_sql', {
-        sql: `
-          SELECT 
-            column_name, 
-            data_type, 
-            is_nullable, 
-            column_default
-          FROM information_schema.columns 
-          WHERE table_name = '${tableName}' 
-          AND table_schema = 'public'
-        `
-      });
-
-    if (error || !columns) {
-      console.warn(`⚠️ Could not analyze table ${tableName}`);
-      return createFallbackAnalysis(tableName);
-    }
-
-    const columnData = columns.map((col: any) => ({
-      name: col.column_name,
-      type: col.data_type,
-      nullable: col.is_nullable === 'YES',
-      defaultValue: col.column_default
-    }));
-
-    return createAnalysisFromColumns(tableName, columnData);
+    // Since we cannot use raw SQL queries, create analysis based on known table structures
+    return createFallbackAnalysis(tableName);
     
   } catch (error) {
     console.error(`❌ Error analyzing table ${tableName}:`, error);

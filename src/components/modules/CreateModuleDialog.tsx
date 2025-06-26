@@ -18,11 +18,13 @@ import { Plus } from 'lucide-react';
 interface CreateModuleDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSubmit?: (moduleData: any) => Promise<void>;
 }
 
 const CreateModuleDialog: React.FC<CreateModuleDialogProps> = ({
   open,
   onOpenChange,
+  onSubmit,
 }) => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -35,11 +37,17 @@ const CreateModuleDialog: React.FC<CreateModuleDialogProps> = ({
     
     if (!name.trim()) return;
     
-    await createModule({
+    const moduleData = {
       name: name.trim(),
       description: description.trim() || null,
       is_active: isActive
-    });
+    };
+
+    if (onSubmit) {
+      await onSubmit(moduleData);
+    } else {
+      await createModule(moduleData);
+    }
     
     onOpenChange(false);
     setName('');
