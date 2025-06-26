@@ -210,59 +210,56 @@ const handler = async (req: Request): Promise<Response> => {
       .select('*', { count: 'exact', head: true })
       .gte('created_at', todayStart.toISOString());
 
-    // Calculate active users - users who have been active in the last 7 days
-    // This includes both users who performed actions AND users who had actions performed on them
+    // Calculate active users from auth.users table (last 7 days login activity)
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     
-    // Get users who performed actions
-    const { data: activeUserActions } = await supabase
-      .from('audit_logs')
-      .select('user_id')
-      .gte('created_at', sevenDaysAgo.toISOString())
-      .not('user_id', 'is', null);
-
-    // Get users who had actions performed on them (from profiles table changes)
-    const { data: profileChanges } = await supabase
-      .from('audit_logs')
-      .select('record_id')
-      .eq('table_name', 'profiles')
-      .gte('created_at', sevenDaysAgo.toISOString());
-
-    // Get users from user_roles changes (both user_id field and record_id for role assignments)
-    const { data: userRoleChanges } = await supabase
-      .from('audit_logs')
-      .select('new_values, old_values')
-      .eq('table_name', 'user_roles')
-      .gte('created_at', sevenDaysAgo.toISOString());
-
-    // Combine all user IDs
-    const allActiveUserIds = new Set();
+    let uniqueActiveUsers = 0;
     
-    // Add users who performed actions
-    activeUserActions?.forEach(log => {
-      if (log.user_id) allActiveUserIds.add(log.user_id);
-    });
-    
-    // Add users who had profile changes
-    profileChanges?.forEach(log => {
-      if (log.record_id) allActiveUserIds.add(log.record_id);
-    });
-    
-    // Add users from role changes
-    userRoleChanges?.forEach(log => {
-      if (log.new_values?.user_id) allActiveUserIds.add(log.new_values.user_id);
-      if (log.old_values?.user_id) allActiveUserIds.add(log.old_values.user_id);
-    });
-
-    const uniqueActiveUsers = allActiveUserIds.size;
+    try {
+      // Get all users from auth.users and filter by last sign in
+      const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+      
+      if (!authError && authUsers) {
+        // Count users who have signed in within the last 7 days
+        const activeUsers = authUsers.users.filter(user => {
+          if (!user.last_sign_in_at) return false;
+          const lastSignIn = new Date(user.last_sign_in_at);
+          return lastSignIn >= sevenDaysAgo;
+        });
+        
+        uniqueActiveUsers = activeUsers.length;
+        
+        console.log('👥 Active users calculation:', {
+          totalUsers: authUsers.users.length,
+          usersWithLastSignIn: authUsers.users.filter(u => u.last_sign_in_at).length,
+          activeUsersLast7Days: uniqueActiveUsers,
+          cutoffDate: sevenDaysAgo.toISOString()
+        });
+        
+        // Log some sample data for debugging
+        if (authUsers.users.length > 0) {
+          console.log('📋 Sample user data:', authUsers.users.slice(0, 3).map(u => ({
+            id: u.id.substring(0, 8) + '...',
+            email: u.email,
+            last_sign_in_at: u.last_sign_in_at,
+            created_at: u.created_at
+          })));
+        }
+      } else {
+        console.error('❌ Error fetching auth users for active count:', authError);
+        uniqueActiveUsers = 0;
+      }
+    } catch (error) {
+      console.error('❌ Error calculating active users:', error);
+      uniqueActiveUsers = 0;
+    }
 
     console.log('📈 Statistics calculated:', {
       total: totalCount || 0,
       today: todayCount || 0,
       activeUsers: uniqueActiveUsers,
-      filtered: enrichedData?.length || 0,
-      activeUserIds: Array.from(allActiveUserIds)
+      filtered: enrichedData?.length || 0
     });
 
     return new Response(JSON.stringify({ 
