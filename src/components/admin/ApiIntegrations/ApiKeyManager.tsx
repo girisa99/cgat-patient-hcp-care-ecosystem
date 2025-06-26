@@ -35,6 +35,23 @@ interface ApiKeyConfig {
   ipWhitelist?: string[];
 }
 
+interface ApiKey {
+  id: string;
+  name: string;
+  key: string;
+  type: 'development' | 'production' | 'sandbox';
+  modules: string[];
+  permissions: string[];
+  rateLimit: {
+    requests: number;
+    period: 'minute' | 'hour' | 'day';
+  };
+  status: 'active' | 'inactive';
+  createdAt: string;
+  lastUsed?: string;
+  usageCount: number;
+}
+
 const ApiKeyManager = () => {
   const { toast } = useToast();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -55,16 +72,16 @@ const ApiKeyManager = () => {
     { id: 'admin', name: 'Admin Access' },
   ];
 
-  const [apiKeys, setApiKeys] = useState([
+  const [apiKeys, setApiKeys] = useState<ApiKey[]>([
     {
       id: '1',
       name: 'Healthcare App Dev',
       key: 'hc_dev_1a2b3c4d5e6f7g8h9i0j',
-      type: 'development' as const,
+      type: 'development',
       modules: ['patients', 'facilities'],
       permissions: ['read', 'write'],
-      rateLimit: { requests: 1000, period: 'hour' as const },
-      status: 'active' as const,
+      rateLimit: { requests: 1000, period: 'hour' },
+      status: 'active',
       createdAt: '2024-01-15T10:00:00Z',
       lastUsed: '2024-01-20T14:30:00Z',
       usageCount: 2450
@@ -78,7 +95,7 @@ const ApiKeyManager = () => {
   };
 
   const handleCreateApiKey = (config: ApiKeyConfig) => {
-    const newKey = {
+    const newKey: ApiKey = {
       id: Date.now().toString(),
       name: config.name,
       key: generateApiKey(config.type),
@@ -86,7 +103,7 @@ const ApiKeyManager = () => {
       modules: config.modules,
       permissions: config.permissions,
       rateLimit: config.rateLimit,
-      status: 'active' as const,
+      status: 'active',
       createdAt: new Date().toISOString(),
       lastUsed: undefined,
       usageCount: 0
@@ -156,7 +173,7 @@ const ApiKeyManager = () => {
         
         <div className="space-y-2">
           <Label htmlFor="keyType">Environment Type</Label>
-          <Select value={config.type} onValueChange={(value: any) => setConfig({ ...config, type: value })}>
+          <Select value={config.type} onValueChange={(value: 'development' | 'production' | 'sandbox') => setConfig({ ...config, type: value })}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
@@ -229,7 +246,7 @@ const ApiKeyManager = () => {
             <Label htmlFor="ratePeriod">Per</Label>
             <Select
               value={config.rateLimit.period}
-              onValueChange={(value: any) => setConfig({
+              onValueChange={(value: 'minute' | 'hour' | 'day') => setConfig({
                 ...config,
                 rateLimit: { ...config.rateLimit, period: value }
               })}
