@@ -1,4 +1,3 @@
-
 /**
  * Database Schema Analyzer - Analyzes real database structure for API sync
  */
@@ -38,31 +37,28 @@ export interface RLSPolicy {
 
 class DatabaseSchemaAnalyzerClass {
   /**
-   * Get all tables from the public schema
+   * Get all tables from the database schema
+   * Uses known table structure instead of querying information_schema
    */
   async getAllTables(): Promise<DatabaseTable[]> {
-    console.log('🔍 Analyzing real database schema...');
+    console.log('🔍 Analyzing database schema from known structure...');
 
     try {
-      // Get all tables in public schema
-      const { data: tables, error: tablesError } = await supabase
-        .from('information_schema.tables')
-        .select('table_name')
-        .eq('table_schema', 'public')
-        .eq('table_type', 'BASE TABLE');
+      // Get main application tables that we know exist
+      const knownTables = [
+        'profiles', 'facilities', 'modules', 'permissions', 'roles', 
+        'user_roles', 'user_permissions', 'api_integration_registry',
+        'external_api_registry', 'external_api_endpoints', 'api_keys',
+        'audit_logs', 'developer_applications', 'marketplace_listings'
+      ];
 
-      if (tablesError) {
-        console.error('❌ Error fetching tables:', tablesError);
-        return [];
-      }
-
-      console.log(`📊 Found ${tables?.length || 0} tables in database`);
+      console.log(`📊 Processing ${knownTables.length} known tables`);
 
       const analyzedTables: DatabaseTable[] = [];
 
-      // Analyze each table
-      for (const table of tables || []) {
-        const tableAnalysis = await this.analyzeTable(table.table_name);
+      // Analyze each known table
+      for (const tableName of knownTables) {
+        const tableAnalysis = await this.analyzeTable(tableName);
         if (tableAnalysis) {
           analyzedTables.push(tableAnalysis);
         }
@@ -84,10 +80,21 @@ class DatabaseSchemaAnalyzerClass {
     try {
       console.log(`🔍 Analyzing table: ${tableName}`);
 
-      // Get column information
-      const columns = await this.getTableColumns(tableName);
-      const foreignKeys = await this.getTableForeignKeys(tableName);
-      const rlsPolicies = await this.getTableRLSPolicies(tableName);
+      // Get column information from our known schema
+      const columns = this.getKnownTableColumns(tableName);
+      const foreignKeys = this.getKnownForeignKeys(tableName);
+      const rlsPolicies = this.generateStandardRLSPolicies(tableName);
+
+      // Verify table exists by attempting a simple query
+      const { error: tableError } = await supabase
+        .from(tableName as any)
+        .select('*')
+        .limit(1);
+
+      if (tableError) {
+        console.warn(`⚠️ Table ${tableName} may not be accessible:`, tableError.message);
+        // Continue anyway with known structure
+      }
 
       return {
         table_name: tableName,
@@ -104,33 +111,7 @@ class DatabaseSchemaAnalyzerClass {
   }
 
   /**
-   * Get columns for a table
-   */
-  private async getTableColumns(tableName: string): Promise<DatabaseColumn[]> {
-    // Since we can't directly query information_schema from client,
-    // we'll use the known table structures from the schema
-    const knownColumns = this.getKnownTableColumns(tableName);
-    return knownColumns;
-  }
-
-  /**
-   * Get foreign keys for a table
-   */
-  private async getTableForeignKeys(tableName: string): Promise<ForeignKey[]> {
-    const knownForeignKeys = this.getKnownForeignKeys(tableName);
-    return knownForeignKeys;
-  }
-
-  /**
-   * Get RLS policies for a table
-   */
-  private async getTableRLSPolicies(tableName: string): Promise<RLSPolicy[]> {
-    // Generate standard RLS policies based on table structure
-    return this.generateStandardRLSPolicies(tableName);
-  }
-
-  /**
-   * Get known column structures from schema
+   * Get known column structures from our database schema
    */
   private getKnownTableColumns(tableName: string): DatabaseColumn[] {
     const columnMappings: Record<string, DatabaseColumn[]> = {
@@ -185,6 +166,42 @@ class DatabaseSchemaAnalyzerClass {
         { column_name: 'description', data_type: 'text', is_nullable: true, column_default: null, is_primary_key: false },
         { column_name: 'type', data_type: 'text', is_nullable: false, column_default: null, is_primary_key: false },
         { column_name: 'direction', data_type: 'text', is_nullable: false, column_default: null, is_primary_key: false }
+      ],
+      external_api_registry: [
+        { column_name: 'id', data_type: 'uuid', is_nullable: false, column_default: 'gen_random_uuid()', is_primary_key: true },
+        { column_name: 'external_name', data_type: 'character varying', is_nullable: false, column_default: null, is_primary_key: false },
+        { column_name: 'internal_api_id', data_type: 'uuid', is_nullable: false, column_default: null, is_primary_key: false },
+        { column_name: 'status', data_type: 'character varying', is_nullable: false, column_default: 'draft', is_primary_key: false }
+      ],
+      external_api_endpoints: [
+        { column_name: 'id', data_type: 'uuid', is_nullable: false, column_default: 'gen_random_uuid()', is_primary_key: true },
+        { column_name: 'external_api_id', data_type: 'uuid', is_nullable: false, column_default: null, is_primary_key: false },
+        { column_name: 'external_path', data_type: 'character varying', is_nullable: false, column_default: null, is_primary_key: false },
+        { column_name: 'method', data_type: 'character varying', is_nullable: false, column_default: null, is_primary_key: false }
+      ],
+      api_keys: [
+        { column_name: 'id', data_type: 'uuid', is_nullable: false, column_default: 'gen_random_uuid()', is_primary_key: true },
+        { column_name: 'user_id', data_type: 'uuid', is_nullable: false, column_default: null, is_primary_key: false },
+        { column_name: 'name', data_type: 'character varying', is_nullable: false, column_default: null, is_primary_key: false },
+        { column_name: 'key_hash', data_type: 'text', is_nullable: false, column_default: null, is_primary_key: false }
+      ],
+      audit_logs: [
+        { column_name: 'id', data_type: 'uuid', is_nullable: false, column_default: 'gen_random_uuid()', is_primary_key: true },
+        { column_name: 'user_id', data_type: 'uuid', is_nullable: true, column_default: null, is_primary_key: false },
+        { column_name: 'action', data_type: 'character varying', is_nullable: false, column_default: null, is_primary_key: false },
+        { column_name: 'table_name', data_type: 'character varying', is_nullable: true, column_default: null, is_primary_key: false }
+      ],
+      developer_applications: [
+        { column_name: 'id', data_type: 'uuid', is_nullable: false, column_default: 'gen_random_uuid()', is_primary_key: true },
+        { column_name: 'user_id', data_type: 'uuid', is_nullable: false, column_default: null, is_primary_key: false },
+        { column_name: 'company_name', data_type: 'character varying', is_nullable: false, column_default: null, is_primary_key: false },
+        { column_name: 'status', data_type: 'character varying', is_nullable: false, column_default: 'pending', is_primary_key: false }
+      ],
+      marketplace_listings: [
+        { column_name: 'id', data_type: 'uuid', is_nullable: false, column_default: 'gen_random_uuid()', is_primary_key: true },
+        { column_name: 'external_api_id', data_type: 'uuid', is_nullable: false, column_default: null, is_primary_key: false },
+        { column_name: 'title', data_type: 'character varying', is_nullable: false, column_default: null, is_primary_key: false },
+        { column_name: 'listing_status', data_type: 'character varying', is_nullable: false, column_default: 'draft', is_primary_key: false }
       ]
     };
 
@@ -205,9 +222,14 @@ class DatabaseSchemaAnalyzerClass {
       user_permissions: [
         { column_name: 'permission_id', foreign_table_schema: 'public', foreign_table_name: 'permissions', foreign_column_name: 'id' }
       ],
-      role_permissions: [
-        { column_name: 'role_id', foreign_table_schema: 'public', foreign_table_name: 'roles', foreign_column_name: 'id' },
-        { column_name: 'permission_id', foreign_table_schema: 'public', foreign_table_name: 'permissions', foreign_column_name: 'id' }
+      external_api_registry: [
+        { column_name: 'internal_api_id', foreign_table_schema: 'public', foreign_table_name: 'api_integration_registry', foreign_column_name: 'id' }
+      ],
+      external_api_endpoints: [
+        { column_name: 'external_api_id', foreign_table_schema: 'public', foreign_table_name: 'external_api_registry', foreign_column_name: 'id' }
+      ],
+      marketplace_listings: [
+        { column_name: 'external_api_id', foreign_table_schema: 'public', foreign_table_name: 'external_api_registry', foreign_column_name: 'id' }
       ]
     };
 
@@ -245,7 +267,7 @@ class DatabaseSchemaAnalyzerClass {
   }
 
   /**
-   * Fallback table structure if direct analysis fails
+   * Fallback table structure if analysis fails
    */
   private getFallbackTableStructure(): DatabaseTable[] {
     const mainTables = [
@@ -349,9 +371,6 @@ class DatabaseSchemaAnalyzerClass {
     return endpoints;
   }
 
-  /**
-   * Generate request schema for list endpoints
-   */
   private generateListRequestSchema(): any {
     return {
       type: 'object',
@@ -365,9 +384,6 @@ class DatabaseSchemaAnalyzerClass {
     };
   }
 
-  /**
-   * Generate response schema for list endpoints
-   */
   private generateListResponseSchema(table: DatabaseTable): any {
     return {
       type: 'object',
@@ -390,9 +406,6 @@ class DatabaseSchemaAnalyzerClass {
     };
   }
 
-  /**
-   * Generate schema from table structure
-   */
   private generateTableSchema(table: DatabaseTable): any {
     const properties: any = {};
 
@@ -410,9 +423,6 @@ class DatabaseSchemaAnalyzerClass {
     };
   }
 
-  /**
-   * Map SQL data types to JSON schema types
-   */
   private mapDataTypeToJsonSchema(sqlType: string): string {
     const typeMap: Record<string, string> = {
       'uuid': 'string',
