@@ -1,4 +1,3 @@
-
 /**
  * External API Synchronization Manager
  * Handles real-time sync between internal and external APIs
@@ -64,28 +63,100 @@ class ExternalApiSyncManagerClass {
       const externalApi = await externalApiManager.publishInternalApi(internalApiId, publishConfig);
       console.log('✅ External API published:', externalApi.id);
 
-      // Step 3: Sync all endpoints to external tables
+      // Step 3: Clear existing endpoints for this external API
+      await this.clearExistingEndpoints(externalApi.id);
+
+      // Step 4: Sync all endpoints to external tables with retry logic
+      let externalEndpoints = [];
       if (internalApiDetails.endpoints.length > 0) {
-        const externalEndpoints = await this.syncEndpointsToExternal(
+        externalEndpoints = await this.syncEndpointsToExternalWithRetry(
           externalApi.id,
           internalApiDetails.endpoints
         );
-        console.log(`✅ Synced ${externalEndpoints.length} endpoints to external tables`);
+        console.log(`✅ Successfully synced ${externalEndpoints.length} endpoints to external tables`);
       }
 
-      // Step 4: Set up real-time sync for future changes
+      // Step 5: Set up real-time sync for future changes
       await this.setupRealtimeSync(internalApiId, externalApi.id);
       console.log('✅ Real-time sync established');
 
+      // Step 6: Verify sync completion
+      const verificationResult = await this.verifySyncCompletion(externalApi.id);
+      console.log('🔍 Sync verification:', verificationResult);
+
       return {
         ...externalApi,
-        synced_endpoints_count: internalApiDetails.endpoints.length,
-        sync_status: 'active'
+        synced_endpoints_count: externalEndpoints.length,
+        sync_status: 'active',
+        verification: verificationResult
       };
 
     } finally {
       this.syncInProgress.delete(internalApiId);
     }
+  }
+
+  /**
+   * Clear existing endpoints for an external API to avoid duplicates
+   */
+  private async clearExistingEndpoints(externalApiId: string) {
+    console.log('🧹 Clearing existing endpoints for external API:', externalApiId);
+    
+    const { error } = await supabase
+      .from('external_api_endpoints')
+      .delete()
+      .eq('external_api_id', externalApiId);
+
+    if (error) {
+      console.warn('⚠️ Error clearing existing endpoints:', error);
+    } else {
+      console.log('✅ Existing endpoints cleared');
+    }
+  }
+
+  /**
+   * Sync endpoints with retry logic
+   */
+  private async syncEndpointsToExternalWithRetry(
+    externalApiId: string,
+    internalEndpoints: InternalApiEndpoint[],
+    maxRetries: number = 3
+  ) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`🔄 Sync attempt ${attempt}/${maxRetries} for ${internalEndpoints.length} endpoints`);
+        return await this.syncEndpointsToExternal(externalApiId, internalEndpoints);
+      } catch (error) {
+        console.error(`❌ Sync attempt ${attempt} failed:`, error);
+        if (attempt === maxRetries) {
+          throw error;
+        }
+        // Wait before retry
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+      }
+    }
+    return [];
+  }
+
+  /**
+   * Verify that sync completed successfully
+   */
+  private async verifySyncCompletion(externalApiId: string) {
+    const { data: endpoints, error } = await supabase
+      .from('external_api_endpoints')
+      .select('id, external_path, method')
+      .eq('external_api_id', externalApiId);
+
+    if (error) {
+      console.error('❌ Error verifying sync completion:', error);
+      return { success: false, error: error.message };
+    }
+
+    return {
+      success: true,
+      synced_endpoints: endpoints?.length || 0,
+      endpoints_preview: endpoints?.slice(0, 3).map(ep => `${ep.method} ${ep.external_path}`) || []
+    };
   }
 
   /**
@@ -104,21 +175,22 @@ class ExternalApiSyncManagerClass {
       throw apiError;
     }
 
-    // For now, we'll generate mock endpoints since we don't have a complete endpoints table
-    // In a real scenario, you'd fetch from an internal_endpoints table
+    // Generate comprehensive mock endpoints for healthcare API
     const mockEndpoints: InternalApiEndpoint[] = [
       {
-        id: `${internalApiId}_endpoint_1`,
+        id: `${internalApiId}_patients_get`,
         api_integration_id: internalApiId,
         endpoint_path: '/api/v1/patients',
         method: 'GET',
-        description: 'Get list of patients with pagination and filtering',
+        description: 'Retrieve paginated list of patients with optional filtering and search capabilities',
         request_schema: {
           type: 'object',
           properties: {
-            page: { type: 'integer', minimum: 1, default: 1 },
-            limit: { type: 'integer', minimum: 1, maximum: 100, default: 20 },
-            search: { type: 'string', description: 'Search by patient name or ID' }
+            page: { type: 'integer', minimum: 1, default: 1, description: 'Page number for pagination' },
+            limit: { type: 'integer', minimum: 1, maximum: 100, default: 20, description: 'Records per page' },
+            search: { type: 'string', description: 'Search by patient name, email, or ID' },
+            facility_id: { type: 'string', format: 'uuid', description: 'Filter by facility' },
+            status: { type: 'string', enum: ['active', 'inactive'], description: 'Patient status filter' }
           }
         },
         response_schema: {
@@ -130,11 +202,15 @@ class ExternalApiSyncManagerClass {
               items: {
                 type: 'object',
                 properties: {
-                  id: { type: 'string' },
+                  id: { type: 'string', format: 'uuid' },
                   first_name: { type: 'string' },
                   last_name: { type: 'string' },
-                  email: { type: 'string' },
-                  created_at: { type: 'string', format: 'date-time' }
+                  email: { type: 'string', format: 'email' },
+                  phone: { type: 'string' },
+                  date_of_birth: { type: 'string', format: 'date' },
+                  facility_id: { type: 'string', format: 'uuid' },
+                  created_at: { type: 'string', format: 'date-time' },
+                  updated_at: { type: 'string', format: 'date-time' }
                 }
               }
             },
@@ -155,20 +231,29 @@ class ExternalApiSyncManagerClass {
         updated_at: new Date().toISOString()
       },
       {
-        id: `${internalApiId}_endpoint_2`,
+        id: `${internalApiId}_patients_post`,
         api_integration_id: internalApiId,
         endpoint_path: '/api/v1/patients',
         method: 'POST',
-        description: 'Create a new patient record',
+        description: 'Create a new patient record with comprehensive health information',
         request_schema: {
           type: 'object',
-          required: ['first_name', 'last_name', 'email'],
+          required: ['first_name', 'last_name', 'email', 'facility_id'],
           properties: {
-            first_name: { type: 'string', minLength: 1 },
-            last_name: { type: 'string', minLength: 1 },
+            first_name: { type: 'string', minLength: 1, maxLength: 100 },
+            last_name: { type: 'string', minLength: 1, maxLength: 100 },
             email: { type: 'string', format: 'email' },
-            phone: { type: 'string' },
-            date_of_birth: { type: 'string', format: 'date' }
+            phone: { type: 'string', pattern: '^[+]?[0-9\\s\\-\\(\\)]+$' },
+            date_of_birth: { type: 'string', format: 'date' },
+            facility_id: { type: 'string', format: 'uuid' },
+            emergency_contact: {
+              type: 'object',
+              properties: {
+                name: { type: 'string' },
+                phone: { type: 'string' },
+                relationship: { type: 'string' }
+              }
+            }
           }
         },
         response_schema: {
@@ -178,7 +263,7 @@ class ExternalApiSyncManagerClass {
             data: {
               type: 'object',
               properties: {
-                id: { type: 'string' },
+                id: { type: 'string', format: 'uuid' },
                 first_name: { type: 'string' },
                 last_name: { type: 'string' },
                 email: { type: 'string' },
@@ -194,15 +279,15 @@ class ExternalApiSyncManagerClass {
         updated_at: new Date().toISOString()
       },
       {
-        id: `${internalApiId}_endpoint_3`,
+        id: `${internalApiId}_patients_by_id`,
         api_integration_id: internalApiId,
         endpoint_path: '/api/v1/patients/{id}',
         method: 'GET',
-        description: 'Get a specific patient by ID',
+        description: 'Retrieve detailed information for a specific patient by ID',
         request_schema: {
           type: 'object',
           properties: {
-            id: { type: 'string', description: 'Patient ID' }
+            id: { type: 'string', format: 'uuid', description: 'Patient unique identifier' }
           }
         },
         response_schema: {
@@ -212,12 +297,20 @@ class ExternalApiSyncManagerClass {
             data: {
               type: 'object',
               properties: {
-                id: { type: 'string' },
+                id: { type: 'string', format: 'uuid' },
                 first_name: { type: 'string' },
                 last_name: { type: 'string' },
                 email: { type: 'string' },
                 phone: { type: 'string' },
                 date_of_birth: { type: 'string', format: 'date' },
+                facility: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'string', format: 'uuid' },
+                    name: { type: 'string' },
+                    type: { type: 'string' }
+                  }
+                },
                 created_at: { type: 'string', format: 'date-time' },
                 updated_at: { type: 'string', format: 'date-time' }
               }
@@ -226,6 +319,94 @@ class ExternalApiSyncManagerClass {
         },
         authentication_required: true,
         rate_limit_config: { requests: 200, period: 'minute' },
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      {
+        id: `${internalApiId}_facilities_get`,
+        api_integration_id: internalApiId,
+        endpoint_path: '/api/v1/facilities',
+        method: 'GET',
+        description: 'Get list of healthcare facilities with filtering options',
+        request_schema: {
+          type: 'object',
+          properties: {
+            type: { type: 'string', enum: ['hospital', 'clinic', 'pharmacy', 'laboratory'] },
+            active_only: { type: 'boolean', default: true },
+            page: { type: 'integer', minimum: 1, default: 1 },
+            limit: { type: 'integer', minimum: 1, maximum: 50, default: 20 }
+          }
+        },
+        response_schema: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            data: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  id: { type: 'string', format: 'uuid' },
+                  name: { type: 'string' },
+                  type: { type: 'string' },
+                  address: { type: 'string' },
+                  phone: { type: 'string' },
+                  email: { type: 'string' },
+                  is_active: { type: 'boolean' }
+                }
+              }
+            }
+          }
+        },
+        authentication_required: true,
+        rate_limit_config: { requests: 150, period: 'minute' },
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      {
+        id: `${internalApiId}_users_get`,
+        api_integration_id: internalApiId,
+        endpoint_path: '/api/v1/users',
+        method: 'GET',
+        description: 'Retrieve healthcare system users with role and permission information',
+        request_schema: {
+          type: 'object',
+          properties: {
+            role: { type: 'string', enum: ['admin', 'doctor', 'nurse', 'staff'] },
+            facility_id: { type: 'string', format: 'uuid' },
+            active_only: { type: 'boolean', default: true },
+            page: { type: 'integer', minimum: 1, default: 1 },
+            limit: { type: 'integer', minimum: 1, maximum: 100, default: 25 }
+          }
+        },
+        response_schema: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            data: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  id: { type: 'string', format: 'uuid' },
+                  first_name: { type: 'string' },
+                  last_name: { type: 'string' },
+                  email: { type: 'string' },
+                  roles: { type: 'array', items: { type: 'string' } },
+                  facility: {
+                    type: 'object',
+                    properties: {
+                      id: { type: 'string', format: 'uuid' },
+                      name: { type: 'string' }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        authentication_required: true,
+        rate_limit_config: { requests: 80, period: 'minute' },
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       }
@@ -281,7 +462,7 @@ class ExternalApiSyncManagerClass {
       example_request: this.generateExampleRequest(endpoint),
       example_response: this.generateExampleResponse(endpoint),
       rate_limit_override: endpoint.rate_limit_config,
-      tags: [endpoint.method.toLowerCase(), 'auto-synced'],
+      tags: [endpoint.method.toLowerCase(), 'auto-synced', 'healthcare'],
       deprecated: false
     }));
 
@@ -320,9 +501,11 @@ class ExternalApiSyncManagerClass {
         switch (prop.type) {
           case 'string':
             if (prop.format === 'email') {
-              example[key] = 'user@example.com';
+              example[key] = 'patient@example.com';
             } else if (prop.format === 'date') {
-              example[key] = '2024-01-01';
+              example[key] = '1990-01-01';
+            } else if (prop.format === 'uuid') {
+              example[key] = '550e8400-e29b-41d4-a716-446655440000';
             } else {
               example[key] = `example_${key}`;
             }
@@ -331,7 +514,10 @@ class ExternalApiSyncManagerClass {
             example[key] = prop.minimum || 1;
             break;
           case 'boolean':
-            example[key] = true;
+            example[key] = prop.default !== undefined ? prop.default : true;
+            break;
+          case 'object':
+            example[key] = { example: 'nested_object' };
             break;
           default:
             example[key] = `example_${key}`;
@@ -359,7 +545,7 @@ class ExternalApiSyncManagerClass {
     return {
       success: true,
       data: {
-        id: 'example_id_123',
+        id: '550e8400-e29b-41d4-a716-446655440000',
         message: 'Operation completed successfully'
       },
       timestamp: new Date().toISOString()

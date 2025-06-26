@@ -16,6 +16,7 @@ import {
 import { usePublishedApiIntegration, PublishedApiForDevelopers } from '@/hooks/usePublishedApiIntegration';
 import { useEnhancedPublishedApiDetails, ApiIntegrationDetails } from '@/hooks/useEnhancedPublishedApiDetails';
 import { useToast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 import ApiDetailsDialog from './ApiDetailsDialog';
 
 interface PublishedApisSectionProps {
@@ -24,6 +25,7 @@ interface PublishedApisSectionProps {
 
 const PublishedApisSection = ({ showInDeveloperPortal = false }: PublishedApisSectionProps) => {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [selectedApiDetails, setSelectedApiDetails] = useState<ApiIntegrationDetails | null>(null);
   const [showApiDialog, setShowApiDialog] = useState(false);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
@@ -45,8 +47,19 @@ const PublishedApisSection = ({ showInDeveloperPortal = false }: PublishedApisSe
     
     try {
       console.log('🔍 Loading enhanced API details for:', api.id);
+      
+      // Force invalidate any cached data before fetching
+      await queryClient.invalidateQueries({ 
+        queryKey: ['enhanced-api-details', api.id] 
+      });
+      await queryClient.invalidateQueries({ 
+        queryKey: ['external-api-endpoints', api.id] 
+      });
+      
       const details = await getEnhancedApiDetails(api.id);
       console.log('✅ Enhanced API details loaded:', details?.name);
+      console.log('📊 Endpoints in details:', details?.endpoints?.length || 0);
+      
       setSelectedApiDetails(details);
     } catch (error) {
       console.error('❌ Error fetching enhanced API details:', error);
@@ -74,6 +87,20 @@ const PublishedApisSection = ({ showInDeveloperPortal = false }: PublishedApisSe
 
   const handleNotifyDevelopers = (apiId: string) => {
     notifyDevelopers(apiId);
+  };
+
+  const handleRefreshData = async () => {
+    console.log('🔄 Manually refreshing published APIs data...');
+    
+    // Invalidate all related queries
+    await queryClient.invalidateQueries({ queryKey: ['published-apis-for-developers'] });
+    await queryClient.invalidateQueries({ queryKey: ['external-apis'] });
+    await queryClient.invalidateQueries({ queryKey: ['enhanced-api-details'] });
+    
+    toast({
+      title: "Data Refreshed",
+      description: "API data has been refreshed with latest sync information",
+    });
   };
 
   if (isLoadingPublishedApis) {
@@ -106,7 +133,13 @@ const PublishedApisSection = ({ showInDeveloperPortal = false }: PublishedApisSe
             }
           </p>
         </div>
-        <Badge variant="secondary">{publishedApisForDevelopers.length} APIs</Badge>
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary">{publishedApisForDevelopers.length} APIs</Badge>
+          <Button variant="outline" size="sm" onClick={handleRefreshData}>
+            <RefreshCw className="h-4 w-4 mr-1" />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

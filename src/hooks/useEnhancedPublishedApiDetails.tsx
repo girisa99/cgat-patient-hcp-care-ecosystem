@@ -1,3 +1,4 @@
+
 /**
  * Enhanced Published API Details Hook with Real-time Data
  */
@@ -13,7 +14,7 @@ export const useEnhancedPublishedApiDetails = () => {
     console.log('🔍 ENHANCED: Fetching API details with real-time sync for:', apiId);
 
     try {
-      // Step 1: Get the external API registry entry
+      // Step 1: Get the external API registry entry with fresh data
       console.log('📋 Step 1: Fetching external API registry entry...');
       const { data: externalApi, error: externalError } = await supabase
         .from('external_api_registry')
@@ -34,7 +35,7 @@ export const useEnhancedPublishedApiDetails = () => {
         visibility: externalApi.visibility
       });
 
-      // Step 2: Fetch synced external API endpoints
+      // Step 2: Fetch synced external API endpoints with forced refresh
       console.log('📋 Step 2: Fetching synced external API endpoints...');
       const { data: endpoints, error: endpointsError } = await supabase
         .from('external_api_endpoints')
@@ -47,6 +48,16 @@ export const useEnhancedPublishedApiDetails = () => {
       }
 
       console.log(`📊 Found ${endpoints?.length || 0} synced endpoints`);
+
+      // Log endpoint details for debugging
+      if (endpoints && endpoints.length > 0) {
+        console.log('🔍 Endpoint details:', endpoints.map(ep => ({
+          id: ep.id,
+          method: ep.method,
+          path: ep.external_path,
+          summary: ep.summary
+        })));
+      }
 
       // Transform the endpoints data with proper structure
       const transformedEndpoints = (endpoints || []).map(endpoint => ({
@@ -300,5 +311,21 @@ export const useEnhancedPublishedApiDetails = () => {
     }
   };
 
-  return { getEnhancedApiDetails };
+  // Return hook with cache invalidation support
+  const useApiDetailsQuery = (apiId: string) => {
+    return useQuery({
+      queryKey: ['enhanced-api-details', apiId],
+      queryFn: () => getEnhancedApiDetails(apiId),
+      enabled: !!apiId,
+      staleTime: 0, // Always fetch fresh data
+      gcTime: 0, // Don't cache results
+      refetchOnMount: true,
+      refetchOnWindowFocus: true
+    });
+  };
+
+  return { 
+    getEnhancedApiDetails,
+    useApiDetailsQuery
+  };
 };
