@@ -130,33 +130,63 @@ export const useUsers = () => {
     }
   });
 
-  // FIXED: Use edge function for role assignment to ensure proper permissions
+  // REFACTORED: Use direct database operations for role assignment
   const assignRoleMutation = useMutation({
     mutationFn: async ({ userId, roleName }: { userId: string; roleName: UserRole }) => {
-      console.log('🔄 Assigning role via edge function:', roleName, 'to user:', userId);
+      console.log('🔄 Assigning role via database operations:', roleName, 'to user:', userId);
       
       try {
-        const { data, error } = await supabase.functions.invoke('manage-user-roles', {
-          body: {
+        // First, get the role ID from the roles table
+        const { data: role, error: roleError } = await supabase
+          .from('roles')
+          .select('id')
+          .eq('name', roleName)
+          .single();
+
+        if (roleError || !role) {
+          console.error('❌ Role not found:', roleName, roleError);
+          throw new Error(`Role '${roleName}' not found`);
+        }
+
+        console.log('✅ Found role ID:', role.id, 'for role:', roleName);
+
+        // Check if user already has this role
+        const { data: existingRole, error: checkError } = await supabase
+          .from('user_roles')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('role_id', role.id)
+          .maybeSingle();
+
+        if (checkError) {
+          console.error('❌ Error checking existing role:', checkError);
+          throw new Error('Error checking existing role assignment');
+        }
+
+        if (existingRole) {
+          console.log('ℹ️ User already has this role assigned');
+          return { success: true };
+        }
+
+        // Assign the role to the user
+        console.log('🔄 Inserting role assignment...');
+        const { data: insertData, error: assignError } = await supabase
+          .from('user_roles')
+          .insert({
             user_id: userId,
-            role_name: roleName,
-            action: 'assign'
-          }
-        });
+            role_id: role.id
+          })
+          .select();
 
-        if (error) {
-          console.error('❌ Error assigning role via edge function:', error);
-          throw error;
+        if (assignError) {
+          console.error('❌ Error assigning role:', assignError);
+          throw new Error(assignError.message);
         }
 
-        if (!data.success) {
-          throw new Error('Role assignment failed');
-        }
-
-        console.log('✅ Role assigned successfully via edge function');
-        return data;
+        console.log('✅ Role assignment successful! Insert result:', insertData);
+        return { success: true };
       } catch (err) {
-        console.error('❌ Role assignment failed:', err);
+        console.error('💥 Exception in role assignment:', err);
         throw err;
       }
     },
