@@ -1,7 +1,7 @@
 
 /**
  * Enhanced API Change Detection and Notification System
- * Works with the new API integration registry system
+ * Works with the api_lifecycle_events table (api_change_tracking was consolidated)
  */
 
 import { supabase } from '@/integrations/supabase/client';
@@ -22,16 +22,19 @@ interface ApiChange {
   migration_notes?: string;
 }
 
-interface ApiChangeTrackingRecord {
+interface ApiLifecycleEventRecord {
   id: string;
-  type: string;
-  api_name: string;
-  direction: ApiDirection | null;
-  lifecycle_stage: ApiLifecycleStage | null;
-  impact_assessment: Record<string, any> | null;
-  migration_notes: string | null;
-  detected_at: string;
+  api_integration_id: string;
+  event_type: string;
+  description: string;
+  impact_level: ImpactLevel;
+  from_stage: string | null;
+  to_stage: string | null;
+  requires_migration: boolean | null;
+  migration_instructions: string | null;
+  metadata: Record<string, any> | null;
   created_at: string;
+  created_by: string | null;
 }
 
 class ApiChangeDetector {
@@ -41,7 +44,7 @@ class ApiChangeDetector {
    * Scans for API changes and triggers notifications
    */
   async detectAndNotifyChanges() {
-    console.log('🔍 Scanning for API changes with enhanced detection...');
+    console.log('🔍 Scanning for API changes using api_lifecycle_events...');
 
     try {
       const changes = await this.scanForChanges();
@@ -60,7 +63,7 @@ class ApiChangeDetector {
   }
 
   /**
-   * Enhanced scanning for changes using the new registry system
+   * Enhanced scanning for changes using the api_lifecycle_events table
    */
   private async scanForChanges(): Promise<ApiChange[]> {
     const changes: ApiChange[] = [];
@@ -73,7 +76,7 @@ class ApiChangeDetector {
     const newModules = await this.detectNewModules();
     changes.push(...newModules);
 
-    // Check for lifecycle stage changes
+    // Check for lifecycle stage changes from api_lifecycle_events
     const lifecycleChanges = await this.detectLifecycleChanges();
     changes.push(...lifecycleChanges);
 
@@ -81,67 +84,58 @@ class ApiChangeDetector {
   }
 
   /**
-   * Detects new API integrations in the registry
+   * Detects new API integrations by checking recent lifecycle events
    */
   private async detectNewIntegrations(): Promise<ApiChange[]> {
     const changes: ApiChange[] = [];
     
     try {
-      const { data: currentIntegrations } = await supabase
-        .from('api_integration_registry')
-        .select('*')
-        .eq('status', 'active');
+      // Get recent integration registration events from api_lifecycle_events
+      const { data: recentEvents } = await supabase
+        .from('api_lifecycle_events')
+        .select(`
+          *,
+          api_integration_registry (
+            id,
+            name,
+            direction,
+            lifecycle_stage,
+            category,
+            type,
+            endpoints_count,
+            rls_policies_count,
+            data_mappings_count
+          )
+        `)
+        .eq('event_type', 'integration_registered')
+        .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()) // Last 24 hours
+        .order('created_at', { ascending: false });
 
-      const { data: trackedIntegrations } = await supabase
-        .from('api_change_tracking')
-        .select('*')
-        .eq('type', 'integration');
-
-      const trackedIntegrationIds = new Set((trackedIntegrations as ApiChangeTrackingRecord[] || []).map(t => t.api_name));
-
-      for (const integration of currentIntegrations || []) {
-        if (!trackedIntegrationIds.has(integration.id)) {
+      for (const event of recentEvents || []) {
+        const registry = event.api_integration_registry as any;
+        if (registry) {
           changes.push({
             type: 'new_integration',
-            api_name: integration.name,
-            direction: integration.direction as ApiDirection,
-            lifecycle_stage: integration.lifecycle_stage as ApiLifecycleStage,
+            api_name: registry.name,
+            direction: registry.direction as ApiDirection,
+            lifecycle_stage: registry.lifecycle_stage as ApiLifecycleStage,
             changes: [
-              `New ${integration.direction} API integration: ${integration.name}`,
-              `Type: ${integration.type}`,
-              `Purpose: ${integration.purpose}`,
-              `Category: ${integration.category}`,
-              `Lifecycle Stage: ${integration.lifecycle_stage}`
+              `New ${registry.direction} API integration: ${registry.name}`,
+              `Type: ${registry.type}`,
+              `Category: ${registry.category}`,
+              `Lifecycle Stage: ${registry.lifecycle_stage}`
             ],
-            impact_level: this.calculateImpactLevel(integration),
-            migration_required: integration.lifecycle_stage === 'production',
+            impact_level: event.impact_level as ImpactLevel,
+            migration_required: event.requires_migration || false,
             impact_assessment: {
-              endpoints_count: integration.endpoints_count,
-              rls_policies_count: integration.rls_policies_count,
-              data_mappings_count: integration.data_mappings_count,
-              category: integration.category,
-              type: integration.type
+              endpoints_count: registry.endpoints_count,
+              rls_policies_count: registry.rls_policies_count,
+              data_mappings_count: registry.data_mappings_count,
+              category: registry.category,
+              type: registry.type
             },
-            migration_notes: integration.lifecycle_stage === 'production' 
-              ? 'This API is in production and may require integration updates.'
-              : undefined
+            migration_notes: event.migration_instructions
           });
-
-          // Track this integration
-          await supabase
-            .from('api_change_tracking')
-            .insert({
-              type: 'integration',
-              api_name: integration.id,
-              direction: integration.direction as ApiDirection,
-              lifecycle_stage: integration.lifecycle_stage as ApiLifecycleStage,
-              impact_assessment: {
-                endpoints_count: integration.endpoints_count,
-                category: integration.category,
-                type: integration.type
-              },
-              detected_at: new Date().toISOString()
-            });
         }
       }
     } catch (error) {
@@ -152,7 +146,7 @@ class ApiChangeDetector {
   }
 
   /**
-   * Detects lifecycle stage changes
+   * Detects lifecycle stage changes and breaking changes
    */
   private async detectLifecycleChanges(): Promise<ApiChange[]> {
     const changes: ApiChange[] = [];
@@ -170,7 +164,7 @@ class ApiChangeDetector {
             category
           )
         `)
-        .in('event_type', ['version_released', 'breaking_change', 'deprecated'])
+        .in('event_type', ['version_released', 'breaking_change', 'deprecated', 'stage_transition'])
         .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()) // Last 24 hours
         .order('created_at', { ascending: false });
 
@@ -184,7 +178,7 @@ class ApiChangeDetector {
             lifecycle_stage: registry?.lifecycle_stage as ApiLifecycleStage,
             changes: [event.description],
             impact_level: event.impact_level as ImpactLevel,
-            migration_required: event.requires_migration,
+            migration_required: event.requires_migration || false,
             impact_assessment: event.metadata as Record<string, any>,
             migration_notes: event.migration_instructions
           });
@@ -209,12 +203,14 @@ class ApiChangeDetector {
         .select('*')
         .eq('is_active', true);
 
+      // Check for modules that don't have corresponding lifecycle events
       const { data: trackedModules } = await supabase
-        .from('api_change_tracking')
+        .from('api_lifecycle_events')
         .select('*')
-        .eq('type', 'module');
+        .eq('event_type', 'module_added');
 
-      const trackedModuleIds = new Set((trackedModules as ApiChangeTrackingRecord[] || []).map(m => m.api_name));
+      const trackedModuleIds = new Set((trackedModules as ApiLifecycleEventRecord[] || [])
+        .map(t => t.metadata?.module_id || t.api_integration_id));
 
       for (const module of currentModules || []) {
         if (!trackedModuleIds.has(module.id)) {
@@ -227,15 +223,19 @@ class ApiChangeDetector {
             migration_required: false
           });
 
-          // Track this module
+          // Create a lifecycle event for this module
           await supabase
-            .from('api_change_tracking')
+            .from('api_lifecycle_events')
             .insert({
-              type: 'module',
-              api_name: module.id,
-              direction: 'inbound' as ApiDirection,
-              lifecycle_stage: 'production' as ApiLifecycleStage,
-              detected_at: new Date().toISOString()
+              api_integration_id: module.id,
+              event_type: 'module_added',
+              description: `New module detected: ${module.name}`,
+              impact_level: 'low',
+              metadata: {
+                module_id: module.id,
+                module_name: module.name,
+                auto_detected: true
+              }
             });
         }
       }

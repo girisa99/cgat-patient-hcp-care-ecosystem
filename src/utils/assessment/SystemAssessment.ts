@@ -1,4 +1,3 @@
-
 /**
  * System Assessment Tool
  * Comprehensive analysis of mock data usage, unnecessary tables, and cleanup recommendations
@@ -260,18 +259,18 @@ class SystemAssessmentClass {
           recordCount: await this.getTableRecordCount('external_api_registry'),
           lastActivity: await this.getTableLastActivity('external_api_registry'),
           isActive: true
+        },
+        {
+          name: 'api_lifecycle_events',
+          purpose: 'API lifecycle tracking - Consolidated change tracking (✅ Actively used)',
+          recordCount: await this.getTableRecordCount('api_lifecycle_events'),
+          lastActivity: await this.getTableLastActivity('api_lifecycle_events'),
+          isActive: true
         }
       ];
 
-      // Updated unnecessary tables list after cleanup
+      // Updated unnecessary tables list after cleanup - api_change_tracking was removed
       const unnecessaryTables = [
-        {
-          name: 'api_change_tracking',
-          reason: 'Low utilization - might be redundant with lifecycle events',
-          recordCount: await this.getTableRecordCount('api_change_tracking'),
-          canDelete: false,
-          dependencies: ['api_lifecycle_events']
-        },
         {
           name: 'developer_notification_preferences',
           reason: 'Low usage - developer notifications not fully implemented',
@@ -392,6 +391,7 @@ class SystemAssessmentClass {
         items: [
           '✅ UserManagementDebug component removed from production',
           '✅ Feature flags table dropped as not needed',
+          '✅ api_change_tracking table consolidated into api_lifecycle_events',
           '✅ Real-time sync enabled for user roles table',
           'Clean up remaining unused imports in API management hooks',
           'Consolidate duplicate API endpoint handling logic'
@@ -403,7 +403,6 @@ class SystemAssessmentClass {
         items: [
           'Optimize table structures - remove unused columns',
           'Implement proper real-time sync for facilities and modules',
-          'Consolidate api_change_tracking with api_lifecycle_events',
           'Review and optimize marketplace-related tables',
           'Improve error handling in API sync operations'
         ],
@@ -444,12 +443,13 @@ class SystemAssessmentClass {
         'permissions - Core security for API endpoints',
         'api_integration_registry - Core API management',
         'external_api_registry - Published API definitions',
-        'external_api_endpoints - API endpoint specifications'
+        'external_api_endpoints - API endpoint specifications',
+        'api_lifecycle_events - Consolidated API change tracking (✅ Active)'
       ],
       tablesToRemove: [
         '✅ feature_flags - Removed as not used in API functionality',
-        'developer_notification_preferences - Can be simplified or removed',
-        'api_change_tracking - Redundant with lifecycle events'
+        '✅ api_change_tracking - Consolidated into api_lifecycle_events',
+        'developer_notification_preferences - Can be simplified or removed'
       ],
       schemaChangesNeeded: [
         'Optimize external_api_endpoints table structure',
@@ -459,6 +459,7 @@ class SystemAssessmentClass {
       ],
       apiDocumentationImpact: [
         '✅ Documentation cleaner with feature flags table removed',
+        '✅ Unified change tracking with api_lifecycle_events',
         'API schema more focused on core healthcare functionality',
         'Reduced complexity in API authentication flows',
         'Better performance for API documentation generation'
@@ -478,7 +479,7 @@ class SystemAssessmentClass {
     console.log('📊 Assessing admin portal optimization...');
 
     return {
-      currentState: 'The admin portal has been cleaned up with security risks removed and real-time functionality improved',
+      currentState: 'The admin portal has been cleaned up with security risks removed, redundant tables consolidated, and real-time functionality improved',
       redundantFeatures: [
         'Multiple API testing interfaces that could be consolidated',
         'Overlapping developer portal and marketplace features',
@@ -554,11 +555,11 @@ class SystemAssessmentClass {
             .select('*', { count: 'exact', head: true });
           return externalApiError ? 0 : (externalApiCount || 0);
           
-        case 'api_change_tracking':
-          const { count: changeTrackingCount, error: changeTrackingError } = await supabase
-            .from('api_change_tracking')
+        case 'api_lifecycle_events':
+          const { count: lifecycleEventsCount, error: lifecycleEventsError } = await supabase
+            .from('api_lifecycle_events')
             .select('*', { count: 'exact', head: true });
-          return changeTrackingError ? 0 : (changeTrackingCount || 0);
+          return lifecycleEventsError ? 0 : (lifecycleEventsCount || 0);
           
         case 'developer_notification_preferences':
           const { count: devNotifPrefCount, error: devNotifPrefError } = await supabase
@@ -587,7 +588,7 @@ class SystemAssessmentClass {
       // Handle tables that have updated_at and created_at columns
       const tablesWithTimestamps = [
         'profiles', 'facilities', 'modules', 'api_integration_registry', 
-        'external_api_registry', 'api_change_tracking',
+        'external_api_registry', 'api_lifecycle_events',
         'developer_notification_preferences', 'marketplace_listings'
       ];
       
@@ -623,6 +624,15 @@ class SystemAssessmentClass {
               .limit(1)
               .maybeSingle();
             return moduleError || !moduleData ? null : (moduleData.updated_at || moduleData.created_at);
+            
+          case 'api_lifecycle_events':
+            const { data: lifecycleData, error: lifecycleError } = await supabase
+              .from('api_lifecycle_events')
+              .select('created_at')
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .maybeSingle();
+            return lifecycleError || !lifecycleData ? null : lifecycleData.created_at;
             
           default:
             return null;
@@ -670,6 +680,7 @@ class SystemAssessmentClass {
       'api_integration_registry': 'Internal API integration registry',
       'external_api_registry': 'Published external API registry',
       'external_api_endpoints': 'External API endpoint definitions',
+      'api_lifecycle_events': 'API lifecycle tracking and change management',
       'audit_logs': 'System audit trail and logging',
       'api_usage_analytics': 'API usage tracking and analytics',
       'developer_applications': 'Developer portal applications',
@@ -684,7 +695,8 @@ class SystemAssessmentClass {
       'audit_logs', // Will be populated as system is used
       'api_usage_analytics', // Will be populated with API usage
       'external_api_endpoints', // Will be populated when APIs are published
-      'developer_applications' // Will be populated when developers apply
+      'developer_applications', // Will be populated when developers apply
+      'api_lifecycle_events' // Will be populated with API changes
     ];
     
     return keepEmpty.includes(tableName);
@@ -696,6 +708,7 @@ class SystemAssessmentClass {
       'api_usage_analytics': 'Will be populated with API usage data - essential for monitoring',
       'external_api_endpoints': 'Will be populated when APIs are published - core functionality',
       'developer_applications': 'Will be populated when developers apply for access - keep for future',
+      'api_lifecycle_events': 'Will be populated with API changes and lifecycle events - actively used',
       'marketplace_listings': 'Low usage but may be needed for future marketplace features'
     };
     
