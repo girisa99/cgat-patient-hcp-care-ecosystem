@@ -14,7 +14,7 @@ interface ExtensibleModuleTemplateProps<T = any> {
   onEdit?: (item: T) => void;
   onDelete?: (item: T) => void;
   customColumns?: Array<{
-    key: keyof T | string;
+    key: string;
     header: string;
     render?: (item: T) => React.ReactNode;
   }>;
@@ -46,7 +46,7 @@ export const ExtensibleModuleTemplate = <T extends { id: string; created_at?: st
   // Default columns that work for most modules
   const defaultColumns = [
     {
-      key: 'name' as keyof T,
+      key: 'name',
       header: 'Name',
       render: (item: T) => (
         <span className="font-medium">
@@ -55,14 +55,14 @@ export const ExtensibleModuleTemplate = <T extends { id: string; created_at?: st
       )
     },
     {
-      key: 'status' as keyof T,
+      key: 'status',
       header: 'Status',
       render: (item: T) => (
         <StatusBadge status={(item as any).status || 'active'} />
       )
     },
     {
-      key: 'created_at' as keyof T,
+      key: 'created_at',
       header: 'Created',
       render: (item: T) => {
         const date = item.created_at || (item as any).created_at;

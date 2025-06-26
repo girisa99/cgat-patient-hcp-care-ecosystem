@@ -1,4 +1,5 @@
 
+import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -6,6 +7,9 @@ import { validateTableExists, preModuleCreationCheck, ModuleConfig } from '@/uti
 import { Database } from '@/integrations/supabase/types';
 
 type DatabaseTables = keyof Database['public']['Tables'];
+type TableRow<T extends DatabaseTables> = Database['public']['Tables'][T]['Row'];
+type TableInsert<T extends DatabaseTables> = Database['public']['Tables'][T]['Insert'];
+type TableUpdate<T extends DatabaseTables> = Database['public']['Tables'][T]['Update'];
 
 /**
  * Type-Safe Module Template Hook
@@ -39,7 +43,7 @@ export const useTypeSafeModuleTemplate = <T extends DatabaseTables>(
     refetch
   } = useQuery({
     queryKey: [config.tableName, config.moduleName],
-    queryFn: async () => {
+    queryFn: async (): Promise<TableRow<T>[]> => {
       console.log(`🔍 Fetching ${config.tableName} data for ${config.moduleName}...`);
       
       if (!validateTableExists(config.tableName)) {
@@ -57,7 +61,7 @@ export const useTypeSafeModuleTemplate = <T extends DatabaseTables>(
       }
 
       console.log(`✅ ${config.tableName} data fetched:`, data?.length || 0);
-      return data || [];
+      return (data as TableRow<T>[]) || [];
     },
     retry: 2,
     staleTime: 30000,
@@ -66,12 +70,12 @@ export const useTypeSafeModuleTemplate = <T extends DatabaseTables>(
 
   // Type-safe create mutation
   const createMutation = useMutation({
-    mutationFn: async (newItem: Partial<Database['public']['Tables'][T]['Insert']>) => {
+    mutationFn: async (newItem: TableInsert<T>) => {
       console.log(`🔄 Creating new ${config.tableName} item:`, newItem);
       
       // Validate required fields
       if (config.requiredFields) {
-        const missingFields = config.requiredFields.filter(field => !newItem[field as keyof typeof newItem]);
+        const missingFields = config.requiredFields.filter(field => !newItem[field as keyof TableInsert<T>]);
         if (missingFields.length > 0) {
           throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
         }
@@ -93,7 +97,7 @@ export const useTypeSafeModuleTemplate = <T extends DatabaseTables>(
         throw error;
       }
 
-      return data;
+      return data as TableRow<T>;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [config.tableName] });
@@ -118,7 +122,7 @@ export const useTypeSafeModuleTemplate = <T extends DatabaseTables>(
       updates 
     }: { 
       id: string; 
-      updates: Partial<Database['public']['Tables'][T]['Update']>
+      updates: TableUpdate<T>
     }) => {
       console.log(`🔄 Updating ${config.tableName} item:`, id, updates);
       
@@ -134,7 +138,7 @@ export const useTypeSafeModuleTemplate = <T extends DatabaseTables>(
         throw error;
       }
 
-      return data;
+      return data as TableRow<T>;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [config.tableName] });

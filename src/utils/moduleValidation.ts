@@ -6,7 +6,7 @@
  * new modules, ensuring database schema compatibility and code safety.
  */
 
-import { Database } from '@/integrations/supabase/types';
+import type { Database } from '@/integrations/supabase/types';
 
 // Extract all table names from the database schema
 type DatabaseTables = keyof Database['public']['Tables'];
@@ -47,8 +47,9 @@ export const validateTableExists = (tableName: string): tableName is DatabaseTab
 /**
  * Gets the TypeScript interface for a specific table
  */
-export const getTableInterface = (tableName: DatabaseTables) => {
-  return Database['public']['Tables'][tableName]['Row'];
+export const getTableInterface = <T extends DatabaseTables>(tableName: T) => {
+  // This function returns the type structure, not actual data
+  return {} as Database['public']['Tables'][T]['Row'];
 };
 
 /**
