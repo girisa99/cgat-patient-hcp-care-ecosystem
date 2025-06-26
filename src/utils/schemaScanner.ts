@@ -9,4 +9,4 @@
 export { scanDatabaseSchema, detectNewModules } from './schema/moduleDetector';
 export { generateHookCode, generateComponentCode } from './schema/codeGenerator';
 export { SchemaAnalysis, analyzeTable, calculateConfidence, toPascalCase } from './schema/schemaAnalyzer';
-export { AutoModuleConfig, AutoRegistrationConfig } from './schema/types';
+export type { AutoModuleConfig, AutoRegistrationConfig } from './schema/types';

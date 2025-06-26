@@ -4,4 +4,4 @@
  * Re-exports the main AutoModuleManager component
  */
 
-export { AutoModuleManager } from './AutoModuleManager';
+export { AutoModuleManager } from './AutoModuleManager/index';
