@@ -1,4 +1,3 @@
-
 /**
  * External API Management and Publishing System
  * Handles external API publishing, marketplace listings, and developer portal
@@ -113,26 +112,41 @@ class ExternalApiManagerClass {
     internalApiId: string,
     publishConfig: Omit<ExternalApiRegistry, 'id' | 'internal_api_id' | 'created_at' | 'updated_at' | 'created_by'>
   ): Promise<ExternalApiRegistry> {
+    console.log('🚀 Starting publishInternalApi with:', { internalApiId, publishConfig });
+    
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('User not authenticated');
+    if (!user) {
+      console.error('❌ User not authenticated');
+      throw new Error('User not authenticated');
+    }
+    console.log('✅ User authenticated:', user.id);
 
     // Generate a proper UUID for the internal API reference if it's a string identifier
     let actualInternalApiId = internalApiId;
     
     // If the ID is not in UUID format, we need to find or create a proper reference
     if (!internalApiId.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+      console.log('📝 ID is not UUID format, checking for existing API:', internalApiId);
+      
       // Check if we have an existing API with this identifier
-      const { data: existingApi } = await supabase
+      const { data: existingApi, error: searchError } = await supabase
         .from('api_integration_registry')
         .select('id, name')
         .eq('name', internalApiId)
         .single();
 
+      if (searchError) {
+        console.log('⚠️ No existing API found, will create new one:', searchError.message);
+      }
+
       if (existingApi) {
+        console.log('✅ Found existing API:', existingApi);
         actualInternalApiId = existingApi.id;
       } else {
+        console.log('📝 Creating new API integration registry entry');
+        
         // Create a new entry in the api_integration_registry if it doesn't exist
-        // Using valid constraint values based on the database schema
+        // Using valid constraint values based on the ApiPurpose type
         const { data: newApi, error: createError } = await supabase
           .from('api_integration_registry')
           .insert({
@@ -140,7 +154,7 @@ class ExternalApiManagerClass {
             type: 'internal',
             category: publishConfig.category || 'healthcare',
             direction: 'outbound',
-            purpose: 'publishing', // Using valid constraint value from ApiPurpose type
+            purpose: 'hybrid', // Using hybrid as it covers both consuming and publishing
             description: publishConfig.external_description || 'Internal API for external publishing',
             status: 'active',
             lifecycle_stage: 'production',
@@ -150,37 +164,58 @@ class ExternalApiManagerClass {
           .single();
 
         if (createError) {
-          console.error('Error creating internal API reference:', createError);
+          console.error('❌ Error creating internal API reference:', createError);
           throw createError;
         }
 
+        console.log('✅ Created new API integration:', newApi);
         actualInternalApiId = newApi.id;
       }
     }
 
     // Get the internal API details to extract category
-    const { data: internalApi } = await supabase
+    console.log('📋 Fetching internal API details for:', actualInternalApiId);
+    const { data: internalApi, error: fetchError } = await supabase
       .from('api_integration_registry')
       .select('category, name')
       .eq('id', actualInternalApiId)
       .single();
 
+    if (fetchError) {
+      console.error('❌ Error fetching internal API:', fetchError);
+      // Continue with default values if we can't fetch the internal API
+    }
+
+    console.log('📋 Internal API details:', internalApi);
+
+    // Prepare the external API data
+    const externalApiData = {
+      internal_api_id: actualInternalApiId,
+      created_by: user.id,
+      category: internalApi?.category || publishConfig.category || 'general',
+      ...publishConfig
+    };
+
+    console.log('📤 Inserting external API with data:', externalApiData);
+
     const { data, error } = await supabase
       .from('external_api_registry')
-      .insert({
-        internal_api_id: actualInternalApiId,
-        created_by: user.id,
-        category: internalApi?.category || publishConfig.category || 'general',
-        ...publishConfig
-      })
+      .insert(externalApiData)
       .select()
       .single();
 
     if (error) {
-      console.error('Error publishing external API:', error);
+      console.error('❌ Error publishing external API:', error);
+      console.error('❌ Error details:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      });
       throw error;
     }
 
+    console.log('✅ Successfully published external API:', data);
     return data as ExternalApiRegistry;
   }
 
