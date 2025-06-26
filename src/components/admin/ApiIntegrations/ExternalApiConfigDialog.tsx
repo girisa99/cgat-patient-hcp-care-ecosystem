@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,37 +7,64 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useExternalApis } from '@/hooks/useExternalApis';
-import { ExternalApiRegistry } from '@/utils/api/ExternalApiManager';
+import { PublishedApiForDevelopers } from '@/hooks/usePublishedApiIntegration';
 
 interface ExternalApiConfigDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  api: ExternalApiRegistry | null;
+  api: PublishedApiForDevelopers | null;
 }
 
 const ExternalApiConfigDialog = ({ open, onOpenChange, api }: ExternalApiConfigDialogProps) => {
   const { updateApiStatus, isUpdatingStatus } = useExternalApis();
   const [configForm, setConfigForm] = useState({
-    status: api?.status || 'draft',
-    visibility: api?.visibility || 'private',
-    base_url: api?.base_url || '',
-    documentation_url: api?.documentation_url || '',
-    sandbox_url: api?.sandbox_url || '',
-    rate_limits: api?.rate_limits || { requests: 1000, period: 'hour' }
+    status: 'published' as 'draft' | 'review' | 'published' | 'deprecated',
+    visibility: 'public' as 'private' | 'public' | 'marketplace',
+    base_url: '',
+    documentation_url: '',
+    sandbox_url: '',
+    rate_limits: { requests: 1000, period: 'hour' }
   });
 
+  useEffect(() => {
+    if (api) {
+      console.log('🔧 Setting up config form for API:', api.external_name);
+      setConfigForm({
+        status: 'published', // Published APIs are already published
+        visibility: 'public', // Default visibility for published APIs
+        base_url: api.base_url || '',
+        documentation_url: api.documentation_url || '',
+        sandbox_url: api.sandbox_url || '',
+        rate_limits: {
+          requests: api.rate_limits?.requests || 1000,
+          period: api.rate_limits?.period || 'hour'
+        }
+      });
+    }
+  }, [api]);
+
   const handleSave = async () => {
-    if (!api) return;
+    if (!api) {
+      console.error('❌ No API selected for configuration');
+      return;
+    }
 
     try {
+      console.log('💾 Saving API configuration:', {
+        apiId: api.id,
+        status: configForm.status
+      });
+      
       // Update the API status and other configurations
       await updateApiStatus({ 
         externalApiId: api.id, 
-        status: configForm.status as ExternalApiRegistry['status']
+        status: configForm.status
       });
+      
+      console.log('✅ API configuration saved successfully');
       onOpenChange(false);
     } catch (error) {
-      console.error('Failed to update API configuration:', error);
+      console.error('❌ Failed to update API configuration:', error);
     }
   };
 
@@ -55,10 +82,9 @@ const ExternalApiConfigDialog = ({ open, onOpenChange, api }: ExternalApiConfigD
               <Label>Status</Label>
               <Select 
                 value={configForm.status} 
-                onValueChange={(value) => setConfigForm(prev => ({ 
-                  ...prev, 
-                  status: value as ExternalApiRegistry['status']
-                }))}
+                onValueChange={(value: 'draft' | 'review' | 'published' | 'deprecated') => 
+                  setConfigForm(prev => ({ ...prev, status: value }))
+                }
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -75,10 +101,9 @@ const ExternalApiConfigDialog = ({ open, onOpenChange, api }: ExternalApiConfigD
               <Label>Visibility</Label>
               <Select 
                 value={configForm.visibility} 
-                onValueChange={(value) => setConfigForm(prev => ({ 
-                  ...prev, 
-                  visibility: value as ExternalApiRegistry['visibility']
-                }))}
+                onValueChange={(value: 'private' | 'public' | 'marketplace') => 
+                  setConfigForm(prev => ({ ...prev, visibility: value }))
+                }
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -127,7 +152,7 @@ const ExternalApiConfigDialog = ({ open, onOpenChange, api }: ExternalApiConfigD
                 value={configForm.rate_limits.requests}
                 onChange={(e) => setConfigForm(prev => ({ 
                   ...prev, 
-                  rate_limits: { ...prev.rate_limits, requests: parseInt(e.target.value) }
+                  rate_limits: { ...prev.rate_limits, requests: parseInt(e.target.value) || 1000 }
                 }))}
               />
             </div>

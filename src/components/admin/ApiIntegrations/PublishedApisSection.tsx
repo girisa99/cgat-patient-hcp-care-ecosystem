@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -41,10 +40,12 @@ const PublishedApisSection = ({ showInDeveloperPortal = false }: PublishedApisSe
   const [isForceRefreshing, setIsForceRefreshing] = useState(false);
   const [debugMode, setDebugMode] = useState(false);
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
-  const [showConfigDialog, setShowConfigDialog] = useState<boolean>(false);
-  const [showAnalyticsDialog, setShowAnalyticsDialog] = useState<boolean>(false);
-  const [configApi, setConfigApi] = useState<any>(null);
-  const [analyticsApi, setAnalyticsApi] = useState<any>(null);
+  
+  // Dialog states
+  const [showConfigDialog, setShowConfigDialog] = useState(false);
+  const [showAnalyticsDialog, setShowAnalyticsDialog] = useState(false);
+  const [selectedApiForConfig, setSelectedApiForConfig] = useState<PublishedApiForDevelopers | null>(null);
+  const [selectedApiForAnalytics, setSelectedApiForAnalytics] = useState<PublishedApiForDevelopers | null>(null);
 
   const {
     publishedApisForDevelopers,
@@ -58,12 +59,11 @@ const PublishedApisSection = ({ showInDeveloperPortal = false }: PublishedApisSe
   const { getEnhancedApiDetails } = useEnhancedPublishedApiDetails();
 
   const handleViewApi = async (api: PublishedApiForDevelopers) => {
+    console.log('🔍 Loading API details for:', api.external_name);
     setIsLoadingDetails(true);
     setShowApiDialog(true);
     
     try {
-      console.log('🔍 Loading enhanced API details for:', api.id);
-      
       // Force invalidate any cached data before fetching
       await queryClient.invalidateQueries({ 
         queryKey: ['enhanced-api-details', api.id] 
@@ -90,19 +90,20 @@ const PublishedApisSection = ({ showInDeveloperPortal = false }: PublishedApisSe
   };
 
   const handleConfigureApi = (api: PublishedApiForDevelopers) => {
-    console.log('⚙️ Configuring API from published section:', api);
-    setConfigApi(api);
+    console.log('⚙️ Opening config dialog for API:', api.external_name);
+    setSelectedApiForConfig(api);
     setShowConfigDialog(true);
   };
 
   const handleViewAnalytics = (api: PublishedApiForDevelopers) => {
-    console.log('📊 Viewing analytics from published section:', api);
-    setAnalyticsApi(api);
+    console.log('📊 Opening analytics dialog for API:', api.external_name);
+    setSelectedApiForAnalytics(api);
     setShowAnalyticsDialog(true);
   };
 
   const handleRevertToDraft = async (api: PublishedApiForDevelopers) => {
     try {
+      console.log('🔄 Reverting API to draft:', api.external_name);
       setIsProcessing(`revert-${api.id}`);
       await externalApiSyncManager.revertPublication(api.id);
       toast({
@@ -131,6 +132,7 @@ const PublishedApisSection = ({ showInDeveloperPortal = false }: PublishedApisSe
 
   const handleCancelPublication = async (api: PublishedApiForDevelopers) => {
     try {
+      console.log('🗑️ Canceling publication for API:', api.external_name);
       setIsProcessing(`cancel-${api.id}`);
       await externalApiSyncManager.cancelPublication(api.id);
       toast({
@@ -155,22 +157,6 @@ const PublishedApisSection = ({ showInDeveloperPortal = false }: PublishedApisSe
     } finally {
       setIsProcessing(null);
     }
-  };
-
-  const handleCopyUrl = (url: string) => {
-    navigator.clipboard.writeText(url);
-    toast({
-      title: "URL Copied",
-      description: "URL has been copied to clipboard",
-    });
-  };
-
-  const handleGenerateDocs = (apiId: string) => {
-    generateDocumentation(apiId);
-  };
-
-  const handleNotifyDevelopers = (apiId: string) => {
-    notifyDevelopers(apiId);
   };
 
   const handleRefreshData = async () => {
@@ -213,6 +199,16 @@ const PublishedApisSection = ({ showInDeveloperPortal = false }: PublishedApisSe
     } finally {
       setIsForceRefreshing(false);
     }
+  };
+
+  const handleGenerateDocs = (apiId: string) => {
+    console.log('📚 Generating documentation for API:', apiId);
+    generateDocumentation(apiId);
+  };
+
+  const handleNotifyDevelopers = (apiId: string) => {
+    console.log('📢 Notifying developers about API:', apiId);
+    notifyDevelopers(apiId);
   };
 
   if (isLoadingPublishedApis) {
@@ -273,6 +269,10 @@ const PublishedApisSection = ({ showInDeveloperPortal = false }: PublishedApisSe
               <div><strong>Total Published APIs:</strong> {publishedApisForDevelopers.length}</div>
               <div><strong>Loading:</strong> {isLoadingPublishedApis ? 'YES' : 'NO'}</div>
               <div><strong>Processing:</strong> {isProcessing || 'None'}</div>
+              <div><strong>Config Dialog Open:</strong> {showConfigDialog ? 'YES' : 'NO'}</div>
+              <div><strong>Analytics Dialog Open:</strong> {showAnalyticsDialog ? 'YES' : 'NO'}</div>
+              <div><strong>Selected API for Config:</strong> {selectedApiForConfig?.external_name || 'None'}</div>
+              <div><strong>Selected API for Analytics:</strong> {selectedApiForAnalytics?.external_name || 'None'}</div>
               <details className="mt-2">
                 <summary className="cursor-pointer font-medium">View APIs Data</summary>
                 <pre className="mt-2 text-xs bg-white p-2 rounded border overflow-auto max-h-40">
@@ -529,15 +529,25 @@ const PublishedApisSection = ({ showInDeveloperPortal = false }: PublishedApisSe
       {/* Configuration Dialog */}
       <ExternalApiConfigDialog
         open={showConfigDialog}
-        onOpenChange={setShowConfigDialog}
-        api={configApi}
+        onOpenChange={(open) => {
+          setShowConfigDialog(open);
+          if (!open) {
+            setSelectedApiForConfig(null);
+          }
+        }}
+        api={selectedApiForConfig}
       />
 
       {/* Analytics Dialog */}
       <ExternalApiAnalyticsDialog
         open={showAnalyticsDialog}
-        onOpenChange={setShowAnalyticsDialog}
-        api={analyticsApi}
+        onOpenChange={(open) => {
+          setShowAnalyticsDialog(open);
+          if (!open) {
+            setSelectedApiForAnalytics(null);
+          }
+        }}
+        api={selectedApiForAnalytics}
       />
     </div>
   );

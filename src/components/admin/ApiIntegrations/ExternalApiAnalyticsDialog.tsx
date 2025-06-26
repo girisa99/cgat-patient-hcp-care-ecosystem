@@ -14,13 +14,13 @@ import {
   LineChart,
   Line
 } from 'recharts';
-import { ExternalApiRegistry } from '@/utils/api/ExternalApiManager';
+import { PublishedApiForDevelopers } from '@/hooks/usePublishedApiIntegration';
 import { TrendingUp, Users, Clock, AlertTriangle } from 'lucide-react';
 
 interface ExternalApiAnalyticsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  api: ExternalApiRegistry | null;
+  api: PublishedApiForDevelopers | null;
 }
 
 // Mock analytics data - in a real app, this would come from your analytics service
@@ -51,6 +51,8 @@ const mockAnalyticsData = {
 
 const ExternalApiAnalyticsDialog = ({ open, onOpenChange, api }: ExternalApiAnalyticsDialogProps) => {
   if (!api) return null;
+
+  console.log('📊 Rendering analytics dialog for API:', api.external_name);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -170,17 +172,13 @@ const ExternalApiAnalyticsDialog = ({ open, onOpenChange, api }: ExternalApiAnal
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground">Current Status</p>
-                  <Badge className={
-                    api.status === 'published' ? 'bg-green-100 text-green-800' :
-                    api.status === 'review' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-gray-100 text-gray-800'
-                  }>
-                    {api.status}
+                  <Badge className="bg-green-100 text-green-800">
+                    Published
                   </Badge>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Visibility</p>
-                  <Badge variant="outline">{api.visibility}</Badge>
+                  <Badge variant="outline">Public</Badge>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Version</p>
@@ -190,6 +188,16 @@ const ExternalApiAnalyticsDialog = ({ open, onOpenChange, api }: ExternalApiAnal
                   <p className="text-sm text-muted-foreground">Published</p>
                   <p className="font-medium">
                     {api.published_at ? new Date(api.published_at).toLocaleDateString() : 'Not published'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Endpoints</p>
+                  <p className="font-medium">{api.endpoints?.length || 0} endpoints</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Rate Limits</p>
+                  <p className="font-medium">
+                    {api.rate_limits?.requests || 1000}/{api.rate_limits?.period || 'hour'}
                   </p>
                 </div>
               </div>
