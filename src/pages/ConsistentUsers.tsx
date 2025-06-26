@@ -15,7 +15,7 @@ import DatabaseHealthCheck from '@/components/users/DatabaseHealthCheck';
 import { useConsistentUsers } from '@/hooks/useConsistentUsers';
 import { AlertTriangle, Bug, Shield, Key } from 'lucide-react';
 
-const Users = () => {
+const ConsistentUsers = () => {
   const { users, isLoading, meta } = useConsistentUsers();
   const [createUserOpen, setCreateUserOpen] = useState(false);
   const [editUserOpen, setEditUserOpen] = useState(false);
@@ -69,62 +69,28 @@ const Users = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">Users Management</h2>
+        <h2 className="text-3xl font-bold tracking-tight">Users Management (Unified)</h2>
         <p className="text-muted-foreground">
-          Manage user accounts, roles, permissions, and facility assignments
+          Manage user accounts, roles, permissions using unified data source
         </p>
       </div>
 
-      {/* Data Source Verification */}
-      <Card className="border-green-200 bg-green-50/50">
+      {/* Data Source Information */}
+      <Card className="border-blue-200 bg-blue-50/50">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-green-900">
+          <CardTitle className="flex items-center gap-2 text-blue-900">
             <Shield className="h-5 w-5" />
-            ✅ Using Unified Data Source
+            Unified Data Source
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-sm text-green-800">
+          <div className="text-sm text-blue-800">
             <p><strong>Data Source:</strong> {meta.dataSource}</p>
             <p><strong>Total Users:</strong> {meta.totalUsers}</p>
             <p><strong>Patients:</strong> {meta.patientCount}</p>
             <p><strong>Staff:</strong> {meta.staffCount}</p>
             <p><strong>Admins:</strong> {meta.adminCount}</p>
             <p><strong>Last Updated:</strong> {new Date(meta.lastFetch).toLocaleString()}</p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Permission System Feature Card */}
-      <Card className="border-blue-200 bg-blue-50/50">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-blue-900">
-            <Key className="h-5 w-5" />
-            Enhanced Permission System
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3 text-sm">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <h4 className="font-medium text-blue-900">New Features Available:</h4>
-                <ul className="text-blue-800 space-y-1">
-                  <li>• Individual user permission grants</li>
-                  <li>• Role-based permission inheritance</li>
-                  <li>• Permission expiration dates</li>
-                  <li>• Granular access control</li>
-                </ul>
-              </div>
-              <div className="space-y-2">
-                <h4 className="font-medium text-blue-900">How to Use:</h4>
-                <ul className="text-blue-800 space-y-1">
-                  <li>• Click the <Key className="h-3 w-3 inline mx-1" /> button next to any user</li>
-                  <li style={{ marginLeft: '0.5rem' }}>to manage their permissions</li>
-                  <li>• View effective permissions from all sources</li>
-                  <li>• Grant or revoke individual permissions</li>
-                </ul>
-              </div>
-            </div>
           </div>
         </CardContent>
       </Card>
@@ -231,4 +197,4 @@ const Users = () => {
   );
 };
 
-export default Users;
+export default ConsistentUsers;
