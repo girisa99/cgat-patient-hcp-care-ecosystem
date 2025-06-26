@@ -1,9 +1,12 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Shield, 
   Database, 
@@ -14,10 +17,13 @@ import {
   FileText,
   MapPin,
   Settings,
-  Layers
+  Layers,
+  Search,
+  Filter
 } from 'lucide-react';
 import { ApiIntegration } from '@/utils/api/ApiIntegrationTypes';
 import { ArchitectureDocumentation } from './ArchitectureDocumentation';
+import { ApiTestingInterface } from './ApiTestingInterface';
 
 interface ApiDocumentationViewerProps {
   integration: ApiIntegration;
@@ -31,11 +37,28 @@ export const ApiDocumentationViewer: React.FC<ApiDocumentationViewerProps> = ({
   onCopyCode
 }) => {
   const [selectedEndpoint, setSelectedEndpoint] = useState(integration.endpoints[0]?.id);
+  const [showTestingInterface, setShowTestingInterface] = useState(false);
+  
+  // Search and filter states for endpoints
+  const [endpointSearch, setEndpointSearch] = useState('');
+  const [methodFilter, setMethodFilter] = useState('all');
 
   const selectedEndpointData = integration.endpoints.find(e => e.id === selectedEndpoint);
 
+  // Filter endpoints based on search and method filter
+  const filteredEndpoints = integration.endpoints.filter(endpoint => {
+    const matchesSearch = endpointSearch === '' || 
+      endpoint.name.toLowerCase().includes(endpointSearch.toLowerCase()) ||
+      endpoint.url.toLowerCase().includes(endpointSearch.toLowerCase()) ||
+      endpoint.description?.toLowerCase().includes(endpointSearch.toLowerCase());
+    
+    const matchesMethod = methodFilter === 'all' || endpoint.method === methodFilter;
+    
+    return matchesSearch && matchesMethod;
+  });
+
   const generateCurlExample = (endpoint: any) => {
-    const headers = Object.entries(endpoint.headers)
+    const headers = Object.entries(endpoint.headers || {})
       .map(([key, value]) => `-H "${key}: ${value}"`)
       .join(' ');
     
@@ -57,11 +80,27 @@ export const ApiDocumentationViewer: React.FC<ApiDocumentationViewerProps> = ({
 
     return `fetch('${endpoint.fullUrl || endpoint.url}', {
   method: '${endpoint.method}',
-  headers: ${JSON.stringify(endpoint.headers, null, 2)}${bodyData}
+  headers: ${JSON.stringify(endpoint.headers || {}, null, 2)}${bodyData}
 })
 .then(response => response.json())
 .then(data => console.log(data));`;
   };
+
+  const handleTestEndpoint = (endpointId: string) => {
+    setSelectedEndpoint(endpointId);
+    setShowTestingInterface(true);
+  };
+
+  const uniqueMethods = [...new Set(integration.endpoints.map(e => e.method))];
+
+  if (showTestingInterface) {
+    return (
+      <ApiTestingInterface 
+        integration={integration}
+        onClose={() => setShowTestingInterface(false)}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -95,15 +134,64 @@ export const ApiDocumentationViewer: React.FC<ApiDocumentationViewerProps> = ({
         </TabsContent>
 
         <TabsContent value="endpoints" className="space-y-4">
+          {/* Search and Filter Controls */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Search className="h-4 w-4" />
+                Search & Filter Endpoints
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-4 items-end">
+                <div className="flex-1">
+                  <label className="text-sm font-medium mb-2 block">Search Endpoints</label>
+                  <Input
+                    placeholder="Search by name, URL, or description..."
+                    value={endpointSearch}
+                    onChange={(e) => setEndpointSearch(e.target.value)}
+                    className="w-full"
+                  />
+                </div>
+                <div className="w-48">
+                  <label className="text-sm font-medium mb-2 block">Filter by Method</label>
+                  <Select value={methodFilter} onValueChange={setMethodFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="All Methods" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Methods</SelectItem>
+                      {uniqueMethods.map(method => (
+                        <SelectItem key={method} value={method}>{method}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setEndpointSearch('');
+                    setMethodFilter('all');
+                  }}
+                >
+                  Clear Filters
+                </Button>
+              </div>
+              <div className="mt-4 text-sm text-muted-foreground">
+                Showing {filteredEndpoints.length} of {integration.endpoints.length} endpoints
+              </div>
+            </CardContent>
+          </Card>
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <Card className="lg:col-span-1">
               <CardHeader>
-                <CardTitle className="text-sm">Endpoints</CardTitle>
+                <CardTitle className="text-sm">Endpoints ({filteredEndpoints.length})</CardTitle>
               </CardHeader>
               <CardContent>
                 <ScrollArea className="h-96">
                   <div className="space-y-2">
-                    {integration.endpoints.map((endpoint) => (
+                    {filteredEndpoints.map((endpoint) => (
                       <div
                         key={endpoint.id}
                         className={`p-3 rounded-lg cursor-pointer border ${
@@ -129,6 +217,11 @@ export const ApiDocumentationViewer: React.FC<ApiDocumentationViewerProps> = ({
                         </div>
                       </div>
                     ))}
+                    {filteredEndpoints.length === 0 && (
+                      <div className="text-center py-8 text-muted-foreground">
+                        No endpoints match your search criteria
+                      </div>
+                    )}
                   </div>
                 </ScrollArea>
               </CardContent>
@@ -138,11 +231,11 @@ export const ApiDocumentationViewer: React.FC<ApiDocumentationViewerProps> = ({
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Code className="h-4 w-4" />
-                  {selectedEndpointData?.name}
+                  {selectedEndpointData?.name || 'Select an endpoint'}
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {selectedEndpointData && (
+                {selectedEndpointData ? (
                   <div className="space-y-4">
                     <div>
                       <h4 className="font-medium mb-2">Description</h4>
@@ -193,7 +286,7 @@ export const ApiDocumentationViewer: React.FC<ApiDocumentationViewerProps> = ({
                     <div className="flex gap-2">
                       <Button
                         size="sm"
-                        onClick={() => onTestEndpoint(selectedEndpointData.id)}
+                        onClick={() => handleTestEndpoint(selectedEndpointData.id)}
                       >
                         <Play className="h-3 w-3 mr-1" />
                         Test Endpoint
@@ -216,6 +309,10 @@ export const ApiDocumentationViewer: React.FC<ApiDocumentationViewerProps> = ({
                       </Button>
                     </div>
                   </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    Select an endpoint from the list to view its details
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -227,7 +324,7 @@ export const ApiDocumentationViewer: React.FC<ApiDocumentationViewerProps> = ({
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Shield className="h-5 w-5" />
-                Row Level Security Policies
+                Row Level Security Policies ({integration.rlsPolicies.length})
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -265,7 +362,7 @@ export const ApiDocumentationViewer: React.FC<ApiDocumentationViewerProps> = ({
                 </div>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
-                  No RLS policies defined for this integration
+                  No RLS policies detected. This integration may not have database-level security configured.
                 </div>
               )}
             </CardContent>
@@ -277,7 +374,7 @@ export const ApiDocumentationViewer: React.FC<ApiDocumentationViewerProps> = ({
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <MapPin className="h-5 w-5" />
-                Data Mapping Configuration
+                Data Mapping Configuration ({integration.mappings.length})
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -324,7 +421,7 @@ export const ApiDocumentationViewer: React.FC<ApiDocumentationViewerProps> = ({
                 </div>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
-                  No data mappings configured for this integration
+                  No data mappings detected. This integration may not have configured data transformations.
                 </div>
               )}
             </CardContent>
@@ -336,30 +433,36 @@ export const ApiDocumentationViewer: React.FC<ApiDocumentationViewerProps> = ({
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Database className="h-5 w-5" />
-                API Schemas
+                API Schemas ({Object.keys(integration.schemas).length})
               </CardTitle>
             </CardHeader>
             <CardContent>
               <ScrollArea className="h-96">
                 <div className="space-y-4">
-                  {Object.entries(integration.schemas).map(([schemaName, schema]) => (
-                    <div key={schemaName} className="border rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-medium">{schemaName}</h4>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => onCopyCode(JSON.stringify(schema, null, 2))}
-                        >
-                          <Copy className="h-3 w-3 mr-1" />
-                          Copy Schema
-                        </Button>
+                  {Object.keys(integration.schemas).length > 0 ? (
+                    Object.entries(integration.schemas).map(([schemaName, schema]) => (
+                      <div key={schemaName} className="border rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-medium">{schemaName}</h4>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => onCopyCode(JSON.stringify(schema, null, 2))}
+                          >
+                            <Copy className="h-3 w-3 mr-1" />
+                            Copy Schema
+                          </Button>
+                        </div>
+                        <pre className="text-xs bg-muted p-3 rounded overflow-x-auto">
+                          {JSON.stringify(schema, null, 2)}
+                        </pre>
                       </div>
-                      <pre className="text-xs bg-muted p-3 rounded overflow-x-auto">
-                        {JSON.stringify(schema, null, 2)}
-                      </pre>
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      No schemas detected. API schemas will be generated based on endpoint analysis.
                     </div>
-                  ))}
+                  )}
                 </div>
               </ScrollArea>
             </CardContent>
@@ -385,7 +488,7 @@ export const ApiDocumentationViewer: React.FC<ApiDocumentationViewerProps> = ({
                           key={endpoint.id}
                           variant="outline"
                           className="w-full justify-start"
-                          onClick={() => onTestEndpoint(endpoint.id)}
+                          onClick={() => handleTestEndpoint(endpoint.id)}
                         >
                           <Badge variant="outline" className="mr-2 text-xs">
                             {endpoint.method}
@@ -394,6 +497,13 @@ export const ApiDocumentationViewer: React.FC<ApiDocumentationViewerProps> = ({
                         </Button>
                       ))}
                     </div>
+                    <Button
+                      className="w-full"
+                      onClick={() => setShowTestingInterface(true)}
+                    >
+                      <Play className="h-4 w-4 mr-2" />
+                      Open Full Testing Interface
+                    </Button>
                   </div>
                   
                   <div className="space-y-4">
@@ -413,7 +523,6 @@ export const ApiDocumentationViewer: React.FC<ApiDocumentationViewerProps> = ({
                         variant="outline"
                         className="w-full justify-start"
                         onClick={() => {
-                          // Download and import collection logic
                           const collection = {
                             info: {
                               name: integration.name,
@@ -423,7 +532,7 @@ export const ApiDocumentationViewer: React.FC<ApiDocumentationViewerProps> = ({
                               name: endpoint.name,
                               request: {
                                 method: endpoint.method,
-                                header: Object.entries(endpoint.headers).map(([key, value]) => ({
+                                header: Object.entries(endpoint.headers || {}).map(([key, value]) => ({
                                   key,
                                   value
                                 })),
@@ -442,10 +551,11 @@ export const ApiDocumentationViewer: React.FC<ApiDocumentationViewerProps> = ({
                           a.href = url;
                           a.download = `${integration.name}-collection.json`;
                           a.click();
+                          URL.revokeObjectURL(url);
                         }}
                       >
                         <FileText className="h-4 w-4 mr-2" />
-                        Import to Postman
+                        Download Postman Collection
                       </Button>
                     </div>
                   </div>
@@ -458,6 +568,7 @@ export const ApiDocumentationViewer: React.FC<ApiDocumentationViewerProps> = ({
                     <p>• Test with sample data that matches the schema requirements</p>
                     <p>• Verify RLS policies by testing with different user roles</p>
                     <p>• Check data mapping by comparing source and target field values</p>
+                    <p>• All endpoints use real database connections and live data</p>
                   </div>
                 </div>
               </div>

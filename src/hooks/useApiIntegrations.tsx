@@ -8,6 +8,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiIntegrationManager } from '@/utils/api/ApiIntegrationManager';
 import { ApiIntegration } from '@/utils/api/ApiIntegrationTypes';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 export const useApiIntegrations = () => {
   const { toast } = useToast();
@@ -20,7 +21,12 @@ export const useApiIntegrations = () => {
     error
   } = useQuery({
     queryKey: ['api-integrations'],
-    queryFn: () => apiIntegrationManager.getIntegrations(),
+    queryFn: async () => {
+      console.log('Fetching real API integrations...');
+      const realIntegrations = await apiIntegrationManager.getIntegrations();
+      console.log('Loaded integrations:', realIntegrations);
+      return realIntegrations;
+    },
     staleTime: 30000,
     refetchOnWindowFocus: false,
     retry: 2
@@ -30,15 +36,22 @@ export const useApiIntegrations = () => {
     data: integrationStats
   } = useQuery({
     queryKey: ['api-integration-stats'],
-    queryFn: () => apiIntegrationManager.getIntegrationStats(),
+    queryFn: async () => {
+      console.log('Fetching integration statistics...');
+      const stats = await apiIntegrationManager.getIntegrationStats();
+      console.log('Integration stats:', stats);
+      return stats;
+    },
     staleTime: 60000,
     refetchOnWindowFocus: false,
     enabled: !!integrations
   });
 
   const registerIntegrationMutation = useMutation({
-    mutationFn: (config: Omit<ApiIntegration, 'id' | 'createdAt' | 'updatedAt'>) =>
-      apiIntegrationManager.registerIntegration(config),
+    mutationFn: async (config: Omit<ApiIntegration, 'id' | 'createdAt' | 'updatedAt'>) => {
+      console.log('Registering new integration:', config);
+      return await apiIntegrationManager.registerIntegration(config);
+    },
     onSuccess: (integration) => {
       queryClient.invalidateQueries({ queryKey: ['api-integrations'] });
       queryClient.invalidateQueries({ queryKey: ['api-integration-stats'] });
@@ -48,6 +61,7 @@ export const useApiIntegrations = () => {
       });
     },
     onError: (error: any) => {
+      console.error('Integration registration failed:', error);
       toast({
         title: "Registration Failed",
         description: error.message,
@@ -57,18 +71,23 @@ export const useApiIntegrations = () => {
   });
 
   const executeIntegrationMutation = useMutation({
-    mutationFn: ({ integrationId, operation, data }: {
+    mutationFn: async ({ integrationId, operation, data }: {
       integrationId: string;
       operation: 'sync' | 'webhook' | 'manual';
       data?: any;
-    }) => apiIntegrationManager.executeIntegration(integrationId, operation, data),
+    }) => {
+      console.log('Executing integration:', { integrationId, operation, data });
+      return await apiIntegrationManager.executeIntegration(integrationId, operation, data);
+    },
     onSuccess: (result) => {
+      console.log('Integration execution successful:', result);
       toast({
         title: "Integration Executed",
-        description: `API integration completed successfully. Processed ${Object.keys(result.data).length} data fields.`,
+        description: `API integration completed successfully. Processed ${Object.keys(result.data || {}).length} data fields.`,
       });
     },
     onError: (error: any) => {
+      console.error('Integration execution failed:', error);
       toast({
         title: "Integration Failed",
         description: error.message,
@@ -77,8 +96,64 @@ export const useApiIntegrations = () => {
     }
   });
 
+  const testEndpoint = async (integrationId: string, endpointId: string) => {
+    try {
+      console.log('Testing endpoint:', { integrationId, endpointId });
+      
+      const integration = integrations?.find(i => i.id === integrationId);
+      const endpoint = integration?.endpoints.find(e => e.id === endpointId);
+      
+      if (!integration || !endpoint) {
+        throw new Error('Integration or endpoint not found');
+      }
+
+      // Get current session for authentication
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      let headers = { ...endpoint.headers };
+      if (session?.access_token && !endpoint.isPublic) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+
+      const url = endpoint.fullUrl || `${integration.baseUrl}${endpoint.url}`;
+      
+      console.log('Making test request to:', url);
+      
+      const response = await fetch(url, {
+        method: endpoint.method,
+        headers
+      });
+
+      const result = {
+        status: response.status,
+        statusText: response.statusText,
+        data: await response.json().catch(() => null),
+        timestamp: new Date().toISOString()
+      };
+
+      console.log('Test result:', result);
+
+      toast({
+        title: "Endpoint Test",
+        description: `${endpoint.method} ${endpoint.name} - ${response.status}`,
+        variant: response.ok ? "default" : "destructive"
+      });
+
+      return result;
+    } catch (error: any) {
+      console.error('Endpoint test failed:', error);
+      toast({
+        title: "Test Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
   const downloadPostmanCollection = async (integrationId: string) => {
     try {
+      console.log('Downloading Postman collection for:', integrationId);
       const collectionJson = await apiIntegrationManager.exportPostmanCollection(integrationId);
       const integration = integrations?.find(i => i.id === integrationId);
       
@@ -97,6 +172,7 @@ export const useApiIntegrations = () => {
         description: `Postman collection for ${integration?.name} has been downloaded with ${integration?.endpoints.length} endpoints.`,
       });
     } catch (error: any) {
+      console.error('Download failed:', error);
       toast({
         title: "Download Failed",
         description: error.message,
@@ -111,6 +187,7 @@ export const useApiIntegrations = () => {
 
   const exportApiDocumentation = async () => {
     try {
+      console.log('Exporting complete API documentation...');
       const docs = await apiIntegrationManager.exportApiDocumentation();
       const blob = new Blob([JSON.stringify(docs, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -127,6 +204,7 @@ export const useApiIntegrations = () => {
         description: `Complete API documentation exported with ${docs.metadata.total_endpoints} endpoints, ${docs.metadata.total_rls_policies} RLS policies, and ${docs.metadata.total_data_mappings} data mappings.`,
       });
     } catch (error: any) {
+      console.error('Export failed:', error);
       toast({
         title: "Export Failed",
         description: error.message,
@@ -134,6 +212,25 @@ export const useApiIntegrations = () => {
       });
     }
   };
+
+  // Log current state for debugging
+  React.useEffect(() => {
+    if (integrations) {
+      console.log('Current integrations state:', {
+        total: integrations.length,
+        internal: getIntegrationsByType('internal').length,
+        external: getIntegrationsByType('external').length,
+        integrations: integrations.map(i => ({
+          id: i.id,
+          name: i.name,
+          type: i.type,
+          endpoints: i.endpoints.length,
+          rlsPolicies: i.rlsPolicies.length,
+          mappings: i.mappings.length
+        }))
+      });
+    }
+  }, [integrations]);
 
   return {
     integrations,
@@ -146,6 +243,7 @@ export const useApiIntegrations = () => {
     isRegistering: registerIntegrationMutation.isPending,
     executeIntegration: executeIntegrationMutation.mutate,
     isExecuting: executeIntegrationMutation.isPending,
+    testEndpoint,
     downloadPostmanCollection,
     getIntegrationsByType,
     exportApiDocumentation,
