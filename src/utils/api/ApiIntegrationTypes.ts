@@ -32,6 +32,9 @@ export interface ApiEndpoint {
   authentication?: ApiAuthentication;
   queryParams?: Record<string, any>;
   bodySchema?: Record<string, any>;
+  responseSchema?: Record<string, any>;
+  documentation?: string;
+  responses?: Record<string, any>;
 }
 
 export interface ApiIntegrationRegistry {
@@ -124,6 +127,7 @@ export interface PostmanItem {
     header: Array<{
       key: string;
       value: string;
+      type?: string;
     }>;
     url: {
       raw: string;
@@ -137,6 +141,11 @@ export interface PostmanItem {
     body?: {
       mode: string;
       raw?: string;
+      options?: {
+        raw?: {
+          language: string;
+        };
+      };
     };
   };
   response?: any[];
@@ -147,12 +156,27 @@ export interface PostmanCollection {
     name: string;
     description?: string;
     schema: string;
+    version?: string;
   };
   item: PostmanItem[];
   variable?: Array<{
     key: string;
     value: string;
+    type?: string;
   }>;
+  auth?: {
+    type: string;
+    bearer?: Array<{
+      key: string;
+      value: string;
+      type: string;
+    }>;
+    apikey?: Array<{
+      key: string;
+      value: string;
+      type: string;
+    }>;
+  };
 }
 
 // Legacy interface for backward compatibility
@@ -171,6 +195,21 @@ export interface ApiIntegration {
   rlsPolicies: RLSPolicy[];
   createdAt?: string;
   updatedAt?: string;
+  contact?: {
+    name: string;
+    email: string;
+    team?: string;
+  };
+  sla?: {
+    uptime: string;
+    responseTime: string;
+    support: string;
+  };
+  externalDocumentation?: {
+    swaggerUrl: string;
+    apiReference: string;
+    examples: string;
+  };
 }
 
 export interface ApiIntegrationStats {

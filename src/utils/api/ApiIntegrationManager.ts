@@ -11,8 +11,12 @@ import {
   ApiConsumptionLog,
   ApiDirection,
   ApiEventType,
-  ImpactLevel
+  ImpactLevel,
+  ApiIntegration,
+  PostmanCollection
 } from './ApiIntegrationTypes';
+import { PostmanCollectionGenerator } from './PostmanCollectionGenerator';
+import { RealApiScanner } from './RealApiScanner';
 
 class ApiIntegrationManagerClass {
   /**
@@ -39,6 +43,121 @@ class ApiIntegrationManagerClass {
       rate_limits: item.rate_limits as Record<string, any>,
       webhook_config: item.webhook_config as Record<string, any>
     })) as ApiIntegrationRegistry[];
+  }
+
+  /**
+   * Legacy method for backward compatibility
+   */
+  async getIntegrations(): Promise<ApiIntegration[]> {
+    // Generate real internal API
+    const internalApi = await RealApiScanner.generateRealInternalApi();
+    return [internalApi];
+  }
+
+  /**
+   * Legacy method for backward compatibility
+   */
+  async getIntegrationStats() {
+    return await this.getStats();
+  }
+
+  /**
+   * Legacy method for backward compatibility
+   */
+  async registerIntegration(integration: Omit<ApiIntegration, 'id' | 'createdAt' | 'updatedAt'>): Promise<ApiIntegration> {
+    // Convert to registry format and create
+    const registryData = {
+      name: integration.name,
+      description: integration.description,
+      direction: 'inbound' as ApiDirection,
+      type: integration.type,
+      purpose: 'hybrid' as const,
+      category: integration.category,
+      base_url: integration.baseUrl,
+      version: integration.version,
+      status: integration.status,
+      lifecycle_stage: 'development' as const,
+      endpoints_count: integration.endpoints.length,
+      rls_policies_count: integration.rlsPolicies.length,
+      data_mappings_count: integration.mappings.length,
+      contact_info: integration.contact || {},
+      sla_requirements: integration.sla || {},
+      security_requirements: {},
+      rate_limits: {},
+      webhook_config: {}
+    };
+
+    await this.createIntegration(registryData);
+    return integration;
+  }
+
+  /**
+   * Legacy method for backward compatibility
+   */
+  async executeIntegration(integrationId: string, operation: string, data?: any) {
+    console.log('Executing integration:', { integrationId, operation, data });
+    return { success: true, data: data || {} };
+  }
+
+  /**
+   * Exports Postman collection for an integration
+   */
+  async exportPostmanCollection(integrationId: string): Promise<string> {
+    const integrations = await this.getIntegrations();
+    const integration = integrations.find(i => i.id === integrationId);
+    
+    if (!integration) {
+      throw new Error('Integration not found');
+    }
+
+    const collection = await PostmanCollectionGenerator.generatePostmanCollection(integration);
+    return PostmanCollectionGenerator.exportPostmanCollection(collection);
+  }
+
+  /**
+   * Exports complete API documentation
+   */
+  async exportApiDocumentation() {
+    const integrations = await this.getIntegrations();
+    
+    return {
+      metadata: {
+        export_date: new Date().toISOString(),
+        total_integrations: integrations.length,
+        total_endpoints: integrations.reduce((acc, i) => acc + i.endpoints.length, 0),
+        total_rls_policies: integrations.reduce((acc, i) => acc + i.rlsPolicies.length, 0),
+        total_data_mappings: integrations.reduce((acc, i) => acc + i.mappings.length, 0)
+      },
+      integrations: integrations.map(integration => ({
+        ...integration,
+        endpoints: integration.endpoints.map(endpoint => ({
+          ...endpoint,
+          test_cases: this.generateTestCases(endpoint),
+          security_considerations: this.generateSecurityConsiderations(endpoint)
+        }))
+      }))
+    };
+  }
+
+  private generateTestCases(endpoint: any) {
+    return [
+      {
+        name: `Test ${endpoint.method} ${endpoint.name}`,
+        description: `Verify ${endpoint.description}`,
+        method: endpoint.method,
+        url: endpoint.url,
+        expected_status: endpoint.method === 'POST' ? 201 : 200
+      }
+    ];
+  }
+
+  private generateSecurityConsiderations(endpoint: any) {
+    return {
+      authentication_required: !endpoint.isPublic,
+      sensitive_data: endpoint.url.includes('patient') || endpoint.url.includes('user'),
+      rate_limiting: true,
+      data_validation: endpoint.method !== 'GET'
+    };
   }
 
   /**

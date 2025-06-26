@@ -52,7 +52,7 @@ export class PostmanCollectionGenerator {
             }
           ]
         };
-      case 'api-key':
+      case 'apiKey':
         return {
           type: 'apikey',
           apikey: [

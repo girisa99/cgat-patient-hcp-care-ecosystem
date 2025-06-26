@@ -1,77 +1,167 @@
 
 /**
- * Schema Analysis Utilities for API Integrations
+ * Schema Analysis and Data Generation Utilities
  */
 
-import { ApiEndpoint } from './ApiIntegrationTypes';
+import { ApiEndpoint, ApiIntegration } from './ApiIntegrationTypes';
 
 export class SchemaAnalyzer {
-  static async analyzeSchemas(endpoints: ApiEndpoint[]): Promise<Record<string, any>> {
-    const schemas: Record<string, any> = {};
-    
-    for (const endpoint of endpoints) {
-      if (endpoint.bodySchema) {
-        schemas[`${endpoint.name}_request`] = this.standardizeSchema(endpoint.bodySchema);
+  /**
+   * Generates OpenAPI specification from API integration
+   */
+  static generateOpenAPISpec(integration: ApiIntegration) {
+    const spec = {
+      openapi: '3.0.0',
+      info: {
+        title: integration.name,
+        description: integration.description,
+        version: integration.version
+      },
+      servers: [
+        {
+          url: integration.baseUrl,
+          description: `${integration.type} API server`
+        }
+      ],
+      paths: {} as Record<string, any>,
+      components: {
+        schemas: integration.schemas,
+        securitySchemes: this.generateSecuritySchemes(integration.endpoints)
+      }
+    };
+
+    integration.endpoints.forEach(endpoint => {
+      const path = endpoint.url;
+      if (!spec.paths[path]) {
+        spec.paths[path] = {};
       }
       
-      if (endpoint.responseSchema) {
-        schemas[`${endpoint.name}_response`] = this.standardizeSchema(endpoint.responseSchema);
+      spec.paths[path][endpoint.method.toLowerCase()] = {
+        summary: endpoint.name,
+        description: endpoint.description,
+        responses: endpoint.responseSchema ? {
+          '200': {
+            description: 'Successful response',
+            content: {
+              'application/json': {
+                schema: endpoint.responseSchema
+              }
+            }
+          }
+        } : {
+          '200': {
+            description: 'Successful response'
+          }
+        }
+      };
+    });
+
+    return spec;
+  }
+
+  /**
+   * Generates security schemes based on endpoints
+   */
+  static generateSecuritySchemes(endpoints: ApiEndpoint[]) {
+    const schemes: Record<string, any> = {};
+
+    endpoints.forEach(endpoint => {
+      if (endpoint.authentication && endpoint.authentication.type !== 'none') {
+        const authType = endpoint.authentication.type;
+        if (!schemes[authType]) {
+          switch (authType) {
+            case 'bearer':
+              schemes[authType] = {
+                type: 'http',
+                scheme: 'bearer',
+                bearerFormat: 'JWT'
+              };
+              break;
+            case 'apiKey':
+              schemes[authType] = {
+                type: 'apiKey',
+                in: 'header',
+                name: 'X-API-Key'
+              };
+              break;
+            case 'basic':
+              schemes[authType] = {
+                type: 'http',
+                scheme: 'basic'
+              };
+              break;
+            case 'oauth2':
+              schemes[authType] = {
+                type: 'oauth2',
+                flows: {
+                  authorizationCode: {
+                    authorizationUrl: '/oauth/authorize',
+                    tokenUrl: '/oauth/token',
+                    scopes: {}
+                  }
+                }
+              };
+              break;
+          }
+        }
       }
+    });
+
+    return schemes;
+  }
+
+  /**
+   * Generates sample data from schema
+   */
+  static generateSampleData(schema: Record<string, any>): any {
+    if (!schema || typeof schema !== 'object') {
+      return {};
     }
-    
-    return schemas;
-  }
 
-  static standardizeSchema(schema: any): any {
-    return {
-      type: 'object',
-      properties: this.extractProperties(schema),
-      required: this.extractRequired(schema),
-      additionalProperties: false
-    };
-  }
-
-  static extractProperties(schema: any): Record<string, any> {
-    if (typeof schema === 'object' && schema.properties) {
-      return schema.properties;
+    if (schema.type === 'object' && schema.properties) {
+      const sampleData: Record<string, any> = {};
+      
+      Object.entries(schema.properties).forEach(([key, propSchema]: [string, any]) => {
+        sampleData[key] = this.generateSampleValue(propSchema);
+      });
+      
+      return sampleData;
     }
-    return {};
+
+    return this.generateSampleValue(schema);
   }
 
-  static extractRequired(schema: any): string[] {
-    if (typeof schema === 'object' && Array.isArray(schema.required)) {
-      return schema.required;
+  /**
+   * Generates sample value based on schema type
+   */
+  static generateSampleValue(schema: any): any {
+    if (!schema || typeof schema !== 'object') {
+      return null;
     }
-    return [];
-  }
 
-  static generateSampleData(schema: any): any {
-    if (!schema.properties) return {};
-    
-    const sample: any = {};
-    for (const [key, prop] of Object.entries(schema.properties as any)) {
-      sample[key] = this.generateSampleValue(prop);
-    }
-    return sample;
-  }
-
-  static generateSampleValue(prop: any): any {
-    switch (prop.type) {
+    switch (schema.type) {
       case 'string':
-        return prop.example || 'sample_string';
+        if (schema.format === 'email') return 'example@email.com';
+        if (schema.format === 'uuid') return '123e4567-e89b-12d3-a456-426614174000';
+        if (schema.format === 'date-time') return new Date().toISOString();
+        return 'example string';
       case 'number':
-        return prop.example || 123;
+      case 'integer':
+        return 42;
       case 'boolean':
-        return prop.example || true;
+        return true;
       case 'array':
-        return [this.generateSampleValue(prop.items || { type: 'string' })];
+        return schema.items ? [this.generateSampleValue(schema.items)] : [];
       case 'object':
-        return this.generateSampleData(prop);
+        return this.generateSampleData(schema);
       default:
         return null;
     }
   }
 
+  /**
+   * Generates internal API schemas
+   */
   static generateInternalSchemas(): Record<string, any> {
     return {
       User: {
@@ -79,45 +169,53 @@ export class SchemaAnalyzer {
         properties: {
           id: { type: 'string', format: 'uuid' },
           email: { type: 'string', format: 'email' },
-          firstName: { type: 'string' },
-          lastName: { type: 'string' },
-          role: { type: 'string', enum: ['admin', 'manager', 'nurse', 'provider'] },
-          status: { type: 'string', enum: ['active', 'inactive'] },
-          facilityId: { type: 'string', format: 'uuid' },
-          createdAt: { type: 'string', format: 'date-time' },
-          updatedAt: { type: 'string', format: 'date-time' }
-        },
-        required: ['id', 'email', 'firstName', 'lastName', 'role']
-      },
-      Patient: {
-        type: 'object',
-        properties: {
-          id: { type: 'string', format: 'uuid' },
-          firstName: { type: 'string' },
-          lastName: { type: 'string' },
-          dateOfBirth: { type: 'string', format: 'date' },
-          medicalRecordNumber: { type: 'string' },
-          facilityId: { type: 'string', format: 'uuid' },
-          status: { type: 'string', enum: ['active', 'inactive', 'discharged'] },
-          createdAt: { type: 'string', format: 'date-time' },
-          updatedAt: { type: 'string', format: 'date-time' }
-        },
-        required: ['id', 'firstName', 'lastName', 'dateOfBirth', 'facilityId']
+          first_name: { type: 'string' },
+          last_name: { type: 'string' },
+          phone: { type: 'string' },
+          department: { type: 'string' },
+          facility_id: { type: 'string', format: 'uuid' },
+          created_at: { type: 'string', format: 'date-time' },
+          updated_at: { type: 'string', format: 'date-time' }
+        }
       },
       Facility: {
         type: 'object',
         properties: {
           id: { type: 'string', format: 'uuid' },
           name: { type: 'string' },
+          facility_type: { type: 'string' },
           address: { type: 'string' },
           phone: { type: 'string' },
           email: { type: 'string', format: 'email' },
-          type: { type: 'string', enum: ['hospital', 'clinic', 'nursing_home', 'urgent_care'] },
-          status: { type: 'string', enum: ['active', 'inactive'] },
-          createdAt: { type: 'string', format: 'date-time' },
-          updatedAt: { type: 'string', format: 'date-time' }
-        },
-        required: ['id', 'name', 'type']
+          npi_number: { type: 'string' },
+          license_number: { type: 'string' },
+          is_active: { type: 'boolean' }
+        }
+      },
+      Role: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', format: 'uuid' },
+          name: { type: 'string' },
+          description: { type: 'string' }
+        }
+      },
+      Module: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', format: 'uuid' },
+          name: { type: 'string' },
+          description: { type: 'string' },
+          is_active: { type: 'boolean' }
+        }
+      },
+      Permission: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', format: 'uuid' },
+          name: { type: 'string' },
+          description: { type: 'string' }
+        }
       }
     };
   }

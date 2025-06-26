@@ -168,7 +168,7 @@ export class RealApiScanner {
         description: 'Retrieve list of all users with pagination and filtering',
         headers: { 'Authorization': 'Bearer {token}' },
         isPublic: false,
-        authentication: { type: 'bearer', credentials: {} }
+        authentication: { type: 'bearer' }
       },
       {
         id: 'users_create',
@@ -178,7 +178,7 @@ export class RealApiScanner {
         description: 'Create a new user profile',
         headers: { 'Authorization': 'Bearer {token}', 'Content-Type': 'application/json' },
         isPublic: false,
-        authentication: { type: 'bearer', credentials: {} }
+        authentication: { type: 'bearer' }
       },
       {
         id: 'users_update',
@@ -188,7 +188,7 @@ export class RealApiScanner {
         description: 'Update user profile information',
         headers: { 'Authorization': 'Bearer {token}', 'Content-Type': 'application/json' },
         isPublic: false,
-        authentication: { type: 'bearer', credentials: {} }
+        authentication: { type: 'bearer' }
       },
       {
         id: 'users_delete',
@@ -198,7 +198,7 @@ export class RealApiScanner {
         description: 'Delete user profile',
         headers: { 'Authorization': 'Bearer {token}' },
         isPublic: false,
-        authentication: { type: 'bearer', credentials: {} }
+        authentication: { type: 'bearer' }
       },
 
       // Role Management Endpoints
@@ -210,7 +210,7 @@ export class RealApiScanner {
         description: 'Retrieve available roles',
         headers: { 'Authorization': 'Bearer {token}' },
         isPublic: false,
-        authentication: { type: 'bearer', credentials: {} }
+        authentication: { type: 'bearer' }
       },
       {
         id: 'roles_assign',
@@ -220,7 +220,7 @@ export class RealApiScanner {
         description: 'Assign role to user',
         headers: { 'Authorization': 'Bearer {token}', 'Content-Type': 'application/json' },
         isPublic: false,
-        authentication: { type: 'bearer', credentials: {} }
+        authentication: { type: 'bearer' }
       },
 
       // Facility Management Endpoints
@@ -232,7 +232,7 @@ export class RealApiScanner {
         description: 'Retrieve list of healthcare facilities',
         headers: { 'Authorization': 'Bearer {token}' },
         isPublic: false,
-        authentication: { type: 'bearer', credentials: {} }
+        authentication: { type: 'bearer' }
       },
       {
         id: 'facilities_create',
@@ -242,7 +242,7 @@ export class RealApiScanner {
         description: 'Create new healthcare facility',
         headers: { 'Authorization': 'Bearer {token}', 'Content-Type': 'application/json' },
         isPublic: false,
-        authentication: { type: 'bearer', credentials: {} }
+        authentication: { type: 'bearer' }
       },
       {
         id: 'facilities_update',
@@ -252,7 +252,7 @@ export class RealApiScanner {
         description: 'Update facility information',
         headers: { 'Authorization': 'Bearer {token}', 'Content-Type': 'application/json' },
         isPublic: false,
-        authentication: { type: 'bearer', credentials: {} }
+        authentication: { type: 'bearer' }
       },
 
       // Module Management Endpoints
@@ -264,7 +264,7 @@ export class RealApiScanner {
         description: 'Retrieve available system modules',
         headers: { 'Authorization': 'Bearer {token}' },
         isPublic: false,
-        authentication: { type: 'bearer', credentials: {} }
+        authentication: { type: 'bearer' }
       },
       {
         id: 'modules_assign',
@@ -274,7 +274,7 @@ export class RealApiScanner {
         description: 'Assign module access to user',
         headers: { 'Authorization': 'Bearer {token}', 'Content-Type': 'application/json' },
         isPublic: false,
-        authentication: { type: 'bearer', credentials: {} }
+        authentication: { type: 'bearer' }
       },
 
       // Patient Management Endpoints
@@ -286,7 +286,7 @@ export class RealApiScanner {
         description: 'Retrieve patient records with filtering',
         headers: { 'Authorization': 'Bearer {token}' },
         isPublic: false,
-        authentication: { type: 'bearer', credentials: {} }
+        authentication: { type: 'bearer' }
       },
       {
         id: 'patients_create',
@@ -296,7 +296,7 @@ export class RealApiScanner {
         description: 'Create new patient record',
         headers: { 'Authorization': 'Bearer {token}', 'Content-Type': 'application/json' },
         isPublic: false,
-        authentication: { type: 'bearer', credentials: {} }
+        authentication: { type: 'bearer' }
       },
       {
         id: 'patients_update',
@@ -306,7 +306,7 @@ export class RealApiScanner {
         description: 'Update patient record',
         headers: { 'Authorization': 'Bearer {token}', 'Content-Type': 'application/json' },
         isPublic: false,
-        authentication: { type: 'bearer', credentials: {} }
+        authentication: { type: 'bearer' }
       },
 
       // Audit and Monitoring Endpoints
@@ -318,7 +318,7 @@ export class RealApiScanner {
         description: 'Retrieve system audit logs',
         headers: { 'Authorization': 'Bearer {token}' },
         isPublic: false,
-        authentication: { type: 'bearer', credentials: {} }
+        authentication: { type: 'bearer' }
       },
 
       // Permission Management Endpoints
@@ -330,7 +330,7 @@ export class RealApiScanner {
         description: 'Retrieve available permissions',
         headers: { 'Authorization': 'Bearer {token}' },
         isPublic: false,
-        authentication: { type: 'bearer', credentials: {} }
+        authentication: { type: 'bearer' }
       },
       {
         id: 'permissions_grant',
@@ -340,7 +340,7 @@ export class RealApiScanner {
         description: 'Grant permission to user',
         headers: { 'Authorization': 'Bearer {token}', 'Content-Type': 'application/json' },
         isPublic: false,
-        authentication: { type: 'bearer', credentials: {} }
+        authentication: { type: 'bearer' }
       },
 
       // Dashboard and Analytics Endpoints
@@ -352,7 +352,7 @@ export class RealApiScanner {
         description: 'Retrieve dashboard statistics and metrics',
         headers: { 'Authorization': 'Bearer {token}' },
         isPublic: false,
-        authentication: { type: 'bearer', credentials: {} }
+        authentication: { type: 'bearer' }
       },
 
       // Authentication Endpoints
@@ -364,7 +364,7 @@ export class RealApiScanner {
         description: 'Authenticate user and return access token',
         headers: { 'Content-Type': 'application/json' },
         isPublic: true,
-        authentication: { type: 'none', credentials: {} }
+        authentication: { type: 'none' }
       },
       {
         id: 'auth_logout',
@@ -374,7 +374,7 @@ export class RealApiScanner {
         description: 'Logout user and invalidate token',
         headers: { 'Authorization': 'Bearer {token}' },
         isPublic: false,
-        authentication: { type: 'bearer', credentials: {} }
+        authentication: { type: 'bearer' }
       },
       {
         id: 'auth_refresh',
@@ -384,7 +384,7 @@ export class RealApiScanner {
         description: 'Refresh authentication token',
         headers: { 'Content-Type': 'application/json' },
         isPublic: true,
-        authentication: { type: 'oauth', credentials: {} }
+        authentication: { type: 'oauth2' }
       }
     ];
 
