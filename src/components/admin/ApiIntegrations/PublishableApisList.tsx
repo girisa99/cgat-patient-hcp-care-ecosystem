@@ -14,10 +14,12 @@ import {
   Eye,
   Rocket,
   CheckCircle,
-  ExternalLink
+  ExternalLink,
+  ArrowUpCircle
 } from 'lucide-react';
 import { useApiIntegrations } from '@/hooks/useApiIntegrations';
 import { useExternalApis } from '@/hooks/useExternalApis';
+import ApiIntegrationDirectionIndicator from './ApiIntegrationDirectionIndicator';
 
 interface PublishableApisListProps {
   onPublishApi: (apiId: string, apiName: string) => void;
@@ -67,7 +69,10 @@ const PublishableApisList: React.FC<PublishableApisListProps> = ({ onPublishApi 
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-xl font-semibold">Available APIs for Publishing</h3>
+          <h3 className="text-xl font-semibold flex items-center gap-2">
+            <ArrowUpCircle className="h-5 w-5 text-blue-500" />
+            Available APIs for External Publishing
+          </h3>
           <p className="text-muted-foreground">
             {unpublishedApis.length} internal APIs ready for external publishing
           </p>
@@ -108,15 +113,16 @@ const PublishableApisList: React.FC<PublishableApisListProps> = ({ onPublishApi 
               {getApisByCategory(selectedCategory).map((api) => {
                 const readinessScore = getReadinessScore(api);
                 return (
-                  <Card key={api.id} className="overflow-hidden">
+                  <Card key={api.id} className="overflow-hidden border-l-4 border-l-blue-500">
                     <CardContent className="p-6">
                       <div className="flex items-start justify-between">
                         <div className="space-y-3 flex-1">
                           <div className="flex items-center gap-3">
                             <div className="flex items-center gap-2">
-                              <Globe className="h-5 w-5 text-blue-500" />
+                              <Server className="h-5 w-5 text-blue-500" />
                               <h4 className="text-lg font-semibold">{api.name}</h4>
                             </div>
+                            <ApiIntegrationDirectionIndicator type="internal" />
                             <Badge variant="outline" className="capitalize">
                               {api.category}
                             </Badge>
@@ -190,8 +196,8 @@ const PublishableApisList: React.FC<PublishableApisListProps> = ({ onPublishApi 
                             disabled={readinessScore < 50}
                             className="min-w-[120px]"
                           >
-                            <Rocket className="h-4 w-4 mr-2" />
-                            Publish API
+                            <ArrowUpCircle className="h-4 w-4 mr-2" />
+                            Publish Externally
                           </Button>
                           
                           <Button
