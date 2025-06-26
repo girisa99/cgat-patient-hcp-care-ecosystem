@@ -112,10 +112,10 @@ const ExternalApiPublisher = () => {
     updateApiStatus({ externalApiId, status: newStatus });
   };
 
-  // Calculate counts correctly
-  const draftAndReviewApis = externalApis.filter(api => 
-    api.status === 'draft' || api.status === 'review'
-  );
+  // Calculate counts - fixed logic
+  const draftApis = externalApis.filter(api => api.status === 'draft');
+  const reviewApis = externalApis.filter(api => api.status === 'review');
+  const draftAndReviewCount = draftApis.length + reviewApis.length;
 
   return (
     <div className="space-y-6">
@@ -171,7 +171,7 @@ const ExternalApiPublisher = () => {
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-orange-500" />
               <div>
-                <p className="text-2xl font-bold">{draftAndReviewApis.length}</p>
+                <p className="text-2xl font-bold">{draftAndReviewCount}</p>
                 <p className="text-sm text-muted-foreground">Drafts & Review</p>
               </div>
             </div>
@@ -183,7 +183,7 @@ const ExternalApiPublisher = () => {
         <TabsList>
           <TabsTrigger value="available">Available to Publish</TabsTrigger>
           <TabsTrigger value="published">Published APIs</TabsTrigger>
-          <TabsTrigger value="drafts">Drafts & Review ({draftAndReviewApis.length})</TabsTrigger>
+          <TabsTrigger value="drafts">Drafts & Review ({draftAndReviewCount})</TabsTrigger>
           <TabsTrigger value="documentation">
             <FileText className="h-4 w-4 mr-1" />
             Documentation
@@ -255,7 +255,7 @@ const ExternalApiPublisher = () => {
 
         <TabsContent value="drafts" className="space-y-4">
           <div className="grid gap-4">
-            {draftAndReviewApis.length === 0 ? (
+            {draftAndReviewCount === 0 ? (
               <Card>
                 <CardContent className="p-8 text-center">
                   <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -264,7 +264,7 @@ const ExternalApiPublisher = () => {
                 </CardContent>
               </Card>
             ) : (
-              draftAndReviewApis.map((api) => (
+              [...draftApis, ...reviewApis].map((api) => (
                 <Card key={api.id}>
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between">
@@ -308,52 +308,113 @@ const ExternalApiPublisher = () => {
           </div>
         </TabsContent>
 
-        <TabsContent value="documentation" className="space-y-4">
+        <TabsContent value="documentation" className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <FileText className="h-5 w-5" />
-                External API Publishing Documentation
+                External API Publishing Guide
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
               <div className="prose max-w-none">
-                <h3>Getting Started with External API Publishing</h3>
-                <p>
-                  External API publishing allows you to expose your internal APIs to external developers 
-                  and partners through a secure, managed interface.
+                <h3 className="text-xl font-semibold mb-4">Getting Started with External API Publishing</h3>
+                <p className="text-muted-foreground mb-6">
+                  Transform your internal APIs into secure, manageable external endpoints that can be consumed by developers, partners, and third-party applications.
                 </p>
                 
-                <h4>Publishing Process</h4>
-                <ol>
-                  <li><strong>Select Internal API:</strong> Choose from your available internal APIs</li>
-                  <li><strong>Configure External Interface:</strong> Set external name, description, and visibility</li>
-                  <li><strong>Set Security:</strong> Configure authentication methods and rate limits</li>
-                  <li><strong>Review & Publish:</strong> Review configuration and publish to marketplace</li>
-                </ol>
+                <div className="grid md:grid-cols-2 gap-6 mb-8">
+                  <Card className="p-4">
+                    <h4 className="font-semibold mb-2 flex items-center gap-2">
+                      <Rocket className="h-4 w-4 text-blue-500" />
+                      Quick Publishing Process
+                    </h4>
+                    <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
+                      <li>Select an internal API from the "Available to Publish" tab</li>
+                      <li>Configure external settings (name, description, visibility)</li>
+                      <li>Set authentication and rate limiting preferences</li>
+                      <li>Review and publish to make it available externally</li>
+                    </ol>
+                  </Card>
 
-                <h4>API Readiness Checklist</h4>
-                <ul>
-                  <li>At least one endpoint defined</li>
-                  <li>Security policies configured</li>
-                  <li>Data mappings established</li>
-                  <li>Comprehensive description provided</li>
-                </ul>
+                  <Card className="p-4">
+                    <h4 className="font-semibold mb-2 flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                      Readiness Checklist
+                    </h4>
+                    <ul className="space-y-2 text-sm text-muted-foreground">
+                      <li>✓ At least 1 endpoint defined (30 points)</li>
+                      <li>✓ Security policies configured (25 points)</li>
+                      <li>✓ Data mappings established (25 points)</li>
+                      <li>✓ Detailed description (20+ chars) (20 points)</li>
+                      <li className="text-xs text-amber-600">Need 40+ points to review, 70+ to publish</li>
+                    </ul>
+                  </Card>
+                </div>
 
-                <h4>Visibility Options</h4>
-                <ul>
-                  <li><strong>Private:</strong> Only accessible with direct API key</li>
-                  <li><strong>Public:</strong> Listed in public directory</li>
-                  <li><strong>Marketplace:</strong> Featured in developer marketplace</li>
-                </ul>
+                <div className="space-y-6">
+                  <div>
+                    <h4 className="text-lg font-semibold mb-3">API Visibility Options</h4>
+                    <div className="grid md:grid-cols-3 gap-4">
+                      <div className="border rounded-lg p-3">
+                        <h5 className="font-medium text-blue-600">Private</h5>
+                        <p className="text-sm text-muted-foreground">Only accessible with direct API key invitation</p>
+                      </div>
+                      <div className="border rounded-lg p-3">
+                        <h5 className="font-medium text-green-600">Public</h5>
+                        <p className="text-sm text-muted-foreground">Listed in public developer directory</p>
+                      </div>
+                      <div className="border rounded-lg p-3">
+                        <h5 className="font-medium text-purple-600">Marketplace</h5>
+                        <p className="text-sm text-muted-foreground">Featured in developer marketplace with enhanced discovery</p>
+                      </div>
+                    </div>
+                  </div>
 
-                <h4>Pricing Models</h4>
-                <ul>
-                  <li><strong>Free:</strong> No cost to developers</li>
-                  <li><strong>Freemium:</strong> Free tier with paid upgrades</li>
-                  <li><strong>Paid:</strong> Subscription-based access</li>
-                  <li><strong>Enterprise:</strong> Custom pricing for large organizations</li>
-                </ul>
+                  <div>
+                    <h4 className="text-lg font-semibold mb-3">Pricing Models</h4>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="border rounded-lg p-3">
+                        <h5 className="font-medium text-green-600">Free</h5>
+                        <p className="text-sm text-muted-foreground">No cost to developers, great for community APIs</p>
+                      </div>
+                      <div className="border rounded-lg p-3">
+                        <h5 className="font-medium text-blue-600">Freemium</h5>
+                        <p className="text-sm text-muted-foreground">Free tier with premium features available</p>
+                      </div>
+                      <div className="border rounded-lg p-3">
+                        <h5 className="font-medium text-orange-600">Paid</h5>
+                        <p className="text-sm text-muted-foreground">Subscription-based access with usage tiers</p>
+                      </div>
+                      <div className="border rounded-lg p-3">
+                        <h5 className="font-medium text-purple-600">Enterprise</h5>
+                        <p className="text-sm text-muted-foreground">Custom pricing for large organizations</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h4 className="font-semibold text-blue-800 mb-2">💡 Best Practices</h4>
+                    <ul className="text-sm text-blue-700 space-y-1">
+                      <li>• Provide comprehensive API documentation with examples</li>
+                      <li>• Set appropriate rate limits to prevent abuse</li>
+                      <li>• Use semantic versioning for API updates</li>
+                      <li>• Monitor usage analytics to understand developer needs</li>
+                      <li>• Maintain backward compatibility when possible</li>
+                    </ul>
+                  </div>
+
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                    <h4 className="font-semibold text-amber-800 mb-2">⚠️ Security Considerations</h4>
+                    <ul className="text-sm text-amber-700 space-y-1">
+                      <li>• Always require authentication for sensitive endpoints</li>
+                      <li>• Implement proper rate limiting and throttling</li>
+                      <li>• Validate all input data and sanitize responses</li>
+                      <li>• Use HTTPS for all external API communications</li>
+                      <li>• Log API usage for security monitoring</li>
+                    </ul>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>

@@ -44,7 +44,7 @@ const PublishableApisList: React.FC<PublishableApisListProps> = ({ onPublishApi 
 
   const categories = ['all', ...new Set(unpublishedApis.map(api => api.category))];
 
-  // Updated readiness scoring logic - more lenient thresholds
+  // More lenient readiness scoring logic
   const getReadinessScore = (api: any) => {
     let score = 0;
     
@@ -63,8 +63,8 @@ const PublishableApisList: React.FC<PublishableApisListProps> = ({ onPublishApi 
       score += 25;
     }
     
-    // Description check (20 points) - reduced requirement to 20 characters
-    if (api.description && api.description.length > 20) {
+    // Description check (20 points) - reduced requirement to 10 characters
+    if (api.description && api.description.length > 10) {
       score += 20;
     }
     
@@ -73,13 +73,13 @@ const PublishableApisList: React.FC<PublishableApisListProps> = ({ onPublishApi 
 
   const getReadinessColor = (score: number) => {
     if (score >= 70) return 'text-green-600 bg-green-50 border-green-200';
-    if (score >= 40) return 'text-yellow-600 bg-yellow-50 border-yellow-200';
+    if (score >= 30) return 'text-yellow-600 bg-yellow-50 border-yellow-200';
     return 'text-red-600 bg-red-50 border-red-200';
   };
 
   const getReadinessText = (score: number) => {
     if (score >= 70) return 'Ready to Publish';
-    if (score >= 40) return 'Needs Review';
+    if (score >= 30) return 'Needs Review';
     return 'Incomplete';
   };
 
@@ -87,7 +87,7 @@ const PublishableApisList: React.FC<PublishableApisListProps> = ({ onPublishApi 
   const readyToPublish = unpublishedApis.filter(api => getReadinessScore(api) >= 70).length;
   const needsReview = unpublishedApis.filter(api => {
     const score = getReadinessScore(api);
-    return score >= 40 && score < 70;
+    return score >= 30 && score < 70;
   }).length;
 
   return (
@@ -218,7 +218,7 @@ const PublishableApisList: React.FC<PublishableApisListProps> = ({ onPublishApi 
                         <div className="flex flex-col gap-2 ml-4">
                           <Button
                             onClick={() => onPublishApi(api.id, api.name)}
-                            disabled={readinessScore < 40}
+                            disabled={readinessScore < 30}
                             className="min-w-[120px]"
                           >
                             <ArrowUpCircle className="h-4 w-4 mr-2" />
@@ -262,15 +262,15 @@ const PublishableApisList: React.FC<PublishableApisListProps> = ({ onPublishApi 
                                 <span>Define data mappings (25 points)</span>
                               </div>
                             )}
-                            {(!api.description || api.description.length <= 20) && (
+                            {(!api.description || api.description.length <= 10) && (
                               <div className="flex items-center gap-2 text-amber-700">
                                 <span>•</span>
-                                <span>Add detailed description (20 points)</span>
+                                <span>Add description (10+ chars) (20 points)</span>
                               </div>
                             )}
                           </div>
                           <div className="mt-2 text-xs text-amber-600">
-                            Score: {readinessScore}/100 (Need 70+ to publish, 40+ for review)
+                            Score: {readinessScore}/100 (Need 30+ to review, 70+ to publish)
                           </div>
                         </div>
                       )}
