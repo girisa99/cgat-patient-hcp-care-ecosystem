@@ -1,11 +1,23 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.2';
 import type { ProfileRequest } from './types.ts';
+import { getAuthUserById, validateDataArchitectureCompliance } from '../_shared/user-data-utils.ts';
 
 export async function updateProfile(supabase: any, targetUserId: string, profileData: any) {
-  console.log('🔄 Updating profile for user:', targetUserId, profileData);
+  validateDataArchitectureCompliance('manage-user-profiles/updateProfile');
+  
+  console.log('🔄 [MANAGE-USER-PROFILES] Updating profile for user:', targetUserId, profileData);
 
-  // First, check if profile exists
+  // Validate user exists in auth.users (PRIMARY SOURCE)
+  try {
+    const authUser = await getAuthUserById(supabase, targetUserId);
+    console.log('✅ [MANAGE-USER-PROFILES] User validated in auth.users:', authUser.email);
+  } catch (error) {
+    console.error('❌ [MANAGE-USER-PROFILES] User validation failed:', error);
+    throw new Error(`User not found in auth.users: ${error.message}`);
+  }
+
+  // Check if profile exists in supplementary table
   const { data: existingProfile } = await supabase
     .from('profiles')
     .select('id')
@@ -13,8 +25,8 @@ export async function updateProfile(supabase: any, targetUserId: string, profile
     .single();
 
   if (existingProfile) {
-    // Update existing profile
-    console.log('✅ Profile exists, updating...');
+    // Update existing supplementary profile
+    console.log('✅ [MANAGE-USER-PROFILES] Profile exists in supplementary table, updating...');
     const result = await supabase
       .from('profiles')
       .update({
@@ -24,34 +36,43 @@ export async function updateProfile(supabase: any, targetUserId: string, profile
       .eq('id', targetUserId)
       .select();
 
-    console.log('✅ Profile update result:', result);
+    console.log('✅ [MANAGE-USER-PROFILES] Supplementary profile update result:', result);
     return result;
   } else {
-    // Create new profile - get user email first
-    console.log('⚠️ Profile does not exist, creating new one...');
-    const { data: authUser } = await supabase.auth.admin.getUserById(targetUserId);
+    // Create new supplementary profile
+    console.log('⚠️ [MANAGE-USER-PROFILES] Creating new supplementary profile...');
+    const authUser = await getAuthUserById(supabase, targetUserId);
     
-    if (!authUser.user) {
-      throw new Error('User not found');
-    }
-
     const result = await supabase
       .from('profiles')
       .insert({
         id: targetUserId,
-        email: authUser.user.email,
+        email: authUser.email, // Use email from auth.users (primary source)
         ...profileData,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
       .select();
 
-    console.log('✅ Profile create result:', result);
+    console.log('✅ [MANAGE-USER-PROFILES] Supplementary profile create result:', result);
     return result;
   }
 }
 
 export async function getProfile(supabase: any, getUserId: string) {
+  validateDataArchitectureCompliance('manage-user-profiles/getProfile');
+  
+  console.log('🔍 [MANAGE-USER-PROFILES] Getting profile with auth.users validation');
+  
+  // Validate user exists in auth.users first (PRIMARY SOURCE)
+  try {
+    await getAuthUserById(supabase, getUserId);
+  } catch (error) {
+    console.error('❌ [MANAGE-USER-PROFILES] User not found in auth.users:', error);
+    throw new Error('User not found in primary data source (auth.users)');
+  }
+
+  // Get supplementary profile data
   return await supabase
     .from('profiles')
     .select(`

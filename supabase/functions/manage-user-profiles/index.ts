@@ -3,6 +3,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import type { ProfileRequest } from './types.ts';
 import { verifyAuthentication } from './auth.ts';
 import { handleProfileRequest } from './request-handler.ts';
+import { validateDataArchitectureCompliance } from './_shared/user-data-utils.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -15,6 +16,11 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Validate data architecture compliance
+    validateDataArchitectureCompliance('manage-user-profiles/main');
+    
+    console.log('🔄 [MANAGE-USER-PROFILES] Processing request with standardized user data pattern');
+
     // Verify authentication
     const authHeader = req.headers.get('Authorization');
     const { user, error: authError, supabase } = await verifyAuthentication(authHeader);
@@ -31,12 +37,14 @@ const handler = async (req: Request): Promise<Response> => {
     const result = await handleProfileRequest(supabase, user, profileRequest);
 
     if (result.error) {
-      console.error('Database error:', result.error);
+      console.error('❌ [MANAGE-USER-PROFILES] Database error:', result.error);
       return new Response(JSON.stringify({ error: result.error.message }), {
         status: 400,
         headers: { 'Content-Type': 'application/json', ...corsHeaders },
       });
     }
+
+    console.log('✅ [MANAGE-USER-PROFILES] Request completed successfully using standardized pattern');
 
     return new Response(JSON.stringify({ success: true, data: result.data }), {
       status: 200,
@@ -44,7 +52,7 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
   } catch (error) {
-    console.error('Error in manage-user-profiles:', error);
+    console.error('❌ [MANAGE-USER-PROFILES] Error:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { 'Content-Type': 'application/json', ...corsHeaders },

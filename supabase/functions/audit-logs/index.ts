@@ -6,6 +6,7 @@ import { verifyAuthentication, checkSuperAdminPermission } from './auth.ts';
 import { buildAuditLogQuery, executeAuditLogQuery } from './query-builder.ts';
 import { fetchUserProfiles, enrichAuditLogsWithUserData } from './user-data.ts';
 import { calculateAuditLogStatistics } from './statistics.ts';
+import { validateDataArchitectureCompliance } from '../_shared/user-data-utils.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -18,6 +19,9 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Validate data architecture compliance
+    validateDataArchitectureCompliance('audit-logs/main');
+    
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -48,30 +52,30 @@ const handler = async (req: Request): Promise<Response> => {
     const result = await executeAuditLogQuery(query, action, filters);
 
     if (result.error) {
-      console.error('Database error:', result.error);
+      console.error('❌ [AUDIT-LOGS] Database error:', result.error);
       return new Response(JSON.stringify({ error: result.error.message }), {
         status: 400,
         headers: { 'Content-Type': 'application/json', ...corsHeaders },
       });
     }
 
-    console.log('📊 Audit logs fetched:', result.data?.length || 0);
+    console.log('📊 [AUDIT-LOGS] Audit logs fetched:', result.data?.length || 0);
 
     // Get unique user IDs from audit logs (excluding null values)
     const userIds = [...new Set(result.data?.map(log => log.user_id).filter(Boolean))];
     
-    // Fetch user profiles
+    // Fetch user profiles using standardized utilities
     const userProfiles = await fetchUserProfiles(supabase, userIds);
     
     // Enrich audit logs with user data
     const enrichedData = enrichAuditLogsWithUserData(result.data || [], userProfiles);
     
-    console.log('🔄 Enriched data prepared with user info');
+    console.log('🔄 [AUDIT-LOGS] Enriched data prepared with standardized user info');
 
     // Calculate statistics
     const statistics = await calculateAuditLogStatistics(supabase);
 
-    console.log('📈 Statistics calculated:', {
+    console.log('📈 [AUDIT-LOGS] Statistics calculated using standardized pattern:', {
       ...statistics,
       filtered: enrichedData?.length || 0
     });
@@ -89,7 +93,7 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
   } catch (error) {
-    console.error('Error in audit-logs:', error);
+    console.error('❌ [AUDIT-LOGS] Error:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { 'Content-Type': 'application/json', ...corsHeaders },

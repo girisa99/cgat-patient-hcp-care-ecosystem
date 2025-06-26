@@ -1,62 +1,34 @@
 
-import { UserProfile } from './types.ts';
+import { fetchAllAuthUsers, fetchSupplementaryProfiles, combineUserDataStandardized, enrichWithUserData, validateDataArchitectureCompliance, type StandardizedUser } from '../_shared/user-data-utils.ts';
 
-export async function fetchUserProfiles(supabase: any, userIds: string[]): Promise<UserProfile[]> {
+export async function fetchUserProfiles(supabase: any, userIds: string[]): Promise<StandardizedUser[]> {
+  validateDataArchitectureCompliance('audit-logs/fetchUserProfiles');
+  
   if (userIds.length === 0) {
+    console.log('⚠️ [AUDIT-LOGS] No user IDs provided for user profile fetch');
     return [];
   }
 
   try {
-    console.log('👥 User IDs found in audit logs:', userIds);
+    console.log('👥 [AUDIT-LOGS] User IDs found in audit logs:', userIds);
     
-    // First get all auth users
-    const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+    // Use standardized utilities to fetch user data
+    const authUsers = await fetchAllAuthUsers(supabase);
+    const profiles = await fetchSupplementaryProfiles(supabase, userIds);
     
-    if (authError) {
-      console.error('❌ Error fetching auth users:', authError);
-      return [];
-    }
+    // No roles needed for audit logs, so pass empty array
+    const userProfiles = combineUserDataStandardized(authUsers, profiles, []);
     
-    console.log('✅ Total auth users available:', authUsers.users.length);
-    
-    // Get profile data for all users
-    const { data: profilesData, error: profilesError } = await supabase
-      .from('profiles')
-      .select('id, first_name, last_name, email');
-    
-    if (profilesError) {
-      console.error('❌ Error fetching profiles:', profilesError);
-    } else {
-      console.log('📝 Total profiles available:', profilesData?.length || 0);
-    }
-    
-    // Create user profiles map for all users (not just those in audit logs)
-    const userProfiles = authUsers.users.map(authUser => {
-      const profile = profilesData?.find(p => p.id === authUser.id);
-      return {
-        id: authUser.id,
-        first_name: profile?.first_name || authUser.user_metadata?.firstName || authUser.user_metadata?.first_name || null,
-        last_name: profile?.last_name || authUser.user_metadata?.lastName || authUser.user_metadata?.last_name || null,
-        email: profile?.email || authUser.email
-      };
-    });
-    
-    console.log('✅ User profiles prepared for all users:', userProfiles.length);
+    console.log('✅ [AUDIT-LOGS] User profiles prepared using standardized utilities:', userProfiles.length);
     return userProfiles;
     
   } catch (error) {
-    console.error('❌ Error fetching user data:', error);
+    console.error('❌ [AUDIT-LOGS] Error fetching user data:', error);
     return [];
   }
 }
 
-export function enrichAuditLogsWithUserData(auditLogs: any[], userProfiles: UserProfile[]) {
-  return auditLogs.map(log => {
-    const userProfile = userProfiles.find(profile => profile && profile.id === log.user_id);
-    
-    return {
-      ...log,
-      profiles: userProfile || null
-    };
-  });
+export function enrichAuditLogsWithUserData(auditLogs: any[], userProfiles: StandardizedUser[]) {
+  console.log('🔄 [AUDIT-LOGS] Enriching audit logs with standardized user data');
+  return enrichWithUserData(auditLogs, userProfiles);
 }
