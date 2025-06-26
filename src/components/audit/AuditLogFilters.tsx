@@ -53,14 +53,14 @@ export const AuditLogFilters = ({ filters, onFiltersChange, onClearFilters }: Au
           <div className="space-y-2">
             <Label htmlFor="action-filter">Action Type</Label>
             <Select
-              value={filters.action_type || ''}
-              onValueChange={(value) => handleFilterChange('action_type', value)}
+              value={filters.action_type || 'all'}
+              onValueChange={(value) => handleFilterChange('action_type', value === 'all' ? '' : value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="All actions" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All actions</SelectItem>
+                <SelectItem value="all">All actions</SelectItem>
                 <SelectItem value="INSERT">Create</SelectItem>
                 <SelectItem value="UPDATE">Update</SelectItem>
                 <SelectItem value="DELETE">Delete</SelectItem>
@@ -71,14 +71,14 @@ export const AuditLogFilters = ({ filters, onFiltersChange, onClearFilters }: Au
           <div className="space-y-2">
             <Label htmlFor="table-filter">Table</Label>
             <Select
-              value={filters.table_name || ''}
-              onValueChange={(value) => handleFilterChange('table_name', value)}
+              value={filters.table_name || 'all'}
+              onValueChange={(value) => handleFilterChange('table_name', value === 'all' ? '' : value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="All tables" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All tables</SelectItem>
+                <SelectItem value="all">All tables</SelectItem>
                 <SelectItem value="profiles">Profiles</SelectItem>
                 <SelectItem value="user_roles">User Roles</SelectItem>
                 <SelectItem value="facilities">Facilities</SelectItem>

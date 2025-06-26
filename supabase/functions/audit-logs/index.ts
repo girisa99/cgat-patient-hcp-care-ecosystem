@@ -56,16 +56,10 @@ const handler = async (req: Request): Promise<Response> => {
 
     const { action, filters }: AuditRequest = await req.json();
 
+    // First get audit logs
     let query = supabase
       .from('audit_logs')
-      .select(`
-        *,
-        profiles!user_id (
-          first_name,
-          last_name,
-          email
-        )
-      `);
+      .select('*');
 
     // Apply filters
     if (filters) {
@@ -123,25 +117,9 @@ const handler = async (req: Request): Promise<Response> => {
         break;
 
       case 'export_logs':
-        // For export, get more comprehensive data
         result = await query
           .order('created_at', { ascending: false })
           .limit(filters?.limit || 1000);
-        
-        if (result.data) {
-          // Format data for CSV export
-          const csvData = result.data.map(log => ({
-            timestamp: log.created_at,
-            user: log.profiles ? `${log.profiles.first_name} ${log.profiles.last_name}` : 'Unknown',
-            email: log.profiles?.email || 'Unknown',
-            action: log.action,
-            table: log.table_name,
-            record_id: log.record_id,
-            ip_address: log.ip_address
-          }));
-          
-          result.data = csvData;
-        }
         break;
 
       default:
@@ -159,6 +137,25 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
+    // Now get user profiles separately to avoid join issues
+    const userIds = [...new Set(result.data?.map(log => log.user_id).filter(Boolean))];
+    let profiles = [];
+    
+    if (userIds.length > 0) {
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, email')
+        .in('id', userIds);
+      
+      profiles = profilesData || [];
+    }
+
+    // Merge the data
+    const enrichedData = result.data?.map(log => ({
+      ...log,
+      profiles: profiles.find(profile => profile.id === log.user_id) || null
+    }));
+
     // Get summary statistics
     const { data: totalCount } = await supabase
       .from('audit_logs')
@@ -171,11 +168,11 @@ const handler = async (req: Request): Promise<Response> => {
 
     return new Response(JSON.stringify({ 
       success: true, 
-      data: result.data,
+      data: enrichedData,
       metadata: {
         total_logs: totalCount?.length || 0,
         today_logs: todayCount?.length || 0,
-        filtered_count: result.data?.length || 0
+        filtered_count: enrichedData?.length || 0
       }
     }), {
       status: 200,
