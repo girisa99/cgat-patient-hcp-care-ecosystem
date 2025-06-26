@@ -84,6 +84,12 @@ class ExternalApiSyncManagerClass {
       const verificationResult = await this.verifySyncCompletion(externalApi.id);
       console.log('🔍 Sync verification:', verificationResult);
 
+      // Step 7: Log the sync event for tracking
+      await this.logSyncEvent(externalApi.id, 'sync_completed', {
+        endpoints_synced: externalEndpoints.length,
+        verification: verificationResult
+      });
+
       return {
         ...externalApi,
         synced_endpoints_count: externalEndpoints.length,
@@ -125,17 +131,49 @@ class ExternalApiSyncManagerClass {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         console.log(`🔄 Sync attempt ${attempt}/${maxRetries} for ${internalEndpoints.length} endpoints`);
-        return await this.syncEndpointsToExternal(externalApiId, internalEndpoints);
+        const result = await this.syncEndpointsToExternal(externalApiId, internalEndpoints);
+        
+        // Verify the sync immediately after
+        const verifyResult = await this.verifyEndpointsSync(externalApiId, internalEndpoints.length);
+        if (!verifyResult.success) {
+          throw new Error(`Sync verification failed: ${verifyResult.error}`);
+        }
+        
+        return result;
       } catch (error) {
         console.error(`❌ Sync attempt ${attempt} failed:`, error);
         if (attempt === maxRetries) {
           throw error;
         }
-        // Wait before retry
-        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+        // Wait before retry with exponential backoff
+        await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
       }
     }
     return [];
+  }
+
+  /**
+   * Verify that endpoints were synced correctly
+   */
+  private async verifyEndpointsSync(externalApiId: string, expectedCount: number) {
+    const { data: syncedEndpoints, error } = await supabase
+      .from('external_api_endpoints')
+      .select('id, external_path, method')
+      .eq('external_api_id', externalApiId);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    const actualCount = syncedEndpoints?.length || 0;
+    if (actualCount !== expectedCount) {
+      return { 
+        success: false, 
+        error: `Expected ${expectedCount} endpoints, but found ${actualCount}` 
+      };
+    }
+
+    return { success: true, count: actualCount };
   }
 
   /**
@@ -157,6 +195,29 @@ class ExternalApiSyncManagerClass {
       synced_endpoints: endpoints?.length || 0,
       endpoints_preview: endpoints?.slice(0, 3).map(ep => `${ep.method} ${ep.external_path}`) || []
     };
+  }
+
+  /**
+   * Log sync events for tracking and debugging
+   */
+  private async logSyncEvent(externalApiId: string, eventType: string, metadata: any) {
+    try {
+      const { error } = await supabase
+        .from('api_lifecycle_events')
+        .insert({
+          api_integration_id: externalApiId,
+          event_type: eventType,
+          description: `Sync event: ${eventType}`,
+          metadata: metadata,
+          impact_level: 'medium'
+        });
+
+      if (error) {
+        console.warn('⚠️ Error logging sync event:', error);
+      }
+    } catch (error) {
+      console.warn('⚠️ Error logging sync event:', error);
+    }
   }
 
   /**
@@ -689,6 +750,42 @@ class ExternalApiSyncManagerClass {
       synced_endpoints: endpoints?.length || 0,
       last_sync: externalApi.updated_at
     };
+  }
+
+  /**
+   * Force refresh sync for an external API
+   */
+  async forceRefreshSync(externalApiId: string) {
+    console.log('🔄 Force refreshing sync for external API:', externalApiId);
+    
+    try {
+      // Get the external API info
+      const { data: externalApi, error } = await supabase
+        .from('external_api_registry')
+        .select('internal_api_id')
+        .eq('id', externalApiId)
+        .single();
+
+      if (error || !externalApi) {
+        throw new Error('External API not found');
+      }
+
+      // Clear existing endpoints
+      await this.clearExistingEndpoints(externalApiId);
+
+      // Get internal API details and re-sync
+      const internalApiDetails = await this.getInternalApiDetails(externalApi.internal_api_id);
+      const syncedEndpoints = await this.syncEndpointsToExternal(externalApiId, internalApiDetails.endpoints);
+
+      console.log(`✅ Force refresh completed: ${syncedEndpoints.length} endpoints synced`);
+      return { 
+        success: true, 
+        synced_endpoints: syncedEndpoints.length 
+      };
+    } catch (error) {
+      console.error('❌ Error during force refresh:', error);
+      throw error;
+    }
   }
 }
 

@@ -17,6 +17,7 @@ import { usePublishedApiIntegration, PublishedApiForDevelopers } from '@/hooks/u
 import { useEnhancedPublishedApiDetails, ApiIntegrationDetails } from '@/hooks/useEnhancedPublishedApiDetails';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
+import { externalApiSyncManager } from '@/utils/api/ExternalApiSyncManager';
 import ApiDetailsDialog from './ApiDetailsDialog';
 
 interface PublishedApisSectionProps {
@@ -29,6 +30,7 @@ const PublishedApisSection = ({ showInDeveloperPortal = false }: PublishedApisSe
   const [selectedApiDetails, setSelectedApiDetails] = useState<ApiIntegrationDetails | null>(null);
   const [showApiDialog, setShowApiDialog] = useState(false);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+  const [isForceRefreshing, setIsForceRefreshing] = useState(false);
 
   const {
     publishedApisForDevelopers,
@@ -101,6 +103,34 @@ const PublishedApisSection = ({ showInDeveloperPortal = false }: PublishedApisSe
       title: "Data Refreshed",
       description: "API data has been refreshed with latest sync information",
     });
+  };
+
+  const handleForceSync = async (apiId: string) => {
+    setIsForceRefreshing(true);
+    try {
+      console.log('🔄 Force syncing endpoints for API:', apiId);
+      
+      await externalApiSyncManager.forceRefreshSync(apiId);
+      
+      // Invalidate all related queries to refresh the UI
+      await queryClient.invalidateQueries({ queryKey: ['published-apis-for-developers'] });
+      await queryClient.invalidateQueries({ queryKey: ['enhanced-api-details'] });
+      await queryClient.invalidateQueries({ queryKey: ['external-api-endpoints'] });
+      
+      toast({
+        title: "Sync Completed",
+        description: "API endpoints have been force-synced successfully",
+      });
+    } catch (error) {
+      console.error('❌ Error force syncing:', error);
+      toast({
+        title: "Sync Failed",
+        description: "Failed to force sync endpoints. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsForceRefreshing(false);
+    }
   };
 
   if (isLoadingPublishedApis) {
@@ -229,6 +259,15 @@ const PublishedApisSection = ({ showInDeveloperPortal = false }: PublishedApisSe
                       disabled={isNotifyingDevelopers}
                     >
                       <Bell className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleForceSync(api.id)}
+                      disabled={isForceRefreshing}
+                      title="Force sync endpoints"
+                    >
+                      <RefreshCw className={`h-3 w-3 ${isForceRefreshing ? 'animate-spin' : ''}`} />
                     </Button>
                   </>
                 )}
