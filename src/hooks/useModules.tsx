@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -89,6 +88,43 @@ export const useModules = () => {
     return hasAccess;
   };
 
+  // Create new module
+  const createModuleMutation = useMutation({
+    mutationFn: async ({ 
+      name, 
+      description, 
+      is_active 
+    }: { 
+      name: string; 
+      description: string | null; 
+      is_active: boolean;
+    }) => {
+      const { error } = await supabase
+        .from('modules')
+        .insert({
+          name,
+          description,
+          is_active
+        });
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['modules'] });
+      toast({
+        title: "Module Created",
+        description: "New module has been created successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create module",
+        variant: "destructive",
+      });
+    }
+  });
+
   // Assign module to user
   const assignModuleMutation = useMutation({
     mutationFn: async ({ 
@@ -168,8 +204,10 @@ export const useModules = () => {
     modulesError,
     userModulesError,
     hasModuleAccess,
+    createModule: createModuleMutation.mutate,
     assignModule: assignModuleMutation.mutate,
     assignModuleToRole: assignModuleToRoleMutation.mutate,
+    isCreating: createModuleMutation.isPending,
     isAssigning: assignModuleMutation.isPending,
     isAssigningToRole: assignModuleToRoleMutation.isPending
   };
