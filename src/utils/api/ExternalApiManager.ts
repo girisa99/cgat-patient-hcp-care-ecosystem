@@ -132,15 +132,16 @@ class ExternalApiManagerClass {
         actualInternalApiId = existingApi.id;
       } else {
         // Create a new entry in the api_integration_registry if it doesn't exist
+        // Using valid constraint values based on the database schema
         const { data: newApi, error: createError } = await supabase
           .from('api_integration_registry')
           .insert({
             name: internalApiId,
             type: 'internal',
-            category: publishConfig.category || 'general',
+            category: publishConfig.category || 'healthcare',
             direction: 'outbound',
-            purpose: 'External API Publishing',
-            description: publishConfig.external_description || '',
+            purpose: 'integration', // Using valid constraint value
+            description: publishConfig.external_description || 'Internal API for external publishing',
             status: 'active',
             lifecycle_stage: 'production',
             created_by: user.id
