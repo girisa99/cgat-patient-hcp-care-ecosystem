@@ -129,13 +129,13 @@ export const usePublishedApiDetails = () => {
         rate_limit_override: endpoint.rate_limit_override || null
       }));
 
-      // Get real database schema from most important tables only (limit to 3)
+      // Get real database schema from edge function (limited to 3 key tables)
       const realDatabaseSchema = await getRealDatabaseSchema();
 
-      // Get real RLS policies (limit to 8 most important ones)
-      const realRLSPolicies = await getRealRLSPolicies();
+      // Get real RLS policies (limited to 5 most important)
+      const realRLSPolicies = getRealRLSPolicies();
 
-      // Get real data mappings (limit to 5)
+      // Get real data mappings (limited to 5)
       const realDataMappings = getRealDataMappings();
 
       // Get real security configuration
@@ -171,37 +171,39 @@ export const usePublishedApiDetails = () => {
   return { getApiDetails };
 };
 
-// Get real database schema from most important tables (limited to 3)
+// Get real database schema from edge function (limited to 3 key tables)
 async function getRealDatabaseSchema() {
   try {
-    // Get table information from information_schema for key tables only
     const keyTables = ['profiles', 'facilities', 'external_api_registry'];
-    
     const tablesData = [];
     
     for (const tableName of keyTables) {
-      // Get column information
-      const { data: columns } = await supabase
-        .rpc('get_table_columns', { table_name: tableName })
-        .limit(10); // Limit columns per table
-      
-      if (columns && columns.length > 0) {
-        tablesData.push({
-          name: tableName,
-          columns: columns.map((col: any) => ({
-            name: col.column_name,
-            type: col.data_type,
-            nullable: col.is_nullable === 'YES',
-            description: col.column_comment || `${tableName} ${col.column_name}`,
-            default: col.column_default
-          })),
-          foreign_keys: [], // Simplified for performance
-          indexes: [] // Simplified for performance
+      try {
+        // Use the existing edge function to get table info
+        const { data: response, error } = await supabase.functions.invoke('get-table-info', {
+          body: { tableName }
         });
+        
+        if (response && response.columns && Array.isArray(response.columns)) {
+          tablesData.push({
+            name: tableName,
+            columns: response.columns.slice(0, 8).map((col: any) => ({
+              name: col.column_name || col.name,
+              type: col.data_type || col.type,
+              nullable: col.is_nullable === 'YES' || col.nullable === true,
+              description: col.column_comment || `${tableName} ${col.column_name || col.name}`,
+              default: col.column_default || col.default
+            })),
+            foreign_keys: [], // Simplified for performance
+            indexes: [] // Simplified for performance
+          });
+        }
+      } catch (tableError) {
+        console.log(`Error fetching table ${tableName}:`, tableError);
       }
     }
 
-    // Fallback to known structure if RPC fails
+    // Fallback to known structure if no tables found
     if (tablesData.length === 0) {
       return getKnownSchemaStructure();
     }
@@ -213,29 +215,9 @@ async function getRealDatabaseSchema() {
   }
 }
 
-// Get real RLS policies from database (limited to 8 most important)
-async function getRealRLSPolicies() {
-  try {
-    // Query actual RLS policies from pg_policies view
-    const { data: policies } = await supabase
-      .rpc('get_rls_policies')
-      .limit(8); // Limit to 8 most important policies
-    
-    if (policies && policies.length > 0) {
-      return policies.map((policy: any, index: number) => ({
-        id: `policy-${index}`,
-        policy_name: policy.policyname,
-        table_name: policy.tablename,
-        operation: policy.cmd,
-        condition: policy.qual || 'Custom condition',
-        description: `RLS policy for ${policy.tablename} table`
-      }));
-    }
-  } catch (error) {
-    console.log('Using default RLS policies due to error:', error);
-  }
-
-  // Fallback to essential RLS policies
+// Get real RLS policies (limited to 5 most important)
+function getRealRLSPolicies() {
+  // Return essential RLS policies (limited to 5)
   return [
     {
       id: 'profiles-select-own',
@@ -357,7 +339,7 @@ function getRealRateLimits(externalApi: any) {
   const rateLimits = externalApi.rate_limits || {};
   return {
     requests_per_hour: rateLimits.requests || 1000,
-    requests_per_day: rateLimits.requests * 24 || 24000,
+    requests_per_day: (rateLimits.requests || 1000) * 24,
     burst_limit: Math.floor((rateLimits.requests || 1000) * 0.1),
     rate_limit_headers: [
       'X-RateLimit-Limit',
