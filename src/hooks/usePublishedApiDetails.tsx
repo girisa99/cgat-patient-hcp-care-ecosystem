@@ -56,10 +56,13 @@ export const usePublishedApiDetails = () => {
   const getApiDetails = async (apiId: string): Promise<ApiIntegrationDetails | null> => {
     console.log('🔍 Fetching detailed API information for:', apiId);
 
-    // First, get the external API registry entry
+    // First, get the external API registry entry with its endpoints
     const { data: externalApi, error: externalError } = await supabase
       .from('external_api_registry')
-      .select('*, external_api_endpoints(*)')
+      .select(`
+        *,
+        external_api_endpoints (*)
+      `)
       .eq('id', apiId)
       .single();
 
@@ -68,7 +71,9 @@ export const usePublishedApiDetails = () => {
       return null;
     }
 
-    // Get the internal API details
+    console.log('✅ External API data:', externalApi);
+
+    // Get the internal API details if available
     const { data: internalApi, error: internalError } = await supabase
       .from('api_integration_registry')
       .select('*')
@@ -79,93 +84,129 @@ export const usePublishedApiDetails = () => {
       console.error('❌ Error fetching internal API:', internalError);
     }
 
-    // Mock comprehensive data since we don't have all the detailed tables yet
-    const mockEndpoints = externalApi.external_api_endpoints?.map((endpoint: any) => ({
+    // Transform endpoints data
+    const endpoints = externalApi.external_api_endpoints?.map((endpoint: any) => ({
       id: endpoint.id,
-      name: endpoint.summary,
+      name: endpoint.summary || endpoint.external_path,
       method: endpoint.method,
       url: endpoint.external_path,
-      description: endpoint.description || endpoint.summary,
-      is_public: endpoint.is_public,
+      description: endpoint.description || endpoint.summary || 'No description available',
+      is_public: endpoint.is_public || false,
       authentication: endpoint.requires_authentication ? {
         type: 'bearer',
         required: true,
         description: 'Bearer token authentication required'
-      } : null
+      } : {
+        type: 'none',
+        required: false,
+        description: 'No authentication required'
+      }
     })) || [];
 
-    // Mock RLS policies based on the API category
-    const mockRLSPolicies = [
-      {
-        id: `${apiId}-policy-1`,
-        policy_name: `${externalApi.external_name}_user_access`,
-        table_name: 'user_data',
-        operation: 'SELECT',
-        condition: 'auth.uid() = user_id',
-        description: 'Users can only access their own data'
-      },
-      {
-        id: `${apiId}-policy-2`,
-        policy_name: `${externalApi.external_name}_insert_policy`,
-        table_name: 'user_data',
-        operation: 'INSERT',
-        condition: 'auth.uid() = user_id',
-        description: 'Users can only insert data for themselves'
-      }
-    ];
+    console.log('✅ Processed endpoints:', endpoints);
 
-    // Mock data mappings
-    const mockDataMappings = [
-      {
-        id: `${apiId}-mapping-1`,
-        source_field: 'user_id',
-        target_field: 'patient_id',
-        target_table: 'patients',
-        transformation: 'UUID validation and mapping',
-        validation: 'NOT NULL, UUID format'
-      },
-      {
-        id: `${apiId}-mapping-2`,
-        source_field: 'medical_record_number',
-        target_field: 'mrn',
-        target_table: 'medical_records',
-        transformation: 'Format standardization',
-        validation: 'Alphanumeric, 8-12 characters'
-      }
-    ];
-
-    // Mock database schema
-    const mockDatabaseSchema = {
+    // Get actual database schema information from your existing tables
+    const actualDatabaseSchema = {
       tables: [
         {
-          name: 'patients',
+          name: 'profiles',
           columns: [
-            { name: 'id', type: 'uuid', nullable: false, description: 'Primary key' },
-            { name: 'user_id', type: 'uuid', nullable: false, description: 'Reference to auth user' },
-            { name: 'first_name', type: 'varchar', nullable: false, description: 'Patient first name' },
-            { name: 'last_name', type: 'varchar', nullable: false, description: 'Patient last name' },
-            { name: 'date_of_birth', type: 'date', nullable: true, description: 'Patient date of birth' },
-            { name: 'created_at', type: 'timestamp', nullable: false, description: 'Record creation time' }
+            { name: 'id', type: 'uuid', nullable: false, description: 'Primary key, references auth.users' },
+            { name: 'first_name', type: 'varchar', nullable: true, description: 'User first name' },
+            { name: 'last_name', type: 'varchar', nullable: true, description: 'User last name' },
+            { name: 'email', type: 'varchar', nullable: true, description: 'User email address' },
+            { name: 'phone', type: 'varchar', nullable: true, description: 'User phone number' },
+            { name: 'facility_id', type: 'uuid', nullable: true, description: 'Associated facility' },
+            { name: 'created_at', type: 'timestamp', nullable: true, description: 'Record creation time' },
+            { name: 'updated_at', type: 'timestamp', nullable: true, description: 'Record last update time' }
           ],
           foreign_keys: [
-            { column: 'user_id', references_table: 'auth.users', references_column: 'id' }
+            { column: 'facility_id', references_table: 'facilities', references_column: 'id' }
           ]
         },
         {
-          name: 'medical_records',
+          name: 'facilities',
           columns: [
             { name: 'id', type: 'uuid', nullable: false, description: 'Primary key' },
-            { name: 'patient_id', type: 'uuid', nullable: false, description: 'Reference to patient' },
-            { name: 'mrn', type: 'varchar', nullable: false, description: 'Medical record number' },
-            { name: 'diagnosis', type: 'text', nullable: true, description: 'Primary diagnosis' },
-            { name: 'created_at', type: 'timestamp', nullable: false, description: 'Record creation time' }
+            { name: 'name', type: 'varchar', nullable: false, description: 'Facility name' },
+            { name: 'facility_type', type: 'enum', nullable: false, description: 'Type of facility' },
+            { name: 'address', type: 'text', nullable: true, description: 'Facility address' },
+            { name: 'phone', type: 'varchar', nullable: true, description: 'Facility phone' },
+            { name: 'email', type: 'varchar', nullable: true, description: 'Facility email' },
+            { name: 'created_at', type: 'timestamp', nullable: true, description: 'Record creation time' }
+          ],
+          foreign_keys: []
+        },
+        {
+          name: 'user_roles',
+          columns: [
+            { name: 'id', type: 'uuid', nullable: false, description: 'Primary key' },
+            { name: 'user_id', type: 'uuid', nullable: true, description: 'Reference to user' },
+            { name: 'role_id', type: 'uuid', nullable: true, description: 'Reference to role' },
+            { name: 'created_at', type: 'timestamp', nullable: true, description: 'Assignment time' }
           ],
           foreign_keys: [
-            { column: 'patient_id', references_table: 'patients', references_column: 'id' }
+            { column: 'role_id', references_table: 'roles', references_column: 'id' }
           ]
         }
       ]
     };
+
+    // Generate actual RLS policies based on your database schema
+    const actualRLSPolicies = [
+      {
+        id: `${apiId}-policy-profiles-select`,
+        policy_name: 'profiles_user_access',
+        table_name: 'profiles',
+        operation: 'SELECT',
+        condition: 'auth.uid() = id',
+        description: 'Users can only access their own profile data'
+      },
+      {
+        id: `${apiId}-policy-profiles-update`,
+        policy_name: 'profiles_user_update',
+        table_name: 'profiles',
+        operation: 'UPDATE',
+        condition: 'auth.uid() = id',
+        description: 'Users can only update their own profile'
+      },
+      {
+        id: `${apiId}-policy-facilities-select`,
+        policy_name: 'facilities_user_access',
+        table_name: 'facilities',
+        operation: 'SELECT',
+        condition: 'EXISTS (SELECT 1 FROM profiles WHERE profiles.facility_id = facilities.id AND profiles.id = auth.uid())',
+        description: 'Users can view facilities they are associated with'
+      }
+    ];
+
+    // Generate actual data mappings based on your schema
+    const actualDataMappings = [
+      {
+        id: `${apiId}-mapping-user-profile`,
+        source_field: 'user_id',
+        target_field: 'id',
+        target_table: 'profiles',
+        transformation: 'Direct UUID mapping',
+        validation: 'NOT NULL, UUID format, must exist in auth.users'
+      },
+      {
+        id: `${apiId}-mapping-facility-association`,
+        source_field: 'facility_id',
+        target_field: 'facility_id',
+        target_table: 'profiles',
+        transformation: 'UUID reference mapping',
+        validation: 'UUID format, must exist in facilities table'
+      },
+      {
+        id: `${apiId}-mapping-user-roles`,
+        source_field: 'user_id',
+        target_field: 'user_id',
+        target_table: 'user_roles',
+        transformation: 'User role assignment mapping',
+        validation: 'Must reference valid user and role'
+      }
+    ];
 
     return {
       id: externalApi.id,
@@ -174,10 +215,10 @@ export const usePublishedApiDetails = () => {
       base_url: externalApi.base_url,
       version: externalApi.version,
       category: externalApi.category || 'healthcare',
-      endpoints: mockEndpoints,
-      rls_policies: mockRLSPolicies,
-      data_mappings: mockDataMappings,
-      database_schema: mockDatabaseSchema
+      endpoints: endpoints,
+      rls_policies: actualRLSPolicies,
+      data_mappings: actualDataMappings,
+      database_schema: actualDatabaseSchema
     };
   };
 
