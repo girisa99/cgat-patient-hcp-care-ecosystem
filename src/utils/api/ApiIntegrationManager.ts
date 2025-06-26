@@ -4,7 +4,7 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
-import { ApiIntegration, ApiEndpoint, DataMapping, RLSPolicy, PostmanCollection } from './ApiIntegrationTypes';
+import { ApiIntegration, ApiEndpoint, DataMapping, RLSPolicy, PostmanCollection, PostmanItem } from './ApiIntegrationTypes';
 import { InternalApiDetector } from './InternalApiDetector';
 
 class ApiIntegrationManagerClass {
