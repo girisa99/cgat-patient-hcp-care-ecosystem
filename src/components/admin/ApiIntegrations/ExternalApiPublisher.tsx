@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -26,6 +25,22 @@ import {
 import { useApiIntegrations } from '@/hooks/useApiIntegrations';
 import { useExternalApis } from '@/hooks/useExternalApis';
 import PublishableApisList from './PublishableApisList';
+
+// Helper function to get status color
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'published':
+      return 'bg-green-100 text-green-800 border-green-200';
+    case 'review':
+      return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+    case 'draft':
+      return 'bg-gray-100 text-gray-800 border-gray-200';
+    case 'deprecated':
+      return 'bg-red-100 text-red-800 border-red-200';
+    default:
+      return 'bg-gray-100 text-gray-800 border-gray-200';
+  }
+};
 
 const ExternalApiPublisher = () => {
   const { integrations } = useApiIntegrations();
