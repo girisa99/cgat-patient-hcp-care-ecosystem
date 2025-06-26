@@ -140,7 +140,7 @@ class ExternalApiManagerClass {
             type: 'internal',
             category: publishConfig.category || 'healthcare',
             direction: 'outbound',
-            purpose: 'integration', // Using valid constraint value
+            purpose: 'publishing', // Using valid constraint value from ApiPurpose type
             description: publishConfig.external_description || 'Internal API for external publishing',
             status: 'active',
             lifecycle_stage: 'production',
