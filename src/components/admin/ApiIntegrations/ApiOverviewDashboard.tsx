@@ -1,9 +1,9 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { 
   ArrowDownCircle, 
   ArrowUpCircle, 
@@ -15,16 +15,31 @@ import {
   ExternalLink,
   Eye,
   Settings,
-  Activity
+  Activity,
+  RotateCcw,
+  Trash2,
+  RefreshCw
 } from 'lucide-react';
 import { useApiIntegrations } from '@/hooks/useApiIntegrations';
 import { useExternalApis } from '@/hooks/useExternalApis';
+import { useToast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
+import { externalApiSyncManager } from '@/utils/api/ExternalApiSyncManager';
+import ExternalApiConfigDialog from './ExternalApiConfigDialog';
+import ExternalApiAnalyticsDialog from './ExternalApiAnalyticsDialog';
 
 const ApiOverviewDashboard = () => {
   const { integrations } = useApiIntegrations();
   const { externalApis, publishedApis, marketplaceStats } = useExternalApis();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   const [selectedView, setSelectedView] = useState<'overview' | 'consuming' | 'publishing'>('overview');
+  const [showConfigDialog, setShowConfigDialog] = useState(false);
+  const [showAnalyticsDialog, setShowAnalyticsDialog] = useState(false);
+  const [selectedApiForConfig, setSelectedApiForConfig] = useState<any>(null);
+  const [selectedApiForAnalytics, setSelectedApiForAnalytics] = useState<any>(null);
+  const [isProcessing, setIsProcessing] = useState<string | null>(null);
 
   // Separate APIs by type
   const consumedApis = integrations?.filter(api => api.type === 'external') || [];
@@ -38,6 +53,76 @@ const ApiOverviewDashboard = () => {
       case 'draft': return 'bg-yellow-500';
       case 'inactive': return 'bg-gray-500';
       default: return 'bg-gray-500';
+    }
+  };
+
+  const handleConfigureApi = (api: any) => {
+    console.log('⚙️ Opening config dialog for published API:', api.external_name);
+    setSelectedApiForConfig(api);
+    setShowConfigDialog(true);
+  };
+
+  const handleViewAnalytics = (api: any) => {
+    console.log('📊 Opening analytics dialog for published API:', api.external_name);
+    setSelectedApiForAnalytics(api);
+    setShowAnalyticsDialog(true);
+  };
+
+  const handleRevertToDraft = async (api: any) => {
+    try {
+      console.log('🔄 Reverting published API to draft:', api.external_name);
+      setIsProcessing(`revert-${api.id}`);
+      await externalApiSyncManager.revertPublication(api.id);
+      toast({
+        title: "API Reverted",
+        description: `${api.external_name} has been reverted to draft status.`,
+      });
+      
+      // Force a refresh of the data
+      await queryClient.invalidateQueries({ queryKey: ['external-apis'] });
+      await queryClient.invalidateQueries({ queryKey: ['published-external-apis'] });
+      
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } catch (error: any) {
+      console.error('❌ Revert failed:', error);
+      toast({
+        title: "Revert Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(null);
+    }
+  };
+
+  const handleCancelPublication = async (api: any) => {
+    try {
+      console.log('🗑️ Canceling publication for API:', api.external_name);
+      setIsProcessing(`cancel-${api.id}`);
+      await externalApiSyncManager.cancelPublication(api.id);
+      toast({
+        title: "Publication Canceled",
+        description: `${api.external_name} has been completely removed.`,
+      });
+      
+      // Force a refresh of the data
+      await queryClient.invalidateQueries({ queryKey: ['external-apis'] });
+      await queryClient.invalidateQueries({ queryKey: ['published-external-apis'] });
+      
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } catch (error: any) {
+      console.error('❌ Cancel failed:', error);
+      toast({
+        title: "Cancel Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(null);
     }
   };
 
@@ -243,14 +328,96 @@ const ApiOverviewDashboard = () => {
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <Button size="sm" variant="outline">
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => handleConfigureApi(api)}
+                      disabled={isProcessing !== null}
+                      className="bg-gray-50 hover:bg-gray-100"
+                    >
+                      {isProcessing !== null ? (
+                        <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                      ) : (
+                        <Settings className="h-3 w-3 mr-1" />
+                      )}
+                      Manage
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => handleViewAnalytics(api)}
+                      disabled={isProcessing !== null}
+                      className="bg-blue-50 hover:bg-blue-100"
+                    >
                       <TrendingUp className="h-3 w-3 mr-1" />
                       Analytics
                     </Button>
-                    <Button size="sm" variant="outline">
-                      <Settings className="h-3 w-3 mr-1" />
-                      Manage
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          disabled={isProcessing !== null}
+                          className="bg-orange-50 hover:bg-orange-100"
+                        >
+                          {isProcessing === `revert-${api.id}` ? (
+                            <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                          ) : (
+                            <RotateCcw className="h-3 w-3 mr-1" />
+                          )}
+                          Revert
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Revert to Draft?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will change the status back to draft and unpublish the API. 
+                            The API will no longer be accessible to external developers.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleRevertToDraft(api)}>
+                            Revert to Draft
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button 
+                          size="sm" 
+                          variant="destructive"
+                          disabled={isProcessing !== null}
+                        >
+                          {isProcessing === `cancel-${api.id}` ? (
+                            <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-3 w-3 mr-1" />
+                          )}
+                          Cancel
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Cancel Publication?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will permanently delete the external API and all its data. 
+                            This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Keep API</AlertDialogCancel>
+                          <AlertDialogAction 
+                            onClick={() => handleCancelPublication(api)}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            Delete Permanently
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </div>
               </CardContent>
@@ -353,6 +520,30 @@ const ApiOverviewDashboard = () => {
           <PublishingAPIsView />
         </TabsContent>
       </Tabs>
+
+      {/* Configuration Dialog */}
+      <ExternalApiConfigDialog
+        open={showConfigDialog}
+        onOpenChange={(open) => {
+          setShowConfigDialog(open);
+          if (!open) {
+            setSelectedApiForConfig(null);
+          }
+        }}
+        api={selectedApiForConfig}
+      />
+
+      {/* Analytics Dialog */}
+      <ExternalApiAnalyticsDialog
+        open={showAnalyticsDialog}
+        onOpenChange={(open) => {
+          setShowAnalyticsDialog(open);
+          if (!open) {
+            setSelectedApiForAnalytics(null);
+          }
+        }}
+        api={selectedApiForAnalytics}
+      />
     </div>
   );
 };
