@@ -203,6 +203,58 @@ export type Database = {
           },
         ]
       }
+      role_permission_overrides: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          facility_id: string | null
+          id: string
+          is_granted: boolean | null
+          permission_id: string | null
+          role_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          facility_id?: string | null
+          id?: string
+          is_granted?: boolean | null
+          permission_id?: string | null
+          role_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          facility_id?: string | null
+          id?: string
+          is_granted?: boolean | null
+          permission_id?: string | null
+          role_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_permission_overrides_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "role_permission_overrides_permission_id_fkey"
+            columns: ["permission_id"]
+            isOneToOne: false
+            referencedRelation: "permissions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "role_permission_overrides_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       role_permissions: {
         Row: {
           created_at: string | null
@@ -301,6 +353,44 @@ export type Database = {
           },
         ]
       }
+      user_permissions: {
+        Row: {
+          expires_at: string | null
+          granted_at: string | null
+          granted_by: string | null
+          id: string
+          is_active: boolean | null
+          permission_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          expires_at?: string | null
+          granted_at?: string | null
+          granted_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          permission_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          expires_at?: string | null
+          granted_at?: string | null
+          granted_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          permission_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_permissions_permission_id_fkey"
+            columns: ["permission_id"]
+            isOneToOne: false
+            referencedRelation: "permissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           assigned_by: string | null
@@ -353,6 +443,14 @@ export type Database = {
           access_level: string
         }[]
       }
+      get_user_effective_permissions: {
+        Args: { check_user_id: string; facility_id?: string }
+        Returns: {
+          permission_name: string
+          source: string
+          expires_at: string
+        }[]
+      }
       has_permission: {
         Args: { user_id: string; permission_name: string }
         Returns: boolean
@@ -361,6 +459,14 @@ export type Database = {
         Args: {
           user_id: string
           role_name: Database["public"]["Enums"]["user_role"]
+        }
+        Returns: boolean
+      }
+      user_has_permission: {
+        Args: {
+          check_user_id: string
+          permission_name: string
+          facility_id?: string
         }
         Returns: boolean
       }

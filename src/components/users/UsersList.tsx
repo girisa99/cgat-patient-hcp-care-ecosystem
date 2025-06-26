@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useUsers } from '@/hooks/useUsers';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,7 +11,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Plus, UserPlus, Building, Edit, Minus } from 'lucide-react';
+import { Plus, Shield } from 'lucide-react';
+import UserActions from './UserActions';
+import PermissionManagementDialog from './PermissionManagementDialog';
 
 interface UsersListProps {
   onCreateUser: () => void;
@@ -29,6 +31,15 @@ const UsersList: React.FC<UsersListProps> = ({
   onEditUser
 }) => {
   const { users, isLoading } = useUsers();
+  const [permissionDialogOpen, setPermissionDialogOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [selectedUserName, setSelectedUserName] = useState<string>('');
+
+  const handleManagePermissions = (userId: string, userName: string) => {
+    setSelectedUserId(userId);
+    setSelectedUserName(userName);
+    setPermissionDialogOpen(true);
+  };
 
   if (isLoading) {
     return (
@@ -53,7 +64,10 @@ const UsersList: React.FC<UsersListProps> = ({
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-medium">All Users ({users.length})</h3>
+        <h3 className="text-lg font-medium flex items-center gap-2">
+          <Shield className="h-5 w-5" />
+          All Users ({users.length})
+        </h3>
         <Button onClick={onCreateUser}>
           <Plus className="mr-2 h-4 w-4" />
           Add User
@@ -112,44 +126,27 @@ const UsersList: React.FC<UsersListProps> = ({
                   </span>
                 </TableCell>
                 <TableCell>
-                  <div className="flex gap-1">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onEditUser(user)}
-                    >
-                      <Edit className="h-3 w-3" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onAssignRole(user.id)}
-                    >
-                      <UserPlus className="h-3 w-3" />
-                    </Button>
-                    {onRemoveRole && user.user_roles && user.user_roles.length > 0 && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onRemoveRole(user.id)}
-                      >
-                        <Minus className="h-3 w-3" />
-                      </Button>
-                    )}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onAssignFacility(user.id)}
-                    >
-                      <Building className="h-3 w-3" />
-                    </Button>
-                  </div>
+                  <UserActions
+                    user={user}
+                    onEditUser={onEditUser}
+                    onAssignRole={onAssignRole}
+                    onRemoveRole={onRemoveRole}
+                    onAssignFacility={onAssignFacility}
+                    onManagePermissions={handleManagePermissions}
+                  />
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </div>
+
+      <PermissionManagementDialog
+        open={permissionDialogOpen}
+        onOpenChange={setPermissionDialogOpen}
+        userId={selectedUserId}
+        userName={selectedUserName}
+      />
     </div>
   );
 };
