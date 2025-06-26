@@ -26,7 +26,7 @@ export const validateModulePermission = async (
     
     // Check if user has super admin role (bypass all checks)
     const { data: superAdminCheck } = await supabase
-      .rpc('check_user_role', { 
+      .rpc('user_has_role', { 
         check_user_id: userId, 
         role_name: 'superAdmin' 
       });
@@ -39,7 +39,7 @@ export const validateModulePermission = async (
     // Check specific module permission
     const permissionName = `${moduleName.toLowerCase()}_${operation}`;
     const { data: hasPermission } = await supabase
-      .rpc('check_user_permission', {
+      .rpc('user_has_permission', {
         check_user_id: userId,
         permission_name: permissionName
       });
