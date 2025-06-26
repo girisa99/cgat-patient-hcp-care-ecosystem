@@ -1,4 +1,3 @@
-
 /**
  * Enhanced API Integration Manager
  * Handles CRUD operations for the new API integration registry system
@@ -65,6 +64,18 @@ class ApiIntegrationManagerClass {
    * Legacy method for backward compatibility
    */
   async registerIntegration(integration: Omit<ApiIntegration, 'id' | 'createdAt' | 'updatedAt'>): Promise<ApiIntegration> {
+    // Generate a unique ID for the integration
+    const id = crypto.randomUUID();
+    const now = new Date().toISOString();
+    
+    // Create the complete integration object
+    const completeIntegration: ApiIntegration = {
+      ...integration,
+      id,
+      createdAt: now,
+      updatedAt: now
+    };
+
     // Convert to registry format and create
     const registryData = {
       name: integration.name,
@@ -88,7 +99,7 @@ class ApiIntegrationManagerClass {
     };
 
     await this.createIntegration(registryData);
-    return integration;
+    return completeIntegration;
   }
 
   /**
