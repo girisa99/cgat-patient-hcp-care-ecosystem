@@ -127,14 +127,14 @@ export const usePublishedApiDetails = () => {
         rate_limit_override: endpoint.rate_limit_override || null
       })) || [];
 
-      // Get real database schema from actual tables
-      const realDatabaseSchema = await getRealDatabaseSchema();
+      // Get real database schema from known tables
+      const realDatabaseSchema = getRealDatabaseSchema();
 
       // Get real RLS policies
-      const realRLSPolicies = await getRealRLSPolicies();
+      const realRLSPolicies = getRealRLSPolicies();
 
       // Get real data mappings
-      const realDataMappings = await getRealDataMappings();
+      const realDataMappings = getRealDataMappings();
 
       // Get real security configuration
       const realSecurityConfig = getRealSecurityConfig();
@@ -169,21 +169,9 @@ export const usePublishedApiDetails = () => {
   return { getApiDetails };
 };
 
-// Get real database schema from actual tables
-async function getRealDatabaseSchema() {
-  // Query actual table structure from information_schema
-  const { data: tables, error } = await supabase
-    .from('information_schema.tables')
-    .select('table_name')
-    .eq('table_schema', 'public')
-    .neq('table_name', 'spatial_ref_sys');
-
-  if (error) {
-    console.log('Using known schema structure');
-    return getKnownSchemaStructure();
-  }
-
-  const schemaData = {
+// Get real database schema from known tables structure
+function getRealDatabaseSchema() {
+  return {
     tables: [
       {
         name: 'profiles',
@@ -347,12 +335,10 @@ async function getRealDatabaseSchema() {
       }
     ]
   };
-
-  return schemaData;
 }
 
 // Get real RLS policies from database
-async function getRealRLSPolicies() {
+function getRealRLSPolicies() {
   return [
     {
       id: 'profiles-select-own',
@@ -414,7 +400,7 @@ async function getRealRLSPolicies() {
 }
 
 // Get real data mappings
-async function getRealDataMappings() {
+function getRealDataMappings() {
   return [
     {
       id: 'auth-user-profile-mapping',
@@ -555,30 +541,6 @@ function getRealArchitecture() {
       'Multi-region deployment for disaster recovery',
       'Health checks and failover mechanisms',
       'Comprehensive logging and alerting'
-    ]
-  };
-}
-
-// Fallback known schema structure
-function getKnownSchemaStructure() {
-  return {
-    tables: [
-      {
-        name: 'profiles',
-        columns: [
-          { name: 'id', type: 'uuid', nullable: false, description: 'Primary key, references auth.users' },
-          { name: 'first_name', type: 'varchar', nullable: true, description: 'User first name' },
-          { name: 'last_name', type: 'varchar', nullable: true, description: 'User last name' },
-          { name: 'email', type: 'varchar', nullable: true, description: 'User email address' },
-          { name: 'phone', type: 'varchar', nullable: true, description: 'User phone number' },
-          { name: 'facility_id', type: 'uuid', nullable: true, description: 'Associated facility' },
-          { name: 'created_at', type: 'timestamp', nullable: true, description: 'Record creation time' },
-          { name: 'updated_at', type: 'timestamp', nullable: true, description: 'Record last update time' }
-        ],
-        foreign_keys: [
-          { column: 'facility_id', references_table: 'facilities', references_column: 'id' }
-        ]
-      }
     ]
   };
 }
