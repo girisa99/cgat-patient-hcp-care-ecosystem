@@ -16,36 +16,31 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     <div className="min-h-screen bg-background">
       <Header />
       <div className="flex">
-        {/* Desktop Sidebar - Always visible */}
-        <aside className="hidden md:block w-64 border-r bg-background">
-          <Sidebar 
-            isOpen={true} 
-            onClose={() => {}} 
-          />
-        </aside>
+        {/* Desktop Sidebar - Always visible and properly positioned */}
+        <Sidebar 
+          isOpen={sidebarOpen} 
+          onClose={() => setSidebarOpen(false)} 
+        />
         
-        {/* Mobile Sidebar Toggle */}
-        <div className="md:hidden">
-          <Sidebar 
-            isOpen={sidebarOpen} 
-            onClose={() => setSidebarOpen(false)} 
-          />
-        </div>
-        
-        <main className="flex-1 p-6">
+        {/* Main Content Area */}
+        <main className="flex-1 md:ml-64">
           {/* Mobile Menu Button */}
-          <div className="md:hidden mb-4">
+          <div className="md:hidden p-4 border-b bg-background">
             <Button 
               variant="ghost" 
               size="sm" 
               onClick={() => setSidebarOpen(true)}
-              className="mb-4"
+              className="flex items-center space-x-2"
             >
-              <Menu className="h-4 w-4 mr-2" />
-              Menu
+              <Menu className="h-4 w-4" />
+              <span>Menu</span>
             </Button>
           </div>
-          {children}
+          
+          {/* Page Content */}
+          <div className="p-6">
+            {children}
+          </div>
         </main>
       </div>
     </div>

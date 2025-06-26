@@ -39,63 +39,69 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
 
   // Desktop Navigation (always visible)
   const DesktopNav = () => (
-    <div className="py-4 px-2">
-      <div className="px-3 py-2 mb-4">
+    <div className="h-full flex flex-col">
+      <div className="px-3 py-6 border-b">
         <h2 className="text-lg font-semibold text-foreground">Admin Portal</h2>
         <p className="text-sm text-muted-foreground">Healthcare Management System</p>
       </div>
-      {menuItems.map((item) => (
-        <NavLink
-          key={item.name}
-          to={item.path}
-          className={({ isActive }) =>
-            cn(
-              "flex items-center space-x-3 px-3 py-2 mx-1 text-sm font-medium rounded-md hover:bg-secondary hover:text-foreground transition-colors",
-              isActive ? "bg-secondary text-foreground" : "text-muted-foreground"
-            )
-          }
-        >
-          <item.icon className="h-4 w-4" />
-          <span>{item.name}</span>
-        </NavLink>
-      ))}
+      <nav className="flex-1 px-2 py-4 space-y-1">
+        {menuItems.map((item) => (
+          <NavLink
+            key={item.name}
+            to={item.path}
+            className={({ isActive }) =>
+              cn(
+                "flex items-center space-x-3 px-3 py-2 text-sm font-medium rounded-md hover:bg-secondary hover:text-foreground transition-colors group",
+                isActive 
+                  ? "bg-primary text-primary-foreground hover:bg-primary/90" 
+                  : "text-muted-foreground hover:text-foreground"
+              )
+            }
+          >
+            <item.icon className="h-4 w-4 flex-shrink-0" />
+            <span>{item.name}</span>
+          </NavLink>
+        ))}
+      </nav>
     </div>
   );
 
   return (
     <>
       {/* Desktop Sidebar */}
-      <div className="hidden md:block h-full">
+      <div className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 md:border-r md:bg-background">
         <DesktopNav />
       </div>
 
       {/* Mobile Sidebar */}
       <Sheet open={isOpen} onOpenChange={onClose}>
         <SheetContent side="left" className="w-64 p-0">
-          <SheetHeader className="px-5 pt-5 pb-4">
+          <SheetHeader className="px-6 py-6 border-b">
             <SheetTitle>Admin Portal</SheetTitle>
             <SheetDescription>
               Healthcare Management System
             </SheetDescription>
           </SheetHeader>
-          <div className="py-4">
+          <nav className="px-2 py-4 space-y-1">
             {menuItems.map((item) => (
               <NavLink
                 key={item.name}
                 to={item.path}
                 className={({ isActive }) =>
                   cn(
-                    "flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-md hover:bg-secondary hover:text-foreground transition-colors",
-                    isActive ? "bg-secondary text-foreground" : "text-muted-foreground"
+                    "flex items-center space-x-3 px-3 py-2 text-sm font-medium rounded-md hover:bg-secondary hover:text-foreground transition-colors",
+                    isActive 
+                      ? "bg-primary text-primary-foreground" 
+                      : "text-muted-foreground hover:text-foreground"
                   )
                 }
                 onClick={onClose}
               >
-                <item.icon className="h-4 w-4" />
+                <item.icon className="h-4 w-4 flex-shrink-0" />
                 <span>{item.name}</span>
               </NavLink>
             ))}
-          </div>
+          </nav>
         </SheetContent>
       </Sheet>
     </>
