@@ -1,4 +1,3 @@
-
 /**
  * Universal Advanced Search Hook
  * Automatically available for all modules
@@ -6,7 +5,8 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { advancedSearchManager, SearchConfig, SearchFilter, SearchResult } from '@/utils/search/AdvancedSearchManager';
+import { advancedSearchManager } from '@/utils/search';
+import type { SearchConfig, SearchFilter, SearchResult } from '@/utils/search';
 
 export interface UseAdvancedSearchOptions {
   tableName: string;
