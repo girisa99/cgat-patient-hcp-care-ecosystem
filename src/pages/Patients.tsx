@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { UserCheck, Plus, Search, Filter } from 'lucide-react';
+import { UserCheck, Search, Filter, Eye, Edit, UserX } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
 const Patients = () => {
@@ -15,7 +15,8 @@ const Patients = () => {
       phone: '(555) 123-4567',
       dateOfBirth: '1985-06-15',
       lastVisit: '2024-01-15',
-      status: 'Active'
+      status: 'Active',
+      facility: 'General Hospital'
     },
     {
       id: '2',
@@ -24,7 +25,8 @@ const Patients = () => {
       phone: '(555) 987-6543',
       dateOfBirth: '1978-03-22',
       lastVisit: '2024-01-10',
-      status: 'Active'
+      status: 'Active',
+      facility: 'Medical Center'
     },
     {
       id: '3',
@@ -33,7 +35,8 @@ const Patients = () => {
       phone: '(555) 456-7890',
       dateOfBirth: '1992-11-08',
       lastVisit: '2023-12-20',
-      status: 'Inactive'
+      status: 'Inactive',
+      facility: 'General Hospital'
     }
   ];
 
@@ -43,13 +46,9 @@ const Patients = () => {
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Patient Management</h2>
           <p className="text-muted-foreground">
-            Manage patient records and care coordination
+            View and manage patient records across all facilities
           </p>
         </div>
-        <Button className="flex items-center space-x-2">
-          <Plus className="h-4 w-4" />
-          <span>Add Patient</span>
-        </Button>
       </div>
 
       {/* Search and Filter Bar */}
@@ -65,7 +64,7 @@ const Patients = () => {
             </div>
             <Button variant="outline" className="flex items-center space-x-2">
               <Filter className="h-4 w-4" />
-              <span>Filter</span>
+              <span>Filter by Facility</span>
             </Button>
           </div>
         </CardContent>
@@ -76,7 +75,7 @@ const Patients = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <UserCheck className="h-5 w-5" />
-            Patients ({patients.length})
+            Registered Patients ({patients.length})
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -93,9 +92,11 @@ const Patients = () => {
                       <span className="hidden sm:inline">•</span>
                       <span>DOB: {new Date(patient.dateOfBirth).toLocaleDateString()}</span>
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      Last visit: {new Date(patient.lastVisit).toLocaleDateString()}
-                    </p>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm text-muted-foreground">
+                      <span>Facility: {patient.facility}</span>
+                      <span className="hidden sm:inline">•</span>
+                      <span>Last visit: {new Date(patient.lastVisit).toLocaleDateString()}</span>
+                    </div>
                   </div>
                   <div className="flex items-center space-x-2">
                     <span className={`px-2 py-1 text-xs rounded-full ${
@@ -105,9 +106,22 @@ const Patients = () => {
                     }`}>
                       {patient.status}
                     </span>
-                    <Button variant="outline" size="sm">
-                      View Details
-                    </Button>
+                    <div className="flex space-x-1">
+                      <Button variant="outline" size="sm" className="flex items-center space-x-1">
+                        <Eye className="h-3 w-3" />
+                        <span>View</span>
+                      </Button>
+                      <Button variant="outline" size="sm" className="flex items-center space-x-1">
+                        <Edit className="h-3 w-3" />
+                        <span>Edit</span>
+                      </Button>
+                      {patient.status === 'Active' && (
+                        <Button variant="outline" size="sm" className="flex items-center space-x-1 text-red-600 hover:text-red-700">
+                          <UserX className="h-3 w-3" />
+                          <span>Deactivate</span>
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -118,10 +132,6 @@ const Patients = () => {
             <div className="text-center py-8">
               <UserCheck className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <p className="text-muted-foreground">No patients found.</p>
-              <Button className="mt-4">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Your First Patient
-              </Button>
             </div>
           )}
         </CardContent>
