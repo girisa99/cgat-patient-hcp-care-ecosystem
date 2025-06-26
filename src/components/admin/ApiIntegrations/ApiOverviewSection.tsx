@@ -249,7 +249,7 @@ export const ApiOverviewSection = ({
                         {api.status}
                       </Badge>
                     )}
-                    {type === 'published' && (
+                    {(type === 'published' || type === 'external') && (
                       <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                         <RefreshCw className="h-3 w-3 mr-1" />
                         Synced
@@ -267,7 +267,7 @@ export const ApiOverviewSection = ({
                         <span>{api.endpoints.length} endpoints</span>
                       </>
                     )}
-                    {type === 'published' && api.published_at && (
+                    {(type === 'published' || type === 'external') && api.published_at && (
                       <>
                         <span>•</span>
                         <span>Published {new Date(api.published_at).toLocaleDateString()}</span>
@@ -293,7 +293,7 @@ export const ApiOverviewSection = ({
                     </Button>
                   )}
                   
-                  {type === 'published' && (
+                  {(type === 'published' || type === 'external') && (
                     <>
                       <Button 
                         size="sm" 
@@ -388,7 +388,7 @@ export const ApiOverviewSection = ({
                     </>
                   )}
                   
-                  {(type === 'external' || api.status === 'draft' || api.status === 'review') && (
+                  {(type === 'external' && (api.status === 'draft' || api.status === 'review')) && (
                     <Button 
                       size="sm" 
                       variant="outline"
