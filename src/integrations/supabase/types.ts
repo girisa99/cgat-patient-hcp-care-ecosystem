@@ -9,6 +9,30 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      api_change_tracking: {
+        Row: {
+          api_name: string
+          created_at: string
+          detected_at: string
+          id: string
+          type: string
+        }
+        Insert: {
+          api_name: string
+          created_at?: string
+          detected_at?: string
+          id?: string
+          type: string
+        }
+        Update: {
+          api_name?: string
+          created_at?: string
+          detected_at?: string
+          id?: string
+          type?: string
+        }
+        Relationships: []
+      }
       api_keys: {
         Row: {
           created_at: string
@@ -190,6 +214,81 @@ export type Database = {
           reviewed_by?: string | null
           status?: string
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      developer_notification_preferences: {
+        Row: {
+          beta_launches: boolean
+          breaking_changes: boolean
+          created_at: string
+          documentation_updates: boolean
+          email_notifications: boolean
+          feature_updates: boolean
+          id: string
+          in_app_notifications: boolean
+          new_apis: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          beta_launches?: boolean
+          breaking_changes?: boolean
+          created_at?: string
+          documentation_updates?: boolean
+          email_notifications?: boolean
+          feature_updates?: boolean
+          id?: string
+          in_app_notifications?: boolean
+          new_apis?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          beta_launches?: boolean
+          breaking_changes?: boolean
+          created_at?: string
+          documentation_updates?: boolean
+          email_notifications?: boolean
+          feature_updates?: boolean
+          id?: string
+          in_app_notifications?: boolean
+          new_apis?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      developer_notifications: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string
+          metadata: Json | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message: string
+          metadata?: Json | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          metadata?: Json | null
+          title?: string
+          type?: string
           user_id?: string
         }
         Relationships: []

@@ -5,7 +5,6 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
-import { apiIntegrationManager } from '@/utils/api/ApiIntegrationManager';
 
 interface ApiChange {
   type: 'new_endpoint' | 'modified_endpoint' | 'deprecated_endpoint' | 'new_module' | 'breaking_change';
@@ -15,6 +14,14 @@ interface ApiChange {
   changes: string[];
   impact_level: 'low' | 'medium' | 'high';
   migration_required: boolean;
+}
+
+interface ApiChangeTrackingRecord {
+  id: string;
+  type: string;
+  api_name: string;
+  detected_at: string;
+  created_at: string;
 }
 
 class ApiChangeDetector {
@@ -48,70 +55,11 @@ class ApiChangeDetector {
   private async scanForChanges(): Promise<ApiChange[]> {
     const changes: ApiChange[] = [];
 
-    // Check for new internal APIs
-    const newInternalApis = await this.detectNewInternalApis();
-    changes.push(...newInternalApis);
-
-    // Check for modified endpoints
-    const modifiedEndpoints = await this.detectModifiedEndpoints();
-    changes.push(...modifiedEndpoints);
-
     // Check for new modules
     const newModules = await this.detectNewModules();
     changes.push(...newModules);
 
     return changes;
-  }
-
-  /**
-   * Detects new internal APIs based on database schema changes
-   */
-  private async detectNewInternalApis(): Promise<ApiChange[]> {
-    const changes: ApiChange[] = [];
-    
-    // Get current integrations
-    const currentIntegrations = await apiIntegrationManager.getInternalIntegrations();
-    
-    // Compare with previously detected APIs (stored in a tracking table)
-    const { data: trackedApis } = await supabase
-      .from('api_change_tracking')
-      .select('*')
-      .eq('type', 'internal_api');
-
-    const trackedApiNames = new Set(trackedApis?.map(api => api.api_name) || []);
-    
-    for (const integration of currentIntegrations) {
-      if (!trackedApiNames.has(integration.name)) {
-        changes.push({
-          type: 'new_module',
-          api_name: integration.name,
-          module_name: integration.name,
-          changes: [`New internal API detected: ${integration.name}`],
-          impact_level: 'medium',
-          migration_required: false
-        });
-
-        // Track this API
-        await supabase
-          .from('api_change_tracking')
-          .insert({
-            type: 'internal_api',
-            api_name: integration.name,
-            detected_at: new Date().toISOString()
-          });
-      }
-    }
-
-    return changes;
-  }
-
-  /**
-   * Detects modified API endpoints
-   */
-  private async detectModifiedEndpoints(): Promise<ApiChange[]> {
-    // This would compare current endpoint schemas with previously stored ones
-    // For now, returning empty array - would need endpoint versioning system
-    return [];
   }
 
   /**
@@ -126,11 +74,11 @@ class ApiChangeDetector {
       .eq('is_active', true);
 
     const { data: trackedModules } = await supabase
-      .from('api_change_tracking')
+      .from('api_change_tracking' as any)
       .select('*')
       .eq('type', 'module');
 
-    const trackedModuleIds = new Set(trackedModules?.map(m => m.api_name) || []);
+    const trackedModuleIds = new Set((trackedModules as ApiChangeTrackingRecord[] || []).map(m => m.api_name));
 
     for (const module of currentModules || []) {
       if (!trackedModuleIds.has(module.id)) {
@@ -145,7 +93,7 @@ class ApiChangeDetector {
 
         // Track this module
         await supabase
-          .from('api_change_tracking')
+          .from('api_change_tracking' as any)
           .insert({
             type: 'module',
             api_name: module.id,
@@ -196,7 +144,7 @@ class ApiChangeDetector {
     }));
 
     await supabase
-      .from('developer_notifications')
+      .from('developer_notifications' as any)
       .insert(notifications);
 
     console.log(`📨 Created ${notifications.length} notifications for API change: ${change.api_name}`);

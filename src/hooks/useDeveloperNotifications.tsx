@@ -41,13 +41,13 @@ export const useDeveloperNotifications = () => {
     queryKey: ['developer-notifications'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('developer_notifications')
+        .from('developer_notifications' as any)
         .select('*')
         .order('created_at', { ascending: false })
         .limit(50);
 
       if (error) throw error;
-      return data as DeveloperNotification[];
+      return (data || []) as DeveloperNotification[];
     }
   });
 
@@ -59,12 +59,12 @@ export const useDeveloperNotifications = () => {
     queryKey: ['notification-preferences'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('developer_notification_preferences')
+        .from('developer_notification_preferences' as any)
         .select('*')
         .single();
 
       if (error && error.code !== 'PGRST116') throw error;
-      return data as NotificationPreferences || {
+      return (data as NotificationPreferences) || {
         new_apis: true,
         beta_launches: true,
         documentation_updates: false,
@@ -80,7 +80,7 @@ export const useDeveloperNotifications = () => {
   const markAsReadMutation = useMutation({
     mutationFn: async (notificationId: string) => {
       const { error } = await supabase
-        .from('developer_notifications')
+        .from('developer_notifications' as any)
         .update({ is_read: true })
         .eq('id', notificationId);
 
@@ -98,7 +98,7 @@ export const useDeveloperNotifications = () => {
       if (!user) throw new Error('User not authenticated');
 
       const { error } = await supabase
-        .from('developer_notification_preferences')
+        .from('developer_notification_preferences' as any)
         .upsert({
           user_id: user.id,
           ...newPreferences
