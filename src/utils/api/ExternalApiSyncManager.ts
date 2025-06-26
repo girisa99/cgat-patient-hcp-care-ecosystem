@@ -202,6 +202,37 @@ class ExternalApiSyncManagerClass {
   }
 
   /**
+   * Force refresh sync for an API - refreshes all endpoints and sync status
+   */
+  async forceRefreshSync(externalApiId: string) {
+    console.log('🔄 Force refreshing sync for API:', externalApiId);
+    
+    try {
+      // Get the external API details
+      const { data: externalApi, error: apiError } = await supabase
+        .from('external_api_registry')
+        .select('*')
+        .eq('id', externalApiId)
+        .single();
+
+      if (apiError) throw apiError;
+
+      if (!externalApi) {
+        throw new Error('External API not found');
+      }
+
+      // Force sync all endpoints
+      const syncResult = await this.syncAllEndpoints(externalApiId, externalApi.internal_api_id);
+      
+      console.log('✅ Force sync completed:', syncResult);
+      return syncResult;
+    } catch (error) {
+      console.error('❌ Force sync failed:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Gets internal API endpoints (mock implementation)
    */
   async getInternalApiEndpoints(internalApiId: string) {
