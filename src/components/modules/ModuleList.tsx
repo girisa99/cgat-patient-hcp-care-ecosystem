@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ChevronDown, ChevronRight, Component, Settings, Lock, Unlock } from 'lucide-react';
 import { moduleRegistry, type ComponentServiceInfo } from '@/utils/moduleRegistry';
 
@@ -70,11 +71,20 @@ export const ModuleList: React.FC<ModuleListProps> = ({
         </div>
       </div>
       <div className="flex items-center space-x-2">
-        {item.isProtected ? (
-          <Lock className="h-3 w-3 text-red-500" title="Protected" />
-        ) : (
-          <Unlock className="h-3 w-3 text-green-500" title="Public" />
-        )}
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger>
+              {item.isProtected ? (
+                <Lock className="h-3 w-3 text-red-500" />
+              ) : (
+                <Unlock className="h-3 w-3 text-green-500" />
+              )}
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{item.isProtected ? 'Protected' : 'Public'}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
         <div className="flex flex-wrap gap-1">
           {item.permissions.slice(0, 2).map((permission) => (
             <Badge key={permission} variant="outline" className="text-xs">
