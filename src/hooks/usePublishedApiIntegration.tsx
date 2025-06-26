@@ -43,61 +43,9 @@ export const usePublishedApiIntegration = () => {
     queryFn: async (): Promise<PublishedApiForDevelopers[]> => {
       console.log('🔍 Fetching published APIs for developers...');
       
-      // First, let's debug by fetching ALL external APIs to see what's in the database
-      const { data: allExternalApis, error: allError } = await supabase
-        .from('external_api_registry')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (allError) {
-        console.error('❌ Error fetching all external APIs for debugging:', allError);
-      } else {
-        console.log('🔍 DEBUG: All external APIs in database:', allExternalApis);
-        console.log('🔍 DEBUG: APIs by status:', {
-          draft: allExternalApis?.filter(api => api.status === 'draft').length || 0,
-          review: allExternalApis?.filter(api => api.status === 'review').length || 0,
-          published: allExternalApis?.filter(api => api.status === 'published').length || 0,
-          deprecated: allExternalApis?.filter(api => api.status === 'deprecated').length || 0
-        });
-        console.log('🔍 DEBUG: APIs by visibility:', {
-          private: allExternalApis?.filter(api => api.visibility === 'private').length || 0,
-          public: allExternalApis?.filter(api => api.visibility === 'public').length || 0,
-          marketplace: allExternalApis?.filter(api => api.visibility === 'marketplace').length || 0
-        });
-      }
-
-      // Get published external APIs with the original query
-      const { data: publishedApis, error } = await supabase
-        .from('external_api_registry')
-        .select(`
-          *,
-          external_api_endpoints (
-            id,
-            external_path,
-            method,
-            summary,
-            description,
-            is_public,
-            requires_authentication
-          )
-        `)
-        .eq('status', 'published')
-        .in('visibility', ['public', 'marketplace'])
-        .order('published_at', { ascending: false });
-
-      if (error) {
-        console.error('❌ Error fetching published APIs:', error);
-        throw error;
-      }
-
-      console.log('✅ Original query result - published APIs:', publishedApis);
-      console.log('📊 Published APIs count from original query:', publishedApis?.length || 0);
-
-      // If no results with strict query, try a more lenient approach
-      if (!publishedApis || publishedApis.length === 0) {
-        console.log('🔍 No results with strict query, trying published status only...');
-        
-        const { data: publishedOnlyApis, error: publishedError } = await supabase
+      try {
+        // First, let's get all external APIs with status 'published' 
+        const { data: publishedApis, error } = await supabase
           .from('external_api_registry')
           .select(`
             *,
@@ -114,69 +62,59 @@ export const usePublishedApiIntegration = () => {
           .eq('status', 'published')
           .order('created_at', { ascending: false });
 
-        if (publishedError) {
-          console.error('❌ Error fetching published-only APIs:', publishedError);
-        } else {
-          console.log('🔍 Published-only query result:', publishedOnlyApis);
-          console.log('📊 Published-only APIs count:', publishedOnlyApis?.length || 0);
-          
-          // If we have published APIs but they don't match visibility criteria
-          if (publishedOnlyApis && publishedOnlyApis.length > 0) {
-            console.log('⚠️ Found published APIs but they may not match visibility criteria');
-            console.log('🔍 Visibility values:', publishedOnlyApis.map(api => ({ 
-              name: api.external_name, 
-              visibility: api.visibility,
-              status: api.status
-            })));
-            
-            // Return published APIs regardless of visibility for debugging
-            const mappedApis = publishedOnlyApis.map(api => ({
-              id: api.id,
-              external_name: api.external_name,
-              external_description: api.external_description,
-              version: api.version,
-              category: api.category,
-              base_url: api.base_url,
-              documentation_url: api.documentation_url,
-              sandbox_url: api.sandbox_url || generateSandboxUrl(api.id),
-              pricing_model: api.pricing_model,
-              rate_limits: (api.rate_limits as any) || {},
-              authentication_methods: api.authentication_methods,
-              supported_formats: api.supported_formats,
-              tags: api.tags,
-              published_at: api.published_at,
-              endpoints: api.external_api_endpoints || []
-            }));
-            
-            console.log('✅ Returning published APIs (ignoring visibility for now):', mappedApis);
-            return mappedApis;
-          }
+        if (error) {
+          console.error('❌ Error fetching published APIs:', error);
+          throw error;
         }
-      }
-      
-      // Type cast the database results to match our interface
-      const mappedResults = (publishedApis || []).map(api => ({
-        id: api.id,
-        external_name: api.external_name,
-        external_description: api.external_description,
-        version: api.version,
-        category: api.category,
-        base_url: api.base_url,
-        documentation_url: api.documentation_url,
-        sandbox_url: api.sandbox_url || generateSandboxUrl(api.id),
-        pricing_model: api.pricing_model,
-        rate_limits: (api.rate_limits as any) || {},
-        authentication_methods: api.authentication_methods,
-        supported_formats: api.supported_formats,
-        tags: api.tags,
-        published_at: api.published_at,
-        endpoints: api.external_api_endpoints || []
-      }));
 
-      console.log('✅ Final mapped results:', mappedResults);
-      return mappedResults;
+        console.log('📊 Raw published APIs from database:', publishedApis?.length || 0);
+        console.log('🔍 Published APIs details:', publishedApis?.map(api => ({
+          id: api.id,
+          name: api.external_name,
+          status: api.status,
+          visibility: api.visibility,
+          endpoints: api.external_api_endpoints?.length || 0
+        })));
+
+        if (!publishedApis || publishedApis.length === 0) {
+          console.log('⚠️ No published APIs found in database');
+          return [];
+        }
+
+        // Transform the data to match our interface
+        const transformedApis = publishedApis.map(api => ({
+          id: api.id,
+          external_name: api.external_name,
+          external_description: api.external_description,
+          version: api.version,
+          category: api.category,
+          base_url: api.base_url,
+          documentation_url: api.documentation_url,
+          sandbox_url: api.sandbox_url || generateSandboxUrl(api.id),
+          pricing_model: api.pricing_model,
+          rate_limits: (api.rate_limits as any) || { requests: 1000, period: 'hour' },
+          authentication_methods: api.authentication_methods || ['api_key'],
+          supported_formats: api.supported_formats || ['json'],
+          tags: api.tags || [],
+          published_at: api.published_at,
+          endpoints: api.external_api_endpoints || []
+        }));
+
+        console.log('✅ Transformed published APIs:', transformedApis.length);
+        console.log('📋 Final APIs for developers:', transformedApis.map(api => ({
+          id: api.id,
+          name: api.external_name,
+          endpoints: api.endpoints?.length || 0
+        })));
+
+        return transformedApis;
+
+      } catch (error) {
+        console.error('❌ Failed to fetch published APIs:', error);
+        throw error;
+      }
     },
-    staleTime: 60000
+    staleTime: 30000 // Reduced from 60000 to refresh more frequently
   });
 
   // Generate documentation for a published API
