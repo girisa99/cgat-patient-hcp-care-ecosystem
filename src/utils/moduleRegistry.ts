@@ -15,6 +15,7 @@ export interface ComponentServiceInfo {
   permissions: string[];
   isProtected: boolean;
   lastModified: string;
+  note?: string; // Optional note for auto-generated or likely components
 }
 
 export interface RegisteredModule extends ModuleConfig {
