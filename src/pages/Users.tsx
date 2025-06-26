@@ -7,6 +7,7 @@ import UsersList from '@/components/users/UsersList';
 import CreateUserDialog from '@/components/users/CreateUserDialog';
 import EditUserDialog from '@/components/users/EditUserDialog';
 import AssignRoleDialog from '@/components/users/AssignRoleDialog';
+import RemoveRoleDialog from '@/components/users/RemoveRoleDialog';
 import AssignFacilityDialog from '@/components/users/AssignFacilityDialog';
 import RoleAssignmentDebugger from '@/components/users/RoleAssignmentDebugger';
 import BulkRoleAssignment from '@/components/users/BulkRoleAssignment';
@@ -19,6 +20,7 @@ const Users = () => {
   const [createUserOpen, setCreateUserOpen] = useState(false);
   const [editUserOpen, setEditUserOpen] = useState(false);
   const [assignRoleOpen, setAssignRoleOpen] = useState(false);
+  const [removeRoleOpen, setRemoveRoleOpen] = useState(false);
   const [assignFacilityOpen, setAssignFacilityOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<any>(null);
@@ -47,6 +49,11 @@ const Users = () => {
   const handleAssignRole = (userId: string) => {
     setSelectedUserId(userId);
     setAssignRoleOpen(true);
+  };
+
+  const handleRemoveRole = (userId: string) => {
+    setSelectedUserId(userId);
+    setRemoveRoleOpen(true);
   };
 
   const handleAssignFacility = (userId: string) => {
@@ -122,6 +129,26 @@ const Users = () => {
         </CardContent>
       </Card>
 
+      {/* Role Management Instructions */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Role Management Guide</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3 text-sm">
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+              <h4 className="font-medium text-blue-900 mb-2">How to Manage User Roles:</h4>
+              <ul className="text-blue-800 space-y-1">
+                <li><strong>Assign New Role:</strong> Click "Assign Role" next to any user to add additional roles</li>
+                <li><strong>Remove Existing Role:</strong> Click "Remove Role" next to any user to remove current roles</li>
+                <li><strong>Multiple Roles:</strong> Users can have multiple roles assigned simultaneously</li>
+                <li><strong>Bulk Assignment:</strong> Use the bulk assignment tool below for users without roles</li>
+              </ul>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Bulk Role Assignment */}
       <BulkRoleAssignment />
       
@@ -133,6 +160,7 @@ const Users = () => {
           <UsersList
             onCreateUser={() => setCreateUserOpen(true)}
             onAssignRole={handleAssignRole}
+            onRemoveRole={handleRemoveRole}
             onAssignFacility={handleAssignFacility}
             onEditUser={handleEditUser}
           />
@@ -161,6 +189,13 @@ const Users = () => {
       <AssignRoleDialog
         open={assignRoleOpen}
         onOpenChange={setAssignRoleOpen}
+        userId={selectedUserId}
+        userName={selectedUserName}
+      />
+
+      <RemoveRoleDialog
+        open={removeRoleOpen}
+        onOpenChange={setRemoveRoleOpen}
         userId={selectedUserId}
         userName={selectedUserName}
       />

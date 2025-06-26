@@ -1,10 +1,12 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { RefreshCw, Database, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { Database as DatabaseTypes } from '@/integrations/supabase/types';
+
+type UserRole = DatabaseTypes['public']['Enums']['user_role'];
 
 interface HealthCheckResult {
   component: string;
@@ -36,8 +38,8 @@ const DatabaseHealthCheck = () => {
           details: rolesError
         });
       } else {
-        const expectedRoles = ['superAdmin', 'healthcareProvider', 'nurse', 'caseManager', 'onboardingTeam', 'patientCaregiver'];
-        const existingRoles = roles?.map(r => r.name) || [];
+        const expectedRoles: UserRole[] = ['superAdmin', 'healthcareProvider', 'nurse', 'caseManager', 'onboardingTeam', 'patientCaregiver'];
+        const existingRoles = roles?.map(r => r.name as UserRole) || [];
         const missingRoles = expectedRoles.filter(role => !existingRoles.includes(role));
         
         if (missingRoles.length > 0) {
