@@ -1,6 +1,6 @@
 
 /**
- * Enhanced hook for managing API integrations with internal/external differentiation
+ * Enhanced hook for managing API integrations with real data detection
  */
 
 import { useState } from 'react';
@@ -21,7 +21,9 @@ export const useApiIntegrations = () => {
   } = useQuery({
     queryKey: ['api-integrations'],
     queryFn: () => apiIntegrationManager.getIntegrations(),
-    staleTime: 30000
+    staleTime: 30000,
+    refetchOnWindowFocus: false,
+    retry: 2
   });
 
   const {
@@ -29,7 +31,9 @@ export const useApiIntegrations = () => {
   } = useQuery({
     queryKey: ['api-integration-stats'],
     queryFn: () => apiIntegrationManager.getIntegrationStats(),
-    staleTime: 60000
+    staleTime: 60000,
+    refetchOnWindowFocus: false,
+    enabled: !!integrations
   });
 
   const registerIntegrationMutation = useMutation({
@@ -40,7 +44,7 @@ export const useApiIntegrations = () => {
       queryClient.invalidateQueries({ queryKey: ['api-integration-stats'] });
       toast({
         title: "Integration Registered",
-        description: `${integration.name} has been successfully registered with auto-generated schemas and Postman collection.`,
+        description: `${integration.name} has been successfully registered with ${integration.endpoints.length} endpoints, ${integration.rlsPolicies.length} RLS policies, and ${integration.mappings.length} data mappings.`,
       });
     },
     onError: (error: any) => {
@@ -73,9 +77,9 @@ export const useApiIntegrations = () => {
     }
   });
 
-  const downloadPostmanCollection = (integrationId: string) => {
+  const downloadPostmanCollection = async (integrationId: string) => {
     try {
-      const collectionJson = apiIntegrationManager.exportPostmanCollection(integrationId);
+      const collectionJson = await apiIntegrationManager.exportPostmanCollection(integrationId);
       const integration = integrations?.find(i => i.id === integrationId);
       
       const blob = new Blob([collectionJson], { type: 'application/json' });
@@ -90,7 +94,7 @@ export const useApiIntegrations = () => {
 
       toast({
         title: "Collection Downloaded",
-        description: `Postman collection for ${integration?.name} has been downloaded successfully.`,
+        description: `Postman collection for ${integration?.name} has been downloaded with ${integration?.endpoints.length} endpoints.`,
       });
     } catch (error: any) {
       toast({
@@ -105,9 +109,9 @@ export const useApiIntegrations = () => {
     return integrations?.filter(integration => integration.type === type) || [];
   };
 
-  const exportApiDocumentation = () => {
+  const exportApiDocumentation = async () => {
     try {
-      const docs = apiIntegrationManager.exportApiDocumentation();
+      const docs = await apiIntegrationManager.exportApiDocumentation();
       const blob = new Blob([JSON.stringify(docs, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -120,7 +124,7 @@ export const useApiIntegrations = () => {
 
       toast({
         title: "Documentation Exported",
-        description: "Complete API documentation has been exported successfully.",
+        description: `Complete API documentation exported with ${docs.metadata.total_endpoints} endpoints, ${docs.metadata.total_rls_policies} RLS policies, and ${docs.metadata.total_data_mappings} data mappings.`,
       });
     } catch (error: any) {
       toast({
