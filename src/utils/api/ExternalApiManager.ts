@@ -153,7 +153,7 @@ class ExternalApiManagerClass {
             type: 'internal',
             category: publishConfig.category || 'healthcare',
             direction: 'outbound',
-            purpose: 'publishing', // Using publishing as purpose for external APIs
+            purpose: 'publishing',
             description: publishConfig.external_description || 'Internal API for external publishing',
             status: 'active',
             lifecycle_stage: 'production',
@@ -187,10 +187,10 @@ class ExternalApiManagerClass {
 
     console.log('📋 Internal API details:', internalApi);
 
-    // Prepare the external API data
+    // Prepare the external API data - ensuring created_by is set for RLS
     const externalApiData = {
       internal_api_id: actualInternalApiId,
-      created_by: user.id,
+      created_by: user.id, // This is crucial for RLS policy
       category: internalApi?.category || publishConfig.category || 'general',
       ...publishConfig
     };
