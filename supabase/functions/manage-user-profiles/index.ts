@@ -3,7 +3,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import type { ProfileRequest } from './types.ts';
 import { verifyAuthentication } from './auth.ts';
 import { handleProfileRequest } from './request-handler.ts';
-import { validateDataArchitectureCompliance } from './_shared/user-data-utils.ts';
+import { validateDataArchitectureCompliance } from '../_shared/user-data-utils.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
