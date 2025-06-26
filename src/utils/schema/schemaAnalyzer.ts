@@ -1,6 +1,6 @@
 
 /**
- * Schema Analysis Utilities - Real Implementation
+ * Schema Analysis Utilities - Fixed Implementation
  */
 
 import { supabase } from '@/integrations/supabase/client';
@@ -25,34 +25,32 @@ export interface SchemaAnalysis {
 }
 
 /**
- * Get actual table information from the database
+ * Get actual table information using a safer approach
  */
 export const analyzeTable = async (tableName: string): Promise<SchemaAnalysis | null> => {
   try {
-    console.log(`🔍 Analyzing real table: ${tableName}`);
+    console.log(`🔍 Analyzing table: ${tableName}`);
     
-    // Get table structure from information_schema
-    const { data: columns, error } = await supabase
-      .from('information_schema.columns')
-      .select('column_name, data_type, is_nullable, column_default')
-      .eq('table_schema', 'public')
-      .eq('table_name', tableName);
+    // Use RPC call to get table info through the existing edge function
+    const { data: tableInfo, error } = await supabase.functions.invoke('get-table-info', {
+      body: { tableName }
+    });
 
     if (error) {
       console.error(`Error fetching table info for ${tableName}:`, error);
       return null;
     }
 
-    if (!columns || columns.length === 0) {
-      console.log(`No columns found for table: ${tableName}`);
+    if (!tableInfo || !tableInfo.columns) {
+      console.log(`No table info found for: ${tableName}`);
       return null;
     }
 
-    const columnInfos: ColumnInfo[] = columns.map(col => ({
-      name: col.column_name,
-      type: col.data_type,
-      nullable: col.is_nullable === 'YES',
-      default: col.column_default
+    const columnInfos: ColumnInfo[] = tableInfo.columns.map((col: any) => ({
+      name: col.column_name || col.name,
+      type: col.data_type || col.type,
+      nullable: col.is_nullable === 'YES' || col.nullable === true,
+      default: col.column_default || col.default
     }));
 
     const hasId = columnInfos.some(col => col.name === 'id');
