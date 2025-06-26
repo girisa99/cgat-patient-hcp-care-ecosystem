@@ -58,9 +58,9 @@ export const AuditLogStats = () => {
           <Shield className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">--</div>
+          <div className="text-2xl font-bold">{stats?.filtered_count || 0}</div>
           <p className="text-xs text-muted-foreground">
-            Authentication & access
+            In current view
           </p>
         </CardContent>
       </Card>

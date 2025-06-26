@@ -178,7 +178,6 @@ const handler = async (req: Request): Promise<Response> => {
           });
           
           console.log('✅ User profiles prepared for all users:', userProfiles.length);
-          console.log('🔍 Sample user profile:', userProfiles.length > 0 ? userProfiles[0] : 'None');
         }
       } catch (error) {
         console.error('❌ Error fetching user data:', error);
@@ -189,7 +188,6 @@ const handler = async (req: Request): Promise<Response> => {
     // Merge the data with user profiles
     const enrichedData = result.data?.map(log => {
       const userProfile = userProfiles.find(profile => profile && profile.id === log.user_id);
-      console.log(`🔍 Matching log user_id ${log.user_id} with profile:`, userProfile ? 'Found' : 'Not found');
       
       return {
         ...log,
@@ -212,23 +210,59 @@ const handler = async (req: Request): Promise<Response> => {
       .select('*', { count: 'exact', head: true })
       .gte('created_at', todayStart.toISOString());
 
-    // Calculate active users (users who have activity in the last 7 days)
+    // Calculate active users - users who have been active in the last 7 days
+    // This includes both users who performed actions AND users who had actions performed on them
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     
-    const { data: activeUserIds } = await supabase
+    // Get users who performed actions
+    const { data: activeUserActions } = await supabase
       .from('audit_logs')
       .select('user_id')
       .gte('created_at', sevenDaysAgo.toISOString())
       .not('user_id', 'is', null);
 
-    const uniqueActiveUsers = activeUserIds ? [...new Set(activeUserIds.map(log => log.user_id))].length : 0;
+    // Get users who had actions performed on them (from profiles table changes)
+    const { data: profileChanges } = await supabase
+      .from('audit_logs')
+      .select('record_id')
+      .eq('table_name', 'profiles')
+      .gte('created_at', sevenDaysAgo.toISOString());
+
+    // Get users from user_roles changes (both user_id field and record_id for role assignments)
+    const { data: userRoleChanges } = await supabase
+      .from('audit_logs')
+      .select('new_values, old_values')
+      .eq('table_name', 'user_roles')
+      .gte('created_at', sevenDaysAgo.toISOString());
+
+    // Combine all user IDs
+    const allActiveUserIds = new Set();
+    
+    // Add users who performed actions
+    activeUserActions?.forEach(log => {
+      if (log.user_id) allActiveUserIds.add(log.user_id);
+    });
+    
+    // Add users who had profile changes
+    profileChanges?.forEach(log => {
+      if (log.record_id) allActiveUserIds.add(log.record_id);
+    });
+    
+    // Add users from role changes
+    userRoleChanges?.forEach(log => {
+      if (log.new_values?.user_id) allActiveUserIds.add(log.new_values.user_id);
+      if (log.old_values?.user_id) allActiveUserIds.add(log.old_values.user_id);
+    });
+
+    const uniqueActiveUsers = allActiveUserIds.size;
 
     console.log('📈 Statistics calculated:', {
       total: totalCount || 0,
       today: todayCount || 0,
       activeUsers: uniqueActiveUsers,
-      filtered: enrichedData?.length || 0
+      filtered: enrichedData?.length || 0,
+      activeUserIds: Array.from(allActiveUserIds)
     });
 
     return new Response(JSON.stringify({ 
