@@ -103,6 +103,11 @@ export const usePublishedApiDetails = () => {
 
       console.log('✅ External API data:', externalApi);
 
+      // Safely access rate_limits JSON data
+      const rateLimitsData = externalApi.rate_limits as any;
+      const defaultRequests = 1000;
+      const requestsPerHour = rateLimitsData?.requests || defaultRequests;
+
       // Get real endpoints from the database
       const realEndpoints = (externalApi.external_api_endpoints || []).map((endpoint: any) => ({
         id: endpoint.id,
@@ -127,7 +132,7 @@ export const usePublishedApiDetails = () => {
         rate_limit_override: endpoint.rate_limit_override || null
       }));
 
-      // Get real database schema from the actual database
+      // Get real database schema from the edge function
       const realDatabaseSchema = await getRealDatabaseSchema();
 
       // Build the API details from real database data
@@ -149,9 +154,9 @@ export const usePublishedApiDetails = () => {
           data_protection: ['HIPAA compliance for healthcare data']
         },
         rate_limits: {
-          requests_per_hour: externalApi.rate_limits?.requests || 1000,
-          requests_per_day: (externalApi.rate_limits?.requests || 1000) * 24,
-          burst_limit: Math.floor((externalApi.rate_limits?.requests || 1000) * 0.1),
+          requests_per_hour: requestsPerHour,
+          requests_per_day: requestsPerHour * 24,
+          burst_limit: Math.floor(requestsPerHour * 0.1),
           rate_limit_headers: ['X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset']
         },
         architecture: {
@@ -170,56 +175,8 @@ export const usePublishedApiDetails = () => {
   return { getApiDetails };
 };
 
-// Get real database schema information
+// Get real database schema information using the edge function
 async function getRealDatabaseSchema() {
-  try {
-    // Get actual table information from the database
-    const { data: tablesData, error } = await supabase
-      .from('information_schema.tables')
-      .select('table_name')
-      .eq('table_schema', 'public')
-      .in('table_name', ['profiles', 'facilities', 'external_api_registry'])
-      .limit(3);
-
-    if (error) {
-      console.log('Using edge function for schema info due to error:', error);
-      return await getSchemaFromEdgeFunction();
-    }
-
-    const tables = [];
-    for (const tableInfo of tablesData || []) {
-      const tableName = tableInfo.table_name;
-      
-      // Get columns for each table using the edge function
-      const { data: response, error: edgeError } = await supabase.functions.invoke('get-table-info', {
-        body: { tableName }
-      });
-      
-      if (response && response.columns && Array.isArray(response.columns)) {
-        tables.push({
-          name: tableName,
-          columns: response.columns.map((col: any) => ({
-            name: col.column_name || col.name,
-            type: col.data_type || col.type,
-            nullable: col.is_nullable === 'YES',
-            description: `${tableName} column: ${col.column_name || col.name}`,
-            default: col.column_default || col.default
-          })),
-          foreign_keys: [],
-          indexes: []
-        });
-      }
-    }
-
-    return { tables };
-  } catch (error) {
-    console.log('Fallback to edge function for schema:', error);
-    return await getSchemaFromEdgeFunction();
-  }
-}
-
-// Fallback to edge function for schema information
-async function getSchemaFromEdgeFunction() {
   const keyTables = ['profiles', 'facilities', 'external_api_registry'];
   const tables = [];
   
