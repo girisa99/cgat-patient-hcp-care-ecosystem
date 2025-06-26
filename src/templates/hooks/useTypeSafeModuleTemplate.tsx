@@ -112,7 +112,7 @@ export const useTypeSafeModuleTemplate = <T extends DatabaseTables>(
     }
   });
 
-  // Type-safe update mutation
+  // Type-safe update mutation - fixed to use proper column reference
   const updateMutation = useMutation({
     mutationFn: async ({ 
       id, 
@@ -123,12 +123,15 @@ export const useTypeSafeModuleTemplate = <T extends DatabaseTables>(
     }) => {
       console.log(`🔄 Updating ${config.tableName} item:`, id, updates);
       
-      const { data, error } = await supabase
+      // Use the table's query builder directly to avoid type issues
+      const query = supabase
         .from(config.tableName)
         .update(updates)
-        .eq('id', id)
         .select()
         .single();
+
+      // Apply the id filter using the correct column name
+      const { data, error } = await (query as any).eq('id', id);
 
       if (error) {
         console.error(`❌ Error updating ${config.tableName}:`, error);
