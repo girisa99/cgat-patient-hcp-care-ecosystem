@@ -261,7 +261,7 @@ export class RealApiScanner {
       baseUrl: window.location.origin,
       version: '1.0.0',
       status: 'active',
-      category: 'healthcare-core',
+      category: 'healthcare',
       endpoints,
       rlsPolicies,
       mappings: dataMappings,
