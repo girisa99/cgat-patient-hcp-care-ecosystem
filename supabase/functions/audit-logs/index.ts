@@ -137,23 +137,39 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-    // Now get user profiles separately to avoid join issues
+    // Now get user data from auth.users table via manage-user-profiles function
     const userIds = [...new Set(result.data?.map(log => log.user_id).filter(Boolean))];
-    let profiles = [];
+    let userProfiles = [];
     
     if (userIds.length > 0) {
-      const { data: profilesData } = await supabase
-        .from('profiles')
-        .select('id, first_name, last_name, email')
-        .in('id', userIds);
-      
-      profiles = profilesData || [];
+      try {
+        // Use the manage-user-profiles function to get auth.users data
+        const { data: usersResponse } = await supabase.functions.invoke('manage-user-profiles', {
+          body: { 
+            action: 'list',
+            filters: { user_ids: userIds }
+          }
+        });
+
+        if (usersResponse?.success && usersResponse?.data) {
+          userProfiles = usersResponse.data.map((user: any) => ({
+            id: user.id,
+            first_name: user.first_name,
+            last_name: user.last_name,
+            email: user.email
+          }));
+        }
+      } catch (error) {
+        console.error('Error fetching user profiles from auth.users:', error);
+        // Fallback to empty profiles array
+        userProfiles = [];
+      }
     }
 
     // Merge the data
     const enrichedData = result.data?.map(log => ({
       ...log,
-      profiles: profiles.find(profile => profile.id === log.user_id) || null
+      profiles: userProfiles.find(profile => profile.id === log.user_id) || null
     }));
 
     // Get summary statistics
