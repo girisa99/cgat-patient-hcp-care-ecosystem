@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,9 +13,11 @@ import {
   ExternalLink,
   FileText,
   MapPin,
-  Settings
+  Settings,
+  Layers
 } from 'lucide-react';
 import { ApiIntegration } from '@/utils/api/ApiIntegrationTypes';
+import { ArchitectureDocumentation } from './ArchitectureDocumentation';
 
 interface ApiDocumentationViewerProps {
   integration: ApiIntegration;
@@ -79,14 +80,19 @@ export const ApiDocumentationViewer: React.FC<ApiDocumentationViewerProps> = ({
         </div>
       </div>
 
-      <Tabs defaultValue="endpoints" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5">
+      <Tabs defaultValue="architecture" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-6">
+          <TabsTrigger value="architecture">Architecture</TabsTrigger>
           <TabsTrigger value="endpoints">Endpoints</TabsTrigger>
           <TabsTrigger value="rls-policies">RLS Policies</TabsTrigger>
           <TabsTrigger value="data-mapping">Data Mapping</TabsTrigger>
           <TabsTrigger value="schemas">Schemas</TabsTrigger>
           <TabsTrigger value="testing">Testing</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="architecture" className="space-y-4">
+          <ArchitectureDocumentation />
+        </TabsContent>
 
         <TabsContent value="endpoints" className="space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
