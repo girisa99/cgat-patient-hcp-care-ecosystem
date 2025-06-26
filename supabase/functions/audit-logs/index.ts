@@ -137,31 +137,50 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-    // Now get user data from auth.users table via manage-user-profiles function
+    console.log('📊 Audit logs fetched:', result.data?.length || 0);
+
+    // Now get user data from auth.users table using admin API directly
     const userIds = [...new Set(result.data?.map(log => log.user_id).filter(Boolean))];
     let userProfiles = [];
     
     if (userIds.length > 0) {
+      console.log('👥 Fetching user data for IDs:', userIds);
+      
       try {
-        // Use the manage-user-profiles function to get auth.users data
-        const { data: usersResponse } = await supabase.functions.invoke('manage-user-profiles', {
-          body: { 
-            action: 'list',
-            filters: { user_ids: userIds }
-          }
-        });
-
-        if (usersResponse?.success && usersResponse?.data) {
-          userProfiles = usersResponse.data.map((user: any) => ({
-            id: user.id,
-            first_name: user.first_name,
-            last_name: user.last_name,
-            email: user.email
-          }));
+        // Use the admin API to get user data directly from auth.users
+        const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+        
+        if (authError) {
+          console.error('❌ Error fetching auth users:', authError);
+        } else {
+          console.log('✅ Auth users fetched:', authUsers.users.length);
+          
+          // Filter users to only those we need and get their profiles
+          const relevantUsers = authUsers.users.filter(user => userIds.includes(user.id));
+          console.log('🔍 Relevant users found:', relevantUsers.length);
+          
+          // Get additional profile data if available
+          const { data: profilesData } = await supabase
+            .from('profiles')
+            .select('id, first_name, last_name, email')
+            .in('id', userIds);
+          
+          console.log('📝 Profiles found:', profilesData?.length || 0);
+          
+          userProfiles = relevantUsers.map(authUser => {
+            const profile = profilesData?.find(p => p.id === authUser.id);
+            return {
+              id: authUser.id,
+              first_name: profile?.first_name || authUser.user_metadata?.firstName || authUser.user_metadata?.first_name || null,
+              last_name: profile?.last_name || authUser.user_metadata?.lastName || authUser.user_metadata?.last_name || null,
+              email: profile?.email || authUser.email
+            };
+          });
+          
+          console.log('✅ User profiles prepared:', userProfiles.length);
         }
       } catch (error) {
-        console.error('Error fetching user profiles from auth.users:', error);
-        // Fallback to empty profiles array
+        console.error('❌ Error fetching user data:', error);
         userProfiles = [];
       }
     }
@@ -171,6 +190,8 @@ const handler = async (req: Request): Promise<Response> => {
       ...log,
       profiles: userProfiles.find(profile => profile.id === log.user_id) || null
     }));
+
+    console.log('🔄 Enriched data prepared with user info');
 
     // Get summary statistics
     const { data: totalCount } = await supabase
