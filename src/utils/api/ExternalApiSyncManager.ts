@@ -6,6 +6,8 @@
 import { supabase } from '@/integrations/supabase/client';
 import { externalApiManager } from './ExternalApiManager';
 import { databaseSchemaAnalyzer, DatabaseTable } from './DatabaseSchemaAnalyzer';
+import { syncOperationWrapper } from './SyncOperationWrapper';
+import { apiSyncErrorHandler } from './ApiSyncErrorHandler';
 import type { Json } from '@/integrations/supabase/types';
 
 export interface InternalApiEndpoint {
@@ -47,78 +49,145 @@ class ExternalApiSyncManagerClass {
     internalApiId: string,
     publishConfig: any
   ): Promise<any> {
-    console.log('🔄 Starting REAL DATABASE SYNC for:', internalApiId);
+    console.log('🔄 Starting REAL DATABASE SYNC with enhanced error handling for:', internalApiId);
 
     if (this.syncInProgress.has(internalApiId)) {
-      console.log('⚠️ Sync already in progress for:', internalApiId);
-      throw new Error('Sync already in progress for this API');
+      throw apiSyncErrorHandler.handleError(
+        new Error('Sync already in progress for this API'),
+        'publishWithFullSync',
+        { internalApiId }
+      );
     }
 
     this.syncInProgress.add(internalApiId);
 
     try {
-      // Step 1: Analyze real database schema
-      const databaseTables = await databaseSchemaAnalyzer.getAllTables();
-      console.log(`📊 Analyzed ${databaseTables.length} real database tables`);
+      // Use the sync operation wrapper for better error handling
+      const syncResult = await syncOperationWrapper.execute(
+        async () => await this.performFullSync(internalApiId, publishConfig),
+        `full-sync-${internalApiId}`,
+        {
+          maxRetries: 2,
+          baseDelay: 2000,
+          timeout: 60000,
+          skipRetryOn: ['VALIDATION_ERROR', 'AUTH_ERROR']
+        }
+      );
 
-      // Step 2: Get complete internal API details with real data
-      const internalApiDetails = await this.getInternalApiDetailsWithRealData(internalApiId, databaseTables);
-      console.log('📋 Internal API details with real database:', {
-        name: internalApiDetails.name,
-        tables: internalApiDetails.total_tables_count,
-        endpoints: internalApiDetails.total_endpoints_count,
-        rls_policies: internalApiDetails.total_rls_policies_count
-      });
-
-      // Step 3: Publish the external API registry entry
-      const externalApi = await externalApiManager.publishInternalApi(internalApiId, publishConfig);
-      console.log('✅ External API published:', externalApi.id);
-
-      // Step 4: Clear existing endpoints for this external API
-      await this.clearExistingEndpoints(externalApi.id);
-
-      // Step 5: Sync ALL real endpoints to external tables
-      let externalEndpoints = [];
-      if (internalApiDetails.endpoints.length > 0) {
-        externalEndpoints = await this.syncRealEndpointsToExternalWithRetry(
-          externalApi.id,
-          internalApiDetails.endpoints
-        );
-        console.log(`✅ Successfully synced ${externalEndpoints.length} REAL endpoints to external tables`);
+      if (!syncResult.success) {
+        throw syncResult.error || new Error('Sync operation failed');
       }
 
-      // Step 6: Set up real-time sync for future changes
-      await this.setupRealtimeSync(internalApiId, externalApi.id);
-      console.log('✅ Real-time sync established');
-
-      // Step 7: Verify sync completion with real data
-      const verificationResult = await this.verifySyncCompletion(externalApi.id);
-      console.log('🔍 Real data sync verification:', verificationResult);
-
-      // Step 8: Log the sync event for tracking
-      await this.logSyncEvent(externalApi.id, 'real_database_sync_completed', {
-        database_tables_analyzed: databaseTables.length,
-        endpoints_synced: externalEndpoints.length,
-        rls_policies_generated: internalApiDetails.total_rls_policies_count,
-        verification: verificationResult
-      });
-
-      return {
-        ...externalApi,
-        synced_endpoints_count: externalEndpoints.length,
-        synced_tables_count: internalApiDetails.total_tables_count,
-        synced_rls_policies_count: internalApiDetails.total_rls_policies_count,
-        sync_status: 'active',
-        verification: verificationResult,
-        database_analysis: {
-          total_tables: databaseTables.length,
-          analyzed_tables: databaseTables.map(t => t.table_name)
-        }
-      };
+      return syncResult.data;
 
     } finally {
       this.syncInProgress.delete(internalApiId);
     }
+  }
+
+  /**
+   * Perform the actual sync operation
+   */
+  private async performFullSync(internalApiId: string, publishConfig: any): Promise<any> {
+    // Step 1: Analyze real database schema
+    const databaseTables = await this.executeWithErrorHandling(
+      () => databaseSchemaAnalyzer.getAllTables(),
+      'analyze-database-schema'
+    );
+    console.log(`📊 Analyzed ${databaseTables.length} real database tables`);
+
+    // Step 2: Get complete internal API details with real data
+    const internalApiDetails = await this.executeWithErrorHandling(
+      () => this.getInternalApiDetailsWithRealData(internalApiId, databaseTables),
+      'get-internal-api-details'
+    );
+    console.log('📋 Internal API details with real database:', {
+      name: internalApiDetails.name,
+      tables: internalApiDetails.total_tables_count,
+      endpoints: internalApiDetails.total_endpoints_count,
+      rls_policies: internalApiDetails.total_rls_policies_count
+    });
+
+    // Step 3: Publish the external API registry entry
+    const externalApi = await this.executeWithErrorHandling(
+      () => externalApiManager.publishInternalApi(internalApiId, publishConfig),
+      'publish-external-api'
+    );
+    console.log('✅ External API published:', externalApi.id);
+
+    // Step 4: Clear existing endpoints for this external API
+    await this.executeWithErrorHandling(
+      () => this.clearExistingEndpoints(externalApi.id),
+      'clear-existing-endpoints'
+    );
+
+    // Step 5: Sync ALL real endpoints to external tables
+    let externalEndpoints = [];
+    if (internalApiDetails.endpoints.length > 0) {
+      externalEndpoints = await this.executeWithErrorHandling(
+        () => this.syncRealEndpointsToExternalWithRetry(externalApi.id, internalApiDetails.endpoints),
+        'sync-real-endpoints'
+      );
+      console.log(`✅ Successfully synced ${externalEndpoints.length} REAL endpoints to external tables`);
+    }
+
+    // Step 6: Set up real-time sync for future changes
+    await this.executeWithErrorHandling(
+      () => this.setupRealtimeSync(internalApiId, externalApi.id),
+      'setup-realtime-sync'
+    );
+    console.log('✅ Real-time sync established');
+
+    // Step 7: Verify sync completion with real data
+    const verificationResult = await this.executeWithErrorHandling(
+      () => this.verifySyncCompletion(externalApi.id),
+      'verify-sync-completion'
+    );
+    console.log('🔍 Real data sync verification:', verificationResult);
+
+    // Step 8: Log the sync event for tracking
+    await this.executeWithErrorHandling(
+      () => this.logSyncEvent(externalApi.id, 'real_database_sync_completed', {
+        database_tables_analyzed: databaseTables.length,
+        endpoints_synced: externalEndpoints.length,
+        rls_policies_generated: internalApiDetails.total_rls_policies_count,
+        verification: verificationResult
+      }),
+      'log-sync-event'
+    );
+
+    return {
+      ...externalApi,
+      synced_endpoints_count: externalEndpoints.length,
+      synced_tables_count: internalApiDetails.total_tables_count,
+      synced_rls_policies_count: internalApiDetails.total_rls_policies_count,
+      sync_status: 'active',
+      verification: verificationResult,
+      database_analysis: {
+        total_tables: databaseTables.length,
+        analyzed_tables: databaseTables.map(t => t.table_name)
+      }
+    };
+  }
+
+  /**
+   * Execute operation with error handling
+   */
+  private async executeWithErrorHandling<T>(
+    operation: () => Promise<T>,
+    operationName: string
+  ): Promise<T> {
+    const result = await syncOperationWrapper.execute(operation, operationName, {
+      maxRetries: 1,
+      baseDelay: 1000,
+      timeout: 30000
+    });
+
+    if (!result.success) {
+      throw result.error || new Error(`${operationName} failed`);
+    }
+
+    return result.data!;
   }
 
   /**
@@ -127,48 +196,59 @@ class ExternalApiSyncManagerClass {
   private async clearExistingEndpoints(externalApiId: string) {
     console.log('🧹 Clearing existing endpoints for external API:', externalApiId);
     
-    const { error } = await supabase
-      .from('external_api_endpoints')
-      .delete()
-      .eq('external_api_id', externalApiId);
+    try {
+      const { error } = await supabase
+        .from('external_api_endpoints')
+        .delete()
+        .eq('external_api_id', externalApiId);
 
-    if (error) {
-      console.warn('⚠️ Error clearing existing endpoints:', error);
-    } else {
+      if (error) {
+        throw apiSyncErrorHandler.handleError(error, 'clearExistingEndpoints', {
+          externalApiId
+        });
+      }
+      
       console.log('✅ Existing endpoints cleared');
+    } catch (err) {
+      console.warn('⚠️ Error clearing existing endpoints:', err);
+      throw err;
     }
   }
 
   /**
-   * Sync real endpoints with retry logic
+   * Enhanced sync with better error handling and validation
    */
   private async syncRealEndpointsToExternalWithRetry(
     externalApiId: string,
     realEndpoints: InternalApiEndpoint[],
     maxRetries: number = 3
   ) {
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        console.log(`🔄 REAL SYNC attempt ${attempt}/${maxRetries} for ${realEndpoints.length} real endpoints`);
-        const result = await this.syncRealEndpointsToExternal(externalApiId, realEndpoints);
-        
-        // Verify the sync immediately after
-        const verifyResult = await this.verifyEndpointsSync(externalApiId, realEndpoints.length);
-        if (!verifyResult.success) {
-          throw new Error(`Real sync verification failed: ${verifyResult.error}`);
-        }
-        
-        return result;
-      } catch (error) {
-        console.error(`❌ Real sync attempt ${attempt} failed:`, error);
-        if (attempt === maxRetries) {
-          throw error;
-        }
-        // Wait before retry with exponential backoff
-        await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
+    const result = await syncOperationWrapper.execute(
+      () => this.syncRealEndpointsToExternal(externalApiId, realEndpoints),
+      `sync-endpoints-${externalApiId}`,
+      {
+        maxRetries,
+        baseDelay: 1000,
+        timeout: 45000,
+        skipRetryOn: ['VALIDATION_ERROR', 'SCHEMA_ERROR']
       }
+    );
+
+    if (!result.success) {
+      throw result.error || new Error('Failed to sync endpoints');
     }
-    return [];
+
+    // Verify the sync immediately after
+    const verifyResult = await this.verifyEndpointsSync(externalApiId, realEndpoints.length);
+    if (!verifyResult.success) {
+      throw apiSyncErrorHandler.handleError(
+        new Error(`Real sync verification failed: ${verifyResult.error}`),
+        'verifyEndpointsSync',
+        { externalApiId, expectedCount: realEndpoints.length }
+      );
+    }
+    
+    return result.data;
   }
 
   /**
@@ -570,39 +650,55 @@ class ExternalApiSyncManagerClass {
    * Force refresh sync using real database analysis
    */
   async forceRefreshSync(externalApiId: string) {
-    console.log('🔄 Force refreshing sync with REAL DATABASE ANALYSIS for external API:', externalApiId);
+    console.log('🔄 Force refreshing sync with REAL DATABASE ANALYSIS and enhanced error handling for external API:', externalApiId);
     
-    try {
-      // Get the external API info
-      const { data: externalApi, error } = await supabase
-        .from('external_api_registry')
-        .select('internal_api_id')
-        .eq('id', externalApiId)
-        .single();
+    const result = await syncOperationWrapper.execute(
+      async () => {
+        // Get the external API info
+        const { data: externalApi, error } = await supabase
+          .from('external_api_registry')
+          .select('internal_api_id')
+          .eq('id', externalApiId)
+          .single();
 
-      if (error || !externalApi) {
-        throw new Error('External API not found');
+        if (error || !externalApi) {
+          throw apiSyncErrorHandler.handleError(
+            error || new Error('External API not found'),
+            'forceRefreshSync',
+            { externalApiId }
+          );
+        }
+
+        // Clear existing endpoints
+        await this.clearExistingEndpoints(externalApiId);
+
+        // Analyze real database and re-sync
+        const databaseTables = await databaseSchemaAnalyzer.getAllTables();
+        const internalApiDetails = await this.getInternalApiDetailsWithRealData(externalApi.internal_api_id, databaseTables);
+        const syncedEndpoints = await this.syncRealEndpointsToExternal(externalApiId, internalApiDetails.endpoints);
+
+        console.log(`✅ Force refresh with REAL DATA completed: ${syncedEndpoints.length} endpoints synced from ${databaseTables.length} tables`);
+        return { 
+          success: true, 
+          synced_endpoints: syncedEndpoints.length,
+          analyzed_tables: databaseTables.length,
+          sync_type: 'real_database_analysis'
+        };
+      },
+      `force-refresh-${externalApiId}`,
+      {
+        maxRetries: 1,
+        baseDelay: 2000,
+        timeout: 60000
       }
+    );
 
-      // Clear existing endpoints
-      await this.clearExistingEndpoints(externalApiId);
-
-      // Analyze real database and re-sync
-      const databaseTables = await databaseSchemaAnalyzer.getAllTables();
-      const internalApiDetails = await this.getInternalApiDetailsWithRealData(externalApi.internal_api_id, databaseTables);
-      const syncedEndpoints = await this.syncRealEndpointsToExternal(externalApiId, internalApiDetails.endpoints);
-
-      console.log(`✅ Force refresh with REAL DATA completed: ${syncedEndpoints.length} endpoints synced from ${databaseTables.length} tables`);
-      return { 
-        success: true, 
-        synced_endpoints: syncedEndpoints.length,
-        analyzed_tables: databaseTables.length,
-        sync_type: 'real_database_analysis'
-      };
-    } catch (error) {
-      console.error('❌ Error during real database force refresh:', error);
-      throw error;
+    if (!result.success) {
+      console.error('❌ Error during real database force refresh:', result.error);
+      throw result.error;
     }
+
+    return result.data;
   }
 }
 

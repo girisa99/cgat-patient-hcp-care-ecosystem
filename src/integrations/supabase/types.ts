@@ -9,42 +9,6 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      api_change_tracking: {
-        Row: {
-          api_name: string
-          created_at: string
-          detected_at: string
-          direction: string | null
-          id: string
-          impact_assessment: Json | null
-          lifecycle_stage: string | null
-          migration_notes: string | null
-          type: string
-        }
-        Insert: {
-          api_name: string
-          created_at?: string
-          detected_at?: string
-          direction?: string | null
-          id?: string
-          impact_assessment?: Json | null
-          lifecycle_stage?: string | null
-          migration_notes?: string | null
-          type: string
-        }
-        Update: {
-          api_name?: string
-          created_at?: string
-          detected_at?: string
-          direction?: string | null
-          id?: string
-          impact_assessment?: Json | null
-          lifecycle_stage?: string | null
-          migration_notes?: string | null
-          type?: string
-        }
-        Relationships: []
-      }
       api_consumption_logs: {
         Row: {
           api_integration_id: string

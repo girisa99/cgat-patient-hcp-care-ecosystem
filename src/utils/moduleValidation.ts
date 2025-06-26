@@ -1,4 +1,3 @@
-
 /**
  * Module Validation Utilities
  * 
@@ -46,7 +45,6 @@ export const validateTableExists = (tableName: string): tableName is DatabaseTab
     'api_usage_analytics',
     'marketplace_listings',
     'external_api_change_logs',
-    'api_change_tracking',
     'api_consumption_logs',
     'api_lifecycle_events',
     'api_usage_logs',
