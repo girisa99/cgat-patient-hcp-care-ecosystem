@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.2';
 
@@ -168,17 +169,11 @@ const handler = async (req: Request): Promise<Response> => {
         }
 
         console.log('✅ Auth users fetched:', authUsers.users.length);
-        console.log('📊 Auth users list:');
-        authUsers.users.forEach((authUser, index) => {
-          console.log(`  ${index + 1}. ID: ${authUser.id}`);
-          console.log(`     Email: ${authUser.email}`);
-          console.log(`     Created: ${authUser.created_at}`);
-          console.log(`     Confirmed: ${authUser.email_confirmed_at || 'Not confirmed'}`);
-          console.log('     ---');
-        });
 
-        // Now get profiles for each auth user (if they exist)
+        // Get user IDs for batch queries
         const userIds = authUsers.users.map(u => u.id);
+
+        // Fetch profiles for all users
         const { data: profiles, error: profilesError } = await supabase
           .from('profiles')
           .select(`
@@ -197,12 +192,14 @@ const handler = async (req: Request): Promise<Response> => {
           console.log('✅ Profiles fetched:', profiles?.length || 0);
         }
 
-        // Get user roles for all users
+        // FIXED: Fetch user roles with proper join structure to get role names
         const { data: userRoles, error: rolesError } = await supabase
           .from('user_roles')
           .select(`
             user_id,
-            roles (
+            role_id,
+            roles!inner (
+              id,
               name,
               description
             )
@@ -211,14 +208,30 @@ const handler = async (req: Request): Promise<Response> => {
 
         if (rolesError) {
           console.error('❌ Error fetching roles:', rolesError);
+          console.error('Roles error details:', rolesError);
         } else {
           console.log('✅ User roles fetched:', userRoles?.length || 0);
+          console.log('🔍 Role details:', userRoles?.map(ur => ({
+            user_id: ur.user_id,
+            role_name: ur.roles?.name,
+            role_desc: ur.roles?.description
+          })));
         }
 
         // Combine auth users with their profiles and roles
         const combinedUsers = authUsers.users.map(authUser => {
           const profile = profiles?.find(p => p.id === authUser.id);
-          const roles = userRoles?.filter(ur => ur.user_id === authUser.id) || [];
+          
+          // FIXED: Properly filter and map roles for this specific user
+          const userRoleRecords = userRoles?.filter(ur => ur.user_id === authUser.id) || [];
+          const formattedRoles = userRoleRecords.map(ur => ({
+            roles: {
+              name: ur.roles?.name || 'patientCaregiver',
+              description: ur.roles?.description || null
+            }
+          }));
+          
+          console.log(`🔍 User ${authUser.email} roles:`, formattedRoles);
           
           return {
             // Use auth user data as base
@@ -238,17 +251,19 @@ const handler = async (req: Request): Promise<Response> => {
             is_email_verified: profile?.is_email_verified || !!authUser.email_confirmed_at,
             // Include facility info if profile exists
             facilities: profile?.facilities || null,
-            // Include roles
-            user_roles: roles.map(ur => ({
-              roles: {
-                name: ur.roles?.name || 'patientCaregiver',
-                description: ur.roles?.description || null
-              }
-            }))
+            // Include properly formatted roles
+            user_roles: formattedRoles
           };
         });
 
         console.log('✅ Combined users prepared:', combinedUsers.length);
+        console.log('🔍 Final user role summary:');
+        combinedUsers.forEach(user => {
+          console.log(`  - ${user.email}: ${user.user_roles?.length || 0} roles`);
+          user.user_roles?.forEach(ur => {
+            console.log(`    * ${ur.roles.name}`);
+          });
+        });
         
         result = { data: combinedUsers };
         break;
