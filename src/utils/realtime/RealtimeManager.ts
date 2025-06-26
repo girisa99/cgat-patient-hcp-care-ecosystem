@@ -40,8 +40,8 @@ class RealtimeManager {
     // Get all registered modules
     const modules = moduleRegistry.getAll();
     
-    // Auto-detect additional modules from database tables
-    const detectedTables = await this.scanDatabaseTables();
+    // Get additional tables from known schema
+    const detectedTables = this.getKnownTables();
     
     // Register real-time for all detected modules
     for (const module of modules) {
@@ -73,23 +73,24 @@ class RealtimeManager {
   }
 
   /**
-   * Scans database tables to auto-detect modules
+   * Get known database tables from our schema
    */
-  private async scanDatabaseTables(): Promise<string[]> {
-    try {
-      // Get all tables from information_schema
-      const { data: tables } = await supabase
-        .from('information_schema.tables')
-        .select('table_name')
-        .eq('table_schema', 'public')
-        .neq('table_name', 'audit_logs'); // Exclude system tables
-
-      return tables?.map(t => t.table_name) || [];
-    } catch (error) {
-      console.warn('⚠️ Could not scan database tables:', error);
-      // Fallback to known tables
-      return ['profiles', 'facilities', 'modules', 'user_roles', 'permissions'];
-    }
+  private getKnownTables(): string[] {
+    // Return hardcoded list of known tables from our database schema
+    return [
+      'profiles', 
+      'facilities', 
+      'modules', 
+      'permissions', 
+      'roles', 
+      'user_roles',
+      'audit_logs',
+      'feature_flags',
+      'user_permissions',
+      'user_facility_access',
+      'role_permissions',
+      'module_permissions'
+    ];
   }
 
   /**

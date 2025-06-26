@@ -144,6 +144,7 @@ const Patients = () => {
       <PatientManagementHeader 
         meta={{
           ...meta,
+          totalPatients: patients?.length || 0,
           realtimeEnabled: true,
           isOnline,
           platform: capabilities.platform,

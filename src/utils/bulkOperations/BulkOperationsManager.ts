@@ -157,8 +157,8 @@ class BulkOperationsManager {
    * Execute batch insert
    */
   private async executeBatchInsert(tableName: string, data: any[]) {
-    return await supabase
-      .from(tableName)
+    // Use type assertion to handle dynamic table names
+    return await (supabase.from as any)(tableName)
       .insert(data)
       .select();
   }
@@ -173,8 +173,7 @@ class BulkOperationsManager {
     
     for (const item of data) {
       const { id, ...updateData } = item;
-      const result = await supabase
-        .from(tableName)
+      const result = await (supabase.from as any)(tableName)
         .update(updateData)
         .eq('id', id)
         .select();
@@ -193,8 +192,7 @@ class BulkOperationsManager {
   private async executeBatchDelete(tableName: string, data: any[]) {
     const ids = data.map(item => item.id || item);
     
-    return await supabase
-      .from(tableName)
+    return await (supabase.from as any)(tableName)
       .delete()
       .in('id', ids)
       .select();
@@ -204,8 +202,7 @@ class BulkOperationsManager {
    * Execute batch upsert
    */
   private async executeBatchUpsert(tableName: string, data: any[]) {
-    return await supabase
-      .from(tableName)
+    return await (supabase.from as any)(tableName)
       .upsert(data)
       .select();
   }
