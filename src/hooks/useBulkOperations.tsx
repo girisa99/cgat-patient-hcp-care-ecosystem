@@ -5,7 +5,8 @@
  */
 
 import { useState, useCallback } from 'react';
-import { bulkOperationsManager, BulkOperation, BulkOperationResult } from '@/utils/bulkOperations/BulkOperationsManager';
+import { bulkOperationsManager } from '@/utils/bulkOperations';
+import { BulkOperation, BulkOperationResult } from '@/utils/bulkOperations';
 import { useToast } from '@/hooks/use-toast';
 
 export interface UseBulkOperationsOptions {
