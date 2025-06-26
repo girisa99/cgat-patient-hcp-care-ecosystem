@@ -3,7 +3,7 @@
  * Postman Collection Generation Utilities for API Integrations
  */
 
-import { ApiIntegration, ApiEndpoint, PostmanCollection, PostmanItem } from './ApiIntegrationTypes';
+import { ApiIntegration, ApiEndpoint, PostmanCollection, PostmanItem, PostmanUrl } from './ApiIntegrationTypes';
 import { SchemaAnalyzer } from './SchemaAnalyzer';
 
 export class PostmanCollectionGenerator {
@@ -74,26 +74,28 @@ export class PostmanCollectionGenerator {
   }
 
   static generatePostmanItem(endpoint: ApiEndpoint, integration: ApiIntegration): PostmanItem {
+    const urlObject: PostmanUrl = {
+      raw: endpoint.fullUrl || `{{baseUrl}}${endpoint.url}`,
+      host: endpoint.fullUrl ? [endpoint.fullUrl.split('/')[2]] : ['{{baseUrl}}'],
+      path: endpoint.url.split('/').filter(p => p)
+    };
+
     const item: PostmanItem = {
       name: endpoint.name,
       request: {
         method: endpoint.method,
-        header: Object.entries(endpoint.headers).map(([key, value]) => ({
+        header: Object.entries(endpoint.headers || {}).map(([key, value]) => ({
           key,
           value,
           type: 'text'
         })),
-        url: {
-          raw: endpoint.fullUrl || `{{baseUrl}}${endpoint.url}`,
-          host: endpoint.fullUrl ? [endpoint.fullUrl.split('/')[2]] : ['{{baseUrl}}'],
-          path: endpoint.url.split('/').filter(p => p)
-        }
+        url: urlObject
       },
       response: []
     };
 
     if (endpoint.queryParams) {
-      item.request.url.query = Object.entries(endpoint.queryParams).map(([key, value]) => ({
+      urlObject.query = Object.entries(endpoint.queryParams).map(([key, value]) => ({
         key,
         value
       }));

@@ -154,8 +154,12 @@ export const useRealtime = (options: UseRealtimeOptions) => {
       console.log('🔍 Triggering component detection for new module...');
       // This would trigger the ApiChangeDetector to scan for components
       setTimeout(async () => {
-        const { apiChangeDetector } = await import('@/utils/automation/ApiChangeDetector');
-        apiChangeDetector.detectAndNotifyChanges().catch(console.error);
+        try {
+          const { ApiChangeDetector } = await import('@/utils/automation/ApiChangeDetector');
+          await ApiChangeDetector.detectAndNotifyChanges();
+        } catch (error) {
+          console.error('Failed to trigger API change detection:', error);
+        }
       }, 2000);
     }
 

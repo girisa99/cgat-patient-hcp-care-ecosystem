@@ -125,6 +125,16 @@ const ExternalApiPublisher = () => {
     setSelectedApi(apiId);
     const integration = integrations?.find(i => i.id === apiId);
     
+    const getDocumentationUrl = () => {
+      if (typeof integration?.externalDocumentation === 'string') {
+        return integration.externalDocumentation;
+      }
+      if (typeof integration?.externalDocumentation === 'object' && integration.externalDocumentation?.apiReference) {
+        return integration.externalDocumentation.apiReference;
+      }
+      return '';
+    };
+    
     const newFormData = {
       external_name: apiName,
       external_description: integration?.description || 'Enhanced API with real-time sync capabilities',
@@ -133,7 +143,7 @@ const ExternalApiPublisher = () => {
       visibility: 'private' as const,
       pricing_model: 'free' as const,
       category: integration?.category || 'general',
-      documentation_url: integration?.externalDocumentation?.apiReference || '',
+      documentation_url: getDocumentationUrl(),
       tags: ['real-time-sync', 'enhanced'] as string[],
       rate_limits: { requests: 1000, period: 'hour' },
       authentication_methods: ['api_key'],
@@ -354,7 +364,7 @@ const ExternalApiPublisher = () => {
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-orange-500" />
               <div>
-                <p className="text-2xl font-bold">{draftAndReviewCount}</p>
+                <p className="text-2xl font-bold">{(externalApis.filter(api => api.status === 'draft').length + externalApis.filter(api => api.status === 'review').length)}</p>
                 <p className="text-sm text-muted-foreground">Drafts & Review</p>
               </div>
             </div>
@@ -368,7 +378,7 @@ const ExternalApiPublisher = () => {
           <TabsTrigger value="published">
             Published APIs ({publishedApis.length})
           </TabsTrigger>
-          <TabsTrigger value="drafts">Drafts & Review ({draftAndReviewCount})</TabsTrigger>
+          <TabsTrigger value="drafts">Drafts & Review ({(externalApis.filter(api => api.status === 'draft').length + externalApis.filter(api => api.status === 'review').length)})</TabsTrigger>
           <TabsTrigger value="documentation">
             <FileText className="h-4 w-4 mr-1" />
             Documentation

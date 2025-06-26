@@ -19,7 +19,7 @@ export class RealApiScanner {
       description: 'Live Supabase database APIs detected from the running application',
       type: 'internal',
       version: '1.0.0',
-      baseUrl: supabase.supabaseUrl,
+      baseUrl: this.getSupabaseUrl(),
       status: 'active',
       category: 'database',
       endpoints: realEndpoints,
@@ -31,6 +31,38 @@ export class RealApiScanner {
     };
 
     return [realIntegration];
+  }
+
+  /**
+   * Generate a comprehensive real internal API integration
+   */
+  static async generateRealInternalApi(): Promise<ApiIntegration> {
+    const realEndpoints = await this.detectRealEndpoints();
+    
+    return {
+      id: 'comprehensive_real_api',
+      name: 'Comprehensive Real Healthcare API',
+      description: 'Complete real API integration with all detected endpoints and schemas',
+      type: 'internal',
+      version: '1.0.0',
+      baseUrl: this.getSupabaseUrl(),
+      status: 'active',
+      category: 'healthcare',
+      endpoints: realEndpoints,
+      schemas: await this.detectRealSchemas(),
+      rlsPolicies: await this.detectRealRLSPolicies(),
+      mappings: await this.detectRealMappings(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+  }
+
+  /**
+   * Get Supabase URL safely
+   */
+  private static getSupabaseUrl(): string {
+    // Access the URL through the supabase client's public properties
+    return (supabase as any).supabaseUrl || process.env.VITE_SUPABASE_URL || 'https://your-project.supabase.co';
   }
 
   /**
