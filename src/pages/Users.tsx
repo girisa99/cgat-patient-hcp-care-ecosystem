@@ -3,7 +3,6 @@ import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield } from 'lucide-react';
 import UsersList from '@/components/users/UsersList';
-import RoleAssignmentDebugger from '@/components/users/RoleAssignmentDebugger';
 import BulkRoleAssignment from '@/components/users/BulkRoleAssignment';
 import DatabaseHealthCheck from '@/components/users/DatabaseHealthCheck';
 import { UserManagementHeader } from '@/components/admin/UserManagement/UserManagementHeader';
@@ -93,13 +92,6 @@ const Users = () => {
           />
         </CardContent>
       </Card>
-
-      {debugMode && selectedUserId && (
-        <RoleAssignmentDebugger
-          userId={selectedUserId}
-          userName={selectedUserName}
-        />
-      )}
 
       <UserManagementDialogs
         createUserOpen={createUserOpen}

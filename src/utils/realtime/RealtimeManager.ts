@@ -33,7 +33,40 @@ class RealtimeManager {
       await this.registerModule(config);
     }
 
+    // Ensure critical tables are registered for real-time
+    await this.ensureCriticalTablesRegistered();
+
     console.log(`✅ Auto-registered ${this.subscriptionManager.getDetectedModules().length} modules for real-time updates`);
+  }
+
+  /**
+   * Ensures critical tables like user_roles and roles have real-time enabled
+   */
+  private async ensureCriticalTablesRegistered() {
+    const criticalTables = [
+      {
+        tableName: 'user_roles',
+        moduleName: 'UserRoles',
+        enableInsert: true,
+        enableUpdate: true,
+        enableDelete: true,
+        enableBulkOperations: true
+      },
+      {
+        tableName: 'roles',
+        moduleName: 'Roles', 
+        enableInsert: true,
+        enableUpdate: true,
+        enableDelete: true,
+        enableBulkOperations: true
+      }
+    ];
+
+    for (const config of criticalTables) {
+      if (!this.subscriptionManager.getDetectedModules().includes(config.moduleName)) {
+        await this.registerModule(config);
+      }
+    }
   }
 
   /**

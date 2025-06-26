@@ -908,42 +908,6 @@ export type Database = {
         }
         Relationships: []
       }
-      feature_flags: {
-        Row: {
-          configuration: Json | null
-          created_at: string | null
-          description: string | null
-          id: string
-          is_enabled: boolean | null
-          name: string
-          target_facilities: string[] | null
-          target_roles: Database["public"]["Enums"]["user_role"][] | null
-          updated_at: string | null
-        }
-        Insert: {
-          configuration?: Json | null
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          is_enabled?: boolean | null
-          name: string
-          target_facilities?: string[] | null
-          target_roles?: Database["public"]["Enums"]["user_role"][] | null
-          updated_at?: string | null
-        }
-        Update: {
-          configuration?: Json | null
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          is_enabled?: boolean | null
-          name?: string
-          target_facilities?: string[] | null
-          target_roles?: Database["public"]["Enums"]["user_role"][] | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
       marketplace_listings: {
         Row: {
           category: string

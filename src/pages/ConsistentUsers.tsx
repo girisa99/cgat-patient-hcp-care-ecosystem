@@ -3,12 +3,10 @@ import React from 'react';
 import { useConsistentUsers } from '@/hooks/useConsistentUsers';
 import { useUserManagementDialogs } from '@/hooks/useUserManagementDialogs';
 import { useUserStatistics } from '@/hooks/useUserStatistics';
-import { useSelectedUserInfo } from '@/hooks/useSelectedUserInfo';
 import { useDebugMode } from '@/hooks/useDebugMode';
 import { UserManagementStats } from '@/components/admin/UserManagement/UserManagementStats';
 import { UserManagementActions } from '@/components/admin/UserManagement/UserManagementActions';
 import { UserManagementList } from '@/components/admin/UserManagement/UserManagementList';
-import { UserManagementDebug } from '@/components/admin/UserManagement/UserManagementDebug';
 import { UserManagementDialogs } from '@/components/admin/UserManagement/UserManagementDialogs';
 
 const ConsistentUsers = () => {
@@ -34,8 +32,6 @@ const ConsistentUsers = () => {
     handleAssignFacility,
     handleEditUser
   } = useUserManagementDialogs();
-
-  const { selectedUserName } = useSelectedUserInfo(users, selectedUserId);
 
   return (
     <div className="space-y-6">
@@ -63,12 +59,6 @@ const ConsistentUsers = () => {
         onEditUser={handleEditUser}
       />
 
-      <UserManagementDebug
-        debugMode={debugMode}
-        selectedUserId={selectedUserId}
-        selectedUserName={selectedUserName}
-      />
-
       <UserManagementDialogs
         createUserOpen={createUserOpen}
         setCreateUserOpen={setCreateUserOpen}
@@ -82,7 +72,7 @@ const ConsistentUsers = () => {
         setAssignFacilityOpen={setAssignFacilityOpen}
         selectedUserId={selectedUserId}
         selectedUser={selectedUser}
-        selectedUserName={selectedUserName}
+        selectedUserName={users?.find(u => u.id === selectedUserId)?.first_name || ''}
       />
     </div>
   );
