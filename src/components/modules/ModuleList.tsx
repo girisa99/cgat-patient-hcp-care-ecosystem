@@ -45,7 +45,26 @@ export const ModuleList: React.FC<ModuleListProps> = ({
   };
 
   const getModuleComponents = (moduleName: string): ComponentServiceInfo[] => {
-    return moduleRegistry.getModuleComponentsForRBAC(moduleName);
+    console.log(`🔍 Looking for components for module: ${moduleName}`);
+    
+    // Try exact match first
+    let components = moduleRegistry.getModuleComponentsForRBAC(moduleName);
+    
+    // If no exact match, try variations
+    if (!components || components.length === 0) {
+      // Try plural form
+      const pluralName = moduleName.endsWith('s') ? moduleName : `${moduleName}s`;
+      components = moduleRegistry.getModuleComponentsForRBAC(pluralName);
+      
+      // Try without 's' if original had 's'
+      if ((!components || components.length === 0) && moduleName.endsWith('s')) {
+        const singularName = moduleName.slice(0, -1);
+        components = moduleRegistry.getModuleComponentsForRBAC(singularName);
+      }
+    }
+    
+    console.log(`📊 Found ${components?.length || 0} components for ${moduleName}`);
+    return components || [];
   };
 
   const getComponentIcon = (type: 'component' | 'service' | 'hook') => {
@@ -100,6 +119,17 @@ export const ModuleList: React.FC<ModuleListProps> = ({
       </div>
     </div>
   );
+
+  // Debug: Log all registered modules
+  React.useEffect(() => {
+    const registeredModules = moduleRegistry.getAll();
+    console.log('📋 All registered modules:', registeredModules.map(m => ({
+      name: m.moduleName,
+      components: m.components?.length || 0,
+      services: m.services?.length || 0,
+      hooks: m.hooks?.length || 0
+    })));
+  }, []);
 
   return (
     <Card>
@@ -211,7 +241,7 @@ export const ModuleList: React.FC<ModuleListProps> = ({
                           <div className="text-center py-4 text-gray-500">
                             <Component className="h-8 w-8 mx-auto mb-2 opacity-50" />
                             <p>No components or services detected for this module</p>
-                            <p className="text-xs mt-1">Components will appear here when auto-detected</p>
+                            <p className="text-xs mt-1">Use "Auto Detection" tab to scan and register components</p>
                           </div>
                         )}
                       </div>
