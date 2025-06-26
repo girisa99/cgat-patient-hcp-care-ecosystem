@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Database } from '@/integrations/supabase/types';
+import { Badge } from '@/components/ui/badge';
 
 type UserRole = Database['public']['Enums']['user_role'];
 
@@ -45,14 +46,11 @@ const AssignRoleDialog: React.FC<AssignRoleDialogProps> = ({
   const { assignRole, isAssigningRole, users } = useUsers();
   const [selectedRole, setSelectedRole] = useState<UserRole | ''>('');
 
-  // Find current user to show debug info
+  // Find current user to show current roles
   const currentUser = users?.find(u => u.id === userId);
+  const currentRoles = currentUser?.user_roles || [];
   
-  console.log('🔍 AssignRoleDialog Debug Info:');
-  console.log('  - User ID:', userId);
-  console.log('  - User Name:', userName);
-  console.log('  - Current User Data:', currentUser);
-  console.log('  - Current User Roles:', currentUser?.user_roles);
+  console.log('🔍 AssignRoleDialog - Current user roles:', currentRoles);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,6 +66,10 @@ const AssignRoleDialog: React.FC<AssignRoleDialogProps> = ({
     onOpenChange(false);
   };
 
+  const hasRole = (roleName: UserRole) => {
+    return currentRoles.some(ur => ur.roles.name === roleName);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -75,22 +77,29 @@ const AssignRoleDialog: React.FC<AssignRoleDialogProps> = ({
           <DialogTitle>Assign Role to {userName}</DialogTitle>
         </DialogHeader>
         
-        {/* Debug info for current user roles */}
+        {/* Show current roles */}
         {currentUser && (
-          <div className="bg-gray-100 p-3 rounded-md mb-4 text-sm">
-            <p className="font-medium">Current User Info:</p>
-            <p>ID: {currentUser.id}</p>
-            <p>Email: {currentUser.email}</p>
-            <p>Current Roles: {currentUser.user_roles?.length > 0 
-              ? currentUser.user_roles.map(ur => ur.roles.name).join(', ')
-              : 'None'
-            }</p>
+          <div className="space-y-3">
+            <div>
+              <Label className="text-sm font-medium">Current Roles:</Label>
+              <div className="flex flex-wrap gap-2 mt-1">
+                {currentRoles.length > 0 ? (
+                  currentRoles.map((ur, index) => (
+                    <Badge key={index} variant="secondary">
+                      {ur.roles.name}
+                    </Badge>
+                  ))
+                ) : (
+                  <span className="text-sm text-gray-500">No roles assigned</span>
+                )}
+              </div>
+            </div>
           </div>
         )}
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="role">Select Role</Label>
+            <Label htmlFor="role">Add New Role</Label>
             <Select
               value={selectedRole}
               onValueChange={(value: UserRole) => setSelectedRole(value)}
@@ -100,8 +109,12 @@ const AssignRoleDialog: React.FC<AssignRoleDialogProps> = ({
               </SelectTrigger>
               <SelectContent>
                 {roleOptions.map((role) => (
-                  <SelectItem key={role.value} value={role.value}>
-                    {role.label}
+                  <SelectItem 
+                    key={role.value} 
+                    value={role.value}
+                    disabled={hasRole(role.value)}
+                  >
+                    {role.label} {hasRole(role.value) && '(Already assigned)'}
                   </SelectItem>
                 ))}
               </SelectContent>

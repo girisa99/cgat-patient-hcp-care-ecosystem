@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -42,110 +43,29 @@ export const useUsers = () => {
   } = useQuery({
     queryKey: ['users'],
     queryFn: async () => {
-      console.log('🔍 Fetching users - checking both auth.users and profiles tables...');
+      console.log('🔍 Fetching users - using manage-user-profiles edge function...');
       
       try {
-        // Debug: Check current user and auth state
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        console.log('🔍 Current authenticated user:', user?.id, authError);
-        
-        // First, let's try to get all users from auth.users using the admin API
-        console.log('🔍 Attempting to fetch all users from auth.users table...');
-        
-        // Use the manage-user-profiles edge function to get all users
-        const { data: authUsersResponse, error: authUsersError } = await supabase.functions.invoke('manage-user-profiles', {
+        // Use the manage-user-profiles edge function to get all users with roles
+        const { data: response, error: functionError } = await supabase.functions.invoke('manage-user-profiles', {
           body: {
             action: 'list'
           }
         });
 
-        if (authUsersError) {
-          console.error('❌ Error fetching users from edge function:', authUsersError);
-          console.log('⚠️ Falling back to profiles table only...');
-          
-          // Fallback to profiles table
-          const { data: profiles, error: profilesError } = await supabase
-            .from('profiles')
-            .select(`
-              *,
-              facilities (
-                id,
-                name,
-                facility_type
-              )
-            `)
-            .order('email', { ascending: true });
-
-          if (profilesError) {
-            console.error('❌ Error fetching profiles:', profilesError);
-            throw new Error(`Failed to fetch profiles: ${profilesError.message}`);
-          }
-
-          console.log('📊 FALLBACK - Profiles fetched:', profiles?.length || 0);
-          
-          if (!profiles || profiles.length === 0) {
-            console.log('⚠️ NO PROFILES FOUND');
-            return [];
-          }
-
-          // Get user roles for profiles
-          const profileIds = profiles.map(p => p.id);
-          const { data: userRoles, error: userRolesError } = await supabase
-            .from('user_roles')
-            .select(`
-              user_id,
-              roles (
-                name,
-                description
-              )
-            `)
-            .in('user_id', profileIds);
-
-          if (userRolesError) {
-            console.warn('⚠️ Error fetching user roles:', userRolesError);
-          }
-
-          console.log('✅ User roles fetched:', userRoles?.length || 0);
-
-          // Combine the data
-          const usersWithRoles: UserWithRoles[] = profiles.map(profile => {
-            const userRolesForProfile = userRoles?.filter(ur => ur.user_id === profile.id) || [];
-            
-            return {
-              ...profile,
-              user_roles: userRolesForProfile.map(ur => ({
-                roles: {
-                  name: ur.roles?.name || 'patientCaregiver' as UserRole,
-                  description: ur.roles?.description || null
-                }
-              }))
-            };
-          });
-
-          console.log('✅ Final users with roles prepared (fallback):', usersWithRoles.length);
-          return usersWithRoles;
+        if (functionError) {
+          console.error('❌ Error from edge function:', functionError);
+          throw new Error(`Edge function error: ${functionError.message}`);
         }
 
-        console.log('✅ Edge function response:', authUsersResponse);
-
-        if (!authUsersResponse.success || !authUsersResponse.data) {
+        if (!response.success || !response.data) {
           console.log('⚠️ No users data returned from edge function');
           return [];
         }
 
-        const allUsersData = authUsersResponse.data;
-        console.log('📊 EDGE FUNCTION - All users fetched:', allUsersData.length);
-        console.log('📊 EDGE FUNCTION - User details:');
-        allUsersData.forEach((userData, index) => {
-          console.log(`  ${index + 1}. ID: ${userData.id}`);
-          console.log(`     Email: ${userData.email}`);
-          console.log(`     Name: ${userData.first_name || 'N/A'} ${userData.last_name || 'N/A'}`);
-          console.log(`     Created: ${userData.created_at}`);
-          console.log(`     Roles: ${userData.user_roles?.map(ur => ur.roles?.name).join(', ') || 'None'}`);
-          console.log('     ---');
-        });
-
-        console.log('✅ Final users with roles prepared from edge function:', allUsersData.length);
+        const allUsersData = response.data;
+        console.log('📊 All users fetched successfully:', allUsersData.length);
+        
         return allUsersData;
         
       } catch (err) {
@@ -210,49 +130,31 @@ export const useUsers = () => {
     }
   });
 
-  // For role assignment, use direct database operations for reliability
+  // FIXED: Use edge function for role assignment to ensure proper permissions
   const assignRoleMutation = useMutation({
     mutationFn: async ({ userId, roleName }: { userId: string; roleName: UserRole }) => {
-      console.log('🔄 Assigning role:', roleName, 'to user:', userId);
+      console.log('🔄 Assigning role via edge function:', roleName, 'to user:', userId);
       
       try {
-        // First get the role ID
-        const { data: role, error: roleError } = await supabase
-          .from('roles')
-          .select('id')
-          .eq('name', roleName)
-          .single();
-
-        if (roleError || !role) {
-          throw new Error('Role not found');
-        }
-
-        // Check if user already has this role
-        const { data: existingRole } = await supabase
-          .from('user_roles')
-          .select('id')
-          .eq('user_id', userId)
-          .eq('role_id', role.id)
-          .single();
-
-        if (existingRole) {
-          throw new Error('User already has this role');
-        }
-
-        // Assign the role
-        const { error: assignError } = await supabase
-          .from('user_roles')
-          .insert({
+        const { data, error } = await supabase.functions.invoke('manage-user-roles', {
+          body: {
             user_id: userId,
-            role_id: role.id
-          });
+            role_name: roleName,
+            action: 'assign'
+          }
+        });
 
-        if (assignError) {
-          throw assignError;
+        if (error) {
+          console.error('❌ Error assigning role via edge function:', error);
+          throw error;
         }
 
-        console.log('✅ Role assigned successfully');
-        return { success: true };
+        if (!data.success) {
+          throw new Error('Role assignment failed');
+        }
+
+        console.log('✅ Role assigned successfully via edge function');
+        return data;
       } catch (err) {
         console.error('❌ Role assignment failed:', err);
         throw err;
