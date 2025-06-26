@@ -11,7 +11,7 @@ import {
   Bell,
   BookOpen,
   TestTube,
-  sync as Sync
+  RefreshCw
 } from 'lucide-react';
 import { usePublishedApiIntegration, PublishedApiForDevelopers } from '@/hooks/usePublishedApiIntegration';
 import { useEnhancedPublishedApiDetails, ApiIntegrationDetails } from '@/hooks/useEnhancedPublishedApiDetails';
@@ -80,7 +80,7 @@ const PublishedApisSection = ({ showInDeveloperPortal = false }: PublishedApisSe
     return (
       <Card>
         <CardContent className="p-6 text-center">
-          <Sync className="h-8 w-8 animate-spin text-blue-500 mx-auto mb-2" />
+          <RefreshCw className="h-8 w-8 animate-spin text-blue-500 mx-auto mb-2" />
           Loading enhanced published APIs...
         </CardContent>
       </Card>
@@ -95,7 +95,7 @@ const PublishedApisSection = ({ showInDeveloperPortal = false }: PublishedApisSe
             <Globe className="h-5 w-5 text-blue-500" />
             {showInDeveloperPortal ? 'Available APIs' : 'Published APIs'}
             <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-              <Sync className="h-3 w-3 mr-1" />
+              <RefreshCw className="h-3 w-3 mr-1" />
               Enhanced
             </Badge>
           </h3>
@@ -118,7 +118,7 @@ const PublishedApisSection = ({ showInDeveloperPortal = false }: PublishedApisSe
                   <CardTitle className="text-base flex items-center gap-2">
                     {api.external_name}
                     <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                      <Sync className="h-3 w-3 mr-1" />
+                      <RefreshCw className="h-3 w-3 mr-1" />
                       Synced
                     </Badge>
                   </CardTitle>
@@ -163,7 +163,7 @@ const PublishedApisSection = ({ showInDeveloperPortal = false }: PublishedApisSe
                   </span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-green-600 font-medium">
-                  <Sync className="h-3 w-3" />
+                  <RefreshCw className="h-3 w-3" />
                   <span>Live Sync Active</span>
                 </div>
                 {api.published_at && (

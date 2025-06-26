@@ -23,7 +23,7 @@ import {
   FileText,
   ArrowDown,
   AlertTriangle,
-  Sync,
+  RefreshCw,
   Zap
 } from 'lucide-react';
 import { useApiIntegrations } from '@/hooks/useApiIntegrations';
@@ -203,7 +203,7 @@ const ExternalApiPublisher = () => {
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-2xl font-bold flex items-center gap-2">
-            <Sync className="h-6 w-6 text-blue-500" />
+            <RefreshCw className="h-6 w-6 text-blue-500" />
             Enhanced External API Publisher
           </h3>
           <p className="text-muted-foreground">
@@ -311,7 +311,7 @@ const ExternalApiPublisher = () => {
                           <Badge variant="outline">{api.visibility}</Badge>
                           <Badge variant="secondary">{api.pricing_model}</Badge>
                           <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                            <Sync className="h-3 w-3 mr-1" />
+                            <RefreshCw className="h-3 w-3 mr-1" />
                             Synced
                           </Badge>
                         </div>
@@ -560,7 +560,7 @@ const ExternalApiPublisher = () => {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Sync className="h-5 w-5 text-blue-500" />
+              <RefreshCw className="h-5 w-5 text-blue-500" />
               Publish Internal API with Real-time Sync
             </DialogTitle>
           </DialogHeader>
@@ -709,12 +709,12 @@ const ExternalApiPublisher = () => {
               >
                 {isPublishingWithSync ? (
                   <>
-                    <Sync className="h-4 w-4 mr-2 animate-spin" />
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
                     Publishing with Sync...
                   </>
                 ) : (
                   <>
-                    <Sync className="h-4 w-4 mr-2" />
+                    <RefreshCw className="h-4 w-4 mr-2" />
                     Publish with Sync
                   </>
                 )}

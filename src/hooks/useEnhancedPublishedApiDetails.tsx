@@ -1,13 +1,12 @@
-
 /**
  * Enhanced Published API Details Hook with Real-time Data
  */
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { ApiIntegrationDetails } from './usePublishedApiDetails';
+import type { ApiIntegrationDetails } from './usePublishedApiDetails';
 
-export { ApiIntegrationDetails } from './usePublishedApiDetails';
+export type { ApiIntegrationDetails } from './usePublishedApiDetails';
 
 export const useEnhancedPublishedApiDetails = () => {
   const getEnhancedApiDetails = async (apiId: string): Promise<ApiIntegrationDetails | null> => {
