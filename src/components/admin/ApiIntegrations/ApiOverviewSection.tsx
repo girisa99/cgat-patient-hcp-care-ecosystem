@@ -43,12 +43,14 @@ export const ApiOverviewSection = ({
   onPublishApi 
 }: ApiOverviewSectionProps) => {
   const { toast } = useToast();
+  const { updateApiStatus, isUpdatingStatus } = useExternalApis();
   const [showConfigDialog, setShowConfigDialog] = useState(false);
   const [showAnalyticsDialog, setShowAnalyticsDialog] = useState(false);
   const [configApi, setConfigApi] = useState<any>(null);
   const [analyticsApi, setAnalyticsApi] = useState<any>(null);
   const [isDuplicateDialogOpen, setIsDuplicateDialogOpen] = useState(false);
   const [duplicateInfo, setDuplicateInfo] = useState<any>(null);
+  const [isProcessing, setIsProcessing] = useState<string | null>(null);
 
   const handlePublishClick = async (api: any) => {
     if (type !== 'internal') return;
@@ -82,6 +84,7 @@ export const ApiOverviewSection = ({
     if (!duplicateInfo) return;
     
     try {
+      setIsProcessing('sync');
       const result = await externalApiSyncManager.syncEndpointsOnly(
         duplicateInfo.existingApi.id,
         duplicateInfo.internalApiId
@@ -101,6 +104,8 @@ export const ApiOverviewSection = ({
         description: error.message,
         variant: "destructive",
       });
+    } finally {
+      setIsProcessing(null);
     }
   };
 
@@ -126,11 +131,15 @@ export const ApiOverviewSection = ({
 
   const handleRevertToDraft = async (api: any) => {
     try {
+      setIsProcessing(`revert-${api.id}`);
       await externalApiSyncManager.revertPublication(api.id);
       toast({
         title: "API Reverted",
         description: `${api.external_name || api.name} has been reverted to draft status.`,
       });
+      
+      // Force a refresh of the data
+      window.location.reload();
     } catch (error: any) {
       console.error('❌ Revert failed:', error);
       toast({
@@ -138,16 +147,22 @@ export const ApiOverviewSection = ({
         description: error.message,
         variant: "destructive",
       });
+    } finally {
+      setIsProcessing(null);
     }
   };
 
   const handleCancelPublication = async (api: any) => {
     try {
+      setIsProcessing(`cancel-${api.id}`);
       await externalApiSyncManager.cancelPublication(api.id);
       toast({
         title: "Publication Canceled",
         description: `${api.external_name || api.name} has been completely removed.`,
       });
+      
+      // Force a refresh of the data
+      window.location.reload();
     } catch (error: any) {
       console.error('❌ Cancel failed:', error);
       toast({
@@ -155,6 +170,29 @@ export const ApiOverviewSection = ({
         description: error.message,
         variant: "destructive",
       });
+    } finally {
+      setIsProcessing(null);
+    }
+  };
+
+  const handleStatusUpdate = async (apiId: string, newStatus: string) => {
+    try {
+      setIsProcessing(`status-${apiId}`);
+      await updateApiStatus({ externalApiId: apiId, status: newStatus as any });
+      
+      // Force a refresh of the data
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } catch (error: any) {
+      console.error('❌ Status update failed:', error);
+      toast({
+        title: "Status Update Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(null);
     }
   };
 
@@ -226,8 +264,13 @@ export const ApiOverviewSection = ({
                       variant="outline"
                       onClick={() => handlePublishClick(api)}
                       className="bg-blue-50 hover:bg-blue-100"
+                      disabled={isProcessing === `publish-${api.id}`}
                     >
-                      <ArrowUpCircle className="h-3 w-3 mr-1" />
+                      {isProcessing === `publish-${api.id}` ? (
+                        <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                      ) : (
+                        <ArrowUpCircle className="h-3 w-3 mr-1" />
+                      )}
                       Publish
                     </Button>
                   )}
@@ -238,6 +281,7 @@ export const ApiOverviewSection = ({
                         size="sm" 
                         variant="outline"
                         onClick={() => handleConfigureApi(api)}
+                        disabled={isProcessing !== null}
                       >
                         <Settings className="h-3 w-3 mr-1" />
                         Manage
@@ -246,17 +290,101 @@ export const ApiOverviewSection = ({
                         size="sm" 
                         variant="outline"
                         onClick={() => handleViewAnalytics(api)}
+                        disabled={isProcessing !== null}
                       >
                         <TrendingUp className="h-3 w-3 mr-1" />
                         Analytics
                       </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            disabled={isProcessing !== null}
+                          >
+                            {isProcessing === `revert-${api.id}` ? (
+                              <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                            ) : (
+                              <RotateCcw className="h-3 w-3 mr-1" />
+                            )}
+                            Revert
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Revert to Draft?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This will change the status back to draft and unpublish the API. 
+                              The API will no longer be accessible to external developers.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleRevertToDraft(api)}>
+                              Revert to Draft
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button 
+                            size="sm" 
+                            variant="destructive"
+                            disabled={isProcessing !== null}
+                          >
+                            {isProcessing === `cancel-${api.id}` ? (
+                              <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-3 w-3 mr-1" />
+                            )}
+                            Cancel
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Cancel Publication?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This will permanently delete the external API and all its data. 
+                              This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Keep API</AlertDialogCancel>
+                            <AlertDialogAction 
+                              onClick={() => handleCancelPublication(api)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Delete Permanently
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </>
+                  )}
+                  
+                  {(type === 'external' || api.status === 'draft' || api.status === 'review') && (
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => handleStatusUpdate(api.id, 'published')}
+                      disabled={isProcessing !== null || isUpdatingStatus}
+                      className="bg-green-50 hover:bg-green-100"
+                    >
+                      {isProcessing === `status-${api.id}` || isUpdatingStatus ? (
+                        <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                      ) : (
+                        <Rocket className="h-3 w-3 mr-1" />
+                      )}
+                      Publish
+                    </Button>
                   )}
                   
                   <Button 
                     size="sm" 
                     variant="ghost"
                     onClick={() => onViewDetails?.(api.id)}
+                    disabled={isProcessing !== null}
                   >
                     <Eye className="h-3 w-3 mr-1" />
                     View
@@ -298,16 +426,24 @@ export const ApiOverviewSection = ({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isProcessing === 'sync'}>Cancel</AlertDialogCancel>
             <Button 
               variant="outline" 
               onClick={handleDuplicateSync}
               className="bg-blue-50 hover:bg-blue-100"
+              disabled={isProcessing === 'sync'}
             >
-              <RefreshCw className="h-4 w-4 mr-2" />
+              {isProcessing === 'sync' ? (
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4 mr-2" />
+              )}
               Sync Endpoints Only
             </Button>
-            <AlertDialogAction onClick={handleForceRepublish}>
+            <AlertDialogAction 
+              onClick={handleForceRepublish}
+              disabled={isProcessing === 'sync'}
+            >
               <Rocket className="h-4 w-4 mr-2" />
               Force Republish
             </AlertDialogAction>
