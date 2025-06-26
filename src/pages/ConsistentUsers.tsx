@@ -1,19 +1,11 @@
 
 import React, { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import UsersList from '@/components/users/UsersList';
-import CreateUserDialog from '@/components/users/CreateUserDialog';
-import EditUserDialog from '@/components/users/EditUserDialog';
-import AssignRoleDialog from '@/components/users/AssignRoleDialog';
-import RemoveRoleDialog from '@/components/users/RemoveRoleDialog';
-import AssignFacilityDialog from '@/components/users/AssignFacilityDialog';
-import RoleAssignmentDebugger from '@/components/users/RoleAssignmentDebugger';
-import BulkRoleAssignment from '@/components/users/BulkRoleAssignment';
-import DatabaseHealthCheck from '@/components/users/DatabaseHealthCheck';
 import { useConsistentUsers } from '@/hooks/useConsistentUsers';
-import { AlertTriangle, Bug, Shield, Key } from 'lucide-react';
+import { UserManagementStats } from '@/components/admin/UserManagement/UserManagementStats';
+import { UserManagementActions } from '@/components/admin/UserManagement/UserManagementActions';
+import { UserManagementList } from '@/components/admin/UserManagement/UserManagementList';
+import { UserManagementDebug } from '@/components/admin/UserManagement/UserManagementDebug';
+import { UserManagementDialogs } from '@/components/admin/UserManagement/UserManagementDialogs';
 
 const ConsistentUsers = () => {
   const { users, isLoading, meta } = useConsistentUsers();
@@ -66,6 +58,10 @@ const ConsistentUsers = () => {
     setEditUserOpen(true);
   };
 
+  const handleToggleDebug = () => {
+    setDebugMode(!debugMode);
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -75,123 +71,43 @@ const ConsistentUsers = () => {
         </p>
       </div>
 
-      {/* Data Source Information */}
-      <Card className="border-blue-200 bg-blue-50/50">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-blue-900">
-            <Shield className="h-5 w-5" />
-            Unified Data Source
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-sm text-blue-800">
-            <p><strong>Data Source:</strong> {meta.dataSource}</p>
-            <p><strong>Total Users:</strong> {meta.totalUsers}</p>
-            <p><strong>Patients:</strong> {meta.patientCount}</p>
-            <p><strong>Staff:</strong> {meta.staffCount}</p>
-            <p><strong>Admins:</strong> {meta.adminCount}</p>
-            <p><strong>Last Updated:</strong> {new Date(meta.lastFetch).toLocaleString()}</p>
-          </div>
-        </CardContent>
-      </Card>
+      <UserManagementStats
+        userStats={userStats}
+        meta={meta}
+        debugMode={debugMode}
+        onToggleDebug={handleToggleDebug}
+      />
 
-      {/* Database Health Check */}
-      <DatabaseHealthCheck />
-
-      {/* Role Assignment Statistics */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5" />
-            Role Assignment Status
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-4 items-center mb-4">
-            <Badge variant="outline">
-              Total Users: {userStats.totalUsers}
-            </Badge>
-            <Badge variant="default">
-              With Roles: {userStats.usersWithRoles}
-            </Badge>
-            <Badge variant="destructive">
-              Without Roles: {userStats.usersWithoutRoles}
-            </Badge>
-          </div>
-          
-          <div className="flex gap-2">
-            <Button 
-              onClick={() => setDebugMode(!debugMode)}
-              variant="outline"
-              size="sm"
-            >
-              <Bug className="mr-2 h-4 w-4" />
-              {debugMode ? 'Hide' : 'Show'} Role Debug Info
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Bulk Role Assignment */}
-      <BulkRoleAssignment />
+      <UserManagementActions />
       
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5" />
-            System Users
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <UsersList
-            onCreateUser={() => setCreateUserOpen(true)}
-            onAssignRole={handleAssignRole}
-            onRemoveRole={handleRemoveRole}
-            onAssignFacility={handleAssignFacility}
-            onEditUser={handleEditUser}
-          />
-        </CardContent>
-      </Card>
-
-      {/* Debug Panel */}
-      {debugMode && selectedUserId && (
-        <RoleAssignmentDebugger
-          userId={selectedUserId}
-          userName={selectedUserName}
-        />
-      )}
-
-      {/* Dialogs */}
-      <CreateUserDialog
-        open={createUserOpen}
-        onOpenChange={setCreateUserOpen}
+      <UserManagementList
+        onCreateUser={() => setCreateUserOpen(true)}
+        onAssignRole={handleAssignRole}
+        onRemoveRole={handleRemoveRole}
+        onAssignFacility={handleAssignFacility}
+        onEditUser={handleEditUser}
       />
 
-      <EditUserDialog
-        open={editUserOpen}
-        onOpenChange={setEditUserOpen}
-        user={selectedUser}
+      <UserManagementDebug
+        debugMode={debugMode}
+        selectedUserId={selectedUserId}
+        selectedUserName={selectedUserName}
       />
 
-      <AssignRoleDialog
-        open={assignRoleOpen}
-        onOpenChange={setAssignRoleOpen}
-        userId={selectedUserId}
-        userName={selectedUserName}
-      />
-
-      <RemoveRoleDialog
-        open={removeRoleOpen}
-        onOpenChange={setRemoveRoleOpen}
-        userId={selectedUserId}
-        userName={selectedUserName}
-      />
-
-      <AssignFacilityDialog
-        open={assignFacilityOpen}
-        onOpenChange={setAssignFacilityOpen}
-        userId={selectedUserId}
-        userName={selectedUserName}
+      <UserManagementDialogs
+        createUserOpen={createUserOpen}
+        setCreateUserOpen={setCreateUserOpen}
+        editUserOpen={editUserOpen}
+        setEditUserOpen={setEditUserOpen}
+        assignRoleOpen={assignRoleOpen}
+        setAssignRoleOpen={setAssignRoleOpen}
+        removeRoleOpen={removeRoleOpen}
+        setRemoveRoleOpen={setRemoveRoleOpen}
+        assignFacilityOpen={assignFacilityOpen}
+        setAssignFacilityOpen={setAssignFacilityOpen}
+        selectedUserId={selectedUserId}
+        selectedUser={selectedUser}
+        selectedUserName={selectedUserName}
       />
     </div>
   );
