@@ -1,322 +1,333 @@
 
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { 
-  Search, 
-  Server, 
   Globe, 
-  Download, 
-  FileText, 
-  Database,
-  Shield,
-  Code,
-  Eye,
-  Copy,
-  TestTube,
-  BookOpen
+  Server, 
+  ArrowUpCircle, 
+  ArrowDownCircle, 
+  Eye, 
+  Settings, 
+  TrendingUp,
+  RotateCcw,
+  Trash2,
+  RefreshCw,
+  Rocket,
+  AlertTriangle
 } from 'lucide-react';
-import { ApiIntegration } from '@/utils/api/ApiIntegrationTypes';
-import { InternalApiEndpointsList } from './InternalApiEndpointsList';
-import { ExternalApiEndpointsList } from './ExternalApiEndpointsList';
+import { useApiIntegrations } from '@/hooks/useApiIntegrations';
+import { useExternalApis } from '@/hooks/useExternalApis';
+import { externalApiSyncManager } from '@/utils/api/ExternalApiSyncManager';
+import { useToast } from '@/hooks/use-toast';
+import ExternalApiConfigDialog from './ExternalApiConfigDialog';
+import ExternalApiAnalyticsDialog from './ExternalApiAnalyticsDialog';
 
 interface ApiOverviewSectionProps {
-  internalApis: ApiIntegration[];
-  externalApis: ApiIntegration[];
-  onDownloadCollection: (integrationId: string) => void;
-  onViewDetails: (integrationId: string) => void;
-  onViewDocumentation: (integrationId: string) => void;
-  onCopyUrl: (url: string) => void;
+  title: string;
+  apis: any[];
+  type: 'internal' | 'external' | 'published';
+  icon: React.ReactNode;
+  onViewDetails?: (apiId: string) => void;
+  onPublishApi?: (apiId: string, apiName: string) => void;
 }
 
-export const ApiOverviewSection: React.FC<ApiOverviewSectionProps> = ({
-  internalApis,
-  externalApis,
-  onDownloadCollection,
+export const ApiOverviewSection = ({ 
+  title, 
+  apis, 
+  type, 
+  icon, 
   onViewDetails,
-  onViewDocumentation,
-  onCopyUrl
-}) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState('internal');
+  onPublishApi 
+}: ApiOverviewSectionProps) => {
+  const { toast } = useToast();
+  const [showConfigDialog, setShowConfigDialog] = useState(false);
+  const [showAnalyticsDialog, setShowAnalyticsDialog] = useState(false);
+  const [configApi, setConfigApi] = useState<any>(null);
+  const [analyticsApi, setAnalyticsApi] = useState<any>(null);
+  const [isDuplicateDialogOpen, setIsDuplicateDialogOpen] = useState(false);
+  const [duplicateInfo, setDuplicateInfo] = useState<any>(null);
 
-  const filteredInternalApis = internalApis.filter(api =>
-    api.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    api.endpoints.some(endpoint => 
-      endpoint.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      endpoint.url.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-  );
+  const handlePublishClick = async (api: any) => {
+    if (type !== 'internal') return;
+    
+    console.log('🚀 Publishing from overview:', api);
+    
+    try {
+      const existingApi = await externalApiSyncManager.checkForDuplicateApi(api.id, api.name);
+      
+      if (existingApi) {
+        setDuplicateInfo({
+          existingApi,
+          internalApiId: api.id,
+          proposedName: api.name,
+          sourceApi: api
+        });
+        setIsDuplicateDialogOpen(true);
+        return;
+      }
+    } catch (error) {
+      console.error('❌ Error checking duplicates:', error);
+    }
+    
+    // If no duplicate, proceed with publishing
+    if (onPublishApi) {
+      onPublishApi(api.id, api.name);
+    }
+  };
 
-  const filteredExternalApis = externalApis.filter(api =>
-    api.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    api.endpoints.some(endpoint => 
-      endpoint.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      endpoint.url.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-  );
+  const handleDuplicateSync = async () => {
+    if (!duplicateInfo) return;
+    
+    try {
+      const result = await externalApiSyncManager.syncEndpointsOnly(
+        duplicateInfo.existingApi.id,
+        duplicateInfo.internalApiId
+      );
+      
+      toast({
+        title: "Endpoints Synchronized",
+        description: `${result.new_endpoints} new endpoints added to existing API.`,
+      });
+      
+      setIsDuplicateDialogOpen(false);
+      setDuplicateInfo(null);
+    } catch (error: any) {
+      console.error('❌ Sync failed:', error);
+      toast({
+        title: "Sync Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
 
-  const totalEndpoints = [...internalApis, ...externalApis].reduce(
-    (acc, api) => acc + api.endpoints.length, 0
-  );
+  const handleForceRepublish = () => {
+    if (!duplicateInfo || !onPublishApi) return;
+    
+    onPublishApi(duplicateInfo.internalApiId, duplicateInfo.proposedName);
+    setIsDuplicateDialogOpen(false);
+    setDuplicateInfo(null);
+  };
 
-  const totalRlsPolicies = [...internalApis, ...externalApis].reduce(
-    (acc, api) => acc + api.rlsPolicies.length, 0
-  );
+  const handleConfigureApi = (api: any) => {
+    console.log('⚙️ Configuring API from overview:', api);
+    setConfigApi(api);
+    setShowConfigDialog(true);
+  };
 
-  const totalMappings = [...internalApis, ...externalApis].reduce(
-    (acc, api) => acc + api.mappings.length, 0
-  );
+  const handleViewAnalytics = (api: any) => {
+    console.log('📊 Viewing analytics from overview:', api);
+    setAnalyticsApi(api);
+    setShowAnalyticsDialog(true);
+  };
+
+  const handleRevertToDraft = async (api: any) => {
+    try {
+      await externalApiSyncManager.revertPublication(api.id);
+      toast({
+        title: "API Reverted",
+        description: `${api.external_name || api.name} has been reverted to draft status.`,
+      });
+    } catch (error: any) {
+      console.error('❌ Revert failed:', error);
+      toast({
+        title: "Revert Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCancelPublication = async (api: any) => {
+    try {
+      await externalApiSyncManager.cancelPublication(api.id);
+      toast({
+        title: "Publication Canceled",
+        description: `${api.external_name || api.name} has been completely removed.`,
+      });
+    } catch (error: any) {
+      console.error('❌ Cancel failed:', error);
+      toast({
+        title: "Cancel Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (apis.length === 0) {
+    return (
+      <Card>
+        <CardContent className="p-8 text-center">
+          <div className="flex flex-col items-center gap-4">
+            {icon}
+            <div>
+              <h4 className="text-lg font-medium mb-2">No {title}</h4>
+              <p className="text-muted-foreground">
+                {type === 'internal' && "No internal APIs detected yet."}
+                {type === 'external' && "No external APIs configured yet."}
+                {type === 'published' && "No APIs published yet."}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      {/* Enhanced Search and Filter Header */}
-      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-        <div className="flex items-center gap-4 flex-1">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input
-              placeholder="Search APIs, endpoints, or methods..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          <div className="flex gap-2">
-            <Badge variant="secondary" className="flex items-center gap-1">
-              <Server className="h-3 w-3" />
-              {internalApis.length} Internal
-            </Badge>
-            <Badge variant="secondary" className="flex items-center gap-1">
-              <Globe className="h-3 w-3" />
-              {externalApis.length} External
-            </Badge>
-            <Badge variant="outline" className="flex items-center gap-1">
-              <Database className="h-3 w-3" />
-              {totalEndpoints} Endpoints
-            </Badge>
-            <Badge variant="outline" className="flex items-center gap-1">
-              <Shield className="h-3 w-3" />
-              {totalRlsPolicies} RLS Policies
-            </Badge>
-          </div>
-        </div>
-      </div>
-
-      {/* API Endpoints Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="internal" className="flex items-center gap-2">
-            <Server className="h-4 w-4" />
-            Internal APIs
-          </TabsTrigger>
-          <TabsTrigger value="external" className="flex items-center gap-2">
-            <Globe className="h-4 w-4" />
-            External APIs
-          </TabsTrigger>
-          <TabsTrigger value="documentation" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            Documentation Hub
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="internal" className="space-y-4">
-          <InternalApiEndpointsList
-            apis={filteredInternalApis}
-            searchTerm={searchTerm}
-            onDownloadCollection={onDownloadCollection}
-            onViewDetails={onViewDetails}
-            onViewDocumentation={onViewDocumentation}
-            onCopyUrl={onCopyUrl}
-          />
-        </TabsContent>
-
-        <TabsContent value="external" className="space-y-4">
-          <ExternalApiEndpointsList
-            apis={filteredExternalApis}
-            searchTerm={searchTerm}
-            onDownloadCollection={onDownloadCollection}
-            onViewDetails={onViewDetails}
-            onViewDocumentation={onViewDocumentation}
-            onCopyUrl={onCopyUrl}
-          />
-        </TabsContent>
-
-        <TabsContent value="documentation" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Server className="h-5 w-5 text-blue-500" />
-                  Internal API Documentation
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4 mb-4">
-                    <div className="text-center p-3 bg-blue-50 rounded-lg">
-                      <div className="text-2xl font-bold text-blue-600">{internalApis.length}</div>
-                      <div className="text-sm text-blue-600">Internal APIs</div>
-                    </div>
-                    <div className="text-center p-3 bg-green-50 rounded-lg">
-                      <div className="text-2xl font-bold text-green-600">
-                        {internalApis.reduce((acc, api) => acc + api.endpoints.length, 0)}
-                      </div>
-                      <div className="text-sm text-green-600">Endpoints</div>
-                    </div>
+    <>
+      <div className="grid gap-4">
+        {apis.slice(0, 3).map((api) => (
+          <Card key={api.id} className="hover:shadow-md transition-shadow">
+            <CardContent className="p-4">
+              <div className="flex items-start justify-between">
+                <div className="space-y-2 flex-1">
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-semibold">{api.external_name || api.name}</h4>
+                    {api.status && (
+                      <Badge variant={api.status === 'published' ? 'default' : 'secondary'}>
+                        {api.status}
+                      </Badge>
+                    )}
+                    {type === 'published' && (
+                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                        <RefreshCw className="h-3 w-3 mr-1" />
+                        Synced
+                      </Badge>
+                    )}
                   </div>
-                  
-                  <div className="space-y-2">
-                    {internalApis.map((api) => (
-                      <div key={api.id} className="p-3 border rounded-lg">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="font-medium">{api.name}</span>
-                          <Badge variant="outline">v{api.version}</Badge>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => onViewDocumentation(api.id)}
-                          >
-                            <BookOpen className="h-3 w-3 mr-1" />
-                            View Docs
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => onDownloadCollection(api.id)}
-                          >
-                            <Download className="h-3 w-3 mr-1" />
-                            Collection
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => onViewDetails(api.id)}
-                          >
-                            <TestTube className="h-3 w-3 mr-1" />
-                            Test
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                    
-                    <div className="mt-4 space-y-2">
-                      <Button 
-                        variant="outline" 
-                        className="w-full justify-start"
-                        onClick={() => {
-                          // Generate comprehensive internal API documentation
-                          const internalDocs = {
-                            info: {
-                              title: 'Healthcare Admin Internal API',
-                              version: '1.0.0',
-                              description: 'Complete internal API documentation with RLS policies and data mapping',
-                            },
-                            apis: internalApis.map(api => ({
-                              name: api.name,
-                              endpoints: api.endpoints,
-                              rlsPolicies: api.rlsPolicies,
-                              mappings: api.mappings,
-                              schemas: api.schemas
-                            })),
-                            metadata: {
-                              totalEndpoints: internalApis.reduce((acc, api) => acc + api.endpoints.length, 0),
-                              totalRlsPolicies: internalApis.reduce((acc, api) => acc + api.rlsPolicies.length, 0),
-                              totalMappings: internalApis.reduce((acc, api) => acc + api.mappings.length, 0),
-                              generatedAt: new Date().toISOString()
-                            }
-                          };
-                          
-                          const blob = new Blob([JSON.stringify(internalDocs, null, 2)], { type: 'application/json' });
-                          const url = URL.createObjectURL(blob);
-                          const a = document.createElement('a');
-                          a.href = url;
-                          a.download = 'internal-api-complete-documentation.json';
-                          a.click();
-                        }}
-                      >
-                        <FileText className="h-4 w-4 mr-2" />
-                        Complete Internal API Documentation
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Globe className="h-5 w-5 text-green-500" />
-                  External API Documentation
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4 mb-4">
-                    <div className="text-center p-3 bg-green-50 rounded-lg">
-                      <div className="text-2xl font-bold text-green-600">{externalApis.length}</div>
-                      <div className="text-sm text-green-600">External APIs</div>
-                    </div>
-                    <div className="text-center p-3 bg-purple-50 rounded-lg">
-                      <div className="text-2xl font-bold text-purple-600">{totalMappings}</div>
-                      <div className="text-sm text-purple-600">Data Mappings</div>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    {externalApis.map((api) => (
-                      <div key={api.id} className="p-3 border rounded-lg">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="font-medium">{api.name}</span>
-                          <Badge variant="outline">v{api.version}</Badge>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => onViewDocumentation(api.id)}
-                          >
-                            <BookOpen className="h-3 w-3 mr-1" />
-                            View Docs
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => onDownloadCollection(api.id)}
-                          >
-                            <Download className="h-3 w-3 mr-1" />
-                            Collection
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => onViewDetails(api.id)}
-                          >
-                            <Eye className="h-3 w-3 mr-1" />
-                            Details
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                    
-                    {externalApis.length === 0 && (
-                      <div className="text-center py-8 text-muted-foreground">
-                        No external APIs configured yet
-                      </div>
+                  <p className="text-sm text-muted-foreground line-clamp-2">
+                    {api.external_description || api.description || 'No description available'}
+                  </p>
+                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                    <span>Version {api.version || '1.0.0'}</span>
+                    {api.endpoints?.length && (
+                      <>
+                        <span>•</span>
+                        <span>{api.endpoints.length} endpoints</span>
+                      </>
+                    )}
+                    {type === 'published' && api.published_at && (
+                      <>
+                        <span>•</span>
+                        <span>Published {new Date(api.published_at).toLocaleDateString()}</span>
+                      </>
                     )}
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+                <div className="flex gap-1 ml-4">
+                  {type === 'internal' && (
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => handlePublishClick(api)}
+                      className="bg-blue-50 hover:bg-blue-100"
+                    >
+                      <ArrowUpCircle className="h-3 w-3 mr-1" />
+                      Publish
+                    </Button>
+                  )}
+                  
+                  {type === 'published' && (
+                    <>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => handleConfigureApi(api)}
+                      >
+                        <Settings className="h-3 w-3 mr-1" />
+                        Manage
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => handleViewAnalytics(api)}
+                      >
+                        <TrendingUp className="h-3 w-3 mr-1" />
+                        Analytics
+                      </Button>
+                    </>
+                  )}
+                  
+                  <Button 
+                    size="sm" 
+                    variant="ghost"
+                    onClick={() => onViewDetails?.(api.id)}
+                  >
+                    <Eye className="h-3 w-3 mr-1" />
+                    View
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+        
+        {apis.length > 3 && (
+          <div className="text-center py-4">
+            <p className="text-sm text-muted-foreground">
+              +{apis.length - 3} more {title.toLowerCase()}
+            </p>
           </div>
-        </TabsContent>
-      </Tabs>
-    </div>
+        )}
+      </div>
+
+      {/* Duplicate Detection Dialog */}
+      <AlertDialog open={isDuplicateDialogOpen} onOpenChange={setIsDuplicateDialogOpen}>
+        <AlertDialogContent className="max-w-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              Duplicate API Detected
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-4">
+              <p>An API with similar properties already exists:</p>
+              {duplicateInfo && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-2">
+                  <div><strong>Existing API:</strong> {duplicateInfo.existingApi.external_name}</div>
+                  <div><strong>Version:</strong> {duplicateInfo.existingApi.version}</div>
+                  <div><strong>Status:</strong> {duplicateInfo.existingApi.status}</div>
+                  <div><strong>Created:</strong> {new Date(duplicateInfo.existingApi.created_at).toLocaleDateString()}</div>
+                </div>
+              )}
+              <p>You can either sync new endpoints to the existing API or force republish as a new API.</p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <Button 
+              variant="outline" 
+              onClick={handleDuplicateSync}
+              className="bg-blue-50 hover:bg-blue-100"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Sync Endpoints Only
+            </Button>
+            <AlertDialogAction onClick={handleForceRepublish}>
+              <Rocket className="h-4 w-4 mr-2" />
+              Force Republish
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Configuration Dialog */}
+      <ExternalApiConfigDialog
+        open={showConfigDialog}
+        onOpenChange={setShowConfigDialog}
+        api={configApi}
+      />
+
+      {/* Analytics Dialog */}
+      <ExternalApiAnalyticsDialog
+        open={showAnalyticsDialog}
+        onOpenChange={setShowAnalyticsDialog}
+        api={analyticsApi}
+      />
+    </>
   );
 };

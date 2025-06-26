@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { 
   Globe, 
   Rocket, 
@@ -24,10 +25,14 @@ import {
   ArrowDown,
   AlertTriangle,
   RefreshCw,
-  Zap
+  Zap,
+  RotateCcw,
+  Trash2
 } from 'lucide-react';
 import { useApiIntegrations } from '@/hooks/useApiIntegrations';
 import { useEnhancedExternalApis } from '@/hooks/useEnhancedExternalApis';
+import { externalApiSyncManager } from '@/utils/api/ExternalApiSyncManager';
+import { useToast } from '@/hooks/use-toast';
 import PublishableApisList from './PublishableApisList';
 import ExternalApiConfigDialog from './ExternalApiConfigDialog';
 import ExternalApiAnalyticsDialog from './ExternalApiAnalyticsDialog';
@@ -49,12 +54,13 @@ const getStatusColor = (status: string) => {
 };
 
 const ExternalApiPublisher = () => {
+  const { toast } = useToast();
   const { integrations } = useApiIntegrations();
   const { 
     externalApis, 
     publishedApis, 
     marketplaceStats, 
-    publishWithSync, // Using enhanced sync version
+    publishWithSync,
     isPublishingWithSync,
     updateApiStatus,
     isUpdatingStatus,
@@ -67,6 +73,8 @@ const ExternalApiPublisher = () => {
   const [showAnalyticsDialog, setShowAnalyticsDialog] = useState(false);
   const [configApi, setConfigApi] = useState<any>(null);
   const [analyticsApi, setAnalyticsApi] = useState<any>(null);
+  const [isDuplicateDialogOpen, setIsDuplicateDialogOpen] = useState(false);
+  const [duplicateInfo, setDuplicateInfo] = useState<any>(null);
   
   const [publishForm, setPublishForm] = useState({
     external_name: '',
@@ -88,12 +96,34 @@ const ExternalApiPublisher = () => {
     analytics_config: {}
   });
 
-  const handlePublishApi = (apiId: string, apiName: string) => {
+  const handlePublishApi = async (apiId: string, apiName: string) => {
     console.log('🚀 Enhanced Publishing API - Starting:', { apiId, apiName });
     
+    // Check for duplicates first
+    try {
+      const existingApi = await externalApiSyncManager.checkForDuplicateApi(apiId, apiName);
+      
+      if (existingApi) {
+        console.log('⚠️ Duplicate detected, showing dialog:', existingApi);
+        setDuplicateInfo({
+          existingApi,
+          internalApiId: apiId,
+          proposedName: apiName
+        });
+        setIsDuplicateDialogOpen(true);
+        return;
+      }
+    } catch (error) {
+      console.error('❌ Error checking duplicates:', error);
+    }
+    
+    // If no duplicate, proceed with normal publishing
+    proceedWithPublishing(apiId, apiName);
+  };
+
+  const proceedWithPublishing = (apiId: string, apiName: string) => {
     setSelectedApi(apiId);
     const integration = integrations?.find(i => i.id === apiId);
-    console.log('📋 Found integration:', integration);
     
     const newFormData = {
       external_name: apiName,
@@ -105,19 +135,49 @@ const ExternalApiPublisher = () => {
       category: integration?.category || 'general',
       documentation_url: integration?.externalDocumentation?.apiReference || '',
       tags: ['real-time-sync', 'enhanced'] as string[],
-      rate_limits: {
-        requests: 1000,
-        period: 'hour'
-      },
+      rate_limits: { requests: 1000, period: 'hour' },
       authentication_methods: ['api_key'],
       supported_formats: ['json'],
       marketplace_config: {},
       analytics_config: {}
     };
     
-    console.log('📝 Setting enhanced form data:', newFormData);
     setPublishForm(newFormData);
     setShowPublishDialog(true);
+  };
+
+  const handleDuplicateSync = async () => {
+    if (!duplicateInfo) return;
+    
+    try {
+      const result = await externalApiSyncManager.syncEndpointsOnly(
+        duplicateInfo.existingApi.id,
+        duplicateInfo.internalApiId
+      );
+      
+      toast({
+        title: "Endpoints Synchronized",
+        description: `${result.new_endpoints} new endpoints added to existing API.`,
+      });
+      
+      setIsDuplicateDialogOpen(false);
+      setDuplicateInfo(null);
+    } catch (error: any) {
+      console.error('❌ Sync failed:', error);
+      toast({
+        title: "Sync Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleForceRepublish = () => {
+    if (!duplicateInfo) return;
+    
+    proceedWithPublishing(duplicateInfo.internalApiId, duplicateInfo.proposedName);
+    setIsDuplicateDialogOpen(false);
+    setDuplicateInfo(null);
   };
 
   const handleSubmitPublish = async () => {
@@ -170,17 +230,49 @@ const ExternalApiPublisher = () => {
   };
 
   const handleConfigureApi = (api: any) => {
+    console.log('⚙️ Configuring API:', api);
     setConfigApi(api);
     setShowConfigDialog(true);
   };
 
   const handleViewAnalytics = (api: any) => {
+    console.log('📊 Viewing analytics for API:', api);
     setAnalyticsApi(api);
     setShowAnalyticsDialog(true);
   };
 
-  const handleRevertToDraft = (api: any) => {
-    handleStatusUpdate(api.id, 'draft');
+  const handleRevertToDraft = async (api: any) => {
+    try {
+      await externalApiSyncManager.revertPublication(api.id);
+      toast({
+        title: "API Reverted",
+        description: `${api.external_name} has been reverted to draft status.`,
+      });
+    } catch (error: any) {
+      console.error('❌ Revert failed:', error);
+      toast({
+        title: "Revert Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCancelPublication = async (api: any) => {
+    try {
+      await externalApiSyncManager.cancelPublication(api.id);
+      toast({
+        title: "Publication Canceled",
+        description: `${api.external_name} has been completely removed.`,
+      });
+    } catch (error: any) {
+      console.error('❌ Cancel failed:', error);
+      toast({
+        title: "Cancel Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   // Calculate counts - fixed logic
@@ -351,15 +443,63 @@ const ExternalApiPublisher = () => {
                           <TrendingUp className="h-3 w-3 mr-1" />
                           Analytics
                         </Button>
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => handleRevertToDraft(api)}
-                          disabled={isUpdatingStatus}
-                        >
-                          <ArrowDown className="h-3 w-3 mr-1" />
-                          Revert
-                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              disabled={isUpdatingStatus}
+                            >
+                              <RotateCcw className="h-3 w-3 mr-1" />
+                              Revert
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Revert to Draft?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This will change the status back to draft and unpublish the API. 
+                                The API will no longer be accessible to external developers.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleRevertToDraft(api)}>
+                                Revert to Draft
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button 
+                              size="sm" 
+                              variant="destructive"
+                              disabled={isUpdatingStatus}
+                            >
+                              <Trash2 className="h-3 w-3 mr-1" />
+                              Cancel
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Cancel Publication?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This will permanently delete the external API and all its data. 
+                                This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Keep API</AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={() => handleCancelPublication(api)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Delete Permanently
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     </div>
                   </CardContent>
@@ -554,6 +694,49 @@ const ExternalApiPublisher = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Duplicate Detection Dialog */}
+      <AlertDialog open={isDuplicateDialogOpen} onOpenChange={setIsDuplicateDialogOpen}>
+        <AlertDialogContent className="max-w-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              Duplicate API Detected
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-4">
+              <p>
+                An API with similar properties already exists:
+              </p>
+              {duplicateInfo && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-2">
+                  <div><strong>Existing API:</strong> {duplicateInfo.existingApi.external_name}</div>
+                  <div><strong>Version:</strong> {duplicateInfo.existingApi.version}</div>
+                  <div><strong>Status:</strong> {duplicateInfo.existingApi.status}</div>
+                  <div><strong>Created:</strong> {new Date(duplicateInfo.existingApi.created_at).toLocaleDateString()}</div>
+                </div>
+              )}
+              <p>
+                You can either sync new endpoints to the existing API or force republish as a new API.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <Button 
+              variant="outline" 
+              onClick={handleDuplicateSync}
+              className="bg-blue-50 hover:bg-blue-100"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Sync Endpoints Only
+            </Button>
+            <AlertDialogAction onClick={handleForceRepublish}>
+              <Rocket className="h-4 w-4 mr-2" />
+              Force Republish
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Enhanced Publish Dialog */}
       <Dialog open={showPublishDialog} onOpenChange={setShowPublishDialog}>
