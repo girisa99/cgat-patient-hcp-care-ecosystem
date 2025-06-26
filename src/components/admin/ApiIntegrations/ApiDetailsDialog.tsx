@@ -46,66 +46,612 @@ const ApiDetailsDialog = ({ open, onOpenChange, apiDetails, isLoading }: ApiDeta
 
   if (!apiDetails) return null;
 
-  // Generate examples only if we have actual endpoints
-  const generateExamples = () => {
+  // Generate comprehensive code examples for all endpoints
+  const generateCodeExamples = () => {
     if (!apiDetails.endpoints || apiDetails.endpoints.length === 0) {
       return {
         curl: '# No endpoints available - Configure endpoints first',
         javascript: '// No endpoints available - Configure endpoints first',
-        python: '# No endpoints available - Configure endpoints first'
+        react: '// No endpoints available - Configure endpoints first',
+        python: '# No endpoints available - Configure endpoints first',
+        sdk: '// SDK example - No endpoints configured'
       };
     }
 
-    const sampleEndpoint = apiDetails.endpoints[0];
+    const authEndpoint = apiDetails.endpoints.find(e => e.url.includes('/auth/login'));
+    const patientsEndpoint = apiDetails.endpoints.find(e => e.url.includes('/patients') && e.method === 'GET');
+    const createEndpoint = apiDetails.endpoints.find(e => e.method === 'POST' && !e.url.includes('/auth'));
     const baseUrl = apiDetails.base_url;
 
-    const curlExample = `# ${sampleEndpoint.description}
-curl -X ${sampleEndpoint.method} "${baseUrl}${sampleEndpoint.url}" \\
-  -H "Authorization: Bearer YOUR_API_KEY" \\
-  -H "Content-Type: application/json"${sampleEndpoint.method === 'POST' ? ` \\
-  -d '${JSON.stringify(sampleEndpoint.example_request || { data: 'example' }, null, 2)}'` : ''}`;
+    // Comprehensive cURL examples
+    const curlExamples = `# Healthcare API Examples
 
-    const jsExample = `// ${sampleEndpoint.description}
-const response = await fetch('${baseUrl}${sampleEndpoint.url}', {
-  method: '${sampleEndpoint.method}',
-  headers: {
-    'Authorization': 'Bearer YOUR_API_KEY',
-    'Content-Type': 'application/json'
-  }${sampleEndpoint.method === 'POST' ? `,
-  body: JSON.stringify(${JSON.stringify(sampleEndpoint.example_request || { data: 'example' }, null, 2)})` : ''}
-});
+# 1. Authentication
+curl -X POST "${baseUrl}/auth/login" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "email": "doctor@healthcarecorp.com",
+    "password": "SecurePass123!",
+    "remember_me": true
+  }'
 
-const data = await response.json();
-console.log('Response:', data);`;
+# 2. Get Patients List (with authentication)
+curl -X GET "${baseUrl}/api/v1/patients?page=1&limit=20&facility_id=123e4567-e89b-12d3-a456-426614174000" \\
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \\
+  -H "Content-Type: application/json"
 
-    const pythonExample = `# ${sampleEndpoint.description}
-import requests
+# 3. Create New Patient
+curl -X POST "${baseUrl}/api/v1/patients" \\
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "first_name": "John",
+    "last_name": "Doe",
+    "date_of_birth": "1985-03-15",
+    "facility_id": "123e4567-e89b-12d3-a456-426614174000",
+    "phone": "+1-555-0123",
+    "email": "john.doe@email.com"
+  }'
 
-headers = {
-    'Authorization': 'Bearer YOUR_API_KEY',
-    'Content-Type': 'application/json'
+# 4. Get Facilities
+curl -X GET "${baseUrl}/api/v1/facilities" \\
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \\
+  -H "Content-Type: application/json"`;
+
+    // Comprehensive JavaScript examples
+    const jsExamples = `// Healthcare API JavaScript Examples
+
+class HealthcareAPI {
+  constructor(baseUrl, apiKey) {
+    this.baseUrl = baseUrl;
+    this.apiKey = apiKey;
+    this.accessToken = null;
+  }
+
+  // 1. Authentication
+  async login(email, password, rememberMe = false) {
+    try {
+      const response = await fetch(\`\${this.baseUrl}/auth/login\`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          email,
+          password,
+          remember_me: rememberMe
+        })
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        this.accessToken = data.data.access_token;
+        localStorage.setItem('healthcare_token', data.data.access_token);
+      } else {
+        setError(data.message || 'Login failed');
+      }
+      
+      return data;
+    } catch (err) {
+      setError('Network error occurred');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // 2. Get Patients with Pagination
+  async getPatients(options = {}) {
+    const { page = 1, limit = 20, search = '', facilityId = null } = options;
+    
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      ...(search && { search }),
+      ...(facilityId && { facility_id: facilityId })
+    });
+
+    const response = await fetch(\`\${this.baseUrl}/api/v1/patients?\${params}\`, {
+      method: 'GET',
+      headers: {
+        'Authorization': \`Bearer \${this.accessToken}\`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    return await response.json();
+  }
+
+  // 3. Create New Patient
+  async createPatient(patientData) {
+    const response = await fetch(\`\${this.baseUrl}/api/v1/patients\`, {
+      method: 'POST',
+      headers: {
+        'Authorization': \`Bearer \${this.accessToken}\`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(patientData)
+    });
+
+    return await response.json();
+  }
+
+  // 4. Get Facilities
+  async getFacilities(facilityType = null) {
+    const params = new URLSearchParams({
+      ...(facilityType && { facility_type: facilityType })
+    });
+
+    const response = await fetch(\`\${this.baseUrl}/api/v1/facilities?\${params}\`, {
+      headers: {
+        'Authorization': \`Bearer \${this.accessToken}\`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    return await response.json();
+  }
 }
 
-${sampleEndpoint.method === 'POST' ? `data = ${JSON.stringify(sampleEndpoint.example_request || { data: 'example' }, null, 2)}
+// Usage Example
+const api = new HealthcareAPI('${baseUrl}', 'your-api-key');
 
-response = requests.${sampleEndpoint.method.toLowerCase()}(
-    '${baseUrl}${sampleEndpoint.url}',
-    headers=headers,
-    json=data
-)` : `response = requests.${sampleEndpoint.method.toLowerCase()}(
-    '${baseUrl}${sampleEndpoint.url}',
-    headers=headers
-)`}
+// Login and use the API
+async function example() {
+  await api.login('doctor@healthcarecorp.com', 'SecurePass123!');
+  
+  const patients = await api.getPatients({ 
+    page: 1, 
+    limit: 10, 
+    search: 'John' 
+  });
+  
+  console.log('Patients:', patients);
+}`;
 
-if response.status_code == 200:
-    print('Response:', response.json())
-else:
-    print(f'Error: {response.status_code}')`;
+    // React Hook examples
+    const reactExamples = `// React Hooks for Healthcare API
 
-    return { curl: curlExample, javascript: jsExample, python: pythonExample };
+import React, { useState, useEffect, useCallback } from 'react';
+
+// Custom hook for Healthcare API
+export const useHealthcareAPI = (baseUrl) => {
+  const [accessToken, setAccessToken] = useState(
+    localStorage.getItem('healthcare_token')
+  );
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Login function
+  const login = useCallback(async (email, password) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const response = await fetch(\`\${baseUrl}/auth/login\`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setAccessToken(data.data.access_token);
+        localStorage.setItem('healthcare_token', data.data.access_token);
+      } else {
+        setError(data.message || 'Login failed');
+      }
+      
+      return data;
+    } catch (err) {
+      setError('Network error occurred');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [baseUrl]);
+
+  // API request helper
+  const apiRequest = useCallback(async (endpoint, options = {}) => {
+    const config = {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(accessToken && { 'Authorization': \`Bearer \${accessToken}\` }),
+        ...options.headers
+      },
+      ...options
+    };
+
+    const response = await fetch(\`\${baseUrl}\${endpoint}\`, config);
+    return await response.json();
+  }, [baseUrl, accessToken]);
+
+  return {
+    accessToken,
+    loading,
+    error,
+    login,
+    apiRequest,
+    isAuthenticated: !!accessToken
+  };
+};
+
+// React Component Example
+export const PatientList = () => {
+  const { apiRequest, isAuthenticated } = useHealthcareAPI('${baseUrl}');
+  const [patients, setPatients] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchPatients();
+    }
+  }, [isAuthenticated]);
+
+  const fetchPatients = async () => {
+    setLoading(true);
+    try {
+      const response = await apiRequest('/api/v1/patients?page=1&limit=20');
+      if (response.success) {
+        setPatients(response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching patients:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const examples = generateExamples();
+  if (!isAuthenticated) {
+    return <div>Please log in to view patients</div>;
+  }
+
+  return (
+    <div>
+      <h2>Patient List</h2>
+      {loading ? (
+        <div>Loading patients...</div>
+      ) : (
+        <ul>
+          {patients.map(patient => (
+            <li key={patient.id}>
+              {patient.first_name} {patient.last_name} - MRN: {patient.medical_record_number}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+};`;
+
+    // Python examples
+    const pythonExamples = `# Healthcare API Python Examples
+
+import requests
+import json
+from typing import Optional, Dict, List
+
+class HealthcareAPI:
+    def __init__(self, base_url: str, api_key: Optional[str] = None):
+        self.base_url = base_url.rstrip('/')
+        self.api_key = api_key
+        self.access_token = None
+        self.session = requests.Session()
+    
+    def login(self, email: str, password: str, remember_me: bool = False) -> Dict:
+        """Authenticate with the Healthcare API"""
+        url = f"{self.base_url}/auth/login"
+        
+        payload = {
+            "email": email,
+            "password": password,
+            "remember_me": remember_me
+        }
+        
+        response = self.session.post(url, json=payload)
+        response.raise_for_status()
+        
+        data = response.json()
+        if data.get('success'):
+            self.access_token = data['data']['access_token']
+            # Update session headers for subsequent requests
+            self.session.headers.update({
+                'Authorization': f'Bearer {self.access_token}'
+            })
+        
+        return data
+    
+    def get_patients(self, page: int = 1, limit: int = 20, 
+                    search: Optional[str] = None, 
+                    facility_id: Optional[str] = None) -> Dict:
+        """Retrieve paginated list of patients"""
+        url = f"{self.base_url}/api/v1/patients"
+        
+        params = {
+            'page': page,
+            'limit': limit
+        }
+        
+        if search:
+            params['search'] = search
+        if facility_id:
+            params['facility_id'] = facility_id
+        
+        response = self.session.get(url, params=params)
+        response.raise_for_status()
+        
+        return response.json()
+    
+    def create_patient(self, patient_data: Dict) -> Dict:
+        """Create a new patient record"""
+        url = f"{self.base_url}/api/v1/patients"
+        
+        response = self.session.post(url, json=patient_data)
+        response.raise_for_status()
+        
+        return response.json()
+    
+    def get_facilities(self, facility_type: Optional[str] = None) -> Dict:
+        """Retrieve list of healthcare facilities"""
+        url = f"{self.base_url}/api/v1/facilities"
+        
+        params = {}
+        if facility_type:
+            params['facility_type'] = facility_type
+        
+        response = self.session.get(url, params=params)
+        response.raise_for_status()
+        
+        return response.json()
+
+# Usage Example
+def main():
+    # Initialize the API client
+    api = HealthcareAPI('${baseUrl}')
+    
+    try:
+        # Login
+        login_result = api.login(
+            email='doctor@healthcarecorp.com',
+            password='SecurePass123!',
+            remember_me=True
+        )
+        
+        print("Login successful:", login_result['success'])
+        
+        # Get patients
+        patients = api.get_patients(page=1, limit=10, search='John')
+        print(f"Found {len(patients['data'])} patients")
+        
+        # Create a new patient
+        new_patient = {
+            "first_name": "Jane",
+            "last_name": "Smith",
+            "date_of_birth": "1990-05-15",
+            "facility_id": "123e4567-e89b-12d3-a456-426614174000",
+            "phone": "+1-555-0456",
+            "email": "jane.smith@email.com"
+        }
+        
+        result = api.create_patient(new_patient)
+        print("Patient created:", result['success'])
+        
+        # Get facilities
+        facilities = api.get_facilities(facility_type='hospital')
+        print(f"Found {len(facilities['data'])} hospitals")
+        
+    except requests.exceptions.HTTPError as e:
+        print(f"HTTP Error: {e}")
+    except Exception as e:
+        print(f"Error: {e}")
+
+if __name__ == "__main__":
+    main()`;
+
+    // SDK example (TypeScript)
+    const sdkExamples = `// Healthcare API TypeScript SDK
+
+export interface LoginCredentials {
+  email: string;
+  password: string;
+  remember_me?: boolean;
+}
+
+export interface Patient {
+  id?: string;
+  first_name: string;
+  last_name: string;
+  date_of_birth: string;
+  medical_record_number?: string;
+  facility_id: string;
+  phone?: string;
+  email?: string;
+  status?: 'active' | 'inactive' | 'discharged';
+}
+
+export interface PaginationOptions {
+  page?: number;
+  limit?: number;
+  search?: string;
+  facility_id?: string;
+}
+
+export interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  message?: string;
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    total_pages: number;
+  };
+}
+
+export class HealthcareSDK {
+  private baseUrl: string;
+  private accessToken: string | null = null;
+  private refreshToken: string | null = null;
+
+  constructor(baseUrl: string) {
+    this.baseUrl = baseUrl.replace(/\\/$/, '');
+  }
+
+  // Authentication methods
+  async login(credentials: LoginCredentials): Promise<ApiResponse<{
+    user: any;
+    access_token: string;
+    refresh_token: string;
+    expires_in: number;
+  }>> {
+    const response = await this.makeRequest<any>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(credentials),
+    });
+
+    if (response.success) {
+      this.accessToken = response.data.access_token;
+      this.refreshToken = response.data.refresh_token;
+    }
+
+    return response;
+  }
+
+  async logout(): Promise<void> {
+    await this.makeRequest('/auth/logout', { method: 'POST' });
+    this.accessToken = null;
+    this.refreshToken = null;
+  }
+
+  // Patient management methods
+  async getPatients(options: PaginationOptions = {}): Promise<ApiResponse<Patient[]>> {
+    const params = new URLSearchParams();
+    Object.entries(options).forEach(([key, value]) => {
+      if (value !== undefined) {
+        params.append(key, value.toString());
+      }
+    });
+
+    const queryString = params.toString();
+    const endpoint = \`/api/v1/patients\${queryString ? \`?\${queryString}\` : ''}\`;
+    
+    return this.makeRequest<Patient[]>(endpoint);
+  }
+
+  async createPatient(patientData: Omit<Patient, 'id' | 'medical_record_number'>): Promise<ApiResponse<Patient>> {
+    return this.makeRequest<Patient>('/api/v1/patients', {
+      method: 'POST',
+      body: JSON.stringify(patientData),
+    });
+  }
+
+  async getPatient(patientId: string): Promise<ApiResponse<Patient>> {
+    return this.makeRequest<Patient>(\`/api/v1/patients/\${patientId}\`);
+  }
+
+  async updatePatient(patientId: string, updates: Partial<Patient>): Promise<ApiResponse<Patient>> {
+    return this.makeRequest<Patient>(\`/api/v1/patients/\${patientId}\`, {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    });
+  }
+
+  // Facility management methods
+  async getFacilities(facilityType?: string): Promise<ApiResponse<any[]>> {
+    const params = facilityType ? \`?facility_type=\${facilityType}\` : '';
+    return this.makeRequest<any[]>(\`/api/v1/facilities\${params}\`);
+  }
+
+  // Private helper methods
+  private async makeRequest<T>(
+    endpoint: string,
+    options: RequestInit = {}
+  ): Promise<ApiResponse<T>> {
+    const url = \`\${this.baseUrl}\${endpoint}\`;
+    
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    };
+
+    if (this.accessToken && !endpoint.includes('/auth/login')) {
+      headers['Authorization'] = \`Bearer \${this.accessToken}\`;
+    }
+
+    const response = await fetch(url, {
+      ...options,
+      headers,
+    });
+
+    if (!response.ok) {
+      throw new Error(\`HTTP error! status: \${response.status}\`);
+    }
+
+    return response.json();
+  }
+
+  // Utility methods
+  isAuthenticated(): boolean {
+    return !!this.accessToken;
+  }
+
+  getAccessToken(): string | null {
+    return this.accessToken;
+  }
+}
+
+// Usage Example
+const sdk = new HealthcareSDK('${baseUrl}');
+
+async function exampleUsage() {
+  try {
+    // Login
+    const loginResponse = await sdk.login({
+      email: 'doctor@healthcarecorp.com',
+      password: 'SecurePass123!',
+      remember_me: true
+    });
+
+    console.log('Logged in:', loginResponse.success);
+
+    // Get patients
+    const patients = await sdk.getPatients({
+      page: 1,
+      limit: 20,
+      search: 'John'
+    });
+
+    console.log('Patients found:', patients.data.length);
+
+    // Create patient
+    const newPatient = {
+      first_name: 'Alice',
+      last_name: 'Johnson',
+      date_of_birth: '1988-12-10',
+      facility_id: '123e4567-e89b-12d3-a456-426614174000',
+      email: 'alice.johnson@email.com'
+    };
+
+    const result = await sdk.createPatient(newPatient);
+    console.log('Patient created:', result.success);
+
+  } catch (error) {
+    console.error('SDK Error:', error);
+  }
+}`;
+
+    return {
+      curl: curlExamples,
+      javascript: jsExamples,
+      react: reactExamples,
+      python: pythonExamples,
+      sdk: sdkExamples
+    };
+  };
+
+  const examples = generateCodeExamples();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -589,7 +1135,7 @@ else:
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center justify-between">
-                      cURL Example
+                      cURL Examples
                       <Button size="sm" variant="outline" onClick={() => handleCopyCode(examples.curl)}>
                         <Copy className="h-3 w-3 mr-1" />
                         Copy
@@ -606,7 +1152,7 @@ else:
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center justify-between">
-                      JavaScript Example
+                      JavaScript Examples
                       <Button size="sm" variant="outline" onClick={() => handleCopyCode(examples.javascript)}>
                         <Copy className="h-3 w-3 mr-1" />
                         Copy
@@ -623,7 +1169,24 @@ else:
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center justify-between">
-                      Python Example
+                      React Hook Examples
+                      <Button size="sm" variant="outline" onClick={() => handleCopyCode(examples.react)}>
+                        <Copy className="h-3 w-3 mr-1" />
+                        Copy
+                      </Button>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <pre className="text-sm bg-muted p-3 rounded-lg overflow-x-auto">
+                      <code>{examples.react}</code>
+                    </pre>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      Python Examples
                       <Button size="sm" variant="outline" onClick={() => handleCopyCode(examples.python)}>
                         <Copy className="h-3 w-3 mr-1" />
                         Copy
@@ -633,6 +1196,23 @@ else:
                   <CardContent>
                     <pre className="text-sm bg-muted p-3 rounded-lg overflow-x-auto">
                       <code>{examples.python}</code>
+                    </pre>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      TypeScript SDK Example
+                      <Button size="sm" variant="outline" onClick={() => handleCopyCode(examples.sdk)}>
+                        <Copy className="h-3 w-3 mr-1" />
+                        Copy
+                      </Button>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <pre className="text-sm bg-muted p-3 rounded-lg overflow-x-auto">
+                      <code>{examples.sdk}</code>
                     </pre>
                   </CardContent>
                 </Card>
