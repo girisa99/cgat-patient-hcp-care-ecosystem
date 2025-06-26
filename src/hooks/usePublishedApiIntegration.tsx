@@ -69,6 +69,7 @@ export const usePublishedApiIntegration = () => {
 
       console.log('✅ Fetched published APIs:', publishedApis);
       
+      // Type cast the database results to match our interface
       return publishedApis.map(api => ({
         id: api.id,
         external_name: api.external_name,
@@ -79,7 +80,7 @@ export const usePublishedApiIntegration = () => {
         documentation_url: api.documentation_url,
         sandbox_url: api.sandbox_url || generateSandboxUrl(api.id),
         pricing_model: api.pricing_model,
-        rate_limits: api.rate_limits,
+        rate_limits: (api.rate_limits as any) || {},
         authentication_methods: api.authentication_methods,
         supported_formats: api.supported_formats,
         tags: api.tags,

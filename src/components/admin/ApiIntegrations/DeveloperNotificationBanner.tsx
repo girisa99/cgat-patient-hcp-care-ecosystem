@@ -39,7 +39,10 @@ const DeveloperNotificationBanner = () => {
         table: 'developer_notifications'
       }, (payload) => {
         console.log('New notification received:', payload);
-        const newNotification = payload.new as DeveloperNotification;
+        const newNotification = {
+          ...payload.new,
+          metadata: (payload.new.metadata as any) || {}
+        } as DeveloperNotification;
         setNotifications(prev => [newNotification, ...prev]);
         
         // Show toast for new notifications
@@ -70,7 +73,13 @@ const DeveloperNotificationBanner = () => {
 
       if (error) throw error;
 
-      setNotifications(data || []);
+      // Type cast the database results to match our interface
+      const typedNotifications: DeveloperNotification[] = (data || []).map(notification => ({
+        ...notification,
+        metadata: (notification.metadata as any) || {}
+      }));
+
+      setNotifications(typedNotifications);
     } catch (error) {
       console.error('Error fetching notifications:', error);
     } finally {
