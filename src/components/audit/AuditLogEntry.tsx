@@ -63,11 +63,32 @@ export const AuditLogEntry = ({ log }: AuditLogEntryProps) => {
   };
 
   const getUserName = () => {
+    // If no user_id, it's a system action
+    if (!log.user_id) {
+      return 'System';
+    }
+    
+    // If we have profile data, use it
     if (log.profiles) {
       const fullName = `${log.profiles.first_name || ''} ${log.profiles.last_name || ''}`.trim();
-      return fullName || log.profiles.email;
+      if (fullName) {
+        return fullName;
+      }
+      return log.profiles.email || 'Unknown User';
     }
-    return 'Unknown User';
+    
+    // Fallback if profile not found
+    return `User ${log.user_id.substring(0, 8)}...`;
+  };
+
+  const getUserDisplayClass = () => {
+    if (!log.user_id) {
+      return 'text-muted-foreground'; // System actions
+    }
+    if (log.profiles) {
+      return 'text-foreground'; // User found
+    }
+    return 'text-orange-600'; // User not found but has ID
   };
 
   return (
@@ -99,7 +120,9 @@ export const AuditLogEntry = ({ log }: AuditLogEntryProps) => {
       <div className="flex items-center gap-6 text-sm text-muted-foreground">
         <div className="flex items-center gap-1">
           <User className="h-4 w-4" />
-          <span>By: {getUserName()}</span>
+          <span className={getUserDisplayClass()}>
+            By: {getUserName()}
+          </span>
         </div>
         <div className="flex items-center gap-1">
           <Clock className="h-4 w-4" />

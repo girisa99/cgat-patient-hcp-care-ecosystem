@@ -71,9 +71,9 @@ export const AuditLogStats = () => {
           <Users className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">--</div>
+          <div className="text-2xl font-bold">{stats?.active_users || 0}</div>
           <p className="text-xs text-muted-foreground">
-            Users with activity
+            Users with activity (7 days)
           </p>
         </CardContent>
       </Card>

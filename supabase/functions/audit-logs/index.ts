@@ -139,35 +139,35 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('📊 Audit logs fetched:', result.data?.length || 0);
 
-    // Now get user data from auth.users table using admin API directly
+    // Get all unique user IDs from audit logs (excluding null values)
     const userIds = [...new Set(result.data?.map(log => log.user_id).filter(Boolean))];
+    console.log('👥 User IDs found in audit logs:', userIds);
+    
     let userProfiles = [];
     
     if (userIds.length > 0) {
-      console.log('👥 Fetching user data for IDs:', userIds);
-      
       try {
-        // Use the admin API to get user data directly from auth.users
+        // First get all auth users
         const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
         
         if (authError) {
           console.error('❌ Error fetching auth users:', authError);
         } else {
-          console.log('✅ Auth users fetched:', authUsers.users.length);
+          console.log('✅ Total auth users available:', authUsers.users.length);
           
-          // Filter users to only those we need and get their profiles
-          const relevantUsers = authUsers.users.filter(user => userIds.includes(user.id));
-          console.log('🔍 Relevant users found:', relevantUsers.length);
-          
-          // Get additional profile data if available
-          const { data: profilesData } = await supabase
+          // Get profile data for all users
+          const { data: profilesData, error: profilesError } = await supabase
             .from('profiles')
-            .select('id, first_name, last_name, email')
-            .in('id', userIds);
+            .select('id, first_name, last_name, email');
           
-          console.log('📝 Profiles found:', profilesData?.length || 0);
+          if (profilesError) {
+            console.error('❌ Error fetching profiles:', profilesError);
+          } else {
+            console.log('📝 Total profiles available:', profilesData?.length || 0);
+          }
           
-          userProfiles = relevantUsers.map(authUser => {
+          // Create user profiles map for all users (not just those in audit logs)
+          userProfiles = authUsers.users.map(authUser => {
             const profile = profilesData?.find(p => p.id === authUser.id);
             return {
               id: authUser.id,
@@ -177,7 +177,8 @@ const handler = async (req: Request): Promise<Response> => {
             };
           });
           
-          console.log('✅ User profiles prepared:', userProfiles.length);
+          console.log('✅ User profiles prepared for all users:', userProfiles.length);
+          console.log('🔍 Sample user profile:', userProfiles.length > 0 ? userProfiles[0] : 'None');
         }
       } catch (error) {
         console.error('❌ Error fetching user data:', error);
@@ -185,30 +186,58 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
 
-    // Merge the data
-    const enrichedData = result.data?.map(log => ({
-      ...log,
-      profiles: userProfiles.find(profile => profile.id === log.user_id) || null
-    }));
+    // Merge the data with user profiles
+    const enrichedData = result.data?.map(log => {
+      const userProfile = userProfiles.find(profile => profile && profile.id === log.user_id);
+      console.log(`🔍 Matching log user_id ${log.user_id} with profile:`, userProfile ? 'Found' : 'Not found');
+      
+      return {
+        ...log,
+        profiles: userProfile || null
+      };
+    });
 
     console.log('🔄 Enriched data prepared with user info');
 
-    // Get summary statistics
-    const { data: totalCount } = await supabase
+    // Calculate statistics
+    const { count: totalCount } = await supabase
       .from('audit_logs')
-      .select('id', { count: 'exact' });
+      .select('*', { count: 'exact', head: true });
 
-    const { data: todayCount } = await supabase
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    
+    const { count: todayCount } = await supabase
       .from('audit_logs')
-      .select('id', { count: 'exact' })
-      .gte('created_at', new Date().toISOString().split('T')[0]);
+      .select('*', { count: 'exact', head: true })
+      .gte('created_at', todayStart.toISOString());
+
+    // Calculate active users (users who have activity in the last 7 days)
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    
+    const { data: activeUserIds } = await supabase
+      .from('audit_logs')
+      .select('user_id')
+      .gte('created_at', sevenDaysAgo.toISOString())
+      .not('user_id', 'is', null);
+
+    const uniqueActiveUsers = activeUserIds ? [...new Set(activeUserIds.map(log => log.user_id))].length : 0;
+
+    console.log('📈 Statistics calculated:', {
+      total: totalCount || 0,
+      today: todayCount || 0,
+      activeUsers: uniqueActiveUsers,
+      filtered: enrichedData?.length || 0
+    });
 
     return new Response(JSON.stringify({ 
       success: true, 
       data: enrichedData,
       metadata: {
-        total_logs: totalCount?.length || 0,
-        today_logs: todayCount?.length || 0,
+        total_logs: totalCount || 0,
+        today_logs: todayCount || 0,
+        active_users: uniqueActiveUsers,
         filtered_count: enrichedData?.length || 0
       }
     }), {
