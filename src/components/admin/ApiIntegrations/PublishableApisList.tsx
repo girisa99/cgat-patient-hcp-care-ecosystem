@@ -44,26 +44,51 @@ const PublishableApisList: React.FC<PublishableApisListProps> = ({ onPublishApi 
 
   const categories = ['all', ...new Set(unpublishedApis.map(api => api.category))];
 
+  // Updated readiness scoring logic - more lenient thresholds
   const getReadinessScore = (api: any) => {
     let score = 0;
-    if (api.endpoints?.length > 0) score += 25;
-    if (api.rlsPolicies?.length > 0) score += 25;
-    if (api.mappings?.length > 0) score += 25;
-    if (api.description && api.description.length > 50) score += 25;
+    
+    // Endpoints check (30 points)
+    if (api.endpoints && api.endpoints.length > 0) {
+      score += 30;
+    }
+    
+    // RLS Policies check (25 points) 
+    if (api.rlsPolicies && api.rlsPolicies.length > 0) {
+      score += 25;
+    }
+    
+    // Data mappings check (25 points)
+    if (api.mappings && api.mappings.length > 0) {
+      score += 25;
+    }
+    
+    // Description check (20 points) - reduced requirement to 20 characters
+    if (api.description && api.description.length > 20) {
+      score += 20;
+    }
+    
     return score;
   };
 
   const getReadinessColor = (score: number) => {
-    if (score >= 75) return 'text-green-600 bg-green-50';
-    if (score >= 50) return 'text-yellow-600 bg-yellow-50';
-    return 'text-red-600 bg-red-50';
+    if (score >= 70) return 'text-green-600 bg-green-50 border-green-200';
+    if (score >= 40) return 'text-yellow-600 bg-yellow-50 border-yellow-200';
+    return 'text-red-600 bg-red-50 border-red-200';
   };
 
   const getReadinessText = (score: number) => {
-    if (score >= 75) return 'Ready to Publish';
-    if (score >= 50) return 'Needs Review';
+    if (score >= 70) return 'Ready to Publish';
+    if (score >= 40) return 'Needs Review';
     return 'Incomplete';
   };
+
+  // Calculate statistics with updated thresholds
+  const readyToPublish = unpublishedApis.filter(api => getReadinessScore(api) >= 70).length;
+  const needsReview = unpublishedApis.filter(api => {
+    const score = getReadinessScore(api);
+    return score >= 40 && score < 70;
+  }).length;
 
   return (
     <div className="space-y-6">
@@ -82,7 +107,7 @@ const PublishableApisList: React.FC<PublishableApisListProps> = ({ onPublishApi 
       {/* Category Filter */}
       <Tabs value={selectedCategory} onValueChange={setSelectedCategory}>
         <TabsList className="grid w-full grid-cols-6">
-          {categories.map((category) => (
+          {categories.slice(0, 6).map((category) => (
             <TabsTrigger key={category} value={category} className="capitalize">
               {category === 'all' ? 'All APIs' : category}
               {category !== 'all' && (
@@ -127,9 +152,9 @@ const PublishableApisList: React.FC<PublishableApisListProps> = ({ onPublishApi 
                               {api.category}
                             </Badge>
                             <Badge 
-                              className={`${getReadinessColor(readinessScore)} border-0`}
+                              className={`${getReadinessColor(readinessScore)} border`}
                             >
-                              {getReadinessText(readinessScore)}
+                              {getReadinessText(readinessScore)} ({readinessScore}%)
                             </Badge>
                           </div>
                           
@@ -193,7 +218,7 @@ const PublishableApisList: React.FC<PublishableApisListProps> = ({ onPublishApi 
                         <div className="flex flex-col gap-2 ml-4">
                           <Button
                             onClick={() => onPublishApi(api.id, api.name)}
-                            disabled={readinessScore < 50}
+                            disabled={readinessScore < 40}
                             className="min-w-[120px]"
                           >
                             <ArrowUpCircle className="h-4 w-4 mr-2" />
@@ -212,37 +237,40 @@ const PublishableApisList: React.FC<PublishableApisListProps> = ({ onPublishApi 
                       </div>
                       
                       {/* Readiness Checklist for incomplete APIs */}
-                      {readinessScore < 75 && (
-                        <div className="mt-4 p-3 bg-yellow-50 rounded-lg">
+                      {readinessScore < 70 && (
+                        <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
                           <h5 className="text-sm font-medium mb-2 flex items-center gap-2">
                             <CheckCircle className="h-4 w-4" />
                             Publishing Readiness Checklist:
                           </h5>
                           <div className="space-y-1 text-sm">
                             {(!api.endpoints || api.endpoints.length === 0) && (
-                              <div className="flex items-center gap-2 text-red-600">
+                              <div className="flex items-center gap-2 text-amber-700">
                                 <span>•</span>
-                                <span>Add at least one endpoint</span>
+                                <span>Add at least one endpoint (30 points)</span>
                               </div>
                             )}
                             {(!api.rlsPolicies || api.rlsPolicies.length === 0) && (
-                              <div className="flex items-center gap-2 text-red-600">
+                              <div className="flex items-center gap-2 text-amber-700">
                                 <span>•</span>
-                                <span>Configure security policies</span>
+                                <span>Configure security policies (25 points)</span>
                               </div>
                             )}
                             {(!api.mappings || api.mappings.length === 0) && (
-                              <div className="flex items-center gap-2 text-red-600">
+                              <div className="flex items-center gap-2 text-amber-700">
                                 <span>•</span>
-                                <span>Define data mappings</span>
+                                <span>Define data mappings (25 points)</span>
                               </div>
                             )}
-                            {(!api.description || api.description.length < 50) && (
-                              <div className="flex items-center gap-2 text-red-600">
+                            {(!api.description || api.description.length <= 20) && (
+                              <div className="flex items-center gap-2 text-amber-700">
                                 <span>•</span>
-                                <span>Add detailed description</span>
+                                <span>Add detailed description (20 points)</span>
                               </div>
                             )}
+                          </div>
+                          <div className="mt-2 text-xs text-amber-600">
+                            Score: {readinessScore}/100 (Need 70+ to publish, 40+ for review)
                           </div>
                         </div>
                       )}
@@ -262,9 +290,7 @@ const PublishableApisList: React.FC<PublishableApisListProps> = ({ onPublishApi 
             <div className="flex items-center gap-2">
               <CheckCircle className="h-4 w-4 text-green-500" />
               <div>
-                <p className="text-2xl font-bold">
-                  {unpublishedApis.filter(api => getReadinessScore(api) >= 75).length}
-                </p>
+                <p className="text-2xl font-bold">{readyToPublish}</p>
                 <p className="text-sm text-muted-foreground">Ready to Publish</p>
               </div>
             </div>
@@ -276,9 +302,7 @@ const PublishableApisList: React.FC<PublishableApisListProps> = ({ onPublishApi 
             <div className="flex items-center gap-2">
               <Eye className="h-4 w-4 text-yellow-500" />
               <div>
-                <p className="text-2xl font-bold">
-                  {unpublishedApis.filter(api => getReadinessScore(api) >= 50 && getReadinessScore(api) < 75).length}
-                </p>
+                <p className="text-2xl font-bold">{needsReview}</p>
                 <p className="text-sm text-muted-foreground">Need Review</p>
               </div>
             </div>

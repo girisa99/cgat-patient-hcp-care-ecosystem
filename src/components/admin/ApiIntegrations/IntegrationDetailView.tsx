@@ -1,213 +1,162 @@
 
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { ArrowLeft, ExternalLink, Code, Shield, Database } from 'lucide-react';
 import { useApiIntegrations } from '@/hooks/useApiIntegrations';
-import { X, ExternalLink, Download } from 'lucide-react';
 
 interface IntegrationDetailViewProps {
   integrationId: string;
-  onClose: () => void;
+  onBack: () => void;
 }
 
-export const IntegrationDetailView: React.FC<IntegrationDetailViewProps> = ({
+const IntegrationDetailView: React.FC<IntegrationDetailViewProps> = ({
   integrationId,
-  onClose
+  onBack
 }) => {
-  const { integrations, downloadPostmanCollection } = useApiIntegrations();
-  
+  const { integrations } = useApiIntegrations();
   const integration = integrations?.find(i => i.id === integrationId);
 
   if (!integration) {
     return (
-      <Dialog open={true} onOpenChange={onClose}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Integration not found</DialogTitle>
-          </DialogHeader>
-          <div className="p-4">
-            <p>The requested integration could not be found.</p>
-            <Button onClick={onClose} className="mt-4">Close</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <div className="space-y-6">
+        <Button onClick={onBack} variant="outline" className="mb-4">
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back
+        </Button>
+        <Card>
+          <CardContent className="p-8 text-center">
+            <h3 className="text-lg font-medium mb-2">Integration Not Found</h3>
+            <p className="text-muted-foreground">The requested integration could not be found.</p>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   return (
-    <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
-            <span>{integration.name}</span>
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
-          </DialogTitle>
-        </DialogHeader>
-        
-        <div className="space-y-6">
-          {/* Integration Overview */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Overview</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <span className="font-medium">Type:</span>
-                  <Badge variant="outline" className="ml-2">
-                    {integration.type}
-                  </Badge>
-                </div>
-                <div>
-                  <span className="font-medium">Category:</span>
-                  <Badge variant="outline" className="ml-2">
-                    {integration.category}
-                  </Badge>
-                </div>
-                <div>
-                  <span className="font-medium">Status:</span>
-                  <Badge 
-                    variant={integration.status === 'active' ? 'default' : 'secondary'}
-                    className="ml-2"
-                  >
-                    {integration.status}
-                  </Badge>
-                </div>
-                <div>
-                  <span className="font-medium">Version:</span>
-                  <span className="ml-2">{integration.version}</span>
-                </div>
-              </div>
-              
-              <div>
-                <span className="font-medium">Description:</span>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {integration.description}
-                </p>
-              </div>
-
-              <div>
-                <span className="font-medium">Base URL:</span>
-                <div className="flex items-center gap-2 mt-1">
-                  <code className="text-sm bg-muted px-2 py-1 rounded">
-                    {integration.baseUrl}
-                  </code>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => window.open(integration.baseUrl, '_blank')}
-                  >
-                    <ExternalLink className="h-3 w-3" />
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Endpoints */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Endpoints ({integration.endpoints.length})</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {integration.endpoints.map((endpoint) => (
-                  <div key={endpoint.id} className="border rounded-lg p-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline">
-                          {endpoint.method}
-                        </Badge>
-                        <span className="font-medium">{endpoint.name}</span>
-                      </div>
-                      <Badge variant={endpoint.isPublic ? 'secondary' : 'default'}>
-                        {endpoint.isPublic ? 'Public' : 'Private'}
-                      </Badge>
-                    </div>
-                    <code className="text-sm text-muted-foreground">
-                      {endpoint.url}
-                    </code>
-                    <p className="text-sm mt-1">{endpoint.description}</p>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* RLS Policies */}
-          {integration.rlsPolicies.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>RLS Policies ({integration.rlsPolicies.length})</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {integration.rlsPolicies.map((policy, index) => (
-                    <div key={index} className="border rounded-lg p-3">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-medium">{policy.policyName}</span>
-                        <Badge variant="outline">{policy.operation}</Badge>
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        <span className="font-medium">Table: </span>
-                        {policy.tableName}
-                      </div>
-                      <div className="text-sm text-muted-foreground mt-1">
-                        <span className="font-medium">Condition: </span>
-                        <code className="text-xs">{policy.condition}</code>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Data Mappings */}
-          {integration.mappings.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Data Mappings ({integration.mappings.length})</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {integration.mappings.map((mapping, index) => (
-                    <div key={index} className="border rounded-lg p-3">
-                      <div className="flex items-center justify-between">
-                        <div className="text-sm">
-                          <span className="font-medium">{mapping.sourceField}</span>
-                          <span className="mx-2">→</span>
-                          <span className="font-medium">{mapping.targetTable}.{mapping.targetField}</span>
-                        </div>
-                        {mapping.transformation && (
-                          <Badge variant="outline" className="text-xs">
-                            {mapping.transformation}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Actions */}
-          <div className="flex gap-2">
-            <Button
-              onClick={() => downloadPostmanCollection(integration.id)}
-              className="flex items-center gap-2"
-            >
-              <Download className="h-4 w-4" />
-              Download Postman Collection
-            </Button>
-          </div>
+    <div className="space-y-6">
+      <div className="flex items-center gap-4">
+        <Button onClick={onBack} variant="outline">
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back
+        </Button>
+        <div>
+          <h2 className="text-2xl font-bold">{integration.name}</h2>
+          <p className="text-muted-foreground">{integration.description}</p>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Code className="h-4 w-4 text-blue-500" />
+              <div>
+                <p className="text-2xl font-bold">{integration.endpoints?.length || 0}</p>
+                <p className="text-sm text-muted-foreground">Endpoints</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Shield className="h-4 w-4 text-green-500" />
+              <div>
+                <p className="text-2xl font-bold">{integration.rlsPolicies?.length || 0}</p>
+                <p className="text-sm text-muted-foreground">RLS Policies</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Database className="h-4 w-4 text-purple-500" />
+              <div>
+                <p className="text-2xl font-bold">{integration.mappings?.length || 0}</p>
+                <p className="text-sm text-muted-foreground">Data Mappings</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Integration Details</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium">Type</label>
+              <Badge variant="outline" className="ml-2 capitalize">
+                {integration.type}
+              </Badge>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Status</label>
+              <Badge className="ml-2" variant="outline">
+                {integration.status}
+              </Badge>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Category</label>
+              <p className="capitalize">{integration.category}</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Version</label>
+              <p>v{integration.version}</p>
+            </div>
+          </div>
+          
+          {integration.baseUrl && (
+            <div>
+              <label className="text-sm font-medium">Base URL</label>
+              <div className="flex items-center gap-2 mt-1">
+                <code className="bg-muted px-2 py-1 rounded text-sm flex-1">
+                  {integration.baseUrl}
+                </code>
+                <Button size="sm" variant="outline" asChild>
+                  <a href={integration.baseUrl} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                </Button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {integration.endpoints && integration.endpoints.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>API Endpoints</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {integration.endpoints.map((endpoint: any, idx: number) => (
+                <div key={idx} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Badge variant="outline">{endpoint.method}</Badge>
+                    <code className="text-sm">{endpoint.url}</code>
+                    <span className="text-sm text-muted-foreground">{endpoint.name}</span>
+                  </div>
+                  {endpoint.isPublic && (
+                    <Badge variant="secondary">Public</Badge>
+                  )}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 };
+
+export default IntegrationDetailView;

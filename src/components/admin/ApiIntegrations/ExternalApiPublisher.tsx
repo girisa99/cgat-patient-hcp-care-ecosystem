@@ -20,7 +20,8 @@ import {
   Edit,
   CheckCircle,
   XCircle,
-  Clock
+  Clock,
+  FileText
 } from 'lucide-react';
 import { useApiIntegrations } from '@/hooks/useApiIntegrations';
 import { useExternalApis } from '@/hooks/useExternalApis';
@@ -111,6 +112,11 @@ const ExternalApiPublisher = () => {
     updateApiStatus({ externalApiId, status: newStatus });
   };
 
+  // Calculate counts correctly
+  const draftAndReviewApis = externalApis.filter(api => 
+    api.status === 'draft' || api.status === 'review'
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -129,7 +135,7 @@ const ExternalApiPublisher = () => {
             <div className="flex items-center gap-2">
               <Globe className="h-4 w-4 text-blue-500" />
               <div>
-                <p className="text-2xl font-bold">{marketplaceStats?.totalPublishedApis || 0}</p>
+                <p className="text-2xl font-bold">{publishedApis.length}</p>
                 <p className="text-sm text-muted-foreground">Published APIs</p>
               </div>
             </div>
@@ -165,8 +171,8 @@ const ExternalApiPublisher = () => {
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-orange-500" />
               <div>
-                <p className="text-2xl font-bold">{marketplaceStats?.pendingApplications || 0}</p>
-                <p className="text-sm text-muted-foreground">Pending Review</p>
+                <p className="text-2xl font-bold">{draftAndReviewApis.length}</p>
+                <p className="text-sm text-muted-foreground">Drafts & Review</p>
               </div>
             </div>
           </CardContent>
@@ -177,7 +183,11 @@ const ExternalApiPublisher = () => {
         <TabsList>
           <TabsTrigger value="available">Available to Publish</TabsTrigger>
           <TabsTrigger value="published">Published APIs</TabsTrigger>
-          <TabsTrigger value="drafts">Drafts & Review</TabsTrigger>
+          <TabsTrigger value="drafts">Drafts & Review ({draftAndReviewApis.length})</TabsTrigger>
+          <TabsTrigger value="documentation">
+            <FileText className="h-4 w-4 mr-1" />
+            Documentation
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="available" className="space-y-4">
@@ -186,96 +196,167 @@ const ExternalApiPublisher = () => {
 
         <TabsContent value="published" className="space-y-4">
           <div className="grid gap-4">
-            {publishedApis.map((api) => (
-              <Card key={api.id}>
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-semibold">{api.external_name}</h4>
-                        <Badge className={getStatusColor(api.status)}>
-                          {api.status}
-                        </Badge>
-                        <Badge variant="outline">{api.visibility}</Badge>
-                        <Badge variant="secondary">{api.pricing_model}</Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        {api.external_description}
-                      </p>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span>Version {api.version}</span>
-                        <span>•</span>
-                        <span>Published {new Date(api.published_at!).toLocaleDateString()}</span>
-                        {api.base_url && (
-                          <>
-                            <span>•</span>
-                            <a href={api.base_url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
-                              View API
-                            </a>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button size="sm" variant="outline">
-                        <Settings className="h-3 w-3 mr-1" />
-                        Configure
-                      </Button>
-                      <Button size="sm" variant="outline">
-                        <Eye className="h-3 w-3 mr-1" />
-                        Analytics
-                      </Button>
-                    </div>
-                  </div>
+            {publishedApis.length === 0 ? (
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <Globe className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h4 className="text-lg font-medium mb-2">No Published APIs</h4>
+                  <p className="text-muted-foreground">No APIs have been published externally yet.</p>
                 </CardContent>
               </Card>
-            ))}
+            ) : (
+              publishedApis.map((api) => (
+                <Card key={api.id}>
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-semibold">{api.external_name}</h4>
+                          <Badge className={getStatusColor(api.status)}>
+                            {api.status}
+                          </Badge>
+                          <Badge variant="outline">{api.visibility}</Badge>
+                          <Badge variant="secondary">{api.pricing_model}</Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {api.external_description}
+                        </p>
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                          <span>Version {api.version}</span>
+                          <span>•</span>
+                          <span>Published {new Date(api.published_at!).toLocaleDateString()}</span>
+                          {api.base_url && (
+                            <>
+                              <span>•</span>
+                              <a href={api.base_url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                                View API
+                              </a>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline">
+                          <Settings className="h-3 w-3 mr-1" />
+                          Configure
+                        </Button>
+                        <Button size="sm" variant="outline">
+                          <Eye className="h-3 w-3 mr-1" />
+                          Analytics
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
           </div>
         </TabsContent>
 
         <TabsContent value="drafts" className="space-y-4">
           <div className="grid gap-4">
-            {externalApis.filter(api => api.status !== 'published').map((api) => (
-              <Card key={api.id}>
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-semibold">{api.external_name}</h4>
-                        <Badge className={getStatusColor(api.status)}>
-                          {api.status}
-                        </Badge>
-                        <Badge variant="outline">{api.visibility}</Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        {api.external_description}
-                      </p>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span>Version {api.version}</span>
-                        <span>•</span>
-                        <span>Created {new Date(api.created_at).toLocaleDateString()}</span>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => handleStatusUpdate(api.id, 'published')}
-                        disabled={isUpdatingStatus}
-                      >
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        Publish
-                      </Button>
-                      <Button size="sm" variant="outline">
-                        <Edit className="h-3 w-3 mr-1" />
-                        Edit
-                      </Button>
-                    </div>
-                  </div>
+            {draftAndReviewApis.length === 0 ? (
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h4 className="text-lg font-medium mb-2">No Draft or Review APIs</h4>
+                  <p className="text-muted-foreground">No APIs are currently in draft or review status.</p>
                 </CardContent>
               </Card>
-            ))}
+            ) : (
+              draftAndReviewApis.map((api) => (
+                <Card key={api.id}>
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-semibold">{api.external_name}</h4>
+                          <Badge className={getStatusColor(api.status)}>
+                            {api.status}
+                          </Badge>
+                          <Badge variant="outline">{api.visibility}</Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {api.external_description}
+                        </p>
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                          <span>Version {api.version}</span>
+                          <span>•</span>
+                          <span>Created {new Date(api.created_at).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleStatusUpdate(api.id, 'published')}
+                          disabled={isUpdatingStatus}
+                        >
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          Publish
+                        </Button>
+                        <Button size="sm" variant="outline">
+                          <Edit className="h-3 w-3 mr-1" />
+                          Edit
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
           </div>
+        </TabsContent>
+
+        <TabsContent value="documentation" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                External API Publishing Documentation
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="prose max-w-none">
+                <h3>Getting Started with External API Publishing</h3>
+                <p>
+                  External API publishing allows you to expose your internal APIs to external developers 
+                  and partners through a secure, managed interface.
+                </p>
+                
+                <h4>Publishing Process</h4>
+                <ol>
+                  <li><strong>Select Internal API:</strong> Choose from your available internal APIs</li>
+                  <li><strong>Configure External Interface:</strong> Set external name, description, and visibility</li>
+                  <li><strong>Set Security:</strong> Configure authentication methods and rate limits</li>
+                  <li><strong>Review & Publish:</strong> Review configuration and publish to marketplace</li>
+                </ol>
+
+                <h4>API Readiness Checklist</h4>
+                <ul>
+                  <li>At least one endpoint defined</li>
+                  <li>Security policies configured</li>
+                  <li>Data mappings established</li>
+                  <li>Comprehensive description provided</li>
+                </ul>
+
+                <h4>Visibility Options</h4>
+                <ul>
+                  <li><strong>Private:</strong> Only accessible with direct API key</li>
+                  <li><strong>Public:</strong> Listed in public directory</li>
+                  <li><strong>Marketplace:</strong> Featured in developer marketplace</li>
+                </ul>
+
+                <h4>Pricing Models</h4>
+                <ul>
+                  <li><strong>Free:</strong> No cost to developers</li>
+                  <li><strong>Freemium:</strong> Free tier with paid upgrades</li>
+                  <li><strong>Paid:</strong> Subscription-based access</li>
+                  <li><strong>Enterprise:</strong> Custom pricing for large organizations</li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
 
