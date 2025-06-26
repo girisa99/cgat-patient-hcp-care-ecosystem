@@ -10,6 +10,7 @@ import AssignRoleDialog from '@/components/users/AssignRoleDialog';
 import AssignFacilityDialog from '@/components/users/AssignFacilityDialog';
 import RoleAssignmentDebugger from '@/components/users/RoleAssignmentDebugger';
 import BulkRoleAssignment from '@/components/users/BulkRoleAssignment';
+import DatabaseHealthCheck from '@/components/users/DatabaseHealthCheck';
 import { useUsers } from '@/hooks/useUsers';
 import { AlertTriangle, Bug } from 'lucide-react';
 
@@ -66,6 +67,9 @@ const Users = () => {
           Manage user accounts, roles, and facility assignments
         </p>
       </div>
+
+      {/* Database Health Check */}
+      <DatabaseHealthCheck />
 
       {/* Role Assignment Statistics */}
       <Card>
