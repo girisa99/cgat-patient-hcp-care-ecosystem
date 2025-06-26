@@ -1,6 +1,10 @@
 
-import React, { useState, useMemo } from 'react';
+import React from 'react';
 import { useConsistentUsers } from '@/hooks/useConsistentUsers';
+import { useUserManagementDialogs } from '@/hooks/useUserManagementDialogs';
+import { useUserStatistics } from '@/hooks/useUserStatistics';
+import { useSelectedUserInfo } from '@/hooks/useSelectedUserInfo';
+import { useDebugMode } from '@/hooks/useDebugMode';
 import { UserManagementStats } from '@/components/admin/UserManagement/UserManagementStats';
 import { UserManagementActions } from '@/components/admin/UserManagement/UserManagementActions';
 import { UserManagementList } from '@/components/admin/UserManagement/UserManagementList';
@@ -9,58 +13,29 @@ import { UserManagementDialogs } from '@/components/admin/UserManagement/UserMan
 
 const ConsistentUsers = () => {
   const { users, isLoading, meta } = useConsistentUsers();
-  const [createUserOpen, setCreateUserOpen] = useState(false);
-  const [editUserOpen, setEditUserOpen] = useState(false);
-  const [assignRoleOpen, setAssignRoleOpen] = useState(false);
-  const [removeRoleOpen, setRemoveRoleOpen] = useState(false);
-  const [assignFacilityOpen, setAssignFacilityOpen] = useState(false);
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-  const [selectedUser, setSelectedUser] = useState<any>(null);
-  const [debugMode, setDebugMode] = useState(false);
+  const { debugMode, handleToggleDebug } = useDebugMode();
+  const userStats = useUserStatistics(users);
+  
+  const {
+    createUserOpen,
+    editUserOpen,
+    assignRoleOpen,
+    removeRoleOpen,
+    assignFacilityOpen,
+    selectedUserId,
+    selectedUser,
+    setCreateUserOpen,
+    setEditUserOpen,
+    setAssignRoleOpen,
+    setRemoveRoleOpen,
+    setAssignFacilityOpen,
+    handleAssignRole,
+    handleRemoveRole,
+    handleAssignFacility,
+    handleEditUser
+  } = useUserManagementDialogs();
 
-  // Memoize calculations to prevent unnecessary re-renders
-  const userStats = useMemo(() => {
-    if (!users) return { totalUsers: 0, usersWithRoles: 0, usersWithoutRoles: 0 };
-    
-    const totalUsers = users.length;
-    const usersWithRoles = users.filter(user => user.user_roles && user.user_roles.length > 0).length;
-    const usersWithoutRoles = totalUsers - usersWithRoles;
-    
-    return { totalUsers, usersWithRoles, usersWithoutRoles };
-  }, [users]);
-
-  const selectedUserForRole = useMemo(() => {
-    return users?.find(u => u.id === selectedUserId);
-  }, [users, selectedUserId]);
-
-  const selectedUserName = useMemo(() => {
-    if (!selectedUserForRole) return '';
-    return `${selectedUserForRole.first_name || ''} ${selectedUserForRole.last_name || ''}`.trim() || selectedUserForRole.email;
-  }, [selectedUserForRole]);
-
-  const handleAssignRole = (userId: string) => {
-    setSelectedUserId(userId);
-    setAssignRoleOpen(true);
-  };
-
-  const handleRemoveRole = (userId: string) => {
-    setSelectedUserId(userId);
-    setRemoveRoleOpen(true);
-  };
-
-  const handleAssignFacility = (userId: string) => {
-    setSelectedUserId(userId);
-    setAssignFacilityOpen(true);
-  };
-
-  const handleEditUser = (user: any) => {
-    setSelectedUser(user);
-    setEditUserOpen(true);
-  };
-
-  const handleToggleDebug = () => {
-    setDebugMode(!debugMode);
-  };
+  const { selectedUserName } = useSelectedUserInfo(users, selectedUserId);
 
   return (
     <div className="space-y-6">
