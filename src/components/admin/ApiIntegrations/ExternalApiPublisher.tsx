@@ -20,11 +20,15 @@ import {
   CheckCircle,
   XCircle,
   Clock,
-  FileText
+  FileText,
+  ArrowDown,
+  AlertTriangle
 } from 'lucide-react';
 import { useApiIntegrations } from '@/hooks/useApiIntegrations';
 import { useExternalApis } from '@/hooks/useExternalApis';
 import PublishableApisList from './PublishableApisList';
+import ExternalApiConfigDialog from './ExternalApiConfigDialog';
+import ExternalApiAnalyticsDialog from './ExternalApiAnalyticsDialog';
 
 // Helper function to get status color
 const getStatusColor = (status: string) => {
@@ -56,6 +60,11 @@ const ExternalApiPublisher = () => {
 
   const [selectedApi, setSelectedApi] = useState<string | null>(null);
   const [showPublishDialog, setShowPublishDialog] = useState(false);
+  const [showConfigDialog, setShowConfigDialog] = useState(false);
+  const [showAnalyticsDialog, setShowAnalyticsDialog] = useState(false);
+  const [configApi, setConfigApi] = useState<any>(null);
+  const [analyticsApi, setAnalyticsApi] = useState<any>(null);
+  
   const [publishForm, setPublishForm] = useState({
     external_name: '',
     external_description: '',
@@ -155,6 +164,25 @@ const ExternalApiPublisher = () => {
   const handleStatusUpdate = (externalApiId: string, newStatus: any) => {
     console.log('🔄 Updating API status:', { externalApiId, newStatus });
     updateApiStatus({ externalApiId, status: newStatus });
+  };
+
+  const handleConfigureApi = (api: any) => {
+    setConfigApi(api);
+    setShowConfigDialog(true);
+  };
+
+  const handleViewAnalytics = (api: any) => {
+    setAnalyticsApi(api);
+    setShowAnalyticsDialog(true);
+  };
+
+  const handleRevertToDraft = (api: any) => {
+    handleStatusUpdate(api.id, 'draft');
+  };
+
+  const handleChangeVisibility = (api: any, newVisibility: string) => {
+    // This would need to be implemented in the backend to update visibility
+    console.log('Changing visibility:', api.id, newVisibility);
   };
 
   // Calculate counts - fixed logic
@@ -291,13 +319,30 @@ const ExternalApiPublisher = () => {
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        <Button size="sm" variant="outline">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleConfigureApi(api)}
+                        >
                           <Settings className="h-3 w-3 mr-1" />
                           Configure
                         </Button>
-                        <Button size="sm" variant="outline">
-                          <Eye className="h-3 w-3 mr-1" />
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleViewAnalytics(api)}
+                        >
+                          <TrendingUp className="h-3 w-3 mr-1" />
                           Analytics
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleRevertToDraft(api)}
+                          disabled={isUpdatingStatus}
+                        >
+                          <ArrowDown className="h-3 w-3 mr-1" />
+                          Revert
                         </Button>
                       </div>
                     </div>
@@ -350,7 +395,11 @@ const ExternalApiPublisher = () => {
                           <CheckCircle className="h-3 w-3 mr-1" />
                           Publish
                         </Button>
-                        <Button size="sm" variant="outline">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleConfigureApi(api)}
+                        >
                           <Edit className="h-3 w-3 mr-1" />
                           Edit
                         </Button>
@@ -622,6 +671,20 @@ const ExternalApiPublisher = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Configuration Dialog */}
+      <ExternalApiConfigDialog
+        open={showConfigDialog}
+        onOpenChange={setShowConfigDialog}
+        api={configApi}
+      />
+
+      {/* Analytics Dialog */}
+      <ExternalApiAnalyticsDialog
+        open={showAnalyticsDialog}
+        onOpenChange={setShowAnalyticsDialog}
+        api={analyticsApi}
+      />
     </div>
   );
 };
