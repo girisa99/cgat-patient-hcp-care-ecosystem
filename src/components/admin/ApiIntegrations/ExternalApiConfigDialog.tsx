@@ -55,7 +55,10 @@ const ExternalApiConfigDialog = ({ open, onOpenChange, api }: ExternalApiConfigD
               <Label>Status</Label>
               <Select 
                 value={configForm.status} 
-                onValueChange={(value) => setConfigForm(prev => ({ ...prev, status: value }))}
+                onValueChange={(value) => setConfigForm(prev => ({ 
+                  ...prev, 
+                  status: value as ExternalApiRegistry['status']
+                }))}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -72,7 +75,10 @@ const ExternalApiConfigDialog = ({ open, onOpenChange, api }: ExternalApiConfigD
               <Label>Visibility</Label>
               <Select 
                 value={configForm.visibility} 
-                onValueChange={(value) => setConfigForm(prev => ({ ...prev, visibility: value }))}
+                onValueChange={(value) => setConfigForm(prev => ({ 
+                  ...prev, 
+                  visibility: value as ExternalApiRegistry['visibility']
+                }))}
               >
                 <SelectTrigger>
                   <SelectValue />
