@@ -38,11 +38,10 @@ export class InternalApiInitializer {
         isPublic: endpoint.isPublic,
         authentication: {
           type: endpoint.authentication as any,
-          credentials: endpoint.authentication === 'bearer' 
-            ? { token: '{{jwt_token}}' }
-            : {}
+          required: endpoint.authentication !== 'none'
         },
-        documentation: `Module: ${endpoint.module}. ${endpoint.description}`,
+        parameters: endpoint.parameters || [],
+        responses: endpoint.responses || { 200: 'Success' },
         responseSchema: endpoint.responses
       })),
       schemas: SchemaAnalyzer.generateInternalSchemas(),
@@ -58,11 +57,7 @@ export class InternalApiInitializer {
         responseTime: '<200ms',
         support: '24/7 Internal Support'
       },
-      externalDocumentation: {
-        swaggerUrl: `${window.location.origin}/api/docs`,
-        apiReference: `${window.location.origin}/api/reference`,
-        examples: `${window.location.origin}/api/examples`
-      },
+      externalDocumentation: `${window.location.origin}/api/docs`,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };

@@ -54,7 +54,11 @@ export interface ApiIntegration {
   rlsPolicies: ApiRlsPolicy[];
   mappings: ApiDataMapping[];
   category?: string;
-  externalDocumentation?: string;
+  externalDocumentation?: string | {
+    swaggerUrl?: string;
+    apiReference?: string;
+    examples?: string;
+  };
   createdAt?: string;
   updatedAt?: string;
   contact?: Record<string, any>;
@@ -133,14 +137,18 @@ export type ApiEventType =
 
 export type ImpactLevel = 'low' | 'medium' | 'high' | 'critical';
 
+export type ApiLifecycleStage = 'development' | 'testing' | 'staging' | 'production' | 'deprecated';
+
 export interface PostmanCollection {
   info: {
     name: string;
     description: string;
     schema: string;
+    version?: string;
   };
   item: PostmanItem[];
   variable?: PostmanVariable[];
+  auth?: any;
 }
 
 export interface PostmanItem {
@@ -196,3 +204,7 @@ export interface PostmanVariable {
   value: string;
   type?: string;
 }
+
+// Legacy type aliases for backward compatibility
+export type DataMapping = ApiDataMapping;
+export type RLSPolicy = ApiRlsPolicy;

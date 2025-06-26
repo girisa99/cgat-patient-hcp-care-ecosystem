@@ -1,13 +1,12 @@
-
 /**
  * Data Mapping Generation Utilities for API Integrations
  */
 
-import { ApiIntegration, DataMapping } from './ApiIntegrationTypes';
+import { ApiIntegration, ApiDataMapping } from './ApiIntegrationTypes';
 
 export class DataMappingGenerator {
-  static async generateDataMappings(integration: ApiIntegration): Promise<DataMapping[]> {
-    const mappings: DataMapping[] = [];
+  static async generateDataMappings(integration: ApiIntegration): Promise<ApiDataMapping[]> {
+    const mappings: ApiDataMapping[] = [];
     
     for (const [schemaName, schema] of Object.entries(integration.schemas)) {
       if (schema.properties) {
@@ -23,7 +22,7 @@ export class DataMappingGenerator {
     return mappings;
   }
 
-  static async suggestMapping(fieldName: string, fieldSchema: any, integrationName: string): Promise<DataMapping | null> {
+  static async suggestMapping(fieldName: string, fieldSchema: any, integrationName: string): Promise<ApiDataMapping | null> {
     const tables = await this.getDatabaseTables();
     
     for (const table of tables) {
@@ -32,6 +31,9 @@ export class DataMappingGenerator {
       for (const column of columns) {
         if (this.isFieldMatch(fieldName, column.name)) {
           return {
+            internal: fieldName,
+            external: column.name,
+            type: 'field',
             sourceField: fieldName,
             targetField: column.name,
             targetTable: table,
@@ -45,7 +47,7 @@ export class DataMappingGenerator {
     return null;
   }
 
-  static async applyDataMappings(data: any, mappings: DataMapping[]): Promise<any> {
+  static async applyDataMappings(data: any, mappings: ApiDataMapping[]): Promise<any> {
     const mapped: any = {};
     
     for (const mapping of mappings) {
