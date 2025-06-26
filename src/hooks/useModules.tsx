@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuthContext } from '@/components/auth/AuthProvider';
 
 interface Module {
   id: string;
@@ -34,6 +35,7 @@ interface EffectiveModule {
 export const useModules = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { userRoles } = useAuthContext();
 
   // Get all available modules
   const {
@@ -75,7 +77,16 @@ export const useModules = () => {
 
   // Check if user has access to a specific module
   const hasModuleAccess = (moduleName: string): boolean => {
-    return userModules?.some(module => module.module_name === moduleName) || false;
+    // Super admins have access to all modules
+    if (userRoles.includes('superAdmin')) {
+      console.log('🔑 Super admin has access to all modules:', moduleName);
+      return true;
+    }
+
+    const hasAccess = userModules?.some(module => module.module_name === moduleName) || false;
+    console.log('🔍 Module access check:', moduleName, 'Access:', hasAccess);
+    console.log('🔍 User modules:', userModules?.map(m => m.module_name));
+    return hasAccess;
   };
 
   // Assign module to user

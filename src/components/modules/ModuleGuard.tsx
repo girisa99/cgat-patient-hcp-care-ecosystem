@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { useModules } from '@/hooks/useModules';
+import { useAuthContext } from '@/components/auth/AuthProvider';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Shield, AlertTriangle } from 'lucide-react';
 
@@ -18,6 +19,11 @@ const ModuleGuard: React.FC<ModuleGuardProps> = ({
   showAccessDenied = true
 }) => {
   const { hasModuleAccess, isLoadingUserModules } = useModules();
+  const { userRoles } = useAuthContext();
+
+  console.log('🛡️ ModuleGuard checking access for:', moduleName);
+  console.log('🛡️ User roles:', userRoles);
+  console.log('🛡️ Loading modules:', isLoadingUserModules);
 
   if (isLoadingUserModules) {
     return (
@@ -29,6 +35,7 @@ const ModuleGuard: React.FC<ModuleGuardProps> = ({
   }
 
   const hasAccess = hasModuleAccess(moduleName);
+  console.log('🛡️ Final access decision for', moduleName, ':', hasAccess);
 
   if (!hasAccess) {
     if (fallback) {
@@ -42,6 +49,11 @@ const ModuleGuard: React.FC<ModuleGuardProps> = ({
           <AlertDescription className="text-orange-800">
             You don't have access to the <strong>{moduleName}</strong> module. 
             Contact your administrator to request access.
+            {process.env.NODE_ENV === 'development' && (
+              <div className="mt-2 text-xs">
+                <strong>Debug:</strong> Roles: {userRoles.join(', ')}
+              </div>
+            )}
           </AlertDescription>
         </Alert>
       );
