@@ -27,7 +27,7 @@ export const useModuleTemplate = (tableName: string) => {
     queryFn: async () => {
       console.log(`🔍 Fetching ${tableName} data...`);
       
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from(tableName)
         .select('*')
         .order('created_at', { ascending: false });
@@ -49,7 +49,7 @@ export const useModuleTemplate = (tableName: string) => {
     mutationFn: async (newItem: any) => {
       console.log(`🔄 Creating new ${tableName} item:`, newItem);
       
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from(tableName)
         .insert(newItem)
         .select()
@@ -83,7 +83,7 @@ export const useModuleTemplate = (tableName: string) => {
     mutationFn: async ({ id, updates }: { id: string; updates: any }) => {
       console.log(`🔄 Updating ${tableName} item:`, id, updates);
       
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from(tableName)
         .update(updates)
         .eq('id', id)
