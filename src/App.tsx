@@ -14,6 +14,7 @@ import Settings from '@/pages/Settings';
 import Onboarding from '@/pages/Onboarding';
 import NotFound from '@/pages/NotFound';
 import Modules from '@/pages/Modules';
+import AuditLog from '@/pages/AuditLog';
 
 const queryClient = new QueryClient();
 
@@ -91,6 +92,16 @@ function App() {
                   <ProtectedRoute>
                     <DashboardLayout>
                       <Modules />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/audit-log"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout>
+                      <AuditLog />
                     </DashboardLayout>
                   </ProtectedRoute>
                 }
