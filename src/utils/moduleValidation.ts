@@ -26,7 +26,6 @@ export const validateTableExists = (tableName: string): tableName is DatabaseTab
   const validTables: DatabaseTables[] = [
     'audit_logs',
     'facilities', 
-    'feature_flags',
     'module_permissions',
     'modules',
     'permissions',
@@ -38,7 +37,22 @@ export const validateTableExists = (tableName: string): tableName is DatabaseTab
     'user_facility_access',
     'user_module_assignments',
     'user_permissions',
-    'user_roles'
+    'user_roles',
+    'api_integration_registry',
+    'api_keys',
+    'external_api_registry',
+    'external_api_endpoints',
+    'developer_portal_applications',
+    'api_usage_analytics',
+    'marketplace_listings',
+    'external_api_change_logs',
+    'api_change_tracking',
+    'api_consumption_logs',
+    'api_lifecycle_events',
+    'api_usage_logs',
+    'developer_applications',
+    'developer_notification_preferences',
+    'developer_notifications'
   ];
   
   return validTables.includes(tableName as DatabaseTables);
