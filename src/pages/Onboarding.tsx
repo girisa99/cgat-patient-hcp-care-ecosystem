@@ -28,7 +28,7 @@ const Onboarding = () => {
               <CardTitle className="flex items-center gap-2">
                 <Building2 className="h-5 w-5" />
                 Facility Onboarding
-                <Shield className="h-4 w-4 text-green-600" title="Module Protected" />
+                <Shield className="h-4 w-4 text-green-600" />
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -67,7 +67,7 @@ const Onboarding = () => {
               <CardTitle className="flex items-center gap-2">
                 <UserPlus className="h-5 w-5" />
                 User Onboarding
-                <Shield className="h-4 w-4 text-green-600" title="Module Protected" />
+                <Shield className="h-4 w-4 text-green-600" />
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
