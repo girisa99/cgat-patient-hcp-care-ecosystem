@@ -1,10 +1,11 @@
 /**
  * External API Synchronization Manager
- * Handles real-time sync between internal and external APIs
+ * Handles real-time sync between internal and external APIs using actual database schema analysis
  */
 
 import { supabase } from '@/integrations/supabase/client';
 import { externalApiManager } from './ExternalApiManager';
+import { databaseSchemaAnalyzer, DatabaseTable } from './DatabaseSchemaAnalyzer';
 import type { Json } from '@/integrations/supabase/types';
 
 export interface InternalApiEndpoint {
@@ -30,19 +31,23 @@ export interface InternalApiDetails {
   endpoints: InternalApiEndpoint[];
   security_requirements: Record<string, any>;
   rate_limits: Record<string, any>;
+  database_tables: DatabaseTable[];
+  total_tables_count: number;
+  total_rls_policies_count: number;
+  total_endpoints_count: number;
 }
 
 class ExternalApiSyncManagerClass {
   private syncInProgress = new Set<string>();
 
   /**
-   * Enhanced publishing that syncs all internal data to external tables
+   * Enhanced publishing that syncs all internal data to external tables using real database analysis
    */
   async publishWithFullSync(
     internalApiId: string,
     publishConfig: any
   ): Promise<any> {
-    console.log('🔄 Starting enhanced publish with full sync for:', internalApiId);
+    console.log('🔄 Starting REAL DATABASE SYNC for:', internalApiId);
 
     if (this.syncInProgress.has(internalApiId)) {
       console.log('⚠️ Sync already in progress for:', internalApiId);
@@ -52,49 +57,63 @@ class ExternalApiSyncManagerClass {
     this.syncInProgress.add(internalApiId);
 
     try {
-      // Step 1: Get complete internal API details
-      const internalApiDetails = await this.getInternalApiDetails(internalApiId);
-      console.log('📋 Internal API details retrieved:', {
+      // Step 1: Analyze real database schema
+      const databaseTables = await databaseSchemaAnalyzer.getAllTables();
+      console.log(`📊 Analyzed ${databaseTables.length} real database tables`);
+
+      // Step 2: Get complete internal API details with real data
+      const internalApiDetails = await this.getInternalApiDetailsWithRealData(internalApiId, databaseTables);
+      console.log('📋 Internal API details with real database:', {
         name: internalApiDetails.name,
-        endpoints: internalApiDetails.endpoints.length
+        tables: internalApiDetails.total_tables_count,
+        endpoints: internalApiDetails.total_endpoints_count,
+        rls_policies: internalApiDetails.total_rls_policies_count
       });
 
-      // Step 2: Publish the external API registry entry
+      // Step 3: Publish the external API registry entry
       const externalApi = await externalApiManager.publishInternalApi(internalApiId, publishConfig);
       console.log('✅ External API published:', externalApi.id);
 
-      // Step 3: Clear existing endpoints for this external API
+      // Step 4: Clear existing endpoints for this external API
       await this.clearExistingEndpoints(externalApi.id);
 
-      // Step 4: Sync all endpoints to external tables with retry logic
+      // Step 5: Sync ALL real endpoints to external tables
       let externalEndpoints = [];
       if (internalApiDetails.endpoints.length > 0) {
-        externalEndpoints = await this.syncEndpointsToExternalWithRetry(
+        externalEndpoints = await this.syncRealEndpointsToExternalWithRetry(
           externalApi.id,
           internalApiDetails.endpoints
         );
-        console.log(`✅ Successfully synced ${externalEndpoints.length} endpoints to external tables`);
+        console.log(`✅ Successfully synced ${externalEndpoints.length} REAL endpoints to external tables`);
       }
 
-      // Step 5: Set up real-time sync for future changes
+      // Step 6: Set up real-time sync for future changes
       await this.setupRealtimeSync(internalApiId, externalApi.id);
       console.log('✅ Real-time sync established');
 
-      // Step 6: Verify sync completion
+      // Step 7: Verify sync completion with real data
       const verificationResult = await this.verifySyncCompletion(externalApi.id);
-      console.log('🔍 Sync verification:', verificationResult);
+      console.log('🔍 Real data sync verification:', verificationResult);
 
-      // Step 7: Log the sync event for tracking
-      await this.logSyncEvent(externalApi.id, 'sync_completed', {
+      // Step 8: Log the sync event for tracking
+      await this.logSyncEvent(externalApi.id, 'real_database_sync_completed', {
+        database_tables_analyzed: databaseTables.length,
         endpoints_synced: externalEndpoints.length,
+        rls_policies_generated: internalApiDetails.total_rls_policies_count,
         verification: verificationResult
       });
 
       return {
         ...externalApi,
         synced_endpoints_count: externalEndpoints.length,
+        synced_tables_count: internalApiDetails.total_tables_count,
+        synced_rls_policies_count: internalApiDetails.total_rls_policies_count,
         sync_status: 'active',
-        verification: verificationResult
+        verification: verificationResult,
+        database_analysis: {
+          total_tables: databaseTables.length,
+          analyzed_tables: databaseTables.map(t => t.table_name)
+        }
       };
 
     } finally {
@@ -121,27 +140,27 @@ class ExternalApiSyncManagerClass {
   }
 
   /**
-   * Sync endpoints with retry logic
+   * Sync real endpoints with retry logic
    */
-  private async syncEndpointsToExternalWithRetry(
+  private async syncRealEndpointsToExternalWithRetry(
     externalApiId: string,
-    internalEndpoints: InternalApiEndpoint[],
+    realEndpoints: InternalApiEndpoint[],
     maxRetries: number = 3
   ) {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        console.log(`🔄 Sync attempt ${attempt}/${maxRetries} for ${internalEndpoints.length} endpoints`);
-        const result = await this.syncEndpointsToExternal(externalApiId, internalEndpoints);
+        console.log(`🔄 REAL SYNC attempt ${attempt}/${maxRetries} for ${realEndpoints.length} real endpoints`);
+        const result = await this.syncRealEndpointsToExternal(externalApiId, realEndpoints);
         
         // Verify the sync immediately after
-        const verifyResult = await this.verifyEndpointsSync(externalApiId, internalEndpoints.length);
+        const verifyResult = await this.verifyEndpointsSync(externalApiId, realEndpoints.length);
         if (!verifyResult.success) {
-          throw new Error(`Sync verification failed: ${verifyResult.error}`);
+          throw new Error(`Real sync verification failed: ${verifyResult.error}`);
         }
         
         return result;
       } catch (error) {
-        console.error(`❌ Sync attempt ${attempt} failed:`, error);
+        console.error(`❌ Real sync attempt ${attempt} failed:`, error);
         if (attempt === maxRetries) {
           throw error;
         }
@@ -221,9 +240,9 @@ class ExternalApiSyncManagerClass {
   }
 
   /**
-   * Get complete internal API details including endpoints
+   * Get complete internal API details including REAL database analysis
    */
-  private async getInternalApiDetails(internalApiId: string): Promise<InternalApiDetails> {
+  private async getInternalApiDetailsWithRealData(internalApiId: string, databaseTables: DatabaseTable[]): Promise<InternalApiDetails> {
     // Get the main API record
     const { data: apiData, error: apiError } = await supabase
       .from('api_integration_registry')
@@ -236,242 +255,28 @@ class ExternalApiSyncManagerClass {
       throw apiError;
     }
 
-    // Generate comprehensive mock endpoints for healthcare API
-    const mockEndpoints: InternalApiEndpoint[] = [
-      {
-        id: `${internalApiId}_patients_get`,
-        api_integration_id: internalApiId,
-        endpoint_path: '/api/v1/patients',
-        method: 'GET',
-        description: 'Retrieve paginated list of patients with optional filtering and search capabilities',
-        request_schema: {
-          type: 'object',
-          properties: {
-            page: { type: 'integer', minimum: 1, default: 1, description: 'Page number for pagination' },
-            limit: { type: 'integer', minimum: 1, maximum: 100, default: 20, description: 'Records per page' },
-            search: { type: 'string', description: 'Search by patient name, email, or ID' },
-            facility_id: { type: 'string', format: 'uuid', description: 'Filter by facility' },
-            status: { type: 'string', enum: ['active', 'inactive'], description: 'Patient status filter' }
-          }
-        },
-        response_schema: {
-          type: 'object',
-          properties: {
-            success: { type: 'boolean' },
-            data: {
-              type: 'array',
-              items: {
-                type: 'object',
-                properties: {
-                  id: { type: 'string', format: 'uuid' },
-                  first_name: { type: 'string' },
-                  last_name: { type: 'string' },
-                  email: { type: 'string', format: 'email' },
-                  phone: { type: 'string' },
-                  date_of_birth: { type: 'string', format: 'date' },
-                  facility_id: { type: 'string', format: 'uuid' },
-                  created_at: { type: 'string', format: 'date-time' },
-                  updated_at: { type: 'string', format: 'date-time' }
-                }
-              }
-            },
-            pagination: {
-              type: 'object',
-              properties: {
-                page: { type: 'integer' },
-                limit: { type: 'integer' },
-                total: { type: 'integer' },
-                pages: { type: 'integer' }
-              }
-            }
-          }
-        },
-        authentication_required: true,
-        rate_limit_config: { requests: 100, period: 'minute' },
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      },
-      {
-        id: `${internalApiId}_patients_post`,
-        api_integration_id: internalApiId,
-        endpoint_path: '/api/v1/patients',
-        method: 'POST',
-        description: 'Create a new patient record with comprehensive health information',
-        request_schema: {
-          type: 'object',
-          required: ['first_name', 'last_name', 'email', 'facility_id'],
-          properties: {
-            first_name: { type: 'string', minLength: 1, maxLength: 100 },
-            last_name: { type: 'string', minLength: 1, maxLength: 100 },
-            email: { type: 'string', format: 'email' },
-            phone: { type: 'string', pattern: '^[+]?[0-9\\s\\-\\(\\)]+$' },
-            date_of_birth: { type: 'string', format: 'date' },
-            facility_id: { type: 'string', format: 'uuid' },
-            emergency_contact: {
-              type: 'object',
-              properties: {
-                name: { type: 'string' },
-                phone: { type: 'string' },
-                relationship: { type: 'string' }
-              }
-            }
-          }
-        },
-        response_schema: {
-          type: 'object',
-          properties: {
-            success: { type: 'boolean' },
-            data: {
-              type: 'object',
-              properties: {
-                id: { type: 'string', format: 'uuid' },
-                first_name: { type: 'string' },
-                last_name: { type: 'string' },
-                email: { type: 'string' },
-                created_at: { type: 'string', format: 'date-time' }
-              }
-            },
-            message: { type: 'string' }
-          }
-        },
-        authentication_required: true,
-        rate_limit_config: { requests: 50, period: 'minute' },
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      },
-      {
-        id: `${internalApiId}_patients_by_id`,
-        api_integration_id: internalApiId,
-        endpoint_path: '/api/v1/patients/{id}',
-        method: 'GET',
-        description: 'Retrieve detailed information for a specific patient by ID',
-        request_schema: {
-          type: 'object',
-          properties: {
-            id: { type: 'string', format: 'uuid', description: 'Patient unique identifier' }
-          }
-        },
-        response_schema: {
-          type: 'object',
-          properties: {
-            success: { type: 'boolean' },
-            data: {
-              type: 'object',
-              properties: {
-                id: { type: 'string', format: 'uuid' },
-                first_name: { type: 'string' },
-                last_name: { type: 'string' },
-                email: { type: 'string' },
-                phone: { type: 'string' },
-                date_of_birth: { type: 'string', format: 'date' },
-                facility: {
-                  type: 'object',
-                  properties: {
-                    id: { type: 'string', format: 'uuid' },
-                    name: { type: 'string' },
-                    type: { type: 'string' }
-                  }
-                },
-                created_at: { type: 'string', format: 'date-time' },
-                updated_at: { type: 'string', format: 'date-time' }
-              }
-            }
-          }
-        },
-        authentication_required: true,
-        rate_limit_config: { requests: 200, period: 'minute' },
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      },
-      {
-        id: `${internalApiId}_facilities_get`,
-        api_integration_id: internalApiId,
-        endpoint_path: '/api/v1/facilities',
-        method: 'GET',
-        description: 'Get list of healthcare facilities with filtering options',
-        request_schema: {
-          type: 'object',
-          properties: {
-            type: { type: 'string', enum: ['hospital', 'clinic', 'pharmacy', 'laboratory'] },
-            active_only: { type: 'boolean', default: true },
-            page: { type: 'integer', minimum: 1, default: 1 },
-            limit: { type: 'integer', minimum: 1, maximum: 50, default: 20 }
-          }
-        },
-        response_schema: {
-          type: 'object',
-          properties: {
-            success: { type: 'boolean' },
-            data: {
-              type: 'array',
-              items: {
-                type: 'object',
-                properties: {
-                  id: { type: 'string', format: 'uuid' },
-                  name: { type: 'string' },
-                  type: { type: 'string' },
-                  address: { type: 'string' },
-                  phone: { type: 'string' },
-                  email: { type: 'string' },
-                  is_active: { type: 'boolean' }
-                }
-              }
-            }
-          }
-        },
-        authentication_required: true,
-        rate_limit_config: { requests: 150, period: 'minute' },
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      },
-      {
-        id: `${internalApiId}_users_get`,
-        api_integration_id: internalApiId,
-        endpoint_path: '/api/v1/users',
-        method: 'GET',
-        description: 'Retrieve healthcare system users with role and permission information',
-        request_schema: {
-          type: 'object',
-          properties: {
-            role: { type: 'string', enum: ['admin', 'doctor', 'nurse', 'staff'] },
-            facility_id: { type: 'string', format: 'uuid' },
-            active_only: { type: 'boolean', default: true },
-            page: { type: 'integer', minimum: 1, default: 1 },
-            limit: { type: 'integer', minimum: 1, maximum: 100, default: 25 }
-          }
-        },
-        response_schema: {
-          type: 'object',
-          properties: {
-            success: { type: 'boolean' },
-            data: {
-              type: 'array',
-              items: {
-                type: 'object',
-                properties: {
-                  id: { type: 'string', format: 'uuid' },
-                  first_name: { type: 'string' },
-                  last_name: { type: 'string' },
-                  email: { type: 'string' },
-                  roles: { type: 'array', items: { type: 'string' } },
-                  facility: {
-                    type: 'object',
-                    properties: {
-                      id: { type: 'string', format: 'uuid' },
-                      name: { type: 'string' }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        authentication_required: true,
-        rate_limit_config: { requests: 80, period: 'minute' },
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
-    ];
+    console.log(`🔍 Generating REAL endpoints from ${databaseTables.length} database tables`);
+
+    // Generate real endpoints from actual database tables
+    const realEndpointsData = databaseSchemaAnalyzer.generateEndpointsFromTables(databaseTables);
+    
+    // Convert to internal endpoint format
+    const realEndpoints: InternalApiEndpoint[] = realEndpointsData.map((endpoint, index) => ({
+      id: `${internalApiId}_${endpoint.method}_${endpoint.external_path.replace(/[^a-zA-Z0-9]/g, '_')}_${index}`,
+      api_integration_id: internalApiId,
+      endpoint_path: endpoint.external_path,
+      method: endpoint.method,
+      description: endpoint.description,
+      request_schema: endpoint.request_schema,
+      response_schema: endpoint.response_schema,
+      authentication_required: endpoint.requires_authentication,
+      rate_limit_config: { requests: 100, period: 'minute' },
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }));
+
+    // Calculate real RLS policies count
+    const totalRlsPolicies = databaseTables.reduce((sum, table) => sum + table.rls_policies.length, 0);
 
     // Convert Json types to Record<string, any> safely
     const securityRequirements = this.convertJsonToRecord(apiData.security_requirements);
@@ -483,9 +288,13 @@ class ExternalApiSyncManagerClass {
       description: apiData.description,
       version: apiData.version,
       category: apiData.category,
-      endpoints: mockEndpoints,
+      endpoints: realEndpoints,
       security_requirements: securityRequirements,
-      rate_limits: rateLimits
+      rate_limits: rateLimits,
+      database_tables: databaseTables,
+      total_tables_count: databaseTables.length,
+      total_rls_policies_count: totalRlsPolicies,
+      total_endpoints_count: realEndpoints.length
     };
   }
 
@@ -501,15 +310,15 @@ class ExternalApiSyncManagerClass {
   }
 
   /**
-   * Sync internal endpoints to external API endpoints table
+   * Sync real internal endpoints to external API endpoints table
    */
-  private async syncEndpointsToExternal(
+  private async syncRealEndpointsToExternal(
     externalApiId: string,
-    internalEndpoints: InternalApiEndpoint[]
+    realEndpoints: InternalApiEndpoint[]
   ) {
-    console.log(`🔄 Syncing ${internalEndpoints.length} endpoints to external tables`);
+    console.log(`🔄 Syncing ${realEndpoints.length} REAL endpoints to external tables`);
 
-    const externalEndpoints = internalEndpoints.map(endpoint => ({
+    const externalEndpoints = realEndpoints.map(endpoint => ({
       external_api_id: externalApiId,
       internal_endpoint_id: endpoint.id,
       external_path: endpoint.endpoint_path,
@@ -523,7 +332,7 @@ class ExternalApiSyncManagerClass {
       example_request: this.generateExampleRequest(endpoint),
       example_response: this.generateExampleResponse(endpoint),
       rate_limit_override: endpoint.rate_limit_config,
-      tags: [endpoint.method.toLowerCase(), 'auto-synced', 'healthcare'],
+      tags: [endpoint.method.toLowerCase(), 'real-database-sync', 'generated-from-schema'],
       deprecated: false
     }));
 
@@ -533,11 +342,11 @@ class ExternalApiSyncManagerClass {
       .select();
 
     if (error) {
-      console.error('❌ Error syncing endpoints:', error);
+      console.error('❌ Error syncing REAL endpoints:', error);
       throw error;
     }
 
-    console.log(`✅ Successfully synced ${data?.length || 0} endpoints`);
+    console.log(`✅ Successfully synced ${data?.length || 0} REAL endpoints`);
     return data || [];
   }
 
@@ -725,7 +534,7 @@ class ExternalApiSyncManagerClass {
   }
 
   /**
-   * Get sync status for an external API
+   * Get sync status for an external API with real data metrics
    */
   async getSyncStatus(externalApiId: string) {
     const { data: externalApi, error } = await supabase
@@ -743,20 +552,25 @@ class ExternalApiSyncManagerClass {
       .select('count')
       .eq('external_api_id', externalApiId);
 
+    // Get real database table count for comparison
+    const databaseTables = await databaseSchemaAnalyzer.getAllTables();
+
     return {
       status: 'active',
       external_api_id: externalApiId,
       internal_api_id: externalApi.internal_api_id,
       synced_endpoints: endpoints?.length || 0,
-      last_sync: externalApi.updated_at
+      database_tables_analyzed: databaseTables.length,
+      last_sync: externalApi.updated_at,
+      sync_type: 'real_database_analysis'
     };
   }
 
   /**
-   * Force refresh sync for an external API
+   * Force refresh sync using real database analysis
    */
   async forceRefreshSync(externalApiId: string) {
-    console.log('🔄 Force refreshing sync for external API:', externalApiId);
+    console.log('🔄 Force refreshing sync with REAL DATABASE ANALYSIS for external API:', externalApiId);
     
     try {
       // Get the external API info
@@ -773,17 +587,20 @@ class ExternalApiSyncManagerClass {
       // Clear existing endpoints
       await this.clearExistingEndpoints(externalApiId);
 
-      // Get internal API details and re-sync
-      const internalApiDetails = await this.getInternalApiDetails(externalApi.internal_api_id);
-      const syncedEndpoints = await this.syncEndpointsToExternal(externalApiId, internalApiDetails.endpoints);
+      // Analyze real database and re-sync
+      const databaseTables = await databaseSchemaAnalyzer.getAllTables();
+      const internalApiDetails = await this.getInternalApiDetailsWithRealData(externalApi.internal_api_id, databaseTables);
+      const syncedEndpoints = await this.syncRealEndpointsToExternal(externalApiId, internalApiDetails.endpoints);
 
-      console.log(`✅ Force refresh completed: ${syncedEndpoints.length} endpoints synced`);
+      console.log(`✅ Force refresh with REAL DATA completed: ${syncedEndpoints.length} endpoints synced from ${databaseTables.length} tables`);
       return { 
         success: true, 
-        synced_endpoints: syncedEndpoints.length 
+        synced_endpoints: syncedEndpoints.length,
+        analyzed_tables: databaseTables.length,
+        sync_type: 'real_database_analysis'
       };
     } catch (error) {
-      console.error('❌ Error during force refresh:', error);
+      console.error('❌ Error during real database force refresh:', error);
       throw error;
     }
   }
