@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,9 +23,12 @@ import {
   Eye,
   TestTube,
   Users,
-  Key
+  Key,
+  Rocket,
+  Store
 } from 'lucide-react';
 import { useApiIntegrations } from '@/hooks/useApiIntegrations';
+import { useExternalApis } from '@/hooks/useExternalApis';
 import { useRealtime } from '@/hooks/useRealtime';
 import { apiIntegrationManager } from '@/utils/api/ApiIntegrationManager';
 import { CreateIntegrationDialog } from './CreateIntegrationDialog';
@@ -34,6 +38,8 @@ import { ApiDocumentationViewer } from './ApiDocumentationViewer';
 import { ApiTestingInterface } from './ApiTestingInterface';
 import DeveloperPortal from './DeveloperPortal';
 import ApiKeyManager from './ApiKeyManager';
+import ExternalApiPublisher from './ExternalApiPublisher';
+import DeveloperApplicationsManager from './DeveloperApplicationsManager';
 import { useToast } from '@/hooks/use-toast';
 
 const ApiIntegrationsManager = () => {
@@ -47,6 +53,8 @@ const ApiIntegrationsManager = () => {
     isExecuting,
     downloadPostmanCollection
   } = useApiIntegrations();
+
+  const { marketplaceStats } = useExternalApis();
 
   // Enable real-time updates for API integrations
   useRealtime({
@@ -133,7 +141,7 @@ const ApiIntegrationsManager = () => {
         <div>
           <h2 className="text-3xl font-bold tracking-tight">API Integration Center</h2>
           <p className="text-muted-foreground">
-            Comprehensive API management with documentation, testing, and developer portal
+            Comprehensive API management, publishing, and marketplace functionality
           </p>
         </div>
         <div className="flex gap-2">
@@ -160,7 +168,7 @@ const ApiIntegrationsManager = () => {
       </div>
 
       {/* Enhanced Overview Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-8 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
@@ -216,9 +224,21 @@ const ApiIntegrationsManager = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
+              <Rocket className="h-4 w-4 text-indigo-500" />
+              <div>
+                <p className="text-2xl font-bold">{marketplaceStats?.totalPublishedApis || 0}</p>
+                <p className="text-sm text-muted-foreground">Published APIs</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
               <Users className="h-4 w-4 text-orange-500" />
               <div>
-                <p className="text-2xl font-bold">12</p>
+                <p className="text-2xl font-bold">{marketplaceStats?.approvedApplications || 0}</p>
                 <p className="text-sm text-muted-foreground">Developers</p>
               </div>
             </div>
@@ -236,11 +256,25 @@ const ApiIntegrationsManager = () => {
             </div>
           </CardContent>
         </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Store className="h-4 w-4 text-teal-500" />
+              <div>
+                <p className="text-2xl font-bold">{marketplaceStats?.approvedListings || 0}</p>
+                <p className="text-sm text-muted-foreground">Marketplace</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-8">
           <TabsTrigger value="overview">API Overview</TabsTrigger>
+          <TabsTrigger value="publisher">API Publisher</TabsTrigger>
+          <TabsTrigger value="applications">Developer Apps</TabsTrigger>
           <TabsTrigger value="monitoring">Monitoring</TabsTrigger>
           <TabsTrigger value="testing">Testing Hub</TabsTrigger>
           <TabsTrigger value="developer-portal">Developer Portal</TabsTrigger>
@@ -257,6 +291,14 @@ const ApiIntegrationsManager = () => {
             onViewDocumentation={handleViewDocumentation}
             onCopyUrl={handleCopyUrl}
           />
+        </TabsContent>
+
+        <TabsContent value="publisher" className="space-y-6">
+          <ExternalApiPublisher />
+        </TabsContent>
+
+        <TabsContent value="applications" className="space-y-6">
+          <DeveloperApplicationsManager />
         </TabsContent>
 
         <TabsContent value="monitoring" className="space-y-6">
@@ -276,7 +318,7 @@ const ApiIntegrationsManager = () => {
                       <span className="font-medium">Active Monitoring</span>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      Real-time updates enabled for all API integrations
+                      Real-time updates enabled for all API integrations and external APIs
                     </p>
                   </div>
                   
@@ -305,15 +347,15 @@ const ApiIntegrationsManager = () => {
                   <h4 className="font-medium mb-2">Latest Updates</h4>
                   <div className="space-y-2 text-sm">
                     <div className="flex items-center justify-between">
-                      <span>API schemas refreshed</span>
+                      <span>External API published</span>
                       <Badge variant="secondary">Just now</Badge>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span>RLS policies synchronized</span>
+                      <span>Developer application approved</span>
                       <Badge variant="secondary">2 mins ago</Badge>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span>Test collections updated</span>
+                      <span>API schemas refreshed</span>
                       <Badge variant="secondary">5 mins ago</Badge>
                     </div>
                   </div>
@@ -410,7 +452,7 @@ const ApiIntegrationsManager = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Globe className="h-5 w-5" />
+                <Store className="h-5 w-5" />
                 API Marketplace Strategy
               </CardTitle>
             </CardHeader>
@@ -429,7 +471,11 @@ const ApiIntegrationsManager = () => {
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge variant="secondary">✓</Badge>
-                      <span className="text-sm">Rate Limiting</span>
+                      <span className="text-sm">Developer Portal</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary">✓</Badge>
+                      <span className="text-sm">API Publishing Workflow</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge variant="outline">○</Badge>
@@ -443,34 +489,31 @@ const ApiIntegrationsManager = () => {
                 </div>
                 
                 <div className="space-y-4">
-                  <h4 className="font-medium">Recommended Process</h4>
+                  <h4 className="font-medium">Current Status</h4>
                   <div className="space-y-3 text-sm">
                     <div className="p-3 border rounded-lg">
-                      <strong>1. Beta Program</strong>
-                      <p className="text-muted-foreground">Invite selected partners to test APIs</p>
+                      <strong>Published APIs: {marketplaceStats?.totalPublishedApis || 0}</strong>
+                      <p className="text-muted-foreground">Ready for external consumption</p>
                     </div>
                     <div className="p-3 border rounded-lg">
-                      <strong>2. Module-Based Access</strong>
-                      <p className="text-muted-foreground">Different tiers for different modules</p>
+                      <strong>Developer Applications: {marketplaceStats?.totalApplications || 0}</strong>
+                      <p className="text-muted-foreground">Pending: {marketplaceStats?.pendingApplications || 0}</p>
                     </div>
                     <div className="p-3 border rounded-lg">
-                      <strong>3. Tiered Pricing</strong>
-                      <p className="text-muted-foreground">Free tier, professional, enterprise</p>
-                    </div>
-                    <div className="p-3 border rounded-lg">
-                      <strong>4. Support & SLA</strong>
-                      <p className="text-muted-foreground">Define support levels and guarantees</p>
+                      <strong>Marketplace Listings: {marketplaceStats?.approvedListings || 0}</strong>
+                      <p className="text-muted-foreground">Live marketplace entries</p>
                     </div>
                   </div>
                 </div>
               </div>
               
               <div className="p-4 bg-blue-50 rounded-lg">
-                <h4 className="font-medium mb-2">Suggested API Gateway Structure</h4>
+                <h4 className="font-medium mb-2">Next Steps</h4>
                 <div className="text-sm space-y-1">
-                  <p><strong>Sandbox:</strong> Free access with limited rate limits</p>
-                  <p><strong>Development:</strong> Higher limits for registered developers</p>
-                  <p><strong>Production:</strong> Commercial licenses with SLA guarantees</p>
+                  <p><strong>1. Beta Program:</strong> Invite selected partners to test APIs</p>
+                  <p><strong>2. SLA Definition:</strong> Define uptime and response time guarantees</p>
+                  <p><strong>3. Pricing Tiers:</strong> Implement freemium/paid tiers</p>
+                  <p><strong>4. Rate Limiting:</strong> Configure usage limits per tier</p>
                 </div>
               </div>
               

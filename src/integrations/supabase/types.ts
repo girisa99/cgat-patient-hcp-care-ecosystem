@@ -295,6 +295,75 @@ export type Database = {
           },
         ]
       }
+      api_usage_analytics: {
+        Row: {
+          api_key_id: string | null
+          country_code: string | null
+          endpoint_path: string
+          error_message: string | null
+          external_api_id: string
+          id: string
+          ip_address: unknown | null
+          method: string
+          rate_limited: boolean | null
+          request_size_bytes: number | null
+          response_size_bytes: number | null
+          response_time_ms: number | null
+          status_code: number
+          timestamp: string
+          user_agent: string | null
+        }
+        Insert: {
+          api_key_id?: string | null
+          country_code?: string | null
+          endpoint_path: string
+          error_message?: string | null
+          external_api_id: string
+          id?: string
+          ip_address?: unknown | null
+          method: string
+          rate_limited?: boolean | null
+          request_size_bytes?: number | null
+          response_size_bytes?: number | null
+          response_time_ms?: number | null
+          status_code: number
+          timestamp?: string
+          user_agent?: string | null
+        }
+        Update: {
+          api_key_id?: string | null
+          country_code?: string | null
+          endpoint_path?: string
+          error_message?: string | null
+          external_api_id?: string
+          id?: string
+          ip_address?: unknown | null
+          method?: string
+          rate_limited?: boolean | null
+          request_size_bytes?: number | null
+          response_size_bytes?: number | null
+          response_time_ms?: number | null
+          status_code?: number
+          timestamp?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_usage_analytics_api_key_id_fkey"
+            columns: ["api_key_id"]
+            isOneToOne: false
+            referencedRelation: "api_keys"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "api_usage_analytics_external_api_id_fkey"
+            columns: ["external_api_id"]
+            isOneToOne: false
+            referencedRelation: "external_api_registry"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       api_usage_logs: {
         Row: {
           api_key_id: string
@@ -495,6 +564,291 @@ export type Database = {
         }
         Relationships: []
       }
+      developer_portal_applications: {
+        Row: {
+          application_name: string
+          application_type: string
+          approval_notes: string | null
+          approved_at: string | null
+          approved_by: string | null
+          company_name: string | null
+          created_at: string
+          description: string
+          environment: string
+          id: string
+          privacy_policy_accepted: boolean | null
+          requested_apis: string[] | null
+          requested_scopes: string[] | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          terms_accepted: boolean | null
+          updated_at: string
+          use_case: string | null
+          user_id: string
+          website_url: string | null
+        }
+        Insert: {
+          application_name: string
+          application_type?: string
+          approval_notes?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          company_name?: string | null
+          created_at?: string
+          description: string
+          environment?: string
+          id?: string
+          privacy_policy_accepted?: boolean | null
+          requested_apis?: string[] | null
+          requested_scopes?: string[] | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          terms_accepted?: boolean | null
+          updated_at?: string
+          use_case?: string | null
+          user_id: string
+          website_url?: string | null
+        }
+        Update: {
+          application_name?: string
+          application_type?: string
+          approval_notes?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          company_name?: string | null
+          created_at?: string
+          description?: string
+          environment?: string
+          id?: string
+          privacy_policy_accepted?: boolean | null
+          requested_apis?: string[] | null
+          requested_scopes?: string[] | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          terms_accepted?: boolean | null
+          updated_at?: string
+          use_case?: string | null
+          user_id?: string
+          website_url?: string | null
+        }
+        Relationships: []
+      }
+      external_api_change_logs: {
+        Row: {
+          affected_endpoints: string[] | null
+          breaking_change: boolean | null
+          change_type: string
+          created_at: string
+          created_by: string | null
+          description: string
+          developer_notification_sent: boolean | null
+          external_api_id: string
+          id: string
+          migration_guide: string | null
+          title: string
+          version_from: string | null
+          version_to: string | null
+        }
+        Insert: {
+          affected_endpoints?: string[] | null
+          breaking_change?: boolean | null
+          change_type: string
+          created_at?: string
+          created_by?: string | null
+          description: string
+          developer_notification_sent?: boolean | null
+          external_api_id: string
+          id?: string
+          migration_guide?: string | null
+          title: string
+          version_from?: string | null
+          version_to?: string | null
+        }
+        Update: {
+          affected_endpoints?: string[] | null
+          breaking_change?: boolean | null
+          change_type?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          developer_notification_sent?: boolean | null
+          external_api_id?: string
+          id?: string
+          migration_guide?: string | null
+          title?: string
+          version_from?: string | null
+          version_to?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "external_api_change_logs_external_api_id_fkey"
+            columns: ["external_api_id"]
+            isOneToOne: false
+            referencedRelation: "external_api_registry"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      external_api_endpoints: {
+        Row: {
+          created_at: string
+          deprecated: boolean | null
+          deprecation_date: string | null
+          description: string | null
+          example_request: Json | null
+          example_response: Json | null
+          external_api_id: string
+          external_path: string
+          id: string
+          internal_endpoint_id: string | null
+          is_public: boolean | null
+          method: string
+          rate_limit_override: Json | null
+          request_schema: Json | null
+          requires_authentication: boolean | null
+          response_schema: Json | null
+          summary: string
+          tags: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deprecated?: boolean | null
+          deprecation_date?: string | null
+          description?: string | null
+          example_request?: Json | null
+          example_response?: Json | null
+          external_api_id: string
+          external_path: string
+          id?: string
+          internal_endpoint_id?: string | null
+          is_public?: boolean | null
+          method: string
+          rate_limit_override?: Json | null
+          request_schema?: Json | null
+          requires_authentication?: boolean | null
+          response_schema?: Json | null
+          summary: string
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deprecated?: boolean | null
+          deprecation_date?: string | null
+          description?: string | null
+          example_request?: Json | null
+          example_response?: Json | null
+          external_api_id?: string
+          external_path?: string
+          id?: string
+          internal_endpoint_id?: string | null
+          is_public?: boolean | null
+          method?: string
+          rate_limit_override?: Json | null
+          request_schema?: Json | null
+          requires_authentication?: boolean | null
+          response_schema?: Json | null
+          summary?: string
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "external_api_endpoints_external_api_id_fkey"
+            columns: ["external_api_id"]
+            isOneToOne: false
+            referencedRelation: "external_api_registry"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      external_api_registry: {
+        Row: {
+          analytics_config: Json | null
+          authentication_methods: string[] | null
+          base_url: string | null
+          created_at: string
+          created_by: string | null
+          documentation_url: string | null
+          external_description: string | null
+          external_name: string
+          id: string
+          internal_api_id: string
+          marketplace_config: Json | null
+          pricing_model: string
+          published_at: string | null
+          published_by: string | null
+          rate_limits: Json | null
+          sandbox_url: string | null
+          status: string
+          supported_formats: string[] | null
+          tags: string[] | null
+          updated_at: string
+          version: string
+          visibility: string
+        }
+        Insert: {
+          analytics_config?: Json | null
+          authentication_methods?: string[] | null
+          base_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          documentation_url?: string | null
+          external_description?: string | null
+          external_name: string
+          id?: string
+          internal_api_id: string
+          marketplace_config?: Json | null
+          pricing_model?: string
+          published_at?: string | null
+          published_by?: string | null
+          rate_limits?: Json | null
+          sandbox_url?: string | null
+          status?: string
+          supported_formats?: string[] | null
+          tags?: string[] | null
+          updated_at?: string
+          version?: string
+          visibility?: string
+        }
+        Update: {
+          analytics_config?: Json | null
+          authentication_methods?: string[] | null
+          base_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          documentation_url?: string | null
+          external_description?: string | null
+          external_name?: string
+          id?: string
+          internal_api_id?: string
+          marketplace_config?: Json | null
+          pricing_model?: string
+          published_at?: string | null
+          published_by?: string | null
+          rate_limits?: Json | null
+          sandbox_url?: string | null
+          status?: string
+          supported_formats?: string[] | null
+          tags?: string[] | null
+          updated_at?: string
+          version?: string
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "external_api_registry_internal_api_id_fkey"
+            columns: ["internal_api_id"]
+            isOneToOne: false
+            referencedRelation: "api_integration_registry"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       facilities: {
         Row: {
           address: string | null
@@ -572,6 +926,95 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      marketplace_listings: {
+        Row: {
+          category: string
+          created_at: string
+          demo_url: string | null
+          external_api_id: string
+          featured: boolean | null
+          featured_order: number | null
+          id: string
+          is_verified: boolean | null
+          listing_status: string
+          logo_url: string | null
+          long_description: string | null
+          metrics: Json | null
+          pricing_info: Json | null
+          published_at: string | null
+          screenshots: string[] | null
+          seo_description: string | null
+          seo_keywords: string[] | null
+          short_description: string
+          subcategory: string | null
+          support_url: string | null
+          title: string
+          updated_at: string
+          verification_date: string | null
+          video_url: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          demo_url?: string | null
+          external_api_id: string
+          featured?: boolean | null
+          featured_order?: number | null
+          id?: string
+          is_verified?: boolean | null
+          listing_status?: string
+          logo_url?: string | null
+          long_description?: string | null
+          metrics?: Json | null
+          pricing_info?: Json | null
+          published_at?: string | null
+          screenshots?: string[] | null
+          seo_description?: string | null
+          seo_keywords?: string[] | null
+          short_description: string
+          subcategory?: string | null
+          support_url?: string | null
+          title: string
+          updated_at?: string
+          verification_date?: string | null
+          video_url?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          demo_url?: string | null
+          external_api_id?: string
+          featured?: boolean | null
+          featured_order?: number | null
+          id?: string
+          is_verified?: boolean | null
+          listing_status?: string
+          logo_url?: string | null
+          long_description?: string | null
+          metrics?: Json | null
+          pricing_info?: Json | null
+          published_at?: string | null
+          screenshots?: string[] | null
+          seo_description?: string | null
+          seo_keywords?: string[] | null
+          short_description?: string
+          subcategory?: string | null
+          support_url?: string | null
+          title?: string
+          updated_at?: string
+          verification_date?: string | null
+          video_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_listings_external_api_id_fkey"
+            columns: ["external_api_id"]
+            isOneToOne: false
+            referencedRelation: "external_api_registry"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       module_permissions: {
         Row: {
