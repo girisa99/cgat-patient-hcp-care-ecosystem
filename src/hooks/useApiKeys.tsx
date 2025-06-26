@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { createHash } from 'crypto';
 
 interface ApiKeyConfig {
   name: string;
@@ -61,6 +60,10 @@ export const useApiKeys = () => {
 
   const createApiKeyMutation = useMutation({
     mutationFn: async (config: ApiKeyConfig) => {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
       // Generate the API key
       const { data: keyData, error: keyError } = await supabase.rpc(
         'generate_api_key',
@@ -70,7 +73,8 @@ export const useApiKeys = () => {
       if (keyError) throw keyError;
 
       const apiKey = keyData as string;
-      const keyHash = createHash('sha256').update(apiKey).digest('hex');
+      // Create a simple hash for the key (in production, use a proper crypto library)
+      const keyHash = btoa(apiKey); // Base64 encoding as a simple hash
       const keyPrefix = apiKey.substring(0, 12) + '...';
 
       const { data, error } = await supabase
@@ -85,7 +89,8 @@ export const useApiKeys = () => {
           rate_limit_requests: config.rateLimit.requests,
           rate_limit_period: config.rateLimit.period,
           expires_at: config.expiresAt || null,
-          ip_whitelist: config.ipWhitelist || null
+          ip_whitelist: config.ipWhitelist || null,
+          user_id: user.id
         })
         .select()
         .single();

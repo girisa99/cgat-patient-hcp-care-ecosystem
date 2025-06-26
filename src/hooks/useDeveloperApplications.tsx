@@ -47,13 +47,18 @@ export const useDeveloperApplications = () => {
 
   const createApplicationMutation = useMutation({
     mutationFn: async (formData: ApplicationFormData) => {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
       const { data, error } = await supabase
         .from('developer_applications')
         .insert({
           company_name: formData.companyName,
           email: formData.email,
           description: formData.description,
-          requested_modules: formData.requestedModules
+          requested_modules: formData.requestedModules,
+          user_id: user.id
         })
         .select()
         .single();
