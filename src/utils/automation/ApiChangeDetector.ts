@@ -68,38 +68,42 @@ class ApiChangeDetector {
   private async detectNewModules(): Promise<ApiChange[]> {
     const changes: ApiChange[] = [];
     
-    const { data: currentModules } = await supabase
-      .from('modules')
-      .select('*')
-      .eq('is_active', true);
+    try {
+      const { data: currentModules } = await supabase
+        .from('modules')
+        .select('*')
+        .eq('is_active', true);
 
-    const { data: trackedModules } = await supabase
-      .from('api_change_tracking' as any)
-      .select('*')
-      .eq('type', 'module');
+      const { data: trackedModules } = await supabase
+        .from('api_change_tracking')
+        .select('*')
+        .eq('type', 'module');
 
-    const trackedModuleIds = new Set((trackedModules as ApiChangeTrackingRecord[] || []).map(m => m.api_name));
+      const trackedModuleIds = new Set((trackedModules as ApiChangeTrackingRecord[] || []).map(m => m.api_name));
 
-    for (const module of currentModules || []) {
-      if (!trackedModuleIds.has(module.id)) {
-        changes.push({
-          type: 'new_module',
-          api_name: module.name,
-          module_name: module.name,
-          changes: [`New module available: ${module.name}`],
-          impact_level: 'low',
-          migration_required: false
-        });
-
-        // Track this module
-        await supabase
-          .from('api_change_tracking' as any)
-          .insert({
-            type: 'module',
-            api_name: module.id,
-            detected_at: new Date().toISOString()
+      for (const module of currentModules || []) {
+        if (!trackedModuleIds.has(module.id)) {
+          changes.push({
+            type: 'new_module',
+            api_name: module.name,
+            module_name: module.name,
+            changes: [`New module available: ${module.name}`],
+            impact_level: 'low',
+            migration_required: false
           });
+
+          // Track this module
+          await supabase
+            .from('api_change_tracking')
+            .insert({
+              type: 'module',
+              api_name: module.id,
+              detected_at: new Date().toISOString()
+            });
+        }
       }
+    } catch (error) {
+      console.error('Error detecting new modules:', error);
     }
 
     return changes;
@@ -118,36 +122,40 @@ class ApiChangeDetector {
    * Creates notifications for registered developers
    */
   private async createDeveloperNotifications(change: ApiChange) {
-    // Get all approved developers
-    const { data: developers } = await supabase
-      .from('developer_applications')
-      .select('user_id')
-      .eq('status', 'approved');
+    try {
+      // Get all approved developers
+      const { data: developers } = await supabase
+        .from('developer_applications')
+        .select('user_id')
+        .eq('status', 'approved');
 
-    if (!developers) return;
+      if (!developers) return;
 
-    const notificationTitle = this.getNotificationTitle(change);
-    const notificationMessage = this.getNotificationMessage(change);
+      const notificationTitle = this.getNotificationTitle(change);
+      const notificationMessage = this.getNotificationMessage(change);
 
-    // Create notifications for all developers
-    const notifications = developers.map(dev => ({
-      user_id: dev.user_id,
-      title: notificationTitle,
-      message: notificationMessage,
-      type: this.getNotificationType(change.type),
-      metadata: {
-        api_name: change.api_name,
-        affected_modules: change.module_name ? [change.module_name] : undefined,
-        impact_level: change.impact_level
-      },
-      is_read: false
-    }));
+      // Create notifications for all developers
+      const notifications = developers.map(dev => ({
+        user_id: dev.user_id,
+        title: notificationTitle,
+        message: notificationMessage,
+        type: this.getNotificationType(change.type),
+        metadata: {
+          api_name: change.api_name,
+          affected_modules: change.module_name ? [change.module_name] : undefined,
+          impact_level: change.impact_level
+        },
+        is_read: false
+      }));
 
-    await supabase
-      .from('developer_notifications' as any)
-      .insert(notifications);
+      await supabase
+        .from('developer_notifications')
+        .insert(notifications);
 
-    console.log(`📨 Created ${notifications.length} notifications for API change: ${change.api_name}`);
+      console.log(`📨 Created ${notifications.length} notifications for API change: ${change.api_name}`);
+    } catch (error) {
+      console.error('Error creating developer notifications:', error);
+    }
   }
 
   private getNotificationTitle(change: ApiChange): string {
