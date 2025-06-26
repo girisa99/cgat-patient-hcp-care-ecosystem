@@ -6,7 +6,8 @@
 
 import { useEffect, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { realtimeManager, RealtimeEvent } from '@/utils/realtime/RealtimeManager';
+import { realtimeManager } from '@/utils/realtime';
+import { RealtimeEvent } from '@/utils/realtime';
 import { useToast } from '@/hooks/use-toast';
 
 export interface UseRealtimeOptions {
