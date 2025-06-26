@@ -14,10 +14,22 @@ import { useBulkOperations } from '@/hooks/useBulkOperations';
 import { useAdvancedSearch } from '@/hooks/useAdvancedSearch';
 import { useMobileFeatures } from '@/hooks/useMobileFeatures';
 
+// Import dialogs for patient operations
+import { PatientViewDialog } from '@/components/admin/PatientManagement/PatientViewDialog';
+import { PatientEditDialog } from '@/components/admin/PatientManagement/PatientEditDialog';
+
 const Patients = () => {
   const { patients, isLoading, error, deactivatePatient, isDeactivating, meta } = useConsistentPatients();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Dialog states
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
+
+  // Get selected patient data
+  const selectedPatient = patients?.find(p => p.id === selectedPatientId);
 
   // Automatically enabled real-time updates
   useRealtime({
@@ -78,11 +90,9 @@ const Patients = () => {
   ) || [];
 
   const handleViewPatient = (patientId: string) => {
-    toast({
-      title: "View Patient",
-      description: "Patient details view would open here.",
-    });
-    console.log('View patient:', patientId);
+    console.log('📋 Opening patient view dialog for:', patientId);
+    setSelectedPatientId(patientId);
+    setViewDialogOpen(true);
     
     // Mobile notification if supported
     if (isNativeApp) {
@@ -91,15 +101,20 @@ const Patients = () => {
   };
 
   const handleEditPatient = (patientId: string) => {
+    console.log('✏️ Opening patient edit dialog for:', patientId);
+    setSelectedPatientId(patientId);
+    setEditDialogOpen(true);
+    
     toast({
       title: "Edit Patient",
-      description: "Patient edit form would open here.",
+      description: "Opening patient edit form...",
     });
-    console.log('Edit patient:', patientId);
   };
 
   const handleDeactivatePatient = (patientId: string, patientName: string) => {
-    if (window.confirm(`Are you sure you want to deactivate ${patientName}?`)) {
+    console.log('⚠️ Attempting to deactivate patient:', patientId, patientName);
+    
+    if (window.confirm(`Are you sure you want to deactivate ${patientName}? This action will prevent them from accessing the system.`)) {
       deactivatePatient(patientId);
     }
   };
@@ -118,6 +133,17 @@ const Patients = () => {
   const handleAdvancedSearch = (term: string) => {
     setSearchTerm(term);
     setAdvancedSearchTerm(term);
+  };
+
+  // Close dialogs
+  const handleCloseViewDialog = () => {
+    setViewDialogOpen(false);
+    setSelectedPatientId(null);
+  };
+
+  const handleCloseEditDialog = () => {
+    setEditDialogOpen(false);
+    setSelectedPatientId(null);
   };
 
   if (isLoading) {
@@ -188,6 +214,20 @@ const Patients = () => {
           Offline Mode - Changes will sync when online
         </div>
       )}
+
+      {/* Patient View Dialog */}
+      <PatientViewDialog
+        open={viewDialogOpen}
+        onClose={handleCloseViewDialog}
+        patient={selectedPatient}
+      />
+
+      {/* Patient Edit Dialog */}
+      <PatientEditDialog
+        open={editDialogOpen}
+        onClose={handleCloseEditDialog}
+        patient={selectedPatient}
+      />
     </div>
   );
 };
