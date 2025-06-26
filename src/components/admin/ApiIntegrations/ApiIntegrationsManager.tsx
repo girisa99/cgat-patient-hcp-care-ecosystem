@@ -42,42 +42,40 @@ const ApiIntegrationsManager = () => {
       </div>
 
       <Tabs defaultValue="overview" className="space-y-6">
-        <div className="overflow-x-auto">
-          <TabsList className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 w-full min-w-[600px] h-auto p-1">
-            <TabsTrigger value="overview" className="flex items-center gap-2 px-3 py-2 text-sm whitespace-nowrap">
-              <BarChart3 className="h-4 w-4 flex-shrink-0" />
-              <span className="hidden sm:inline">Overview</span>
-            </TabsTrigger>
-            <TabsTrigger value="status-checker" className="flex items-center gap-2 px-3 py-2 text-sm whitespace-nowrap">
-              <Search className="h-4 w-4 flex-shrink-0" />
-              <span className="hidden sm:inline">Status Checker</span>
-            </TabsTrigger>
-            <TabsTrigger value="publisher" className="flex items-center gap-2 px-3 py-2 text-sm whitespace-nowrap">
-              <ArrowUpCircle className="h-4 w-4 flex-shrink-0" />
-              <span className="hidden sm:inline">Publisher</span>
-              {(draftApis.length > 0 || reviewApis.length > 0) && (
-                <Badge variant="secondary" className="ml-1 flex-shrink-0">
-                  {draftApis.length + reviewApis.length}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="published" className="flex items-center gap-2 px-3 py-2 text-sm whitespace-nowrap">
-              <Globe className="h-4 w-4 flex-shrink-0" />
-              <span className="hidden sm:inline">Published APIs</span>
-              <Badge variant="outline" className="ml-1 flex-shrink-0">
-                {publishedApisForDevelopers.length}
+        <TabsList className="flex flex-wrap gap-1 h-auto p-1 bg-muted rounded-md">
+          <TabsTrigger value="overview" className="flex items-center gap-2 flex-shrink-0">
+            <BarChart3 className="h-4 w-4" />
+            Overview
+          </TabsTrigger>
+          <TabsTrigger value="status-checker" className="flex items-center gap-2 flex-shrink-0">
+            <Search className="h-4 w-4" />
+            Status Checker
+          </TabsTrigger>
+          <TabsTrigger value="publisher" className="flex items-center gap-2 flex-shrink-0">
+            <ArrowUpCircle className="h-4 w-4" />
+            Publisher
+            {(draftApis.length > 0 || reviewApis.length > 0) && (
+              <Badge variant="secondary" className="ml-1">
+                {draftApis.length + reviewApis.length}
               </Badge>
-            </TabsTrigger>
-            <TabsTrigger value="developer-portal" className="flex items-center gap-2 px-3 py-2 text-sm whitespace-nowrap">
-              <Users className="h-4 w-4 flex-shrink-0" />
-              <span className="hidden sm:inline">Developer Portal</span>
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center gap-2 px-3 py-2 text-sm whitespace-nowrap">
-              <Settings className="h-4 w-4 flex-shrink-0" />
-              <span className="hidden sm:inline">Settings</span>
-            </TabsTrigger>
-          </TabsList>
-        </div>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="published" className="flex items-center gap-2 flex-shrink-0">
+            <Globe className="h-4 w-4" />
+            Published APIs
+            <Badge variant="outline" className="ml-1">
+              {publishedApisForDevelopers.length}
+            </Badge>
+          </TabsTrigger>
+          <TabsTrigger value="developer-portal" className="flex items-center gap-2 flex-shrink-0">
+            <Users className="h-4 w-4" />
+            Developer Portal
+          </TabsTrigger>
+          <TabsTrigger value="settings" className="flex items-center gap-2 flex-shrink-0">
+            <Settings className="h-4 w-4" />
+            Settings
+          </TabsTrigger>
+        </TabsList>
 
         <TabsContent value="overview">
           <ApiOverviewDashboard />
