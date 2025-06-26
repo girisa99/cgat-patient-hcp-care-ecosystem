@@ -1,163 +1,244 @@
 
 import React, { useState } from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Shield, Settings, Users, Plus } from 'lucide-react';
+import { Zap, Settings, List, Plus } from 'lucide-react';
 import { useModules } from '@/hooks/useModules';
-import ModuleAssignmentDialog from '@/components/modules/ModuleAssignmentDialog';
-import CreateModuleDialog from '@/components/modules/CreateModuleDialog';
-import ModuleRoleAssignmentDialog from '@/components/modules/ModuleRoleAssignmentDialog';
+import { CreateModuleDialog } from '@/components/modules/CreateModuleDialog';
+import { ModuleAssignmentDialog } from '@/components/modules/ModuleAssignmentDialog';
+import { ModuleRoleAssignmentDialog } from '@/components/modules/ModuleRoleAssignmentDialog';
+import { useToast } from '@/hooks/use-toast';
+import { AutoModuleManager } from '@/components/admin/AutoModuleManager';
 
 const Modules = () => {
-  const { modules, userModules, isLoadingModules, isLoadingUserModules } = useModules();
-  const [moduleAssignmentOpen, setModuleAssignmentOpen] = useState(false);
-  const [createModuleOpen, setCreateModuleOpen] = useState(false);
-  const [roleAssignmentOpen, setRoleAssignmentOpen] = useState(false);
+  const { modules, isLoading, createModule, updateModule, deleteModule } = useModules();
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [assignmentDialogOpen, setAssignmentDialogOpen] = useState(false);
+  const [roleAssignmentDialogOpen, setRoleAssignmentDialogOpen] = useState(false);
   const [selectedModule, setSelectedModule] = useState<any>(null);
+  const { toast } = useToast();
 
-  if (isLoadingModules || isLoadingUserModules) {
+  const handleCreateModule = async (moduleData: any) => {
+    try {
+      await createModule(moduleData);
+      setCreateDialogOpen(false);
+      toast({
+        title: "Module Created",
+        description: "New module has been created successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create module.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteModule = async (moduleId: string) => {
+    try {
+      await deleteModule(moduleId);
+      toast({
+        title: "Module Deleted",
+        description: "Module has been removed successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete module.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const stats = [
+    { label: 'Total Modules', value: modules?.length || 0, color: 'blue' },
+    { label: 'Active Modules', value: modules?.filter(m => m.is_active).length || 0, color: 'green' },
+    { label: 'Inactive Modules', value: modules?.filter(m => !m.is_active).length || 0, color: 'red' },
+  ];
+
+  if (isLoading) {
     return (
-      <div className="flex justify-center items-center p-8">
+      <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
-  const handleAssignToUser = (module: any) => {
-    setSelectedModule(module);
-    setModuleAssignmentOpen(true);
-  };
-
-  const handleAssignToRole = (module: any) => {
-    setSelectedModule(module);
-    setRoleAssignmentOpen(true);
-  };
-
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Module Management</h2>
-          <p className="text-muted-foreground">
-            Manage system modules and access permissions
-          </p>
+          <h1 className="text-3xl font-bold">Module Management</h1>
+          <p className="text-gray-600">Manage application modules and their configurations</p>
         </div>
-        <Button onClick={() => setCreateModuleOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
+        <Button onClick={() => setCreateDialogOpen(true)}>
+          <Plus className="w-4 h-4 mr-2" />
           Create Module
         </Button>
       </div>
 
-      {/* Available Modules */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Settings className="h-5 w-5" />
-            Available Modules ({modules?.length || 0})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {modules?.map((module) => (
-              <Card key={module.id} className="border-2 h-full">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <CardTitle className="text-base leading-tight break-words">
-                      {module.name}
-                    </CardTitle>
-                    <Badge variant="secondary" className="shrink-0">
-                      {module.is_active ? 'Active' : 'Inactive'}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <p className="text-sm text-muted-foreground leading-relaxed min-h-[2.5rem]">
-                    {module.description || 'No description available'}
-                  </p>
-                  <div className="flex flex-col gap-2">
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      onClick={() => handleAssignToUser(module)}
-                      className="w-full"
-                    >
-                      <Users className="h-3 w-3 mr-2" />
-                      Assign to User
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      onClick={() => handleAssignToRole(module)}
-                      className="w-full"
-                    >
-                      <Shield className="h-3 w-3 mr-2" />
-                      Assign to Role
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-          {(!modules || modules.length === 0) && (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">No modules available. Create your first module to get started.</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {stats.map((stat, index) => (
+          <Card key={index}>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">{stat.label}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className={`text-2xl font-bold text-${stat.color}-600`}>
+                {stat.value}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
 
-      {/* User's Current Modules */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5" />
-            Your Active Modules ({userModules?.length || 0})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {userModules && userModules.length > 0 ? (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {userModules.map((module) => (
-                <div key={module.module_id} className="p-4 border rounded-lg space-y-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <h4 className="font-medium leading-tight break-words">{module.module_name}</h4>
-                    <Badge variant="outline" className="shrink-0">{module.source}</Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {module.module_description || 'No description available'}
-                  </p>
-                  {module.expires_at && (
-                    <p className="text-xs text-amber-600">
-                      Expires: {new Date(module.expires_at).toLocaleDateString()}
-                    </p>
-                  )}
+      {/* Tabs */}
+      <Tabs defaultValue="list" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="list">
+            <List className="w-4 h-4 mr-2" />
+            Module List
+          </TabsTrigger>
+          <TabsTrigger value="auto">
+            <Zap className="w-4 h-4 mr-2" />
+            Auto Detection
+          </TabsTrigger>
+          <TabsTrigger value="settings">
+            <Settings className="w-4 h-4 mr-2" />
+            Settings
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="list">
+          <Card>
+            <CardHeader>
+              <CardTitle>All Modules</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {modules && modules.length > 0 ? (
+                <div className="space-y-4">
+                  {modules.map((module) => (
+                    <div key={module.id} className="border rounded-lg p-4">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="font-semibold text-lg">{module.name}</h3>
+                          <p className="text-sm text-gray-600 mt-1">{module.description}</p>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Badge variant={module.is_active ? "default" : "secondary"}>
+                            {module.is_active ? "Active" : "Inactive"}
+                          </Badge>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedModule(module);
+                              setAssignmentDialogOpen(true);
+                            }}
+                          >
+                            Assign Users
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedModule(module);
+                              setRoleAssignmentDialogOpen(true);
+                            }}
+                          >
+                            Assign Roles
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleDeleteModule(module.id)}
+                          >
+                            Delete
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-muted-foreground">No modules currently assigned to you.</p>
-          )}
-        </CardContent>
-      </Card>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  No modules found. Create your first module to get started.
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="auto">
+          <AutoModuleManager />
+        </TabsContent>
+
+        <TabsContent value="settings">
+          <Card>
+            <CardHeader>
+              <CardTitle>Module Settings</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="font-medium">Auto-Registration</h3>
+                    <p className="text-sm text-gray-600">Automatically register new modules when detected</p>
+                  </div>
+                  <Button variant="outline" size="sm">
+                    Configure
+                  </Button>
+                </div>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="font-medium">Code Generation</h3>
+                    <p className="text-sm text-gray-600">Generate boilerplate code for new modules</p>
+                  </div>
+                  <Button variant="outline" size="sm">
+                    Configure
+                  </Button>
+                </div>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="font-medium">Schema Validation</h3>
+                    <p className="text-sm text-gray-600">Validate module configurations against database schema</p>
+                  </div>
+                  <Button variant="outline" size="sm">
+                    Configure
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       {/* Dialogs */}
-      <ModuleAssignmentDialog
-        open={moduleAssignmentOpen}
-        onOpenChange={setModuleAssignmentOpen}
-        selectedModule={selectedModule}
-      />
-
       <CreateModuleDialog
-        open={createModuleOpen}
-        onOpenChange={setCreateModuleOpen}
+        open={createDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        onSubmit={handleCreateModule}
       />
-
-      <ModuleRoleAssignmentDialog
-        open={roleAssignmentOpen}
-        onOpenChange={setRoleAssignmentOpen}
-        selectedModule={selectedModule}
-      />
+      
+      {selectedModule && (
+        <>
+          <ModuleAssignmentDialog
+            open={assignmentDialogOpen}
+            onOpenChange={setAssignmentDialogOpen}
+            module={selectedModule}
+          />
+          <ModuleRoleAssignmentDialog
+            open={roleAssignmentDialogOpen}
+            onOpenChange={setRoleAssignmentDialogOpen}
+            module={selectedModule}
+          />
+        </>
+      )}
     </div>
   );
 };
