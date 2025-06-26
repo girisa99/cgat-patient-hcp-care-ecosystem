@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,7 +20,9 @@ import {
   Copy,
   Share,
   Eye,
-  TestTube
+  TestTube,
+  Users,
+  Key
 } from 'lucide-react';
 import { useApiIntegrations } from '@/hooks/useApiIntegrations';
 import { useRealtime } from '@/hooks/useRealtime';
@@ -31,6 +32,8 @@ import { IntegrationDetailView } from './IntegrationDetailView';
 import { ApiOverviewSection } from './ApiOverviewSection';
 import { ApiDocumentationViewer } from './ApiDocumentationViewer';
 import { ApiTestingInterface } from './ApiTestingInterface';
+import DeveloperPortal from './DeveloperPortal';
+import ApiKeyManager from './ApiKeyManager';
 import { useToast } from '@/hooks/use-toast';
 
 const ApiIntegrationsManager = () => {
@@ -130,7 +133,7 @@ const ApiIntegrationsManager = () => {
         <div>
           <h2 className="text-3xl font-bold tracking-tight">API Integration Center</h2>
           <p className="text-muted-foreground">
-            Comprehensive API management with documentation, testing, and real-time monitoring
+            Comprehensive API management with documentation, testing, and developer portal
           </p>
         </div>
         <div className="flex gap-2">
@@ -157,7 +160,7 @@ const ApiIntegrationsManager = () => {
       </div>
 
       {/* Enhanced Overview Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
@@ -213,10 +216,22 @@ const ApiIntegrationsManager = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <TestTube className="h-4 w-4 text-orange-500" />
+              <Users className="h-4 w-4 text-orange-500" />
               <div>
-                <p className="text-2xl font-bold">{integrations?.length || 0}</p>
-                <p className="text-sm text-muted-foreground">Test Collections</p>
+                <p className="text-2xl font-bold">12</p>
+                <p className="text-sm text-muted-foreground">Developers</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Key className="h-4 w-4 text-pink-500" />
+              <div>
+                <p className="text-2xl font-bold">8</p>
+                <p className="text-sm text-muted-foreground">API Keys</p>
               </div>
             </div>
           </CardContent>
@@ -224,10 +239,13 @@ const ApiIntegrationsManager = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview">API Overview</TabsTrigger>
-          <TabsTrigger value="monitoring">Real-time Monitoring</TabsTrigger>
+          <TabsTrigger value="monitoring">Monitoring</TabsTrigger>
           <TabsTrigger value="testing">Testing Hub</TabsTrigger>
+          <TabsTrigger value="developer-portal">Developer Portal</TabsTrigger>
+          <TabsTrigger value="api-keys">API Keys</TabsTrigger>
+          <TabsTrigger value="marketplace">Marketplace</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -375,6 +393,100 @@ const ApiIntegrationsManager = () => {
                     </Button>
                   </div>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="developer-portal" className="space-y-6">
+          <DeveloperPortal />
+        </TabsContent>
+
+        <TabsContent value="api-keys" className="space-y-6">
+          <ApiKeyManager />
+        </TabsContent>
+
+        <TabsContent value="marketplace" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Globe className="h-5 w-5" />
+                API Marketplace Strategy
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <h4 className="font-medium">Market Readiness Checklist</h4>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary">✓</Badge>
+                      <span className="text-sm">API Documentation Complete</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary">✓</Badge>
+                      <span className="text-sm">Authentication System</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary">✓</Badge>
+                      <span className="text-sm">Rate Limiting</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline">○</Badge>
+                      <span className="text-sm">SLA Definitions</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline">○</Badge>
+                      <span className="text-sm">Pricing Model</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  <h4 className="font-medium">Recommended Process</h4>
+                  <div className="space-y-3 text-sm">
+                    <div className="p-3 border rounded-lg">
+                      <strong>1. Beta Program</strong>
+                      <p className="text-muted-foreground">Invite selected partners to test APIs</p>
+                    </div>
+                    <div className="p-3 border rounded-lg">
+                      <strong>2. Module-Based Access</strong>
+                      <p className="text-muted-foreground">Different tiers for different modules</p>
+                    </div>
+                    <div className="p-3 border rounded-lg">
+                      <strong>3. Tiered Pricing</strong>
+                      <p className="text-muted-foreground">Free tier, professional, enterprise</p>
+                    </div>
+                    <div className="p-3 border rounded-lg">
+                      <strong>4. Support & SLA</strong>
+                      <p className="text-muted-foreground">Define support levels and guarantees</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="p-4 bg-blue-50 rounded-lg">
+                <h4 className="font-medium mb-2">Suggested API Gateway Structure</h4>
+                <div className="text-sm space-y-1">
+                  <p><strong>Sandbox:</strong> Free access with limited rate limits</p>
+                  <p><strong>Development:</strong> Higher limits for registered developers</p>
+                  <p><strong>Production:</strong> Commercial licenses with SLA guarantees</p>
+                </div>
+              </div>
+              
+              <div className="flex gap-2">
+                <Button>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Create SLA Template
+                </Button>
+                <Button variant="outline">
+                  <Settings className="h-4 w-4 mr-2" />
+                  Configure Pricing Tiers
+                </Button>
+                <Button variant="outline">
+                  <Users className="h-4 w-4 mr-2" />
+                  Launch Beta Program
+                </Button>
               </div>
             </CardContent>
           </Card>
