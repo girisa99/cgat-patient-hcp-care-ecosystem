@@ -1,10 +1,15 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Building2, UserPlus, CheckCircle, ArrowRight } from 'lucide-react';
+import CreateFacilityDialog from '@/components/facilities/CreateFacilityDialog';
+import CreateUserDialog from '@/components/users/CreateUserDialog';
 
 const Onboarding = () => {
+  const [facilityDialogOpen, setFacilityDialogOpen] = useState(false);
+  const [userDialogOpen, setUserDialogOpen] = useState(false);
+
   return (
     <div className="space-y-6">
       <div>
@@ -40,7 +45,10 @@ const Onboarding = () => {
                 Configure facility settings
               </div>
             </div>
-            <Button className="w-full">
+            <Button 
+              className="w-full"
+              onClick={() => setFacilityDialogOpen(true)}
+            >
               Start New Facility Onboarding
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
@@ -72,7 +80,10 @@ const Onboarding = () => {
                 Grant facility access
               </div>
             </div>
-            <Button className="w-full">
+            <Button 
+              className="w-full"
+              onClick={() => setUserDialogOpen(true)}
+            >
               Start User Onboarding
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
@@ -112,6 +123,17 @@ const Onboarding = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Dialogs */}
+      <CreateFacilityDialog 
+        open={facilityDialogOpen}
+        onOpenChange={setFacilityDialogOpen}
+      />
+      
+      <CreateUserDialog 
+        open={userDialogOpen}
+        onOpenChange={setUserDialogOpen}
+      />
     </div>
   );
 };
