@@ -5,13 +5,22 @@ import { Button } from '@/components/ui/button';
 import { FileText, RefreshCw, Download, Calendar } from 'lucide-react';
 import { AuditLogEntry } from './AuditLogEntry';
 import { useAuditLogs } from '@/hooks/useAuditLogs';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface AuditLogListProps {
   filters: any;
 }
 
 export const AuditLogList = ({ filters }: AuditLogListProps) => {
-  const { data, isLoading, error, refetch } = useAuditLogs(filters);
+  const queryClient = useQueryClient();
+  const { data, isLoading, error, refetch, isFetching } = useAuditLogs(filters);
+
+  const handleRefresh = async () => {
+    console.log('🔄 Manual refresh triggered');
+    // Invalidate and refetch the query
+    await queryClient.invalidateQueries({ queryKey: ['audit-logs'] });
+    refetch();
+  };
 
   const handleExport = async () => {
     console.log('🔄 Exporting audit logs...');
@@ -35,10 +44,11 @@ export const AuditLogList = ({ filters }: AuditLogListProps) => {
             <p className="text-destructive">Error loading audit logs: {error.message}</p>
             <Button
               variant="outline"
-              onClick={() => refetch()}
+              onClick={handleRefresh}
               className="mt-4"
+              disabled={isFetching}
             >
-              <RefreshCw className="h-4 w-4 mr-2" />
+              <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
               Retry
             </Button>
           </div>
@@ -68,10 +78,10 @@ export const AuditLogList = ({ filters }: AuditLogListProps) => {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => refetch()}
-              disabled={isLoading}
+              onClick={handleRefresh}
+              disabled={isLoading || isFetching}
             >
-              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`h-4 w-4 mr-2 ${(isLoading || isFetching) ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
             <Button
@@ -105,10 +115,11 @@ export const AuditLogList = ({ filters }: AuditLogListProps) => {
                 <p className="text-muted-foreground">No audit logs found for today.</p>
                 <Button
                   variant="outline"
-                  onClick={() => refetch()}
+                  onClick={handleRefresh}
                   className="mt-4"
+                  disabled={isFetching}
                 >
-                  <RefreshCw className="h-4 w-4 mr-2" />
+                  <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
                   Check Again
                 </Button>
               </div>
@@ -122,10 +133,11 @@ export const AuditLogList = ({ filters }: AuditLogListProps) => {
             </p>
             <Button
               variant="outline"
-              onClick={() => refetch()}
+              onClick={handleRefresh}
               className="mt-4"
+              disabled={isFetching}
             >
-              <RefreshCw className="h-4 w-4 mr-2" />
+              <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
           </div>
