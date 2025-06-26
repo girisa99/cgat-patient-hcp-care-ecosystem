@@ -59,8 +59,9 @@ export const useAuditLogs = (filters?: AuditLogFilters) => {
       console.log('✅ Audit logs fetched successfully:', data);
       return data;
     },
-    staleTime: 30000, // 30 seconds
-    refetchInterval: 60000, // Refetch every minute
+    staleTime: 5000, // 5 seconds - more frequent updates
+    refetchInterval: 30000, // Refetch every 30 seconds for real-time feel
+    refetchOnWindowFocus: true, // Refetch when user returns to tab
   });
 };
 
@@ -84,6 +85,7 @@ export const useAuditLogStats = () => {
 
       return data.metadata;
     },
-    staleTime: 60000, // 1 minute
+    staleTime: 30000, // 30 seconds
+    refetchInterval: 60000, // Refetch every minute
   });
 };

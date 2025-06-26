@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, RefreshCw, Download } from 'lucide-react';
+import { FileText, RefreshCw, Download, Calendar } from 'lucide-react';
 import { AuditLogEntry } from './AuditLogEntry';
 import { useAuditLogs } from '@/hooks/useAuditLogs';
 
@@ -16,6 +16,15 @@ export const AuditLogList = ({ filters }: AuditLogListProps) => {
   const handleExport = async () => {
     console.log('🔄 Exporting audit logs...');
     // TODO: Implement export functionality
+  };
+
+  const getTodayCount = () => {
+    if (!data?.data) return 0;
+    const today = new Date().toDateString();
+    return data.data.filter(log => {
+      const logDate = new Date(log.created_at).toDateString();
+      return logDate === today;
+    }).length;
   };
 
   if (error) {
@@ -52,6 +61,10 @@ export const AuditLogList = ({ filters }: AuditLogListProps) => {
             )}
           </CardTitle>
           <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+              <Calendar className="h-4 w-4" />
+              <span>Today: {getTodayCount()}</span>
+            </div>
             <Button
               variant="outline"
               size="sm"
@@ -87,10 +100,34 @@ export const AuditLogList = ({ filters }: AuditLogListProps) => {
             {data.data.map((log) => (
               <AuditLogEntry key={log.id} log={log} />
             ))}
+            {data.data.length === 0 && (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">No audit logs found for today.</p>
+                <Button
+                  variant="outline"
+                  onClick={() => refetch()}
+                  className="mt-4"
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Check Again
+                </Button>
+              </div>
+            )}
           </div>
         ) : (
           <div className="text-center py-8">
             <p className="text-muted-foreground">No audit logs found with current filters.</p>
+            <p className="text-sm text-muted-foreground mt-2">
+              Try adjusting your filters or refresh to see recent activity.
+            </p>
+            <Button
+              variant="outline"
+              onClick={() => refetch()}
+              className="mt-4"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
           </div>
         )}
       </CardContent>

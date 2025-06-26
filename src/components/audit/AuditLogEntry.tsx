@@ -39,12 +39,24 @@ export const AuditLogEntry = ({ log }: AuditLogEntryProps) => {
         return 'bg-blue-100 text-blue-800';
       case 'DELETE':
         return 'bg-red-100 text-red-800';
+      case 'PATIENT_DEACTIVATED':
+        return 'bg-orange-100 text-orange-800';
+      case 'API_INTEGRATION_CREATED':
+        return 'bg-purple-100 text-purple-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
   };
 
   const getActionDescription = (action: string, tableName: string) => {
+    // Handle special actions first
+    if (action === 'PATIENT_DEACTIVATED') {
+      return 'Patient deactivated via admin interface';
+    }
+    if (action.startsWith('API_INTEGRATION_')) {
+      return action.replace('API_INTEGRATION_', '').toLowerCase().replace('_', ' ');
+    }
+
     const tableDisplayName = tableName.replace('_', ' ').toLowerCase();
     switch (action.toUpperCase()) {
       case 'INSERT':
@@ -59,7 +71,30 @@ export const AuditLogEntry = ({ log }: AuditLogEntryProps) => {
   };
 
   const formatTimestamp = (timestamp: string) => {
-    return new Date(timestamp).toLocaleString();
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffHours = Math.abs(now.getTime() - date.getTime()) / (1000 * 60 * 60);
+    
+    // Show relative time for recent entries
+    if (diffHours < 24) {
+      const diffMinutes = Math.floor(diffHours * 60);
+      if (diffMinutes < 1) {
+        return 'Just now';
+      } else if (diffMinutes < 60) {
+        return `${diffMinutes} minute${diffMinutes > 1 ? 's' : ''} ago`;
+      } else {
+        const hours = Math.floor(diffHours);
+        return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+      }
+    }
+    
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
   };
 
   const getUserName = () => {
@@ -92,7 +127,7 @@ export const AuditLogEntry = ({ log }: AuditLogEntryProps) => {
   };
 
   return (
-    <div className="border rounded-lg p-4 space-y-3">
+    <div className="border rounded-lg p-4 space-y-3 hover:bg-gray-50 transition-colors">
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
           <Activity className="h-5 w-5 text-muted-foreground" />
