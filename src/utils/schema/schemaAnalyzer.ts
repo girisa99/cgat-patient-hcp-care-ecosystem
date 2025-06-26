@@ -1,6 +1,6 @@
 
 /**
- * Schema Analysis Utilities - Fixed Implementation
+ * Schema Analysis Utilities - Enhanced Implementation
  */
 
 import { supabase } from '@/integrations/supabase/client';
@@ -22,6 +22,10 @@ export interface SchemaAnalysis {
   hasUpdatedAt: boolean;
   hasStatus: boolean;
   hasId: boolean;
+  hasNameField: boolean;
+  hasUserReference: boolean;
+  hasEmail: boolean;
+  recordCount?: number;
 }
 
 /**
@@ -57,10 +61,28 @@ export const analyzeTable = async (tableName: string): Promise<SchemaAnalysis | 
     const hasCreatedAt = columnInfos.some(col => col.name === 'created_at');
     const hasUpdatedAt = columnInfos.some(col => col.name === 'updated_at');
     const hasStatus = columnInfos.some(col => col.name.includes('status') || col.name === 'is_active');
+    const hasNameField = columnInfos.some(col => col.name === 'name' || col.name === 'title' || col.name.includes('name'));
+    const hasUserReference = columnInfos.some(col => col.name === 'user_id' || col.name === 'created_by' || col.name === 'assigned_by');
+    const hasEmail = columnInfos.some(col => col.name === 'email');
 
-    // Determine required vs optional fields
+    // Get record count to assess table usage
+    let recordCount = 0;
+    try {
+      const { count } = await supabase
+        .from(tableName as any)
+        .select('*', { count: 'exact', head: true });
+      recordCount = count || 0;
+    } catch (e) {
+      console.log(`Could not get record count for ${tableName}`);
+    }
+
+    // Determine required vs optional fields with enhanced logic
     const requiredFields = columnInfos
-      .filter(col => !col.nullable && col.name !== 'id' && !col.name.includes('created_at') && !col.name.includes('updated_at'))
+      .filter(col => !col.nullable && 
+        col.name !== 'id' && 
+        !col.name.includes('created_at') && 
+        !col.name.includes('updated_at') &&
+        col.default === null)
       .map(col => col.name);
 
     const optionalFields = columnInfos
@@ -76,7 +98,11 @@ export const analyzeTable = async (tableName: string): Promise<SchemaAnalysis | 
       hasCreatedAt,
       hasUpdatedAt,
       hasStatus,
-      hasId
+      hasId,
+      hasNameField,
+      hasUserReference,
+      hasEmail,
+      recordCount
     };
 
     console.log(`✅ Successfully analyzed table ${tableName}:`, analysis);
@@ -89,15 +115,43 @@ export const analyzeTable = async (tableName: string): Promise<SchemaAnalysis | 
 };
 
 export const calculateConfidence = (analysis: SchemaAnalysis): number => {
-  let confidence = 0.5; // Base confidence
+  let confidence = 0.3; // Lower base confidence
   
-  // Higher confidence for tables with standard fields
-  if (analysis.hasId) confidence += 0.2;
+  // Core database structure indicators
+  if (analysis.hasId) confidence += 0.15;
   if (analysis.hasCreatedAt) confidence += 0.1;
-  if (analysis.suggestedRequiredFields.length > 0) confidence += 0.2;
-  if (analysis.hasStatus) confidence += 0.1;
+  if (analysis.hasUpdatedAt) confidence += 0.05;
   
-  return Math.min(confidence, 1.0);
+  // Business logic indicators
+  if (analysis.hasNameField) confidence += 0.15; // Name field is very important
+  if (analysis.suggestedRequiredFields.length > 0) confidence += 0.1;
+  if (analysis.hasStatus) confidence += 0.1;
+  if (analysis.hasUserReference) confidence += 0.1; // User association indicates business use
+  
+  // Data quality indicators
+  if (analysis.recordCount && analysis.recordCount > 0) confidence += 0.1; // Has actual data
+  if (analysis.hasEmail) confidence += 0.05; // Email suggests user-facing
+  
+  // Column count assessment
+  const columnCount = analysis.columns.length;
+  if (columnCount >= 5 && columnCount <= 15) confidence += 0.1; // Good range for business entities
+  else if (columnCount > 15) confidence -= 0.05; // Too complex might be system table
+  else if (columnCount < 3) confidence -= 0.1; // Too simple might be lookup table
+  
+  // Business entity name patterns
+  const businessPatterns = ['user', 'customer', 'patient', 'order', 'product', 'facility', 'module', 'role', 'permission'];
+  const tableLower = analysis.tableName.toLowerCase();
+  if (businessPatterns.some(pattern => tableLower.includes(pattern))) {
+    confidence += 0.1;
+  }
+  
+  // System table penalties
+  const systemPatterns = ['log', 'audit', 'temp', 'cache', 'session', 'token', 'key'];
+  if (systemPatterns.some(pattern => tableLower.includes(pattern))) {
+    confidence -= 0.15;
+  }
+  
+  return Math.max(0.2, Math.min(confidence, 1.0)); // Keep between 20% and 100%
 };
 
 export const toPascalCase = (str: string): string => {

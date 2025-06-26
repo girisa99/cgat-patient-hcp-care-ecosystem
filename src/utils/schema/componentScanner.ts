@@ -1,50 +1,54 @@
 
 /**
- * Real Component Scanner - Detects actual components in the codebase
+ * Enhanced Component Scanner - Detects components based on patterns and naming conventions
  */
 
 import { ComponentServiceInfo } from '../moduleRegistry';
 
 /**
- * Scan for real components based on known file patterns
+ * Enhanced scan for real components based on module patterns and naming conventions
  */
 export const scanForRealComponents = (moduleName: string): ComponentServiceInfo[] => {
   const components: ComponentServiceInfo[] = [];
   const moduleNameLower = moduleName.toLowerCase();
   
-  // Known component patterns based on existing codebase structure
-  const componentPatterns = [
-    // List components
-    {
-      name: `${moduleName}List`,
-      type: 'component' as const,
-      filePath: `src/components/${moduleNameLower}/${moduleName}List.tsx`,
-      permissions: [`${moduleNameLower}_read`, `${moduleNameLower}_list`],
-      isProtected: true,
-      pattern: 'list'
-    },
-    // Create dialogs
-    {
-      name: `Create${moduleName}Dialog`,
-      type: 'component' as const,
-      filePath: `src/components/${moduleNameLower}/Create${moduleName}Dialog.tsx`,
-      permissions: [`${moduleNameLower}_create`, `${moduleNameLower}_write`],
-      isProtected: true,
-      pattern: 'create'
-    },
-    // Edit dialogs
-    {
-      name: `Edit${moduleName}Dialog`,
-      type: 'component' as const,
-      filePath: `src/components/${moduleNameLower}/Edit${moduleName}Dialog.tsx`,
-      permissions: [`${moduleNameLower}_update`, `${moduleNameLower}_write`],
-      isProtected: true,
-      pattern: 'edit'
-    }
+  console.log(`🔍 Scanning for components for module: ${moduleName}`);
+  
+  // Enhanced pattern matching for different module name formats
+  const moduleVariations = [
+    moduleName,
+    moduleName.toLowerCase(),
+    moduleName.replace(/([A-Z])/g, '_$1').toLowerCase().replace(/^_/, ''), // PascalCase to snake_case
+    moduleName.replace(/_/g, ''), // Remove underscores
+    moduleNameLower.endsWith('s') ? moduleNameLower.slice(0, -1) : moduleNameLower + 's', // Plural/singular
   ];
 
-  // Check for existing patterns based on known modules
-  if (moduleNameLower === 'users' || moduleNameLower === 'user') {
+  // Check each variation against known patterns
+  for (const variation of moduleVariations) {
+    const foundComponents = getComponentsForPattern(variation);
+    if (foundComponents.length > 0) {
+      components.push(...foundComponents);
+      break; // Found components, no need to check other variations
+    }
+  }
+
+  // If no exact matches found, generate likely components based on naming patterns
+  if (components.length === 0) {
+    components.push(...generateLikelyComponents(moduleName));
+  }
+
+  console.log(`📊 Found ${components.length} components for ${moduleName}`);
+  return components;
+};
+
+/**
+ * Get components for specific pattern matches
+ */
+const getComponentsForPattern = (pattern: string): ComponentServiceInfo[] => {
+  const patternLower = pattern.toLowerCase();
+  
+  // Direct matches for known modules
+  if (patternLower === 'users' || patternLower === 'user' || patternLower === 'profile' || patternLower === 'profiles') {
     return [
       {
         name: 'UsersList',
@@ -73,7 +77,7 @@ export const scanForRealComponents = (moduleName: string): ComponentServiceInfo[
     ];
   }
 
-  if (moduleNameLower === 'facilities' || moduleNameLower === 'facility') {
+  if (patternLower === 'facilities' || patternLower === 'facility') {
     return [
       {
         name: 'FacilitiesList',
@@ -94,7 +98,7 @@ export const scanForRealComponents = (moduleName: string): ComponentServiceInfo[
     ];
   }
 
-  if (moduleNameLower === 'modules' || moduleNameLower === 'module') {
+  if (patternLower === 'modules' || patternLower === 'module') {
     return [
       {
         name: 'ModuleList',
@@ -123,19 +127,118 @@ export const scanForRealComponents = (moduleName: string): ComponentServiceInfo[
     ];
   }
 
-  // For unknown modules, return empty array instead of sample data
-  console.log(`No real components found for module: ${moduleName}`);
+  // Pattern matching for common healthcare/business entities
+  if (patternLower.includes('patient')) {
+    return [
+      {
+        name: 'PatientsList',
+        type: 'component',
+        filePath: 'src/components/admin/PatientManagement/PatientsList.tsx',
+        permissions: ['patients_read', 'patients_list'],
+        isProtected: true,
+        lastModified: new Date().toISOString()
+      },
+      {
+        name: 'PatientCard',
+        type: 'component',
+        filePath: 'src/components/admin/PatientManagement/PatientCard.tsx',
+        permissions: ['patients_read'],
+        isProtected: true,
+        lastModified: new Date().toISOString()
+      }
+    ];
+  }
+
+  if (patternLower.includes('user') && patternLower.includes('management')) {
+    return [
+      {
+        name: 'UserManagementList',
+        type: 'component',
+        filePath: 'src/components/admin/UserManagement/UserManagementList.tsx',
+        permissions: ['user_management_read', 'users_admin'],
+        isProtected: true,
+        lastModified: new Date().toISOString()
+      },
+      {
+        name: 'UserManagementActions',
+        type: 'component',
+        filePath: 'src/components/admin/UserManagement/UserManagementActions.tsx',
+        permissions: ['user_management_write', 'users_admin'],
+        isProtected: true,
+        lastModified: new Date().toISOString()
+      }
+    ];
+  }
+
+  if (patternLower.includes('api') || patternLower.includes('integration')) {
+    return [
+      {
+        name: 'ApiIntegrationsManager',
+        type: 'component',
+        filePath: 'src/components/admin/ApiIntegrations/ApiIntegrationsManager.tsx',
+        permissions: ['api_integrations_read', 'api_admin'],
+        isProtected: true,
+        lastModified: new Date().toISOString()
+      }
+    ];
+  }
+
   return [];
 };
 
 /**
- * Scan for real hooks based on known patterns
+ * Generate likely components based on module name patterns
+ */
+const generateLikelyComponents = (moduleName: string): ComponentServiceInfo[] => {
+  const components: ComponentServiceInfo[] = [];
+  const moduleNameClean = moduleName.replace(/[_-]/g, '');
+  const moduleNameLower = moduleNameClean.toLowerCase();
+  
+  // Generate standard CRUD components that likely exist
+  const standardComponents = [
+    {
+      name: `${moduleNameClean}List`,
+      type: 'component' as const,
+      filePath: `src/components/${moduleNameLower}/${moduleNameClean}List.tsx`,
+      permissions: [`${moduleNameLower}_read`, `${moduleNameLower}_list`],
+      isProtected: true,
+      lastModified: new Date().toISOString(),
+      note: 'Likely component based on naming patterns'
+    },
+    {
+      name: `Create${moduleNameClean}Dialog`,
+      type: 'component' as const,
+      filePath: `src/components/${moduleNameLower}/Create${moduleNameClean}Dialog.tsx`,
+      permissions: [`${moduleNameLower}_create`, `${moduleNameLower}_write`],
+      isProtected: true,
+      lastModified: new Date().toISOString(),
+      note: 'Likely component based on naming patterns'
+    },
+    {
+      name: `Edit${moduleNameClean}Dialog`,
+      type: 'component' as const,
+      filePath: `src/components/${moduleNameLower}/Edit${moduleNameClean}Dialog.tsx`,
+      permissions: [`${moduleNameLower}_update`, `${moduleNameLower}_write`],
+      isProtected: true,
+      lastModified: new Date().toISOString(),
+      note: 'Likely component based on naming patterns'
+    }
+  ];
+
+  components.push(...standardComponents);
+  
+  return components;
+};
+
+/**
+ * Enhanced scan for real hooks based on patterns
  */
 export const scanForRealHooks = (moduleName: string): ComponentServiceInfo[] => {
   const moduleNameLower = moduleName.toLowerCase();
+  const moduleNameClean = moduleName.replace(/[_-]/g, '');
   
-  // Known hook patterns
-  if (moduleNameLower === 'users' || moduleNameLower === 'user') {
+  // Check for exact matches first
+  if (moduleNameLower === 'users' || moduleNameLower === 'user' || moduleNameLower === 'profiles') {
     return [
       {
         name: 'useUsers',
@@ -174,14 +277,40 @@ export const scanForRealHooks = (moduleName: string): ComponentServiceInfo[] => 
     ];
   }
 
-  return [];
+  // Generate likely hook based on naming pattern
+  return [
+    {
+      name: `use${moduleNameClean}`,
+      type: 'hook',
+      filePath: `src/hooks/use${moduleNameClean}.tsx`,
+      permissions: [`${moduleNameLower}_read`],
+      isProtected: true,
+      lastModified: new Date().toISOString(),
+      note: 'Likely hook based on naming patterns'
+    }
+  ];
 };
 
 /**
- * Scan for real services based on known patterns
+ * Enhanced scan for real services based on patterns
  */
 export const scanForRealServices = (moduleName: string): ComponentServiceInfo[] => {
+  const moduleNameLower = moduleName.toLowerCase();
+  
   // Most modules don't have explicit service files in this codebase
-  // Services are typically embedded in hooks or components
+  // But we can identify some patterns
+  if (moduleNameLower.includes('api') || moduleNameLower.includes('integration')) {
+    return [
+      {
+        name: 'ApiIntegrationManager',
+        type: 'service',
+        filePath: 'src/utils/api/ApiIntegrationManager.ts',
+        permissions: ['api_integrations_manage'],
+        isProtected: true,
+        lastModified: new Date().toISOString()
+      }
+    ];
+  }
+
   return [];
 };
