@@ -5,6 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { RefreshCw, Database, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { Database as DatabaseType } from '@/integrations/supabase/types';
+
+type UserRole = DatabaseType['public']['Enums']['user_role'];
 
 interface HealthCheckResult {
   component: string;
@@ -36,7 +39,7 @@ const DatabaseHealthCheck = () => {
           details: rolesError
         });
       } else {
-        const expectedRoles = ['superAdmin', 'healthcareProvider', 'nurse', 'caseManager', 'onboardingTeam', 'patientCaregiver'];
+        const expectedRoles: UserRole[] = ['superAdmin', 'healthcareProvider', 'nurse', 'caseManager', 'onboardingTeam', 'patientCaregiver'];
         const existingRoles = roles?.map(r => r.name) || [];
         const missingRoles = expectedRoles.filter(role => !existingRoles.includes(role));
         
@@ -202,6 +205,28 @@ const DatabaseHealthCheck = () => {
       </CardContent>
     </Card>
   );
+};
+
+const getStatusIcon = (status: HealthCheckResult['status']) => {
+  switch (status) {
+    case 'healthy':
+      return <CheckCircle className="h-4 w-4 text-green-600" />;
+    case 'warning':
+      return <AlertCircle className="h-4 w-4 text-yellow-600" />;
+    case 'error':
+      return <XCircle className="h-4 w-4 text-red-600" />;
+  }
+};
+
+const getStatusBadge = (status: HealthCheckResult['status']) => {
+  switch (status) {
+    case 'healthy':
+      return <Badge variant="default">OK</Badge>;
+    case 'warning':
+      return <Badge variant="secondary">Warning</Badge>;
+    case 'error':
+      return <Badge variant="destructive">Error</Badge>;
+  }
 };
 
 export default DatabaseHealthCheck;
