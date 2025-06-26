@@ -1,4 +1,3 @@
-
 /**
  * Pre-Implementation Verification System
  * Systematic checklist that ensures compliance with knowledge base guidelines
@@ -8,6 +7,7 @@ import { validateTableExists, validateModuleConfig, ModuleConfig } from '@/utils
 import { moduleRegistry, RegisteredModule } from '@/utils/moduleRegistry';
 import { databaseSchemaAnalyzer } from '@/utils/api/DatabaseSchemaAnalyzer';
 import { Database } from '@/integrations/supabase/types';
+import { TemplateEnforcement, PatternEnforcementResult } from './TemplateEnforcement';
 
 type DatabaseTables = keyof Database['public']['Tables'];
 
@@ -19,6 +19,7 @@ export interface PreImplementationCheckResult {
   existingComponents: ComponentScanResult;
   typescriptValidation: TypeScriptValidationResult;
   databaseAlignment: DatabaseAlignmentResult;
+  templateEnforcement: PatternEnforcementResult;
 }
 
 export interface ComponentScanResult {
@@ -75,8 +76,12 @@ export class PreImplementationChecker {
     console.log('📋 Step 3: Checking database alignment...');
     const databaseAlignment = await this.validateDatabaseAlignment(request);
 
-    // 4. Knowledge Base Guidelines Check
-    console.log('📋 Step 4: Validating against knowledge base guidelines...');
+    // 4. Template Enforcement (NEW)
+    console.log('📋 Step 4: Enforcing template usage...');
+    const templateEnforcement = TemplateEnforcement.analyzeAndEnforce(request);
+
+    // 5. Knowledge Base Guidelines Check
+    console.log('📋 Step 5: Validating against knowledge base guidelines...');
     const guidelinesCheck = this.validateKnowledgeBaseGuidelines(request, existingComponents);
 
     // Compile results
@@ -95,13 +100,28 @@ export class PreImplementationChecker {
       issues.push(...databaseAlignment.missingTables.map(table => `Missing database table: ${table}`));
     }
 
+    // Add template enforcement violations as issues
+    if (templateEnforcement.violations.length > 0) {
+      issues.push(...templateEnforcement.violations);
+    }
+
+    // Add template enforcement recommendations
+    if (templateEnforcement.shouldUseTemplate && templateEnforcement.recommendedTemplate) {
+      recommendations.unshift(`TEMPLATE REQUIRED: Use ${templateEnforcement.recommendedTemplate.templateName}`);
+      recommendations.push(`Template Location: ${templateEnforcement.recommendedTemplate.templatePath}`);
+      recommendations.push(`Template Reason: ${templateEnforcement.recommendedTemplate.reason}`);
+    }
+
+    recommendations.push(...templateEnforcement.enforcements);
+
     const canProceed = issues.length === 0;
 
     console.log(`✅ Pre-Implementation Check Complete:`, {
       canProceed,
       issuesCount: issues.length,
       warningsCount: warnings.length,
-      recommendationsCount: recommendations.length
+      recommendationsCount: recommendations.length,
+      templateEnforced: templateEnforcement.shouldUseTemplate
     });
 
     return {
@@ -111,7 +131,8 @@ export class PreImplementationChecker {
       recommendations,
       existingComponents,
       typescriptValidation,
-      databaseAlignment
+      databaseAlignment,
+      templateEnforcement
     };
   }
 
@@ -316,17 +337,24 @@ export class PreImplementationChecker {
 
     plan.push('✅ PRE-IMPLEMENTATION CHECK PASSED');
     
+    // Add template enforcement summary
+    if (checkResult.templateEnforcement.shouldUseTemplate) {
+      plan.push('🎯 TEMPLATE ENFORCEMENT ACTIVE:');
+      const enforcementSummary = TemplateEnforcement.generateEnforcementSummary(checkResult.templateEnforcement);
+      plan.push(...enforcementSummary.map(item => `   ${item}`));
+    }
+    
     if (checkResult.warnings.length > 0) {
       plan.push('⚠️ Warnings to consider:');
       plan.push(...checkResult.warnings.map(warning => `   ⚠️ ${warning}`));
     }
 
     if (checkResult.recommendations.length > 0) {
-      plan.push('💡 Recommendations for implementation:');
+      plan.push('💡 Implementation requirements:');
       plan.push(...checkResult.recommendations.map(rec => `   💡 ${rec}`));
     }
 
-    plan.push('🚀 READY TO PROCEED WITH IMPLEMENTATION');
+    plan.push('🚀 READY TO PROCEED WITH TEMPLATE-ENFORCED IMPLEMENTATION');
     return plan;
   }
 }

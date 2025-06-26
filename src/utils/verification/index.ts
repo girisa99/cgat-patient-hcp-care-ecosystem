@@ -1,4 +1,3 @@
-
 /**
  * Pre-Implementation Verification System - Main Export
  * 
@@ -19,6 +18,10 @@ import type { ComponentInventory, HookInventory, ComponentInfo, TemplateInventor
 import { TypeScriptDatabaseValidator, validateTableSchema, ensureTypescriptDatabaseAlignment } from './TypeScriptDatabaseValidator';
 import type { TypeScriptDatabaseAlignment, TypeConflict } from './TypeScriptDatabaseValidator';
 
+// Template enforcement
+import { TemplateEnforcement, enforceTemplateUsage } from './TemplateEnforcement';
+import type { TemplateRecommendation, PatternEnforcementResult } from './TemplateEnforcement';
+
 // Export main pre-implementation checker
 export { PreImplementationChecker, validateModuleCreation, validateComponentCreation, validateHookCreation };
 export type { PreImplementationCheckResult, ComponentScanResult, TypeScriptValidationResult, DatabaseAlignmentResult };
@@ -30,6 +33,10 @@ export type { ComponentInventory, HookInventory, ComponentInfo, TemplateInventor
 // Export TypeScript-Database validator
 export { TypeScriptDatabaseValidator, validateTableSchema, ensureTypescriptDatabaseAlignment };
 export type { TypeScriptDatabaseAlignment, TypeConflict };
+
+// Export template enforcement
+export { TemplateEnforcement, enforceTemplateUsage };
+export type { TemplateRecommendation, PatternEnforcementResult };
 
 /**
  * Quick validation function - runs all pre-implementation checks
