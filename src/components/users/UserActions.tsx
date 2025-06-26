@@ -24,6 +24,11 @@ const UserActions: React.FC<UserActionsProps> = ({
     ? `${user.first_name || ''} ${user.last_name || ''}`.trim()
     : user.email;
 
+  const handleManagePermissions = () => {
+    console.log('Opening permission management for user:', user.id, userName);
+    onManagePermissions(user.id, userName);
+  };
+
   return (
     <div className="flex gap-1">
       <Button
@@ -67,8 +72,9 @@ const UserActions: React.FC<UserActionsProps> = ({
       <Button
         variant="outline"
         size="sm"
-        onClick={() => onManagePermissions(user.id, userName)}
+        onClick={handleManagePermissions}
         title="Manage Permissions"
+        className="bg-blue-50 hover:bg-blue-100 border-blue-200"
       >
         <Key className="h-3 w-3" />
       </Button>

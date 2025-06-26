@@ -36,6 +36,7 @@ const UsersList: React.FC<UsersListProps> = ({
   const [selectedUserName, setSelectedUserName] = useState<string>('');
 
   const handleManagePermissions = (userId: string, userName: string) => {
+    console.log('Managing permissions for:', userId, userName);
     setSelectedUserId(userId);
     setSelectedUserName(userName);
     setPermissionDialogOpen(true);
@@ -141,6 +142,7 @@ const UsersList: React.FC<UsersListProps> = ({
         </Table>
       </div>
 
+      {/* Permission Management Dialog */}
       <PermissionManagementDialog
         open={permissionDialogOpen}
         onOpenChange={setPermissionDialogOpen}

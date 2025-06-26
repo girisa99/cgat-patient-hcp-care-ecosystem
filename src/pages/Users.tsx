@@ -13,7 +13,7 @@ import RoleAssignmentDebugger from '@/components/users/RoleAssignmentDebugger';
 import BulkRoleAssignment from '@/components/users/BulkRoleAssignment';
 import DatabaseHealthCheck from '@/components/users/DatabaseHealthCheck';
 import { useUsers } from '@/hooks/useUsers';
-import { AlertTriangle, Bug } from 'lucide-react';
+import { AlertTriangle, Bug, Shield, Key } from 'lucide-react';
 
 const Users = () => {
   const { users, isLoading } = useUsers();
@@ -71,9 +71,43 @@ const Users = () => {
       <div>
         <h2 className="text-3xl font-bold tracking-tight">Users Management</h2>
         <p className="text-muted-foreground">
-          Manage user accounts, roles, and facility assignments
+          Manage user accounts, roles, permissions, and facility assignments
         </p>
       </div>
+
+      {/* Permission System Feature Card */}
+      <Card className="border-blue-200 bg-blue-50/50">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-blue-900">
+            <Key className="h-5 w-5" />
+            Enhanced Permission System
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3 text-sm">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <h4 className="font-medium text-blue-900">New Features Available:</h4>
+                <ul className="text-blue-800 space-y-1">
+                  <li>• Individual user permission grants</li>
+                  <li>• Role-based permission inheritance</li>
+                  <li>• Permission expiration dates</li>
+                  <li>• Granular access control</li>
+                </ul>
+              </div>
+              <div className="space-y-2">
+                <h4 className="font-medium text-blue-900">How to Use:</h4>
+                <ul className="text-blue-800 space-y-1">
+                  <li>• Click the <Key className="h-3 w-3 inline mx-1" /> button next to any user</li>
+                  <li style={{ marginLeft: '0.5rem' }}>to manage their permissions</li>
+                  <li>• View effective permissions from all sources</li>
+                  <li>• Grant or revoke individual permissions</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Database Health Check */}
       <DatabaseHealthCheck />
@@ -132,15 +166,16 @@ const Users = () => {
       {/* Role Management Instructions */}
       <Card>
         <CardHeader>
-          <CardTitle>Role Management Guide</CardTitle>
+          <CardTitle>Role & Permission Management Guide</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3 text-sm">
             <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
-              <h4 className="font-medium text-blue-900 mb-2">How to Manage User Roles:</h4>
+              <h4 className="font-medium text-blue-900 mb-2">How to Manage User Access:</h4>
               <ul className="text-blue-800 space-y-1">
                 <li><strong>Assign New Role:</strong> Click "Assign Role" next to any user to add additional roles</li>
                 <li><strong>Remove Existing Role:</strong> Click "Remove Role" next to any user to remove current roles</li>
+                <li><strong>Manage Permissions:</strong> Click the <Key className="h-3 w-3 inline mx-1" /> button to grant/revoke individual permissions</li>
                 <li><strong>Multiple Roles:</strong> Users can have multiple roles assigned simultaneously</li>
                 <li><strong>Bulk Assignment:</strong> Use the bulk assignment tool below for users without roles</li>
               </ul>
@@ -154,7 +189,10 @@ const Users = () => {
       
       <Card>
         <CardHeader>
-          <CardTitle>System Users</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5" />
+            System Users
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <UsersList
