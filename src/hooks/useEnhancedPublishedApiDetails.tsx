@@ -7,6 +7,8 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { ApiIntegrationDetails } from './usePublishedApiDetails';
 
+export { ApiIntegrationDetails } from './usePublishedApiDetails';
+
 export const useEnhancedPublishedApiDetails = () => {
   const getEnhancedApiDetails = async (apiId: string): Promise<ApiIntegrationDetails | null> => {
     console.log('🔍 ENHANCED: Fetching API details with real-time sync for:', apiId);
@@ -151,9 +153,9 @@ export const useEnhancedPublishedApiDetails = () => {
               { name: 'request_id', type: 'uuid', nullable: false, description: 'Associated request identifier', default: null },
               { name: 'endpoint_path', type: 'string', nullable: false, description: 'API endpoint path', default: null },
               { name: 'method', type: 'string', nullable: false, description: 'HTTP method used', default: null },
-              { name: 'status_code', type: 'integer', nullable: false, description: 'HTTP response status code', default: null },
+              { name: 'status_code', type: 'integer', nullable: false, description: 'HTTP response status code', default: '200' },
               { name: 'response_data', type: 'jsonb', nullable: true, description: 'Response payload data', default: null },
-              { name: 'response_time_ms', type: 'integer', nullable: true, description: 'Response time in milliseconds', default: null },
+              { name: 'response_time_ms', type: 'integer', nullable: true, description: 'Response time in milliseconds', default: '0' },
               { name: 'created_at', type: 'timestamp', nullable: false, description: 'Response timestamp', default: 'now()' }
             ],
             foreign_keys: [
@@ -170,10 +172,10 @@ export const useEnhancedPublishedApiDetails = () => {
               { name: 'id', type: 'uuid', nullable: false, description: 'Unique rate limit identifier', default: 'gen_random_uuid()' },
               { name: 'api_key_id', type: 'uuid', nullable: false, description: 'Associated API key', default: null },
               { name: 'endpoint_path', type: 'string', nullable: false, description: 'API endpoint path', default: null },
-              { name: 'requests_count', type: 'integer', nullable: false, description: 'Current request count', default: 0 },
+              { name: 'requests_count', type: 'integer', nullable: false, description: 'Current request count', default: '0' },
               { name: 'window_start', type: 'timestamp', nullable: false, description: 'Rate limit window start', default: 'now()' },
               { name: 'window_duration', type: 'interval', nullable: false, description: 'Rate limit window duration', default: '1 hour' },
-              { name: 'limit_threshold', type: 'integer', nullable: false, description: 'Maximum requests per window', default: 1000 }
+              { name: 'limit_threshold', type: 'integer', nullable: false, description: 'Maximum requests per window', default: '1000' }
             ],
             foreign_keys: [
               { column: 'api_key_id', references_table: 'api_keys', references_column: 'id' }
@@ -256,6 +258,13 @@ export const useEnhancedPublishedApiDetails = () => {
         ]
       };
 
+      // Rate limits configuration with proper type handling
+      const rateLimitsData = externalApi.rate_limits as any;
+      const defaultRequests = 1000;
+      const requestsPerHour = (rateLimitsData && typeof rateLimitsData === 'object' && rateLimitsData.requests) 
+        ? Number(rateLimitsData.requests) 
+        : defaultRequests;
+
       console.log('📊 Final enhanced external API details:', {
         api_id: externalApi.id,
         api_name: externalApi.external_name,
@@ -279,9 +288,9 @@ export const useEnhancedPublishedApiDetails = () => {
         database_schema: externalDatabaseSchema,
         security_config: enhancedSecurityConfig,
         rate_limits: {
-          requests_per_hour: externalApi.rate_limits?.requests || 1000,
-          requests_per_day: (externalApi.rate_limits?.requests || 1000) * 24,
-          burst_limit: Math.floor((externalApi.rate_limits?.requests || 1000) * 0.1),
+          requests_per_hour: requestsPerHour,
+          requests_per_day: requestsPerHour * 24,
+          burst_limit: Math.floor(requestsPerHour * 0.1),
           rate_limit_headers: ['X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset', 'X-RateLimit-Window']
         },
         architecture: enhancedArchitecture

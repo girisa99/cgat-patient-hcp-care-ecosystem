@@ -11,7 +11,7 @@ import {
   Bell,
   BookOpen,
   TestTube,
-  Sync
+  sync as Sync
 } from 'lucide-react';
 import { usePublishedApiIntegration, PublishedApiForDevelopers } from '@/hooks/usePublishedApiIntegration';
 import { useEnhancedPublishedApiDetails, ApiIntegrationDetails } from '@/hooks/useEnhancedPublishedApiDetails';
@@ -193,7 +193,7 @@ const PublishedApisSection = ({ showInDeveloperPortal = false }: PublishedApisSe
                       size="sm"
                       variant="outline"
                       onClick={() => handleNotifyDevelopers(api.id)}
-                      disabled={isNotifyingDeveloperså}
+                      disabled={isNotifyingDevelopers}
                     >
                       <Bell className="h-3 w-3" />
                     </Button>

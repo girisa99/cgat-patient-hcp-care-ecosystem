@@ -6,6 +6,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { externalApiManager } from './ExternalApiManager';
+import type { Json } from '@/integrations/supabase/types';
 
 export interface InternalApiEndpoint {
   id: string;
@@ -230,6 +231,10 @@ class ExternalApiSyncManagerClass {
       }
     ];
 
+    // Convert Json types to Record<string, any> safely
+    const securityRequirements = this.convertJsonToRecord(apiData.security_requirements);
+    const rateLimits = this.convertJsonToRecord(apiData.rate_limits);
+
     return {
       id: apiData.id,
       name: apiData.name,
@@ -237,9 +242,20 @@ class ExternalApiSyncManagerClass {
       version: apiData.version,
       category: apiData.category,
       endpoints: mockEndpoints,
-      security_requirements: apiData.security_requirements || {},
-      rate_limits: apiData.rate_limits || {}
+      security_requirements: securityRequirements,
+      rate_limits: rateLimits
     };
+  }
+
+  /**
+   * Safely convert Json type to Record<string, any>
+   */
+  private convertJsonToRecord(jsonValue: Json | null): Record<string, any> {
+    if (!jsonValue) return {};
+    if (typeof jsonValue === 'object' && !Array.isArray(jsonValue)) {
+      return jsonValue as Record<string, any>;
+    }
+    return {};
   }
 
   /**
