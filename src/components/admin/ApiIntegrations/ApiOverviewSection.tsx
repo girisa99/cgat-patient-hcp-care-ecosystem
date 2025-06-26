@@ -44,11 +44,11 @@ export const ApiOverviewSection = ({
 }: ApiOverviewSectionProps) => {
   const { toast } = useToast();
   const { updateApiStatus, isUpdatingStatus } = useExternalApis();
-  const [showConfigDialog, setShowConfigDialog] = useState(false);
-  const [showAnalyticsDialog, setShowAnalyticsDialog] = useState(false);
+  const [showConfigDialog, setShowConfigDialog] = useState<boolean>(false);
+  const [showAnalyticsDialog, setShowAnalyticsDialog] = useState<boolean>(false);
   const [configApi, setConfigApi] = useState<any>(null);
   const [analyticsApi, setAnalyticsApi] = useState<any>(null);
-  const [isDuplicateDialogOpen, setIsDuplicateDialogOpen] = useState(false);
+  const [isDuplicateDialogOpen, setIsDuplicateDialogOpen] = useState<boolean>(false);
   const [duplicateInfo, setDuplicateInfo] = useState<any>(null);
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
 
@@ -58,6 +58,7 @@ export const ApiOverviewSection = ({
     console.log('🚀 Publishing from overview:', api);
     
     try {
+      setIsProcessing(`publish-${api.id}`);
       const existingApi = await externalApiSyncManager.checkForDuplicateApi(api.id, api.name);
       
       if (existingApi) {
@@ -68,16 +69,19 @@ export const ApiOverviewSection = ({
           sourceApi: api
         });
         setIsDuplicateDialogOpen(true);
+        setIsProcessing(null);
         return;
       }
     } catch (error) {
       console.error('❌ Error checking duplicates:', error);
+      setIsProcessing(null);
     }
     
     // If no duplicate, proceed with publishing
     if (onPublishApi) {
       onPublishApi(api.id, api.name);
     }
+    setIsProcessing(null);
   };
 
   const handleDuplicateSync = async () => {
@@ -97,6 +101,11 @@ export const ApiOverviewSection = ({
       
       setIsDuplicateDialogOpen(false);
       setDuplicateInfo(null);
+      
+      // Refresh the page to show updated data
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     } catch (error: any) {
       console.error('❌ Sync failed:', error);
       toast({
@@ -139,7 +148,9 @@ export const ApiOverviewSection = ({
       });
       
       // Force a refresh of the data
-      window.location.reload();
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     } catch (error: any) {
       console.error('❌ Revert failed:', error);
       toast({
@@ -162,7 +173,9 @@ export const ApiOverviewSection = ({
       });
       
       // Force a refresh of the data
-      window.location.reload();
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     } catch (error: any) {
       console.error('❌ Cancel failed:', error);
       toast({
@@ -179,6 +192,11 @@ export const ApiOverviewSection = ({
     try {
       setIsProcessing(`status-${apiId}`);
       await updateApiStatus({ externalApiId: apiId, status: newStatus as any });
+      
+      toast({
+        title: "Status Updated",
+        description: `API status has been updated to ${newStatus}.`,
+      });
       
       // Force a refresh of the data
       setTimeout(() => {
@@ -264,7 +282,7 @@ export const ApiOverviewSection = ({
                       variant="outline"
                       onClick={() => handlePublishClick(api)}
                       className="bg-blue-50 hover:bg-blue-100"
-                      disabled={isProcessing === `publish-${api.id}`}
+                      disabled={isProcessing !== null}
                     >
                       {isProcessing === `publish-${api.id}` ? (
                         <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
@@ -282,8 +300,13 @@ export const ApiOverviewSection = ({
                         variant="outline"
                         onClick={() => handleConfigureApi(api)}
                         disabled={isProcessing !== null}
+                        className="bg-gray-50 hover:bg-gray-100"
                       >
-                        <Settings className="h-3 w-3 mr-1" />
+                        {isProcessing !== null ? (
+                          <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                        ) : (
+                          <Settings className="h-3 w-3 mr-1" />
+                        )}
                         Manage
                       </Button>
                       <Button 
@@ -291,6 +314,7 @@ export const ApiOverviewSection = ({
                         variant="outline"
                         onClick={() => handleViewAnalytics(api)}
                         disabled={isProcessing !== null}
+                        className="bg-blue-50 hover:bg-blue-100"
                       >
                         <TrendingUp className="h-3 w-3 mr-1" />
                         Analytics
@@ -301,6 +325,7 @@ export const ApiOverviewSection = ({
                             size="sm" 
                             variant="outline"
                             disabled={isProcessing !== null}
+                            className="bg-orange-50 hover:bg-orange-100"
                           >
                             {isProcessing === `revert-${api.id}` ? (
                               <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
