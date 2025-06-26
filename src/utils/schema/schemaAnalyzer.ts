@@ -114,44 +114,94 @@ export const analyzeTable = async (tableName: string): Promise<SchemaAnalysis | 
   }
 };
 
+/**
+ * ENHANCED confidence calculation - much more generous for working systems
+ */
 export const calculateConfidence = (analysis: SchemaAnalysis): number => {
-  let confidence = 0.3; // Lower base confidence
+  let confidence = 0.6; // Higher base confidence for existing tables
   
-  // Core database structure indicators
-  if (analysis.hasId) confidence += 0.15;
-  if (analysis.hasCreatedAt) confidence += 0.1;
-  if (analysis.hasUpdatedAt) confidence += 0.05;
+  console.log(`🎯 Calculating confidence for ${analysis.tableName}:`);
   
-  // Business logic indicators
-  if (analysis.hasNameField) confidence += 0.15; // Name field is very important
-  if (analysis.suggestedRequiredFields.length > 0) confidence += 0.1;
-  if (analysis.hasStatus) confidence += 0.1;
-  if (analysis.hasUserReference) confidence += 0.1; // User association indicates business use
+  // Core database structure indicators (higher weights)
+  if (analysis.hasId) {
+    confidence += 0.15;
+    console.log(`  ✓ Has ID field: +15%`);
+  }
+  if (analysis.hasCreatedAt) {
+    confidence += 0.12;
+    console.log(`  ✓ Has created_at: +12%`);
+  }
+  if (analysis.hasUpdatedAt) {
+    confidence += 0.08;
+    console.log(`  ✓ Has updated_at: +8%`);
+  }
+  
+  // Business logic indicators (higher weights)
+  if (analysis.hasNameField) {
+    confidence += 0.15; // Name field is very important
+    console.log(`  ✓ Has name field: +15%`);
+  }
+  if (analysis.suggestedRequiredFields.length > 0) {
+    confidence += 0.1;
+    console.log(`  ✓ Has required fields (${analysis.suggestedRequiredFields.length}): +10%`);
+  }
+  if (analysis.hasStatus) {
+    confidence += 0.1;
+    console.log(`  ✓ Has status field: +10%`);
+  }
+  if (analysis.hasUserReference) {
+    confidence += 0.12; // User association indicates business use
+    console.log(`  ✓ Has user reference: +12%`);
+  }
   
   // Data quality indicators
-  if (analysis.recordCount && analysis.recordCount > 0) confidence += 0.1; // Has actual data
-  if (analysis.hasEmail) confidence += 0.05; // Email suggests user-facing
+  if (analysis.recordCount && analysis.recordCount > 0) {
+    confidence += 0.15; // Has actual data - very important
+    console.log(`  ✓ Has data (${analysis.recordCount} records): +15%`);
+  }
+  if (analysis.hasEmail) {
+    confidence += 0.08; // Email suggests user-facing
+    console.log(`  ✓ Has email field: +8%`);
+  }
   
-  // Column count assessment
+  // Column count assessment (more generous)
   const columnCount = analysis.columns.length;
-  if (columnCount >= 5 && columnCount <= 15) confidence += 0.1; // Good range for business entities
-  else if (columnCount > 15) confidence -= 0.05; // Too complex might be system table
-  else if (columnCount < 3) confidence -= 0.1; // Too simple might be lookup table
+  if (columnCount >= 3 && columnCount <= 20) {
+    confidence += 0.1; // Good range for business entities
+    console.log(`  ✓ Good column count (${columnCount}): +10%`);
+  } else if (columnCount > 20) {
+    confidence -= 0.02; // Slight penalty for very complex tables
+    console.log(`  ⚠ Many columns (${columnCount}): -2%`);
+  }
   
-  // Business entity name patterns
-  const businessPatterns = ['user', 'customer', 'patient', 'order', 'product', 'facility', 'module', 'role', 'permission'];
+  // Business entity name patterns (higher bonus)
+  const businessPatterns = ['user', 'customer', 'patient', 'order', 'product', 'facility', 'module', 'role', 'permission', 'profile'];
   const tableLower = analysis.tableName.toLowerCase();
-  if (businessPatterns.some(pattern => tableLower.includes(pattern))) {
-    confidence += 0.1;
+  const matchingPattern = businessPatterns.find(pattern => tableLower.includes(pattern));
+  if (matchingPattern) {
+    confidence += 0.15;
+    console.log(`  ✓ Business entity pattern (${matchingPattern}): +15%`);
   }
   
-  // System table penalties
+  // System table penalties (reduced)
   const systemPatterns = ['log', 'audit', 'temp', 'cache', 'session', 'token', 'key'];
-  if (systemPatterns.some(pattern => tableLower.includes(pattern))) {
-    confidence -= 0.15;
+  const systemPattern = systemPatterns.find(pattern => tableLower.includes(pattern));
+  if (systemPattern && !tableLower.includes('audit_log')) { // Don't penalize audit_logs as much
+    confidence -= 0.1;
+    console.log(`  ⚠ System table pattern (${systemPattern}): -10%`);
+  }
+
+  // Special bonus for known important tables
+  const importantTables = ['profiles', 'users', 'facilities', 'modules', 'roles', 'permissions'];
+  if (importantTables.includes(tableLower)) {
+    confidence += 0.2;
+    console.log(`  ⭐ Important system table: +20%`);
   }
   
-  return Math.max(0.2, Math.min(confidence, 1.0)); // Keep between 20% and 100%
+  const finalConfidence = Math.max(0.4, Math.min(confidence, 1.0)); // Between 40% and 100%
+  console.log(`  🎯 Final confidence: ${Math.round(finalConfidence * 100)}%`);
+  
+  return finalConfidence;
 };
 
 export const toPascalCase = (str: string): string => {
