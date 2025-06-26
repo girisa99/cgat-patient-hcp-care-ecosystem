@@ -42,16 +42,27 @@ const AssignRoleDialog: React.FC<AssignRoleDialogProps> = ({
   userId,
   userName
 }) => {
-  const { assignRole, isAssigningRole } = useUsers();
+  const { assignRole, isAssigningRole, users } = useUsers();
   const [selectedRole, setSelectedRole] = useState<UserRole | ''>('');
+
+  // Find current user to show debug info
+  const currentUser = users?.find(u => u.id === userId);
+  
+  console.log('🔍 AssignRoleDialog Debug Info:');
+  console.log('  - User ID:', userId);
+  console.log('  - User Name:', userName);
+  console.log('  - Current User Data:', currentUser);
+  console.log('  - Current User Roles:', currentUser?.user_roles);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!userId || !selectedRole) {
+      console.log('❌ Missing required data for role assignment:', { userId, selectedRole });
       return;
     }
 
+    console.log('🔄 Attempting to assign role:', selectedRole, 'to user:', userId);
     assignRole({ userId, roleName: selectedRole });
     setSelectedRole('');
     onOpenChange(false);
@@ -63,6 +74,19 @@ const AssignRoleDialog: React.FC<AssignRoleDialogProps> = ({
         <DialogHeader>
           <DialogTitle>Assign Role to {userName}</DialogTitle>
         </DialogHeader>
+        
+        {/* Debug info for current user roles */}
+        {currentUser && (
+          <div className="bg-gray-100 p-3 rounded-md mb-4 text-sm">
+            <p className="font-medium">Current User Info:</p>
+            <p>ID: {currentUser.id}</p>
+            <p>Email: {currentUser.email}</p>
+            <p>Current Roles: {currentUser.user_roles?.length > 0 
+              ? currentUser.user_roles.map(ur => ur.roles.name).join(', ')
+              : 'None'
+            }</p>
+          </div>
+        )}
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
