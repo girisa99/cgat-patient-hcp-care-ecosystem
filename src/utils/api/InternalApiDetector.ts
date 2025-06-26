@@ -1,8 +1,9 @@
-
 /**
  * Detects and catalogs internal APIs within the application
  * REFINED: Only core healthcare business functions (16 critical endpoints)
  */
+
+import { ApiRlsPolicy, ApiDataMapping } from './ApiIntegrationTypes';
 
 export interface InternalEndpoint {
   name: string;
@@ -210,6 +211,7 @@ export class InternalApiDetector {
       version: '1.0.0',
       baseUrl: 'https://api.healthcare-admin.com/core',
       status: 'active' as const,
+      category: 'healthcare',
       endpoints: coreEndpoints.map(endpoint => ({
         id: `${endpoint.method.toLowerCase()}_${endpoint.path.replace(/[^a-zA-Z0-9]/g, '_')}`,
         name: endpoint.name,
@@ -226,7 +228,12 @@ export class InternalApiDetector {
         },
         parameters: endpoint.parameters || [],
         responses: endpoint.responses || { 200: 'Success' },
-        fullUrl: `https://api.healthcare-admin.com/core${endpoint.path}`
+        fullUrl: `https://api.healthcare-admin.com/core${endpoint.path}`,
+        headers: endpoint.authentication === 'bearer' ? { 'Authorization': 'Bearer {token}' } : {},
+        queryParams: endpoint.method === 'GET' && endpoint.parameters ? 
+          endpoint.parameters.reduce((acc, param) => ({ ...acc, [param]: 'value' }), {}) : {},
+        bodySchema: endpoint.method !== 'GET' && endpoint.parameters ? 
+          endpoint.parameters.reduce((acc, param) => ({ ...acc, [param]: 'string' }), {}) : undefined
       })),
       schemas: {
         HealthcareUser: {
@@ -258,16 +265,76 @@ export class InternalApiDetector {
         }
       },
       rlsPolicies: [
-        { table: 'profiles', policy: 'Users can view own profile', type: 'SELECT' },
-        { table: 'profiles', policy: 'Users can update own profile', type: 'UPDATE' },
-        { table: 'facilities', policy: 'Users can view assigned facilities', type: 'SELECT' },
-        { table: 'user_roles', policy: 'Users can view own roles', type: 'SELECT' }
-      ],
+        { 
+          table: 'profiles', 
+          policy: 'Users can view own profile', 
+          type: 'SELECT',
+          policyName: 'user_own_profile_select',
+          operation: 'SELECT',
+          tableName: 'profiles',
+          condition: 'id = auth.uid()',
+          roles: ['authenticated']
+        },
+        { 
+          table: 'profiles', 
+          policy: 'Users can update own profile', 
+          type: 'UPDATE',
+          policyName: 'user_own_profile_update',
+          operation: 'UPDATE',
+          tableName: 'profiles',
+          condition: 'id = auth.uid()',
+          roles: ['authenticated']
+        },
+        { 
+          table: 'facilities', 
+          policy: 'Users can view assigned facilities', 
+          type: 'SELECT',
+          policyName: 'user_assigned_facilities_select',
+          operation: 'SELECT',
+          tableName: 'facilities',
+          condition: 'id IN (SELECT facility_id FROM user_facility_access WHERE user_id = auth.uid())',
+          roles: ['authenticated']
+        },
+        { 
+          table: 'user_roles', 
+          policy: 'Users can view own roles', 
+          type: 'SELECT',
+          policyName: 'user_own_roles_select',
+          operation: 'SELECT',
+          tableName: 'user_roles',
+          condition: 'user_id = auth.uid()',
+          roles: ['authenticated']
+        }
+      ] as ApiRlsPolicy[],
       mappings: [
-        { internal: 'profiles', external: 'users', type: 'table' },
-        { internal: 'facilities', external: 'facilities', type: 'table' },
-        { internal: 'user_roles', external: 'roles', type: 'table' }
-      ]
+        { 
+          internal: 'profiles', 
+          external: 'users', 
+          type: 'table',
+          sourceField: 'profiles.id',
+          targetField: 'users.id',
+          targetTable: 'users',
+          transformation: 'direct'
+        },
+        { 
+          internal: 'facilities', 
+          external: 'facilities', 
+          type: 'table',
+          sourceField: 'facilities.id',
+          targetField: 'facilities.id',
+          targetTable: 'facilities',
+          transformation: 'direct'
+        },
+        { 
+          internal: 'user_roles', 
+          external: 'roles', 
+          type: 'table',
+          sourceField: 'user_roles.role_id',
+          targetField: 'roles.id',
+          targetTable: 'roles',
+          transformation: 'join'
+        }
+      ] as ApiDataMapping[]
     };
   }
 

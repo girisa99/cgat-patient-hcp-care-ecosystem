@@ -41,9 +41,18 @@ export const useApiIntegrations = () => {
     gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
+  // Mock function for registerIntegration
+  const registerIntegration = async (integration: Omit<ApiIntegration, 'id' | 'createdAt' | 'updatedAt'>) => {
+    console.log('Mock: Registering integration', integration);
+    // This would normally call an API
+    return { ...integration, id: 'mock-id', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+  };
+
   return {
     integrations,
     isLoading,
-    error
+    error,
+    registerIntegration,
+    isRegistering: false
   };
 };
