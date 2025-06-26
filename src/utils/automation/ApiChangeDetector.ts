@@ -1,25 +1,35 @@
 
 /**
- * API Change Detection and Notification System
- * Automatically detects changes in APIs and triggers notifications
+ * Enhanced API Change Detection and Notification System
+ * Works with the new API integration registry system
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import { apiIntegrationManager } from '@/utils/api/ApiIntegrationManager';
+import { ApiDirection, ApiLifecycleStage, ImpactLevel } from '@/utils/api/ApiIntegrationTypes';
 
 interface ApiChange {
-  type: 'new_endpoint' | 'modified_endpoint' | 'deprecated_endpoint' | 'new_module' | 'breaking_change';
+  type: 'new_endpoint' | 'modified_endpoint' | 'deprecated_endpoint' | 'new_module' | 'breaking_change' | 'new_integration';
   api_name: string;
+  direction?: ApiDirection;
+  lifecycle_stage?: ApiLifecycleStage;
   endpoint?: string;
   module_name?: string;
   changes: string[];
-  impact_level: 'low' | 'medium' | 'high';
+  impact_level: ImpactLevel;
   migration_required: boolean;
+  impact_assessment?: Record<string, any>;
+  migration_notes?: string;
 }
 
 interface ApiChangeTrackingRecord {
   id: string;
   type: string;
   api_name: string;
+  direction: ApiDirection | null;
+  lifecycle_stage: ApiLifecycleStage | null;
+  impact_assessment: Record<string, any> | null;
+  migration_notes: string | null;
   detected_at: string;
   created_at: string;
 }
@@ -31,7 +41,7 @@ class ApiChangeDetector {
    * Scans for API changes and triggers notifications
    */
   async detectAndNotifyChanges() {
-    console.log('🔍 Scanning for API changes...');
+    console.log('🔍 Scanning for API changes with enhanced detection...');
 
     try {
       const changes = await this.scanForChanges();
@@ -50,20 +60,144 @@ class ApiChangeDetector {
   }
 
   /**
-   * Scans database and integration registry for changes
+   * Enhanced scanning for changes using the new registry system
    */
   private async scanForChanges(): Promise<ApiChange[]> {
     const changes: ApiChange[] = [];
 
-    // Check for new modules
+    // Check for new integrations in registry
+    const newIntegrations = await this.detectNewIntegrations();
+    changes.push(...newIntegrations);
+
+    // Check for new modules (legacy support)
     const newModules = await this.detectNewModules();
     changes.push(...newModules);
+
+    // Check for lifecycle stage changes
+    const lifecycleChanges = await this.detectLifecycleChanges();
+    changes.push(...lifecycleChanges);
 
     return changes;
   }
 
   /**
-   * Detects new modules
+   * Detects new API integrations in the registry
+   */
+  private async detectNewIntegrations(): Promise<ApiChange[]> {
+    const changes: ApiChange[] = [];
+    
+    try {
+      const { data: currentIntegrations } = await supabase
+        .from('api_integration_registry')
+        .select('*')
+        .eq('status', 'active');
+
+      const { data: trackedIntegrations } = await supabase
+        .from('api_change_tracking')
+        .select('*')
+        .eq('type', 'integration');
+
+      const trackedIntegrationIds = new Set((trackedIntegrations as ApiChangeTrackingRecord[] || []).map(t => t.api_name));
+
+      for (const integration of currentIntegrations || []) {
+        if (!trackedIntegrationIds.has(integration.id)) {
+          changes.push({
+            type: 'new_integration',
+            api_name: integration.name,
+            direction: integration.direction,
+            lifecycle_stage: integration.lifecycle_stage,
+            changes: [
+              `New ${integration.direction} API integration: ${integration.name}`,
+              `Type: ${integration.type}`,
+              `Purpose: ${integration.purpose}`,
+              `Category: ${integration.category}`,
+              `Lifecycle Stage: ${integration.lifecycle_stage}`
+            ],
+            impact_level: this.calculateImpactLevel(integration),
+            migration_required: integration.lifecycle_stage === 'production',
+            impact_assessment: {
+              endpoints_count: integration.endpoints_count,
+              rls_policies_count: integration.rls_policies_count,
+              data_mappings_count: integration.data_mappings_count,
+              category: integration.category,
+              type: integration.type
+            },
+            migration_notes: integration.lifecycle_stage === 'production' 
+              ? 'This API is in production and may require integration updates.'
+              : undefined
+          });
+
+          // Track this integration
+          await supabase
+            .from('api_change_tracking')
+            .insert({
+              type: 'integration',
+              api_name: integration.id,
+              direction: integration.direction,
+              lifecycle_stage: integration.lifecycle_stage,
+              impact_assessment: {
+                endpoints_count: integration.endpoints_count,
+                category: integration.category,
+                type: integration.type
+              },
+              detected_at: new Date().toISOString()
+            });
+        }
+      }
+    } catch (error) {
+      console.error('Error detecting new integrations:', error);
+    }
+
+    return changes;
+  }
+
+  /**
+   * Detects lifecycle stage changes
+   */
+  private async detectLifecycleChanges(): Promise<ApiChange[]> {
+    const changes: ApiChange[] = [];
+    
+    try {
+      // Get recent lifecycle events that might indicate breaking changes
+      const { data: recentEvents } = await supabase
+        .from('api_lifecycle_events')
+        .select(`
+          *,
+          api_integration_registry (
+            name,
+            direction,
+            lifecycle_stage,
+            category
+          )
+        `)
+        .in('event_type', ['version_released', 'breaking_change', 'deprecated'])
+        .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()) // Last 24 hours
+        .order('created_at', { ascending: false });
+
+      for (const event of recentEvents || []) {
+        if (event.impact_level === 'high' || event.impact_level === 'critical' || event.requires_migration) {
+          changes.push({
+            type: event.event_type === 'breaking_change' ? 'breaking_change' : 'modified_endpoint',
+            api_name: (event.api_integration_registry as any)?.name || 'Unknown API',
+            direction: (event.api_integration_registry as any)?.direction,
+            lifecycle_stage: (event.api_integration_registry as any)?.lifecycle_stage,
+            changes: [event.description],
+            impact_level: event.impact_level as ImpactLevel,
+            migration_required: event.requires_migration,
+            impact_assessment: event.metadata,
+            migration_notes: event.migration_instructions
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error detecting lifecycle changes:', error);
+    }
+
+    return changes;
+  }
+
+  /**
+   * Legacy method: Detects new modules
    */
   private async detectNewModules(): Promise<ApiChange[]> {
     const changes: ApiChange[] = [];
@@ -98,6 +232,8 @@ class ApiChangeDetector {
             .insert({
               type: 'module',
               api_name: module.id,
+              direction: 'inbound', // Default for modules
+              lifecycle_stage: 'production',
               detected_at: new Date().toISOString()
             });
         }
@@ -107,6 +243,19 @@ class ApiChangeDetector {
     }
 
     return changes;
+  }
+
+  /**
+   * Calculate impact level based on integration characteristics
+   */
+  private calculateImpactLevel(integration: any): ImpactLevel {
+    if (integration.lifecycle_stage === 'production' && integration.type === 'external') {
+      return 'high';
+    }
+    if (integration.endpoints_count > 10 || integration.category === 'healthcare') {
+      return 'medium';
+    }
+    return 'low';
   }
 
   /**
@@ -142,8 +291,12 @@ class ApiChangeDetector {
         type: this.getNotificationType(change.type),
         metadata: {
           api_name: change.api_name,
+          direction: change.direction,
+          lifecycle_stage: change.lifecycle_stage,
           affected_modules: change.module_name ? [change.module_name] : undefined,
-          impact_level: change.impact_level
+          impact_level: change.impact_level,
+          migration_required: change.migration_required,
+          impact_assessment: change.impact_assessment
         },
         is_read: false
       }));
@@ -160,6 +313,8 @@ class ApiChangeDetector {
 
   private getNotificationTitle(change: ApiChange): string {
     switch (change.type) {
+      case 'new_integration':
+        return `🆕 New ${change.direction} API: ${change.api_name}`;
       case 'new_endpoint':
         return `New Endpoint Available: ${change.api_name}`;
       case 'new_module':
@@ -179,8 +334,20 @@ class ApiChangeDetector {
     const changesList = change.changes.join(', ');
     let message = `Changes detected in ${change.api_name}: ${changesList}`;
     
+    if (change.direction) {
+      message += ` (${change.direction})`;
+    }
+    
+    if (change.lifecycle_stage) {
+      message += ` [${change.lifecycle_stage}]`;
+    }
+    
     if (change.migration_required) {
       message += ' Migration may be required.';
+    }
+
+    if (change.migration_notes) {
+      message += ` Note: ${change.migration_notes}`;
     }
     
     return message;
@@ -190,6 +357,7 @@ class ApiChangeDetector {
     switch (changeType) {
       case 'new_endpoint':
       case 'new_module':
+      case 'new_integration':
         return 'new_api';
       case 'breaking_change':
         return 'breaking_change';

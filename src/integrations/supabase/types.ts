@@ -14,22 +14,171 @@ export type Database = {
           api_name: string
           created_at: string
           detected_at: string
+          direction: string | null
           id: string
+          impact_assessment: Json | null
+          lifecycle_stage: string | null
+          migration_notes: string | null
           type: string
         }
         Insert: {
           api_name: string
           created_at?: string
           detected_at?: string
+          direction?: string | null
           id?: string
+          impact_assessment?: Json | null
+          lifecycle_stage?: string | null
+          migration_notes?: string | null
           type: string
         }
         Update: {
           api_name?: string
           created_at?: string
           detected_at?: string
+          direction?: string | null
           id?: string
+          impact_assessment?: Json | null
+          lifecycle_stage?: string | null
+          migration_notes?: string | null
           type?: string
+        }
+        Relationships: []
+      }
+      api_consumption_logs: {
+        Row: {
+          api_integration_id: string
+          consumer_id: string | null
+          endpoint_path: string
+          error_details: Json | null
+          id: string
+          ip_address: unknown | null
+          method: string
+          request_size_bytes: number | null
+          request_timestamp: string
+          response_size_bytes: number | null
+          response_status: number | null
+          response_time_ms: number | null
+          user_agent: string | null
+        }
+        Insert: {
+          api_integration_id: string
+          consumer_id?: string | null
+          endpoint_path: string
+          error_details?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          method: string
+          request_size_bytes?: number | null
+          request_timestamp?: string
+          response_size_bytes?: number | null
+          response_status?: number | null
+          response_time_ms?: number | null
+          user_agent?: string | null
+        }
+        Update: {
+          api_integration_id?: string
+          consumer_id?: string | null
+          endpoint_path?: string
+          error_details?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          method?: string
+          request_size_bytes?: number | null
+          request_timestamp?: string
+          response_size_bytes?: number | null
+          response_status?: number | null
+          response_time_ms?: number | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_consumption_logs_api_integration_id_fkey"
+            columns: ["api_integration_id"]
+            isOneToOne: false
+            referencedRelation: "api_integration_registry"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      api_integration_registry: {
+        Row: {
+          base_url: string | null
+          category: string
+          contact_info: Json | null
+          created_at: string
+          created_by: string | null
+          data_mappings_count: number | null
+          description: string | null
+          direction: string
+          documentation_url: string | null
+          endpoints_count: number | null
+          id: string
+          last_modified_by: string | null
+          lifecycle_stage: string
+          name: string
+          purpose: string
+          rate_limits: Json | null
+          rls_policies_count: number | null
+          security_requirements: Json | null
+          sla_requirements: Json | null
+          status: string
+          type: string
+          updated_at: string
+          version: string
+          webhook_config: Json | null
+        }
+        Insert: {
+          base_url?: string | null
+          category: string
+          contact_info?: Json | null
+          created_at?: string
+          created_by?: string | null
+          data_mappings_count?: number | null
+          description?: string | null
+          direction: string
+          documentation_url?: string | null
+          endpoints_count?: number | null
+          id?: string
+          last_modified_by?: string | null
+          lifecycle_stage?: string
+          name: string
+          purpose: string
+          rate_limits?: Json | null
+          rls_policies_count?: number | null
+          security_requirements?: Json | null
+          sla_requirements?: Json | null
+          status?: string
+          type: string
+          updated_at?: string
+          version?: string
+          webhook_config?: Json | null
+        }
+        Update: {
+          base_url?: string | null
+          category?: string
+          contact_info?: Json | null
+          created_at?: string
+          created_by?: string | null
+          data_mappings_count?: number | null
+          description?: string | null
+          direction?: string
+          documentation_url?: string | null
+          endpoints_count?: number | null
+          id?: string
+          last_modified_by?: string | null
+          lifecycle_stage?: string
+          name?: string
+          purpose?: string
+          rate_limits?: Json | null
+          rls_policies_count?: number | null
+          security_requirements?: Json | null
+          sla_requirements?: Json | null
+          status?: string
+          type?: string
+          updated_at?: string
+          version?: string
+          webhook_config?: Json | null
         }
         Relationships: []
       }
@@ -92,6 +241,59 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      api_lifecycle_events: {
+        Row: {
+          api_integration_id: string
+          created_at: string
+          created_by: string | null
+          description: string
+          event_type: string
+          from_stage: string | null
+          id: string
+          impact_level: string
+          metadata: Json | null
+          migration_instructions: string | null
+          requires_migration: boolean | null
+          to_stage: string | null
+        }
+        Insert: {
+          api_integration_id: string
+          created_at?: string
+          created_by?: string | null
+          description: string
+          event_type: string
+          from_stage?: string | null
+          id?: string
+          impact_level?: string
+          metadata?: Json | null
+          migration_instructions?: string | null
+          requires_migration?: boolean | null
+          to_stage?: string | null
+        }
+        Update: {
+          api_integration_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          event_type?: string
+          from_stage?: string | null
+          id?: string
+          impact_level?: string
+          metadata?: Json | null
+          migration_instructions?: string | null
+          requires_migration?: boolean | null
+          to_stage?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_lifecycle_events_api_integration_id_fkey"
+            columns: ["api_integration_id"]
+            isOneToOne: false
+            referencedRelation: "api_integration_registry"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       api_usage_logs: {
         Row: {
