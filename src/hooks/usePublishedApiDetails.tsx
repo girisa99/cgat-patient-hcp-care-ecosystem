@@ -107,7 +107,7 @@ export const usePublishedApiDetails = () => {
         visibility: externalApi.visibility
       });
 
-      // Step 2: Check external_api_endpoints table for this API
+      // Step 2: Fetch external API endpoints
       console.log('📋 Step 2: Fetching external API endpoints...');
       const { data: externalEndpoints, error: endpointsError } = await supabase
         .from('external_api_endpoints')
@@ -120,10 +120,11 @@ export const usePublishedApiDetails = () => {
         endpoints: externalEndpoints
       });
 
-      // Step 3: Check if we should look at internal API instead
+      // Step 3: Check internal API if linked
+      let internalApi = null;
       if (externalApi.internal_api_id) {
-        console.log('📋 Step 3: Checking internal API registry for endpoints...');
-        const { data: internalApi, error: internalError } = await supabase
+        console.log('📋 Step 3: Checking internal API registry...');
+        const { data: internalApiData, error: internalError } = await supabase
           .from('api_integration_registry')
           .select('*')
           .eq('id', externalApi.internal_api_id)
@@ -131,60 +132,24 @@ export const usePublishedApiDetails = () => {
 
         console.log('🔗 Internal API Registry Data:', {
           error: internalError,
-          data: internalApi ? {
-            id: internalApi.id,
-            name: internalApi.name,
-            endpoints_count: internalApi.endpoints_count,
-            rls_policies_count: internalApi.rls_policies_count,
-            data_mappings_count: internalApi.data_mappings_count
+          data: internalApiData ? {
+            id: internalApiData.id,
+            name: internalApiData.name,
+            endpoints_count: internalApiData.endpoints_count,
+            rls_policies_count: internalApiData.rls_policies_count,
+            data_mappings_count: internalApiData.data_mappings_count
           } : null
         });
 
-        // Step 4: Look for other endpoint tables that might be related
-        console.log('📋 Step 4: Searching for all tables that might contain endpoints...');
-        
-        // Check if there are any tables with 'endpoint' in the name
-        const { data: possibleEndpointTables, error: tablesError } = await supabase
-          .from('information_schema.tables')
-          .select('table_name')
-          .eq('table_schema', 'public')
-          .ilike('table_name', '%endpoint%');
-
-        console.log('🔍 Tables containing "endpoint":', {
-          error: tablesError,
-          tables: possibleEndpointTables
-        });
-
-        // Step 5: Let's also check for any API-related tables
-        const { data: apiTables, error: apiTablesError } = await supabase
-          .from('information_schema.tables')
-          .select('table_name')
-          .eq('table_schema', 'public')
-          .or('table_name.ilike.%api%,table_name.ilike.%integration%');
-
-        console.log('🔍 API-related tables:', {
-          error: apiTablesError,
-          tables: apiTables
-        });
+        internalApi = internalApiData;
       }
-
-      // Step 6: Check for RLS policies
-      console.log('📋 Step 6: Checking for RLS policies...');
-      const { data: rlsPolicies, error: rlsError } = await supabase
-        .rpc('get_rls_policies_for_schema', { schema_name: 'public' })
-        .single();
-
-      console.log('🔒 RLS Policies Check:', {
-        error: rlsError,
-        policies_found: rlsPolicies ? 'Found policies' : 'No policies found'
-      });
 
       // Safely access rate_limits JSON data
       const rateLimitsData = externalApi.rate_limits as any;
       const defaultRequests = 1000;
       const requestsPerHour = rateLimitsData?.requests || defaultRequests;
 
-      // Build endpoints from external_api_endpoints (which appears to be empty)
+      // Build endpoints from external_api_endpoints
       const realEndpoints = (externalEndpoints || []).map((endpoint: any) => ({
         id: endpoint.id,
         name: endpoint.summary || endpoint.external_path || 'Unnamed endpoint',
@@ -221,13 +186,8 @@ export const usePublishedApiDetails = () => {
         api_name: externalApi.external_name,
         endpoints_count: realEndpoints.length,
         database_tables_count: realDatabaseSchema.tables.length,
-        expected_vs_actual: {
-          expected_endpoints: 21,
-          actual_endpoints: realEndpoints.length,
-          expected_policies: 42,
-          expected_schemas: 5,
-          actual_tables: realDatabaseSchema.tables.length
-        }
+        internal_api_linked: !!externalApi.internal_api_id,
+        internal_api_found: !!internalApi
       });
 
       // Build the API details from real database data
