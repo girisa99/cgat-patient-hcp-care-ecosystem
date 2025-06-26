@@ -13,6 +13,13 @@ export type ApiLifecycleStage = 'development' | 'staging' | 'production' | 'depr
 export type ApiEventType = 'created' | 'updated' | 'deprecated' | 'activated' | 'deactivated' | 'version_released' | 'breaking_change';
 export type ImpactLevel = 'low' | 'medium' | 'high' | 'critical';
 
+export interface ApiAuthentication {
+  type: 'none' | 'apiKey' | 'bearer' | 'basic' | 'oauth2';
+  location?: 'header' | 'query' | 'body';
+  name?: string;
+  value?: string;
+}
+
 export interface ApiEndpoint {
   id: string;
   name: string;
@@ -22,6 +29,9 @@ export interface ApiEndpoint {
   description: string;
   headers: Record<string, string>;
   isPublic: boolean;
+  authentication?: ApiAuthentication;
+  queryParams?: Record<string, any>;
+  bodySchema?: Record<string, any>;
 }
 
 export interface ApiIntegrationRegistry {
@@ -82,6 +92,69 @@ export interface ApiConsumptionLog {
   user_agent?: string;
 }
 
+// Data mapping interfaces
+export interface DataMapping {
+  id?: string;
+  sourceField: string;
+  targetField: string;
+  targetTable: string;
+  transformation?: string;
+  validation?: string;
+  isRequired?: boolean;
+  dataType?: string;
+}
+
+// RLS Policy interfaces
+export interface RLSPolicy {
+  id?: string;
+  policyName: string;
+  tableName: string;
+  operation: 'SELECT' | 'INSERT' | 'UPDATE' | 'DELETE' | 'ALL';
+  condition: string;
+  roles: string[];
+  isEnabled?: boolean;
+  description?: string;
+}
+
+// Postman collection interfaces
+export interface PostmanItem {
+  name: string;
+  request: {
+    method: string;
+    header: Array<{
+      key: string;
+      value: string;
+    }>;
+    url: {
+      raw: string;
+      host?: string[];
+      path?: string[];
+      query?: Array<{
+        key: string;
+        value: string;
+      }>;
+    };
+    body?: {
+      mode: string;
+      raw?: string;
+    };
+  };
+  response?: any[];
+}
+
+export interface PostmanCollection {
+  info: {
+    name: string;
+    description?: string;
+    schema: string;
+  };
+  item: PostmanItem[];
+  variable?: Array<{
+    key: string;
+    value: string;
+  }>;
+}
+
 // Legacy interface for backward compatibility
 export interface ApiIntegration {
   id: string;
@@ -94,8 +167,8 @@ export interface ApiIntegration {
   status: ApiStatus;
   endpoints: ApiEndpoint[];
   schemas: Record<string, any>;
-  mappings: any[];
-  rlsPolicies: any[];
+  mappings: DataMapping[];
+  rlsPolicies: RLSPolicy[];
   createdAt?: string;
   updatedAt?: string;
 }

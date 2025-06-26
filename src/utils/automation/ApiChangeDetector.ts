@@ -6,7 +6,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { apiIntegrationManager } from '@/utils/api/ApiIntegrationManager';
-import { ApiDirection, ApiLifecycleStage, ImpactLevel } from '@/utils/api/ApiIntegrationTypes';
+import { ApiDirection, ApiLifecycleStage, ImpactLevel, ApiEventType } from '@/utils/api/ApiIntegrationTypes';
 
 interface ApiChange {
   type: 'new_endpoint' | 'modified_endpoint' | 'deprecated_endpoint' | 'new_module' | 'breaking_change' | 'new_integration';
@@ -104,8 +104,8 @@ class ApiChangeDetector {
           changes.push({
             type: 'new_integration',
             api_name: integration.name,
-            direction: integration.direction,
-            lifecycle_stage: integration.lifecycle_stage,
+            direction: integration.direction as ApiDirection,
+            lifecycle_stage: integration.lifecycle_stage as ApiLifecycleStage,
             changes: [
               `New ${integration.direction} API integration: ${integration.name}`,
               `Type: ${integration.type}`,
@@ -133,8 +133,8 @@ class ApiChangeDetector {
             .insert({
               type: 'integration',
               api_name: integration.id,
-              direction: integration.direction,
-              lifecycle_stage: integration.lifecycle_stage,
+              direction: integration.direction as ApiDirection,
+              lifecycle_stage: integration.lifecycle_stage as ApiLifecycleStage,
               impact_assessment: {
                 endpoints_count: integration.endpoints_count,
                 category: integration.category,
@@ -176,15 +176,16 @@ class ApiChangeDetector {
 
       for (const event of recentEvents || []) {
         if (event.impact_level === 'high' || event.impact_level === 'critical' || event.requires_migration) {
+          const registry = event.api_integration_registry as any;
           changes.push({
             type: event.event_type === 'breaking_change' ? 'breaking_change' : 'modified_endpoint',
-            api_name: (event.api_integration_registry as any)?.name || 'Unknown API',
-            direction: (event.api_integration_registry as any)?.direction,
-            lifecycle_stage: (event.api_integration_registry as any)?.lifecycle_stage,
+            api_name: registry?.name || 'Unknown API',
+            direction: registry?.direction as ApiDirection,
+            lifecycle_stage: registry?.lifecycle_stage as ApiLifecycleStage,
             changes: [event.description],
             impact_level: event.impact_level as ImpactLevel,
             migration_required: event.requires_migration,
-            impact_assessment: event.metadata,
+            impact_assessment: event.metadata as Record<string, any>,
             migration_notes: event.migration_instructions
           });
         }
@@ -232,8 +233,8 @@ class ApiChangeDetector {
             .insert({
               type: 'module',
               api_name: module.id,
-              direction: 'inbound', // Default for modules
-              lifecycle_stage: 'production',
+              direction: 'inbound' as ApiDirection,
+              lifecycle_stage: 'production' as ApiLifecycleStage,
               detected_at: new Date().toISOString()
             });
         }
