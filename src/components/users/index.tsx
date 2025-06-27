@@ -24,8 +24,8 @@ export { default as UserPermissionsBadge } from './UserPermissionsBadge';
 export { default as UserPermissionsSummary } from './UserPermissionsSummary';
 export { default as RoleAssignmentDebugger } from './RoleAssignmentDebugger';
 
-// Layout components - using named exports
-export { ConsistentUsersLayout } from './ConsistentUsersLayout';
+// Layout components - mixed export patterns
+export { default as ConsistentUsersLayout } from './ConsistentUsersLayout';
 export { ConsistentUsersHeader } from './ConsistentUsersHeader';
 export { ConsistentUsersContent } from './ConsistentUsersContent';
 
