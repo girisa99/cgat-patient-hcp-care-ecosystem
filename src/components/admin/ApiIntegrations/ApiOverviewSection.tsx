@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -223,50 +222,55 @@ export const ApiOverviewSection = ({
           <div className="grid gap-4">
             {apis.slice(0, 3).map((api) => (
               <Card key={api.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-2 flex-1">
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-semibold">{api.external_name || api.name}</h4>
-                        {api.status && (
-                          <Badge variant={api.status === 'published' ? 'default' : 'secondary'}>
-                            {api.status}
-                          </Badge>
-                        )}
-                        {(type === 'published' || type === 'external') && (
-                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                            <RefreshCw className="h-3 w-3 mr-1" />
-                            Synced
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="text-sm text-muted-foreground line-clamp-2">
-                        {api.external_description || api.description || 'No description available'}
-                      </p>
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                        <span>Version {api.version || '1.0.0'}</span>
-                        {api.endpoints?.length && (
-                          <>
-                            <span>•</span>
-                            <span>{api.endpoints.length} endpoints</span>
-                          </>
-                        )}
-                        {(type === 'published' || type === 'external') && api.published_at && (
-                          <>
-                            <span>•</span>
-                            <span>Published {new Date(api.published_at).toLocaleDateString()}</span>
-                          </>
-                        )}
+                <CardContent className="p-6">
+                  <div className="space-y-4">
+                    {/* Header Section */}
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h4 className="font-semibold truncate">{api.external_name || api.name}</h4>
+                          {api.status && (
+                            <Badge variant={api.status === 'published' ? 'default' : 'secondary'}>
+                              {api.status}
+                            </Badge>
+                          )}
+                          {(type === 'published' || type === 'external') && (
+                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                              <RefreshCw className="h-3 w-3 mr-1" />
+                              Synced
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
+                          {api.external_description || api.description || 'No description available'}
+                        </p>
+                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                          <span>Version {api.version || '1.0.0'}</span>
+                          {api.endpoints?.length && (
+                            <>
+                              <span>•</span>
+                              <span>{api.endpoints.length} endpoints</span>
+                            </>
+                          )}
+                          {(type === 'published' || type === 'external') && api.published_at && (
+                            <>
+                              <span>•</span>
+                              <span>Published {new Date(api.published_at).toLocaleDateString()}</span>
+                            </>
+                          )}
+                        </div>
                       </div>
                     </div>
-                    <div className="flex gap-1 ml-4">
+
+                    {/* Actions Section - Fixed layout to prevent overlapping */}
+                    <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-100">
                       {/* Internal API Publish Button */}
                       {type === 'internal' && (
                         <Button 
                           size="sm" 
                           variant="outline"
                           onClick={() => handlePublishClick(api)}
-                          className="bg-blue-50 hover:bg-blue-100"
+                          className="bg-blue-50 hover:bg-blue-100 flex-shrink-0"
                           disabled={isProcessing !== null}
                         >
                           {isProcessing === `publish-${api.id}` ? (
@@ -286,7 +290,7 @@ export const ApiOverviewSection = ({
                             variant="outline"
                             onClick={() => handleConfigureApi(api)}
                             disabled={isProcessing !== null}
-                            className="bg-gray-50 hover:bg-gray-100"
+                            className="bg-gray-50 hover:bg-gray-100 flex-shrink-0"
                           >
                             {isProcessing !== null ? (
                               <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
@@ -300,7 +304,7 @@ export const ApiOverviewSection = ({
                             variant="outline"
                             onClick={() => handleViewAnalytics(api)}
                             disabled={isProcessing !== null}
-                            className="bg-blue-50 hover:bg-blue-100"
+                            className="bg-blue-50 hover:bg-blue-100 flex-shrink-0"
                           >
                             <TrendingUp className="h-3 w-3 mr-1" />
                             Analytics
@@ -311,7 +315,7 @@ export const ApiOverviewSection = ({
                                 size="sm" 
                                 variant="outline"
                                 disabled={isProcessing !== null}
-                                className="bg-orange-50 hover:bg-orange-100"
+                                className="bg-orange-50 hover:bg-orange-100 flex-shrink-0"
                               >
                                 {isProcessing === `revert-${api.id}` ? (
                                   <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
@@ -343,6 +347,7 @@ export const ApiOverviewSection = ({
                                 size="sm" 
                                 variant="destructive"
                                 disabled={isProcessing !== null}
+                                className="flex-shrink-0"
                               >
                                 {isProcessing === `cancel-${api.id}` ? (
                                   <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
@@ -381,7 +386,7 @@ export const ApiOverviewSection = ({
                           variant="outline"
                           onClick={() => handleStatusUpdate(api.id, 'published')}
                           disabled={isProcessing !== null || isUpdatingStatus}
-                          className="bg-green-50 hover:bg-green-100"
+                          className="bg-green-50 hover:bg-green-100 flex-shrink-0"
                         >
                           {isProcessing === `status-${api.id}` || isUpdatingStatus ? (
                             <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
@@ -392,12 +397,13 @@ export const ApiOverviewSection = ({
                         </Button>
                       )}
                       
-                      {/* View Details Button */}
+                      {/* View Details Button - Always last */}
                       <Button 
                         size="sm" 
                         variant="ghost"
                         onClick={() => onViewDetails?.(api.id)}
                         disabled={isProcessing !== null}
+                        className="flex-shrink-0 ml-auto"
                       >
                         <Eye className="h-3 w-3 mr-1" />
                         View
