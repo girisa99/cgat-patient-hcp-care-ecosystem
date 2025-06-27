@@ -1,101 +1,97 @@
-
 /**
- * Pre-Implementation Verification System - Main Export
+ * Simplified Verification System - Main Export
  * 
- * This is the main entry point for the comprehensive verification system
- * that ensures compliance with knowledge base guidelines before any implementation.
+ * Streamlined verification system that maintains core functionality
+ * while reducing complexity and improving maintainability.
  */
 
-// Main pre-implementation checker
-import { PreImplementationChecker } from './PreImplementationChecker';
-import { validateModuleCreation, validateComponentCreation, validateHookCreation } from './PreImplementationChecker';
+// Main simplified validator
+import { 
+  SimplifiedValidator, 
+  validateModuleCreation, 
+  validateComponentCreation, 
+  validateHookCreation,
+  runSimplifiedValidation
+} from './SimplifiedValidator';
 
-// Component scanners
+// Simplified types
+import type { ValidationRequest, ValidationResult } from './SimplifiedValidator';
+
+// Keep legacy components for backward compatibility but mark as deprecated
+import { PreImplementationChecker } from './PreImplementationChecker';
 import { ComponentScanner } from './ComponentScanner';
 import { TypeScriptValidator } from './TypeScriptValidator';
 import { DatabaseAlignmentValidator } from './DatabaseAlignmentValidator';
 import { GuidelinesValidator } from './GuidelinesValidator';
 
-// Types
-import type { 
-  PreImplementationCheckResult, 
-  ComponentScanResult, 
-  TypeScriptValidationResult, 
-  DatabaseAlignmentResult,
-  PatternEnforcementResult,
-  TemplateRecommendation,
-  VerificationRequest
-} from './types';
-
-// Component registry scanner
+// Component registry scanner (still useful)
 import { ComponentRegistryScanner } from './ComponentRegistryScanner';
 import type { ComponentInventory, HookInventory, ComponentInfo, TemplateInventory, UtilityInventory } from './ComponentRegistryScanner';
 
-// TypeScript-Database validator
+// TypeScript-Database validator (simplified version)
 import { TypeScriptDatabaseValidator, validateTableSchema, ensureTypescriptDatabaseAlignment } from './TypeScriptDatabaseValidator';
 import type { TypeScriptDatabaseAlignment, TypeConflict } from './TypeScriptDatabaseValidator';
 
-// Template enforcement
+// Template enforcement (simplified)
 import { TemplateEnforcement, enforceTemplateUsage } from './TemplateEnforcement';
 
-// Export main pre-implementation checker
-export { PreImplementationChecker, validateModuleCreation, validateComponentCreation, validateHookCreation };
-
-// Export component scanners
-export { ComponentScanner, TypeScriptValidator, DatabaseAlignmentValidator, GuidelinesValidator };
-
-// Export types
-export type { 
-  PreImplementationCheckResult, 
-  ComponentScanResult, 
-  TypeScriptValidationResult, 
-  DatabaseAlignmentResult,
-  PatternEnforcementResult,
-  TemplateRecommendation,
-  VerificationRequest
+// Export main simplified validator (RECOMMENDED)
+export { 
+  SimplifiedValidator, 
+  validateModuleCreation, 
+  validateComponentCreation, 
+  validateHookCreation,
+  runSimplifiedValidation
 };
 
-// Export component registry scanner
+// Export simplified types (RECOMMENDED)
+export type { ValidationRequest, ValidationResult };
+
+// Export component registry scanner (still useful)
 export { ComponentRegistryScanner };
 export type { ComponentInventory, HookInventory, ComponentInfo, TemplateInventory, UtilityInventory };
 
-// Export TypeScript-Database validator
-export { TypeScriptDatabaseValidator, validateTableSchema, ensureTypescriptDatabaseAlignment };
+// Export essential utilities
+export { validateTableSchema, ensureTypescriptDatabaseAlignment };
 export type { TypeScriptDatabaseAlignment, TypeConflict };
 
 // Export template enforcement
 export { TemplateEnforcement, enforceTemplateUsage };
 
+// Legacy exports (DEPRECATED - use SimplifiedValidator instead)
+export { 
+  PreImplementationChecker, 
+  ComponentScanner, 
+  TypeScriptValidator, 
+  DatabaseAlignmentValidator, 
+  GuidelinesValidator 
+};
+
 /**
- * Quick validation function - runs all pre-implementation checks
+ * Quick validation function - RECOMMENDED APPROACH
  */
-export const runPreImplementationChecks = async (request: VerificationRequest) => {
-  console.log('🚀 Running complete pre-implementation verification...');
+export const validateBeforeImplementation = async (request: ValidationRequest) => {
+  console.log('🚀 Running simplified pre-implementation validation...');
   
-  const result = await PreImplementationChecker.runPreFlightCheck(request);
-  const plan = PreImplementationChecker.generateImplementationPlan(result);
+  const result = SimplifiedValidator.validate(request);
+  const plan = SimplifiedValidator.generateImplementationPlan(result);
   
-  console.log('📋 Implementation Plan:');
+  console.log('📋 Validation Summary:');
   plan.forEach(item => console.log(item));
   
   return {
-    checkResult: result,
+    validationResult: result,
     implementationPlan: plan,
     canProceed: result.canProceed
   };
 };
 
 /**
- * Verification summary for developers
+ * Simplified validation summary for developers
  */
-export const getVerificationSummary = async () => {
-  const [
-    componentInventory,
-    typescriptAlignment
-  ] = await Promise.all([
-    ComponentRegistryScanner.scanAllComponents(),
-    TypeScriptDatabaseValidator.validateCompleteAlignment()
-  ]);
+export const getSimplifiedValidationSummary = async () => {
+  const componentInventory = await ComponentRegistryScanner.scanAllComponents();
+  const typescriptAlignment = await TypeScriptDatabaseValidator.validateCompleteAlignment();
 
   return {
     summary: {
