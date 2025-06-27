@@ -1,3 +1,4 @@
+
 /**
  * Enhanced hook for managing API integrations with real data detection
  */
@@ -21,30 +22,10 @@ export const useApiIntegrations = () => {
   } = useQuery({
     queryKey: ['api-integrations'],
     queryFn: async () => {
-      console.log('🔄 Starting API integrations initialization...');
-      
       try {
         const realIntegrations = await ApiIntegrationManager.initializeIntegrations();
-        
-        console.log('✅ Successfully loaded integrations:', {
-          count: realIntegrations.length,
-          integrations: realIntegrations.map(i => ({
-            id: i.id,
-            name: i.name,
-            type: i.type,
-            endpoints: i.endpoints.length,
-            rlsPolicies: i.rlsPolicies.length,
-            mappings: i.mappings.length
-          }))
-        });
-        
-        if (realIntegrations.length === 0) {
-          console.warn('⚠️ No integrations returned from ApiIntegrationManager');
-        }
-        
         return realIntegrations;
       } catch (error) {
-        console.error('❌ Failed to initialize integrations:', error);
         throw error;
       }
     },
@@ -58,9 +39,7 @@ export const useApiIntegrations = () => {
   } = useQuery({
     queryKey: ['api-integration-stats'],
     queryFn: async () => {
-      console.log('Fetching integration statistics...');
       const stats = ApiIntegrationManager.getIntegrationStats();
-      console.log('Integration stats:', stats);
       return stats;
     },
     staleTime: 60000,
@@ -70,7 +49,6 @@ export const useApiIntegrations = () => {
 
   const registerIntegrationMutation = useMutation({
     mutationFn: async (config: Omit<ApiIntegration, 'id' | 'createdAt' | 'updatedAt'>) => {
-      console.log('Registering new integration:', config);
       return await ApiIntegrationManager.registerIntegration(config);
     },
     onSuccess: (integration) => {
@@ -82,7 +60,6 @@ export const useApiIntegrations = () => {
       });
     },
     onError: (error: any) => {
-      console.error('Integration registration failed:', error);
       toast({
         title: "Registration Failed",
         description: error.message,
@@ -97,18 +74,15 @@ export const useApiIntegrations = () => {
       operation: 'sync' | 'webhook' | 'manual';
       data?: any;
     }) => {
-      console.log('Executing integration:', { integrationId, operation, data });
       return await ApiIntegrationManager.executeIntegration(integrationId, operation, data);
     },
     onSuccess: (result) => {
-      console.log('Integration execution successful:', result);
       toast({
         title: "Integration Executed",
         description: `API integration completed successfully. Processed ${Object.keys(result.data || {}).length} data fields.`,
       });
     },
     onError: (error: any) => {
-      console.error('Integration execution failed:', error);
       toast({
         title: "Integration Failed",
         description: error.message,
@@ -119,8 +93,6 @@ export const useApiIntegrations = () => {
 
   const testEndpoint = async (integrationId: string, endpointId: string) => {
     try {
-      console.log('Testing endpoint:', { integrationId, endpointId });
-      
       const integration = integrations?.find(i => i.id === integrationId);
       const endpoint = integration?.endpoints.find(e => e.id === endpointId);
       
@@ -128,7 +100,6 @@ export const useApiIntegrations = () => {
         throw new Error('Integration or endpoint not found');
       }
 
-      // Get current session for authentication
       const { data: { session } } = await supabase.auth.getSession();
       
       let headers = { ...endpoint.headers };
@@ -137,8 +108,6 @@ export const useApiIntegrations = () => {
       }
 
       const url = endpoint.fullUrl || `${integration.baseUrl}${endpoint.url}`;
-      
-      console.log('Making test request to:', url);
       
       const response = await fetch(url, {
         method: endpoint.method,
@@ -152,8 +121,6 @@ export const useApiIntegrations = () => {
         timestamp: new Date().toISOString()
       };
 
-      console.log('Test result:', result);
-
       toast({
         title: "Endpoint Test",
         description: `${endpoint.method} ${endpoint.name} - ${response.status}`,
@@ -162,7 +129,6 @@ export const useApiIntegrations = () => {
 
       return result;
     } catch (error: any) {
-      console.error('Endpoint test failed:', error);
       toast({
         title: "Test Failed",
         description: error.message,
@@ -174,7 +140,6 @@ export const useApiIntegrations = () => {
 
   const downloadPostmanCollection = async (integrationId: string) => {
     try {
-      console.log('Downloading Postman collection for:', integrationId);
       const collectionJson = await ApiIntegrationManager.exportPostmanCollection(integrationId);
       const integration = integrations?.find(i => i.id === integrationId);
       
@@ -193,7 +158,6 @@ export const useApiIntegrations = () => {
         description: `Postman collection for ${integration?.name} has been downloaded with ${integration?.endpoints.length} endpoints.`,
       });
     } catch (error: any) {
-      console.error('Download failed:', error);
       toast({
         title: "Download Failed",
         description: error.message,
@@ -203,17 +167,11 @@ export const useApiIntegrations = () => {
   };
 
   const getIntegrationsByType = (type: 'internal' | 'external') => {
-    const filtered = integrations?.filter(integration => integration.type === type) || [];
-    console.log(`🔍 Filtered ${type} integrations:`, {
-      count: filtered.length,
-      names: filtered.map(i => i.name)
-    });
-    return filtered;
+    return integrations?.filter(integration => integration.type === type) || [];
   };
 
   const exportApiDocumentation = async () => {
     try {
-      console.log('Exporting complete API documentation...');
       const docs = await ApiIntegrationManager.exportApiDocumentation();
       const blob = new Blob([JSON.stringify(docs, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -230,7 +188,6 @@ export const useApiIntegrations = () => {
         description: `Complete API documentation exported with ${docs.metadata.total_endpoints} endpoints, ${docs.metadata.total_rls_policies} RLS policies, and ${docs.metadata.total_data_mappings} data mappings.`,
       });
     } catch (error: any) {
-      console.error('Export failed:', error);
       toast({
         title: "Export Failed",
         description: error.message,
@@ -238,27 +195,6 @@ export const useApiIntegrations = () => {
       });
     }
   };
-
-  // Log current state for debugging
-  React.useEffect(() => {
-    if (integrations) {
-      console.log('📊 Current integrations state in hook:', {
-        total: integrations.length,
-        internal: getIntegrationsByType('internal').length,
-        external: getIntegrationsByType('external').length,
-        integrations: integrations.map(i => ({
-          id: i.id,
-          name: i.name,
-          type: i.type,
-          endpoints: i.endpoints.length,
-          rlsPolicies: i.rlsPolicies.length,
-          mappings: i.mappings.length
-        }))
-      });
-    } else {
-      console.log('⚠️ Integrations is null/undefined in hook');
-    }
-  }, [integrations]);
 
   return {
     integrations,

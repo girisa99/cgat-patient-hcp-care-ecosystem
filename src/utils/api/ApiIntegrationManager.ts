@@ -15,8 +15,6 @@ export class ApiIntegrationManager {
    * Initialize all API integrations
    */
   static async initializeIntegrations(): Promise<ApiIntegration[]> {
-    console.log('🔄 Initializing API integrations...');
-    
     try {
       // Clear existing integrations first
       this.integrations = [];
@@ -24,42 +22,14 @@ export class ApiIntegrationManager {
       // Get the core internal API integration from InternalApiDetector
       const internalIntegration = InternalApiDetector.generateMockInternalIntegration();
       
-      console.log('✅ Generated internal integration:', {
-        id: internalIntegration.id,
-        name: internalIntegration.name,
-        type: internalIntegration.type,
-        endpoints: internalIntegration.endpoints.length,
-        rlsPolicies: internalIntegration.rlsPolicies.length,
-        mappings: internalIntegration.mappings.length
-      });
-      
       // Add the internal integration
       this.integrations = [internalIntegration];
       
-      console.log('✅ API integrations initialized successfully:', {
-        total: this.integrations.length,
-        internal: this.integrations.filter(i => i.type === 'internal').length,
-        external: this.integrations.filter(i => i.type === 'external').length,
-        integrations: this.integrations.map(i => ({
-          id: i.id,
-          name: i.name,
-          type: i.type,
-          endpoints: i.endpoints.length
-        }))
-      });
-      
       return this.integrations;
     } catch (error) {
-      console.error('❌ Failed to initialize API integrations:', error);
-      
       // Fallback: return at least the internal integration
       const fallbackIntegration = InternalApiDetector.generateMockInternalIntegration();
       this.integrations = [fallbackIntegration];
-      
-      console.log('🔄 Using fallback integration:', {
-        name: fallbackIntegration.name,
-        endpoints: fallbackIntegration.endpoints.length
-      });
       
       return this.integrations;
     }
@@ -154,8 +124,6 @@ export class ApiIntegrationManager {
     if (!integration) {
       throw new Error(`Integration with ID ${integrationId} not found`);
     }
-    
-    console.log(`Executing ${operation} operation for integration:`, integration.name);
     
     // Mock execution result
     return {
