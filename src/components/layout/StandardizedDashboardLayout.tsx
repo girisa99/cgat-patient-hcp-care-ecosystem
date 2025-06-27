@@ -98,9 +98,9 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
           onClose={() => setSidebarOpen(false)} 
         />
         
-        {/* Mobile menu button */}
+        {/* Mobile menu button - ONLY show this, no separate mobile menu bar */}
         {(isMobile || isTablet) && (
-          <div className="md:hidden fixed top-16 left-0 right-0 z-40 p-2 border-b bg-background/95 backdrop-blur">
+          <div className="md:hidden fixed top-16 left-0 right-0 z-40 bg-background/95 backdrop-blur border-b px-4 py-2">
             <div className="flex justify-between items-center">
               <Button 
                 variant="ghost" 
@@ -111,6 +111,23 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
                 <Menu className="h-4 w-4" />
                 <span>Menu</span>
               </Button>
+              
+              {/* Show page title in mobile menu bar instead of separate header */}
+              {showPageHeader && pageTitle && (
+                <div className="flex-1 text-center">
+                  <h1 className="text-lg font-semibold text-gray-900 truncate">
+                    {pageTitle}
+                  </h1>
+                </div>
+              )}
+              
+              {/* Show header actions in mobile menu bar */}
+              {showPageHeader && headerActions && (
+                <div className="flex items-center gap-2">
+                  {headerActions}
+                </div>
+              )}
+              
               <Button
                 variant="ghost"
                 size="sm"
@@ -127,35 +144,35 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
           </div>
         )}
         
-        {/* Main content area - completely flush positioning */}
+        {/* Main content area */}
         <div className="flex flex-1">
           <main 
             className={cn(
               "flex-1 transition-all duration-300 ease-in-out",
+              // Desktop: account for sidebar
               isMobile ? "ml-0" : "md:ml-64",
-              // Remove ALL top padding - content should start immediately after header
-              "mt-16",
-              // On mobile, account for the mobile menu bar
-              (isMobile || isTablet) && "mt-[104px]",
+              // Top spacing: header + mobile menu (if mobile)
+              "pt-16", // Base header height
+              (isMobile || isTablet) && "pt-[104px]", // Header + mobile menu
               debugMode && "border-4 border-dashed border-red-500"
             )}
             data-debug-info={debugMode ? JSON.stringify({
               isMobile,
               isTablet,
-              marginTop: (isMobile || isTablet) ? "104px" : "64px",
+              topPadding: (isMobile || isTablet) ? "104px" : "64px",
               leftMargin: isMobile ? "0" : "md:ml-64"
             }) : undefined}
           >
-            {/* Compact page header section - only if explicitly shown */}
-            {showPageHeader && (pageTitle || pageSubtitle || headerActions) && (
+            {/* Desktop page header - ONLY show on desktop when not mobile */}
+            {showPageHeader && !isMobile && !isTablet && (pageTitle || pageSubtitle || headerActions) && (
               <div className={cn(
-                "border-b bg-background",
+                "border-b bg-background px-6 py-4",
                 debugMode && "border-4 border-dashed border-yellow-500"
               )}>
-                <div className="flex items-start justify-between w-full max-w-7xl mx-auto px-6 py-2">
+                <div className="flex items-start justify-between max-w-7xl mx-auto">
                   <div className="flex-1">
                     {pageTitle && (
-                      <h1 className="text-2xl font-bold tracking-tight text-gray-900 mb-0">
+                      <h1 className="text-2xl font-bold tracking-tight text-gray-900">
                         {pageTitle}
                       </h1>
                     )}
@@ -174,9 +191,9 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
               </div>
             )}
             
-            {/* Main content with zero padding */}
+            {/* Main content - starts immediately */}
             <div className={cn(
-              "w-full max-w-7xl mx-auto px-6",
+              "w-full max-w-7xl mx-auto px-6 py-6",
               debugMode && "border-4 border-dashed border-green-500"
             )}>
               {children}
