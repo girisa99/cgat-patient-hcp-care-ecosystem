@@ -22,8 +22,9 @@ export const useApiIntegrations = () => {
   } = useQuery({
     queryKey: ['api-integrations'],
     queryFn: async () => {
-      console.log('Fetching real API integrations...');
-      const realIntegrations = ApiIntegrationManager.getIntegrations();
+      console.log('Initializing API integrations...');
+      // This is the key fix - we need to call initializeIntegrations()
+      const realIntegrations = await ApiIntegrationManager.initializeIntegrations();
       console.log('Loaded integrations:', realIntegrations);
       return realIntegrations;
     },

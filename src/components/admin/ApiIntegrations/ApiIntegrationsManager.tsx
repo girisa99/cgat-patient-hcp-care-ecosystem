@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { useApiIntegrations } from '@/hooks/useApiIntegrations.tsx'; // Use the .tsx version
+import { useApiIntegrations } from '@/hooks/useApiIntegrations.tsx';
 import { useEnhancedExternalApis } from '@/hooks/useEnhancedExternalApis';
 import AutoIntegrationBanner from './AutoIntegrationBanner';
 import ApiKeyIntegrationMonitor from './ApiKeyIntegrationMonitor';
@@ -130,7 +130,7 @@ const ApiIntegrationsManager = () => {
                 />
               </div>
               <p className="text-sm text-muted-foreground">
-                APIs developed and managed internally.
+                APIs developed and managed internally with {internalApis?.length || 0} integrations.
               </p>
             </CardHeader>
             <CardContent>
@@ -157,7 +157,7 @@ const ApiIntegrationsManager = () => {
                 />
               </div>
               <p className="text-sm text-muted-foreground">
-                APIs consumed from external sources.
+                APIs consumed from external sources with {externalApis?.length || 0} integrations.
               </p>
             </CardHeader>
             <CardContent>
