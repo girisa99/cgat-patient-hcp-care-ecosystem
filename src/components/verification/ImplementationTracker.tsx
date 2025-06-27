@@ -1,33 +1,9 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Checkbox } from '@/components/ui/checkbox';
-import { 
-  CheckCircle, 
-  AlertTriangle, 
-  Clock, 
-  Target,
-  Zap,
-  Shield,
-  Palette,
-  Code,
-  Database
-} from 'lucide-react';
-
-interface ImplementationItem {
-  id: string;
-  title: string;
-  description: string;
-  priority: 'critical' | 'high' | 'medium' | 'low';
-  category: 'accessibility' | 'ui-ux' | 'security' | 'performance' | 'code-quality';
-  completed: boolean;
-  estimatedTime: string;
-  implementation: string;
-}
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ImplementationItem, ImplementationProgressStats } from './types/implementationTypes';
+import ImplementationProgressCard from './ImplementationProgressCard';
+import ImplementationTabsContent from './ImplementationTabsContent';
 
 const ImplementationTracker = () => {
   const [items, setItems] = useState<ImplementationItem[]>([
@@ -132,75 +108,26 @@ const ImplementationTracker = () => {
     ));
   };
 
-  const getProgress = () => {
-    const completed = items.filter(item => item.completed).length;
-    return Math.round((completed / items.length) * 100);
+  const getProgressStats = (): ImplementationProgressStats => {
+    const criticalItems = items.filter(item => item.priority === 'critical');
+    const highPriorityItems = items.filter(item => item.priority === 'high');
+    const completedItems = items.filter(item => item.completed);
+    
+    return {
+      criticalCount: criticalItems.filter(i => !i.completed).length,
+      highPriorityCount: highPriorityItems.filter(i => !i.completed).length,
+      completedCount: completedItems.length,
+      totalCount: items.length,
+      progressPercentage: Math.round((completedItems.length / items.length) * 100)
+    };
   };
 
-  const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case 'accessibility': return Shield;
-      case 'ui-ux': return Palette;
-      case 'security': return Shield;
-      case 'performance': return Zap;
-      case 'code-quality': return Code;
-      default: return Target;
-    }
-  };
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'critical': return 'destructive';
-      case 'high': return 'default';
-      case 'medium': return 'secondary';
-      case 'low': return 'outline';
-      default: return 'outline';
-    }
-  };
-
-  const criticalItems = items.filter(item => item.priority === 'critical');
-  const highPriorityItems = items.filter(item => item.priority === 'high');
-  const otherItems = items.filter(item => !['critical', 'high'].includes(item.priority));
+  const stats = getProgressStats();
 
   return (
     <div className="space-y-6">
-      {/* Progress Overview */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Target className="h-5 w-5" />
-            Implementation Progress
-          </CardTitle>
-          <CardDescription>
-            Track your progress implementing verification recommendations
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Overall Progress</span>
-              <span className="text-sm text-muted-foreground">{getProgress()}% Complete</span>
-            </div>
-            <Progress value={getProgress()} className="w-full" />
-            <div className="grid grid-cols-3 gap-4 text-center">
-              <div>
-                <div className="text-2xl font-bold text-red-600">{criticalItems.filter(i => !i.completed).length}</div>
-                <div className="text-xs text-muted-foreground">Critical</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-orange-600">{highPriorityItems.filter(i => !i.completed).length}</div>
-                <div className="text-xs text-muted-foreground">High Priority</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-green-600">{items.filter(i => i.completed).length}</div>
-                <div className="text-xs text-muted-foreground">Completed</div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <ImplementationProgressCard stats={stats} />
 
-      {/* Implementation Tasks */}
       <Tabs defaultValue="critical" className="w-full">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="critical">Critical Issues</TabsTrigger>
@@ -209,169 +136,10 @@ const ImplementationTracker = () => {
           <TabsTrigger value="completed">Completed</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="critical" className="space-y-4">
-          <div className="space-y-3">
-            {criticalItems.map((item) => {
-              const IconComponent = getCategoryIcon(item.category);
-              return (
-                <Card key={item.id} className="border-red-200 bg-red-50/50">
-                  <CardContent className="pt-4">
-                    <div className="flex items-start space-x-3">
-                      <Checkbox
-                        checked={item.completed}
-                        onCheckedChange={() => toggleItem(item.id)}
-                        className="mt-1"
-                      />
-                      <div className="flex-1 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <h4 className="font-semibold flex items-center gap-2">
-                            <IconComponent className="h-4 w-4" />
-                            {item.title}
-                          </h4>
-                          <div className="flex items-center gap-2">
-                            <Badge variant={getPriorityColor(item.priority) as any}>
-                              {item.priority}
-                            </Badge>
-                            <Badge variant="outline">
-                              <Clock className="h-3 w-3 mr-1" />
-                              {item.estimatedTime}
-                            </Badge>
-                          </div>
-                        </div>
-                        <p className="text-sm text-muted-foreground">{item.description}</p>
-                        <div className="bg-white/60 p-3 rounded border">
-                          <p className="text-xs font-medium text-blue-700">Implementation:</p>
-                          <p className="text-xs text-gray-600 mt-1">{item.implementation}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="high" className="space-y-4">
-          <div className="space-y-3">
-            {highPriorityItems.map((item) => {
-              const IconComponent = getCategoryIcon(item.category);
-              return (
-                <Card key={item.id} className="border-orange-200 bg-orange-50/50">
-                  <CardContent className="pt-4">
-                    <div className="flex items-start space-x-3">
-                      <Checkbox
-                        checked={item.completed}
-                        onCheckedChange={() => toggleItem(item.id)}
-                        className="mt-1"
-                      />
-                      <div className="flex-1 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <h4 className="font-semibold flex items-center gap-2">
-                            <IconComponent className="h-4 w-4" />
-                            {item.title}
-                          </h4>
-                          <div className="flex items-center gap-2">
-                            <Badge variant={getPriorityColor(item.priority) as any}>
-                              {item.priority}
-                            </Badge>
-                            <Badge variant="outline">
-                              <Clock className="h-3 w-3 mr-1" />
-                              {item.estimatedTime}
-                            </Badge>
-                          </div>
-                        </div>
-                        <p className="text-sm text-muted-foreground">{item.description}</p>
-                        <div className="bg-white/60 p-3 rounded border">
-                          <p className="text-xs font-medium text-blue-700">Implementation:</p>
-                          <p className="text-xs text-gray-600 mt-1">{item.implementation}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="other" className="space-y-4">
-          <div className="space-y-3">
-            {otherItems.map((item) => {
-              const IconComponent = getCategoryIcon(item.category);
-              return (
-                <Card key={item.id}>
-                  <CardContent className="pt-4">
-                    <div className="flex items-start space-x-3">
-                      <Checkbox
-                        checked={item.completed}
-                        onCheckedChange={() => toggleItem(item.id)}
-                        className="mt-1"
-                      />
-                      <div className="flex-1 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <h4 className="font-semibold flex items-center gap-2">
-                            <IconComponent className="h-4 w-4" />
-                            {item.title}
-                          </h4>
-                          <div className="flex items-center gap-2">
-                            <Badge variant={getPriorityColor(item.priority) as any}>
-                              {item.priority}
-                            </Badge>
-                            <Badge variant="outline">
-                              <Clock className="h-3 w-3 mr-1" />
-                              {item.estimatedTime}
-                            </Badge>
-                          </div>
-                        </div>
-                        <p className="text-sm text-muted-foreground">{item.description}</p>
-                        <div className="bg-gray-50 p-3 rounded border">
-                          <p className="text-xs font-medium text-blue-700">Implementation:</p>
-                          <p className="text-xs text-gray-600 mt-1">{item.implementation}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="completed" className="space-y-4">
-          <div className="space-y-3">
-            {items.filter(item => item.completed).map((item) => {
-              const IconComponent = getCategoryIcon(item.category);
-              return (
-                <Card key={item.id} className="border-green-200 bg-green-50/50">
-                  <CardContent className="pt-4">
-                    <div className="flex items-start space-x-3">
-                      <CheckCircle className="h-5 w-5 text-green-600 mt-1" />
-                      <div className="flex-1 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <h4 className="font-semibold flex items-center gap-2 text-green-800">
-                            <IconComponent className="h-4 w-4" />
-                            {item.title}
-                          </h4>
-                          <Badge variant="default" className="bg-green-600">
-                            Completed
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-green-700">{item.description}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-            {items.filter(item => item.completed).length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                <Target className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                <p>No completed tasks yet. Start with the critical issues!</p>
-              </div>
-            )}
-          </div>
-        </TabsContent>
+        <ImplementationTabsContent 
+          items={items}
+          onToggleItem={toggleItem}
+        />
       </Tabs>
     </div>
   );
