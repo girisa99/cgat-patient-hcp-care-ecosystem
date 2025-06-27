@@ -24,12 +24,16 @@ export const ApiEmptyState: React.FC<ApiEmptyStateProps> = ({ title, type, icon 
 
   return (
     <Card>
-      <CardContent className="p-8 text-center">
-        <div className="flex flex-col items-center gap-4">
-          {icon}
-          <div>
-            <h4 className="text-lg font-medium mb-2">No {title}</h4>
-            <p className="text-muted-foreground">{getEmptyMessage()}</p>
+      <CardContent className="p-8">
+        <div className="flex flex-col items-center gap-6 text-center">
+          <div className="flex justify-center">
+            {icon}
+          </div>
+          <div className="space-y-3">
+            <h4 className="text-lg font-medium">No {title}</h4>
+            <p className="text-muted-foreground max-w-md mx-auto leading-relaxed">
+              {getEmptyMessage()}
+            </p>
           </div>
         </div>
       </CardContent>
