@@ -39,12 +39,12 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
           onClose={() => setSidebarOpen(false)} 
         />
         
-        {/* Main content area with consistent spacing */}
+        {/* Main content area with fixed positioning */}
         <main className={cn(
-          "transition-all duration-300 ease-in-out min-h-screen",
+          "transition-all duration-300 ease-in-out",
           isMobile ? "ml-0" : "md:ml-64"
         )}>
-          {/* Mobile menu button with consistent styling */}
+          {/* Mobile menu button */}
           {(isMobile || isTablet) && (
             <div className="md:hidden p-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-40">
               <Button 
@@ -59,8 +59,8 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
             </div>
           )}
           
-          {/* Content wrapper with proper overflow handling */}
-          <div className="w-full min-h-full">
+          {/* Content wrapper positioned at the top */}
+          <div className="w-full">
             {showPageHeader && (pageTitle || pageSubtitle || headerActions) && (
               <div className="px-6 pt-6 pb-4 bg-background border-b">
                 <div className="flex items-start justify-between w-full max-w-7xl mx-auto">
@@ -85,8 +85,8 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
               </div>
             )}
             
-            {/* Main content with proper constraints */}
-            <div className="px-6 pb-6 pt-6 max-w-7xl mx-auto w-full">
+            {/* Main content with proper positioning */}
+            <div className="w-full max-w-7xl mx-auto px-6 py-6">
               {children}
             </div>
           </div>
