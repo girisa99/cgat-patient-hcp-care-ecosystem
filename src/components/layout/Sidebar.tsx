@@ -36,11 +36,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, onClose }) => {
     { name: 'Admin Verification', href: '/admin-verification', icon: Activity },
   ];
 
-  // Mobile overlay
-  if (typeof isOpen === 'boolean' && onClose) {
+  // Mobile overlay - only when onClose is provided (indicating mobile usage)
+  if (onClose) {
     return (
       <>
-        {/* Mobile overlay */}
         {isOpen && (
           <div className="fixed inset-0 z-50 md:hidden">
             {/* Backdrop */}
@@ -93,7 +92,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, onClose }) => {
     );
   }
 
-  // Desktop sidebar (default)
+  // Desktop sidebar (default behavior when no onClose prop is provided)
   return (
     <div className="flex h-full w-64 flex-col bg-gray-50 border-r border-gray-200">
       <div className="flex h-16 items-center justify-center border-b border-gray-200">
