@@ -1,0 +1,355 @@
+
+/**
+ * Main Module Registry Class
+ */
+
+import { scanForRealComponents, scanForRealHooks, scanForRealServices } from '../schema/componentScanner';
+import { RegisteredModule, ComponentServiceInfo, AutoRegistrationConfig, RegistryStats } from './types';
+
+export class ModuleRegistry {
+  private modules: Map<string, RegisteredModule> = new Map();
+  private componentIndex: Map<string, { moduleName: string; component: ComponentServiceInfo }> = new Map();
+  private listeners: Set<(modules: RegisteredModule[]) => void> = new Set();
+  private autoConfig: AutoRegistrationConfig = {
+    enabled: false,
+    confidenceThreshold: 0.8,
+    scanIntervalMs: 30000,
+    autoGenerateCode: true,
+    trackComponents: true,
+    trackServices: true
+  };
+
+  /**
+   * Register a new module or update existing one with real component detection
+   */
+  register(module: RegisteredModule) {
+    console.log(`📝 Registering module with real components: ${module.moduleName}`);
+    
+    const existing = this.modules.get(module.moduleName);
+    if (existing) {
+      console.log(`🔄 Updating existing module: ${module.moduleName}`);
+    }
+
+    // Scan for real components if not provided
+    if (!module.components || module.components.length === 0) {
+      module.components = scanForRealComponents(module.moduleName);
+    }
+    
+    if (!module.hooks || module.hooks.length === 0) {
+      module.hooks = scanForRealHooks(module.moduleName);
+    }
+    
+    if (!module.services || module.services.length === 0) {
+      module.services = scanForRealServices(module.moduleName);
+    }
+
+    const updatedModule = {
+      ...module,
+      lastUpdated: new Date().toISOString()
+    };
+
+    this.modules.set(module.moduleName, updatedModule);
+    
+    // Update component index
+    this.updateComponentIndex(module.moduleName, updatedModule);
+
+    console.log(`✅ Registered ${module.moduleName} with ${updatedModule.components?.length || 0} components, ${updatedModule.hooks?.length || 0} hooks, ${updatedModule.services?.length || 0} services`);
+    
+    this.notifyListeners();
+  }
+
+  /**
+   * Add component/service to a module
+   */
+  addComponentToModule(moduleName: string, component: ComponentServiceInfo) {
+    const module = this.modules.get(moduleName);
+    if (!module) {
+      console.warn(`Module ${moduleName} not found for component ${component.name}`);
+      return;
+    }
+
+    const updatedModule = { ...module };
+    
+    switch (component.type) {
+      case 'component':
+        updatedModule.components = [...(updatedModule.components || []), component];
+        break;
+      case 'service':
+        updatedModule.services = [...(updatedModule.services || []), component];
+        break;
+      case 'hook':
+        updatedModule.hooks = [...(updatedModule.hooks || []), component];
+        break;
+    }
+
+    updatedModule.lastUpdated = new Date().toISOString();
+    this.modules.set(moduleName, updatedModule);
+    
+    // Update component index
+    this.componentIndex.set(component.name, { moduleName, component });
+    
+    console.log(`🧩 Added ${component.type} ${component.name} to module ${moduleName}`);
+    this.notifyListeners();
+  }
+
+  /**
+   * Get all components across modules for RBAC
+   */
+  getAllComponents(): { moduleName: string; component: ComponentServiceInfo }[] {
+    return Array.from(this.componentIndex.values());
+  }
+
+  /**
+   * Get components by permission
+   */
+  getComponentsByPermission(permission: string): { moduleName: string; component: ComponentServiceInfo }[] {
+    return this.getAllComponents().filter(({ component }) => 
+      component.permissions.includes(permission)
+    );
+  }
+
+  /**
+   * Get module components for RBAC display
+   */
+  getModuleComponentsForRBAC(moduleName: string): ComponentServiceInfo[] {
+    console.log(`🔍 Getting real components for module: ${moduleName}`);
+    
+    const module = this.modules.get(moduleName);
+    if (!module) {
+      console.log(`Module ${moduleName} not found, scanning for real components...`);
+      // Try to scan for real components even if module not registered
+      const realComponents = scanForRealComponents(moduleName);
+      const realHooks = scanForRealHooks(moduleName);
+      const realServices = scanForRealServices(moduleName);
+      
+      return [...realComponents, ...realHooks, ...realServices];
+    }
+
+    const allComponents = [
+      ...(module.components || []),
+      ...(module.services || []),
+      ...(module.hooks || [])
+    ];
+    
+    console.log(`📊 Found ${allComponents.length} real components for ${moduleName}`);
+    return allComponents;
+  }
+
+  /**
+   * Update component index for fast lookups
+   */
+  private updateComponentIndex(moduleName: string, module: RegisteredModule) {
+    // Clear existing entries for this module
+    Array.from(this.componentIndex.keys()).forEach(key => {
+      if (this.componentIndex.get(key)?.moduleName === moduleName) {
+        this.componentIndex.delete(key);
+      }
+    });
+
+    // Add all components/services/hooks
+    const allItems = [
+      ...(module.components || []),
+      ...(module.services || []),
+      ...(module.hooks || [])
+    ];
+
+    allItems.forEach(item => {
+      this.componentIndex.set(item.name, { moduleName, component: item });
+    });
+  }
+
+  /**
+   * Batch register multiple modules
+   */
+  registerBatch(modules: RegisteredModule[]) {
+    console.log(`📝 Batch registering ${modules.length} modules with real component detection`);
+    
+    modules.forEach(module => {
+      // Scan for real components for each module
+      module.components = scanForRealComponents(module.moduleName);
+      module.hooks = scanForRealHooks(module.moduleName);
+      module.services = scanForRealServices(module.moduleName);
+      
+      this.modules.set(module.moduleName, {
+        ...module,
+        lastUpdated: new Date().toISOString()
+      });
+      
+      this.updateComponentIndex(module.moduleName, module);
+    });
+
+    this.notifyListeners();
+  }
+
+  /**
+   * Get all registered modules
+   */
+  getAll(): RegisteredModule[] {
+    return Array.from(this.modules.values());
+  }
+
+  /**
+   * Get modules by status
+   */
+  getByStatus(status: RegisteredModule['status']): RegisteredModule[] {
+    return this.getAll().filter(module => module.status === status);
+  }
+
+  /**
+   * Get auto-generated modules
+   */
+  getAutoGenerated(): RegisteredModule[] {
+    return this.getAll().filter(module => module.isAutoGenerated);
+  }
+
+  /**
+   * Get a specific module by name
+   */
+  get(moduleName: string): RegisteredModule | undefined {
+    return this.modules.get(moduleName);
+  }
+
+  /**
+   * Check if a module exists
+   */
+  exists(moduleName: string): boolean {
+    return this.modules.has(moduleName);
+  }
+
+  /**
+   * Remove a module
+   */
+  remove(moduleName: string): boolean {
+    const module = this.modules.get(moduleName);
+    const removed = this.modules.delete(moduleName);
+    
+    if (removed && module) {
+      // Remove from component index
+      this.updateComponentIndex(moduleName, { ...module, components: [], services: [], hooks: [] });
+      this.notifyListeners();
+    }
+    
+    return removed;
+  }
+
+  /**
+   * Update auto-registration configuration
+   */
+  updateAutoConfig(config: Partial<AutoRegistrationConfig>) {
+    this.autoConfig = { ...this.autoConfig, ...config };
+    console.log('🔧 Auto-registration config updated:', this.autoConfig);
+  }
+
+  /**
+   * Get auto-registration configuration
+   */
+  getAutoConfig(): AutoRegistrationConfig {
+    return { ...this.autoConfig };
+  }
+
+  /**
+   * Subscribe to module changes
+   */
+  subscribe(listener: (modules: RegisteredModule[]) => void) {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
+  }
+
+  /**
+   * Get registry statistics with component/service info
+   */
+  getStats(): RegistryStats {
+    const modules = this.getAll();
+    const allComponents = this.getAllComponents();
+    
+    return {
+      total: modules.length,
+      active: modules.filter(m => m.status === 'active').length,
+      deprecated: modules.filter(m => m.status === 'deprecated').length,
+      development: modules.filter(m => m.status === 'development').length,
+      autoGenerated: modules.filter(m => m.isAutoGenerated).length,
+      totalComponents: allComponents.filter(({ component }) => component.type === 'component').length,
+      totalServices: allComponents.filter(({ component }) => component.type === 'service').length,
+      totalHooks: allComponents.filter(({ component }) => component.type === 'hook').length,
+      protectedComponents: allComponents.filter(({ component }) => component.isProtected).length,
+      lastUpdated: modules.reduce((latest, module) => {
+        const moduleDate = new Date(module.lastUpdated);
+        return moduleDate > latest ? moduleDate : latest;
+      }, new Date(0))
+    };
+  }
+
+  /**
+   * Search modules by name, description, or component
+   */
+  search(query: string): RegisteredModule[] {
+    const lowercaseQuery = query.toLowerCase();
+    return this.getAll().filter(module => 
+      module.moduleName.toLowerCase().includes(lowercaseQuery) ||
+      module.tableName.toLowerCase().includes(lowercaseQuery) ||
+      (module.description && module.description.toLowerCase().includes(lowercaseQuery)) ||
+      this.moduleHasMatchingComponent(module, lowercaseQuery)
+    );
+  }
+
+  /**
+   * Check if module has matching component
+   */
+  private moduleHasMatchingComponent(module: RegisteredModule, query: string): boolean {
+    const allItems = [
+      ...(module.components || []),
+      ...(module.services || []),
+      ...(module.hooks || [])
+    ];
+    
+    return allItems.some(item => 
+      item.name.toLowerCase().includes(query) ||
+      item.permissions.some(perm => perm.toLowerCase().includes(query))
+    );
+  }
+
+  /**
+   * Export registry configuration with components
+   */
+  export(): { modules: RegisteredModule[]; config: AutoRegistrationConfig; componentStats: RegistryStats } {
+    return {
+      modules: this.getAll(),
+      config: this.getAutoConfig(),
+      componentStats: this.getStats()
+    };
+  }
+
+  /**
+   * Import registry configuration
+   */
+  import(data: { modules: RegisteredModule[]; config?: AutoRegistrationConfig }) {
+    console.log(`📥 Importing ${data.modules.length} modules with real component detection`);
+    
+    // Clear existing modules and component index
+    this.modules.clear();
+    this.componentIndex.clear();
+    
+    // Import modules with real component scanning
+    data.modules.forEach(module => {
+      // Re-scan for real components during import
+      module.components = scanForRealComponents(module.moduleName);
+      module.hooks = scanForRealHooks(module.moduleName);
+      module.services = scanForRealServices(module.moduleName);
+      
+      this.modules.set(module.moduleName, module);
+      this.updateComponentIndex(module.moduleName, module);
+    });
+    
+    // Import config if provided
+    if (data.config) {
+      this.autoConfig = data.config;
+    }
+    
+    this.notifyListeners();
+  }
+
+  private notifyListeners() {
+    const modules = this.getAll();
+    this.listeners.forEach(listener => listener(modules));
+  }
+}
