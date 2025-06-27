@@ -2,7 +2,7 @@
 import React from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { PageContainer } from '@/components/layout/PageContainer';
-import { AdminStatsGrid, StatCard } from '@/components/layout/AdminPageWrapper';
+import { AdminStatsGrid, StatCard } from '@/components/layout/AdminStatsGrid';
 import { Card, CardContent } from '@/components/ui/card';
 import SystemStatusCard from '@/components/dashboard/SystemStatusCard';
 import UserRolesCard from '@/components/dashboard/UserRolesCard';

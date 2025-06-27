@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { PageContainer } from '@/components/layout/PageContainer';
-import { AdminStatsGrid, StatCard } from '@/components/layout/AdminPageWrapper';
+import { AdminStatsGrid, StatCard } from '@/components/layout/AdminStatsGrid';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, Building2, CheckCircle, AlertCircle, Settings } from 'lucide-react';
