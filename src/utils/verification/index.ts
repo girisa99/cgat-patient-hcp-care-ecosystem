@@ -1,6 +1,5 @@
-
 /**
- * Fully Automated Verification System - Main Export
+ * Fully Automated Verification System - Main Export (Enhanced with Database Guidelines)
  * 
  * Zero manual intervention required - all verification is automatic
  */
@@ -10,6 +9,15 @@ import {
   AutomatedVerificationOrchestrator, 
   automatedVerification 
 } from './AutomatedVerificationOrchestrator';
+
+// Enhanced database guidelines validator
+import { 
+  DatabaseGuidelinesValidator,
+  DatabaseValidationResult,
+  DatabaseGuideline,
+  DatabaseViolation,
+  WorkflowSuggestion
+} from './DatabaseGuidelinesValidator';
 
 // Simplified validator (used internally by automation)
 import { 
@@ -42,48 +50,59 @@ import { TypeScriptValidator } from './TypeScriptValidator';
 import { DatabaseAlignmentValidator } from './DatabaseAlignmentValidator';
 import { GuidelinesValidator } from './GuidelinesValidator';
 
-// ===== MAIN EXPORTS (FULLY AUTOMATIC) =====
+// ===== MAIN EXPORTS (FULLY AUTOMATIC WITH DATABASE VALIDATION) =====
 
 /**
  * AUTOMATIC verification system - NO MANUAL INTERVENTION REQUIRED
+ * Now includes comprehensive database guidelines validation
  */
 export { 
   AutomatedVerificationOrchestrator,
-  automatedVerification // Global singleton - auto-starts
+  automatedVerification,
+  DatabaseGuidelinesValidator // NEW
 };
 
 /**
- * AUTOMATIC validation function - ALWAYS RUNS
- * This is the ONLY function you need for validation
+ * AUTOMATIC validation function with database guidelines - ALWAYS RUNS
  */
 export const validateBeforeImplementation = async (request: ValidationRequest) => {
-  console.log('🚀 AUTOMATIC PRE-IMPLEMENTATION VALIDATION...');
+  console.log('🚀 AUTOMATIC PRE-IMPLEMENTATION VALIDATION (with Database Guidelines)...');
   
-  // Uses fully automated verification system
+  // Enhanced verification system with database validation
   const canProceed = await automatedVerification.verifyBeforeCreation(request);
   const summary = JSON.parse(localStorage.getItem('verification-results') || '[]')[0];
   
-  console.log('📋 AUTOMATIC VALIDATION SUMMARY:');
+  console.log('📋 ENHANCED AUTOMATIC VALIDATION SUMMARY:');
   console.log(`   Status: ${canProceed ? 'APPROVED' : 'BLOCKED'}`);
   console.log(`   Issues: ${summary?.issuesFound || 0}`);
   console.log(`   Critical: ${summary?.criticalIssues || 0}`);
   console.log(`   Auto-fixes: ${summary?.autoFixesApplied || 0}`);
+  console.log(`   Database Issues: ${summary?.databaseValidation?.violations?.length || 0}`);
+  console.log(`   SQL Auto-fixes: ${summary?.sqlAutoFixes?.length || 0}`);
+  console.log(`   Workflow Suggestions: ${summary?.workflowSuggestions?.length || 0}`);
   
   return {
     validationSummary: summary || null,
     implementationPlan: summary?.recommendations || [],
+    databaseGuidelines: summary?.databaseValidation || null,
+    sqlAutoFixes: summary?.sqlAutoFixes || [],
+    workflowSuggestions: summary?.workflowSuggestions || [],
     canProceed,
-    automatic: true // Indicates this was fully automatic
+    automatic: true,
+    enhanced: true // Indicates enhanced validation with database guidelines
   };
 };
 
 /**
- * Get automatic verification summary (ALWAYS AVAILABLE)
+ * Get enhanced automatic verification summary with database info
  */
 export const getAutomaticVerificationSummary = async () => {
   const componentInventory = await ComponentRegistryScanner.scanAllComponents();
   const typescriptAlignment = await TypeScriptDatabaseValidator.validateCompleteAlignment();
   const verificationStatus = automatedVerification.getStatus();
+  
+  // Run database validation
+  const databaseValidation = await DatabaseGuidelinesValidator.validateDatabase();
 
   return {
     summary: {
@@ -94,40 +113,52 @@ export const getAutomaticVerificationSummary = async () => {
       typescriptAlignment: typescriptAlignment.isAligned,
       alignmentIssues: typescriptAlignment.missingTables.length + typescriptAlignment.typeConflicts.length,
       automatedVerificationActive: verificationStatus.isRunning,
+      databaseValidation: databaseValidation.isValid,
+      databaseIssues: databaseValidation.violations.length,
+      workflowSuggestions: databaseValidation.workflowSuggestions.length,
       isFullyAutomatic: true,
-      lastScan: verificationStatus.lastScanTimestamp
+      lastScan: verificationStatus.lastScanTimestamp,
+      enhanced: true
     },
     componentInventory,
     typescriptAlignment,
+    databaseValidation,
     verificationStatus,
-    isAutomatic: true
+    isAutomatic: true,
+    isEnhanced: true
   };
 };
 
 /**
- * AUTOMATIC module validation (ALWAYS RUNS)
+ * AUTOMATIC module validation with database guidelines (ALWAYS RUNS)
  */
 export const createModuleWithAutomaticValidation = async (config: any) => {
-  console.log('🔍 AUTOMATIC MODULE VALIDATION for:', config.moduleName);
+  console.log('🔍 ENHANCED AUTOMATIC MODULE VALIDATION (with Database Guidelines) for:', config.moduleName);
   
   const request: ValidationRequest = {
     tableName: config.tableName,
     moduleName: config.moduleName,
     componentType: 'module',
-    description: `Module for ${config.tableName} table`
+    description: `Module for ${config.tableName} table with database validation`
   };
   
   const canProceed = await automatedVerification.verifyBeforeCreation(request);
   
   if (!canProceed) {
-    throw new Error('Module creation blocked by automatic verification system');
+    throw new Error('Module creation blocked by enhanced automatic verification system (including database guidelines)');
   }
   
-  console.log('✅ Module creation approved by automatic verification');
-  return { approved: true, automatic: true };
+  console.log('✅ Module creation approved by enhanced automatic verification (including database guidelines)');
+  return { approved: true, automatic: true, enhanced: true };
 };
 
-// ===== SUPPORTING EXPORTS =====
+// Export enhanced types
+export type { 
+  DatabaseValidationResult,
+  DatabaseGuideline,
+  DatabaseViolation,
+  WorkflowSuggestion
+};
 
 // Export types
 export type { 
@@ -171,20 +202,23 @@ export {
   GuidelinesValidator 
 };
 
-// ===== GLOBAL INITIALIZATION (AUTOMATIC) =====
+// ===== GLOBAL INITIALIZATION (ENHANCED AUTOMATIC) =====
 
-// Ensure the automatic system is initialized
 if (typeof window !== 'undefined') {
-  console.log('🚀 AUTOMATIC VERIFICATION SYSTEM INITIALIZING...');
+  console.log('🚀 ENHANCED AUTOMATIC VERIFICATION SYSTEM INITIALIZING (with Database Guidelines)...');
   
-  // Global verification function available everywhere
+  // Enhanced global verification function
   (window as any).automaticVerification = {
     validate: validateBeforeImplementation,
     getSummary: getAutomaticVerificationSummary,
     createModule: createModuleWithAutomaticValidation,
-    isAutomatic: true
+    validateDatabase: DatabaseGuidelinesValidator.validateDatabase,
+    isAutomatic: true,
+    isEnhanced: true,
+    includesDatabaseGuidelines: true
   };
   
-  console.log('✅ AUTOMATIC VERIFICATION SYSTEM READY');
+  console.log('✅ ENHANCED AUTOMATIC VERIFICATION SYSTEM READY');
   console.log('ℹ️  NO MANUAL INTERVENTION REQUIRED - ALL VERIFICATION IS AUTOMATIC');
+  console.log('🗄️  INCLUDES DATABASE GUIDELINES, RLS VALIDATION, AND WORKFLOW SUGGESTIONS');
 }
