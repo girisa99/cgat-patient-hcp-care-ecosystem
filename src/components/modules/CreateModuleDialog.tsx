@@ -14,7 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { useModules } from '@/hooks/useModules';
 import { useAutomatedVerification } from '@/hooks/useAutomatedVerification';
-import { Plus, Shield } from 'lucide-react';
+import { Plus, Shield, CheckCircle } from 'lucide-react';
 
 interface CreateModuleDialogProps {
   open: boolean;
@@ -33,17 +33,20 @@ const CreateModuleDialog: React.FC<CreateModuleDialogProps> = ({
   const [isVerifying, setIsVerifying] = useState(false);
   
   const { createModule, isCreating } = useModules();
-  const { verifyBeforeCreation } = useAutomatedVerification();
+  const { verifyBeforeCreation, isAutomatic } = useAutomatedVerification();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!name.trim()) return;
     
-    // Run automated verification before creating module
+    // AUTOMATIC verification - ALWAYS runs
     setIsVerifying(true);
     
     try {
+      console.log('🔍 AUTOMATIC VERIFICATION: Module creation starting...');
+      
+      // This verification ALWAYS runs automatically
       const canProceed = await verifyBeforeCreation({
         moduleName: name.trim(),
         componentType: 'module',
@@ -51,10 +54,12 @@ const CreateModuleDialog: React.FC<CreateModuleDialogProps> = ({
       });
       
       if (!canProceed) {
-        console.log('🚫 Module creation blocked by verification system');
+        console.log('🚫 Module creation AUTOMATICALLY BLOCKED by verification system');
         setIsVerifying(false);
         return;
       }
+      
+      console.log('✅ Module creation AUTOMATICALLY APPROVED by verification system');
       
       const moduleData = {
         name: name.trim(),
@@ -73,7 +78,7 @@ const CreateModuleDialog: React.FC<CreateModuleDialogProps> = ({
       setDescription('');
       setIsActive(true);
     } catch (error) {
-      console.error('❌ Error during module creation:', error);
+      console.error('❌ Error during AUTOMATIC module creation:', error);
     } finally {
       setIsVerifying(false);
     }
@@ -88,8 +93,17 @@ const CreateModuleDialog: React.FC<CreateModuleDialogProps> = ({
             Create New Module
           </DialogTitle>
           <DialogDescription className="flex items-center gap-2">
-            <Shield className="h-4 w-4 text-blue-500" />
-            Create a new system module with automated verification.
+            {isAutomatic ? (
+              <>
+                <CheckCircle className="h-4 w-4 text-green-500" />
+                Automatic verification enabled - all modules are verified automatically.
+              </>
+            ) : (
+              <>
+                <Shield className="h-4 w-4 text-blue-500" />
+                Create a new system module with automated verification.
+              </>
+            )}
           </DialogDescription>
         </DialogHeader>
         
@@ -125,6 +139,16 @@ const CreateModuleDialog: React.FC<CreateModuleDialogProps> = ({
             <Label htmlFor="module-active">Active</Label>
           </div>
 
+          {/* Automatic verification status indicator */}
+          {isAutomatic && (
+            <div className="p-3 bg-green-50 border border-green-200 rounded-md">
+              <div className="flex items-center gap-2 text-sm text-green-700">
+                <CheckCircle className="h-4 w-4" />
+                <span>Automatic verification is active - all modules are checked automatically</span>
+              </div>
+            </div>
+          )}
+
           <div className="flex gap-2 pt-4">
             <Button
               type="button"
@@ -142,7 +166,7 @@ const CreateModuleDialog: React.FC<CreateModuleDialogProps> = ({
               {isVerifying ? (
                 <>
                   <Shield className="mr-2 h-4 w-4 animate-spin" />
-                  Verifying...
+                  Auto-Verifying...
                 </>
               ) : isCreating ? (
                 'Creating...'
