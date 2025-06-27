@@ -6,7 +6,6 @@ import {
   Users,
   Settings,
   Home,
-  UserCheck,
   Hospital,
   Layers,
   Database,
@@ -23,15 +22,14 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, onClose }) => {
   const location = useLocation();
   
+  // Cleaned up navigation - removed redundant entries
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
     { name: 'Users', href: '/users', icon: Users },
-    { name: 'Consistent Users', href: '/consistent-users', icon: UserCheck },
     { name: 'Patients', href: '/patients', icon: Users },
     { name: 'Facilities', href: '/facilities', icon: Hospital },
     { name: 'Modules', href: '/modules', icon: Layers },
-    { name: 'API Management', href: '/api-management', icon: Database },
-    { name: 'API Integrations', href: '/api-integrations', icon: Settings },
+    { name: 'API Integrations', href: '/api-integrations', icon: Database },
     { name: 'Audit Log', href: '/audit-log', icon: Shield },
     { name: 'Admin Verification', href: '/admin-verification', icon: Activity },
   ];

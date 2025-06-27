@@ -10,7 +10,6 @@ export { useUserMutations } from './useUserMutations';
 
 // Unified hooks that combine multiple concerns
 export { useUsers } from '../useUsers';
-export { useConsistentUsers } from '../useConsistentUsers';
 
 // Specialized hooks for different contexts
 export { useUnifiedUserData, usePatientData, useHealthcareStaffData, useAdminUserData } from '../useUnifiedUserData';
