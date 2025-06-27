@@ -44,6 +44,30 @@ const ConsistentUsers = () => {
     );
   }
 
+  // Helper function to get user name
+  const getUserName = (userId: string) => {
+    const user = users?.find(u => u.id === userId);
+    return user?.first_name || user?.last_name 
+      ? `${user.first_name || ''} ${user.last_name || ''}`.trim()
+      : user?.email || '';
+  };
+
+  // Wrapper functions to handle the userName parameter
+  const handleAssignRoleWithName = (userId: string) => {
+    const userName = getUserName(userId);
+    handleAssignRole(userId, userName);
+  };
+
+  const handleRemoveRoleWithName = (userId: string) => {
+    const userName = getUserName(userId);
+    handleRemoveRole(userId, userName);
+  };
+
+  const handleAssignFacilityWithName = (userId: string) => {
+    const userName = getUserName(userId);
+    handleAssignFacility(userId, userName);
+  };
+
   return (
     <ConsistentUsersLayout
       showAlert={debugMode}
@@ -58,9 +82,9 @@ const ConsistentUsers = () => {
 
       <ConsistentUsersContent
         onCreateUser={() => setCreateUserOpen(true)}
-        onAssignRole={handleAssignRole}
-        onRemoveRole={handleRemoveRole}
-        onAssignFacility={handleAssignFacility}
+        onAssignRole={handleAssignRoleWithName}
+        onRemoveRole={handleRemoveRoleWithName}
+        onAssignFacility={handleAssignFacilityWithName}
         onEditUser={handleEditUser}
         createUserOpen={createUserOpen}
         setCreateUserOpen={setCreateUserOpen}
@@ -74,7 +98,7 @@ const ConsistentUsers = () => {
         setAssignFacilityOpen={setAssignFacilityOpen}
         selectedUserId={selectedUserId}
         selectedUser={selectedUser}
-        selectedUserName={users?.find(u => u.id === selectedUserId)?.first_name || ''}
+        selectedUserName={selectedUserId ? getUserName(selectedUserId) : ''}
       />
     </ConsistentUsersLayout>
   );
