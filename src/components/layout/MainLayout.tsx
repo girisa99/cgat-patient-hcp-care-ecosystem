@@ -16,7 +16,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const { isMobile } = useResponsiveLayout();
 
   return (
-    <div className="h-screen w-screen overflow-hidden bg-background">
+    <div className="min-h-screen w-full overflow-x-hidden bg-background">
       {/* Fixed Header */}
       <Header />
       
@@ -36,7 +36,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       )}
       
       {/* Main Container */}
-      <div className="flex h-full pt-16">
+      <div className="flex w-full">
         {/* Sidebar */}
         <Sidebar 
           isOpen={sidebarOpen} 
@@ -46,13 +46,13 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         {/* Content Area */}
         <main 
           className={cn(
-            "flex-1 h-full overflow-hidden",
-            isMobile ? "pt-12" : "pt-0",
+            "flex-1 min-h-screen w-full overflow-x-hidden",
+            isMobile ? "pt-28" : "pt-16",
             !isMobile && "ml-64"
           )}
         >
-          <div className="h-full w-full overflow-auto">
-            <div className="min-h-full w-full max-w-none">
+          <div className="w-full overflow-x-hidden">
+            <div className="min-h-full w-full">
               {children}
             </div>
           </div>

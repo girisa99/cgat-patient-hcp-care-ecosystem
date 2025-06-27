@@ -21,13 +21,13 @@ export const PageContainer: React.FC<PageContainerProps> = ({
 }) => {
   return (
     <div className={cn(
-      "h-full w-full",
+      "min-h-full w-full overflow-hidden",
       fluid ? "p-0" : "p-6",
       className
     )}>
       <div className={cn(
-        "h-full w-full",
-        !fluid && "max-w-7xl mx-auto"
+        "w-full",
+        !fluid && "max-w-full mx-auto"
       )}>
         {/* Page Header */}
         {(title || subtitle || headerActions) && (
@@ -55,7 +55,7 @@ export const PageContainer: React.FC<PageContainerProps> = ({
         )}
 
         {/* Main Content */}
-        <div className="w-full">
+        <div className="w-full overflow-hidden">
           {children}
         </div>
       </div>
