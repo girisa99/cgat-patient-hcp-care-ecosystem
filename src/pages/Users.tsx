@@ -25,8 +25,7 @@ const Users = () => {
     isLoading, 
     createUser, 
     assignRole, 
-    assignFacility,
-    meta 
+    assignFacility
   } = useUsers();
 
   const [createUserOpen, setCreateUserOpen] = useState(false);
@@ -78,11 +77,11 @@ const Users = () => {
     </Button>
   );
 
-  // Calculate stats from meta data or fallback to users array
+  // Calculate stats from users array
   const stats = {
-    totalUsers: meta?.totalUsers || users?.length || 0,
+    totalUsers: users?.length || 0,
     usersWithRoles: users?.filter(u => u.user_roles && u.user_roles.length > 0).length || 0,
-    activeUsers: meta?.totalUsers || users?.length || 0,
+    activeUsers: users?.length || 0,
     usersWithFacilities: users?.filter(u => u.facilities).length || 0
   };
 
