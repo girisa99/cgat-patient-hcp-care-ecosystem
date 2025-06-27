@@ -16,6 +16,7 @@ interface StandardizedDashboardLayoutProps {
   headerActions?: React.ReactNode;
   containerSize?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
   showPageHeader?: boolean;
+  className?: string;
 }
 
 const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = ({
@@ -25,13 +26,14 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
   headerActions,
   containerSize = 'xl',
   showPageHeader = true,
+  className,
 }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { isMobile, isTablet } = useResponsiveLayout();
 
   return (
     <DesignSystemProvider>
-      <div className="min-h-screen bg-background">
+      <div className={cn("min-h-screen bg-background", className)}>
         <Header />
         <div className="flex">
           {/* Desktop Sidebar - Always visible and properly positioned */}
@@ -42,17 +44,17 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
           
           {/* Main Content Area */}
           <main className={cn(
-            "flex-1 transition-all duration-300",
+            "flex-1 transition-all duration-300 ease-in-out",
             isMobile ? "ml-0" : "md:ml-64"
           )}>
             {/* Mobile Menu Button */}
             {(isMobile || isTablet) && (
-              <div className="md:hidden p-4 border-b bg-background">
+              <div className="md:hidden p-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
                 <Button 
                   variant="ghost" 
                   size="sm" 
                   onClick={() => setSidebarOpen(true)}
-                  className="flex items-center space-x-2"
+                  className="flex items-center space-x-2 hover:bg-accent transition-colors"
                 >
                   <Menu className="h-4 w-4" />
                   <span>Menu</span>
@@ -67,6 +69,7 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
               headerActions={headerActions}
               containerSize={containerSize}
               showHeader={showPageHeader}
+              className="min-h-[calc(100vh-4rem)]"
             >
               {children}
             </PageLayout>
