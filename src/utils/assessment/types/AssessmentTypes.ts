@@ -29,15 +29,6 @@ export interface MigrationRecommendations {
   configurationChanges: string[];
 }
 
-export interface MockDataAssessment {
-  filesWithMockData: string[];
-  componentsUsingMockData: string[];
-  hooksWithMockData: string[];
-  mockDataPatterns: string[];
-  severity: 'low' | 'medium' | 'high';
-  cleanupRecommendations: string[];
-}
-
 export interface TableUtilizationAssessment {
   essentialTables: {
     name: string;

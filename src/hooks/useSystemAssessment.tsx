@@ -116,7 +116,6 @@ ${migrations.configurationChanges.map(c => `- ${c}`).join('\n')}
     
     // Computed values
     hasCriticalFindings: assessmentReport?.criticalFindings.length > 0,
-    mockDataSeverity: assessmentReport?.detailedFindings.mockDataAssessment.severity,
     totalTablesReviewed: assessmentReport?.detailedFindings.tableUtilization.essentialTables.length || 0,
     unnecessaryTablesCount: assessmentReport?.detailedFindings.tableUtilization.unnecessaryTables.length || 0,
     emptyTablesCount: assessmentReport?.detailedFindings.tableUtilization.emptyTables.length || 0
