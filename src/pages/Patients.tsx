@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
-import StandardizedDashboardLayout from '@/components/layout/StandardizedDashboardLayout';
+import MainLayout from '@/components/layout/MainLayout';
+import { PageContainer } from '@/components/layout/PageContainer';
 import { PatientsList } from '@/components/admin/PatientManagement/PatientsList';
 import { PatientEditDialog } from '@/components/admin/PatientManagement/PatientEditDialog';
 import { PatientViewDialog } from '@/components/admin/PatientManagement/PatientViewDialog';
@@ -35,15 +36,11 @@ const Patients = () => {
     : null;
 
   return (
-    <StandardizedDashboardLayout>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Patients</h1>
-          <p className="text-muted-foreground">
-            Manage patient records and healthcare information
-          </p>
-        </div>
-        
+    <MainLayout>
+      <PageContainer
+        title="Patients"
+        subtitle="Manage patient records and healthcare information"
+      >
         <PatientsList 
           patients={patients || []}
           onView={handleView}
@@ -68,8 +65,8 @@ const Patients = () => {
             />
           </>
         )}
-      </div>
-    </StandardizedDashboardLayout>
+      </PageContainer>
+    </MainLayout>
   );
 };
 
