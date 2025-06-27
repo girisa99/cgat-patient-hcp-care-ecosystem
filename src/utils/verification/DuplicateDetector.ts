@@ -1,4 +1,3 @@
-
 /**
  * Duplicate Detection and Prevention Utility
  * 
@@ -13,7 +12,7 @@ import type { ComponentInventory } from './ComponentRegistryScanner';
 
 interface ComponentInfo {
   name: string;
-  path: string;
+  location: string;
   exports: string[];
   isPrimary: boolean;
   type: 'component' | 'hook' | 'utility';
@@ -63,9 +62,9 @@ export class DuplicateDetector {
     inventory.components.forEach(comp => {
       components.push({
         name: comp.name,
-        path: comp.path,
+        location: comp.location,
         exports: [comp.name], // Simplified - assuming component name is the main export
-        isPrimary: this.isPrimaryComponent(comp.name, comp.path),
+        isPrimary: this.isPrimaryComponent(comp.name, comp.location),
         type: 'component'
       });
     });
@@ -74,9 +73,9 @@ export class DuplicateDetector {
     inventory.hooks.forEach(hook => {
       components.push({
         name: hook.name,
-        path: hook.path,
+        location: hook.location,
         exports: [hook.name],
-        isPrimary: this.isPrimaryComponent(hook.name, hook.path),
+        isPrimary: this.isPrimaryComponent(hook.name, hook.location),
         type: 'hook'
       });
     });
@@ -85,9 +84,9 @@ export class DuplicateDetector {
     inventory.utilities.forEach(util => {
       components.push({
         name: util.name,
-        path: util.path,
+        location: util.location,
         exports: [util.name],
-        isPrimary: this.isPrimaryComponent(util.name, util.path),
+        isPrimary: this.isPrimaryComponent(util.name, util.location),
         type: 'utility'
       });
     });
@@ -148,8 +147,8 @@ export class DuplicateDetector {
 
     return {
       component: componentName,
-      primarySource: primaryComponent?.path || 'Not found',
-      duplicates: duplicates.map(d => d.path),
+      primarySource: primaryComponent?.location || 'Not found',
+      duplicates: duplicates.map(d => d.location),
       riskLevel,
       recommendations
     };
