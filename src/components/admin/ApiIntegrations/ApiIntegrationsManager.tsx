@@ -18,6 +18,7 @@ import ApiOverviewDashboard from './ApiOverviewDashboard';
 import ExternalApiPublisher from './ExternalApiPublisher';
 import PublishedApisSection from './PublishedApisSection';
 import ApiPublicationStatusChecker from './ApiPublicationStatusChecker';
+import DeveloperPortal from './DeveloperPortal';
 
 const ApiIntegrationsManager = () => {
   const { integrations } = useApiIntegrations();
@@ -94,7 +95,7 @@ const ApiIntegrationsManager = () => {
         </TabsContent>
 
         <TabsContent value="developer-portal">
-          <PublishedApisSection showInDeveloperPortal={true} />
+          <DeveloperPortal />
         </TabsContent>
 
         <TabsContent value="settings">

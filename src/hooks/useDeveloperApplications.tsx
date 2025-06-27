@@ -10,14 +10,10 @@ interface DeveloperApplication {
   description: string;
   requested_modules: string[];
   status: 'pending' | 'approved' | 'rejected';
-  user_id: string;
-  reviewed_by?: string;
-  reviewed_at?: string;
   created_at: string;
-  updated_at: string;
 }
 
-interface ApplicationFormData {
+interface CreateApplicationData {
   companyName: string;
   email: string;
   description: string;
@@ -34,31 +30,35 @@ export const useDeveloperApplications = () => {
     error
   } = useQuery({
     queryKey: ['developer-applications'],
-    queryFn: async () => {
+    queryFn: async (): Promise<DeveloperApplication[]> => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+
       const { data, error } = await supabase
         .from('developer_applications')
         .select('*')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as DeveloperApplication[];
+      return data || [];
     }
   });
 
   const createApplicationMutation = useMutation({
-    mutationFn: async (formData: ApplicationFormData) => {
-      // Get current user
+    mutationFn: async (applicationData: CreateApplicationData) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
       const { data, error } = await supabase
         .from('developer_applications')
         .insert({
-          company_name: formData.companyName,
-          email: formData.email,
-          description: formData.description,
-          requested_modules: formData.requestedModules,
-          user_id: user.id
+          user_id: user.id,
+          company_name: applicationData.companyName,
+          email: applicationData.email,
+          description: applicationData.description,
+          requested_modules: applicationData.requestedModules,
+          status: 'pending'
         })
         .select()
         .single();
@@ -70,44 +70,13 @@ export const useDeveloperApplications = () => {
       queryClient.invalidateQueries({ queryKey: ['developer-applications'] });
       toast({
         title: "Application Submitted",
-        description: "Your API access request has been submitted for review.",
+        description: "Your API access application has been submitted for review.",
       });
     },
     onError: (error: any) => {
       toast({
         title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  });
-
-  const updateApplicationMutation = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: 'approved' | 'rejected' }) => {
-      const { data, error } = await supabase
-        .from('developer_applications')
-        .update({
-          status,
-          reviewed_at: new Date().toISOString()
-        })
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['developer-applications'] });
-      toast({
-        title: "Application Updated",
-        description: "Application status has been updated successfully.",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message,
+        description: error.message || "Failed to submit application.",
         variant: "destructive",
       });
     }
@@ -118,8 +87,6 @@ export const useDeveloperApplications = () => {
     isLoading,
     error,
     createApplication: createApplicationMutation.mutate,
-    isCreating: createApplicationMutation.isPending,
-    updateApplication: updateApplicationMutation.mutate,
-    isUpdating: updateApplicationMutation.isPending
+    isCreating: createApplicationMutation.isPending
   };
 };
