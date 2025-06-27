@@ -33,30 +33,36 @@ export const ApiCard: React.FC<ApiCardProps> = ({
   isUpdatingStatus
 }) => {
   return (
-    <Card className="hover:shadow-md transition-shadow">
+    <Card className="hover:shadow-md transition-shadow min-w-0">
       <CardContent className="p-6">
-        <div className="space-y-4">
+        <div className="space-y-6">
           {/* Header Section */}
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-2">
-                <h4 className="font-semibold truncate">{api.external_name || api.name}</h4>
-                {api.status && (
-                  <Badge variant={api.status === 'published' ? 'default' : 'secondary'}>
-                    {api.status}
-                  </Badge>
-                )}
-                {(type === 'published' || type === 'external') && (
-                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                    <RefreshCw className="h-3 w-3 mr-1" />
-                    Synced
-                  </Badge>
-                )}
+          <div className="space-y-4">
+            <div className="space-y-3">
+              <div className="flex items-start gap-3 flex-wrap">
+                <h4 className="font-semibold text-lg flex-1 min-w-0 break-words">
+                  {api.external_name || api.name}
+                </h4>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {api.status && (
+                    <Badge variant={api.status === 'published' ? 'default' : 'secondary'}>
+                      {api.status}
+                    </Badge>
+                  )}
+                  {(type === 'published' || type === 'external') && (
+                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                      <RefreshCw className="h-3 w-3 mr-1" />
+                      Synced
+                    </Badge>
+                  )}
+                </div>
               </div>
-              <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
+              
+              <p className="text-sm text-muted-foreground leading-relaxed">
                 {api.external_description || api.description || 'No description available'}
               </p>
-              <div className="flex items-center gap-4 text-xs text-muted-foreground">
+              
+              <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
                 <span>Version {api.version || '1.0.0'}</span>
                 {api.endpoints?.length && (
                   <>
@@ -75,7 +81,7 @@ export const ApiCard: React.FC<ApiCardProps> = ({
           </div>
 
           {/* Actions Section */}
-          <div className="pt-2 border-t border-gray-100">
+          <div className="pt-4 border-t border-gray-100">
             <ApiCardActions
               api={api}
               type={type}

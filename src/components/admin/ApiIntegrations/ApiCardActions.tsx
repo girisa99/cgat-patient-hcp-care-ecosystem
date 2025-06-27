@@ -41,64 +41,104 @@ export const ApiCardActions: React.FC<ApiCardActionsProps> = ({
   isUpdatingStatus
 }) => {
   return (
-    <div className="flex flex-wrap gap-2">
-      {/* Internal API Publish Button */}
-      {type === 'internal' && (
+    <div className="space-y-3">
+      {/* Primary Actions Row */}
+      <div className="flex flex-wrap gap-2">
+        {/* Internal API Publish Button */}
+        {type === 'internal' && (
+          <Button 
+            size="sm" 
+            variant="outline"
+            onClick={() => onPublish?.(api)}
+            className="bg-blue-50 hover:bg-blue-100"
+            disabled={isProcessing !== null}
+          >
+            {isProcessing === `publish-${api.id}` ? (
+              <RefreshCw className="h-3 w-3 mr-2 animate-spin" />
+            ) : (
+              <ArrowUpCircle className="h-3 w-3 mr-2" />
+            )}
+            Publish
+          </Button>
+        )}
+        
+        {/* Published/External API Management Buttons */}
+        {(type === 'published' || type === 'external') && (
+          <>
+            <Button 
+              size="sm" 
+              variant="outline"
+              onClick={() => onConfigure?.(api)}
+              disabled={isProcessing !== null}
+              className="bg-gray-50 hover:bg-gray-100"
+            >
+              {isProcessing !== null ? (
+                <RefreshCw className="h-3 w-3 mr-2 animate-spin" />
+              ) : (
+                <Settings className="h-3 w-3 mr-2" />
+              )}
+              Manage
+            </Button>
+            
+            <Button 
+              size="sm" 
+              variant="outline"
+              onClick={() => onViewAnalytics?.(api)}
+              disabled={isProcessing !== null}
+              className="bg-blue-50 hover:bg-blue-100"
+            >
+              <TrendingUp className="h-3 w-3 mr-2" />
+              Analytics
+            </Button>
+          </>
+        )}
+        
+        {/* External API Publish Button (for draft/review status) */}
+        {(type === 'external' && (api.status === 'draft' || api.status === 'review')) && (
+          <Button 
+            size="sm" 
+            variant="outline"
+            onClick={() => onStatusUpdate?.(api.id, 'published')}
+            disabled={isProcessing !== null || isUpdatingStatus}
+            className="bg-green-50 hover:bg-green-100"
+          >
+            {isProcessing === `status-${api.id}` || isUpdatingStatus ? (
+              <RefreshCw className="h-3 w-3 mr-2 animate-spin" />
+            ) : (
+              <Rocket className="h-3 w-3 mr-2" />
+            )}
+            Publish
+          </Button>
+        )}
+        
+        {/* View Details Button */}
         <Button 
           size="sm" 
-          variant="outline"
-          onClick={() => onPublish?.(api)}
-          className="bg-blue-50 hover:bg-blue-100 flex-shrink-0"
+          variant="ghost"
+          onClick={() => onViewDetails?.(api.id)}
           disabled={isProcessing !== null}
+          className="ml-auto"
         >
-          {isProcessing === `publish-${api.id}` ? (
-            <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
-          ) : (
-            <ArrowUpCircle className="h-3 w-3 mr-1" />
-          )}
-          Publish
+          <Eye className="h-3 w-3 mr-2" />
+          View
         </Button>
-      )}
-      
-      {/* Published/External API Management Buttons */}
+      </div>
+
+      {/* Secondary Actions Row (for destructive actions) */}
       {(type === 'published' || type === 'external') && (
-        <>
-          <Button 
-            size="sm" 
-            variant="outline"
-            onClick={() => onConfigure?.(api)}
-            disabled={isProcessing !== null}
-            className="bg-gray-50 hover:bg-gray-100 flex-shrink-0"
-          >
-            {isProcessing !== null ? (
-              <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
-            ) : (
-              <Settings className="h-3 w-3 mr-1" />
-            )}
-            Manage
-          </Button>
-          <Button 
-            size="sm" 
-            variant="outline"
-            onClick={() => onViewAnalytics?.(api)}
-            disabled={isProcessing !== null}
-            className="bg-blue-50 hover:bg-blue-100 flex-shrink-0"
-          >
-            <TrendingUp className="h-3 w-3 mr-1" />
-            Analytics
-          </Button>
+        <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-50">
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button 
                 size="sm" 
                 variant="outline"
                 disabled={isProcessing !== null}
-                className="bg-orange-50 hover:bg-orange-100 flex-shrink-0"
+                className="bg-orange-50 hover:bg-orange-100 border-orange-200 text-orange-700"
               >
                 {isProcessing === `revert-${api.id}` ? (
-                  <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                  <RefreshCw className="h-3 w-3 mr-2 animate-spin" />
                 ) : (
-                  <RotateCcw className="h-3 w-3 mr-1" />
+                  <RotateCcw className="h-3 w-3 mr-2" />
                 )}
                 Revert
               </Button>
@@ -119,20 +159,21 @@ export const ApiCardActions: React.FC<ApiCardActionsProps> = ({
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button 
                 size="sm" 
-                variant="destructive"
+                variant="outline"
                 disabled={isProcessing !== null}
-                className="flex-shrink-0"
+                className="bg-red-50 hover:bg-red-100 border-red-200 text-red-700"
               >
                 {isProcessing === `cancel-${api.id}` ? (
-                  <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                  <RefreshCw className="h-3 w-3 mr-2 animate-spin" />
                 ) : (
-                  <Trash2 className="h-3 w-3 mr-1" />
+                  <Trash2 className="h-3 w-3 mr-2" />
                 )}
-                Cancel
+                Delete
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
@@ -154,38 +195,8 @@ export const ApiCardActions: React.FC<ApiCardActionsProps> = ({
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
-        </>
+        </div>
       )}
-      
-      {/* External API Publish Button (for draft/review status) */}
-      {(type === 'external' && (api.status === 'draft' || api.status === 'review')) && (
-        <Button 
-          size="sm" 
-          variant="outline"
-          onClick={() => onStatusUpdate?.(api.id, 'published')}
-          disabled={isProcessing !== null || isUpdatingStatus}
-          className="bg-green-50 hover:bg-green-100 flex-shrink-0"
-        >
-          {isProcessing === `status-${api.id}` || isUpdatingStatus ? (
-            <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
-          ) : (
-            <Rocket className="h-3 w-3 mr-1" />
-          )}
-          Publish
-        </Button>
-      )}
-      
-      {/* View Details Button - Always last */}
-      <Button 
-        size="sm" 
-        variant="ghost"
-        onClick={() => onViewDetails?.(api.id)}
-        disabled={isProcessing !== null}
-        className="flex-shrink-0 ml-auto"
-      >
-        <Eye className="h-3 w-3 mr-1" />
-        View
-      </Button>
     </div>
   );
 };

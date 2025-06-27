@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useExternalApis } from '@/hooks/useExternalApis';
 import { externalApiSyncManager } from '@/utils/api/ExternalApiSyncManager';
@@ -187,14 +186,14 @@ export const ApiOverviewSection = ({
 
   return (
     <>
-      <div className="space-y-4">
+      <div className="space-y-6">
         <h3 className="text-lg font-semibold">{title}</h3>
 
         {/* Empty State */}
         {apis.length === 0 ? (
           <ApiEmptyState title={title} type={type} icon={icon} />
         ) : (
-          <div className="grid gap-4">
+          <div className="grid gap-6 lg:grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3">
             {apis.slice(0, 3).map((api) => (
               <ApiCard
                 key={api.id}
@@ -213,7 +212,7 @@ export const ApiOverviewSection = ({
             ))}
             
             {apis.length > 3 && (
-              <div className="text-center py-4">
+              <div className="col-span-full text-center py-6 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
                 <p className="text-sm text-muted-foreground">
                   +{apis.length - 3} more {title.toLowerCase()}
                 </p>
