@@ -4,10 +4,13 @@
 
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiIntegrationManager } from '@/utils/api/ApiIntegrationManager';
+import { ApiIntegrationManager } from '@/utils/api/ApiIntegrationManager';
 import { ApiIntegration } from '@/utils/api/ApiIntegrationTypes';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+
+// Create an instance of the manager
+const apiIntegrationManager = new ApiIntegrationManager();
 
 export const useApiIntegrations = () => {
   const { toast } = useToast();

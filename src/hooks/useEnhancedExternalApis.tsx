@@ -63,8 +63,8 @@ export const useEnhancedExternalApis = () => {
     publishWithSync: publishWithSyncMutation.mutate,
     isPublishingWithSync: publishWithSyncMutation.isPending,
     
-    // Add the missing isLoadingPublished property
-    isLoadingPublished: baseHook.isLoading,
+    // Fix the isLoading property to use the correct property from base hook
+    isLoading: baseHook.isLoadingExternalApis,
     
     // Sync status utilities
     useSyncStatus

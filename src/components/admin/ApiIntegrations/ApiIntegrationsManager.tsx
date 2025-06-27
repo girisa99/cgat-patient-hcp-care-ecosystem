@@ -27,11 +27,33 @@ const ApiIntegrationsManager = () => {
     selectedIntegration, 
     setSelectedIntegration,
     internalApis,
-    externalApis
+    externalApis,
+    downloadPostmanCollection,
+    testEndpoint
   } = useApiIntegrations();
   
   const { externalApis: publishedApis, isLoading: isLoadingPublished } = useEnhancedExternalApis();
   const [activeTab, setActiveTab] = useState('overview');
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // Helper functions for endpoint lists
+  const handleDownloadCollection = (integrationId: string) => {
+    downloadPostmanCollection(integrationId);
+  };
+
+  const handleViewDetails = (integrationId: string) => {
+    setSelectedIntegration(integrationId);
+  };
+
+  const handleViewDocumentation = (integrationId: string) => {
+    // Navigate to documentation view
+    console.log('View documentation for:', integrationId);
+  };
+
+  const handleCopyUrl = (url: string) => {
+    navigator.clipboard.writeText(url);
+  };
 
   if (isLoading) return <LoadingState title="API Integrations" description="Loading API integrations..." />;
   if (error) return <ErrorState title="API Integrations" error={error} />;
@@ -102,7 +124,10 @@ const ApiIntegrationsManager = () => {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Internal APIs</CardTitle>
-                <CreateIntegrationDialog />
+                <CreateIntegrationDialog 
+                  open={createDialogOpen}
+                  onOpenChange={setCreateDialogOpen}
+                />
               </div>
               <p className="text-sm text-muted-foreground">
                 APIs developed and managed internally.
@@ -111,6 +136,11 @@ const ApiIntegrationsManager = () => {
             <CardContent>
               <InternalApiEndpointsList 
                 apis={internalApis || []} 
+                searchTerm={searchTerm}
+                onDownloadCollection={handleDownloadCollection}
+                onViewDetails={handleViewDetails}
+                onViewDocumentation={handleViewDocumentation}
+                onCopyUrl={handleCopyUrl}
               />
             </CardContent>
           </Card>
@@ -121,7 +151,10 @@ const ApiIntegrationsManager = () => {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>External APIs</CardTitle>
-                <CreateIntegrationDialog />
+                <CreateIntegrationDialog 
+                  open={createDialogOpen}
+                  onOpenChange={setCreateDialogOpen}
+                />
               </div>
               <p className="text-sm text-muted-foreground">
                 APIs consumed from external sources.
@@ -130,6 +163,11 @@ const ApiIntegrationsManager = () => {
             <CardContent>
               <ExternalApiEndpointsList 
                 apis={externalApis || []}
+                searchTerm={searchTerm}
+                onDownloadCollection={handleDownloadCollection}
+                onViewDetails={handleViewDetails}
+                onViewDocumentation={handleViewDocumentation}
+                onCopyUrl={handleCopyUrl}
               />
             </CardContent>
           </Card>
@@ -137,7 +175,7 @@ const ApiIntegrationsManager = () => {
 
         <TabsContent value="published" className="space-y-6">
           <PublishedApisSection 
-            publishedApis={publishedApis || []} 
+            externalApis={publishedApis || []} 
             isLoading={isLoadingPublished || false} 
           />
           <ExternalApiPublisher />
