@@ -47,19 +47,26 @@ const Users = () => {
     setEditUserOpen(true);
   };
 
-  // Calculate user statistics
+  // Calculate user statistics with correct data structure
   const userStats = useMemo(() => {
     if (!users) return { total: 0, active: 0, roles: {} };
     
     const stats = {
       total: users.length,
-      active: users.filter(u => u.status === 'active').length,
+      active: users.length, // Assuming all users from auth.users are active
       roles: {} as Record<string, number>
     };
 
     users.forEach(user => {
-      if (user.role) {
-        stats.roles[user.role] = (stats.roles[user.role] || 0) + 1;
+      // Count roles from user_roles array
+      if (user.user_roles && user.user_roles.length > 0) {
+        user.user_roles.forEach(userRole => {
+          const roleName = userRole.roles.name;
+          stats.roles[roleName] = (stats.roles[roleName] || 0) + 1;
+        });
+      } else {
+        // Count users without roles
+        stats.roles['no_role'] = (stats.roles['no_role'] || 0) + 1;
       }
     });
 
@@ -79,7 +86,7 @@ const Users = () => {
           <Badge variant="default">{userStats.active} Active</Badge>
           {Object.entries(userStats.roles).map(([role, count]) => (
             <Badge key={role} variant="secondary" className="capitalize">
-              {count} {role}
+              {count} {role === 'no_role' ? 'No Role' : role}
             </Badge>
           ))}
         </div>
