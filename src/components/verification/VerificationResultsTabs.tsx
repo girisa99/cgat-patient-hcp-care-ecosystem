@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { EnhancedTabs, EnhancedTabsList, EnhancedTabsTrigger, EnhancedTabsContent } from '@/components/ui/enhanced-tabs';
 import { Shield, CheckCircle, AlertTriangle, Lock } from 'lucide-react';
 import { AdminModuleVerificationResult } from '@/utils/verification/AdminModuleVerificationRunner';
 import EnhancedImplementationTracker from './EnhancedImplementationTracker';
@@ -47,21 +47,21 @@ const VerificationResultsTabs: React.FC<VerificationResultsTabsProps> = ({
         </div>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="implementation" className="w-full">
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="implementation">Implementation</TabsTrigger>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="checks">Checks</TabsTrigger>
-            <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
-            <TabsTrigger value="issues">Issues</TabsTrigger>
-            <TabsTrigger value="plan">Plan</TabsTrigger>
-          </TabsList>
+        <EnhancedTabs defaultValue="implementation" className="w-full">
+          <EnhancedTabsList>
+            <EnhancedTabsTrigger value="implementation">Implementation</EnhancedTabsTrigger>
+            <EnhancedTabsTrigger value="overview">Overview</EnhancedTabsTrigger>
+            <EnhancedTabsTrigger value="checks">Checks</EnhancedTabsTrigger>
+            <EnhancedTabsTrigger value="recommendations">Recommendations</EnhancedTabsTrigger>
+            <EnhancedTabsTrigger value="issues">Issues</EnhancedTabsTrigger>
+            <EnhancedTabsTrigger value="plan">Plan</EnhancedTabsTrigger>
+          </EnhancedTabsList>
 
-          <TabsContent value="implementation" className="space-y-4">
+          <EnhancedTabsContent value="implementation">
             <EnhancedImplementationTracker />
-          </TabsContent>
+          </EnhancedTabsContent>
 
-          <TabsContent value="overview" className="space-y-4">
+          <EnhancedTabsContent value="overview">
             <div className="grid gap-4 md:grid-cols-2">
               <div>
                 <h4 className="font-semibold mb-2">Stability Report</h4>
@@ -95,9 +95,9 @@ const VerificationResultsTabs: React.FC<VerificationResultsTabsProps> = ({
                 </div>
               </div>
             </div>
-          </TabsContent>
+          </EnhancedTabsContent>
 
-          <TabsContent value="checks" className="space-y-4">
+          <EnhancedTabsContent value="checks">
             <div className="grid gap-4 md:grid-cols-2">
               <div>
                 <h4 className="font-semibold mb-2 text-green-600">✅ Passed Checks</h4>
@@ -116,9 +116,9 @@ const VerificationResultsTabs: React.FC<VerificationResultsTabsProps> = ({
                 </div>
               </div>
             </div>
-          </TabsContent>
+          </EnhancedTabsContent>
 
-          <TabsContent value="recommendations" className="space-y-4">
+          <EnhancedTabsContent value="recommendations">
             <div className="space-y-2">
               {verificationResult.recommendations.map((rec, index) => (
                 <p key={index} className={rec.startsWith('🔧') || rec.startsWith('📋') || rec.startsWith('🎨') || rec.startsWith('👥') ? 'font-semibold text-blue-600' : 'text-sm pl-4'}>
@@ -126,9 +126,9 @@ const VerificationResultsTabs: React.FC<VerificationResultsTabsProps> = ({
                 </p>
               ))}
             </div>
-          </TabsContent>
+          </EnhancedTabsContent>
 
-          <TabsContent value="issues" className="space-y-4">
+          <EnhancedTabsContent value="issues">
             {verificationResult.criticalIssues.length > 0 ? (
               <div className="space-y-2">
                 <h4 className="font-semibold text-red-600">🚨 Critical Issues</h4>
@@ -145,9 +145,9 @@ const VerificationResultsTabs: React.FC<VerificationResultsTabsProps> = ({
                 <p className="text-muted-foreground">The admin module is free of critical issues.</p>
               </div>
             )}
-          </TabsContent>
+          </EnhancedTabsContent>
 
-          <TabsContent value="plan" className="space-y-4">
+          <EnhancedTabsContent value="plan">
             <div className="space-y-2">
               {verificationResult.improvementPlan.map((item, index) => (
                 <p key={index} className={item.startsWith('📋') || item.startsWith('🚨') || item.startsWith('⚡') || item.startsWith('🔧') ? 'font-semibold text-blue-600' : 'text-sm pl-4'}>
@@ -155,8 +155,8 @@ const VerificationResultsTabs: React.FC<VerificationResultsTabsProps> = ({
                 </p>
               ))}
             </div>
-          </TabsContent>
-        </Tabs>
+          </EnhancedTabsContent>
+        </EnhancedTabs>
       </CardContent>
     </Card>
   );

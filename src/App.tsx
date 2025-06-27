@@ -17,6 +17,7 @@ const Patients = lazy(() => import("./pages/Patients"));
 const Facilities = lazy(() => import("./pages/Facilities"));
 const Modules = lazy(() => import("./pages/Modules"));
 const ApiManagement = lazy(() => import("./pages/ApiManagement"));
+const ApiIntegrations = lazy(() => import("./pages/ApiIntegrations"));
 const AdminVerificationTest = lazy(() => import("./pages/AdminVerificationTest"));
 
 const queryClient = new QueryClient({
@@ -47,6 +48,7 @@ function App() {
                 <Route path="/facilities" element={<Facilities />} />
                 <Route path="/modules" element={<Modules />} />
                 <Route path="/api-management" element={<ApiManagement />} />
+                <Route path="/api-integrations" element={<ApiIntegrations />} />
                 <Route path="/admin-verification" element={<AdminVerificationTest />} />
               </Routes>
             </Suspense>

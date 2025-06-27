@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { EnhancedTabs, EnhancedTabsList, EnhancedTabsTrigger, EnhancedTabsContent } from '@/components/ui/enhanced-tabs';
 import { OverviewTabContent } from './tabs/OverviewTabContent';
 import { InternalApisTabContent } from './tabs/InternalApisTabContent';
 import { ExternalApisTabContent } from './tabs/ExternalApisTabContent';
@@ -41,22 +41,22 @@ export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = ({
   onClose
 }) => {
   return (
-    <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
-      <TabsList className="grid grid-cols-7 w-full">
-        <TabsTrigger value="overview">Overview</TabsTrigger>
-        <TabsTrigger value="internal">Internal APIs</TabsTrigger>
-        <TabsTrigger value="external">External APIs</TabsTrigger>
-        <TabsTrigger value="published">Published APIs</TabsTrigger>
-        <TabsTrigger value="developer">Developer</TabsTrigger>
-        <TabsTrigger value="keys">API Keys</TabsTrigger>
-        <TabsTrigger value="testing">Testing</TabsTrigger>
-      </TabsList>
+    <EnhancedTabs defaultValue={activeTab} className="w-full">
+      <EnhancedTabsList>
+        <EnhancedTabsTrigger value="overview">Overview</EnhancedTabsTrigger>
+        <EnhancedTabsTrigger value="internal">Internal APIs</EnhancedTabsTrigger>
+        <EnhancedTabsTrigger value="external">External APIs</EnhancedTabsTrigger>
+        <EnhancedTabsTrigger value="published">Published APIs</EnhancedTabsTrigger>
+        <EnhancedTabsTrigger value="developer">Developer</EnhancedTabsTrigger>
+        <EnhancedTabsTrigger value="keys">API Keys</EnhancedTabsTrigger>
+        <EnhancedTabsTrigger value="testing">Testing</EnhancedTabsTrigger>
+      </EnhancedTabsList>
 
-      <TabsContent value="overview" className="space-y-6">
+      <EnhancedTabsContent value="overview">
         <OverviewTabContent />
-      </TabsContent>
+      </EnhancedTabsContent>
 
-      <TabsContent value="internal" className="space-y-6">
+      <EnhancedTabsContent value="internal">
         <InternalApisTabContent
           internalApis={internalApis}
           searchTerm={searchTerm}
@@ -67,9 +67,9 @@ export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = ({
           onViewDocumentation={onViewDocumentation}
           onCopyUrl={onCopyUrl}
         />
-      </TabsContent>
+      </EnhancedTabsContent>
 
-      <TabsContent value="external" className="space-y-6">
+      <EnhancedTabsContent value="external">
         <ExternalApisTabContent
           externalApis={externalApis}
           searchTerm={searchTerm}
@@ -80,26 +80,26 @@ export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = ({
           onViewDocumentation={onViewDocumentation}
           onCopyUrl={onCopyUrl}
         />
-      </TabsContent>
+      </EnhancedTabsContent>
 
-      <TabsContent value="published" className="space-y-6">
+      <EnhancedTabsContent value="published">
         <PublishedApisTabContent />
-      </TabsContent>
+      </EnhancedTabsContent>
 
-      <TabsContent value="developer" className="space-y-6">
+      <EnhancedTabsContent value="developer">
         <DeveloperTabContent />
-      </TabsContent>
+      </EnhancedTabsContent>
 
-      <TabsContent value="keys" className="space-y-6">
+      <EnhancedTabsContent value="keys">
         <ApiKeysTabContent />
-      </TabsContent>
+      </EnhancedTabsContent>
 
-      <TabsContent value="testing" className="space-y-6">
+      <EnhancedTabsContent value="testing">
         <TestingTabContent
           integrations={integrations}
           onClose={onClose}
         />
-      </TabsContent>
-    </Tabs>
+      </EnhancedTabsContent>
+    </EnhancedTabs>
   );
 };
