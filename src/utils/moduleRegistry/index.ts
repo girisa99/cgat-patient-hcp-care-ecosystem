@@ -1,6 +1,6 @@
 
 /**
- * Module Registry - Main Export with Refactored Structure
+ * Module Registry - Main Export with Enhanced Refactored Structure
  * 
  * Maintains a registry of all modules and their configurations,
  * enabling real-time updates, validation, automatic registration, and RBAC tracking.
@@ -12,7 +12,9 @@ import {
   registerComponentToModule, 
   enableAutoRegistration, 
   disableAutoRegistration,
-  initializeDefaultModules
+  initializeDefaultModules,
+  createRegistryBackup,
+  restoreRegistryFromBackup
 } from './registryUtils';
 
 // Export types
@@ -31,8 +33,26 @@ export {
   registerNewModule, 
   registerComponentToModule, 
   enableAutoRegistration, 
-  disableAutoRegistration 
+  disableAutoRegistration,
+  createRegistryBackup,
+  restoreRegistryFromBackup
 } from './registryUtils';
+
+// Export auto-registration utilities
+export {
+  autoScanAndRegister,
+  getAutoRegistrationCandidates
+} from './autoRegistrationUtils';
+
+// Export component management utilities
+export {
+  registerComponentsToModule,
+  getComponentsByPermission,
+  getProtectedComponents,
+  getModuleComponentStats,
+  validateComponent,
+  cleanupOrphanedComponents
+} from './componentManagementUtils';
 
 // Global module registry instance
 export const moduleRegistry = new ModuleRegistry();

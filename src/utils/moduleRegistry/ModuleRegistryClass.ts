@@ -1,6 +1,5 @@
-
 /**
- * Main Module Registry Class
+ * Main Module Registry Class - Optimized
  */
 
 import { scanForRealComponents, scanForRealHooks, scanForRealServices } from '../schema/componentScanner';
