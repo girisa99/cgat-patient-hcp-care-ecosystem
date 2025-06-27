@@ -19,9 +19,9 @@ export const useDebugMode = () => {
   useEffect(() => {
     if (layoutDebug) {
       const logLayoutInfo = () => {
-        const header = document.querySelector('header');
-        const sidebar = document.querySelector('[data-sidebar]');
-        const main = document.querySelector('main');
+        const header = document.querySelector('header') as HTMLElement;
+        const sidebar = document.querySelector('[data-sidebar]') as HTMLElement;
+        const main = document.querySelector('main') as HTMLElement;
         
         console.log('🔍 Layout Debug Measurements:');
         console.log('Header:', {

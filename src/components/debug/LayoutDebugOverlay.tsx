@@ -11,10 +11,13 @@ export const LayoutDebugOverlay: React.FC<LayoutDebugOverlayProps> = ({ isEnable
 
   if (!isEnabled) return null;
 
-  // Get current measurements
-  const headerHeight = document.querySelector('header')?.offsetHeight || 0;
-  const sidebarWidth = document.querySelector('[data-sidebar]')?.offsetWidth || 0;
-  const mainElement = document.querySelector('main');
+  // Get current measurements with proper type casting
+  const headerElement = document.querySelector('header') as HTMLElement;
+  const sidebarElement = document.querySelector('[data-sidebar]') as HTMLElement;
+  const mainElement = document.querySelector('main') as HTMLElement;
+  
+  const headerHeight = headerElement?.offsetHeight || 0;
+  const sidebarWidth = sidebarElement?.offsetWidth || 0;
   const mainTop = mainElement?.getBoundingClientRect().top || 0;
   const mainLeft = mainElement?.getBoundingClientRect().left || 0;
 
