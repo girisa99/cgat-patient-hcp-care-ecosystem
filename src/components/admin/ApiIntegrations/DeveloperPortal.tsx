@@ -92,10 +92,11 @@ const DeveloperPortal = () => {
 
   // Get enhanced details for the first published API (for sandbox/docs)
   const firstPublishedApi = publishedApisForDevelopers.length > 0 ? publishedApisForDevelopers[0] : null;
+  const { useApiDetailsQuery } = useEnhancedPublishedApiDetails();
   const {
-    apiDetails,
-    isLoadingDetails
-  } = useEnhancedPublishedApiDetails(firstPublishedApi?.id || '');
+    data: apiDetails,
+    isLoading: isLoadingDetails
+  } = useApiDetailsQuery(firstPublishedApi?.id || '');
 
   const availableModules = [
     { id: 'patients', name: 'Patient Management', description: 'Access patient data and records' },
