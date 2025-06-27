@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useApiIntegrations } from '@/hooks/useApiIntegrations.tsx';
 import { useEnhancedExternalApis } from '@/hooks/useEnhancedExternalApis';
@@ -25,7 +26,6 @@ const ApiIntegrationsManager = () => {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Helper functions for endpoint lists
   const handleDownloadCollection = (integrationId: string) => {
     downloadPostmanCollection(integrationId);
   };
@@ -55,7 +55,7 @@ const ApiIntegrationsManager = () => {
   }
 
   return (
-    <div>
+    <div className="space-y-6">
       <ApiIntegrationsStats
         integrations={integrations || []}
         internalApis={internalApis || []}
@@ -63,23 +63,21 @@ const ApiIntegrationsManager = () => {
         publishedApis={publishedApis || []}
       />
 
-      <div className="mt-6">
-        <ApiIntegrationsTabs
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          internalApis={internalApis || []}
-          externalApis={externalApis || []}
-          searchTerm={searchTerm}
-          createDialogOpen={createDialogOpen}
-          setCreateDialogOpen={setCreateDialogOpen}
-          onDownloadCollection={handleDownloadCollection}
-          onViewDetails={handleViewDetails}
-          onViewDocumentation={handleViewDocumentation}
-          onCopyUrl={handleCopyUrl}
-          integrations={integrations || []}
-          onClose={() => setActiveTab('overview')}
-        />
-      </div>
+      <ApiIntegrationsTabs
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        internalApis={internalApis || []}
+        externalApis={externalApis || []}
+        searchTerm={searchTerm}
+        createDialogOpen={createDialogOpen}
+        setCreateDialogOpen={setCreateDialogOpen}
+        onDownloadCollection={handleDownloadCollection}
+        onViewDetails={handleViewDetails}
+        onViewDocumentation={handleViewDocumentation}
+        onCopyUrl={handleCopyUrl}
+        integrations={integrations || []}
+        onClose={() => setActiveTab('overview')}
+      />
     </div>
   );
 };

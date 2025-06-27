@@ -4,7 +4,6 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/components/auth/AuthProvider';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
-import StandardizedDashboardLayout from '@/components/layout/StandardizedDashboardLayout';
 import { ThemeProvider } from 'next-themes';
 import Index from '@/pages/Index';
 import Dashboard from '@/pages/Dashboard';
@@ -28,16 +27,13 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <Router>
-            {/* Remove the wrapper div that was adding extra background and spacing */}
             <Routes>
               <Route path="/" element={<Index />} />
               <Route
                 path="/dashboard"
                 element={
                   <ProtectedRoute>
-                    <StandardizedDashboardLayout showPageHeader pageTitle="Dashboard" pageSubtitle="Healthcare System Overview">
-                      <Dashboard />
-                    </StandardizedDashboardLayout>
+                    <Dashboard />
                   </ProtectedRoute>
                 }
               />
@@ -45,9 +41,7 @@ function App() {
                 path="/users"
                 element={
                   <ProtectedRoute>
-                    <StandardizedDashboardLayout showPageHeader pageTitle="User Management" pageSubtitle="Manage user accounts, roles, and permissions">
-                      <Users />
-                    </StandardizedDashboardLayout>
+                    <Users />
                   </ProtectedRoute>
                 }
               />
@@ -55,9 +49,7 @@ function App() {
                 path="/facilities"
                 element={
                   <ProtectedRoute>
-                    <StandardizedDashboardLayout showPageHeader pageTitle="Facilities" pageSubtitle="Manage healthcare facilities and locations">
-                      <Facilities />
-                    </StandardizedDashboardLayout>
+                    <Facilities />
                   </ProtectedRoute>
                 }
               />
@@ -65,9 +57,7 @@ function App() {
                 path="/patients"
                 element={
                   <ProtectedRoute>
-                    <StandardizedDashboardLayout showPageHeader pageTitle="Patients" pageSubtitle="Manage patient records and information">
-                      <Patients />
-                    </StandardizedDashboardLayout>
+                    <Patients />
                   </ProtectedRoute>
                 }
               />
@@ -75,9 +65,7 @@ function App() {
                 path="/settings"
                 element={
                   <ProtectedRoute>
-                    <StandardizedDashboardLayout showPageHeader pageTitle="Settings" pageSubtitle="System configuration and preferences">
-                      <Settings />
-                    </StandardizedDashboardLayout>
+                    <Settings />
                   </ProtectedRoute>
                 }
               />
@@ -85,9 +73,7 @@ function App() {
                 path="/onboarding"
                 element={
                   <ProtectedRoute>
-                    <StandardizedDashboardLayout showPageHeader pageTitle="Onboarding" pageSubtitle="User onboarding and setup workflows">
-                      <Onboarding />
-                    </StandardizedDashboardLayout>
+                    <Onboarding />
                   </ProtectedRoute>
                 }
               />
@@ -95,9 +81,7 @@ function App() {
                 path="/modules"
                 element={
                   <ProtectedRoute>
-                    <StandardizedDashboardLayout showPageHeader pageTitle="Modules" pageSubtitle="System modules and components management">
-                      <Modules />
-                    </StandardizedDashboardLayout>
+                    <Modules />
                   </ProtectedRoute>
                 }
               />
@@ -105,9 +89,7 @@ function App() {
                 path="/audit-log"
                 element={
                   <ProtectedRoute>
-                    <StandardizedDashboardLayout showPageHeader pageTitle="Audit Log" pageSubtitle="System activity and security audit trail">
-                      <AuditLog />
-                    </StandardizedDashboardLayout>
+                    <AuditLog />
                   </ProtectedRoute>
                 }
               />
@@ -123,9 +105,7 @@ function App() {
                 path="/design-system"
                 element={
                   <ProtectedRoute>
-                    <StandardizedDashboardLayout showPageHeader pageTitle="Design System" pageSubtitle="Component library and design tokens">
-                      <DesignSystem />
-                    </StandardizedDashboardLayout>
+                    <DesignSystem />
                   </ProtectedRoute>
                 }
               />
