@@ -1,4 +1,3 @@
-
 /**
  * Enhanced Automated Verification System - Main Export 
  * 
@@ -271,8 +270,7 @@ const generateCodeFromTemplate = async (request: TemplateGenerationRequest): Pro
   // Fix: Use only properties that exist in TemplateGenerationResult
   return {
     success: true,
-    templateUsed: request.templateType || 'default',
-    recommendations: []
+    templateUsed: request.templateType || 'default'
   };
 };
 
