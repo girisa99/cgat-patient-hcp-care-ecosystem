@@ -21,7 +21,7 @@ interface PatientsListProps {
 }
 
 export const PatientsList: React.FC<PatientsListProps> = ({
-  patients,
+  patients = [], // Default to empty array to prevent undefined errors
   onView,
   onEdit,
   onDeactivate,
@@ -34,12 +34,33 @@ export const PatientsList: React.FC<PatientsListProps> = ({
   isMobileApp = false,
   isOnline = true
 }) => {
+  // Ensure patients is always an array
+  const safePatients = Array.isArray(patients) ? patients : [];
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <UserCheck className="h-5 w-5" />
+            Loading Patients...
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex justify-center items-center p-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <UserCheck className="h-5 w-5" />
-          Registered Patients ({patients.length})
+          Registered Patients ({safePatients.length})
           {isMobileApp && (
             <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
               Mobile
@@ -64,7 +85,7 @@ export const PatientsList: React.FC<PatientsListProps> = ({
         )}
         
         <div className="space-y-4">
-          {patients.map((patient) => (
+          {safePatients.map((patient) => (
             <PatientCard
               key={patient.id}
               patient={patient}
@@ -76,7 +97,7 @@ export const PatientsList: React.FC<PatientsListProps> = ({
           ))}
         </div>
         
-        {patients.length === 0 && !isLoading && (
+        {safePatients.length === 0 && !isLoading && (
           <div className="text-center py-8">
             <UserCheck className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <p className="text-muted-foreground">
@@ -88,3 +109,5 @@ export const PatientsList: React.FC<PatientsListProps> = ({
     </Card>
   );
 };
+
+export default PatientsList;

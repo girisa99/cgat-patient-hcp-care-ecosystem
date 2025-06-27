@@ -1,20 +1,12 @@
 
 import React from 'react';
-import { Eye, Edit, UserX } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Eye, Edit, UserX } from 'lucide-react';
 
 interface PatientCardProps {
-  patient: {
-    id: string;
-    first_name: string;
-    last_name: string;
-    email: string;
-    phone?: string;
-    created_at: string;
-    facilities?: {
-      name: string;
-    } | null;
-  };
+  patient: any;
   onView: (patientId: string) => void;
   onEdit: (patientId: string) => void;
   onDeactivate: (patientId: string, patientName: string) => void;
@@ -28,73 +20,60 @@ export const PatientCard: React.FC<PatientCardProps> = ({
   onDeactivate,
   isDeactivating
 }) => {
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString();
-  };
+  const patientName = patient.first_name && patient.last_name 
+    ? `${patient.first_name} ${patient.last_name}`
+    : patient.email || 'Unknown Patient';
 
   return (
-    <div className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <h4 className="font-medium">
-            {patient.first_name} {patient.last_name}
-          </h4>
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm text-muted-foreground">
-            <span>{patient.email}</span>
-            {patient.phone && (
-              <>
-                <span className="hidden sm:inline">•</span>
-                <span>{patient.phone}</span>
-              </>
-            )}
+    <Card>
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <div className="flex items-center gap-3">
+              <div>
+                <h3 className="font-medium">{patientName}</h3>
+                <p className="text-sm text-muted-foreground">{patient.email}</p>
+                {patient.phone && (
+                  <p className="text-sm text-muted-foreground">{patient.phone}</p>
+                )}
+              </div>
+            </div>
           </div>
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm text-muted-foreground">
-            <span>
-              Facility: {patient.facilities?.name || 'Not assigned'}
-            </span>
-            <span className="hidden sm:inline">•</span>
-            <span>Registered: {formatDate(patient.created_at)}</span>
-          </div>
-        </div>
-        <div className="flex items-center space-x-2">
-          <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
-            Active
-          </span>
-          <div className="flex space-x-1">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="flex items-center space-x-1"
-              onClick={() => onView(patient.id)}
-            >
-              <Eye className="h-3 w-3" />
-              <span>View</span>
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="flex items-center space-x-1"
-              onClick={() => onEdit(patient.id)}
-            >
-              <Edit className="h-3 w-3" />
-              <span>Edit</span>
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="flex items-center space-x-1 text-red-600 hover:text-red-700"
-              onClick={() => onDeactivate(
-                patient.id, 
-                `${patient.first_name} ${patient.last_name}`
-              )}
-              disabled={isDeactivating}
-            >
-              <UserX className="h-3 w-3" />
-              <span>Deactivate</span>
-            </Button>
+          
+          <div className="flex items-center gap-2">
+            <Badge variant="outline">
+              Patient
+            </Badge>
+            
+            <div className="flex items-center gap-1">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onView(patient.id)}
+              >
+                <Eye className="h-4 w-4" />
+              </Button>
+              
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onEdit(patient.id)}
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+              
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onDeactivate(patient.id, patientName)}
+                disabled={isDeactivating}
+              >
+                <UserX className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };

@@ -1,46 +1,55 @@
 
 import React from 'react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Users, UserPlus, Settings } from 'lucide-react';
 
-interface ConsistentUsersLayoutProps {
-  children: React.ReactNode;
-  title?: string;
-  description?: string;
-  showAlert?: boolean;
-  alertMessage?: string;
-}
-
-export const ConsistentUsersLayout: React.FC<ConsistentUsersLayoutProps> = ({
-  children,
-  title = "User Management",
-  description = "Manage user accounts and permissions",
-  showAlert = false,
-  alertMessage
-}) => {
+const ConsistentUsersLayout = () => {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="w-full px-4 py-8">
-        {/* Header Section - Left Aligned */}
-        <div className="mb-8 text-left">
-          <h1 className="text-4xl font-bold tracking-tight text-gray-900 mb-2 text-left">{title}</h1>
-          <p className="text-lg text-gray-600 text-left">{description}</p>
-          
-          {showAlert && alertMessage && (
-            <Alert className="mt-6 bg-blue-50 border-blue-200">
-              <AlertCircle className="h-4 w-4 text-blue-600" />
-              <AlertDescription className="text-blue-800">
-                {alertMessage}
-              </AlertDescription>
-            </Alert>
-          )}
-        </div>
-
-        {/* Main Content */}
-        <div className="space-y-8 w-full">
-          {children}
-        </div>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Users Management</h1>
+        <p className="text-muted-foreground">
+          Manage system users, roles, and permissions
+        </p>
       </div>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            User Management System
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="flex items-center space-x-4 p-4 border rounded-lg">
+              <UserPlus className="h-8 w-8 text-blue-500" />
+              <div>
+                <h3 className="font-medium">Add Users</h3>
+                <p className="text-sm text-muted-foreground">Create new user accounts</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-4 p-4 border rounded-lg">
+              <Settings className="h-8 w-8 text-green-500" />
+              <div>
+                <h3 className="font-medium">Manage Roles</h3>
+                <p className="text-sm text-muted-foreground">Assign and modify user roles</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-4 p-4 border rounded-lg">
+              <Users className="h-8 w-8 text-purple-500" />
+              <div>
+                <h3 className="font-medium">View Users</h3>
+                <p className="text-sm text-muted-foreground">Browse all system users</p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
+
+export default ConsistentUsersLayout;

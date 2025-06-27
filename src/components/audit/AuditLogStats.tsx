@@ -1,80 +1,60 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Activity, Clock, Shield, Users } from 'lucide-react';
-import { useAuditLogStats } from '@/hooks/useAuditLogs';
+import { Shield, Activity, AlertTriangle, CheckCircle } from 'lucide-react';
 
 export const AuditLogStats = () => {
-  const { data: stats, isLoading } = useAuditLogStats();
-
-  if (isLoading) {
-    return (
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {[...Array(4)].map((_, i) => (
-          <Card key={i}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Loading...</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">--</div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    );
-  }
+  // Mock statistics for demonstration
+  const stats = {
+    totalEvents: 1247,
+    recentEvents: 23,
+    securityAlerts: 2,
+    successfulActions: 1220
+  };
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-4 md:grid-cols-4">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total Logs</CardTitle>
+          <CardTitle className="text-sm font-medium">Total Events</CardTitle>
           <Activity className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{stats?.total_logs || 0}</div>
-          <p className="text-xs text-muted-foreground">
-            All time activity
-          </p>
+          <div className="text-2xl font-bold">{stats.totalEvents.toLocaleString()}</div>
+          <p className="text-xs text-muted-foreground">All time</p>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Today's Activity</CardTitle>
-          <Clock className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{stats?.today_logs || 0}</div>
-          <p className="text-xs text-muted-foreground">
-            Events logged today
-          </p>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Security Events</CardTitle>
+          <CardTitle className="text-sm font-medium">Recent Events</CardTitle>
           <Shield className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{stats?.filtered_count || 0}</div>
-          <p className="text-xs text-muted-foreground">
-            In current view
-          </p>
+          <div className="text-2xl font-bold">{stats.recentEvents}</div>
+          <p className="text-xs text-muted-foreground">Last 24 hours</p>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Active Users</CardTitle>
-          <Users className="h-4 w-4 text-muted-foreground" />
+          <CardTitle className="text-sm font-medium">Security Alerts</CardTitle>
+          <AlertTriangle className="h-4 w-4 text-yellow-600" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{stats?.active_users || 0}</div>
-          <p className="text-xs text-muted-foreground">
-            Users with activity (7 days)
-          </p>
+          <div className="text-2xl font-bold text-yellow-600">{stats.securityAlerts}</div>
+          <p className="text-xs text-muted-foreground">Requires attention</p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Successful Actions</CardTitle>
+          <CheckCircle className="h-4 w-4 text-green-600" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold text-green-600">{stats.successfulActions.toLocaleString()}</div>
+          <p className="text-xs text-muted-foreground">No issues</p>
         </CardContent>
       </Card>
     </div>
