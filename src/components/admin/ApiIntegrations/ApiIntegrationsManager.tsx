@@ -1,109 +1,155 @@
-
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Globe, 
-  ArrowUpCircle, 
-  ArrowDownCircle, 
-  Settings,
-  Search,
-  BarChart3,
-  Users
-} from 'lucide-react';
 import { useApiIntegrations } from '@/hooks/useApiIntegrations';
-import { useExternalApis } from '@/hooks/useExternalApis';
-import { usePublishedApiIntegration } from '@/hooks/usePublishedApiIntegration';
+import { useEnhancedExternalApis } from '@/hooks/useEnhancedExternalApis';
+import AutoIntegrationBanner from './AutoIntegrationBanner';
+import ApiKeyIntegrationMonitor from './ApiKeyIntegrationMonitor';
 import ApiOverviewDashboard from './ApiOverviewDashboard';
-import ExternalApiPublisher from './ExternalApiPublisher';
+import InternalApiEndpointsList from './InternalApiEndpointsList';
+import ExternalApiEndpointsList from './ExternalApiEndpointsList';
 import PublishedApisSection from './PublishedApisSection';
-import ApiPublicationStatusChecker from './ApiPublicationStatusChecker';
-import DeveloperPortal from './DeveloperPortal';
+import CreateIntegrationDialog from './CreateIntegrationDialog';
+import ExternalApiPublisher from './ExternalApiPublisher';
+import ApiKeyManager from './ApiKeyManager';
+import ApiTestingInterface from './ApiTestingInterface';
+import IntegrationDetailView from './IntegrationDetailView';
+import LoadingState from '../shared/LoadingState';
+import ErrorState from '../shared/ErrorState';
 
 const ApiIntegrationsManager = () => {
-  const { integrations } = useApiIntegrations();
-  const { externalApis } = useExternalApis();
-  const { publishedApisForDevelopers } = usePublishedApiIntegration();
+  const { 
+    integrations, 
+    isLoading, 
+    error, 
+    selectedIntegration, 
+    setSelectedIntegration,
+    internalApis,
+    externalApis
+  } = useApiIntegrations();
+  
+  const { externalApis: publishedApis, isLoading: isLoadingPublished } = useEnhancedExternalApis();
+  const [activeTab, setActiveTab] = useState('overview');
 
-  // Calculate counts
-  const internalApis = integrations?.filter(api => api.type === 'internal') || [];
-  const consumedApis = integrations?.filter(api => api.type === 'external') || [];
-  const draftApis = externalApis.filter(api => api.status === 'draft');
-  const reviewApis = externalApis.filter(api => api.status === 'review');
+  if (isLoading) return <LoadingState />;
+  if (error) return <ErrorState error={error} />;
+
+  if (selectedIntegration) {
+    return (
+      <IntegrationDetailView 
+        integrationId={selectedIntegration}
+        onBack={() => setSelectedIntegration(null)}
+      />
+    );
+  }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="container mx-auto p-6 space-y-8">
+      {/* Auto Integration Banner */}
+      <AutoIntegrationBanner />
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">API Integrations</h1>
-          <p className="text-muted-foreground">
-            Manage your API ecosystem - consume external APIs and publish internal APIs
+          <p className="text-muted-foreground mt-2">
+            Manage internal APIs, external integrations, and auto-activated API keys
           </p>
+        </div>
+        <div className="flex gap-2">
+          <Badge variant="outline">{integrations?.length || 0} Total</Badge>
+          <Badge variant="default">{internalApis.length} Internal</Badge>
+          <Badge variant="secondary">{externalApis.length} External</Badge>
+          <Badge variant="outline">{publishedApis?.length || 0} Published</Badge>
         </div>
       </div>
 
-      <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="flex flex-wrap gap-1 h-auto p-1 bg-muted rounded-md">
-          <TabsTrigger value="overview" className="flex items-center gap-2 flex-shrink-0">
-            <BarChart3 className="h-4 w-4" />
-            Overview
-          </TabsTrigger>
-          <TabsTrigger value="status-checker" className="flex items-center gap-2 flex-shrink-0">
-            <Search className="h-4 w-4" />
-            Status Checker
-          </TabsTrigger>
-          <TabsTrigger value="publisher" className="flex items-center gap-2 flex-shrink-0">
-            <ArrowUpCircle className="h-4 w-4" />
-            Publisher
-            {(draftApis.length > 0 || reviewApis.length > 0) && (
-              <Badge variant="secondary" className="ml-1">
-                {draftApis.length + reviewApis.length}
-              </Badge>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="published" className="flex items-center gap-2 flex-shrink-0">
-            <Globe className="h-4 w-4" />
-            Published APIs
-            <Badge variant="outline" className="ml-1">
-              {publishedApisForDevelopers.length}
-            </Badge>
-          </TabsTrigger>
-          <TabsTrigger value="developer-portal" className="flex items-center gap-2 flex-shrink-0">
-            <Users className="h-4 w-4" />
-            Developer Portal
-          </TabsTrigger>
-          <TabsTrigger value="settings" className="flex items-center gap-2 flex-shrink-0">
-            <Settings className="h-4 w-4" />
-            Settings
-          </TabsTrigger>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid grid-cols-7 w-full">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="auto-keys">Auto-Keys</TabsTrigger>
+          <TabsTrigger value="internal">Internal APIs</TabsTrigger>
+          <TabsTrigger value="external">External APIs</TabsTrigger>
+          <TabsTrigger value="published">Published APIs</TabsTrigger>
+          <TabsTrigger value="keys">API Keys</TabsTrigger>
+          <TabsTrigger value="testing">Testing</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview">
+        <TabsContent value="overview" className="space-y-6">
           <ApiOverviewDashboard />
         </TabsContent>
 
-        <TabsContent value="status-checker">
-          <ApiPublicationStatusChecker />
+        <TabsContent value="auto-keys" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                🤖 Auto-Activated API Integrations
+                <Badge variant="secondary">Framework Automation</Badge>
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                API keys automatically trigger framework components: schemas, RLS policies, documentation, and module registration.
+              </p>
+            </CardHeader>
+            <CardContent>
+              <ApiKeyIntegrationMonitor />
+            </CardContent>
+          </Card>
         </TabsContent>
 
-        <TabsContent value="publisher">
+        <TabsContent value="internal" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Internal APIs</CardTitle>
+                <CreateIntegrationDialog type="internal" />
+              </div>
+              <p className="text-sm text-muted-foreground">
+                APIs developed and managed internally.
+              </p>
+            </CardHeader>
+            <CardContent>
+              <InternalApiEndpointsList 
+                apis={internalApis} 
+                onSelectIntegration={setSelectedIntegration} 
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="external" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>External APIs</CardTitle>
+                <CreateIntegrationDialog type="external" />
+              </div>
+              <p className="text-sm text-muted-foreground">
+                APIs consumed from external sources.
+              </p>
+            </CardHeader>
+            <CardContent>
+              <ExternalApiEndpointsList 
+                apis={externalApis}
+                onSelectIntegration={setSelectedIntegration}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="published" className="space-y-6">
+          <PublishedApisSection 
+            publishedApis={publishedApis} 
+            isLoading={isLoadingPublished} 
+          />
           <ExternalApiPublisher />
         </TabsContent>
 
-        <TabsContent value="published">
-          <PublishedApisSection showInDeveloperPortal={false} />
+        <TabsContent value="keys" className="space-y-6">
+          <ApiKeyManager />
         </TabsContent>
 
-        <TabsContent value="developer-portal">
-          <DeveloperPortal />
-        </TabsContent>
-
-        <TabsContent value="settings">
-          <div className="text-center py-12">
-            <Settings className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-medium mb-2">API Settings</h3>
-            <p className="text-muted-foreground">Advanced API configuration options coming soon.</p>
-          </div>
+        <TabsContent value="testing" className="space-y-6">
+          <ApiTestingInterface />
         </TabsContent>
       </Tabs>
     </div>

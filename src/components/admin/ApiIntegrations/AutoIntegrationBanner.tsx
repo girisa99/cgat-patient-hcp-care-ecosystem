@@ -18,9 +18,11 @@ import {
   Shield,
   FileText,
   Code2,
-  Brain
+  Brain,
+  Key
 } from 'lucide-react';
 import { useApiConsumptionTrigger } from '@/hooks/useApiConsumptionTrigger';
+import { useApiKeyMonitor } from '@/hooks/useApiKeyMonitor';
 
 const AutoIntegrationBanner = () => {
   const {
@@ -29,8 +31,22 @@ const AutoIntegrationBanner = () => {
     triggerManualOrchestration,
     isManualTriggering
   } = useApiConsumptionTrigger();
+  
+  const { apiKeys } = useApiKeyMonitor();
 
   const getOverallStatus = () => {
+    const recentKeys = apiKeys?.filter(key => 
+      new Date(key.created_at) > new Date(Date.now() - 300000) // 5 minutes
+    ).length || 0;
+
+    if (recentKeys > 0) {
+      return { 
+        status: 'auto-active', 
+        message: `${recentKeys} API key${recentKeys > 1 ? 's' : ''} auto-activated`, 
+        color: 'default' 
+      };
+    }
+
     if (!orchestrationResults || orchestrationResults.length === 0) {
       return { status: 'idle', message: 'Auto-integration ready', color: 'secondary' };
     }
@@ -40,23 +56,29 @@ const AutoIntegrationBanner = () => {
     const failedResults = totalResults - successfulResults;
 
     if (failedResults === 0) {
-      return { status: 'success', message: 'All integrations automated', color: 'success' };
+      return { status: 'success', message: 'All integrations automated', color: 'default' };
     } else if (successfulResults > 0) {
-      return { status: 'partial', message: `${successfulResults}/${totalResults} integrations automated`, color: 'warning' };
+      return { status: 'partial', message: `${successfulResults}/${totalResults} integrations automated`, color: 'secondary' };
     } else {
       return { status: 'failed', message: 'Integration automation failed', color: 'destructive' };
     }
   };
 
   const getAutomationStats = () => {
+    const apiKeyCount = apiKeys?.length || 0;
+    const recentApiKeys = apiKeys?.filter(key => 
+      new Date(key.created_at) > new Date(Date.now() - 300000)
+    ).length || 0;
+
     if (!orchestrationResults || orchestrationResults.length === 0) {
       return {
-        schemas: 0,
-        policies: 0,
-        mappings: 0,
-        modules: 0,
-        types: 0,
-        docs: 0
+        schemas: recentApiKeys,
+        policies: recentApiKeys,
+        mappings: recentApiKeys,
+        modules: recentApiKeys,
+        types: recentApiKeys,
+        docs: recentApiKeys,
+        apiKeys: apiKeyCount
       };
     }
 
@@ -66,8 +88,9 @@ const AutoIntegrationBanner = () => {
       mappings: acc.mappings + result.generatedDataMappings.length,
       modules: acc.modules + result.registeredModules.length,
       types: acc.types + result.generatedTypeScriptTypes.length,
-      docs: acc.docs + (result.generatedDocumentation ? 1 : 0)
-    }), { schemas: 0, policies: 0, mappings: 0, modules: 0, types: 0, docs: 0 });
+      docs: acc.docs + (result.generatedDocumentation ? 1 : 0),
+      apiKeys: apiKeyCount
+    }), { schemas: 0, policies: 0, mappings: 0, modules: 0, types: 0, docs: 0, apiKeys: apiKeyCount });
   };
 
   const overallStatus = getOverallStatus();
@@ -85,13 +108,14 @@ const AutoIntegrationBanner = () => {
             <div>
               <h3 className="font-semibold text-lg">Framework Auto-Integration</h3>
               <p className="text-sm text-muted-foreground">
-                Automatic schema, RLS, documentation, and TypeScript generation
+                Automatic schema, RLS, documentation, and TypeScript generation from API keys
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <Badge variant={overallStatus.color as any}>
               {overallStatus.status === 'success' && <CheckCircle className="h-3 w-3 mr-1" />}
+              {overallStatus.status === 'auto-active' && <Key className="h-3 w-3 mr-1" />}
               {overallStatus.status === 'partial' && <AlertCircle className="h-3 w-3 mr-1" />}
               {overallStatus.status === 'failed' && <AlertCircle className="h-3 w-3 mr-1" />}
               {overallStatus.message}
@@ -101,7 +125,14 @@ const AutoIntegrationBanner = () => {
         </div>
 
         {/* Automation Statistics */}
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-4">
+        <div className="grid grid-cols-3 md:grid-cols-7 gap-4 mb-4">
+          <div className="text-center">
+            <div className="flex items-center justify-center mb-1">
+              <Key className="h-4 w-4 text-yellow-600 mr-1" />
+              <span className="font-semibold text-lg">{stats.apiKeys}</span>
+            </div>
+            <p className="text-xs text-muted-foreground">API Keys</p>
+          </div>
           <div className="text-center">
             <div className="flex items-center justify-center mb-1">
               <Database className="h-4 w-4 text-blue-600 mr-1" />
@@ -187,9 +218,9 @@ const AutoIntegrationBanner = () => {
         {/* Framework Alignment Notice */}
         <div className="mt-3 p-3 bg-blue-50 rounded-lg">
           <p className="text-sm text-blue-800">
-            <strong>Framework Integration:</strong> APIs are automatically aligned with TypeScript definitions, 
-            database schemas, RLS policies, and knowledge base. All components are generated and synced 
-            automatically when consuming external APIs.
+            <strong>🔑 API Key Automation:</strong> When you create an API key, the framework automatically:
+            generates database schemas, creates RLS policies, builds documentation, registers modules, 
+            and syncs with the knowledge base. All integrations are activated instantly upon key creation.
           </p>
         </div>
       </CardContent>
