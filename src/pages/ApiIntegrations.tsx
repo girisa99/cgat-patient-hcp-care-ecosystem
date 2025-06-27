@@ -2,7 +2,6 @@
 import React from 'react';
 import StandardizedDashboardLayout from '@/components/layout/StandardizedDashboardLayout';
 import ApiIntegrationsManager from '@/components/admin/ApiIntegrations/ApiIntegrationsManager';
-import { Zap } from 'lucide-react';
 
 const ApiIntegrations = () => {
   return (

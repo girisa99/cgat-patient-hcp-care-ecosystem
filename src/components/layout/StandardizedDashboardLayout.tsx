@@ -61,11 +61,11 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
             (isMobile || isTablet) ? "pt-20" : "pt-16"
           )}>
             {showPageHeader && (pageTitle || pageSubtitle || headerActions) && (
-              <div className="px-6 py-4 bg-background border-b">
+              <div className="px-6 py-6 bg-background border-b">
                 <div className="flex items-start justify-between w-full max-w-7xl mx-auto">
                   <div className="flex-1">
                     {pageTitle && (
-                      <h1 className="text-3xl font-bold tracking-tight text-gray-900 mb-1">
+                      <h1 className="text-3xl font-bold tracking-tight text-gray-900 mb-2">
                         {pageTitle}
                       </h1>
                     )}
