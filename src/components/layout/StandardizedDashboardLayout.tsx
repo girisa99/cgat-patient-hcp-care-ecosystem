@@ -125,28 +125,29 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
           </div>
         )}
         
-        {/* Main content area with debug classes */}
+        {/* Main content area - reduced padding significantly */}
         <main 
           className={cn(
             "transition-all duration-300 ease-in-out",
             isMobile ? "ml-0" : "md:ml-64",
-            (isMobile || isTablet) ? "pt-[112px]" : "pt-16",
+            // Minimal top padding - just enough to clear the fixed header
+            (isMobile || isTablet) ? "pt-20" : "pt-16",
             debugMode && "border-4 border-dashed border-red-500"
           )}
           data-debug-info={debugMode ? JSON.stringify({
             isMobile,
             isTablet,
-            topPadding: (isMobile || isTablet) ? "112px" : "16px",
+            topPadding: (isMobile || isTablet) ? "80px" : "64px",
             leftMargin: isMobile ? "0" : "md:ml-64"
           }) : undefined}
         >
-          {/* Page header section */}
+          {/* Page header section - only if explicitly shown */}
           {showPageHeader && (pageTitle || pageSubtitle || headerActions) && (
             <div className={cn(
               "border-b bg-background",
               debugMode && "border-4 border-dashed border-yellow-500"
             )}>
-              <div className="flex items-start justify-between w-full max-w-7xl mx-auto px-6 py-4">
+              <div className="flex items-start justify-between w-full max-w-7xl mx-auto px-6 py-3">
                 <div className="flex-1">
                   {pageTitle && (
                     <h1 className="text-2xl font-bold tracking-tight text-gray-900 mb-1">
@@ -168,9 +169,9 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
             </div>
           )}
           
-          {/* Main content with debug borders */}
+          {/* Main content with minimal padding */}
           <div className={cn(
-            "w-full max-w-7xl mx-auto px-6 py-6",
+            "w-full max-w-7xl mx-auto px-6 py-4",
             debugMode && "border-4 border-dashed border-green-500"
           )}>
             {children}
