@@ -27,7 +27,7 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
   className,
 }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [debugMode, setDebugMode] = useState(true); // Enable debug by default temporarily
+  const [debugMode, setDebugMode] = useState(true);
   const { isMobile, isTablet } = useResponsiveLayout();
 
   // Debug keyboard shortcut
@@ -43,78 +43,11 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [debugMode]);
 
-  // Enhanced debug info logging
-  useEffect(() => {
-    if (debugMode) {
-      console.log('🔍 Layout Analysis:');
-      console.log('- isMobile:', isMobile);
-      console.log('- isTablet:', isTablet);
-      console.log('- sidebarOpen:', sidebarOpen);
-      console.log('- showPageHeader:', showPageHeader);
-      console.log('- pageTitle:', pageTitle);
-      
-      // Get actual measurements with proper type casting
-      setTimeout(() => {
-        const header = document.querySelector('header') as HTMLElement;
-        const mobileMenu = document.querySelector('[data-mobile-menu]') as HTMLElement;
-        const main = document.querySelector('main') as HTMLElement;
-        
-        console.log('📐 Actual Layout Measurements:');
-        console.log('- Header height:', header?.offsetHeight);
-        console.log('- Mobile menu height:', mobileMenu?.offsetHeight);
-        console.log('- Main top position:', main?.getBoundingClientRect().top);
-        console.log('- Main padding-top:', main ? getComputedStyle(main).paddingTop : 'N/A');
-        console.log('- Main margin-top:', main ? getComputedStyle(main).marginTop : 'N/A');
-        console.log('- Window height:', window.innerHeight);
-        
-        // Check for any other elements that might be affecting layout
-        const allFixedElements = document.querySelectorAll('[style*="position: fixed"], .fixed');
-        console.log('🔍 Fixed position elements:', allFixedElements.length);
-        allFixedElements.forEach((el, index) => {
-          console.log(`  ${index + 1}:`, el.tagName, el.className, el.getBoundingClientRect());
-        });
-      }, 100);
-    }
-  }, [debugMode, isMobile, isTablet, sidebarOpen, showPageHeader, pageTitle]);
-
   return (
     <DesignSystemProvider>
       <div className={cn("min-h-screen bg-background", className)}>
-        {/* Debug Overlay */}
-        <LayoutDebugOverlay isEnabled={debugMode} />
-        
-        {/* Debug Controls */}
-        {debugMode && (
-          <div className="fixed top-16 right-4 z-[9998] bg-red-500 text-white p-2 rounded text-xs space-y-1">
-            <div className="mb-2 font-bold flex items-center gap-1">
-              <Bug className="h-3 w-3" />
-              Debug Controls
-            </div>
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => {
-                const main = document.querySelector('main') as HTMLElement;
-                if (main) {
-                  console.log('📐 Main element details:', {
-                    computed: {
-                      paddingTop: getComputedStyle(main).paddingTop,
-                      marginTop: getComputedStyle(main).marginTop,
-                      top: getComputedStyle(main).top,
-                      position: getComputedStyle(main).position,
-                    },
-                    classes: main.className,
-                    rect: main.getBoundingClientRect(),
-                  });
-                }
-              }}
-              className="text-xs h-6"
-            >
-              <Ruler className="h-3 w-3 mr-1" />
-              Log Main Styles
-            </Button>
-          </div>
-        )}
+        {/* Debug Overlay - Only show if debug mode is on */}
+        {debugMode && <LayoutDebugOverlay isEnabled={debugMode} />}
         
         {/* Fixed Header */}
         <Header />
@@ -158,21 +91,38 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
           </div>
         )}
         
-        {/* Main content area */}
-        <div className="flex">
-          <main 
-            className={cn(
-              "flex-1 min-h-screen",
-              // Sidebar spacing
-              isMobile ? "ml-0" : "md:ml-64",
-              // Reset to basic header height only - something else is adding the extra space
-              "pt-16", // 64px - standard header height
-              debugMode && "border-4 border-dashed border-red-500"
-            )}
-          >
+        {/* Main content area - SIMPLIFIED */}
+        <main 
+          className={cn(
+            "flex-1 min-h-screen",
+            // Sidebar spacing
+            isMobile ? "ml-0" : "md:ml-64",
+            // Simple top spacing - just account for header
+            "pt-16", // 64px for header
+            // Add mobile menu spacing only on mobile
+            (isMobile || isTablet) && "pt-24", // 64px header + 32px mobile menu
+            debugMode && "border-4 border-dashed border-red-500"
+          )}
+        >
+          {/* Debug info inside main */}
+          {debugMode && (
+            <div className="bg-yellow-100 border border-yellow-400 p-4 mb-4 text-sm">
+              <div className="font-bold mb-2">🔍 Main Element Debug</div>
+              <div>Expected top: {(isMobile || isTablet) ? '96px (header + mobile menu)' : '64px (header only)'}</div>
+              <div>Actual classes: {cn(
+                "flex-1 min-h-screen",
+                isMobile ? "ml-0" : "md:ml-64",
+                "pt-16",
+                (isMobile || isTablet) && "pt-24",
+                debugMode && "border-4 border-dashed border-red-500"
+              )}</div>
+            </div>
+          )}
+          
+          <div className="p-6">
             {children}
-          </main>
-        </div>
+          </div>
+        </main>
       </div>
     </DesignSystemProvider>
   );
