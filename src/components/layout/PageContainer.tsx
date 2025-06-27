@@ -21,43 +21,38 @@ export const PageContainer: React.FC<PageContainerProps> = ({
 }) => {
   return (
     <div className={cn(
-      "min-h-full w-full overflow-hidden",
+      "w-full h-full",
       fluid ? "p-0" : "p-6",
       className
     )}>
-      <div className={cn(
-        "w-full",
-        !fluid && "max-w-full mx-auto"
-      )}>
-        {/* Page Header */}
-        {(title || subtitle || headerActions) && (
-          <div className="mb-6">
-            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-              <div className="flex-1 min-w-0">
-                {title && (
-                  <h1 className="text-3xl font-bold tracking-tight text-gray-900 mb-2">
-                    {title}
-                  </h1>
-                )}
-                {subtitle && (
-                  <p className="text-base text-muted-foreground">
-                    {subtitle}
-                  </p>
-                )}
-              </div>
-              {headerActions && (
-                <div className="flex items-center gap-3 flex-shrink-0">
-                  {headerActions}
-                </div>
+      {/* Page Header */}
+      {(title || subtitle || headerActions) && (
+        <div className="mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              {title && (
+                <h1 className="text-3xl font-bold tracking-tight text-gray-900 mb-2">
+                  {title}
+                </h1>
+              )}
+              {subtitle && (
+                <p className="text-base text-muted-foreground">
+                  {subtitle}
+                </p>
               )}
             </div>
+            {headerActions && (
+              <div className="flex items-center gap-3 flex-shrink-0">
+                {headerActions}
+              </div>
+            )}
           </div>
-        )}
-
-        {/* Main Content */}
-        <div className="w-full overflow-hidden">
-          {children}
         </div>
+      )}
+
+      {/* Main Content */}
+      <div className="w-full">
+        {children}
       </div>
     </div>
   );

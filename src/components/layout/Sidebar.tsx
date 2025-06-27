@@ -41,7 +41,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   return (
     <>
       {/* Mobile Overlay */}
-      {isOpen && (
+      {isOpen && onClose && (
         <div 
           className="fixed inset-0 z-40 bg-black/50 md:hidden" 
           onClick={onClose}
@@ -50,11 +50,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       
       {/* Sidebar */}
       <div className={cn(
-        "fixed left-0 top-0 z-50 h-full w-64 transform bg-white border-r border-gray-200 transition-transform duration-200 ease-in-out shadow-lg",
-        // Desktop: always visible, positioned statically within layout
-        "md:translate-x-0 md:static md:z-auto md:shadow-none",
-        // Mobile: slide in/out behavior
-        isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+        "bg-white border-r border-gray-200 h-full",
+        // Mobile: Fixed overlay positioning
+        onClose && "fixed left-0 top-0 z-50 w-64 shadow-lg transition-transform duration-200 ease-in-out",
+        onClose && (isOpen ? "translate-x-0" : "-translate-x-full"),
+        // Desktop: Static positioning, full height
+        !onClose && "w-64 min-h-screen"
       )}>
         {/* Header section */}
         <div className="flex h-16 shrink-0 items-center px-6 bg-white border-b">
@@ -66,7 +67,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           {onClose && (
             <button
               onClick={onClose}
-              className="ml-auto p-2 md:hidden hover:bg-gray-100 rounded-md transition-colors"
+              className="ml-auto p-2 hover:bg-gray-100 rounded-md transition-colors"
             >
               <X className="h-5 w-5" />
             </button>

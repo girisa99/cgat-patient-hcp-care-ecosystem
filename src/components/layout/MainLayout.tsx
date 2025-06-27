@@ -16,7 +16,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const { isMobile } = useResponsiveLayout();
 
   return (
-    <div className="min-h-screen w-full overflow-x-hidden bg-background">
+    <div className="min-h-screen bg-background">
       {/* Fixed Header */}
       <Header />
       
@@ -35,27 +35,32 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         </div>
       )}
       
-      {/* Main Container */}
-      <div className="flex w-full">
-        {/* Sidebar */}
-        <Sidebar 
-          isOpen={sidebarOpen} 
-          onClose={() => setSidebarOpen(false)} 
-        />
-        
-        {/* Content Area */}
-        <main 
-          className={cn(
-            "flex-1 min-h-screen w-full overflow-x-hidden",
-            isMobile ? "pt-28" : "pt-16",
-            !isMobile && "ml-64"
-          )}
-        >
-          <div className="w-full overflow-x-hidden">
-            <div className="min-h-full w-full">
-              {children}
-            </div>
+      {/* Main Container with Flex Layout */}
+      <div className="flex pt-16">
+        {/* Sidebar - Only show on desktop */}
+        {!isMobile && (
+          <div className="w-64 flex-shrink-0">
+            <Sidebar 
+              isOpen={false} 
+              onClose={() => {}} 
+            />
           </div>
+        )}
+        
+        {/* Mobile Sidebar Overlay */}
+        {isMobile && (
+          <Sidebar 
+            isOpen={sidebarOpen} 
+            onClose={() => setSidebarOpen(false)} 
+          />
+        )}
+        
+        {/* Content Area - Takes remaining space */}
+        <main className={cn(
+          "flex-1 min-h-screen",
+          isMobile && "pt-12" // Additional padding for mobile menu bar
+        )}>
+          {children}
         </main>
       </div>
     </div>
