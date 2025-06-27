@@ -10,8 +10,7 @@ import {
   Database,
   Shield,
   Activity,
-  X,
-  Lock
+  X
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -22,7 +21,7 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, onClose }) => {
   const location = useLocation();
   
-  // Updated navigation with Security & Performance Center
+  // Updated navigation without Security & Performance
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
     { name: 'Users', href: '/users', icon: Users },
@@ -30,7 +29,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, onClose }) => {
     { name: 'Facilities', href: '/facilities', icon: Hospital },
     { name: 'Modules', href: '/modules', icon: Layers },
     { name: 'API Integrations', href: '/api-integrations', icon: Database },
-    { name: 'Security & Performance', href: '/security-performance', icon: Lock },
     { name: 'Audit Log', href: '/audit-log', icon: Shield },
     { name: 'Admin Verification', href: '/admin-verification', icon: Activity },
   ];
