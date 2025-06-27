@@ -1,6 +1,5 @@
 
 import React, { useState } from 'react';
-import { Tabs } from '@/components/ui/tabs';
 import { useApiIntegrations } from '@/hooks/useApiIntegrations.tsx';
 import { useEnhancedExternalApis } from '@/hooks/useEnhancedExternalApis';
 import IntegrationDetailView from './IntegrationDetailView';
@@ -8,13 +7,6 @@ import { LoadingState } from '../shared/LoadingState';
 import { ErrorState } from '../shared/ErrorState';
 import { ApiIntegrationsStats } from './ApiIntegrationsStats';
 import { ApiIntegrationsTabs } from './ApiIntegrationsTabs';
-import { OverviewTabContent } from './tabs/OverviewTabContent';
-import { InternalApisTabContent } from './tabs/InternalApisTabContent';
-import { ExternalApisTabContent } from './tabs/ExternalApisTabContent';
-import { PublishedApisTabContent } from './tabs/PublishedApisTabContent';
-import { DeveloperTabContent } from './tabs/DeveloperTabContent';
-import { ApiKeysTabContent } from './tabs/ApiKeysTabContent';
-import { TestingTabContent } from './tabs/TestingTabContent';
 
 const ApiIntegrationsManager = () => {
   const { 
@@ -72,44 +64,21 @@ const ApiIntegrationsManager = () => {
         publishedApis={publishedApis || []}
       />
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <ApiIntegrationsTabs activeTab={activeTab} onTabChange={setActiveTab} />
-
-        <OverviewTabContent />
-
-        <InternalApisTabContent
-          internalApis={internalApis || []}
-          searchTerm={searchTerm}
-          createDialogOpen={createDialogOpen}
-          setCreateDialogOpen={setCreateDialogOpen}
-          onDownloadCollection={handleDownloadCollection}
-          onViewDetails={handleViewDetails}
-          onViewDocumentation={handleViewDocumentation}
-          onCopyUrl={handleCopyUrl}
-        />
-
-        <ExternalApisTabContent
-          externalApis={externalApis || []}
-          searchTerm={searchTerm}
-          createDialogOpen={createDialogOpen}
-          setCreateDialogOpen={setCreateDialogOpen}
-          onDownloadCollection={handleDownloadCollection}
-          onViewDetails={handleViewDetails}
-          onViewDocumentation={handleViewDocumentation}
-          onCopyUrl={handleCopyUrl}
-        />
-
-        <PublishedApisTabContent />
-
-        <DeveloperTabContent />
-
-        <ApiKeysTabContent />
-
-        <TestingTabContent
-          integrations={integrations || []}
-          onClose={() => setActiveTab('overview')}
-        />
-      </Tabs>
+      <ApiIntegrationsTabs
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        internalApis={internalApis || []}
+        externalApis={externalApis || []}
+        searchTerm={searchTerm}
+        createDialogOpen={createDialogOpen}
+        setCreateDialogOpen={setCreateDialogOpen}
+        onDownloadCollection={handleDownloadCollection}
+        onViewDetails={handleViewDetails}
+        onViewDocumentation={handleViewDocumentation}
+        onCopyUrl={handleCopyUrl}
+        integrations={integrations || []}
+        onClose={() => setActiveTab('overview')}
+      />
     </div>
   );
 };
