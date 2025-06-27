@@ -48,12 +48,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         />
       )}
       
-      {/* Single Sidebar Instance */}
+      {/* Sidebar with proper z-index layering */}
       <div className={cn(
-        "fixed left-0 top-0 z-50 h-full w-64 transform bg-white border-r border-gray-200 transition-transform duration-300 ease-in-out md:translate-x-0 md:static md:z-auto",
+        "fixed left-0 top-0 z-50 h-full w-64 transform bg-white border-r border-gray-200 transition-transform duration-300 ease-in-out md:translate-x-0 md:static md:z-auto shadow-lg md:shadow-none",
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}>
-        <div className="flex h-16 shrink-0 items-center px-6">
+        {/* Header section */}
+        <div className="flex h-16 shrink-0 items-center px-6 bg-white border-b">
           <Code className="h-8 w-8 text-blue-600" />
           <span className="ml-2 text-xl font-semibold text-gray-900">
             Healthcare Admin
@@ -61,13 +62,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           {onClose && (
             <button
               onClick={onClose}
-              className="ml-auto p-2 md:hidden"
+              className="ml-auto p-2 md:hidden hover:bg-gray-100 rounded-md transition-colors"
             >
               <X className="h-5 w-5" />
             </button>
           )}
         </div>
-        <nav className="flex flex-1 flex-col px-6 py-4">
+        
+        {/* Navigation section */}
+        <nav className="flex flex-1 flex-col px-6 py-4 bg-white">
           <ul role="list" className="flex flex-1 flex-col gap-y-7">
             <li>
               <ul role="list" className="-mx-2 space-y-1">
@@ -80,9 +83,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                         onClick={onClose}
                         className={cn(
                           isActive
-                            ? 'bg-blue-50 text-blue-600'
+                            ? 'bg-blue-50 text-blue-600 border-r-2 border-blue-600'
                             : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50',
-                          'group flex gap-x-3 rounded-md p-2 text-sm font-medium'
+                          'group flex gap-x-3 rounded-md p-2 text-sm font-medium transition-colors'
                         )}
                       >
                         <item.icon

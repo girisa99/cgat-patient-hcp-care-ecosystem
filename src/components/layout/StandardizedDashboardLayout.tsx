@@ -33,19 +33,20 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
       <div className={cn("min-h-screen bg-background", className)}>
         <Header />
         
-        {/* Single sidebar instance */}
+        {/* Single sidebar instance with proper z-index management */}
         <Sidebar 
           isOpen={sidebarOpen} 
           onClose={() => setSidebarOpen(false)} 
         />
         
-        {/* Main content area with proper spacing */}
+        {/* Main content area with consistent spacing */}
         <main className={cn(
-          "transition-all duration-300 ease-in-out",
+          "transition-all duration-300 ease-in-out min-h-screen",
           isMobile ? "ml-0" : "md:ml-64"
         )}>
+          {/* Mobile menu button with consistent styling */}
           {(isMobile || isTablet) && (
-            <div className="md:hidden p-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <div className="md:hidden p-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-40">
               <Button 
                 variant="ghost" 
                 size="sm" 
@@ -58,10 +59,11 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
             </div>
           )}
           
-          <div className="w-full">
+          {/* Content wrapper with proper overflow handling */}
+          <div className="w-full min-h-full">
             {showPageHeader && (pageTitle || pageSubtitle || headerActions) && (
-              <div className="px-6 pt-6 pb-4">
-                <div className="flex items-start justify-between w-full">
+              <div className="px-6 pt-6 pb-4 bg-background border-b">
+                <div className="flex items-start justify-between w-full max-w-7xl mx-auto">
                   <div className="flex-1 text-left">
                     {pageTitle && (
                       <h1 className="text-3xl font-bold tracking-tight text-gray-900 mb-2 text-left">
@@ -83,7 +85,8 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
               </div>
             )}
             
-            <div className="px-6 pb-6">
+            {/* Main content with proper constraints */}
+            <div className="px-6 pb-6 pt-6 max-w-7xl mx-auto w-full">
               {children}
             </div>
           </div>
