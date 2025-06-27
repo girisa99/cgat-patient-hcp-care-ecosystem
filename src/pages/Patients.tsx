@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import StandardizedDashboardLayout from '@/components/layout/StandardizedDashboardLayout';
 import { PatientManagementHeader } from '@/components/admin/PatientManagement/PatientManagementHeader';
 import { PatientSearch } from '@/components/admin/PatientManagement/PatientSearch';
 import { PatientsList } from '@/components/admin/PatientManagement/PatientsList';
@@ -17,6 +18,8 @@ import { useMobileFeatures } from '@/hooks/useMobileFeatures';
 // Import dialogs for patient operations
 import { PatientViewDialog } from '@/components/admin/PatientManagement/PatientViewDialog';
 import { PatientEditDialog } from '@/components/admin/PatientManagement/PatientEditDialog';
+import { Button } from '@/components/ui/button';
+import { UserPlus } from 'lucide-react';
 
 const Patients = () => {
   const { patients, isLoading, error, deactivatePatient, isDeactivating, meta } = useConsistentPatients();
@@ -148,24 +151,40 @@ const Patients = () => {
 
   if (isLoading) {
     return (
-      <LoadingState
-        title="Patient Management"
-        description="Loading patient records..."
-      />
+      <StandardizedDashboardLayout>
+        <LoadingState
+          title="Patient Management"
+          description="Loading patient records..."
+        />
+      </StandardizedDashboardLayout>
     );
   }
 
   if (error) {
     return (
-      <ErrorState
-        title="Patient Management"
-        error={error}
-      />
+      <StandardizedDashboardLayout>
+        <ErrorState
+          title="Patient Management"
+          error={error}
+        />
+      </StandardizedDashboardLayout>
     );
   }
 
+  const headerActions = (
+    <Button>
+      <UserPlus className="w-4 h-4 mr-2" />
+      Add Patient
+    </Button>
+  );
+
   return (
-    <div className="space-y-6">
+    <StandardizedDashboardLayout
+      showPageHeader={true}
+      pageTitle="Patient Management"
+      pageSubtitle="Manage patient records and healthcare data"
+      headerActions={headerActions}
+    >
       {/* Enhanced header with real-time status */}
       <PatientManagementHeader 
         meta={{
@@ -228,7 +247,7 @@ const Patients = () => {
         onClose={handleCloseEditDialog}
         patient={selectedPatient}
       />
-    </div>
+    </StandardizedDashboardLayout>
   );
 };
 

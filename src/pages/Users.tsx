@@ -1,9 +1,12 @@
 
 import React, { useState, useMemo } from 'react';
+import StandardizedDashboardLayout from '@/components/layout/StandardizedDashboardLayout';
 import { Section } from '@/components/ui/layout/Section';
 import UsersList from '@/components/users/UsersList';
 import { UserManagementDialogs } from '@/components/admin/UserManagement/UserManagementDialogs';
 import { useConsistentUsers } from '@/hooks/useConsistentUsers';
+import { Button } from '@/components/ui/button';
+import { UserPlus } from 'lucide-react';
 
 const Users = () => {
   const { users, isLoading, meta } = useConsistentUsers();
@@ -44,10 +47,22 @@ const Users = () => {
     setEditUserOpen(true);
   };
 
+  const headerActions = (
+    <Button onClick={() => setCreateUserOpen(true)}>
+      <UserPlus className="w-4 h-4 mr-2" />
+      Create User
+    </Button>
+  );
+
   return (
-    <div className="space-y-6">
+    <StandardizedDashboardLayout
+      showPageHeader={true}
+      pageTitle="System Users"
+      pageSubtitle="Manage user accounts and permissions"
+      headerActions={headerActions}
+    >
       {/* Users List */}
-      <Section variant="card" title="System Users" subtitle="Manage user accounts and permissions">
+      <Section variant="card" title="User Management" subtitle="View and manage system users">
         <UsersList
           onCreateUser={() => setCreateUserOpen(true)}
           onAssignRole={handleAssignRole}
@@ -73,7 +88,7 @@ const Users = () => {
         selectedUser={selectedUser}
         selectedUserName={selectedUserName}
       />
-    </div>
+    </StandardizedDashboardLayout>
   );
 };
 

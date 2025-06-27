@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import StandardizedDashboardLayout from '@/components/layout/StandardizedDashboardLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Zap, Settings, List, Plus, Component } from 'lucide-react';
@@ -71,30 +72,32 @@ const Modules = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
+      <StandardizedDashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+      </StandardizedDashboardLayout>
     );
   }
 
+  const headerActions = (
+    <Button onClick={() => setCreateDialogOpen(true)}>
+      <Plus className="w-4 h-4 mr-2" />
+      Create Module
+    </Button>
+  );
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Module Management</h1>
-          <p className="text-gray-600">
-            Manage application modules, components, and services with real-time RBAC sync
-          </p>
-          <div className="flex items-center space-x-2 mt-2">
-            <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
-            <span className="text-sm text-green-600">Real-time sync active</span>
-          </div>
-        </div>
-        <Button onClick={() => setCreateDialogOpen(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          Create Module
-        </Button>
+    <StandardizedDashboardLayout
+      showPageHeader={true}
+      pageTitle="Module Management"
+      pageSubtitle="Manage application modules, components, and services with real-time RBAC sync"
+      headerActions={headerActions}
+    >
+      {/* Real-time status indicator */}
+      <div className="flex items-center space-x-2 mb-4">
+        <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
+        <span className="text-sm text-green-600">Real-time sync active</span>
       </div>
 
       {/* Stats */}
@@ -160,7 +163,7 @@ const Modules = () => {
           />
         </>
       )}
-    </div>
+    </StandardizedDashboardLayout>
   );
 };
 

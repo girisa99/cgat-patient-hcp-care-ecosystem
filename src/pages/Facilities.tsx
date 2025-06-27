@@ -1,10 +1,13 @@
 
 import React, { useState } from 'react';
+import StandardizedDashboardLayout from '@/components/layout/StandardizedDashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import FacilitiesList from '@/components/facilities/FacilitiesList';
 import CreateFacilityDialog from '@/components/facilities/CreateFacilityDialog';
 import EditFacilityDialog from '@/components/facilities/EditFacilityDialog';
 import { useFacilities } from '@/hooks/useFacilities';
+import { Button } from '@/components/ui/button';
+import { Building2 } from 'lucide-react';
 
 const Facilities = () => {
   const { facilities } = useFacilities();
@@ -24,15 +27,20 @@ const Facilities = () => {
     setSelectedFacilityId(null);
   };
 
+  const headerActions = (
+    <Button onClick={() => setCreateFacilityOpen(true)}>
+      <Building2 className="w-4 h-4 mr-2" />
+      Create Facility
+    </Button>
+  );
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">Facilities Management</h2>
-        <p className="text-muted-foreground">
-          Manage healthcare facilities and locations
-        </p>
-      </div>
-      
+    <StandardizedDashboardLayout
+      showPageHeader={true}
+      pageTitle="Facilities Management"
+      pageSubtitle="Manage healthcare facilities and locations"
+      headerActions={headerActions}
+    >
       <Card>
         <CardHeader>
           <CardTitle>Healthcare Facilities</CardTitle>
@@ -55,7 +63,7 @@ const Facilities = () => {
         onOpenChange={handleCloseEditDialog}
         facility={selectedFacility}
       />
-    </div>
+    </StandardizedDashboardLayout>
   );
 };
 
