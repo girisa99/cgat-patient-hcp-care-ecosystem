@@ -9,39 +9,73 @@ interface DashboardData {
   totalFacilities: number;
   activeModules: number;
   systemHealth: 'healthy' | 'warning' | 'error';
+  apiIntegrations: number;
+  recentAuditLogs: number;
 }
 
 const fetchDashboardData = async (): Promise<DashboardData> => {
-  // Fetch total users
-  const { count: totalUsers } = await supabase
-    .from('profiles')
-    .select('*', { count: 'exact', head: true });
+  console.log('🔍 Fetching comprehensive dashboard data...');
+  
+  try {
+    // Fetch total users
+    const { count: totalUsers } = await supabase
+      .from('profiles')
+      .select('*', { count: 'exact', head: true });
 
-  // Fetch total facilities
-  const { count: totalFacilities } = await supabase
-    .from('facilities')
-    .select('*', { count: 'exact', head: true })
-    .eq('is_active', true);
+    // Fetch total facilities
+    const { count: totalFacilities } = await supabase
+      .from('facilities')
+      .select('*', { count: 'exact', head: true })
+      .eq('is_active', true);
 
-  // Fetch active modules
-  const { count: activeModules } = await supabase
-    .from('modules')
-    .select('*', { count: 'exact', head: true })
-    .eq('is_active', true);
+    // Fetch active modules
+    const { count: activeModules } = await supabase
+      .from('modules')
+      .select('*', { count: 'exact', head: true })
+      .eq('is_active', true);
 
-  return {
-    totalUsers: totalUsers || 0,
-    totalFacilities: totalFacilities || 0,
-    activeModules: activeModules || 0,
-    systemHealth: 'healthy'
-  };
+    // Fetch API integrations count
+    const { count: apiIntegrations } = await supabase
+      .from('api_integration_registry')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'active');
+
+    // Fetch recent audit logs (last 24 hours)
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    const { count: recentAuditLogs } = await supabase
+      .from('audit_logs')
+      .select('*', { count: 'exact', head: true })
+      .gte('created_at', yesterday.toISOString());
+
+    console.log('✅ Dashboard data fetched:', {
+      totalUsers,
+      totalFacilities,
+      activeModules,
+      apiIntegrations,
+      recentAuditLogs
+    });
+
+    return {
+      totalUsers: totalUsers || 0,
+      totalFacilities: totalFacilities || 0,
+      activeModules: activeModules || 0,
+      systemHealth: 'healthy',
+      apiIntegrations: apiIntegrations || 0,
+      recentAuditLogs: recentAuditLogs || 0
+    };
+  } catch (error) {
+    console.error('❌ Error fetching dashboard data:', error);
+    throw error;
+  }
 };
 
 export const useDashboard = () => {
   const { profile, userRoles, loading, user, refreshUserData } = useAuthContext();
   const { assignUserRole } = useAuthActions();
 
-  // Dashboard data query
+  // Dashboard data query with real-time refresh
   const { 
     data: dashboardData, 
     isLoading, 
@@ -51,6 +85,9 @@ export const useDashboard = () => {
     queryKey: ['dashboard-data'],
     queryFn: fetchDashboardData,
     enabled: !!user, // Only fetch when user is authenticated
+    refetchInterval: 30000, // Refresh every 30 seconds for real-time feel
+    refetchOnWindowFocus: true, // Refresh when user returns to tab
+    staleTime: 0, // Always consider data stale to allow fresh fetches
   });
 
   const handleRefresh = async () => {
