@@ -1,4 +1,3 @@
-
 /**
  * Template Enforcement System
  * Ensures new components default to established patterns and templates
@@ -6,23 +5,7 @@
 
 import { moduleRegistry } from '@/utils/moduleRegistry';
 import { ModuleConfig } from '@/utils/moduleValidation';
-
-export interface TemplateRecommendation {
-  templateName: string;
-  templatePath: string;
-  reason: string;
-  confidence: number;
-  usage: string;
-  example: string;
-}
-
-export interface PatternEnforcementResult {
-  shouldUseTemplate: boolean;
-  recommendedTemplate: TemplateRecommendation | null;
-  alternatives: TemplateRecommendation[];
-  violations: string[];
-  enforcements: string[];
-}
+import type { TemplateRecommendation, PatternEnforcementResult } from './types';
 
 /**
  * Template Enforcement Class

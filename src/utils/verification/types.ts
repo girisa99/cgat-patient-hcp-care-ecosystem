@@ -40,15 +40,21 @@ export interface DatabaseAlignmentResult {
   foreignKeysValid: boolean;
 }
 
+export interface TemplateRecommendation {
+  templateName: string;
+  templatePath: string;
+  reason: string;
+  confidence: number;
+  usage: string;
+  example: string;
+}
+
 export interface PatternEnforcementResult {
   shouldUseTemplate: boolean;
+  recommendedTemplate: TemplateRecommendation | null;
+  alternatives: TemplateRecommendation[];
   violations: string[];
   enforcements: string[];
-  recommendedTemplate?: {
-    templateName: string;
-    templatePath: string;
-    reason: string;
-  };
 }
 
 export interface VerificationRequest {

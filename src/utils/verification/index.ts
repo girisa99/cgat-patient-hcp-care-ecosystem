@@ -23,6 +23,7 @@ import type {
   TypeScriptValidationResult, 
   DatabaseAlignmentResult,
   PatternEnforcementResult,
+  TemplateRecommendation,
   VerificationRequest
 } from './types';
 
@@ -36,7 +37,6 @@ import type { TypeScriptDatabaseAlignment, TypeConflict } from './TypeScriptData
 
 // Template enforcement
 import { TemplateEnforcement, enforceTemplateUsage } from './TemplateEnforcement';
-import type { TemplateRecommendation } from './TemplateEnforcement';
 
 // Export main pre-implementation checker
 export { PreImplementationChecker, validateModuleCreation, validateComponentCreation, validateHookCreation };
@@ -51,6 +51,7 @@ export type {
   TypeScriptValidationResult, 
   DatabaseAlignmentResult,
   PatternEnforcementResult,
+  TemplateRecommendation,
   VerificationRequest
 };
 
@@ -64,7 +65,6 @@ export type { TypeScriptDatabaseAlignment, TypeConflict };
 
 // Export template enforcement
 export { TemplateEnforcement, enforceTemplateUsage };
-export type { TemplateRecommendation };
 
 /**
  * Quick validation function - runs all pre-implementation checks
