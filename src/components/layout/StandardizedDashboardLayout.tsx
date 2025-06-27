@@ -142,9 +142,9 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
               debugMode && "border-4 border-dashed border-red-500"
             )}
           >
-            {/* Content container - minimal padding to maximize space */}
+            {/* Content container - remove all padding to let AdminPageWrapper control spacing */}
             <div className={cn(
-              "w-full max-w-7xl mx-auto px-4 py-4", // Reduced padding from px-6 py-6
+              "w-full h-full", // Remove padding completely
               debugMode && "border-4 border-dashed border-green-500"
             )}>
               {children}

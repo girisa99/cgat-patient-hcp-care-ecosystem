@@ -107,7 +107,7 @@ export const AdminPageWrapper: React.FC<AdminPageWrapperProps> = ({
   variant = 'default'
 }) => {
   const paddingClasses = {
-    none: '',
+    none: 'p-4', // Always have some padding
     sm: 'p-4',
     md: 'p-6',
     lg: 'p-8'
