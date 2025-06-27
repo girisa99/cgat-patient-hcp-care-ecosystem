@@ -57,7 +57,7 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
 
   return (
     <DesignSystemProvider>
-      <div className={cn("min-h-screen bg-background flex flex-col", className)}>
+      <div className={cn("min-h-screen bg-background", className)}>
         {/* Debug Overlay */}
         <LayoutDebugOverlay isEnabled={debugMode} />
         
@@ -98,7 +98,7 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
           onClose={() => setSidebarOpen(false)} 
         />
         
-        {/* Mobile menu button - ONLY show this, no separate mobile menu bar */}
+        {/* Mobile menu button */}
         {(isMobile || isTablet) && (
           <div className="md:hidden fixed top-16 left-0 right-0 z-40 bg-background/95 backdrop-blur border-b px-4 py-2">
             <div className="flex justify-between items-center">
@@ -111,22 +111,6 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
                 <Menu className="h-4 w-4" />
                 <span>Menu</span>
               </Button>
-              
-              {/* Show page title in mobile menu bar instead of separate header */}
-              {showPageHeader && pageTitle && (
-                <div className="flex-1 text-center">
-                  <h1 className="text-lg font-semibold text-gray-900 truncate">
-                    {pageTitle}
-                  </h1>
-                </div>
-              )}
-              
-              {/* Show header actions in mobile menu bar */}
-              {showPageHeader && headerActions && (
-                <div className="flex items-center gap-2">
-                  {headerActions}
-                </div>
-              )}
               
               <Button
                 variant="ghost"
@@ -144,54 +128,21 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
           </div>
         )}
         
-        {/* Main content area */}
-        <div className="flex flex-1">
+        {/* Main content area with correct positioning */}
+        <div className="flex">
           <main 
             className={cn(
-              "flex-1 transition-all duration-300 ease-in-out",
-              // Desktop: account for sidebar
+              "flex-1 min-h-screen",
+              // Sidebar spacing
               isMobile ? "ml-0" : "md:ml-64",
-              // Top spacing: header + mobile menu (if mobile)
-              "pt-16", // Base header height
-              (isMobile || isTablet) && "pt-[104px]", // Header + mobile menu
+              // Top spacing - CRITICAL FIX: Only account for header, no extra padding
+              "mt-16", // Fixed header height
+              // Additional spacing for mobile menu
+              (isMobile || isTablet) && "mt-[104px]", // Header (64px) + mobile menu (40px)
               debugMode && "border-4 border-dashed border-red-500"
             )}
-            data-debug-info={debugMode ? JSON.stringify({
-              isMobile,
-              isTablet,
-              topPadding: (isMobile || isTablet) ? "104px" : "64px",
-              leftMargin: isMobile ? "0" : "md:ml-64"
-            }) : undefined}
           >
-            {/* Desktop page header - ONLY show on desktop when not mobile */}
-            {showPageHeader && !isMobile && !isTablet && (pageTitle || pageSubtitle || headerActions) && (
-              <div className={cn(
-                "border-b bg-background px-6 py-4",
-                debugMode && "border-4 border-dashed border-yellow-500"
-              )}>
-                <div className="flex items-start justify-between max-w-7xl mx-auto">
-                  <div className="flex-1">
-                    {pageTitle && (
-                      <h1 className="text-2xl font-bold tracking-tight text-gray-900">
-                        {pageTitle}
-                      </h1>
-                    )}
-                    {pageSubtitle && (
-                      <p className="text-muted-foreground text-sm mt-1">
-                        {pageSubtitle}
-                      </p>
-                    )}
-                  </div>
-                  {headerActions && (
-                    <div className="flex items-center gap-3 ml-6">
-                      {headerActions}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-            
-            {/* Main content - starts immediately */}
+            {/* Content container - starts immediately, no extra padding */}
             <div className={cn(
               "w-full max-w-7xl mx-auto px-6 py-6",
               debugMode && "border-4 border-dashed border-green-500"
