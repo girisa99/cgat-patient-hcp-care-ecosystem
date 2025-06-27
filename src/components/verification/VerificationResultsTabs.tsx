@@ -1,11 +1,10 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Shield, CheckCircle, AlertTriangle, Lock } from 'lucide-react';
 import { AdminModuleVerificationResult } from '@/utils/verification/AdminModuleVerificationRunner';
-import ImplementationTracker from './ImplementationTracker';
+import EnhancedImplementationTracker from './EnhancedImplementationTracker';
 
 interface VerificationResultsTabsProps {
   verificationResult: AdminModuleVerificationResult;
@@ -59,7 +58,7 @@ const VerificationResultsTabs: React.FC<VerificationResultsTabsProps> = ({
           </TabsList>
 
           <TabsContent value="implementation" className="space-y-4">
-            <ImplementationTracker />
+            <EnhancedImplementationTracker />
           </TabsContent>
 
           <TabsContent value="overview" className="space-y-4">
