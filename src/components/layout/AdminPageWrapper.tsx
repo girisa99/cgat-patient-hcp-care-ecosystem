@@ -1,4 +1,3 @@
-
 import React, { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -106,7 +105,6 @@ export const AdminPageWrapper: React.FC<AdminPageWrapperProps> = ({
   contentPadding = 'md',
   variant = 'default'
 }) => {
-  // No padding classes since StandardizedDashboardLayout handles the outer padding
   const spacingClasses = {
     none: 'space-y-4',
     sm: 'space-y-4',
@@ -114,10 +112,17 @@ export const AdminPageWrapper: React.FC<AdminPageWrapperProps> = ({
     lg: 'space-y-8'
   };
 
+  const paddingClasses = {
+    none: 'p-0',
+    sm: 'p-4',
+    md: 'p-6',
+    lg: 'p-8'
+  };
+
   const containerClasses = {
-    default: spacingClasses[contentPadding],
-    contained: cn(spacingClasses[contentPadding], 'max-w-7xl'),
-    'full-width': cn(spacingClasses[contentPadding], 'w-full')
+    default: cn(spacingClasses[contentPadding], paddingClasses[contentPadding]),
+    contained: cn(spacingClasses[contentPadding], paddingClasses[contentPadding], 'max-w-7xl mx-auto'),
+    'full-width': cn(spacingClasses[contentPadding], paddingClasses[contentPadding], 'w-full')
   };
 
   return (

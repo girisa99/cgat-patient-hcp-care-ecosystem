@@ -88,19 +88,18 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
             onClose={() => setSidebarOpen(false)} 
           />
           
-          {/* Main content - full width with proper sidebar offset */}
+          {/* Main content - NO left margin, let content manage its own spacing */}
           <main 
             className={cn(
               "flex-1 overflow-auto w-full",
-              // Apply left margin only on desktop when sidebar is visible
-              !isMobile && "md:ml-64",
               debugMode && "border-2 border-dashed border-blue-500"
             )}
+            style={{
+              // On desktop, account for fixed sidebar width
+              marginLeft: !isMobile ? '256px' : '0'
+            }}
           >
-            {/* Unified content wrapper - left-aligned with consistent padding */}
-            <div className="w-full max-w-none p-6">
-              {children}
-            </div>
+            {children}
           </main>
         </div>
       </div>
