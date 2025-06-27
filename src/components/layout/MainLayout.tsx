@@ -35,10 +35,10 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       )}
       
       {/* Main Container with Flex Layout */}
-      <div className="flex pt-16">
+      <div className="flex pt-16 min-h-screen">
         {/* Desktop Sidebar - Fixed width, always visible */}
         {!isMobile && (
-          <div className="w-64 flex-shrink-0">
+          <div className="w-64 flex-shrink-0 fixed left-0 top-16 h-full z-30">
             <Sidebar 
               isOpen={false} 
               onClose={() => {}} 
@@ -58,7 +58,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         <main className={`
           flex-1 
           min-h-screen 
-          ${isMobile ? 'pt-12' : ''} 
+          ${isMobile ? 'pt-12' : 'ml-64'} 
           overflow-x-hidden
         `}>
           {children}

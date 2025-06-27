@@ -50,12 +50,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       
       {/* Sidebar */}
       <div className={cn(
-        "bg-white border-r border-gray-200 h-full",
+        "bg-white border-r border-gray-200 h-full shadow-sm",
         // Mobile: Fixed overlay positioning
-        onClose && "fixed left-0 top-0 z-50 w-64 shadow-lg transition-transform duration-200 ease-in-out",
+        onClose && "fixed left-0 top-0 z-50 w-64 transition-transform duration-200 ease-in-out",
         onClose && (isOpen ? "translate-x-0" : "-translate-x-full"),
         // Desktop: Static positioning, full height
-        !onClose && "w-64 min-h-screen"
+        !onClose && "w-64 h-screen relative"
       )}>
         {/* Header section */}
         <div className="flex h-16 shrink-0 items-center px-6 bg-white border-b">
