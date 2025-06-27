@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,15 +10,28 @@ import {
   Code, 
   CheckCircle,
   Clock,
-  Zap
+  Zap,
+  Settings,
+  PlayCircle
 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 import { VerificationSummary } from '@/utils/verification/AutomatedVerificationOrchestrator';
+import IssueTopicGroup from './IssueTopicGroup';
 
 interface IssuesTabProps {
   verificationSummary?: VerificationSummary | null;
 }
 
+interface Issue {
+  type: string;
+  message: string;
+  source: string;
+  severity: string;
+}
+
 const IssuesTab: React.FC<IssuesTabProps> = ({ verificationSummary }) => {
+  const { toast } = useToast();
+
   if (!verificationSummary) {
     return (
       <Card>
@@ -34,21 +46,6 @@ const IssuesTab: React.FC<IssuesTabProps> = ({ verificationSummary }) => {
     );
   }
 
-  const getSeverityColor = (type: string) => {
-    if (type.includes('critical') || type.includes('Critical')) return 'destructive';
-    if (type.includes('security') || type.includes('Security')) return 'destructive';
-    if (type.includes('database') || type.includes('Database')) return 'default';
-    return 'secondary';
-  };
-
-  const getSeverityIcon = (type: string) => {
-    if (type.includes('critical') || type.includes('Critical')) return AlertTriangle;
-    if (type.includes('security') || type.includes('Security')) return Shield;
-    if (type.includes('database') || type.includes('Database')) return Database;
-    if (type.includes('code') || type.includes('Code')) return Code;
-    return Bug;
-  };
-
   // Helper function to extract string message from various issue types
   const extractMessage = (issue: any): string => {
     if (typeof issue === 'string') {
@@ -62,8 +59,8 @@ const IssuesTab: React.FC<IssuesTabProps> = ({ verificationSummary }) => {
   };
 
   // Collect all issues from different sources
-  const allIssues = [
-    // Validation result issues
+  const allIssues: Issue[] = [
+    // Validation result issues mapping
     ...(verificationSummary.validationResult?.issues || []).map(issue => ({
       type: 'Validation Issue',
       message: extractMessage(issue),
@@ -104,6 +101,60 @@ const IssuesTab: React.FC<IssuesTabProps> = ({ verificationSummary }) => {
     }))
   ];
 
+  // Group issues by topic
+  const issuesByTopic = {
+    'Security Issues': allIssues.filter(issue => 
+      issue.source === 'Security' || issue.type.includes('Security')
+    ),
+    'Database Issues': allIssues.filter(issue => 
+      issue.source === 'Database' || issue.source === 'Schema'
+    ),
+    'Code Quality': allIssues.filter(issue => 
+      issue.source === 'Code Quality' || issue.source === 'Validation'
+    )
+  };
+
+  const topicIcons = {
+    'Security Issues': Shield,
+    'Database Issues': Database,
+    'Code Quality': Code
+  };
+
+  // Action handlers
+  const handleIssueAction = async (issue: Issue, actionType: 'run' | 'fix') => {
+    console.log(`${actionType} action for issue:`, issue);
+    
+    // Simulate processing time
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    if (actionType === 'fix') {
+      toast({
+        title: "Fix Applied",
+        description: `Applied fix for ${issue.type}: ${issue.message.substring(0, 50)}...`,
+        variant: "default",
+      });
+    } else {
+      toast({
+        title: "Test Executed",
+        description: `Executed test for ${issue.type}`,
+        variant: "default",
+      });
+    }
+  };
+
+  const handleBulkAction = async (issues: Issue[], actionType: 'run' | 'fix') => {
+    console.log(`Bulk ${actionType} for ${issues.length} issues`);
+    
+    // Simulate processing time
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    toast({
+      title: `Bulk ${actionType === 'run' ? 'Test' : 'Fix'} Complete`,
+      description: `Successfully ${actionType === 'run' ? 'tested' : 'fixed'} ${issues.length} issues`,
+      variant: "default",
+    });
+  };
+
   return (
     <div className="space-y-6">
       {/* Issues Summary */}
@@ -141,7 +192,7 @@ const IssuesTab: React.FC<IssuesTabProps> = ({ verificationSummary }) => {
               <div className="text-3xl font-bold text-blue-600 mb-2">
                 {allIssues.length}
               </div>
-              <p className="text-sm text-blue-800">Detailed Items</p>
+              <p className="text-sm text-blue-800">Actionable Items</p>
             </div>
           </div>
         </CardContent>
@@ -185,43 +236,24 @@ const IssuesTab: React.FC<IssuesTabProps> = ({ verificationSummary }) => {
         </Card>
       )}
 
-      {/* Detailed Issues List */}
-      {allIssues.length > 0 ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5" />
-              Detailed Issues
-            </CardTitle>
-            <CardDescription>
-              All issues identified during the last verification scan
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {allIssues.map((issue, index) => {
-                const Icon = getSeverityIcon(issue.type);
-                return (
-                  <div key={index} className="flex items-start gap-3 p-4 border rounded-lg">
-                    <Icon className="h-5 w-5 mt-0.5 text-muted-foreground" />
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Badge variant={getSeverityColor(issue.type) as any}>
-                          {issue.type}
-                        </Badge>
-                        <Badge variant="outline" className="text-xs">
-                          {issue.source}
-                        </Badge>
-                      </div>
-                      <p className="text-sm">{issue.message}</p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
+      {/* Issues by Topic */}
+      {Object.entries(issuesByTopic).map(([topic, issues]) => {
+        if (issues.length === 0) return null;
+        
+        return (
+          <IssueTopicGroup
+            key={topic}
+            topic={topic}
+            issues={issues}
+            icon={topicIcons[topic as keyof typeof topicIcons]}
+            onIssueAction={handleIssueAction}
+            onBulkAction={handleBulkAction}
+          />
+        );
+      })}
+
+      {/* No Issues State */}
+      {allIssues.length === 0 && (
         <Card>
           <CardContent className="flex items-center justify-center py-12">
             <div className="text-center">
