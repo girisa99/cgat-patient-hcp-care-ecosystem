@@ -157,7 +157,7 @@ export class RefactoringOrchestrator {
     // Refactor each component in the module
     for (const component of moduleComponents) {
       const componentResult = await this.refactorComponent(
-        component.path, 
+        component.location, 
         refactoringType === 'consolidate' ? 'merge' : 'split'
       );
       
