@@ -125,50 +125,100 @@ const DeveloperPortal = () => {
   };
 
   const handleViewDocumentation = () => {
-    if (!firstPublishedApi || !apiDetails) {
+    console.log('🔍 View Documentation clicked');
+    console.log('📋 First Published API:', firstPublishedApi);
+    console.log('📋 API Details:', apiDetails);
+    console.log('📋 Is Loading Details:', isLoadingDetails);
+
+    if (isLoadingDetails) {
       toast({
-        title: "Documentation Not Available",
-        description: "API details are not loaded yet or no APIs are available.",
+        title: "Loading...",
+        description: "API details are still loading. Please wait a moment.",
+        variant: "default"
+      });
+      return;
+    }
+
+    if (!firstPublishedApi) {
+      toast({
+        title: "No API Available",
+        description: "No published APIs are available for documentation.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!apiDetails) {
+      toast({
+        title: "API Details Not Available",
+        description: "Unable to load API details. Please try refreshing the page.",
         variant: "destructive"
       });
       return;
     }
 
     try {
+      console.log('📚 Generating documentation for:', apiDetails.name);
       ApiDocumentationGenerator.viewDocumentation(apiDetails);
       toast({
         title: "Documentation Opened",
         description: "API documentation opened in a new window.",
       });
     } catch (error) {
+      console.error('❌ Documentation generation error:', error);
       toast({
         title: "Error",
-        description: "Failed to open API documentation.",
+        description: "Failed to open API documentation. Please try again.",
         variant: "destructive"
       });
     }
   };
 
   const handleDownloadPostmanCollection = () => {
-    if (!firstPublishedApi || !apiDetails) {
+    console.log('📥 Download Postman Collection clicked');
+    console.log('📋 First Published API:', firstPublishedApi);
+    console.log('📋 API Details:', apiDetails);
+    console.log('📋 Is Loading Details:', isLoadingDetails);
+
+    if (isLoadingDetails) {
       toast({
-        title: "Collection Not Available", 
-        description: "API details are not loaded yet or no APIs are available.",
+        title: "Loading...",
+        description: "API details are still loading. Please wait a moment.",
+        variant: "default"
+      });
+      return;
+    }
+
+    if (!firstPublishedApi) {
+      toast({
+        title: "No API Available", 
+        description: "No published APIs are available for collection download.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!apiDetails) {
+      toast({
+        title: "API Details Not Available",
+        description: "Unable to load API details. Please try refreshing the page.",
         variant: "destructive"
       });
       return;
     }
 
     try {
+      console.log('📥 Generating Postman collection for:', apiDetails.name);
       PostmanCollectionDownloader.generateAndDownload(apiDetails);
       toast({
         title: "Collection Downloaded",
         description: "Postman collection has been downloaded successfully.",
       });
     } catch (error) {
+      console.error('❌ Postman collection download error:', error);
       toast({
         title: "Download Failed",
-        description: "Failed to download Postman collection.",
+        description: "Failed to download Postman collection. Please try again.",
         variant: "destructive"
       });
     }
@@ -554,34 +604,51 @@ const DeveloperPortal = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {firstPublishedApi && apiDetails ? (
+              {firstPublishedApi && !isLoadingDetails ? (
                 <>
                   <div className="p-4 bg-blue-50 rounded-lg">
                     <h4 className="font-medium mb-2">Sandbox Base URL</h4>
-                    <code className="text-sm bg-white p-2 rounded border">
-                      {apiDetails.base_url || `${window.location.origin}/api/sandbox/${firstPublishedApi.id}`}
+                    <code className="text-sm bg-white p-2 rounded border block">
+                      {apiDetails?.base_url || `${window.location.origin}/api/sandbox/${firstPublishedApi.id}`}
                     </code>
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <h4 className="font-medium">Available Endpoints ({apiDetails.endpoints?.length || 0})</h4>
-                      <div className="space-y-1 text-sm max-h-40 overflow-y-auto">
-                        {apiDetails.endpoints && apiDetails.endpoints.length > 0 ? (
-                          apiDetails.endpoints.slice(0, 8).map((endpoint: any, index: number) => (
-                            <div key={index} className="flex items-center gap-2">
-                              <Badge variant="secondary" className="text-xs">
+                      <h4 className="font-medium">
+                        Available Endpoints ({apiDetails?.endpoints?.length || 0})
+                      </h4>
+                      <div className="space-y-2 text-sm max-h-60 overflow-y-auto border rounded p-3">
+                        {apiDetails?.endpoints && apiDetails.endpoints.length > 0 ? (
+                          apiDetails.endpoints.map((endpoint: any, index: number) => (
+                            <div key={index} className="flex items-center gap-3 p-2 bg-gray-50 rounded">
+                              <Badge 
+                                variant={
+                                  endpoint.method?.toUpperCase() === 'GET' ? 'secondary' :
+                                  endpoint.method?.toUpperCase() === 'POST' ? 'default' :
+                                  endpoint.method?.toUpperCase() === 'PUT' ? 'outline' :
+                                  endpoint.method?.toUpperCase() === 'DELETE' ? 'destructive' :
+                                  'secondary'
+                                } 
+                                className="text-xs min-w-[60px] justify-center"
+                              >
                                 {endpoint.method?.toUpperCase() || 'GET'}
                               </Badge>
-                              <code className="text-xs">{endpoint.external_path || endpoint.path}</code>
+                              <code className="text-xs flex-1 font-mono">
+                                {endpoint.url || endpoint.external_path || endpoint.path || '/unknown'}
+                              </code>
+                              {endpoint.name && (
+                                <span className="text-xs text-muted-foreground truncate max-w-[120px]">
+                                  {endpoint.name}
+                                </span>
+                              )}
                             </div>
                           ))
                         ) : (
-                          <div className="text-muted-foreground">Loading endpoints...</div>
-                        )}
-                        {apiDetails.endpoints && apiDetails.endpoints.length > 8 && (
-                          <div className="text-xs text-muted-foreground">
-                            ... and {apiDetails.endpoints.length - 8} more endpoints
+                          <div className="text-center py-4">
+                            <div className="text-muted-foreground">
+                              {isLoadingDetails ? 'Loading endpoints...' : 'No endpoints available'}
+                            </div>
                           </div>
                         )}
                       </div>
@@ -589,9 +656,15 @@ const DeveloperPortal = () => {
                     
                     <div className="space-y-2">
                       <h4 className="font-medium">Authentication</h4>
-                      <div className="text-sm space-y-1">
-                        <p>Header: <code>Authorization: Bearer YOUR_API_KEY</code></p>
-                        <p>Or Query: <code>?api_key=YOUR_API_KEY</code></p>
+                      <div className="text-sm space-y-2 p-3 border rounded">
+                        <p><strong>Header:</strong></p>
+                        <code className="block bg-gray-100 p-2 rounded text-xs">
+                          Authorization: Bearer YOUR_API_KEY
+                        </code>
+                        <p><strong>Or Query Parameter:</strong></p>
+                        <code className="block bg-gray-100 p-2 rounded text-xs">
+                          ?api_key=YOUR_API_KEY
+                        </code>
                       </div>
                     </div>
                   </div>
@@ -603,7 +676,7 @@ const DeveloperPortal = () => {
                       disabled={isLoadingDetails}
                     >
                       <FileText className="h-4 w-4 mr-2" />
-                      View API Documentation
+                      {isLoadingDetails ? 'Loading...' : 'View API Documentation'}
                     </Button>
                     <Button 
                       variant="outline"
@@ -611,10 +684,24 @@ const DeveloperPortal = () => {
                       disabled={isLoadingDetails}
                     >
                       <Download className="h-4 w-4 mr-2" />
-                      Download Postman Collection
+                      {isLoadingDetails ? 'Loading...' : 'Download Postman Collection'}
                     </Button>
                   </div>
+
+                  {isLoadingDetails && (
+                    <div className="text-sm text-muted-foreground text-center py-2">
+                      Loading API details...
+                    </div>
+                  )}
                 </>
+              ) : isLoadingDetails ? (
+                <div className="text-center py-8">
+                  <TestTube className="h-12 w-12 text-muted-foreground mx-auto mb-4 animate-pulse" />
+                  <h3 className="text-lg font-medium mb-2">Loading Sandbox</h3>
+                  <p className="text-muted-foreground">
+                    Loading API details for sandbox environment...
+                  </p>
+                </div>
               ) : (
                 <div className="text-center py-8">
                   <TestTube className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
