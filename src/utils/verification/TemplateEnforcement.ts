@@ -1,3 +1,4 @@
+
 /**
  * Template Enforcement System
  * Ensures new components default to established patterns and templates
@@ -12,6 +13,37 @@ import type { TemplateRecommendation, PatternEnforcementResult } from './types';
  * Analyzes requests and enforces established patterns
  */
 export class TemplateEnforcement {
+  /**
+   * Validate template usage for a specific component type and path
+   */
+  async validateTemplateUsage(componentType: string, targetPath: string): Promise<any> {
+    console.log(`🎯 Validating template usage for ${componentType} at ${targetPath}`);
+    
+    const violations: string[] = [];
+    const warnings: string[] = [];
+    const recommendations: string[] = [];
+    
+    // Check if component follows template patterns
+    if (componentType === 'hook' && !targetPath.includes('useTypeSafeModuleTemplate')) {
+      violations.push('Hook should use useTypeSafeModuleTemplate pattern');
+      recommendations.push('Use useTypeSafeModuleTemplate for consistent database operations');
+    }
+    
+    if (componentType === 'component' && !targetPath.includes('ExtensibleModuleTemplate')) {
+      warnings.push('Component should consider using ExtensibleModuleTemplate pattern');
+      recommendations.push('Use ExtensibleModuleTemplate for consistent UI patterns');
+    }
+    
+    return {
+      isValid: violations.length === 0,
+      violations,
+      warnings,
+      recommendations,
+      shouldUseTemplate: violations.length > 0 || warnings.length > 0,
+      enforceable: violations.length === 0
+    };
+  }
+
   /**
    * Analyze request and enforce template usage
    */

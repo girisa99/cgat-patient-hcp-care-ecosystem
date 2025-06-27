@@ -1,3 +1,4 @@
+
 /**
  * Enhanced Automated Verification System - Main Export 
  * 
@@ -71,7 +72,7 @@ import {
 // ENHANCED INTEGRATION: Duplicate Detection (now fully integrated)
 import { DuplicateDetector, detectDuplicates } from './DuplicateDetector';
 
-// ENHANCED INTEGRATION: Template Enforcement (now fully integrated)
+// ENHANCED INTEGRATION: Template Enforcement (now fully integrated) - FIXED: Single import
 import { TemplateEnforcement, enforceTemplateUsage } from './TemplateEnforcement';
 
 // Simplified validator (used internally by automation)
@@ -191,7 +192,7 @@ export const generateCodeFromTemplate = async (request: TemplateGenerationReques
     const mergeValidation = await validateWithMergeDetection({
       tableName: request.tableName || '',
       moduleName: request.moduleName,
-      componentType: request.templateType,
+      componentType: request.templateType === 'api_integration' ? 'template' : request.templateType, // FIXED: Map api_integration to template
       description: `Template generation for ${request.moduleName}`
     });
     
@@ -238,7 +239,7 @@ export const getAutomaticVerificationSummary = async () => {
       schemaValidation: schemaValidation.isValid,
       schemaIssues: schemaValidation.violations.length,
       securityScore: securityScan.securityScore,
-      securityVulnerabilities: securityVulnerabilities.length,
+      securityVulnerabilities: securityScan.vulnerabilities.length, // FIXED: Added securityScan prefix
       qualityScore: codeQuality.overallScore,
       qualityIssues: codeQuality.issues.length,
       performanceMonitoring: performanceMonitor.getStatus().isMonitoring,
@@ -358,8 +359,7 @@ export {
   ComponentRegistryScanner,
   validateTableSchema, 
   ensureTypescriptDatabaseAlignment,
-  TemplateEnforcement, 
-  enforceTemplateUsage
+  enforceTemplateUsage // FIXED: Single export
 };
 
 // Export individual validation functions (for specific use cases)
