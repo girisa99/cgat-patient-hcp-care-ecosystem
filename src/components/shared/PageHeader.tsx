@@ -25,8 +25,8 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   stats
 }) => {
   return (
-    <Card>
-      <CardHeader>
+    <Card className="mb-4">
+      <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             {icon}
@@ -42,7 +42,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
       </CardHeader>
       
       {stats && stats.length > 0 && (
-        <CardContent>
+        <CardContent className="pt-0">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {stats.map((stat, index) => (
               <div key={index} className="text-center p-4 bg-gray-50 rounded-lg">

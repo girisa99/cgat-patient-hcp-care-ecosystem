@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Section } from '@/components/ui/layout/Section';
 
 interface ApiIntegrationsStatsProps {
   integrations: any[];
@@ -26,8 +25,8 @@ export const ApiIntegrationsStats: React.FC<ApiIntegrationsStatsProps> = ({
   );
 
   return (
-    <Section>
+    <div className="mb-4">
       {statsBadges}
-    </Section>
+    </div>
   );
 };
