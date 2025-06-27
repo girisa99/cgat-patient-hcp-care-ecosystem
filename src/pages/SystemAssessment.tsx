@@ -47,7 +47,7 @@ const SystemAssessment = () => {
       pageTitle="System Assessment"
       pageSubtitle="Comprehensive analysis of system health, performance, and optimization opportunities"
       headerActions={headerActions}
-      containerSize="full"
+      showPageHeader={true}
     >
       <SystemAssessmentDashboard />
     </StandardizedDashboardLayout>
