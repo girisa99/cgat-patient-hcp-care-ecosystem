@@ -6,7 +6,7 @@ import { AdminStatsGrid, StatCard } from '@/components/layout/AdminStatsGrid';
 import { Card, CardContent } from '@/components/ui/card';
 import { Users as UsersIcon, UserPlus, Settings, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useConsistentUsers } from '@/hooks/useConsistentUsers';
+import { useUsers } from '@/hooks/useUsers';
 
 // Import consolidated components
 import {
@@ -27,7 +27,7 @@ const Users = () => {
     assignRole, 
     assignFacility,
     meta 
-  } = useConsistentUsers();
+  } = useUsers();
 
   const [createUserOpen, setCreateUserOpen] = useState(false);
   const [editUserOpen, setEditUserOpen] = useState(false);
@@ -78,11 +78,11 @@ const Users = () => {
     </Button>
   );
 
-  // Calculate stats from meta data
+  // Calculate stats from meta data or fallback to users array
   const stats = {
-    totalUsers: meta.totalUsers,
+    totalUsers: meta?.totalUsers || users?.length || 0,
     usersWithRoles: users?.filter(u => u.user_roles && u.user_roles.length > 0).length || 0,
-    activeUsers: meta.totalUsers,
+    activeUsers: meta?.totalUsers || users?.length || 0,
     usersWithFacilities: users?.filter(u => u.facilities).length || 0
   };
 
