@@ -1,14 +1,29 @@
-
 /**
  * Enhanced Automated Verification System - Main Export 
  * 
- * REFACTORED: Simplified main exports with focused modules
+ * REFACTORED: Now includes comprehensive UI/UX validation capabilities
  */
 
 // Core orchestrators
 export { CoreVerificationOrchestrator, coreVerificationOrchestrator } from './CoreVerificationOrchestrator';
 export { VerificationSummaryGenerator } from './VerificationSummaryGenerator';
 export { ModuleValidationOrchestrator } from './ModuleValidationOrchestrator';
+
+// UI/UX Validation System - NEW COMPREHENSIVE FEATURES
+export { 
+  UIUXOrchestrator,
+  uiuxOrchestrator
+} from './UIUXOrchestrator';
+
+export {
+  DesignSystemValidator,
+  designSystemValidator
+} from './DesignSystemValidator';
+
+export {
+  RoleBasedUIValidator,
+  roleBasedUIValidator
+} from './RoleBasedUIValidator';
 
 // Main verification systems
 export { 
@@ -62,6 +77,7 @@ export {
 import { coreVerificationOrchestrator } from './CoreVerificationOrchestrator';
 import { VerificationSummaryGenerator } from './VerificationSummaryGenerator';
 import { ModuleValidationOrchestrator } from './ModuleValidationOrchestrator';
+import { uiuxOrchestrator } from './UIUXOrchestrator';
 
 // Main validation functions
 export const validateBeforeImplementation = async (request: any) => {
@@ -84,7 +100,18 @@ export const createModuleWithAutomaticValidation = async (config: any) => {
   return await ModuleValidationOrchestrator.createModuleWithAutomaticValidation(config);
 };
 
-// Export types - excluding conflicting SecurityVulnerability from DependencyManager
+// NEW UI/UX VALIDATION FUNCTIONS
+export const validateUIUXDesign = async () => {
+  console.log('🎨 Starting comprehensive UI/UX validation...');
+  return await uiuxOrchestrator.performComprehensiveUIUXValidation();
+};
+
+export const validateComponentDesign = async (components: string[]) => {
+  console.log('⚡ Starting quick UI validation for specific components...');
+  return await uiuxOrchestrator.performQuickUIValidation(components);
+};
+
+// Export types - excluding conflicts and adding new UI/UX types
 export type * from './CoreVerificationOrchestrator';
 export type * from './VerificationSummaryGenerator';
 export type * from './UnusedCodeDetector';
@@ -113,20 +140,42 @@ export type * from './SimplifiedValidator';
 export type * from './AutomatedVerificationOrchestrator';
 export type * from './EnhancedIntegrationOrchestrator';
 
-// Global initialization
+// NEW UI/UX VALIDATION TYPES
+export type * from './DesignSystemValidator';
+export type * from './RoleBasedUIValidator';
+export type * from './UIUXOrchestrator';
+export type * from './types';
+
+// Global initialization with UI/UX capabilities
 if (typeof window !== 'undefined') {
-  console.log('🚀 REFACTORED VERIFICATION SYSTEM INITIALIZING...');
+  console.log('🚀 ENHANCED VERIFICATION SYSTEM WITH UI/UX VALIDATION INITIALIZING...');
   
   (window as any).automaticVerification = {
+    // Existing functions
     validate: validateBeforeImplementation,
     validateWithMergeDetection,
     getSummary: getCompleteVerificationSummary,
     createModule: createModuleWithAutomaticValidation,
     generateTemplate: generateCodeFromTemplate,
+    
+    // NEW UI/UX validation functions
+    validateUIUX: validateUIUXDesign,
+    validateComponents: validateComponentDesign,
+    
+    // Metadata
     isAutomatic: true,
     isRefactored: true,
-    isModular: true
+    isModular: true,
+    hasUIUXValidation: true,
+    supportsRichDesign: true,
+    validatesTabs: true,
+    validatesButtons: true,
+    validatesLayouts: true,
+    validatesRoleBasedUI: true
   };
   
-  console.log('✅ REFACTORED VERIFICATION SYSTEM READY');
+  console.log('✅ ENHANCED VERIFICATION SYSTEM WITH UI/UX VALIDATION READY');
+  console.log('🎨 UI/UX Features: Design System, Role-Based UI, Rich Components');
+  console.log('📱 Component Support: Tabs, Subtabs, Buttons, Layouts, Navigation');
+  console.log('✨ Rich Design: Visual Effects, Animations, Interactions');
 }
