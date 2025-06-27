@@ -3,12 +3,13 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, CheckCircle, AlertTriangle, Lock, Bug } from 'lucide-react';
+import { Shield, CheckCircle, AlertTriangle, Lock, Bug, Activity } from 'lucide-react';
 import { AdminModuleVerificationResult } from '@/utils/verification/AdminModuleVerificationRunner';
 import { useFixedIssuesTracker } from '@/hooks/useFixedIssuesTracker';
 import EnhancedImplementationTracker from './EnhancedImplementationTracker';
 import IssuesTab from '@/components/security/IssuesTab';
 import FixedIssuesTracker from '@/components/security/FixedIssuesTracker';
+import SecurityPerformanceTab from './SecurityPerformanceTab';
 
 interface VerificationResultsTabsProps {
   verificationResult: AdminModuleVerificationResult;
@@ -55,10 +56,10 @@ const VerificationResultsTabs: React.FC<VerificationResultsTabsProps> = ({
           <div>
             <CardTitle className="flex items-center gap-2">
               <Shield className="h-5 w-5" />
-              Verification Results
+              Admin Module Verification Results
             </CardTitle>
             <CardDescription>
-              Comprehensive analysis of the admin module
+              Comprehensive analysis including security, performance, and system health
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
@@ -83,9 +84,12 @@ const VerificationResultsTabs: React.FC<VerificationResultsTabsProps> = ({
               <CheckCircle className="h-4 w-4 mr-1" />
               Fixed ({fixedCount})
             </TabsTrigger>
+            <TabsTrigger value="security-performance" className="flex items-center">
+              <Activity className="h-4 w-4 mr-1" />
+              Security & Performance
+            </TabsTrigger>
             <TabsTrigger value="implementation">Implementation</TabsTrigger>
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="checks">Checks</TabsTrigger>
             <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
           </TabsList>
 
@@ -101,6 +105,12 @@ const VerificationResultsTabs: React.FC<VerificationResultsTabsProps> = ({
             <FixedIssuesTracker 
               fixedIssues={fixedIssues} 
               totalFixesApplied={fixedCount}
+            />
+          </TabsContent>
+
+          <TabsContent value="security-performance">
+            <SecurityPerformanceTab 
+              verificationSummary={verificationResult.comprehensiveResults}
             />
           </TabsContent>
 
@@ -150,35 +160,6 @@ const VerificationResultsTabs: React.FC<VerificationResultsTabsProps> = ({
                     </span>
                   </div>
                 </div>
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="checks">
-            <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <h4 className="font-semibold mb-2 text-green-600">✅ Passed Checks</h4>
-                <div className="space-y-1">
-                  {verificationResult.passedChecks.map((check, index) => (
-                    <p key={index} className="text-sm">{check}</p>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <h4 className="font-semibold mb-2 text-red-600">❌ Failed Checks</h4>
-                <div className="space-y-1">
-                  {verificationResult.failedChecks.map((check, index) => (
-                    <p key={index} className="text-sm">{check}</p>
-                  ))}
-                </div>
-                {fixedCount > 0 && (
-                  <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded">
-                    <p className="text-sm text-green-800">
-                      <CheckCircle className="h-4 w-4 inline mr-1" />
-                      {fixedCount} issues have been automatically resolved
-                    </p>
-                  </div>
-                )}
               </div>
             </div>
           </TabsContent>
