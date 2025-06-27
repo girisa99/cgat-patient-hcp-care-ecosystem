@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import StandardizedDashboardLayout from '@/components/layout/StandardizedDashboardLayout';
 import { ModuleList } from '@/components/modules/ModuleList';
 import { ModuleStats } from '@/components/modules/ModuleStats';
-import { AutoModuleManager } from '@/components/admin/AutoModuleManager';
+import AutoModuleManager from '@/components/admin/AutoModuleManager';
 import { useModules } from '@/hooks/useModules';
 
 const Modules = () => {

@@ -149,15 +149,15 @@ export const ModuleList: React.FC<ModuleListProps> = ({
               return (
                 <Collapsible key={module.id} open={isExpanded} onOpenChange={() => toggleModuleExpansion(module.id)}>
                   <div className="border rounded-lg p-4">
-                    <CollapsibleTrigger className="w-full">
-                      <div className="flex justify-between items-start">
-                        <div className="flex items-center space-x-2">
+                    <div className="flex justify-between items-start">
+                      <CollapsibleTrigger asChild>
+                        <button className="flex items-center space-x-2 text-left hover:bg-gray-50 p-2 rounded -m-2 flex-1">
                           {isExpanded ? (
                             <ChevronDown className="h-4 w-4" />
                           ) : (
                             <ChevronRight className="h-4 w-4" />
                           )}
-                          <div className="text-left">
+                          <div>
                             <h3 className="font-semibold text-lg">{module.name}</h3>
                             <p className="text-sm text-gray-600 mt-1">{module.description}</p>
                             {components.length > 0 && (
@@ -174,44 +174,35 @@ export const ModuleList: React.FC<ModuleListProps> = ({
                               </div>
                             )}
                           </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Badge variant={module.is_active ? "default" : "secondary"}>
-                            {module.is_active ? "Active" : "Inactive"}
-                          </Badge>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onAssignUsers(module);
-                            }}
-                          >
-                            Assign Users
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onAssignRoles(module);
-                            }}
-                          >
-                            Assign Roles
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onDeleteModule(module.id);
-                            }}
-                          >
-                            Delete
-                          </Button>
-                        </div>
+                        </button>
+                      </CollapsibleTrigger>
+                      <div className="flex items-center space-x-2 ml-4">
+                        <Badge variant={module.is_active ? "default" : "secondary"}>
+                          {module.is_active ? "Active" : "Inactive"}
+                        </Badge>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => onAssignUsers(module)}
+                        >
+                          Assign Users
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => onAssignRoles(module)}
+                        >
+                          Assign Roles
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => onDeleteModule(module.id)}
+                        >
+                          Delete
+                        </Button>
                       </div>
-                    </CollapsibleTrigger>
+                    </div>
                     
                     <CollapsibleContent>
                       <div className="mt-4 space-y-3">
