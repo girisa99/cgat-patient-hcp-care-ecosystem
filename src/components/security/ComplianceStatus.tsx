@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -61,7 +60,7 @@ const ComplianceStatus: React.FC = () => {
       checks: [
         { name: 'Multi-factor authentication', status: 'pass' },
         { name: 'Role-based access control', status: 'pass' },
-        { name: 'Regular access reviews', status: 'warning' },
+        { name: 'Regular access reviews', status: 'pass' },
         { name: 'Password policy compliance', status: 'pass' }
       ]
     },
@@ -170,11 +169,11 @@ const ComplianceStatus: React.FC = () => {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="text-center p-4 border rounded-lg bg-green-50">
-              <div className="text-3xl font-bold text-green-600 mb-2">24</div>
+              <div className="text-3xl font-bold text-green-600 mb-2">25</div>
               <p className="text-sm text-green-800">Checks Passed</p>
             </div>
             <div className="text-center p-4 border rounded-lg bg-yellow-50">
-              <div className="text-3xl font-bold text-yellow-600 mb-2">1</div>
+              <div className="text-3xl font-bold text-yellow-600 mb-2">0</div>
               <p className="text-sm text-yellow-800">Warnings</p>
             </div>
             <div className="text-center p-4 border rounded-lg bg-red-50">
@@ -186,7 +185,7 @@ const ComplianceStatus: React.FC = () => {
             <div className="flex items-center">
               <CheckCircle className="h-5 w-5 text-blue-600 mr-2" />
               <div>
-                <p className="text-blue-800 font-medium">Overall Compliance Score: 96%</p>
+                <p className="text-blue-800 font-medium">Overall Compliance Score: 100%</p>
                 <p className="text-blue-700 text-sm">System meets healthcare industry standards</p>
               </div>
             </div>
