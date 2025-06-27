@@ -1,4 +1,33 @@
 
+/**
+ * PRIMARY COMPONENT: UserActions
+ * 
+ * ⚠️  CANONICAL SOURCE OF TRUTH - DO NOT DUPLICATE ⚠️
+ * 
+ * This is the primary user actions component used for all user-related operations.
+ * Provides consistent action buttons and handlers across the application.
+ * 
+ * USAGE LOCATIONS:
+ * - src/components/users/UsersList.tsx (primary usage)
+ * - Any component that needs user action buttons
+ * 
+ * FEATURES:
+ * - Edit user functionality
+ * - Role assignment/removal
+ * - Facility assignment
+ * - Permission management
+ * - Module assignment
+ * - Consistent styling and icons
+ * 
+ * MODIFICATIONS:
+ * - Always update this file for user action changes
+ * - Do not create alternative user action components
+ * - Keep button styles consistent across all actions
+ * 
+ * LAST UPDATED: 2025-06-27
+ * MAINTAINER: System Architecture Team
+ */
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Edit, UserPlus, Building, Minus, Key, Shield } from 'lucide-react';

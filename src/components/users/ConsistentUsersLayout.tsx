@@ -1,4 +1,31 @@
 
+/**
+ * PRIMARY COMPONENT: ConsistentUsersLayout
+ * 
+ * ⚠️  CANONICAL SOURCE OF TRUTH - DO NOT DUPLICATE ⚠️
+ * 
+ * This is the primary layout component for user management pages.
+ * Provides consistent header and overview structure across user-related pages.
+ * 
+ * USAGE LOCATIONS:
+ * - User management overview pages
+ * - Admin dashboards requiring user management context
+ * 
+ * FEATURES:
+ * - Standardized page header and title
+ * - User management overview cards
+ * - Consistent spacing and layout
+ * - Icon-based visual hierarchy
+ * 
+ * MODIFICATIONS:
+ * - Always update this file for layout changes
+ * - Do not create alternative user layout components
+ * - Keep styling consistent with design system
+ * 
+ * LAST UPDATED: 2025-06-27
+ * MAINTAINER: System Architecture Team
+ */
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, UserPlus, Settings } from 'lucide-react';

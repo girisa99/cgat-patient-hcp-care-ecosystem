@@ -1,19 +1,46 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 /**
- * IMPORTANT: Patient data MUST be fetched from auth.users table via the manage-user-profiles edge function.
+ * PRIMARY HOOK: usePatients
  * 
- * ❌ DO NOT query profiles table directly for patient data - it will include non-patient users
- * ✅ ALWAYS use manage-user-profiles edge function with role-based filtering
+ * ⚠️  CANONICAL SOURCE OF TRUTH - DO NOT DUPLICATE ⚠️
  * 
- * This ensures:
- * - Data comes from the authoritative auth.users table
- * - Proper role-based filtering (patientCaregiver role only)
- * - RLS policies are respected
- * - Consistent data structure across the application
+ * This is the primary hook for patient data management throughout the application.
+ * All patient-related data operations should use this hook.
+ * 
+ * USAGE LOCATIONS:
+ * - src/pages/ConsistentPatients.tsx (primary usage)
+ * - src/pages/Patients.tsx
+ * - Any component needing patient-specific data
+ * 
+ * CRITICAL SECURITY REQUIREMENTS:
+ * - Patient data MUST be fetched from auth.users table via edge function
+ * - NEVER query profiles table directly for patient data
+ * - Role filtering (patientCaregiver) enforced at edge function level
+ * - All operations are logged for HIPAA compliance
+ * 
+ * FEATURES:
+ * - Fetches patients with patientCaregiver role only
+ * - Includes facility relationships
+ * - Patient deactivation with audit logging
+ * - Comprehensive error handling
+ * - RLS policy compliance
+ * 
+ * DATA SOURCE:
+ * - Uses manage-user-profiles edge function
+ * - Filters for patientCaregiver role specifically
+ * - Authoritative source: auth.users table
+ * 
+ * MODIFICATIONS:
+ * - Always update this file for patient data logic changes
+ * - Do not create alternative patient hooks
+ * - Maintain HIPAA compliance in all changes
+ * - Coordinate with security team for modifications
+ * 
+ * LAST UPDATED: 2025-06-27
+ * MAINTAINER: System Architecture Team & Security Team
  */
 
 interface PatientUser {

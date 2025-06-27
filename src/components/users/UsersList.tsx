@@ -1,4 +1,37 @@
 
+/**
+ * PRIMARY COMPONENT: UsersList
+ * 
+ * ⚠️  CANONICAL SOURCE OF TRUTH - DO NOT DUPLICATE ⚠️
+ * 
+ * This is the primary users list component used throughout the application.
+ * All user listing functionality should use this component.
+ * 
+ * USAGE LOCATIONS:
+ * - src/pages/Users.tsx (main users page)
+ * - src/components/users/ConsistentUsersContent.tsx
+ * - Any other location needing user list display
+ * 
+ * FEATURES:
+ * - Displays all users in a table format
+ * - Provides action buttons for each user
+ * - Integrates with permission and module assignment dialogs
+ * - Supports loading states and empty states
+ * 
+ * DEPENDENCIES:
+ * - useUsers hook for data fetching
+ * - UserActions component for user operations
+ * - Various dialog components for user management
+ * 
+ * MODIFICATIONS:
+ * - Always update this file for user list changes
+ * - Do not create alternative user list components
+ * - Coordinate with team before major changes
+ * 
+ * LAST UPDATED: 2025-06-27
+ * MAINTAINER: System Architecture Team
+ */
+
 import React, { useState } from 'react';
 import { useUsers } from '@/hooks/useUsers';
 import { Button } from '@/components/ui/button';

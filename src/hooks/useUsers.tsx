@@ -1,3 +1,36 @@
+/**
+ * PRIMARY HOOK: useUsers
+ * 
+ * ⚠️  CANONICAL SOURCE OF TRUTH - DO NOT DUPLICATE ⚠️
+ * 
+ * This is the primary hook for user data management throughout the application.
+ * All user-related data operations should use this hook.
+ * 
+ * USAGE LOCATIONS:
+ * - src/components/users/UsersList.tsx (primary usage)
+ * - src/pages/Users.tsx
+ * - Any component needing user data and operations
+ * 
+ * FEATURES:
+ * - Fetches users via optimized edge function
+ * - Provides CRUD operations for users
+ * - Role assignment and facility assignment
+ * - Comprehensive error handling and loading states
+ * - Automatic cache invalidation
+ * 
+ * DATA SOURCE:
+ * - Uses manage-user-profiles edge function
+ * - Fetches from auth.users table (authoritative source)
+ * - Includes role and facility relationships
+ * 
+ * MODIFICATIONS:
+ * - Always update this file for user data logic changes
+ * - Do not create alternative user hooks
+ * - Coordinate with database team before schema changes
+ * 
+ * LAST UPDATED: 2025-06-27
+ * MAINTAINER: System Architecture Team
+ */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
