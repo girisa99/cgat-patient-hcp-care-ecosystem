@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import StandardizedDashboardLayout from '@/components/layout/StandardizedDashboardLayout';
+import { SimplePageContainer } from '@/components/layout/SimplePageContainer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -96,16 +97,14 @@ const Onboarding = () => {
 
   return (
     <StandardizedDashboardLayout>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Onboarding</h1>
-          <p className="text-muted-foreground">
-            Set up new facilities and users in the system
-          </p>
-        </div>
-
+      <SimplePageContainer
+        title="Onboarding"
+        subtitle="Set up new facilities and users in the system"
+        maxWidth="lg"
+        padding="md"
+      >
         {/* Step Indicator */}
-        <div className="flex items-center justify-center space-x-4 py-4">
+        <div className="flex items-center justify-center space-x-4 py-4 mb-8">
           <div className={`flex items-center space-x-2 ${activeStep === 'facility' ? 'text-blue-600' : activeStep === 'user' || activeStep === 'complete' ? 'text-green-600' : 'text-gray-400'}`}>
             <Building className="h-5 w-5" />
             <span>Create Facility</span>
@@ -337,7 +336,7 @@ const Onboarding = () => {
             </CardContent>
           </Card>
         )}
-      </div>
+      </SimplePageContainer>
     </StandardizedDashboardLayout>
   );
 };

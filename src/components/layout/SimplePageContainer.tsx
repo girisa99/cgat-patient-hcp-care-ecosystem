@@ -22,10 +22,10 @@ export const SimplePageContainer: React.FC<SimplePageContainerProps> = ({
   padding = 'md'
 }) => {
   const maxWidthClasses = {
-    sm: 'max-w-2xl',
-    md: 'max-w-4xl',
-    lg: 'max-w-6xl',
-    xl: 'max-w-7xl',
+    sm: 'max-w-2xl mx-auto',
+    md: 'max-w-4xl mx-auto',
+    lg: 'max-w-6xl mx-auto',
+    xl: 'max-w-7xl mx-auto',
     full: 'w-full'
   };
 
@@ -37,7 +37,7 @@ export const SimplePageContainer: React.FC<SimplePageContainerProps> = ({
 
   return (
     <div className={cn(
-      'w-full mx-auto',
+      'min-h-full',
       maxWidthClasses[maxWidth],
       paddingClasses[padding],
       className

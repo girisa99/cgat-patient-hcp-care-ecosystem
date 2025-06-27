@@ -88,16 +88,15 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
             onClose={() => setSidebarOpen(false)} 
           />
           
-          {/* Main content - NO left margin, let content manage its own spacing */}
+          {/* Main content - Remove the problematic left margin */}
           <main 
             className={cn(
               "flex-1 overflow-auto w-full",
+              // On desktop, the sidebar is fixed, so we need to account for its width
+              // But we'll do this with padding-left instead of margin-left to avoid overflow
+              !isMobile ? "pl-64" : "pl-0",
               debugMode && "border-2 border-dashed border-blue-500"
             )}
-            style={{
-              // On desktop, account for fixed sidebar width
-              marginLeft: !isMobile ? '256px' : '0'
-            }}
           >
             {children}
           </main>
