@@ -11,7 +11,7 @@ import { UserManagementDialogs } from '@/components/admin/UserManagement/UserMan
 
 const ConsistentUsers = () => {
   const { users, isLoading, meta } = useConsistentUsers();
-  const { debugMode, handleToggleDebug } = useDebugMode();
+  const { debugMode, toggleDebugMode } = useDebugMode();
   const userStats = useUserStatistics(users);
   
   const {
@@ -46,7 +46,7 @@ const ConsistentUsers = () => {
         userStats={userStats}
         meta={meta}
         debugMode={debugMode}
-        onToggleDebug={handleToggleDebug}
+        onToggleDebug={toggleDebugMode}
       />
 
       <UserManagementActions />
