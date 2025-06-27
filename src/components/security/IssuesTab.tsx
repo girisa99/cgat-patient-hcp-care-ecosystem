@@ -49,12 +49,24 @@ const IssuesTab: React.FC<IssuesTabProps> = ({ verificationSummary }) => {
     return Bug;
   };
 
+  // Helper function to extract string message from various issue types
+  const extractMessage = (issue: any): string => {
+    if (typeof issue === 'string') {
+      return issue;
+    }
+    if (issue && typeof issue === 'object') {
+      // Try different property names that might contain the message
+      return issue.description || issue.message || issue.violation || issue.issue || JSON.stringify(issue);
+    }
+    return String(issue);
+  };
+
   // Collect all issues from different sources
   const allIssues = [
     // Validation result issues
     ...(verificationSummary.validationResult?.issues || []).map(issue => ({
       type: 'Validation Issue',
-      message: issue,
+      message: extractMessage(issue),
       source: 'Validation',
       severity: 'medium'
     })),
@@ -62,7 +74,7 @@ const IssuesTab: React.FC<IssuesTabProps> = ({ verificationSummary }) => {
     // Database validation violations
     ...(verificationSummary.databaseValidation?.violations || []).map(violation => ({
       type: 'Database Violation',
-      message: violation,
+      message: extractMessage(violation),
       source: 'Database',
       severity: 'high'
     })),
@@ -70,7 +82,7 @@ const IssuesTab: React.FC<IssuesTabProps> = ({ verificationSummary }) => {
     // Security vulnerabilities
     ...(verificationSummary.securityScan?.vulnerabilities || []).map(vuln => ({
       type: 'Security Vulnerability',
-      message: vuln,
+      message: extractMessage(vuln),
       source: 'Security',
       severity: 'critical'
     })),
@@ -78,7 +90,7 @@ const IssuesTab: React.FC<IssuesTabProps> = ({ verificationSummary }) => {
     // Code quality issues
     ...(verificationSummary.codeQuality?.issues || []).map(issue => ({
       type: 'Code Quality Issue',
-      message: issue,
+      message: extractMessage(issue),
       source: 'Code Quality',
       severity: 'medium'
     })),
@@ -86,7 +98,7 @@ const IssuesTab: React.FC<IssuesTabProps> = ({ verificationSummary }) => {
     // Schema validation violations
     ...(verificationSummary.schemaValidation?.violations || []).map(violation => ({
       type: 'Schema Violation',
-      message: violation,
+      message: extractMessage(violation),
       source: 'Schema',
       severity: 'high'
     }))
