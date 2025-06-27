@@ -56,7 +56,7 @@ const ApiIntegrationsManager = () => {
   }
 
   return (
-    <div>
+    <div className="space-y-4">
       <ApiIntegrationsStats
         integrations={integrations || []}
         internalApis={internalApis || []}

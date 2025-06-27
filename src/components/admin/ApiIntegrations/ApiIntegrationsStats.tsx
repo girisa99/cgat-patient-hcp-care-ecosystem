@@ -25,7 +25,7 @@ export const ApiIntegrationsStats: React.FC<ApiIntegrationsStatsProps> = ({
   );
 
   return (
-    <div className="mb-4">
+    <div>
       {statsBadges}
     </div>
   );
