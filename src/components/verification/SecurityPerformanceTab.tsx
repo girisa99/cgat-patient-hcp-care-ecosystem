@@ -53,7 +53,7 @@ const SecurityPerformanceTab: React.FC<SecurityPerformanceTabProps> = ({ verific
     },
     {
       title: 'Database Security',
-      score: verificationSummary?.databaseValidation?.violations.length ? 
+      score: verificationSummary?.databaseValidation?.violations?.length ? 
         Math.max(60, 100 - (verificationSummary.databaseValidation.violations.length * 10)) : 88,
       status: 'good',
       icon: Database,
@@ -105,6 +105,15 @@ const SecurityPerformanceTab: React.FC<SecurityPerformanceTabProps> = ({ verific
     return 'text-red-600';
   };
 
+  // Safe access to verification summary data with fallbacks
+  const databaseIssues = verificationSummary?.databaseValidation?.violations?.length || 0;
+  const codeQualityIssues = verificationSummary?.codeQuality?.issues?.length || 0;
+  const securityVulnerabilities = verificationSummary?.securityScan?.vulnerabilities?.length || 0;
+  const schemaIssues = verificationSummary?.schemaValidation?.violations?.length || 0;
+  const warningsCount = verificationSummary?.validationResult?.warnings?.length || 0;
+  const issuesFound = verificationSummary?.issuesFound || 0;
+  const criticalIssues = verificationSummary?.criticalIssues || 0;
+
   return (
     <div className="space-y-6">
       {/* Security Metrics */}
@@ -141,25 +150,25 @@ const SecurityPerformanceTab: React.FC<SecurityPerformanceTabProps> = ({ verific
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 border rounded-lg bg-gray-50">
               <div className="text-center">
                 <Database className="h-6 w-6 mx-auto mb-2 text-blue-500" />
-                <div className="text-xl font-bold">{verificationSummary.databaseValidation?.violations.length || 0}</div>
+                <div className="text-xl font-bold">{databaseIssues}</div>
                 <p className="text-sm text-muted-foreground">Database Issues</p>
               </div>
               
               <div className="text-center">
                 <Code className="h-6 w-6 mx-auto mb-2 text-purple-500" />
-                <div className="text-xl font-bold">{verificationSummary.codeQuality?.issues.length || 0}</div>
+                <div className="text-xl font-bold">{codeQualityIssues}</div>
                 <p className="text-sm text-muted-foreground">Code Quality Issues</p>
               </div>
 
               <div className="text-center">
                 <Shield className="h-6 w-6 mx-auto mb-2 text-red-500" />
-                <div className="text-xl font-bold">{verificationSummary.securityScan?.vulnerabilities.length || 0}</div>
+                <div className="text-xl font-bold">{securityVulnerabilities}</div>
                 <p className="text-sm text-muted-foreground">Security Vulnerabilities</p>
               </div>
 
               <div className="text-center">
                 <Settings className="h-6 w-6 mx-auto mb-2 text-green-500" />
-                <div className="text-xl font-bold">{verificationSummary.schemaValidation?.violations.length || 0}</div>
+                <div className="text-xl font-bold">{schemaIssues}</div>
                 <p className="text-sm text-muted-foreground">Schema Issues</p>
               </div>
             </div>
@@ -238,7 +247,7 @@ const SecurityPerformanceTab: React.FC<SecurityPerformanceTabProps> = ({ verific
             <div className="grid grid-cols-1 gap-4 mb-4">
               <div className="text-center p-4 border rounded-lg">
                 <div className="text-3xl font-bold mb-2">
-                  {verificationSummary?.validationResult.warnings.length || 0}
+                  {warningsCount}
                 </div>
                 <Badge className="bg-yellow-100 text-yellow-800">
                   Warnings
@@ -246,7 +255,7 @@ const SecurityPerformanceTab: React.FC<SecurityPerformanceTabProps> = ({ verific
               </div>
               <div className="text-center p-4 border rounded-lg">
                 <div className="text-3xl font-bold mb-2">
-                  {verificationSummary?.issuesFound || 0}
+                  {issuesFound}
                 </div>
                 <Badge className="bg-orange-100 text-orange-800">
                   Issues
@@ -254,7 +263,7 @@ const SecurityPerformanceTab: React.FC<SecurityPerformanceTabProps> = ({ verific
               </div>
               <div className="text-center p-4 border rounded-lg">
                 <div className="text-3xl font-bold mb-2">
-                  {verificationSummary?.criticalIssues || 0}
+                  {criticalIssues}
                 </div>
                 <Badge className="bg-red-100 text-red-800">
                   Critical
@@ -266,9 +275,9 @@ const SecurityPerformanceTab: React.FC<SecurityPerformanceTabProps> = ({ verific
               <div className="flex items-center">
                 <CheckCircle className="h-5 w-5 text-green-600 mr-2" />
                 <span className="text-green-800 font-medium">
-                  {!verificationSummary || verificationSummary.criticalIssues === 0 
+                  {criticalIssues === 0 
                     ? "No critical security threats detected" 
-                    : `${verificationSummary.criticalIssues} critical issues require immediate attention`
+                    : `${criticalIssues} critical issues require immediate attention`
                   }
                 </span>
               </div>
@@ -339,7 +348,7 @@ const SecurityPerformanceTab: React.FC<SecurityPerformanceTabProps> = ({ verific
                   <div>
                     <p className="font-medium">Comprehensive security scan completed</p>
                     <p className="text-sm text-muted-foreground">
-                      {verificationSummary.issuesFound} issues found, {verificationSummary.autoFixesApplied} auto-fixed
+                      {issuesFound} issues found, {verificationSummary.autoFixesApplied || 0} auto-fixed
                     </p>
                   </div>
                 </div>
