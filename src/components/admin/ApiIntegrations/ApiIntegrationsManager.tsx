@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useApiIntegrations } from '@/hooks/useApiIntegrations.tsx';
 import { useEnhancedExternalApis } from '@/hooks/useEnhancedExternalApis';
@@ -56,7 +55,7 @@ const ApiIntegrationsManager = () => {
   }
 
   return (
-    <div className="space-y-4">
+    <div>
       <ApiIntegrationsStats
         integrations={integrations || []}
         internalApis={internalApis || []}
@@ -64,21 +63,23 @@ const ApiIntegrationsManager = () => {
         publishedApis={publishedApis || []}
       />
 
-      <ApiIntegrationsTabs
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        internalApis={internalApis || []}
-        externalApis={externalApis || []}
-        searchTerm={searchTerm}
-        createDialogOpen={createDialogOpen}
-        setCreateDialogOpen={setCreateDialogOpen}
-        onDownloadCollection={handleDownloadCollection}
-        onViewDetails={handleViewDetails}
-        onViewDocumentation={handleViewDocumentation}
-        onCopyUrl={handleCopyUrl}
-        integrations={integrations || []}
-        onClose={() => setActiveTab('overview')}
-      />
+      <div className="mt-6">
+        <ApiIntegrationsTabs
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          internalApis={internalApis || []}
+          externalApis={externalApis || []}
+          searchTerm={searchTerm}
+          createDialogOpen={createDialogOpen}
+          setCreateDialogOpen={setCreateDialogOpen}
+          onDownloadCollection={handleDownloadCollection}
+          onViewDetails={handleViewDetails}
+          onViewDocumentation={handleViewDocumentation}
+          onCopyUrl={handleCopyUrl}
+          integrations={integrations || []}
+          onClose={() => setActiveTab('overview')}
+        />
+      </div>
     </div>
   );
 };
