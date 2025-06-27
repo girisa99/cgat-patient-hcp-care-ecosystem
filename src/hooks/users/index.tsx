@@ -1,23 +1,24 @@
 
 /**
- * Refactored Users Hook - Now uses smaller, focused modules
+ * Consolidated User Management Hooks
+ * Single export point for all user-related functionality
  */
-import { useUserData } from './useUserData';
-import { useUserMutations } from './useUserMutations';
 
-export const useUsers = () => {
-  const { data: users, isLoading, error, refetch } = useUserData();
-  const mutations = useUserMutations();
-
-  return {
-    users,
-    isLoading,
-    error,
-    refetch,
-    ...mutations
-  };
-};
-
-// Re-export individual hooks for direct use
+// Core data hooks
 export { useUserData } from './useUserData';
 export { useUserMutations } from './useUserMutations';
+
+// Unified hooks that combine multiple concerns
+export { useUsers } from '../useUsers';
+export { useConsistentUsers } from '../useConsistentUsers';
+
+// Specialized hooks for different contexts
+export { useUnifiedUserData, usePatientData, useHealthcareStaffData, useAdminUserData } from '../useUnifiedUserData';
+
+// Legacy hooks (for backward compatibility)
+export { useConsistentPatients } from '../useConsistentPatients';
+
+// Re-export mutation hooks for convenience
+export { useUserMutations as useUserActions } from './useUserMutations';
+export { useRoleMutations } from '../mutations/useRoleMutations';
+export { useFacilityMutations } from '../mutations/useFacilityMutations';

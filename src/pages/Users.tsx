@@ -5,18 +5,30 @@ import { PageContainer } from '@/components/layout/PageContainer';
 import { AdminStatsGrid, StatCard } from '@/components/layout/AdminStatsGrid';
 import { Card, CardContent } from '@/components/ui/card';
 import { Users as UsersIcon, UserPlus, Settings, Shield } from 'lucide-react';
-import UsersList from '@/components/users/UsersList';
-import CreateUserDialog from '@/components/users/CreateUserDialog';
-import EditUserDialog from '@/components/users/EditUserDialog';
-import AssignRoleDialog from '@/components/users/AssignRoleDialog';
-import RemoveRoleDialog from '@/components/users/RemoveRoleDialog';
-import AssignFacilityDialog from '@/components/users/AssignFacilityDialog';
-import BulkRoleAssignment from '@/components/users/BulkRoleAssignment';
 import { Button } from '@/components/ui/button';
-import { useUsers } from '@/hooks/useUsers';
+import { useUserManagement } from '@/hooks/useUserManagement';
+
+// Import consolidated components
+import {
+  UsersList,
+  CreateUserDialog,
+  EditUserDialog,
+  AssignRoleDialog,
+  RemoveRoleDialog,
+  AssignFacilityDialog,
+  BulkRoleAssignment
+} from '@/components/users';
 
 const Users = () => {
-  const { users, isLoading } = useUsers();
+  const { 
+    users, 
+    isLoading, 
+    createUser, 
+    assignRole, 
+    assignFacility,
+    stats 
+  } = useUserManagement();
+
   const [createUserOpen, setCreateUserOpen] = useState(false);
   const [editUserOpen, setEditUserOpen] = useState(false);
   const [assignRoleOpen, setAssignRoleOpen] = useState(false);
@@ -59,12 +71,6 @@ const Users = () => {
     setAssignFacilityOpen(true);
   };
 
-  // Calculate stats
-  const totalUsers = users?.length || 0;
-  const usersWithRoles = users?.filter(u => u.user_roles && u.user_roles.length > 0).length || 0;
-  const usersWithFacilities = users?.filter(u => u.facilities).length || 0;
-  const activeUsers = totalUsers;
-
   const headerActions = (
     <Button onClick={handleCreateUser}>
       <UserPlus className="h-4 w-4 mr-2" />
@@ -84,25 +90,25 @@ const Users = () => {
           <AdminStatsGrid columns={4}>
             <StatCard
               title="Total Users"
-              value={totalUsers}
+              value={stats.totalUsers}
               icon={UsersIcon}
               description="All system users"
             />
             <StatCard
               title="With Roles"
-              value={usersWithRoles}
+              value={stats.usersWithRoles}
               icon={Shield}
               description="Users with assigned roles"
             />
             <StatCard
               title="Active Users"
-              value={activeUsers}
+              value={stats.activeUsers}
               icon={Settings}
               description="Currently active users"
             />
             <StatCard
               title="With Facilities"
-              value={usersWithFacilities}
+              value={stats.usersWithFacilities}
               icon={Settings}
               description="Users assigned to facilities"
             />

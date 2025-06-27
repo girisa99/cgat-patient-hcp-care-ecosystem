@@ -1,16 +1,17 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { UserWithRoles, createUserQueryKey, USER_ERROR_MESSAGES } from '@/utils/userDataHelpers';
+import { UserWithRoles } from '@/types/userManagement';
+import { createUserQueryKey, USER_ERROR_MESSAGES } from '@/utils/userDataHelpers';
 
 /**
- * Core hook for fetching user data from auth.users via edge function
+ * Consolidated hook for fetching user data from auth.users via edge function
  */
 export const useUserData = () => {
   return useQuery({
     queryKey: createUserQueryKey('all'),
     queryFn: async (): Promise<UserWithRoles[]> => {
-      console.log('🔍 Fetching users via edge function...');
+      console.log('🔍 Fetching users via consolidated edge function...');
       
       try {
         const { data: response, error } = await supabase.functions.invoke('manage-user-profiles', {
@@ -28,7 +29,7 @@ export const useUserData = () => {
         }
 
         const users = response.data || [];
-        console.log('✅ Users fetched successfully:', users.length);
+        console.log('✅ Users fetched successfully via consolidated hook:', users.length);
         return users;
         
       } catch (err: any) {
