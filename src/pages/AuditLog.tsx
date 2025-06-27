@@ -25,7 +25,13 @@ const AuditLog = () => {
   });
 
   const auditLogs = auditLogsResponse?.data || [];
-  const metadata = auditLogsResponse?.metadata || {};
+  
+  // Provide proper default values for metadata with correct typing
+  const metadata = auditLogsResponse?.metadata || {
+    total_logs: 0,
+    today_logs: 0,
+    filtered_count: 0
+  };
 
   const handleClearFilters = () => {
     setFilters({});
@@ -35,9 +41,9 @@ const AuditLog = () => {
     refetch();
   };
 
-  // Calculate stats from real data
-  const totalLogs = metadata.total_logs || 0;
-  const todayLogs = metadata.today_logs || 0;
+  // Calculate stats from real data with proper fallbacks
+  const totalLogs = metadata.total_logs;
+  const todayLogs = metadata.today_logs;
   const filteredCount = metadata.filtered_count || auditLogs.length;
 
   const statsContent = (
