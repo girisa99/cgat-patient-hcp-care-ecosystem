@@ -24,7 +24,7 @@ import {
   Lock
 } from 'lucide-react';
 import { adminModuleVerificationRunner, AdminModuleVerificationResult } from '@/utils/verification/AdminModuleVerificationRunner';
-import { ImplementationTracker } from '@/components/verification/ImplementationTracker';
+import ImplementationTracker from '@/components/verification/ImplementationTracker';
 
 const AdminVerificationTest = () => {
   const [verificationResult, setVerificationResult] = useState<AdminModuleVerificationResult | null>(null);
