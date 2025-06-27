@@ -5,7 +5,6 @@ import Header from './Header';
 import Sidebar from './Sidebar';
 import { Button } from '@/components/ui/button';
 import { Menu } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -37,7 +36,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       
       {/* Main Container with Flex Layout */}
       <div className="flex pt-16">
-        {/* Sidebar - Only show on desktop */}
+        {/* Desktop Sidebar - Fixed width, always visible */}
         {!isMobile && (
           <div className="w-64 flex-shrink-0">
             <Sidebar 
@@ -56,10 +55,12 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         )}
         
         {/* Content Area - Takes remaining space */}
-        <main className={cn(
-          "flex-1 min-h-screen",
-          isMobile && "pt-12" // Additional padding for mobile menu bar
-        )}>
+        <main className={`
+          flex-1 
+          min-h-screen 
+          ${isMobile ? 'pt-12' : ''} 
+          overflow-x-hidden
+        `}>
           {children}
         </main>
       </div>
