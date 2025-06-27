@@ -1,8 +1,7 @@
-
 /**
  * Enhanced Automated Verification System - Main Export 
  * 
- * REFACTORED: Now includes comprehensive UI/UX validation capabilities
+ * REFACTORED: Now includes comprehensive security and performance monitoring
  */
 
 // Core orchestrators
@@ -36,6 +35,27 @@ export {
   EnhancedIntegrationOrchestrator,
   enhancedIntegrationOrchestrator
 } from './EnhancedIntegrationOrchestrator';
+
+// NEW: Comprehensive Security & Performance Monitoring
+export { 
+  RuntimeSecurityMonitor,
+  runtimeSecurityMonitor
+} from './RuntimeSecurityMonitor';
+
+export {
+  RealUserMonitor,
+  realUserMonitor
+} from './RealUserMonitor';
+
+export {
+  AutomatedAlertingSystem,
+  automatedAlertingSystem
+} from './AutomatedAlertingSystem';
+
+export {
+  EnhancedSecurityPerformanceOrchestrator,
+  enhancedSecurityPerformanceOrchestrator
+} from './EnhancedSecurityPerformanceOrchestrator';
 
 // Individual verification components
 export { UnusedCodeDetector, unusedCodeDetector } from './UnusedCodeDetector';
@@ -86,6 +106,24 @@ import { coreVerificationOrchestrator } from './CoreVerificationOrchestrator';
 import { VerificationSummaryGenerator } from './VerificationSummaryGenerator';
 import { ModuleValidationOrchestrator } from './ModuleValidationOrchestrator';
 import { uiuxOrchestrator } from './UIUXOrchestrator';
+
+// NEW: Enhanced main validation functions with comprehensive monitoring
+import { enhancedSecurityPerformanceOrchestrator } from './EnhancedSecurityPerformanceOrchestrator';
+
+export const startComprehensiveMonitoring = async () => {
+  console.log('🚀 Starting comprehensive security and performance monitoring...');
+  await enhancedSecurityPerformanceOrchestrator.startComprehensiveMonitoring();
+};
+
+export const getComprehensiveSystemSummary = async () => {
+  console.log('📊 Getting comprehensive system summary...');
+  return await enhancedSecurityPerformanceOrchestrator.getComprehensiveSummary();
+};
+
+export const executeAutomatedSystemFixes = async (fixIds: string[]) => {
+  console.log('🔧 Executing automated system fixes...');
+  return await enhancedSecurityPerformanceOrchestrator.executeAutomatedFixes(fixIds);
+};
 
 // Main validation functions
 export const validateBeforeImplementation = async (request: any) => {
@@ -174,7 +212,7 @@ export type {
 
 // Global initialization with UI/UX capabilities
 if (typeof window !== 'undefined') {
-  console.log('🚀 ENHANCED VERIFICATION SYSTEM WITH UI/UX VALIDATION INITIALIZING...');
+  console.log('🚀 ENHANCED VERIFICATION SYSTEM WITH COMPREHENSIVE MONITORING INITIALIZING...');
   
   (window as any).automaticVerification = {
     // Existing functions
@@ -188,7 +226,26 @@ if (typeof window !== 'undefined') {
     validateUIUX: validateUIUXDesign,
     validateComponents: validateComponentDesign,
     
-    // Metadata
+    // NEW: Comprehensive monitoring functions
+    startComprehensiveMonitoring,
+    getComprehensiveSystemSummary,
+    executeAutomatedSystemFixes,
+    
+    // NEW: Individual monitoring system access
+    runtimeSecurity: () => runtimeSecurityMonitor.getRuntimeSecurityAnalysis(),
+    realUserMetrics: () => realUserMonitor.getRUMMetrics(),
+    alertingStatus: () => automatedAlertingSystem.getAlertingStatus(),
+    
+    // Enhanced metadata
+    hasComprehensiveMonitoring: true,
+    hasRuntimeSecurity: true,
+    hasRealUserMonitoring: true, 
+    hasAutomatedAlerting: true,
+    hasPerformanceOptimization: true,
+    hasSecurityThreatDetection: true,
+    hasMemoryLeakDetection: true,
+    hasDependencyScanning: true,
+    hasComplianceTracking: true,
     isAutomatic: true,
     isRefactored: true,
     isModular: true,
@@ -200,8 +257,9 @@ if (typeof window !== 'undefined') {
     validatesRoleBasedUI: true
   };
   
-  console.log('✅ ENHANCED VERIFICATION SYSTEM WITH UI/UX VALIDATION READY');
-  console.log('🎨 UI/UX Features: Design System, Role-Based UI, Rich Components');
-  console.log('📱 Component Support: Tabs, Subtabs, Buttons, Layouts, Navigation');
-  console.log('✨ Rich Design: Visual Effects, Animations, Interactions');
+  console.log('✅ ENHANCED VERIFICATION SYSTEM WITH COMPREHENSIVE MONITORING READY');
+  console.log('🛡️ Security Features: Runtime monitoring, threat detection, vulnerability scanning');
+  console.log('📊 Performance Features: RUM, Core Web Vitals, memory leak detection');
+  console.log('🚨 Alerting Features: Real-time alerts, automated responses, incident management');
+  console.log('🔧 Automation Features: Automated fixes, dependency updates, optimization');
 }
