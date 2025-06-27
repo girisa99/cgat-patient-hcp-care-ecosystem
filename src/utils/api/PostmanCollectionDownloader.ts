@@ -1,4 +1,3 @@
-
 /**
  * Postman Collection Generator and Downloader
  * Generates real Postman collections from published APIs
@@ -59,8 +58,8 @@ export class PostmanCollectionDownloader {
     
     const collection: PostmanCollection = {
       info: {
-        name: `${apiDetails.external_name} API`,
-        description: `${apiDetails.external_description || 'Healthcare API'}\n\nGenerated collection for ${apiDetails.external_name}`,
+        name: `${apiDetails.external_name || 'Healthcare'} API`,
+        description: `${apiDetails.external_description || 'Healthcare API'}\n\nGenerated collection for ${apiDetails.external_name || 'Healthcare API'}`,
         version: apiDetails.version || '1.0.0',
         schema: 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json'
       },
@@ -92,10 +91,14 @@ export class PostmanCollectionDownloader {
     // Generate items from endpoints
     if (apiDetails.endpoints && apiDetails.endpoints.length > 0) {
       apiDetails.endpoints.forEach((endpoint: any) => {
+        // Safely handle endpoint path
+        const endpointPath = endpoint.external_path || endpoint.path || endpoint.url || '/unknown';
+        const method = (endpoint.method || 'GET').toUpperCase();
+        
         const item: PostmanItem = {
-          name: endpoint.summary || `${endpoint.method.toUpperCase()} ${endpoint.external_path}`,
+          name: endpoint.summary || endpoint.name || `${method} ${endpointPath}`,
           request: {
-            method: endpoint.method.toUpperCase(),
+            method,
             header: [
               {
                 key: 'Content-Type',
@@ -109,16 +112,16 @@ export class PostmanCollectionDownloader {
               }
             ],
             url: {
-              raw: `{{baseUrl}}${endpoint.external_path}`,
+              raw: `{{baseUrl}}${endpointPath}`,
               host: ['{{baseUrl}}'],
-              path: endpoint.external_path.split('/').filter((p: string) => p)
+              path: endpointPath.split('/').filter((p: string) => p)
             }
           },
           response: []
         };
 
         // Add request body for POST/PUT/PATCH methods
-        if (['POST', 'PUT', 'PATCH'].includes(endpoint.method.toUpperCase())) {
+        if (['POST', 'PUT', 'PATCH'].includes(method)) {
           item.request.body = {
             mode: 'raw',
             raw: JSON.stringify(this.generateSampleRequestBody(endpoint), null, 2),
@@ -200,13 +203,21 @@ export class PostmanCollectionDownloader {
     }
 
     // Generate based on endpoint path
-    return this.generateDefaultRequestBody(endpoint.external_path);
+    const path = endpoint.external_path || endpoint.path || endpoint.url || '';
+    return this.generateDefaultRequestBody(path);
   }
 
   /**
    * Generate default request body based on endpoint path
    */
   private static generateDefaultRequestBody(path: string): any {
+    if (!path) {
+      return {
+        name: "Sample Name",
+        description: "Sample Description"
+      };
+    }
+
     if (path.includes('/users')) {
       return {
         first_name: "John",

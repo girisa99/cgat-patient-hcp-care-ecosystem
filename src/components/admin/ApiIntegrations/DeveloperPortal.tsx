@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { 
   Key, 
   Code, 
@@ -25,7 +26,9 @@ import {
   Clock,
   CheckCircle,
   AlertCircle,
-  Download
+  Download,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
 import { useApiKeys } from '@/hooks/useApiKeys';
 import { useDeveloperApplications } from '@/hooks/useDeveloperApplications';
@@ -68,7 +71,7 @@ const DeveloperPortal = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('overview');
   const [showApplicationDialog, setShowApplicationDialog] = useState(false);
-  const [selectedApiForDocs, setSelectedApiForDocs] = useState<string | null>(null);
+  const [expandedEndpoints, setExpandedEndpoints] = useState<string[]>([]);
 
   const {
     apiKeys,
@@ -105,6 +108,45 @@ const DeveloperPortal = () => {
     { id: 'appointments', name: 'Appointments', description: 'Schedule and manage appointments' },
     { id: 'billing', name: 'Billing', description: 'Handle billing and payments' },
   ];
+
+  // Group endpoints by functionality
+  const groupEndpointsByFunctionality = (endpoints: any[]) => {
+    const groups: { [key: string]: any[] } = {};
+    
+    endpoints.forEach(endpoint => {
+      const path = endpoint.external_path || endpoint.path || endpoint.url || '/unknown';
+      let functionality = 'General';
+      
+      if (path.includes('/users') || path.includes('/auth')) {
+        functionality = 'User Management';
+      } else if (path.includes('/patients')) {
+        functionality = 'Patient Management';
+      } else if (path.includes('/facilities')) {
+        functionality = 'Facility Management';
+      } else if (path.includes('/appointments')) {
+        functionality = 'Appointments';
+      } else if (path.includes('/billing')) {
+        functionality = 'Billing';
+      } else if (path.includes('/health')) {
+        functionality = 'System';
+      }
+      
+      if (!groups[functionality]) {
+        groups[functionality] = [];
+      }
+      groups[functionality].push(endpoint);
+    });
+    
+    return groups;
+  };
+
+  const toggleEndpointGroup = (functionality: string) => {
+    setExpandedEndpoints(prev => 
+      prev.includes(functionality) 
+        ? prev.filter(f => f !== functionality)
+        : [...prev, functionality]
+    );
+  };
 
   const handleGenerateTestUrl = (apiKey: any) => {
     if (!firstPublishedApi) {
@@ -158,7 +200,7 @@ const DeveloperPortal = () => {
     }
 
     try {
-      console.log('📚 Generating documentation for:', apiDetails.name);
+      console.log('📚 Generating documentation for:', apiDetails.external_name || 'API');
       ApiDocumentationGenerator.viewDocumentation(apiDetails);
       toast({
         title: "Documentation Opened",
@@ -208,7 +250,7 @@ const DeveloperPortal = () => {
     }
 
     try {
-      console.log('📥 Generating Postman collection for:', apiDetails.name);
+      console.log('📥 Generating Postman collection for:', apiDetails.external_name || 'API');
       PostmanCollectionDownloader.generateAndDownload(apiDetails);
       toast({
         title: "Collection Downloaded",
@@ -620,30 +662,60 @@ const DeveloperPortal = () => {
                       </h4>
                       <div className="space-y-2 text-sm max-h-60 overflow-y-auto border rounded p-3">
                         {apiDetails?.endpoints && apiDetails.endpoints.length > 0 ? (
-                          apiDetails.endpoints.map((endpoint: any, index: number) => (
-                            <div key={index} className="flex items-center gap-3 p-2 bg-gray-50 rounded">
-                              <Badge 
-                                variant={
-                                  endpoint.method?.toUpperCase() === 'GET' ? 'secondary' :
-                                  endpoint.method?.toUpperCase() === 'POST' ? 'default' :
-                                  endpoint.method?.toUpperCase() === 'PUT' ? 'outline' :
-                                  endpoint.method?.toUpperCase() === 'DELETE' ? 'destructive' :
-                                  'secondary'
-                                } 
-                                className="text-xs min-w-[60px] justify-center"
+                          (() => {
+                            const endpointGroups = groupEndpointsByFunctionality(apiDetails.endpoints);
+                            return Object.entries(endpointGroups).map(([functionality, endpoints]) => (
+                              <Collapsible 
+                                key={functionality}
+                                open={expandedEndpoints.includes(functionality)}
+                                onOpenChange={() => toggleEndpointGroup(functionality)}
                               >
-                                {endpoint.method?.toUpperCase() || 'GET'}
-                              </Badge>
-                              <code className="text-xs flex-1 font-mono">
-                                {endpoint.url || endpoint.external_path || endpoint.path || '/unknown'}
-                              </code>
-                              {endpoint.name && (
-                                <span className="text-xs text-muted-foreground truncate max-w-[120px]">
-                                  {endpoint.name}
-                                </span>
-                              )}
-                            </div>
-                          ))
+                                <CollapsibleTrigger asChild>
+                                  <Button 
+                                    variant="ghost" 
+                                    className="flex items-center justify-between w-full p-2 bg-gray-100 hover:bg-gray-200 rounded mb-2"
+                                  >
+                                    <span className="font-medium text-left">{functionality}</span>
+                                    <div className="flex items-center gap-2">
+                                      <Badge variant="outline" className="text-xs">
+                                        {endpoints.length} endpoints
+                                      </Badge>
+                                      {expandedEndpoints.includes(functionality) ? 
+                                        <ChevronDown className="h-4 w-4" /> : 
+                                        <ChevronRight className="h-4 w-4" />
+                                      }
+                                    </div>
+                                  </Button>
+                                </CollapsibleTrigger>
+                                <CollapsibleContent className="space-y-2 ml-4 mb-4">
+                                  {endpoints.map((endpoint: any, index: number) => (
+                                    <div key={index} className="flex items-center gap-3 p-2 bg-white border rounded">
+                                      <Badge 
+                                        variant={
+                                          endpoint.method?.toUpperCase() === 'GET' ? 'secondary' :
+                                          endpoint.method?.toUpperCase() === 'POST' ? 'default' :
+                                          endpoint.method?.toUpperCase() === 'PUT' ? 'outline' :
+                                          endpoint.method?.toUpperCase() === 'DELETE' ? 'destructive' :
+                                          'secondary'
+                                        } 
+                                        className="text-xs min-w-[60px] justify-center"
+                                      >
+                                        {(endpoint.method || 'GET').toUpperCase()}
+                                      </Badge>
+                                      <code className="text-xs flex-1 font-mono">
+                                        {endpoint.external_path || endpoint.path || endpoint.url || '/unknown'}
+                                      </code>
+                                      {(endpoint.summary || endpoint.name) && (
+                                        <span className="text-xs text-muted-foreground truncate max-w-[120px]">
+                                          {endpoint.summary || endpoint.name}
+                                        </span>
+                                      )}
+                                    </div>
+                                  ))}
+                                </CollapsibleContent>
+                              </Collapsible>
+                            ));
+                          })()
                         ) : (
                           <div className="text-center py-4">
                             <div className="text-muted-foreground">

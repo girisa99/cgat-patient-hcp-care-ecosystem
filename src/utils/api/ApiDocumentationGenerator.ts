@@ -1,4 +1,3 @@
-
 /**
  * API Documentation Generator
  * Generates comprehensive API documentation from published APIs
@@ -61,18 +60,21 @@ export class ApiDocumentationGenerator {
     // Process endpoints
     if (apiDetails.endpoints && apiDetails.endpoints.length > 0) {
       apiDetails.endpoints.forEach((endpoint: any) => {
+        // Safely handle endpoint path
+        const endpointPath = endpoint.external_path || endpoint.path || endpoint.url || '/unknown';
+        
         const docEndpoint = {
-          path: endpoint.external_path,
-          method: endpoint.method.toUpperCase(),
-          summary: endpoint.summary,
+          path: endpointPath,
+          method: (endpoint.method || 'GET').toUpperCase(),
+          summary: endpoint.summary || endpoint.name || `${endpoint.method} ${endpointPath}`,
           description: endpoint.description,
-          parameters: this.extractParameters(endpoint.external_path),
-          requestBody: endpoint.request_schema || this.generateDefaultRequestBody(endpoint.external_path, endpoint.method),
-          responses: endpoint.response_schema || this.generateDefaultResponse(endpoint.external_path, endpoint.method),
+          parameters: this.extractParameters(endpointPath),
+          requestBody: endpoint.request_schema || this.generateDefaultRequestBody(endpointPath, endpoint.method),
+          responses: endpoint.response_schema || this.generateDefaultResponse(endpointPath, endpoint.method),
           examples: {
-            curl: this.generateCurlExample(baseUrl, endpoint),
-            javascript: this.generateJavaScriptExample(baseUrl, endpoint),
-            python: this.generatePythonExample(baseUrl, endpoint)
+            curl: this.generateCurlExample(baseUrl, { ...endpoint, path: endpointPath }),
+            javascript: this.generateJavaScriptExample(baseUrl, { ...endpoint, path: endpointPath }),
+            python: this.generatePythonExample(baseUrl, { ...endpoint, path: endpointPath })
           }
         };
 
@@ -124,6 +126,12 @@ export class ApiDocumentationGenerator {
    */
   private static extractParameters(path: string): any[] {
     const params: any[] = [];
+    
+    // Safely handle undefined or null paths
+    if (!path || typeof path !== 'string') {
+      return params;
+    }
+    
     const pathParts = path.split('/');
     
     pathParts.forEach(part => {
@@ -146,12 +154,15 @@ export class ApiDocumentationGenerator {
    * Generate example curl command
    */
   private static generateCurlExample(baseUrl: string, endpoint: any): string {
-    let curl = `curl -X ${endpoint.method.toUpperCase()} "${baseUrl}${endpoint.path}" \\
+    const method = (endpoint.method || 'GET').toUpperCase();
+    const path = endpoint.path || endpoint.external_path || '/unknown';
+    
+    let curl = `curl -X ${method} "${baseUrl}${path}" \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -H "Content-Type: application/json"`;
 
-    if (['POST', 'PUT', 'PATCH'].includes(endpoint.method.toUpperCase())) {
-      const sampleData = this.generateDefaultRequestBody(endpoint.path, endpoint.method);
+    if (['POST', 'PUT', 'PATCH'].includes(method)) {
+      const sampleData = this.generateDefaultRequestBody(path, endpoint.method);
       curl += ` \\
   -d '${JSON.stringify(sampleData, null, 2)}'`;
     }
@@ -163,15 +174,18 @@ export class ApiDocumentationGenerator {
    * Generate JavaScript example
    */
   private static generateJavaScriptExample(baseUrl: string, endpoint: any): string {
-    let js = `const response = await fetch('${baseUrl}${endpoint.path}', {
-  method: '${endpoint.method.toUpperCase()}',
+    const method = (endpoint.method || 'GET').toUpperCase();
+    const path = endpoint.path || endpoint.external_path || '/unknown';
+    
+    let js = `const response = await fetch('${baseUrl}${path}', {
+  method: '${method}',
   headers: {
     'Authorization': 'Bearer YOUR_API_KEY',
     'Content-Type': 'application/json'
   }`;
 
-    if (['POST', 'PUT', 'PATCH'].includes(endpoint.method.toUpperCase())) {
-      const sampleData = this.generateDefaultRequestBody(endpoint.path, endpoint.method);
+    if (['POST', 'PUT', 'PATCH'].includes(method)) {
+      const sampleData = this.generateDefaultRequestBody(path, endpoint.method);
       js += `,
   body: JSON.stringify(${JSON.stringify(sampleData, null, 2)})`;
     }
@@ -189,25 +203,28 @@ console.log(data);`;
    * Generate Python example
    */
   private static generatePythonExample(baseUrl: string, endpoint: any): string {
+    const method = (endpoint.method || 'GET').toLowerCase();
+    const path = endpoint.path || endpoint.external_path || '/unknown';
+    
     let python = `import requests
 import json
 
-url = "${baseUrl}${endpoint.path}"
+url = "${baseUrl}${path}"
 headers = {
     "Authorization": "Bearer YOUR_API_KEY",
     "Content-Type": "application/json"
 }`;
 
-    if (['POST', 'PUT', 'PATCH'].includes(endpoint.method.toUpperCase())) {
-      const sampleData = this.generateDefaultRequestBody(endpoint.path, endpoint.method);
+    if (['POST', 'PUT', 'PATCH'].includes(method.toUpperCase())) {
+      const sampleData = this.generateDefaultRequestBody(path, endpoint.method);
       python += `
 data = ${JSON.stringify(sampleData, null, 2)}
 
-response = requests.${endpoint.method.toLowerCase()}(url, headers=headers, json=data)`;
+response = requests.${method}(url, headers=headers, json=data)`;
     } else {
       python += `
 
-response = requests.${endpoint.method.toLowerCase()}(url, headers=headers)`;
+response = requests.${method}(url, headers=headers)`;
     }
 
     python += `
@@ -220,11 +237,11 @@ print(response.json())`;
    * Generate default request body based on path
    */
   private static generateDefaultRequestBody(path: string, method: string): any {
-    if (!['POST', 'PUT', 'PATCH'].includes(method.toUpperCase())) {
+    if (!method || !['POST', 'PUT', 'PATCH'].includes(method.toUpperCase())) {
       return null;
     }
 
-    if (path.includes('/users')) {
+    if (path && path.includes('/users')) {
       return {
         first_name: "John",
         last_name: "Doe",
@@ -233,7 +250,7 @@ print(response.json())`;
       };
     }
 
-    if (path.includes('/patients')) {
+    if (path && path.includes('/patients')) {
       return {
         first_name: "Jane",
         last_name: "Smith",
@@ -253,8 +270,8 @@ print(response.json())`;
    * Generate default response schema
    */
   private static generateDefaultResponse(path: string, method: string): any {
-    if (method.toUpperCase() === 'GET') {
-      if (path.includes('/users')) {
+    if (method && method.toUpperCase() === 'GET') {
+      if (path && path.includes('/users')) {
         return {
           200: {
             description: 'Success',
