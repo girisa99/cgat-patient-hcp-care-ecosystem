@@ -107,7 +107,8 @@ const Users = () => {
         headerActions={headerActions}
         showStats={true}
         statsContent={statsContent}
-        variant="contained"
+        variant="full-width"
+        contentPadding="none"
       >
         {/* Users List */}
         <Card className="shadow-sm">

@@ -92,7 +92,8 @@ const Dashboard = () => {
         headerActions={headerActions}
         showStats={true}
         statsContent={statsContent}
-        variant="contained"
+        variant="full-width"
+        contentPadding="none"
       >
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           <Card className="shadow-sm">
