@@ -27,7 +27,7 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
   className,
 }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [debugMode, setDebugMode] = useState(true);
+  const [debugMode, setDebugMode] = useState(false);
   const { isMobile, isTablet } = useResponsiveLayout();
 
   // Debug keyboard shortcut
@@ -58,11 +58,11 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
           onClose={() => setSidebarOpen(false)} 
         />
         
-        {/* Mobile menu button - only show on mobile/tablet */}
-        {(isMobile || isTablet) && (
+        {/* Mobile menu button - only show on mobile */}
+        {isMobile && (
           <div 
             data-mobile-menu
-            className="md:hidden fixed top-16 left-0 right-0 z-40 bg-background/95 backdrop-blur border-b px-4 py-2"
+            className="fixed top-16 left-0 right-0 z-40 bg-background/95 backdrop-blur border-b px-4 py-2 md:hidden"
           >
             <div className="flex justify-between items-center">
               <Button 
@@ -91,16 +91,14 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
           </div>
         )}
         
-        {/* Main content area - SIMPLIFIED */}
+        {/* Main content area - FIXED */}
         <main 
           className={cn(
             "flex-1 min-h-screen",
             // Sidebar spacing
             isMobile ? "ml-0" : "md:ml-64",
-            // Simple top spacing - just account for header
-            "pt-16", // 64px for header
-            // Add mobile menu spacing only on mobile
-            (isMobile || isTablet) && "pt-24", // 64px header + 32px mobile menu
+            // Top spacing - only one padding-top class
+            isMobile ? "pt-24" : "pt-16", // 24 = header + mobile menu, 16 = header only
             debugMode && "border-4 border-dashed border-red-500"
           )}
         >
@@ -108,13 +106,13 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
           {debugMode && (
             <div className="bg-yellow-100 border border-yellow-400 p-4 mb-4 text-sm">
               <div className="font-bold mb-2">🔍 Main Element Debug</div>
-              <div>Expected top: {(isMobile || isTablet) ? '96px (header + mobile menu)' : '64px (header only)'}</div>
-              <div>Actual classes: {cn(
+              <div>Mobile: {isMobile ? 'Yes' : 'No'}</div>
+              <div>Tablet: {isTablet ? 'Yes' : 'No'}</div>
+              <div>Expected top: {isMobile ? '96px (header + mobile menu)' : '64px (header only)'}</div>
+              <div>Applied classes: {cn(
                 "flex-1 min-h-screen",
                 isMobile ? "ml-0" : "md:ml-64",
-                "pt-16",
-                (isMobile || isTablet) && "pt-24",
-                debugMode && "border-4 border-dashed border-red-500"
+                isMobile ? "pt-24" : "pt-16"
               )}</div>
             </div>
           )}
