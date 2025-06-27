@@ -1,12 +1,14 @@
 
 import React from 'react';
 import StandardizedDashboardLayout from '@/components/layout/StandardizedDashboardLayout';
-import ConsistentUsersLayout from '@/components/users/ConsistentUsersLayout';
+import { ConsistentUsersLayout } from '@/components/users/ConsistentUsersLayout';
 
 const Users = () => {
   return (
     <StandardizedDashboardLayout>
-      <ConsistentUsersLayout />
+      <ConsistentUsersLayout>
+        {/* The ConsistentUsersLayout will handle its own content */}
+      </ConsistentUsersLayout>
     </StandardizedDashboardLayout>
   );
 };

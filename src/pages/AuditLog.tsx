@@ -1,10 +1,12 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import StandardizedDashboardLayout from '@/components/layout/StandardizedDashboardLayout';
-import AuditLogList from '@/components/audit/AuditLogList';
-import AuditLogStats from '@/components/audit/AuditLogStats';
+import { AuditLogList } from '@/components/audit/AuditLogList';
+import { AuditLogStats } from '@/components/audit/AuditLogStats';
 
 const AuditLog = () => {
+  const [filters, setFilters] = useState({});
+
   return (
     <StandardizedDashboardLayout>
       <div className="space-y-6">
@@ -16,7 +18,7 @@ const AuditLog = () => {
         </div>
         
         <AuditLogStats />
-        <AuditLogList />
+        <AuditLogList filters={filters} />
       </div>
     </StandardizedDashboardLayout>
   );

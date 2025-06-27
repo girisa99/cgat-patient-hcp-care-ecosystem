@@ -1,7 +1,7 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import StandardizedDashboardLayout from '@/components/layout/StandardizedDashboardLayout';
-import PatientsList from '@/components/admin/PatientManagement/PatientsList';
+import { PatientsList } from '@/components/admin/PatientManagement/PatientsList';
 
 const Patients = () => {
   return (

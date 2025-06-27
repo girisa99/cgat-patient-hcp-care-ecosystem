@@ -1,9 +1,9 @@
 
 import React from 'react';
 import StandardizedDashboardLayout from '@/components/layout/StandardizedDashboardLayout';
-import ModuleList from '@/components/modules/ModuleList';
-import ModuleStats from '@/components/modules/ModuleStats';
-import AutoModuleManager from '@/components/admin/AutoModuleManager';
+import { ModuleList } from '@/components/modules/ModuleList';
+import { ModuleStats } from '@/components/modules/ModuleStats';
+import { AutoModuleManager } from '@/components/admin/AutoModuleManager';
 
 const Modules = () => {
   return (
