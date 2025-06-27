@@ -12,69 +12,46 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Shield, Search, Calendar, User, Database } from 'lucide-react';
+import { Shield, Search, Calendar, User, Database, Loader2, AlertCircle } from 'lucide-react';
+import { AuditLogEntry } from './AuditLogEntry';
 
 interface AuditLogListProps {
+  auditLogs: any[];
+  isLoading?: boolean;
+  error?: any;
   filters?: any;
 }
 
-interface AuditLogEntry {
-  id: string;
-  user_id: string;
-  action: string;
-  table_name: string;
-  timestamp: string;
-  ip_address?: string;
-  user_email?: string;
-  details?: any;
-}
-
-export const AuditLogList: React.FC<AuditLogListProps> = ({ filters = {} }) => {
+export const AuditLogList: React.FC<AuditLogListProps> = ({ 
+  auditLogs = [], 
+  isLoading = false, 
+  error = null,
+  filters = {} 
+}) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedAction, setSelectedAction] = useState('all');
 
-  // Mock data for demonstration
-  const mockAuditLogs: AuditLogEntry[] = [
-    {
-      id: '1',
-      user_id: 'user-1',
-      action: 'CREATE',
-      table_name: 'facilities',
-      timestamp: '2025-06-27T04:30:00Z',
-      ip_address: '192.168.1.100',
-      user_email: 'admin@example.com',
-      details: { facility_name: 'New Medical Center' }
-    },
-    {
-      id: '2',
-      user_id: 'user-2',
-      action: 'UPDATE',
-      table_name: 'profiles',
-      timestamp: '2025-06-27T04:25:00Z',
-      ip_address: '192.168.1.101',
-      user_email: 'user@example.com',
-      details: { field_changed: 'phone_number' }
-    },
-    {
-      id: '3',
-      user_id: 'user-1',
-      action: 'DELETE',
-      table_name: 'user_roles',
-      timestamp: '2025-06-27T04:20:00Z',
-      ip_address: '192.168.1.100',
-      user_email: 'admin@example.com',
-      details: { role_removed: 'temporary_access' }
-    }
-  ];
+  console.log('📋 AuditLogList received:', {
+    auditLogsCount: auditLogs.length,
+    isLoading,
+    error,
+    filters,
+    sampleLog: auditLogs[0]
+  });
 
   const getActionBadgeColor = (action: string) => {
     switch (action.toUpperCase()) {
+      case 'INSERT':
       case 'CREATE':
         return 'bg-green-100 text-green-800';
       case 'UPDATE':
         return 'bg-blue-100 text-blue-800';
       case 'DELETE':
         return 'bg-red-100 text-red-800';
+      case 'PATIENT_DEACTIVATED':
+        return 'bg-orange-100 text-orange-800';
+      case 'API_INTEGRATION_CREATED':
+        return 'bg-purple-100 text-purple-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -84,16 +61,24 @@ export const AuditLogList: React.FC<AuditLogListProps> = ({ filters = {} }) => {
     return new Date(timestamp).toLocaleString();
   };
 
-  const filteredLogs = mockAuditLogs.filter(log => {
+  // Apply local search filtering to the real data
+  const filteredLogs = auditLogs.filter(log => {
     const matchesSearch = searchTerm === '' || 
-      log.user_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.table_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.action.toLowerCase().includes(searchTerm.toLowerCase());
+      log.profiles?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      log.table_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      log.action?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesAction = selectedAction === 'all' || 
-      log.action.toLowerCase() === selectedAction.toLowerCase();
+      log.action?.toLowerCase() === selectedAction.toLowerCase();
 
     return matchesSearch && matchesAction;
+  });
+
+  console.log('🔍 Filtered logs:', {
+    originalCount: auditLogs.length,
+    filteredCount: filteredLogs.length,
+    searchTerm,
+    selectedAction
   });
 
   return (
@@ -102,6 +87,7 @@ export const AuditLogList: React.FC<AuditLogListProps> = ({ filters = {} }) => {
         <CardTitle className="flex items-center gap-2">
           <Shield className="h-5 w-5" />
           Audit Log ({filteredLogs.length} entries)
+          {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -121,78 +107,42 @@ export const AuditLogList: React.FC<AuditLogListProps> = ({ filters = {} }) => {
             className="px-3 py-2 border rounded-md"
           >
             <option value="all">All Actions</option>
-            <option value="create">Create</option>
+            <option value="insert">Insert</option>
             <option value="update">Update</option>
             <option value="delete">Delete</option>
           </select>
         </div>
 
-        {filteredLogs.length === 0 ? (
+        {error && (
+          <div className="text-center py-8">
+            <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <p className="text-red-600 font-medium">Error loading audit logs</p>
+            <p className="text-red-500 text-sm">{error.message}</p>
+          </div>
+        )}
+
+        {isLoading && (
+          <div className="text-center py-8">
+            <Loader2 className="h-12 w-12 text-muted-foreground mx-auto mb-4 animate-spin" />
+            <p className="text-muted-foreground">Loading audit logs...</p>
+          </div>
+        )}
+
+        {!isLoading && !error && filteredLogs.length === 0 && (
           <div className="text-center py-8">
             <Shield className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
             <p className="text-muted-foreground">
               {searchTerm || selectedAction !== 'all' ? 'No audit logs match your filters.' : 'No audit logs found.'}
             </p>
           </div>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="flex items-center gap-1">
-                  <Calendar className="h-4 w-4" />
-                  Timestamp
-                </TableHead>
-                <TableHead className="flex items-center gap-1">
-                  <User className="h-4 w-4" />
-                  User
-                </TableHead>
-                <TableHead>Action</TableHead>
-                <TableHead className="flex items-center gap-1">
-                  <Database className="h-4 w-4" />
-                  Table
-                </TableHead>
-                <TableHead>IP Address</TableHead>
-                <TableHead>Details</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredLogs.map((log) => (
-                <TableRow key={log.id}>
-                  <TableCell className="font-mono text-sm">
-                    {formatTimestamp(log.timestamp)}
-                  </TableCell>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{log.user_email}</div>
-                      <div className="text-sm text-muted-foreground font-mono">
-                        {log.user_id.substring(0, 8)}...
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={getActionBadgeColor(log.action)}>
-                      {log.action}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <code className="bg-gray-100 px-2 py-1 rounded text-sm">
-                      {log.table_name}
-                    </code>
-                  </TableCell>
-                  <TableCell className="font-mono text-sm">
-                    {log.ip_address || 'N/A'}
-                  </TableCell>
-                  <TableCell>
-                    {log.details && (
-                      <div className="text-sm text-muted-foreground max-w-xs truncate">
-                        {JSON.stringify(log.details)}
-                      </div>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+        )}
+
+        {!isLoading && !error && filteredLogs.length > 0 && (
+          <div className="space-y-4">
+            {filteredLogs.map((log) => (
+              <AuditLogEntry key={log.id} log={log} />
+            ))}
+          </div>
         )}
       </CardContent>
     </Card>

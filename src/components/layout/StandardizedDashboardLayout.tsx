@@ -128,7 +128,7 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
           </div>
         )}
         
-        {/* Main content area with optimized positioning */}
+        {/* Main content area - COMPLETELY remove all padding/margins */}
         <div className="flex">
           <main 
             className={cn(
@@ -142,13 +142,8 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
               debugMode && "border-4 border-dashed border-red-500"
             )}
           >
-            {/* Content container - remove all padding to let AdminPageWrapper control spacing */}
-            <div className={cn(
-              "w-full h-full", // Remove padding completely
-              debugMode && "border-4 border-dashed border-green-500"
-            )}>
-              {children}
-            </div>
+            {/* Content container - NO PADDING AT ALL - let AdminPageWrapper handle it */}
+            {children}
           </main>
         </div>
       </div>
