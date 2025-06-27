@@ -199,8 +199,13 @@ export type * from './EnhancedSecurityPerformanceOrchestrator';
 // Export PerformanceMonitor types explicitly to avoid conflicts
 export type { 
   PerformanceMetrics,
-  PerformanceIssue,
-  DatabaseQueryPerformance
+  ComponentPerformance,
+  HookPerformance,
+  QueryPerformance,
+  BundleAnalysis,
+  BundleChunk,
+  MemoryMetrics,
+  PerformanceRecommendation
 } from './PerformanceMonitor';
 
 // Export RealUserMonitor types with renamed PerformanceRecommendation
