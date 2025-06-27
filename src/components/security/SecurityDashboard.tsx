@@ -26,9 +26,8 @@ import ComplianceStatus from './ComplianceStatus';
 const SecurityDashboard: React.FC = () => {
   const [isScanning, setIsScanning] = useState(false);
   const [lastScanTime, setLastScanTime] = useState(new Date());
-  const [scanResults, setScanResults] = useState<any>(null);
   const { toast } = useToast();
-  const { runManualScan, lastSummary } = useAutomatedVerification();
+  const { runManualScan, lastSummary, verificationHistory } = useAutomatedVerification();
 
   const handleSecurityScan = async () => {
     setIsScanning(true);
@@ -44,49 +43,33 @@ const SecurityDashboard: React.FC = () => {
       // Run the automated verification system
       await runManualScan();
       
-      // Simulate additional security-specific checks
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
       const currentTime = new Date();
       setLastScanTime(currentTime);
       
-      // Generate scan results based on the verification system
-      const results = {
-        timestamp: currentTime,
-        totalChecks: 47,
-        passedChecks: lastSummary ? (47 - lastSummary.issuesFound - lastSummary.criticalIssues) : 45,
-        warnings: lastSummary?.issuesFound || 2,
-        criticalIssues: lastSummary?.criticalIssues || 0,
-        categories: {
-          dataIntegrity: { passed: 12, total: 12 },
-          typeScriptAlignment: { passed: 8, total: 10 },
-          namingConventions: { passed: 9, total: 10 },
-          componentStructure: { passed: 7, total: 8 },
-          apiSecurity: { passed: 6, total: 7 }
+      // Wait a moment for the verification results to be available
+      setTimeout(() => {
+        if (lastSummary) {
+          if (lastSummary.criticalIssues > 0) {
+            toast({
+              title: "🚨 Critical Issues Found",
+              description: `Found ${lastSummary.criticalIssues} critical security issues that need immediate attention.`,
+              variant: "destructive",
+            });
+          } else if (lastSummary.issuesFound > 0) {
+            toast({
+              title: "⚠️ Security Scan Complete",
+              description: `Scan completed with ${lastSummary.issuesFound} issues and ${lastSummary.warningsCount || 0} warnings to review.`,
+              variant: "default",
+            });
+          } else {
+            toast({
+              title: "✅ Security Scan Complete",
+              description: "No security issues found. System is secure!",
+              variant: "default",
+            });
+          }
         }
-      };
-      
-      setScanResults(results);
-      
-      if (results.criticalIssues > 0) {
-        toast({
-          title: "🚨 Critical Issues Found",
-          description: `Found ${results.criticalIssues} critical security issues that need immediate attention.`,
-          variant: "destructive",
-        });
-      } else if (results.warnings > 0) {
-        toast({
-          title: "⚠️ Security Scan Complete",
-          description: `Scan completed with ${results.warnings} warnings to review.`,
-          variant: "default",
-        });
-      } else {
-        toast({
-          title: "✅ Security Scan Complete",
-          description: "No security issues found. System is secure!",
-          variant: "default",
-        });
-      }
+      }, 1000);
       
     } catch (error) {
       console.error('❌ Security scan failed:', error);
@@ -101,13 +84,24 @@ const SecurityDashboard: React.FC = () => {
   };
 
   const getOverallStatus = () => {
-    if (!scanResults) return { text: 'Ready', color: 'secondary', icon: Shield };
-    if (scanResults.criticalIssues > 0) return { text: 'Critical Issues', color: 'destructive', icon: AlertTriangle };
-    if (scanResults.warnings > 0) return { text: 'Warnings Found', color: 'default', icon: AlertTriangle };
+    if (!lastSummary) return { text: 'Ready to Scan', color: 'secondary', icon: Shield };
+    if (lastSummary.criticalIssues > 0) return { text: 'Critical Issues', color: 'destructive', icon: AlertTriangle };
+    if (lastSummary.issuesFound > 0) return { text: 'Issues Found', color: 'default', icon: AlertTriangle };
     return { text: 'Secure', color: 'default', icon: CheckCircle };
   };
 
   const status = getOverallStatus();
+
+  // Calculate security score based on real verification data
+  const getSecurityScore = () => {
+    if (!lastSummary) return 95;
+    const totalChecks = 50; // Base number of checks
+    const issues = lastSummary.issuesFound + (lastSummary.criticalIssues * 2); // Weight critical issues more
+    const score = Math.max(0, Math.round(((totalChecks - issues) / totalChecks) * 100));
+    return score;
+  };
+
+  const securityScore = getSecurityScore();
 
   return (
     <div className="space-y-6">
@@ -140,9 +134,7 @@ const SecurityDashboard: React.FC = () => {
             <div className="flex items-center space-x-3">
               <CheckCircle className="h-8 w-8 text-green-500" />
               <div>
-                <p className="text-2xl font-bold">
-                  {scanResults ? Math.round((scanResults.passedChecks / scanResults.totalChecks) * 100) : 98}%
-                </p>
+                <p className="text-2xl font-bold">{securityScore}%</p>
                 <p className="text-sm text-muted-foreground">Security Score</p>
               </div>
             </div>
@@ -173,46 +165,69 @@ const SecurityDashboard: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Scan Results Summary */}
-      {scanResults && (
+      {/* Real-time Scan Results Summary */}
+      {lastSummary && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
               <Eye className="h-5 w-5 mr-2" />
-              Latest Scan Results
+              Latest Verification Results
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-              {Object.entries(scanResults.categories).map(([category, data]: [string, any]) => (
-                <div key={category} className="text-center p-3 border rounded-lg">
-                  <div className="text-lg font-bold mb-1">
-                    {data.passed}/{data.total}
-                  </div>
-                  <p className="text-xs text-muted-foreground capitalize">
-                    {category.replace(/([A-Z])/g, ' $1').trim()}
-                  </p>
-                  <div className="mt-2">
-                    <Badge variant={data.passed === data.total ? "default" : "secondary"}>
-                      {Math.round((data.passed / data.total) * 100)}%
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="text-center p-4 border rounded-lg bg-green-50">
-                <div className="text-3xl font-bold text-green-600 mb-2">{scanResults.passedChecks}</div>
-                <p className="text-sm text-green-800">Checks Passed</p>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <div className="text-center p-4 border rounded-lg bg-blue-50">
+                <div className="text-3xl font-bold text-blue-600 mb-2">{lastSummary.recommendationsCount || 0}</div>
+                <p className="text-sm text-blue-800">Recommendations</p>
               </div>
               <div className="text-center p-4 border rounded-lg bg-yellow-50">
-                <div className="text-3xl font-bold text-yellow-600 mb-2">{scanResults.warnings}</div>
+                <div className="text-3xl font-bold text-yellow-600 mb-2">{lastSummary.warningsCount || 0}</div>
                 <p className="text-sm text-yellow-800">Warnings</p>
               </div>
+              <div className="text-center p-4 border rounded-lg bg-orange-50">
+                <div className="text-3xl font-bold text-orange-600 mb-2">{lastSummary.issuesFound || 0}</div>
+                <p className="text-sm text-orange-800">Issues Found</p>
+              </div>
               <div className="text-center p-4 border rounded-lg bg-red-50">
-                <div className="text-3xl font-bold text-red-600 mb-2">{scanResults.criticalIssues}</div>
+                <div className="text-3xl font-bold text-red-600 mb-2">{lastSummary.criticalIssues || 0}</div>
                 <p className="text-sm text-red-800">Critical Issues</p>
+              </div>
+            </div>
+            
+            {/* Verification Areas Tested */}
+            <div className="mb-4">
+              <h4 className="font-semibold mb-2">Verification Areas Tested:</h4>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                <div className="p-2 bg-gray-50 rounded">Database Guidelines</div>
+                <div className="p-2 bg-gray-50 rounded">TypeScript Alignment</div>
+                <div className="p-2 bg-gray-50 rounded">Code Quality</div>
+                <div className="p-2 bg-gray-50 rounded">Security Scan</div>
+                <div className="p-2 bg-gray-50 rounded">Component Structure</div>
+                <div className="p-2 bg-gray-50 rounded">Naming Conventions</div>
+                <div className="p-2 bg-gray-50 rounded">Performance Analysis</div>
+                <div className="p-2 bg-gray-50 rounded">Schema Validation</div>
+              </div>
+            </div>
+
+            {/* Summary Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="text-center p-4 border rounded-lg bg-green-50">
+                <div className="text-3xl font-bold text-green-600 mb-2">
+                  {lastSummary.autoFixesApplied || 0}
+                </div>
+                <p className="text-sm text-green-800">Auto-fixes Applied</p>
+              </div>
+              <div className="text-center p-4 border rounded-lg bg-blue-50">
+                <div className="text-3xl font-bold text-blue-600 mb-2">
+                  {lastSummary.databaseIssues || 0}
+                </div>
+                <p className="text-sm text-blue-800">Database Issues</p>
+              </div>
+              <div className="text-center p-4 border rounded-lg bg-purple-50">
+                <div className="text-3xl font-bold text-purple-600 mb-2">
+                  {lastSummary.securityVulnerabilities || 0}
+                </div>
+                <p className="text-sm text-purple-800">Security Vulnerabilities</p>
               </div>
             </div>
           </CardContent>
@@ -237,7 +252,7 @@ const SecurityDashboard: React.FC = () => {
         </TabsList>
 
         <TabsContent value="security" className="space-y-6">
-          <SecurityMetrics scanResults={scanResults} />
+          <SecurityMetrics verificationSummary={lastSummary} />
         </TabsContent>
 
         <TabsContent value="performance" className="space-y-6">

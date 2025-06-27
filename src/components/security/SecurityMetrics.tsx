@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -13,14 +12,17 @@ import {
   Database,
   Code,
   FileText,
-  Settings
+  Settings,
+  Zap,
+  Bug
 } from 'lucide-react';
+import { VerificationSummary } from '@/utils/verification/AutomatedVerificationOrchestrator';
 
 interface SecurityMetricsProps {
-  scanResults?: any;
+  verificationSummary?: VerificationSummary | null;
 }
 
-const SecurityMetrics: React.FC<SecurityMetricsProps> = ({ scanResults }) => {
+const SecurityMetrics: React.FC<SecurityMetricsProps> = ({ verificationSummary }) => {
   const securityMetrics = [
     {
       title: 'Authentication Security',
@@ -45,53 +47,11 @@ const SecurityMetrics: React.FC<SecurityMetricsProps> = ({ scanResults }) => {
     },
     {
       title: 'Database Security',
-      score: scanResults?.categories?.dataIntegrity ? 
-        Math.round((scanResults.categories.dataIntegrity.passed / scanResults.categories.dataIntegrity.total) * 100) : 88,
+      score: verificationSummary?.databaseErrors ? 
+        Math.max(60, 100 - (verificationSummary.databaseErrors * 10)) : 88,
       status: 'good',
       icon: Database,
       details: 'RLS policies implemented'
-    }
-  ];
-
-  const codeQualityMetrics = scanResults ? [
-    {
-      title: 'TypeScript Alignment',
-      score: Math.round((scanResults.categories.typeScriptAlignment.passed / scanResults.categories.typeScriptAlignment.total) * 100),
-      category: 'TypeScript',
-      icon: Code,
-      issues: scanResults.categories.typeScriptAlignment.total - scanResults.categories.typeScriptAlignment.passed
-    },
-    {
-      title: 'Naming Conventions',
-      score: Math.round((scanResults.categories.namingConventions.passed / scanResults.categories.namingConventions.total) * 100),
-      category: 'Standards',
-      icon: FileText,
-      issues: scanResults.categories.namingConventions.total - scanResults.categories.namingConventions.passed
-    },
-    {
-      title: 'Component Structure',
-      score: Math.round((scanResults.categories.componentStructure.passed / scanResults.categories.componentStructure.total) * 100),
-      category: 'Architecture',
-      icon: Settings,
-      issues: scanResults.categories.componentStructure.total - scanResults.categories.componentStructure.passed
-    }
-  ] : [];
-
-  const threats = [
-    {
-      type: 'Low Risk',
-      count: scanResults?.warnings || 2,
-      color: 'bg-yellow-100 text-yellow-800'
-    },
-    {
-      type: 'Medium Risk',
-      count: 0,
-      color: 'bg-orange-100 text-orange-800'
-    },
-    {
-      type: 'High Risk',
-      count: scanResults?.criticalIssues || 0,
-      color: 'bg-red-100 text-red-800'
     }
   ];
 
@@ -142,35 +102,82 @@ const SecurityMetrics: React.FC<SecurityMetricsProps> = ({ scanResults }) => {
         ))}
       </div>
 
-      {/* Code Quality Metrics */}
-      {scanResults && codeQualityMetrics.length > 0 && (
+      {/* Real Verification Results */}
+      {verificationSummary && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
-              <Code className="h-5 w-5 mr-2" />
-              Code Quality & Standards
+              <Bug className="h-5 w-5 mr-2" />
+              Live Verification Results
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {codeQualityMetrics.map((metric) => (
-                <div key={metric.title} className="p-4 border rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center">
-                      <metric.icon className="h-4 w-4 mr-2" />
-                      <span className="font-medium text-sm">{metric.title}</span>
-                    </div>
-                    <Badge variant={metric.score >= 90 ? "default" : "secondary"}>
-                      {metric.score}%
-                    </Badge>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              <div className="p-4 border rounded-lg text-center">
+                <Database className="h-8 w-8 mx-auto mb-2 text-blue-500" />
+                <div className="text-2xl font-bold">{verificationSummary.databaseIssues || 0}</div>
+                <p className="text-sm text-muted-foreground">Database Issues</p>
+                {verificationSummary.databaseAutoFixes && (
+                  <p className="text-xs text-green-600">{verificationSummary.databaseAutoFixes} auto-fixed</p>
+                )}
+              </div>
+              
+              <div className="p-4 border rounded-lg text-center">
+                <Code className="h-8 w-8 mx-auto mb-2 text-purple-500" />
+                <div className="text-2xl font-bold">{verificationSummary.codeQualityIssues || 0}</div>
+                <p className="text-sm text-muted-foreground">Code Quality Issues</p>
+                <p className="text-xs text-blue-600">Score: {verificationSummary.codeQualityScore || 'N/A'}</p>
+              </div>
+
+              <div className="p-4 border rounded-lg text-center">
+                <Shield className="h-8 w-8 mx-auto mb-2 text-red-500" />
+                <div className="text-2xl font-bold">{verificationSummary.securityVulnerabilities || 0}</div>
+                <p className="text-sm text-muted-foreground">Security Vulnerabilities</p>
+                <p className="text-xs text-orange-600">Score: {verificationSummary.securityScore || 'N/A'}</p>
+              </div>
+
+              <div className="p-4 border rounded-lg text-center">
+                <Settings className="h-8 w-8 mx-auto mb-2 text-green-500" />
+                <div className="text-2xl font-bold">{verificationSummary.schemaIssues || 0}</div>
+                <p className="text-sm text-muted-foreground">Schema Issues</p>
+                {verificationSummary.schemaAutoFixes && (
+                  <p className="text-xs text-green-600">{verificationSummary.schemaAutoFixes} auto-fixed</p>
+                )}
+              </div>
+            </div>
+
+            {/* Detailed Breakdown */}
+            <div className="space-y-4">
+              <div className="p-4 border rounded-lg">
+                <h4 className="font-semibold mb-2 flex items-center">
+                  <Eye className="h-4 w-4 mr-2" />
+                  Verification Summary
+                </h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium">Total Issues:</span>
+                    <span className="ml-2 text-red-600">{verificationSummary.issuesFound}</span>
                   </div>
-                  <Progress value={metric.score} className="h-2 mb-2" />
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>{metric.category}</span>
-                    <span>{metric.issues} issues</span>
+                  <div>
+                    <span className="font-medium">Critical:</span>
+                    <span className="ml-2 text-red-800">{verificationSummary.criticalIssues}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium">Auto-fixed:</span>
+                    <span className="ml-2 text-green-600">{verificationSummary.autoFixesApplied}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium">SQL Fixes:</span>
+                    <span className="ml-2 text-blue-600">{verificationSummary.sqlAutoFixesGenerated}</span>
                   </div>
                 </div>
-              ))}
+              </div>
+              
+              {verificationSummary.timestamp && (
+                <div className="text-sm text-muted-foreground">
+                  Last scan: {new Date(verificationSummary.timestamp).toLocaleString()}
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -181,27 +188,44 @@ const SecurityMetrics: React.FC<SecurityMetricsProps> = ({ scanResults }) => {
         <CardHeader>
           <CardTitle className="flex items-center">
             <Eye className="h-5 w-5 mr-2" />
-            Threat Detection & Issues
+            Current System Status
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {threats.map((threat) => (
-              <div key={threat.type} className="text-center p-4 border rounded-lg">
-                <div className="text-3xl font-bold mb-2">{threat.count}</div>
-                <Badge className={threat.color}>
-                  {threat.type}
-                </Badge>
+            <div className="text-center p-4 border rounded-lg">
+              <div className="text-3xl font-bold mb-2">
+                {verificationSummary?.warningsCount || 0}
               </div>
-            ))}
+              <Badge className="bg-yellow-100 text-yellow-800">
+                Warnings
+              </Badge>
+            </div>
+            <div className="text-center p-4 border rounded-lg">
+              <div className="text-3xl font-bold mb-2">
+                {verificationSummary?.issuesFound || 0}
+              </div>
+              <Badge className="bg-orange-100 text-orange-800">
+                Issues
+              </Badge>
+            </div>
+            <div className="text-center p-4 border rounded-lg">
+              <div className="text-3xl font-bold mb-2">
+                {verificationSummary?.criticalIssues || 0}
+              </div>
+              <Badge className="bg-red-100 text-red-800">
+                Critical
+              </Badge>
+            </div>
           </div>
-          <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+          
+          <div className="mt-4 p-4 border rounded-lg">
             <div className="flex items-center">
               <CheckCircle className="h-5 w-5 text-green-600 mr-2" />
               <span className="text-green-800 font-medium">
-                {scanResults?.criticalIssues === 0 
+                {!verificationSummary || verificationSummary.criticalIssues === 0 
                   ? "No critical security threats detected" 
-                  : `${scanResults?.criticalIssues || 0} critical issues require immediate attention`
+                  : `${verificationSummary.criticalIssues} critical issues require immediate attention`
                 }
               </span>
             </div>
@@ -216,22 +240,23 @@ const SecurityMetrics: React.FC<SecurityMetricsProps> = ({ scanResults }) => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {scanResults && (
+            {verificationSummary && (
               <div className="flex items-center justify-between p-3 border rounded">
                 <div className="flex items-center space-x-3">
                   <Eye className="h-5 w-5 text-blue-500" />
                   <div>
                     <p className="font-medium">Comprehensive security scan completed</p>
                     <p className="text-sm text-muted-foreground">
-                      {scanResults.passedChecks}/{scanResults.totalChecks} checks passed
+                      {verificationSummary.issuesFound} issues found, {verificationSummary.autoFixesApplied} auto-fixed
                     </p>
                   </div>
                 </div>
                 <span className="text-sm text-muted-foreground">
-                  {new Date(scanResults.timestamp).toLocaleTimeString()}
+                  {verificationSummary.timestamp ? new Date(verificationSummary.timestamp).toLocaleTimeString() : 'Now'}
                 </span>
               </div>
             )}
+            
             <div className="flex items-center justify-between p-3 border rounded">
               <div className="flex items-center space-x-3">
                 <CheckCircle className="h-5 w-5 text-green-500" />
