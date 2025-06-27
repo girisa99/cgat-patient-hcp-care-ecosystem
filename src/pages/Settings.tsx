@@ -1,17 +1,15 @@
 
 import React from 'react';
+import StandardizedDashboardLayout from '@/components/layout/StandardizedDashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const Settings = () => {
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">Settings</h2>
-        <p className="text-muted-foreground">
-          Configure system settings and preferences
-        </p>
-      </div>
-      
+    <StandardizedDashboardLayout
+      showPageHeader={true}
+      pageTitle="Settings"
+      pageSubtitle="Configure system settings and preferences"
+    >
       <Card>
         <CardHeader>
           <CardTitle>System Settings</CardTitle>
@@ -22,7 +20,7 @@ const Settings = () => {
           </p>
         </CardContent>
       </Card>
-    </div>
+    </StandardizedDashboardLayout>
   );
 };
 

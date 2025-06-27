@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import StandardizedDashboardLayout from '@/components/layout/StandardizedDashboardLayout';
 import { AuditLogStats } from '@/components/audit/AuditLogStats';
 import { AuditLogFilters } from '@/components/audit/AuditLogFilters';
 import { AuditLogList } from '@/components/audit/AuditLogList';
@@ -26,16 +27,11 @@ const AuditLog = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Audit Log</h2>
-          <p className="text-muted-foreground">
-            System activity and security audit trail
-          </p>
-        </div>
-      </div>
-
+    <StandardizedDashboardLayout
+      showPageHeader={true}
+      pageTitle="Audit Log"
+      pageSubtitle="System activity and security audit trail"
+    >
       <AuditLogStats />
 
       <AuditLogFilters
@@ -45,7 +41,7 @@ const AuditLog = () => {
       />
 
       <AuditLogList filters={filters} />
-    </div>
+    </StandardizedDashboardLayout>
   );
 };
 

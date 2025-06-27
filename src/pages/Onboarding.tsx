@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import StandardizedDashboardLayout from '@/components/layout/StandardizedDashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Building2, UserPlus, CheckCircle, ArrowRight, Shield } from 'lucide-react';
@@ -12,14 +13,11 @@ const Onboarding = () => {
   const [userDialogOpen, setUserDialogOpen] = useState(false);
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">Onboarding Management</h2>
-        <p className="text-muted-foreground">
-          Streamlined workflow for onboarding new facilities and users
-        </p>
-      </div>
-      
+    <StandardizedDashboardLayout
+      showPageHeader={true}
+      pageTitle="Onboarding Management"
+      pageSubtitle="Streamlined workflow for onboarding new facilities and users"
+    >
       <div className="grid gap-6 md:grid-cols-2">
         {/* Facility Onboarding - Protected by module access */}
         <ModuleGuard moduleName="onboarding_workflow">
@@ -146,7 +144,7 @@ const Onboarding = () => {
           onOpenChange={setUserDialogOpen}
         />
       </ModuleGuard>
-    </div>
+    </StandardizedDashboardLayout>
   );
 };
 
