@@ -57,7 +57,7 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
 
   return (
     <DesignSystemProvider>
-      <div className={cn("min-h-screen bg-background", className)}>
+      <div className={cn("min-h-screen bg-background flex flex-col", className)}>
         {/* Debug Overlay */}
         <LayoutDebugOverlay isEnabled={debugMode} />
         
@@ -89,8 +89,10 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
           </div>
         )}
         
+        {/* Fixed Header */}
         <Header />
         
+        {/* Sidebar */}
         <Sidebar 
           isOpen={sidebarOpen} 
           onClose={() => setSidebarOpen(false)} 
@@ -125,58 +127,62 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
           </div>
         )}
         
-        {/* Main content area - aggressive padding reduction */}
-        <main 
-          className={cn(
-            "transition-all duration-300 ease-in-out",
-            isMobile ? "ml-0" : "md:ml-64",
-            // Very minimal top padding - just enough to clear headers
-            (isMobile || isTablet) ? "pt-[72px]" : "pt-16",
-            debugMode && "border-4 border-dashed border-red-500"
-          )}
-          data-debug-info={debugMode ? JSON.stringify({
-            isMobile,
-            isTablet,
-            topPadding: (isMobile || isTablet) ? "72px" : "64px",
-            leftMargin: isMobile ? "0" : "md:ml-64"
-          }) : undefined}
-        >
-          {/* Compact page header section - only if explicitly shown */}
-          {showPageHeader && (pageTitle || pageSubtitle || headerActions) && (
-            <div className={cn(
-              "border-b bg-background",
-              debugMode && "border-4 border-dashed border-yellow-500"
-            )}>
-              <div className="flex items-start justify-between w-full max-w-7xl mx-auto px-6 py-2">
-                <div className="flex-1">
-                  {pageTitle && (
-                    <h1 className="text-2xl font-bold tracking-tight text-gray-900 mb-0">
-                      {pageTitle}
-                    </h1>
-                  )}
-                  {pageSubtitle && (
-                    <p className="text-muted-foreground text-sm mt-1">
-                      {pageSubtitle}
-                    </p>
+        {/* Main content area - completely flush positioning */}
+        <div className="flex flex-1">
+          <main 
+            className={cn(
+              "flex-1 transition-all duration-300 ease-in-out",
+              isMobile ? "ml-0" : "md:ml-64",
+              // Remove ALL top padding - content should start immediately after header
+              "mt-16",
+              // On mobile, account for the mobile menu bar
+              (isMobile || isTablet) && "mt-[104px]",
+              debugMode && "border-4 border-dashed border-red-500"
+            )}
+            data-debug-info={debugMode ? JSON.stringify({
+              isMobile,
+              isTablet,
+              marginTop: (isMobile || isTablet) ? "104px" : "64px",
+              leftMargin: isMobile ? "0" : "md:ml-64"
+            }) : undefined}
+          >
+            {/* Compact page header section - only if explicitly shown */}
+            {showPageHeader && (pageTitle || pageSubtitle || headerActions) && (
+              <div className={cn(
+                "border-b bg-background",
+                debugMode && "border-4 border-dashed border-yellow-500"
+              )}>
+                <div className="flex items-start justify-between w-full max-w-7xl mx-auto px-6 py-2">
+                  <div className="flex-1">
+                    {pageTitle && (
+                      <h1 className="text-2xl font-bold tracking-tight text-gray-900 mb-0">
+                        {pageTitle}
+                      </h1>
+                    )}
+                    {pageSubtitle && (
+                      <p className="text-muted-foreground text-sm mt-1">
+                        {pageSubtitle}
+                      </p>
+                    )}
+                  </div>
+                  {headerActions && (
+                    <div className="flex items-center gap-3 ml-6">
+                      {headerActions}
+                    </div>
                   )}
                 </div>
-                {headerActions && (
-                  <div className="flex items-center gap-3 ml-6">
-                    {headerActions}
-                  </div>
-                )}
               </div>
+            )}
+            
+            {/* Main content with zero padding */}
+            <div className={cn(
+              "w-full max-w-7xl mx-auto px-6",
+              debugMode && "border-4 border-dashed border-green-500"
+            )}>
+              {children}
             </div>
-          )}
-          
-          {/* Main content with very minimal padding */}
-          <div className={cn(
-            "w-full max-w-7xl mx-auto px-6 py-3",
-            debugMode && "border-4 border-dashed border-green-500"
-          )}>
-            {children}
-          </div>
-        </main>
+          </main>
+        </div>
       </div>
     </DesignSystemProvider>
   );
