@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -200,7 +201,7 @@ const DeveloperPortal = () => {
     }
 
     try {
-      console.log('📚 Generating documentation for:', apiDetails.external_name || 'API');
+      console.log('📚 Generating documentation for:', apiDetails.name || 'API');
       ApiDocumentationGenerator.viewDocumentation(apiDetails);
       toast({
         title: "Documentation Opened",
@@ -250,7 +251,7 @@ const DeveloperPortal = () => {
     }
 
     try {
-      console.log('📥 Generating Postman collection for:', apiDetails.external_name || 'API');
+      console.log('📥 Generating Postman collection for:', apiDetails.name || 'API');
       PostmanCollectionDownloader.generateAndDownload(apiDetails);
       toast({
         title: "Collection Downloaded",
