@@ -4,9 +4,11 @@ import MainLayout from '@/components/layout/MainLayout';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { AdminStatsGrid, StatCard } from '@/components/layout/AdminStatsGrid';
 import { Card, CardContent } from '@/components/ui/card';
-import { Users as UsersIcon, UserPlus, Settings, Shield } from 'lucide-react';
+import { Users as UsersIcon, UserPlus, Settings, Shield, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useUsers } from '@/hooks/useUsers';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { useToast } from '@/hooks/use-toast';
 
 // Import consolidated components
 import {
@@ -20,9 +22,12 @@ import {
 } from '@/components/users';
 
 const Users = () => {
+  const { toast } = useToast();
   const { 
     users, 
     isLoading, 
+    error,
+    refetch,
     createUser, 
     assignRole, 
     assignFacility
@@ -36,6 +41,7 @@ const Users = () => {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [selectedUserName, setSelectedUserName] = useState<string>('');
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleCreateUser = () => {
     setCreateUserOpen(true);
@@ -70,11 +76,40 @@ const Users = () => {
     setAssignFacilityOpen(true);
   };
 
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await refetch();
+      toast({
+        title: "Data Refreshed",
+        description: "User data has been refreshed successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Refresh Failed",
+        description: "Failed to refresh user data. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   const headerActions = (
-    <Button onClick={handleCreateUser}>
-      <UserPlus className="h-4 w-4 mr-2" />
-      Add User
-    </Button>
+    <div className="flex items-center gap-2">
+      <Button 
+        variant="outline" 
+        onClick={handleRefresh}
+        disabled={isRefreshing}
+      >
+        <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+        Refresh
+      </Button>
+      <Button onClick={handleCreateUser}>
+        <UserPlus className="h-4 w-4 mr-2" />
+        Add User
+      </Button>
+    </div>
   );
 
   // Calculate stats from users array
@@ -84,6 +119,42 @@ const Users = () => {
     activeUsers: users?.length || 0,
     usersWithFacilities: users?.filter(u => u.facilities).length || 0
   };
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <PageContainer
+          title="Users Management"
+          subtitle="Loading user data..."
+        >
+          <div className="flex justify-center items-center min-h-[400px]">
+            <LoadingSpinner size="lg" />
+          </div>
+        </PageContainer>
+      </MainLayout>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <MainLayout>
+        <PageContainer
+          title="Users Management"
+          subtitle="Error loading user data"
+        >
+          <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+            <p className="text-red-600">Failed to load users: {error.message}</p>
+            <Button onClick={handleRefresh} variant="outline">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Try Again
+            </Button>
+          </div>
+        </PageContainer>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
