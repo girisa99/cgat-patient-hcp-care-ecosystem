@@ -8,7 +8,7 @@ import { AuthProvider } from "@/components/auth/AuthProvider";
 import { lazy, Suspense } from "react";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
-// Lazy load components - removed redundant pages
+// Lazy load components
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Users = lazy(() => import("./pages/Users"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
@@ -16,6 +16,7 @@ const Patients = lazy(() => import("./pages/Patients"));
 const Facilities = lazy(() => import("./pages/Facilities"));
 const Modules = lazy(() => import("./pages/Modules"));
 const ApiIntegrations = lazy(() => import("./pages/ApiIntegrations"));
+const SecurityPerformance = lazy(() => import("./pages/SecurityPerformance"));
 const AuditLog = lazy(() => import("./pages/AuditLog"));
 const AdminVerificationTest = lazy(() => import("./pages/AdminVerificationTest"));
 
@@ -46,6 +47,7 @@ function App() {
                 <Route path="/facilities" element={<Facilities />} />
                 <Route path="/modules" element={<Modules />} />
                 <Route path="/api-integrations" element={<ApiIntegrations />} />
+                <Route path="/security-performance" element={<SecurityPerformance />} />
                 <Route path="/audit-log" element={<AuditLog />} />
                 <Route path="/admin-verification" element={<AdminVerificationTest />} />
               </Routes>
