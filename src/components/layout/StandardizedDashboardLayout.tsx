@@ -13,7 +13,6 @@ interface StandardizedDashboardLayoutProps {
   pageTitle?: string;
   pageSubtitle?: string;
   headerActions?: React.ReactNode;
-  containerSize?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
   showPageHeader?: boolean;
   className?: string;
 }
@@ -23,7 +22,6 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
   pageTitle,
   pageSubtitle,
   headerActions,
-  containerSize = 'full',
   showPageHeader = false,
   className,
 }) => {

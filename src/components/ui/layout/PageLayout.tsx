@@ -1,7 +1,6 @@
 
 import React, { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
-import { Container } from './Container';
 import { useDesignSystem } from '../design-system/DesignSystemProvider';
 
 interface PageLayoutProps {
@@ -10,7 +9,6 @@ interface PageLayoutProps {
   subtitle?: string;
   headerActions?: ReactNode;
   className?: string;
-  containerSize?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
   showHeader?: boolean;
 }
 
@@ -20,7 +18,6 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
   subtitle,
   headerActions,
   className,
-  containerSize = 'full',
   showHeader = true,
 }) => {
   const { spacing } = useDesignSystem();

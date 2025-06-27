@@ -24,14 +24,14 @@ export const Section: React.FC<SectionProps> = ({
 }) => {
   const headerContent = (title || subtitle || headerActions) && (
     <div className="flex items-start justify-between mb-6">
-      <div className="flex-1">
+      <div className="flex-1 text-left">
         {title && (
-          <h2 className="text-xl font-semibold text-gray-900 mb-1">
+          <h2 className="text-xl font-semibold text-gray-900 mb-1 text-left">
             {title}
           </h2>
         )}
         {subtitle && (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground text-left">
             {subtitle}
           </p>
         )}
@@ -46,14 +46,14 @@ export const Section: React.FC<SectionProps> = ({
 
   if (variant === 'card') {
     return (
-      <Card className={cn('', className)}>
+      <Card className={cn('w-full', className)}>
         {(title || subtitle || headerActions) && (
           <CardHeader>
             <div className="flex items-start justify-between">
-              <div className="flex-1">
-                {title && <CardTitle className="text-xl">{title}</CardTitle>}
+              <div className="flex-1 text-left">
+                {title && <CardTitle className="text-xl text-left">{title}</CardTitle>}
                 {subtitle && (
-                  <p className="text-sm text-muted-foreground mt-1">
+                  <p className="text-sm text-muted-foreground mt-1 text-left">
                     {subtitle}
                   </p>
                 )}
@@ -66,7 +66,7 @@ export const Section: React.FC<SectionProps> = ({
             </div>
           </CardHeader>
         )}
-        <CardContent className={cn('', contentClassName)}>
+        <CardContent className={cn('w-full', contentClassName)}>
           {children}
         </CardContent>
       </Card>
@@ -75,9 +75,9 @@ export const Section: React.FC<SectionProps> = ({
 
   if (variant === 'bordered') {
     return (
-      <div className={cn('border rounded-lg p-6', className)}>
+      <div className={cn('border rounded-lg p-6 w-full', className)}>
         {headerContent}
-        <div className={cn('', contentClassName)}>
+        <div className={cn('w-full', contentClassName)}>
           {children}
         </div>
       </div>
@@ -85,9 +85,9 @@ export const Section: React.FC<SectionProps> = ({
   }
 
   return (
-    <div className={cn('', className)}>
+    <div className={cn('w-full', className)}>
       {headerContent}
-      <div className={cn('', contentClassName)}>
+      <div className={cn('w-full', contentClassName)}>
         {children}
       </div>
     </div>

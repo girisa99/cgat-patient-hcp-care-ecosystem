@@ -20,11 +20,11 @@ export const ConsistentUsersLayout: React.FC<ConsistentUsersLayoutProps> = ({
 }) => {
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <div className="w-full px-4 py-8">
         {/* Header Section - Left Aligned */}
         <div className="mb-8 text-left">
-          <h1 className="text-4xl font-bold tracking-tight text-gray-900 mb-2">{title}</h1>
-          <p className="text-lg text-gray-600">{description}</p>
+          <h1 className="text-4xl font-bold tracking-tight text-gray-900 mb-2 text-left">{title}</h1>
+          <p className="text-lg text-gray-600 text-left">{description}</p>
           
           {showAlert && alertMessage && (
             <Alert className="mt-6 bg-blue-50 border-blue-200">
@@ -37,7 +37,7 @@ export const ConsistentUsersLayout: React.FC<ConsistentUsersLayoutProps> = ({
         </div>
 
         {/* Main Content */}
-        <div className="space-y-8">
+        <div className="space-y-8 w-full">
           {children}
         </div>
       </div>
