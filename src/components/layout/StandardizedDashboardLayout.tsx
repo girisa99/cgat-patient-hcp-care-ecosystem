@@ -165,8 +165,8 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
               "flex-1 min-h-screen",
               // Sidebar spacing
               isMobile ? "ml-0" : "md:ml-64",
-              // Fixed top spacing - match actual header height (65px) + mobile menu if present
-              (isMobile || isTablet) ? "pt-[118px]" : "pt-[65px]", // Mobile: 65px header + 53px menu, Desktop: 65px header only
+              // Reset to basic header height only - something else is adding the extra space
+              "pt-16", // 64px - standard header height
               debugMode && "border-4 border-dashed border-red-500"
             )}
           >
