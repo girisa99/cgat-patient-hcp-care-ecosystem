@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 
@@ -22,17 +21,13 @@ export const ConsistentUsersLayout: React.FC<ConsistentUsersLayoutProps> = ({
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8 max-w-7xl">
-        {/* Header Section */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-4xl font-bold tracking-tight text-gray-900">{title}</h1>
-              <p className="text-lg text-gray-600 mt-2">{description}</p>
-            </div>
-          </div>
+        {/* Header Section - Left Aligned */}
+        <div className="mb-8 text-left">
+          <h1 className="text-4xl font-bold tracking-tight text-gray-900 mb-2">{title}</h1>
+          <p className="text-lg text-gray-600">{description}</p>
           
           {showAlert && alertMessage && (
-            <Alert className="mb-6 bg-blue-50 border-blue-200">
+            <Alert className="mt-6 bg-blue-50 border-blue-200">
               <AlertCircle className="h-4 w-4 text-blue-600" />
               <AlertDescription className="text-blue-800">
                 {alertMessage}

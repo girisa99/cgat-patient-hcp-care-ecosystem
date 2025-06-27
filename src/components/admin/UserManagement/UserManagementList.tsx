@@ -1,7 +1,5 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Shield } from 'lucide-react';
 import UsersList from '@/components/users/UsersList';
 
 interface UserManagementListProps {
@@ -20,22 +18,14 @@ export const UserManagementList: React.FC<UserManagementListProps> = ({
   onEditUser
 }) => {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Shield className="h-5 w-5" />
-          System Users
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <UsersList
-          onCreateUser={onCreateUser}
-          onAssignRole={onAssignRole}
-          onRemoveRole={onRemoveRole}
-          onAssignFacility={onAssignFacility}
-          onEditUser={onEditUser}
-        />
-      </CardContent>
-    </Card>
+    <div className="p-6">
+      <UsersList
+        onCreateUser={onCreateUser}
+        onAssignRole={onAssignRole}
+        onRemoveRole={onRemoveRole}
+        onAssignFacility={onAssignFacility}
+        onEditUser={onEditUser}
+      />
+    </div>
   );
 };

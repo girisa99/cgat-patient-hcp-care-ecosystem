@@ -54,19 +54,13 @@ export const ConsistentUsersContent: React.FC<ConsistentUsersContentProps> = ({
     <div className="space-y-6">
       {/* Actions Section */}
       <Card className="bg-white shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-xl font-semibold text-gray-900">Quick Actions</CardTitle>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <UserManagementActions />
         </CardContent>
       </Card>
 
       {/* Users List Section */}
       <Card className="bg-white shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-xl font-semibold text-gray-900">All Users</CardTitle>
-        </CardHeader>
         <CardContent className="p-0">
           <UserManagementList
             onCreateUser={onCreateUser}
