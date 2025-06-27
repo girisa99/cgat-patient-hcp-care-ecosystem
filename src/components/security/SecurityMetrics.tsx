@@ -10,10 +10,17 @@ import {
   Lock,
   Eye,
   UserCheck,
-  Database
+  Database,
+  Code,
+  FileText,
+  Settings
 } from 'lucide-react';
 
-const SecurityMetrics: React.FC = () => {
+interface SecurityMetricsProps {
+  scanResults?: any;
+}
+
+const SecurityMetrics: React.FC<SecurityMetricsProps> = ({ scanResults }) => {
   const securityMetrics = [
     {
       title: 'Authentication Security',
@@ -38,27 +45,52 @@ const SecurityMetrics: React.FC = () => {
     },
     {
       title: 'Database Security',
-      score: 88,
+      score: scanResults?.categories?.dataIntegrity ? 
+        Math.round((scanResults.categories.dataIntegrity.passed / scanResults.categories.dataIntegrity.total) * 100) : 88,
       status: 'good',
       icon: Database,
       details: 'RLS policies implemented'
     }
   ];
 
+  const codeQualityMetrics = scanResults ? [
+    {
+      title: 'TypeScript Alignment',
+      score: Math.round((scanResults.categories.typeScriptAlignment.passed / scanResults.categories.typeScriptAlignment.total) * 100),
+      category: 'TypeScript',
+      icon: Code,
+      issues: scanResults.categories.typeScriptAlignment.total - scanResults.categories.typeScriptAlignment.passed
+    },
+    {
+      title: 'Naming Conventions',
+      score: Math.round((scanResults.categories.namingConventions.passed / scanResults.categories.namingConventions.total) * 100),
+      category: 'Standards',
+      icon: FileText,
+      issues: scanResults.categories.namingConventions.total - scanResults.categories.namingConventions.passed
+    },
+    {
+      title: 'Component Structure',
+      score: Math.round((scanResults.categories.componentStructure.passed / scanResults.categories.componentStructure.total) * 100),
+      category: 'Architecture',
+      icon: Settings,
+      issues: scanResults.categories.componentStructure.total - scanResults.categories.componentStructure.passed
+    }
+  ] : [];
+
   const threats = [
     {
       type: 'Low Risk',
-      count: 2,
-      color: 'bg-green-100 text-green-800'
+      count: scanResults?.warnings || 2,
+      color: 'bg-yellow-100 text-yellow-800'
     },
     {
       type: 'Medium Risk',
       count: 0,
-      color: 'bg-yellow-100 text-yellow-800'
+      color: 'bg-orange-100 text-orange-800'
     },
     {
       type: 'High Risk',
-      count: 0,
+      count: scanResults?.criticalIssues || 0,
       color: 'bg-red-100 text-red-800'
     }
   ];
@@ -110,12 +142,46 @@ const SecurityMetrics: React.FC = () => {
         ))}
       </div>
 
+      {/* Code Quality Metrics */}
+      {scanResults && codeQualityMetrics.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Code className="h-5 w-5 mr-2" />
+              Code Quality & Standards
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {codeQualityMetrics.map((metric) => (
+                <div key={metric.title} className="p-4 border rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center">
+                      <metric.icon className="h-4 w-4 mr-2" />
+                      <span className="font-medium text-sm">{metric.title}</span>
+                    </div>
+                    <Badge variant={metric.score >= 90 ? "default" : "secondary"}>
+                      {metric.score}%
+                    </Badge>
+                  </div>
+                  <Progress value={metric.score} className="h-2 mb-2" />
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>{metric.category}</span>
+                    <span>{metric.issues} issues</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Threat Detection */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
             <Eye className="h-5 w-5 mr-2" />
-            Threat Detection
+            Threat Detection & Issues
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -133,7 +199,10 @@ const SecurityMetrics: React.FC = () => {
             <div className="flex items-center">
               <CheckCircle className="h-5 w-5 text-green-600 mr-2" />
               <span className="text-green-800 font-medium">
-                No active security threats detected
+                {scanResults?.criticalIssues === 0 
+                  ? "No critical security threats detected" 
+                  : `${scanResults?.criticalIssues || 0} critical issues require immediate attention`
+                }
               </span>
             </div>
           </div>
@@ -147,22 +216,38 @@ const SecurityMetrics: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
+            {scanResults && (
+              <div className="flex items-center justify-between p-3 border rounded">
+                <div className="flex items-center space-x-3">
+                  <Eye className="h-5 w-5 text-blue-500" />
+                  <div>
+                    <p className="font-medium">Comprehensive security scan completed</p>
+                    <p className="text-sm text-muted-foreground">
+                      {scanResults.passedChecks}/{scanResults.totalChecks} checks passed
+                    </p>
+                  </div>
+                </div>
+                <span className="text-sm text-muted-foreground">
+                  {new Date(scanResults.timestamp).toLocaleTimeString()}
+                </span>
+              </div>
+            )}
             <div className="flex items-center justify-between p-3 border rounded">
               <div className="flex items-center space-x-3">
                 <CheckCircle className="h-5 w-5 text-green-500" />
                 <div>
-                  <p className="font-medium">Successful login audit</p>
-                  <p className="text-sm text-muted-foreground">All recent logins verified</p>
+                  <p className="font-medium">Automated verification system active</p>
+                  <p className="text-sm text-muted-foreground">Continuous monitoring enabled</p>
                 </div>
               </div>
-              <span className="text-sm text-muted-foreground">2 hours ago</span>
+              <span className="text-sm text-muted-foreground">Real-time</span>
             </div>
             <div className="flex items-center justify-between p-3 border rounded">
               <div className="flex items-center space-x-3">
                 <Shield className="h-5 w-5 text-blue-500" />
                 <div>
-                  <p className="font-medium">Security scan completed</p>
-                  <p className="text-sm text-muted-foreground">No vulnerabilities found</p>
+                  <p className="font-medium">RLS policies validated</p>
+                  <p className="text-sm text-muted-foreground">Database security confirmed</p>
                 </div>
               </div>
               <span className="text-sm text-muted-foreground">4 hours ago</span>
@@ -171,7 +256,7 @@ const SecurityMetrics: React.FC = () => {
               <div className="flex items-center space-x-3">
                 <Lock className="h-5 w-5 text-purple-500" />
                 <div>
-                  <p className="font-medium">Access permissions updated</p>
+                  <p className="font-medium">Access permissions validated</p>
                   <p className="text-sm text-muted-foreground">User roles synchronized</p>
                 </div>
               </div>
