@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -110,26 +109,47 @@ const DeveloperPortal = () => {
     { id: 'billing', name: 'Billing', description: 'Handle billing and payments' },
   ];
 
-  // Group endpoints by functionality
+  // Enhanced endpoint grouping with more specific categories and system endpoint exclusion
   const groupEndpointsByFunctionality = (endpoints: any[]) => {
     const groups: { [key: string]: any[] } = {};
     
     endpoints.forEach(endpoint => {
       const path = endpoint.external_path || endpoint.path || endpoint.url || '/unknown';
-      let functionality = 'General';
+      let functionality = 'Other';
       
-      if (path.includes('/users') || path.includes('/auth')) {
-        functionality = 'User Management';
+      // Skip system endpoints - don't include them in available endpoints
+      if (path.includes('/health') || path.includes('/status') || path.includes('/metrics') || 
+          path.includes('/system') || path.includes('/internal')) {
+        return; // Skip system endpoints
+      }
+      
+      // More specific grouping logic
+      if (path.includes('/users') || path.includes('/profiles')) {
+        if (path.includes('/permissions') || path.includes('/roles')) {
+          functionality = 'User Permissions';
+        } else {
+          functionality = 'User Management';
+        }
+      } else if (path.includes('/auth') || path.includes('/login') || path.includes('/token')) {
+        functionality = 'Authentication';
       } else if (path.includes('/patients')) {
         functionality = 'Patient Management';
       } else if (path.includes('/facilities')) {
         functionality = 'Facility Management';
       } else if (path.includes('/appointments')) {
         functionality = 'Appointments';
-      } else if (path.includes('/billing')) {
-        functionality = 'Billing';
-      } else if (path.includes('/health')) {
-        functionality = 'System';
+      } else if (path.includes('/billing') || path.includes('/payments')) {
+        functionality = 'Billing & Payments';
+      } else if (path.includes('/permissions') || path.includes('/roles')) {
+        functionality = 'Permissions & Roles';
+      } else if (path.includes('/modules')) {
+        functionality = 'Module Management';
+      } else if (path.includes('/reports') || path.includes('/analytics')) {
+        functionality = 'Reports & Analytics';
+      } else if (path.includes('/notifications')) {
+        functionality = 'Notifications';
+      } else if (path.includes('/settings') || path.includes('/config')) {
+        functionality = 'Settings & Configuration';
       }
       
       if (!groups[functionality]) {
@@ -659,7 +679,7 @@ const DeveloperPortal = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <h4 className="font-medium">
-                        Available Endpoints ({apiDetails?.endpoints?.length || 0})
+                        Available Endpoints ({apiDetails?.endpoints ? Object.values(groupEndpointsByFunctionality(apiDetails.endpoints)).flat().length : 0})
                       </h4>
                       <div className="space-y-2 text-sm max-h-60 overflow-y-auto border rounded p-3">
                         {apiDetails?.endpoints && apiDetails.endpoints.length > 0 ? (
