@@ -14,7 +14,7 @@ import { databaseMigrationSafetyChecker, MigrationSafetyResult } from './Databas
 import { environmentConfigValidator, EnvironmentValidationResult } from './EnvironmentConfigValidator';
 import { componentPropValidator, PropValidationResult } from './ComponentPropValidator';
 import { bundleSizeAnalyzer, BundleAnalysisResult } from './BundleSizeAnalyzer';
-import { accessibilityComplianceChecker, AccessibilityResult } from './AccessibilityComplianceChecker';
+import { accessibilityComplianceChecker, AccessibilityComplianceResult } from './AccessibilityComplianceChecker';
 
 export interface CompleteVerificationResult {
   validationSummary: EnhancedIntegrationResult;
@@ -26,7 +26,7 @@ export interface CompleteVerificationResult {
   environmentValidation: EnvironmentValidationResult;
   propValidation: PropValidationResult;
   bundleAnalysis: BundleAnalysisResult;
-  accessibilityCompliance: AccessibilityResult;
+  accessibilityCompliance: AccessibilityComplianceResult;
   overallStatus: 'approved' | 'blocked' | 'warning';
   canProceed: boolean;
   implementationPlan: string[];
