@@ -1,4 +1,3 @@
-
 /**
  * API Integration Management System
  * Centralized management for all API integrations
@@ -151,7 +150,8 @@ export class ApiIntegrationManager {
       throw new Error(`Integration with ID ${integrationId} not found`);
     }
     
-    return await PostmanCollectionGenerator.generatePostmanCollection(integration);
+    const collection = await PostmanCollectionGenerator.generatePostmanCollection(integration);
+    return PostmanCollectionGenerator.exportPostmanCollection(collection);
   }
 
   /**
