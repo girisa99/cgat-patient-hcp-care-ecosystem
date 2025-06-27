@@ -1,7 +1,8 @@
 
 import React, { useState } from 'react';
-import StandardizedDashboardLayout from '@/components/layout/StandardizedDashboardLayout';
-import { AdminPageWrapper, AdminStatsGrid, StatCard } from '@/components/layout/AdminPageWrapper';
+import MainLayout from '@/components/layout/MainLayout';
+import { PageContainer } from '@/components/layout/PageContainer';
+import { AdminStatsGrid, StatCard } from '@/components/layout/AdminStatsGrid';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, Shield, Activity, Database, AlertTriangle } from 'lucide-react';
@@ -46,35 +47,6 @@ const AuditLog = () => {
   const todayLogs = metadata.today_logs;
   const filteredCount = metadata.filtered_count || auditLogs.length;
 
-  const statsContent = (
-    <AdminStatsGrid columns={4}>
-      <StatCard
-        title="Total Audit Logs"
-        value={totalLogs}
-        icon={Database}
-        description="All system audit entries"
-      />
-      <StatCard
-        title="Today's Activity"
-        value={todayLogs}
-        icon={Activity}
-        description="Logs created today"
-      />
-      <StatCard
-        title="Filtered Results"
-        value={filteredCount}
-        icon={Shield}
-        description="Current filter results"
-      />
-      <StatCard
-        title="System Status"
-        value={error ? "Error" : "Active"}
-        icon={error ? AlertTriangle : Activity}
-        description="Audit system status"
-      />
-    </AdminStatsGrid>
-  );
-
   const headerActions = (
     <Button onClick={handleRefresh} disabled={isLoading}>
       <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
@@ -83,17 +55,41 @@ const AuditLog = () => {
   );
 
   return (
-    <StandardizedDashboardLayout>
-      <AdminPageWrapper
+    <MainLayout>
+      <PageContainer
         title="Audit Log"
         subtitle="View system activity and security events with real-time data"
         headerActions={headerActions}
-        showStats={true}
-        statsContent={statsContent}
-        variant="full-width"
-        contentPadding="md"
       >
         <div className="space-y-6">
+          {/* Stats Grid */}
+          <AdminStatsGrid columns={4}>
+            <StatCard
+              title="Total Audit Logs"
+              value={totalLogs}
+              icon={Database}
+              description="All system audit entries"
+            />
+            <StatCard
+              title="Today's Activity"
+              value={todayLogs}
+              icon={Activity}
+              description="Logs created today"
+            />
+            <StatCard
+              title="Filtered Results"
+              value={filteredCount}
+              icon={Shield}
+              description="Current filter results"
+            />
+            <StatCard
+              title="System Status"
+              value={error ? "Error" : "Active"}
+              icon={error ? AlertTriangle : Activity}
+              description="Audit system status"
+            />
+          </AdminStatsGrid>
+
           {/* Filters */}
           <AuditLogFilters
             filters={filters}
@@ -113,8 +109,8 @@ const AuditLog = () => {
             </CardContent>
           </Card>
         </div>
-      </AdminPageWrapper>
-    </StandardizedDashboardLayout>
+      </PageContainer>
+    </MainLayout>
   );
 };
 
