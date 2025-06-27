@@ -1,4 +1,3 @@
-
 /**
  * Enhanced Database Schema Analyzer with Automatic Triggering Integration
  * Aligned with framework TypeScript types and knowledge base
@@ -399,10 +398,11 @@ class DatabaseSchemaAnalyzerClass {
   private async triggerAutoGeneration(tableName: string, analysis: DatabaseTableAnalysis) {
     console.log(`🤖 Auto-triggering component generation for table: ${tableName}`);
     
-    const { frameworkAlignment } = analysis;
+    // Access framework_alignment correctly
+    const { framework_alignment } = analysis;
     
     // Auto-trigger suggestions based on missing components
-    for (const suggestion of frameworkAlignment.autoTriggerSuggestions) {
+    for (const suggestion of framework_alignment.autoTriggerSuggestions) {
       console.log(`💡 Auto-trigger suggestion for ${tableName}: ${suggestion}`);
       
       // In a real implementation, this would dispatch events or call specific generators
@@ -465,8 +465,6 @@ class DatabaseSchemaAnalyzerClass {
   }
 
   private checkTypeScriptDefinition(tableName: string): boolean {
-    // In a real implementation, this would check if TypeScript types exist
-    // For now, assume framework tables have definitions
     const frameworkTables = ['profiles', 'facilities', 'modules', 'permissions', 'roles'];
     return frameworkTables.includes(tableName);
   }
@@ -491,8 +489,6 @@ class DatabaseSchemaAnalyzerClass {
   }
 
   private async checkDataMappings(tableName: string): Promise<boolean> {
-    // In a real implementation, this would check if data mappings exist
-    // For now, return false to trigger auto-generation
     return false;
   }
 
@@ -504,10 +500,7 @@ class DatabaseSchemaAnalyzerClass {
     };
 
     for (const column of columns) {
-      // Skip ID for input schemas
       if (forInput && column.column_name === 'id') continue;
-      
-      // Skip auto-generated timestamps for input schemas
       if (forInput && ['created_at', 'updated_at'].includes(column.column_name)) continue;
 
       let propType = 'string';
