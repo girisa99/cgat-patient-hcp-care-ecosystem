@@ -115,9 +115,7 @@ function App() {
                   path="/api-integrations"
                   element={
                     <ProtectedRoute>
-                      <StandardizedDashboardLayout pageTitle="API Management" pageSubtitle="Manage API integrations and access keys">
-                        <ApiIntegrations />
-                      </StandardizedDashboardLayout>
+                      <ApiIntegrations />
                     </ProtectedRoute>
                   }
                 />
