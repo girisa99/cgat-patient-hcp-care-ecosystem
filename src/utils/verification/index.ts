@@ -31,18 +31,21 @@ import {
   MergeAutoResolution
 } from './MergeVerificationHandler';
 
-// NEW: API Contract Validation (MISSING CRITICAL PIECE #1)
+// NEW: API Contract Validation (FIXED IMPORTS)
 import {
   ApiContractValidator,
   apiContractValidator,
-  ApiContractIntegration,
-  apiContractIntegration,
   ContractValidationResult,
   ContractViolation,
   ContractWarning,
-  ApiContract,
-  ContractIntegrationResult
+  ApiContract
 } from './ApiContractValidator';
+
+import {
+  ApiContractIntegration,
+  apiContractIntegration,
+  ContractIntegrationResult
+} from './ApiContractIntegration';
 
 // Enhanced comprehensive validators
 import { 
