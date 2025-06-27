@@ -5,21 +5,26 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const Settings = () => {
   return (
-    <StandardizedDashboardLayout
-      showPageHeader={true}
-      pageTitle="Settings"
-      pageSubtitle="Configure system settings and preferences"
-    >
-      <Card>
-        <CardHeader>
-          <CardTitle>System Settings</CardTitle>
-        </CardHeader>
-        <CardContent>
+    <StandardizedDashboardLayout>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
           <p className="text-muted-foreground">
-            Settings functionality will be implemented here.
+            Configure system settings and preferences
           </p>
-        </CardContent>
-      </Card>
+        </div>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>System Settings</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">
+              Settings functionality will be implemented here.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
     </StandardizedDashboardLayout>
   );
 };

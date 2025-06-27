@@ -27,20 +27,25 @@ const AuditLog = () => {
   };
 
   return (
-    <StandardizedDashboardLayout
-      showPageHeader={true}
-      pageTitle="Audit Log"
-      pageSubtitle="System activity and security audit trail"
-    >
-      <AuditLogStats />
+    <StandardizedDashboardLayout>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Audit Log</h1>
+          <p className="text-muted-foreground">
+            System activity and security audit trail
+          </p>
+        </div>
 
-      <AuditLogFilters
-        filters={filters}
-        onFiltersChange={handleFiltersChange}
-        onClearFilters={handleClearFilters}
-      />
+        <AuditLogStats />
 
-      <AuditLogList filters={filters} />
+        <AuditLogFilters
+          filters={filters}
+          onFiltersChange={handleFiltersChange}
+          onClearFilters={handleClearFilters}
+        />
+
+        <AuditLogList filters={filters} />
+      </div>
     </StandardizedDashboardLayout>
   );
 };
