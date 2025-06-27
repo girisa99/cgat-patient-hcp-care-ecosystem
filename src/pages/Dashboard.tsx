@@ -25,6 +25,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { useApiIntegrations } from '@/hooks/useApiIntegrations';
 import { useAuditLogStats } from '@/hooks/useAuditLogs';
 import { RealTimeDashboardStats } from '@/components/dashboard/RealTimeDashboardStats';
+import { ModulesOverviewCard } from '@/components/dashboard/ModulesOverviewCard';
+import { ComponentsServicesCard } from '@/components/dashboard/ComponentsServicesCard';
+import { SystemHighlightsCard } from '@/components/dashboard/SystemHighlightsCard';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { useToast } from '@/hooks/use-toast';
 
@@ -182,6 +185,15 @@ const Dashboard = () => {
 
           {/* Real-time Activity Stats */}
           <RealTimeDashboardStats />
+
+          {/* System Highlights */}
+          <SystemHighlightsCard />
+
+          {/* Modules and Components Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <ModulesOverviewCard />
+            <ComponentsServicesCard />
+          </div>
 
           {/* API Integration Stats */}
           <Card>
