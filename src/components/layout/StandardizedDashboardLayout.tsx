@@ -39,15 +39,15 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
           onClose={() => setSidebarOpen(false)} 
         />
         
-        {/* Main content area positioned directly under header */}
+        {/* Main content area - remove all top padding/margin and position directly under header */}
         <main className={cn(
-          "pt-16", // Account for header height (h-16 = 64px)
+          "min-h-screen", // Full height
           "transition-all duration-300 ease-in-out",
           isMobile ? "ml-0" : "md:ml-64"
         )}>
-          {/* Mobile menu button */}
+          {/* Mobile menu button - position it at the very top */}
           {(isMobile || isTablet) && (
-            <div className="md:hidden p-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-16 z-40">
+            <div className="md:hidden p-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 fixed top-16 left-0 right-0 z-40">
               <Button 
                 variant="ghost" 
                 size="sm" 
@@ -60,34 +60,40 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
             </div>
           )}
           
-          {/* Content starts immediately */}
-          {showPageHeader && (pageTitle || pageSubtitle || headerActions) && (
-            <div className="px-6 pt-6 pb-4 bg-background border-b">
-              <div className="flex items-start justify-between w-full max-w-7xl mx-auto">
-                <div className="flex-1 text-left">
-                  {pageTitle && (
-                    <h1 className="text-3xl font-bold tracking-tight text-gray-900 mb-2 text-left">
-                      {pageTitle}
-                    </h1>
-                  )}
-                  {pageSubtitle && (
-                    <p className="text-muted-foreground text-lg text-left">
-                      {pageSubtitle}
-                    </p>
+          {/* Content container - start immediately at top with header offset */}
+          <div className={cn(
+            "pt-16", // Offset for fixed header (64px)
+            (isMobile || isTablet) ? "pt-28" : "pt-16" // Extra offset for mobile menu
+          )}>
+            {/* Page header section */}
+            {showPageHeader && (pageTitle || pageSubtitle || headerActions) && (
+              <div className="px-6 pt-6 pb-4 bg-background border-b">
+                <div className="flex items-start justify-between w-full max-w-7xl mx-auto">
+                  <div className="flex-1 text-left">
+                    {pageTitle && (
+                      <h1 className="text-3xl font-bold tracking-tight text-gray-900 mb-2 text-left">
+                        {pageTitle}
+                      </h1>
+                    )}
+                    {pageSubtitle && (
+                      <p className="text-muted-foreground text-lg text-left">
+                        {pageSubtitle}
+                      </p>
+                    )}
+                  </div>
+                  {headerActions && (
+                    <div className="flex items-center gap-3 ml-6">
+                      {headerActions}
+                    </div>
                   )}
                 </div>
-                {headerActions && (
-                  <div className="flex items-center gap-3 ml-6">
-                    {headerActions}
-                  </div>
-                )}
               </div>
+            )}
+            
+            {/* Main content area */}
+            <div className="w-full max-w-7xl mx-auto px-6 py-6">
+              {children}
             </div>
-          )}
-          
-          {/* Main content positioned at the very top */}
-          <div className="w-full max-w-7xl mx-auto px-6 py-6">
-            {children}
           </div>
         </main>
       </div>
