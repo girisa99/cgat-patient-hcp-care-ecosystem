@@ -352,7 +352,7 @@ const IssuesTab: React.FC<IssuesTabProps> = ({
                   </Button>
                 </div>
               </CardContent>
-            )}
+            </Card>
           )}
         </TabsContent>
 
