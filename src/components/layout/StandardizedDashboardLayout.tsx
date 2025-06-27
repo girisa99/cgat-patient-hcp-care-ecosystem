@@ -53,16 +53,16 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
           </div>
         )}
         
-        {/* Main content area */}
+        {/* Main content area - fixed header is 64px, mobile menu adds 48px */}
         <main className={cn(
           "transition-all duration-300 ease-in-out",
-          isMobile ? "ml-0 pt-4" : "md:ml-64 pt-4",
-          (isMobile || isTablet) ? "pt-8" : ""
+          isMobile ? "ml-0" : "md:ml-64",
+          (isMobile || isTablet) ? "pt-[112px]" : "pt-16" // 64px header + 48px mobile menu OR just 64px header
         )}>
           {/* Page header section */}
           {showPageHeader && (pageTitle || pageSubtitle || headerActions) && (
             <div className="border-b bg-background">
-              <div className="flex items-start justify-between w-full max-w-7xl mx-auto px-6 py-2">
+              <div className="flex items-start justify-between w-full max-w-7xl mx-auto px-6 py-3">
                 <div className="flex-1">
                   {pageTitle && (
                     <h1 className="text-2xl font-bold tracking-tight text-gray-900 mb-1">
@@ -85,7 +85,7 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
           )}
           
           {/* Main content */}
-          <div className="w-full max-w-7xl mx-auto px-6 py-2">
+          <div className="w-full max-w-7xl mx-auto px-6 py-4">
             {children}
           </div>
         </main>
