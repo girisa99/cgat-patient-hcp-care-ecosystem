@@ -1,16 +1,21 @@
 /**
- * Fully Automated Verification System - Main Export (Enhanced with Database Guidelines)
+ * Enhanced Automated Verification System - Main Export 
  * 
- * Zero manual intervention required - all verification is automatic
+ * NOW INCLUDES: Database Guidelines, Schema Validation, Performance Monitoring,
+ * Security Scanning, Code Quality Analysis, and Template-based Generation
+ * 
+ * Zero manual intervention required - all verification is automatic and comprehensive
  */
 
-// Main automated verification system (RECOMMENDED)
+// Main enhanced automated verification system (RECOMMENDED)
 import { 
   AutomatedVerificationOrchestrator, 
-  automatedVerification 
+  automatedVerification,
+  TemplateGenerationRequest,
+  TemplateGenerationResult
 } from './AutomatedVerificationOrchestrator';
 
-// Enhanced database guidelines validator
+// Enhanced comprehensive validators
 import { 
   DatabaseGuidelinesValidator,
   DatabaseValidationResult,
@@ -18,6 +23,34 @@ import {
   DatabaseViolation,
   WorkflowSuggestion
 } from './DatabaseGuidelinesValidator';
+
+import {
+  DatabaseSchemaValidator,
+  SchemaValidationResult,
+  SchemaViolation,
+  SchemaAutoFix
+} from './DatabaseSchemaValidator';
+
+import {
+  PerformanceMonitor,
+  PerformanceMetrics,
+  PerformanceRecommendation,
+  performanceMonitor
+} from './PerformanceMonitor';
+
+import {
+  SecurityScanner,
+  SecurityScanResult,
+  SecurityVulnerability,
+  SecurityRecommendation
+} from './SecurityScanner';
+
+import {
+  CodeQualityAnalyzer,
+  CodeQualityResult,
+  CodeQualityMetrics,
+  CodeQualityRecommendation
+} from './CodeQualityAnalyzer';
 
 // Simplified validator (used internally by automation)
 import { 
@@ -50,34 +83,43 @@ import { TypeScriptValidator } from './TypeScriptValidator';
 import { DatabaseAlignmentValidator } from './DatabaseAlignmentValidator';
 import { GuidelinesValidator } from './GuidelinesValidator';
 
-// ===== MAIN EXPORTS (FULLY AUTOMATIC WITH DATABASE VALIDATION) =====
+// ===== MAIN EXPORTS (ENHANCED AUTOMATIC WITH ALL FEATURES) =====
 
 /**
- * AUTOMATIC verification system - NO MANUAL INTERVENTION REQUIRED
- * Now includes comprehensive database guidelines validation
+ * ENHANCED AUTOMATIC verification system - NO MANUAL INTERVENTION REQUIRED
+ * Now includes: Database, Schema, Performance, Security, Quality, and Template Generation
  */
 export { 
   AutomatedVerificationOrchestrator,
   automatedVerification,
-  DatabaseGuidelinesValidator // NEW
+  DatabaseGuidelinesValidator,
+  DatabaseSchemaValidator,
+  PerformanceMonitor,
+  performanceMonitor,
+  SecurityScanner,
+  CodeQualityAnalyzer
 };
 
 /**
- * AUTOMATIC validation function with database guidelines - ALWAYS RUNS
+ * ENHANCED AUTOMATIC validation function - COMPREHENSIVE CHECKS
  */
 export const validateBeforeImplementation = async (request: ValidationRequest) => {
-  console.log('🚀 AUTOMATIC PRE-IMPLEMENTATION VALIDATION (with Database Guidelines)...');
+  console.log('🚀 ENHANCED AUTOMATIC PRE-IMPLEMENTATION VALIDATION...');
+  console.log('🔍 Running: Database + Schema + Performance + Security + Quality checks');
   
-  // Enhanced verification system with database validation
+  // Enhanced verification system with all capabilities
   const canProceed = await automatedVerification.verifyBeforeCreation(request);
   const summary = JSON.parse(localStorage.getItem('verification-results') || '[]')[0];
   
-  console.log('📋 ENHANCED AUTOMATIC VALIDATION SUMMARY:');
+  console.log('📋 COMPREHENSIVE AUTOMATIC VALIDATION SUMMARY:');
   console.log(`   Status: ${canProceed ? 'APPROVED' : 'BLOCKED'}`);
+  console.log(`   Overall Health Score: ${summary?.overallHealthScore || 'N/A'}/100`);
+  console.log(`   Security Score: ${summary?.securityScore || 'N/A'}/100`);
+  console.log(`   Quality Score: ${summary?.qualityScore || 'N/A'}/100`);
+  console.log(`   Performance Score: ${summary?.performanceScore || 'N/A'}/100`);
   console.log(`   Issues: ${summary?.issuesFound || 0}`);
   console.log(`   Critical: ${summary?.criticalIssues || 0}`);
   console.log(`   Auto-fixes: ${summary?.autoFixesApplied || 0}`);
-  console.log(`   Database Issues: ${summary?.databaseValidation?.violations?.length || 0}`);
   console.log(`   SQL Auto-fixes: ${summary?.sqlAutoFixes?.length || 0}`);
   console.log(`   Workflow Suggestions: ${summary?.workflowSuggestions?.length || 0}`);
   
@@ -85,24 +127,42 @@ export const validateBeforeImplementation = async (request: ValidationRequest) =
     validationSummary: summary || null,
     implementationPlan: summary?.recommendations || [],
     databaseGuidelines: summary?.databaseValidation || null,
+    schemaValidation: summary?.schemaValidation || null,
+    performanceMetrics: summary?.performanceMetrics || null,
+    securityScan: summary?.securityScan || null,
+    codeQuality: summary?.codeQuality || null,
     sqlAutoFixes: summary?.sqlAutoFixes || [],
     workflowSuggestions: summary?.workflowSuggestions || [],
+    overallHealthScore: summary?.overallHealthScore || 0,
     canProceed,
     automatic: true,
-    enhanced: true // Indicates enhanced validation with database guidelines
+    enhanced: true,
+    comprehensive: true // NEW indicator
   };
 };
 
 /**
- * Get enhanced automatic verification summary with database info
+ * NEW: Enhanced template-based code generation
+ */
+export const generateCodeFromTemplate = async (request: TemplateGenerationRequest): Promise<TemplateGenerationResult> => {
+  console.log('🎯 GENERATING CODE FROM TEMPLATE:', request.templateType);
+  return await automatedVerification.generateFromTemplate(request);
+};
+
+/**
+ * Get comprehensive automatic verification summary with all metrics
  */
 export const getAutomaticVerificationSummary = async () => {
   const componentInventory = await ComponentRegistryScanner.scanAllComponents();
   const typescriptAlignment = await TypeScriptDatabaseValidator.validateCompleteAlignment();
   const verificationStatus = automatedVerification.getStatus();
   
-  // Run database validation
+  // Run comprehensive validation
   const databaseValidation = await DatabaseGuidelinesValidator.validateDatabase();
+  const schemaValidation = await DatabaseSchemaValidator.validateSchema();
+  const securityScan = await SecurityScanner.performSecurityScan();
+  const codeQuality = await CodeQualityAnalyzer.analyzeCodeQuality();
+  const performanceMetrics = await performanceMonitor.getPerformanceMetrics();
 
   return {
     summary: {
@@ -113,43 +173,67 @@ export const getAutomaticVerificationSummary = async () => {
       typescriptAlignment: typescriptAlignment.isAligned,
       alignmentIssues: typescriptAlignment.missingTables.length + typescriptAlignment.typeConflicts.length,
       automatedVerificationActive: verificationStatus.isRunning,
+      
+      // Enhanced metrics
       databaseValidation: databaseValidation.isValid,
       databaseIssues: databaseValidation.violations.length,
+      schemaValidation: schemaValidation.isValid,
+      schemaIssues: schemaValidation.violations.length,
+      securityScore: securityScan.securityScore,
+      securityVulnerabilities: securityScan.vulnerabilities.length,
+      qualityScore: codeQuality.overallScore,
+      qualityIssues: codeQuality.issues.length,
+      performanceMonitoring: performanceMonitor.getStatus().isMonitoring,
+      
       workflowSuggestions: databaseValidation.workflowSuggestions.length,
       isFullyAutomatic: true,
+      isEnhanced: true,
+      isComprehensive: true, // NEW
       lastScan: verificationStatus.lastScanTimestamp,
-      enhanced: true
+      
+      // Overall health calculation
+      overallHealthScore: Math.round((
+        (databaseValidation.isValid ? 25 : 0) +
+        (schemaValidation.isValid ? 25 : 0) +
+        (securityScan.securityScore * 0.25) +
+        (codeQuality.overallScore * 0.25)
+      ))
     },
     componentInventory,
     typescriptAlignment,
     databaseValidation,
+    schemaValidation,
+    securityScan,
+    codeQuality,
+    performanceMetrics,
     verificationStatus,
     isAutomatic: true,
-    isEnhanced: true
+    isEnhanced: true,
+    isComprehensive: true
   };
 };
 
 /**
- * AUTOMATIC module validation with database guidelines (ALWAYS RUNS)
+ * ENHANCED AUTOMATIC module validation with comprehensive checks
  */
 export const createModuleWithAutomaticValidation = async (config: any) => {
-  console.log('🔍 ENHANCED AUTOMATIC MODULE VALIDATION (with Database Guidelines) for:', config.moduleName);
+  console.log('🔍 COMPREHENSIVE AUTOMATIC MODULE VALIDATION for:', config.moduleName);
   
   const request: ValidationRequest = {
     tableName: config.tableName,
     moduleName: config.moduleName,
     componentType: 'module',
-    description: `Module for ${config.tableName} table with database validation`
+    description: `Enhanced module validation for ${config.tableName} table with comprehensive checks`
   };
   
   const canProceed = await automatedVerification.verifyBeforeCreation(request);
   
   if (!canProceed) {
-    throw new Error('Module creation blocked by enhanced automatic verification system (including database guidelines)');
+    throw new Error('Module creation blocked by comprehensive automatic verification system');
   }
   
-  console.log('✅ Module creation approved by enhanced automatic verification (including database guidelines)');
-  return { approved: true, automatic: true, enhanced: true };
+  console.log('✅ Module creation approved by comprehensive automatic verification');
+  return { approved: true, automatic: true, enhanced: true, comprehensive: true };
 };
 
 // Export enhanced types
@@ -157,7 +241,20 @@ export type {
   DatabaseValidationResult,
   DatabaseGuideline,
   DatabaseViolation,
-  WorkflowSuggestion
+  WorkflowSuggestion,
+  SchemaValidationResult,
+  SchemaViolation,
+  SchemaAutoFix,
+  PerformanceMetrics,
+  PerformanceRecommendation,
+  SecurityScanResult,
+  SecurityVulnerability,
+  SecurityRecommendation,
+  CodeQualityResult,
+  CodeQualityMetrics,
+  CodeQualityRecommendation,
+  TemplateGenerationRequest,
+  TemplateGenerationResult
 };
 
 // Export types
@@ -202,23 +299,30 @@ export {
   GuidelinesValidator 
 };
 
-// ===== GLOBAL INITIALIZATION (ENHANCED AUTOMATIC) =====
+// ===== ENHANCED GLOBAL INITIALIZATION =====
 
 if (typeof window !== 'undefined') {
-  console.log('🚀 ENHANCED AUTOMATIC VERIFICATION SYSTEM INITIALIZING (with Database Guidelines)...');
+  console.log('🚀 COMPREHENSIVE AUTOMATIC VERIFICATION SYSTEM INITIALIZING...');
+  console.log('🔍 INCLUDING: Database + Schema + Performance + Security + Quality + Templates');
   
-  // Enhanced global verification function
+  // Enhanced global verification functions
   (window as any).automaticVerification = {
     validate: validateBeforeImplementation,
     getSummary: getAutomaticVerificationSummary,
     createModule: createModuleWithAutomaticValidation,
+    generateTemplate: generateCodeFromTemplate,
     validateDatabase: DatabaseGuidelinesValidator.validateDatabase,
+    validateSchema: DatabaseSchemaValidator.validateSchema,
+    scanSecurity: SecurityScanner.performSecurityScan,
+    analyzeQuality: CodeQualityAnalyzer.analyzeCodeQuality,
+    monitorPerformance: () => performanceMonitor.getPerformanceMetrics(),
     isAutomatic: true,
     isEnhanced: true,
-    includesDatabaseGuidelines: true
+    isComprehensive: true,
+    includesAllFeatures: true
   };
   
-  console.log('✅ ENHANCED AUTOMATIC VERIFICATION SYSTEM READY');
-  console.log('ℹ️  NO MANUAL INTERVENTION REQUIRED - ALL VERIFICATION IS AUTOMATIC');
-  console.log('🗄️  INCLUDES DATABASE GUIDELINES, RLS VALIDATION, AND WORKFLOW SUGGESTIONS');
+  console.log('✅ COMPREHENSIVE AUTOMATIC VERIFICATION SYSTEM READY');
+  console.log('ℹ️  NO MANUAL INTERVENTION REQUIRED - ALL VERIFICATION IS AUTOMATIC AND COMPREHENSIVE');
+  console.log('🎯 INCLUDES: Database Guidelines + Schema Validation + Performance Monitoring + Security Scanning + Code Quality Analysis + Template Generation');
 }

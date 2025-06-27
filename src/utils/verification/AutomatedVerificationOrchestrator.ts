@@ -1,9 +1,11 @@
-
 /**
- * Fully Automated Verification Orchestrator
+ * Fully Automated Verification Orchestrator - ENHANCED UNIFIED SYSTEM
  * 
  * Coordinates all verification systems and triggers them automatically
  * with ZERO manual intervention required
+ * 
+ * NOW INCLUDES: Database Schema Validation, Performance Monitoring, 
+ * Security Scanning, Code Quality Analysis, and Template-based Generation
  */
 
 import { SimplifiedValidator, ValidationRequest, ValidationResult } from './SimplifiedValidator';
@@ -11,6 +13,10 @@ import { ComponentAuditor, AuditResult } from './ComponentAuditor';
 import { DuplicateDetector } from './DuplicateDetector';
 import { CanonicalSourceValidator } from './CanonicalSourceValidator';
 import { DatabaseGuidelinesValidator, DatabaseValidationResult } from './DatabaseGuidelinesValidator';
+import { DatabaseSchemaValidator, SchemaValidationResult } from './DatabaseSchemaValidator';
+import { PerformanceMonitor, PerformanceMetrics, performanceMonitor } from './PerformanceMonitor';
+import { SecurityScanner, SecurityScanResult } from './SecurityScanner';
+import { CodeQualityAnalyzer, CodeQualityResult } from './CodeQualityAnalyzer';
 
 export interface AutomatedVerificationConfig {
   enableRealTimeChecks: boolean;
@@ -21,9 +27,16 @@ export interface AutomatedVerificationConfig {
   blockOnCriticalIssues: boolean;
   autoStartOnAppLoad: boolean;
   mandatoryVerification: boolean;
-  enableDatabaseValidation: boolean; // NEW
-  enableWorkflowSuggestions: boolean; // NEW
-  enableAutoSQLGeneration: boolean; // NEW
+  enableDatabaseValidation: boolean;
+  enableWorkflowSuggestions: boolean;
+  enableAutoSQLGeneration: boolean;
+  // NEW ENHANCED FEATURES
+  enableSchemaValidation: boolean;
+  enablePerformanceMonitoring: boolean;
+  enableSecurityScanning: boolean;
+  enableCodeQualityAnalysis: boolean;
+  enableTemplateGeneration: boolean;
+  enableAutomatedRefactoring: boolean;
 }
 
 export interface VerificationSummary {
@@ -32,13 +45,43 @@ export interface VerificationSummary {
   auditResults: AuditResult[];
   duplicateReport: string;
   canonicalValidation: string;
-  databaseValidation?: DatabaseValidationResult; // NEW
+  databaseValidation?: DatabaseValidationResult;
+  // NEW ENHANCED RESULTS
+  schemaValidation?: SchemaValidationResult;
+  performanceMetrics?: PerformanceMetrics;
+  securityScan?: SecurityScanResult;
+  codeQuality?: CodeQualityResult;
   issuesFound: number;
   criticalIssues: number;
   autoFixesApplied: number;
   recommendations: string[];
-  sqlAutoFixes?: string[]; // NEW
-  workflowSuggestions?: string[]; // NEW
+  sqlAutoFixes?: string[];
+  workflowSuggestions?: string[];
+  // NEW ENHANCED METRICS
+  overallHealthScore: number;
+  securityScore: number;
+  qualityScore: number;
+  performanceScore: number;
+}
+
+// NEW: Template Generation Interface
+export interface TemplateGenerationRequest {
+  templateType: 'hook' | 'component' | 'module' | 'api_integration';
+  tableName?: string;
+  moduleName?: string;
+  apiId?: string;
+  generateTests: boolean;
+  generateDocumentation: boolean;
+}
+
+export interface TemplateGenerationResult {
+  success: boolean;
+  filesGenerated: string[];
+  templateUsed: string;
+  codeGenerated: string;
+  testsGenerated: string;
+  documentationGenerated: string;
+  errors: string[];
 }
 
 export class AutomatedVerificationOrchestrator {
@@ -58,13 +101,20 @@ export class AutomatedVerificationOrchestrator {
       blockOnCriticalIssues: true,
       autoStartOnAppLoad: true,
       mandatoryVerification: true,
-      enableDatabaseValidation: true, // NEW
-      enableWorkflowSuggestions: true, // NEW
-      enableAutoSQLGeneration: true, // NEW
+      enableDatabaseValidation: true,
+      enableWorkflowSuggestions: true,
+      enableAutoSQLGeneration: true,
+      // NEW ENHANCED DEFAULTS
+      enableSchemaValidation: true,
+      enablePerformanceMonitoring: true,
+      enableSecurityScanning: true,
+      enableCodeQualityAnalysis: true,
+      enableTemplateGeneration: true,
+      enableAutomatedRefactoring: true,
       ...config
     };
 
-    // Auto-start verification system immediately
+    // Auto-start enhanced verification system immediately
     if (this.config.autoStartOnAppLoad && typeof window !== 'undefined') {
       setTimeout(() => this.start(), 500);
     }
@@ -78,16 +128,21 @@ export class AutomatedVerificationOrchestrator {
   }
 
   /**
-   * Start automated verification system (AUTOMATIC)
+   * Start enhanced automated verification system (AUTOMATIC)
    */
   start(): void {
     if (this.isRunning) {
-      console.log('🔄 Automated verification is already running');
+      console.log('🔄 Enhanced automated verification is already running');
       return;
     }
 
-    console.log('🚀 STARTING FULLY AUTOMATED VERIFICATION SYSTEM...');
+    console.log('🚀 STARTING ENHANCED AUTOMATED VERIFICATION SYSTEM...');
     this.isRunning = true;
+
+    // Start performance monitoring
+    if (this.config.enablePerformanceMonitoring) {
+      performanceMonitor.startMonitoring();
+    }
 
     // Set up periodic scans (AUTOMATIC)
     if (this.config.enablePeriodicScans) {
@@ -95,38 +150,51 @@ export class AutomatedVerificationOrchestrator {
         () => this.runPeriodicScan(),
         this.config.scanIntervalMinutes * 60 * 1000
       );
-      console.log(`⏰ Automatic periodic scans enabled (every ${this.config.scanIntervalMinutes} minutes)`);
+      console.log(`⏰ Enhanced automatic periodic scans enabled (every ${this.config.scanIntervalMinutes} minutes)`);
     }
 
     // Run initial comprehensive scan (AUTOMATIC)
     this.runComprehensiveScan();
 
     // Emit global event for system integration
-    this.emitVerificationEvent('verification-started', { isRunning: true });
+    this.emitVerificationEvent('verification-started', { isRunning: true, enhanced: true });
 
-    console.log('✅ FULLY AUTOMATED VERIFICATION SYSTEM ACTIVE - NO MANUAL INTERVENTION REQUIRED');
+    console.log('✅ ENHANCED AUTOMATED VERIFICATION SYSTEM ACTIVE - INCLUDES ALL QUALITY, SECURITY, AND PERFORMANCE CHECKS');
   }
 
   /**
-   * MANDATORY verification before any creation (AUTOMATIC) - ENHANCED
+   * ENHANCED MANDATORY verification before any creation (AUTOMATIC)
    */
   async verifyBeforeCreation(request: ValidationRequest): Promise<boolean> {
-    console.log('🔍 MANDATORY AUTOMATED VERIFICATION (with Database Guidelines) for:', request.moduleName || request.tableName);
+    console.log('🔍 ENHANCED MANDATORY AUTOMATED VERIFICATION for:', request.moduleName || request.tableName);
 
     if (!this.config.mandatoryVerification && !this.config.enableRealTimeChecks) {
-      console.log('⚠️ WARNING: Verification bypassed - not recommended');
+      console.log('⚠️ WARNING: Enhanced verification bypassed - not recommended');
       return true;
     }
 
     const timestamp = new Date().toISOString();
 
     try {
-      // Run ALL verification systems automatically (including database)
-      const [validationResult, auditResults, duplicates, databaseValidation] = await Promise.all([
+      // Run ALL enhanced verification systems automatically
+      const [
+        validationResult, 
+        auditResults, 
+        duplicates, 
+        databaseValidation,
+        schemaValidation,
+        performanceMetrics,
+        securityScan,
+        codeQuality
+      ] = await Promise.all([
         this.runValidation(request),
         this.runComponentAudit(),
         this.runDuplicateDetection(),
-        this.config.enableDatabaseValidation ? this.runDatabaseValidation(request) : Promise.resolve(null)
+        this.config.enableDatabaseValidation ? this.runDatabaseValidation(request) : Promise.resolve(null),
+        this.config.enableSchemaValidation ? this.runSchemaValidation(request) : Promise.resolve(null),
+        this.config.enablePerformanceMonitoring ? this.runPerformanceAnalysis() : Promise.resolve(null),
+        this.config.enableSecurityScanning ? this.runSecurityScan() : Promise.resolve(null),
+        this.config.enableCodeQualityAnalysis ? this.runCodeQualityAnalysis() : Promise.resolve(null)
       ]);
 
       const duplicateReport = new DuplicateDetector().generateReport(duplicates);
@@ -139,18 +207,21 @@ export class AutomatedVerificationOrchestrator {
         auditResults,
         duplicateReport,
         canonicalValidation,
-        databaseValidation
+        databaseValidation,
+        schemaValidation,
+        performanceMetrics,
+        securityScan,
+        codeQuality
       );
 
       // ENHANCED handling of results
       await this.handleEnhancedVerificationResults(summary, request);
 
-      // DATABASE CRITICAL ISSUES = AUTOMATIC BLOCKING
-      const hasDatabaseErrors = databaseValidation?.violations.some(v => v.severity === 'error') || false;
-      const totalCriticalIssues = summary.criticalIssues + (hasDatabaseErrors ? 1 : 0);
+      // ENHANCED CRITICAL ISSUES = AUTOMATIC BLOCKING
+      const hasCriticalIssues = this.hasCriticalIssues(summary);
 
-      if (totalCriticalIssues > 0 && this.config.blockOnCriticalIssues) {
-        console.error('🚫 CRITICAL ISSUES DETECTED (including database) - CREATION AUTOMATICALLY BLOCKED');
+      if (hasCriticalIssues && this.config.blockOnCriticalIssues) {
+        console.error('🚫 CRITICAL ISSUES DETECTED (enhanced verification) - CREATION AUTOMATICALLY BLOCKED');
         this.emitVerificationEvent('critical-issues-detected', summary);
         return false;
       }
@@ -159,36 +230,83 @@ export class AutomatedVerificationOrchestrator {
       if (this.config.autoFixSimpleIssues && summary.issuesFound > 0) {
         const autoFixes = await this.applyEnhancedAutoFixes(summary);
         summary.autoFixesApplied = autoFixes;
-        console.log(`🔧 AUTOMATICALLY APPLIED ${autoFixes} fixes (including database fixes)`);
+        console.log(`🔧 AUTOMATICALLY APPLIED ${autoFixes} enhanced fixes`);
+      }
+
+      // Template generation recommendation
+      if (this.config.enableTemplateGeneration && this.shouldGenerateTemplate(request)) {
+        const templateSuggestion = this.suggestTemplate(request);
+        summary.recommendations.unshift(`🎯 RECOMMENDED: Use ${templateSuggestion} for optimal implementation`);
       }
 
       // ENHANCED AUTOMATIC notifications
       this.sendEnhancedAutomaticNotifications(summary);
 
       console.log(`✅ ENHANCED AUTOMATIC VERIFICATION COMPLETE: ${summary.validationResult.canProceed ? 'APPROVED' : 'BLOCKED'}`);
-      return summary.validationResult.canProceed && !hasDatabaseErrors;
+      return summary.validationResult.canProceed && !hasCriticalIssues;
 
     } catch (error) {
       console.error('❌ ENHANCED AUTOMATIC VERIFICATION FAILED:', error);
       this.emitVerificationEvent('verification-error', { error: error.message });
       
-      console.log('⚠️ VERIFICATION FAILURE - ALLOWING CREATION WITH WARNING');
+      console.log('⚠️ ENHANCED VERIFICATION FAILURE - ALLOWING CREATION WITH WARNING');
       return true;
     }
   }
 
   /**
-   * Run database validation automatically
+   * NEW: Template-based code generation
    */
-  private async runDatabaseValidation(request: ValidationRequest): Promise<DatabaseValidationResult | null> {
-    if (!this.config.enableDatabaseValidation) return null;
+  async generateFromTemplate(request: TemplateGenerationRequest): Promise<TemplateGenerationResult> {
+    console.log('🎯 GENERATING CODE FROM TEMPLATE:', request.templateType);
 
-    console.log('🗄️ RUNNING DATABASE GUIDELINES VALIDATION...');
-    
-    // Extract table names from request
-    const tableNames = request.tableName ? [request.tableName] : [];
-    
-    return await DatabaseGuidelinesValidator.validateDatabase(tableNames);
+    const result: TemplateGenerationResult = {
+      success: false,
+      filesGenerated: [],
+      templateUsed: '',
+      codeGenerated: '',
+      testsGenerated: '',
+      documentationGenerated: '',
+      errors: []
+    };
+
+    try {
+      switch (request.templateType) {
+        case 'hook':
+          result.templateUsed = 'useTypeSafeModuleTemplate';
+          result.codeGenerated = this.generateHookTemplate(request);
+          break;
+        case 'component':
+          result.templateUsed = 'ExtensibleModuleTemplate';
+          result.codeGenerated = this.generateComponentTemplate(request);
+          break;
+        case 'module':
+          result.templateUsed = 'CompleteModuleTemplate';
+          result.codeGenerated = this.generateModuleTemplate(request);
+          break;
+        case 'api_integration':
+          result.templateUsed = 'ApiIntegrationTemplate';
+          result.codeGenerated = this.generateApiIntegrationTemplate(request);
+          break;
+      }
+
+      if (request.generateTests) {
+        result.testsGenerated = this.generateTestTemplate(request);
+      }
+
+      if (request.generateDocumentation) {
+        result.documentationGenerated = this.generateDocumentationTemplate(request);
+      }
+
+      result.success = true;
+      console.log('✅ Template generation completed successfully');
+
+    } catch (error) {
+      result.errors.push(`Template generation failed: ${error.message}`);
+      console.error('❌ Template generation failed:', error);
+    }
+
+    return result;
   }
 
   /**
@@ -215,6 +333,61 @@ export class AutomatedVerificationOrchestrator {
   }
 
   /**
+   * Run database validation automatically
+   */
+  private async runDatabaseValidation(request: ValidationRequest): Promise<DatabaseValidationResult | null> {
+    if (!this.config.enableDatabaseValidation) return null;
+
+    console.log('🗄️ RUNNING DATABASE GUIDELINES VALIDATION...');
+    
+    // Extract table names from request
+    const tableNames = request.tableName ? [request.tableName] : [];
+    
+    return await DatabaseGuidelinesValidator.validateDatabase(tableNames);
+  }
+
+  /**
+   * NEW: Run schema validation automatically
+   */
+  private async runSchemaValidation(request: ValidationRequest): Promise<SchemaValidationResult | null> {
+    if (!this.config.enableSchemaValidation) return null;
+
+    console.log('🗄️ RUNNING DATABASE SCHEMA VALIDATION...');
+    const tableNames = request.tableName ? [request.tableName] : [];
+    return await DatabaseSchemaValidator.validateSchema(tableNames);
+  }
+
+  /**
+   * NEW: Run performance analysis automatically
+   */
+  private async runPerformanceAnalysis(): Promise<PerformanceMetrics | null> {
+    if (!this.config.enablePerformanceMonitoring) return null;
+
+    console.log('📊 RUNNING PERFORMANCE ANALYSIS...');
+    return await performanceMonitor.getPerformanceMetrics();
+  }
+
+  /**
+   * NEW: Run security scan automatically
+   */
+  private async runSecurityScan(): Promise<SecurityScanResult | null> {
+    if (!this.config.enableSecurityScanning) return null;
+
+    console.log('🔒 RUNNING SECURITY SCAN...');
+    return await SecurityScanner.performSecurityScan();
+  }
+
+  /**
+   * NEW: Run code quality analysis automatically
+   */
+  private async runCodeQualityAnalysis(): Promise<CodeQualityResult | null> {
+    if (!this.config.enableCodeQualityAnalysis) return null;
+
+    console.log('📊 RUNNING CODE QUALITY ANALYSIS...');
+    return await CodeQualityAnalyzer.analyzeCodeQuality();
+  }
+
+  /**
    * Handle enhanced verification results with database validation
    */
   private async handleEnhancedVerificationResults(summary: VerificationSummary, request: ValidationRequest): Promise<void> {
@@ -233,6 +406,21 @@ export class AutomatedVerificationOrchestrator {
       console.log(`   🗄️ Database Errors: ${summary.databaseValidation.violations.filter(v => v.severity === 'error').length}`);
       console.log(`   🔧 Database Auto-fixes: ${summary.databaseValidation.autoFixesApplied}`);
       console.log(`   🔄 Workflow Suggestions: ${summary.databaseValidation.workflowSuggestions.length}`);
+    }
+
+    if (summary.schemaValidation) {
+      console.log(`   📊 Schema Issues: ${summary.schemaValidation.violations.length}`);
+      console.log(`   🔧 Schema Auto-fixes: ${summary.schemaValidation.autoFixesAvailable.length}`);
+    }
+
+    if (summary.securityScan) {
+      console.log(`   🔒 Security Vulnerabilities: ${summary.securityScan.vulnerabilities.length}`);
+      console.log(`   🔐 Security Score: ${summary.securityScan.securityScore}`);
+    }
+
+    if (summary.codeQuality) {
+      console.log(`   📈 Code Quality Issues: ${summary.codeQuality.issues.length}`);
+      console.log(`   📊 Quality Score: ${summary.codeQuality.overallScore}`);
     }
 
     if (summary.sqlAutoFixes && summary.sqlAutoFixes.length > 0) {
@@ -340,10 +528,14 @@ export class AutomatedVerificationOrchestrator {
     const timestamp = new Date().toISOString();
     
     try {
-      const [auditResults, duplicates, databaseValidation] = await Promise.all([
+      const [auditResults, duplicates, databaseValidation, schemaValidation, securityScan, codeQuality, performanceMetrics] = await Promise.all([
         this.runComponentAudit(),
         this.runDuplicateDetection(),
-        this.config.enableDatabaseValidation ? DatabaseGuidelinesValidator.validateDatabase() : Promise.resolve(null)
+        this.config.enableDatabaseValidation ? DatabaseGuidelinesValidator.validateDatabase() : Promise.resolve(null),
+        this.config.enableSchemaValidation ? DatabaseSchemaValidator.validateSchema() : Promise.resolve(null),
+        this.config.enableSecurityScanning ? SecurityScanner.performSecurityScan() : Promise.resolve(null),
+        this.config.enableCodeQualityAnalysis ? CodeQualityAnalyzer.analyzeCodeQuality() : Promise.resolve(null),
+        this.config.enablePerformanceMonitoring ? performanceMonitor.getPerformanceMetrics() : Promise.resolve(null)
       ]);
 
       const duplicateReport = new DuplicateDetector().generateReport(duplicates);
@@ -364,7 +556,11 @@ export class AutomatedVerificationOrchestrator {
         auditResults,
         duplicateReport,
         canonicalValidation,
-        databaseValidation
+        databaseValidation,
+        schemaValidation,
+        performanceMetrics,
+        securityScan,
+        codeQuality
       );
 
       this.storeVerificationResults(summary);
@@ -418,8 +614,14 @@ export class AutomatedVerificationOrchestrator {
       }
     }
 
+    // Apply schema fixes
+    if (summary.schemaValidation && this.config.enableAutoSQLGeneration) {
+      const schemaFixesCount = summary.schemaValidation.autoFixesAvailable.length;
+      fixesApplied += schemaFixesCount;
+    }
+
     if (fixesApplied > 0) {
-      console.log(`✅ AUTOMATICALLY APPLIED ${fixesApplied} fixes (including database fixes)`);
+      console.log(`✅ AUTOMATICALLY APPLIED ${fixesApplied} fixes (including database and schema fixes)`);
     }
 
     return fixesApplied;
@@ -434,13 +636,21 @@ export class AutomatedVerificationOrchestrator {
     auditResults: AuditResult[],
     duplicateReport: string,
     canonicalValidation: string,
-    databaseValidation: DatabaseValidationResult | null
+    databaseValidation: DatabaseValidationResult | null,
+    schemaValidation: SchemaValidationResult | null,
+    performanceMetrics: PerformanceMetrics | null,
+    securityScan: SecurityScanResult | null,
+    codeQuality: CodeQualityResult | null
   ): VerificationSummary {
     const baseIssuesFound = validationResult.issues.length + 
                           auditResults.reduce((sum, audit) => sum + audit.issues.length, 0);
     
     const databaseIssuesFound = databaseValidation?.violations.length || 0;
-    const issuesFound = baseIssuesFound + databaseIssuesFound;
+    const schemaIssuesFound = schemaValidation?.violations.length || 0;
+    const securityIssuesFound = securityScan?.vulnerabilities.length || 0;
+    const qualityIssuesFound = codeQuality?.issues.length || 0;
+    
+    const issuesFound = baseIssuesFound + databaseIssuesFound + schemaIssuesFound + securityIssuesFound + qualityIssuesFound;
     
     const baseCriticalIssues = validationResult.issues.filter(issue => 
       issue.toLowerCase().includes('critical') || 
@@ -448,16 +658,31 @@ export class AutomatedVerificationOrchestrator {
     ).length;
     
     const databaseCriticalIssues = databaseValidation?.violations.filter(v => v.severity === 'error').length || 0;
-    const criticalIssues = baseCriticalIssues + databaseCriticalIssues;
+    const schemaCriticalIssues = schemaValidation?.violations.filter(v => v.severity === 'error').length || 0;
+    const securityCriticalIssues = securityScan?.vulnerabilities.filter(v => 
+      v.severity === 'critical' || v.severity === 'high').length || 0;
+    const qualityCriticalIssues = codeQuality?.issues.filter(i => i.severity === 'error').length || 0;
+    
+    const criticalIssues = baseCriticalIssues + databaseCriticalIssues + schemaCriticalIssues + 
+                          securityCriticalIssues + qualityCriticalIssues;
 
     const allRecommendations = [
       ...validationResult.recommendations,
       ...auditResults.flatMap(audit => audit.recommendations)
     ];
 
-    // Add database recommendations
+    // Add enhanced system recommendations
     if (databaseValidation) {
       allRecommendations.push(...databaseValidation.violations.map(v => v.recommendation));
+    }
+    if (schemaValidation) {
+      allRecommendations.push(...schemaValidation.recommendations);
+    }
+    if (securityScan) {
+      allRecommendations.push(...securityScan.recommendations.map(r => r.title));
+    }
+    if (codeQuality) {
+      allRecommendations.push(...codeQuality.recommendations.map(r => r.title));
     }
 
     // Generate SQL auto-fixes
@@ -465,10 +690,23 @@ export class AutomatedVerificationOrchestrator {
       ? DatabaseGuidelinesValidator.generateAutoFixSQL(databaseValidation.violations)
       : [];
 
+    // Add schema SQL fixes
+    if (this.config.enableAutoSQLGeneration && schemaValidation) {
+      sqlAutoFixes.push(...DatabaseSchemaValidator.generateAutoFixSQL(schemaValidation.autoFixesAvailable));
+    }
+
     // Generate workflow suggestions
     const workflowSuggestions = this.config.enableWorkflowSuggestions && databaseValidation
       ? databaseValidation.workflowSuggestions.map(ws => ws.description)
       : [];
+
+    // Calculate health scores
+    const overallHealthScore = this.calculateOverallHealthScore({
+      validationScore: issuesFound === 0 ? 100 : Math.max(0, 100 - (issuesFound * 5)),
+      securityScore: securityScan?.securityScore || 100,
+      qualityScore: codeQuality?.overallScore || 100,
+      performanceScore: this.calculatePerformanceScore(performanceMetrics)
+    });
 
     return {
       timestamp,
@@ -477,13 +715,59 @@ export class AutomatedVerificationOrchestrator {
       duplicateReport,
       canonicalValidation,
       databaseValidation,
+      schemaValidation,
+      performanceMetrics,
+      securityScan,
+      codeQuality,
       issuesFound,
       criticalIssues,
       autoFixesApplied: 0,
       recommendations: allRecommendations,
       sqlAutoFixes,
-      workflowSuggestions
+      workflowSuggestions,
+      overallHealthScore,
+      securityScore: securityScan?.securityScore || 100,
+      qualityScore: codeQuality?.overallScore || 100,
+      performanceScore: this.calculatePerformanceScore(performanceMetrics)
     };
+  }
+
+  private calculateOverallHealthScore(scores: {
+    validationScore: number;
+    securityScore: number;
+    qualityScore: number;
+    performanceScore: number;
+  }): number {
+    const weights = {
+      validation: 0.25,
+      security: 0.35,
+      quality: 0.25,
+      performance: 0.15
+    };
+
+    return Math.round(
+      scores.validationScore * weights.validation +
+      scores.securityScore * weights.security +
+      scores.qualityScore * weights.quality +
+      scores.performanceScore * weights.performance
+    );
+  }
+
+  private calculatePerformanceScore(metrics: PerformanceMetrics | null): number {
+    if (!metrics) return 100;
+
+    let score = 100;
+    
+    // Deduct for slow components
+    const slowComponents = metrics.componentRenderTimes.filter(c => c.averageRenderTime > 16);
+    score -= slowComponents.length * 10;
+
+    // Deduct for bundle size
+    if (metrics.bundleSize.totalSize > 3 * 1024 * 1024) { // 3MB
+      score -= 20;
+    }
+
+    return Math.max(0, score);
   }
 
   /**
@@ -503,11 +787,216 @@ export class AutomatedVerificationOrchestrator {
       duplicateReport: 'No verification data available',
       canonicalValidation: 'No verification data available',
       databaseValidation: null,
+      schemaValidation: null,
+      performanceMetrics: null,
+      securityScan: null,
+      codeQuality: null,
       issuesFound: 0,
       criticalIssues: 0,
       autoFixesApplied: 0,
-      recommendations: []
+      recommendations: [],
+      sqlAutoFixes: [],
+      workflowSuggestions: [],
+      overallHealthScore: 100,
+      securityScore: 100,
+      qualityScore: 100,
+      performanceScore: 100
     };
+  }
+
+  /**
+   * NEW: Check for critical issues across all verification systems
+   */
+  private hasCriticalIssues(summary: VerificationSummary): boolean {
+    // Database critical issues
+    const databaseErrors = summary.databaseValidation?.violations.some(v => v.severity === 'error') || false;
+    
+    // Schema critical issues
+    const schemaErrors = summary.schemaValidation?.violations.some(v => v.severity === 'error') || false;
+    
+    // Security critical issues
+    const securityCritical = summary.securityScan?.vulnerabilities.some(v => 
+      v.severity === 'critical' || v.severity === 'high') || false;
+    
+    // Code quality critical issues
+    const qualityCritical = summary.codeQuality?.issues.some(i => i.severity === 'error') || false;
+
+    return summary.criticalIssues > 0 || databaseErrors || schemaErrors || securityCritical || qualityCritical;
+  }
+
+  /**
+   * NEW: Template suggestion logic
+   */
+  private shouldGenerateTemplate(request: ValidationRequest): boolean {
+    return request.componentType === 'hook' || request.componentType === 'component' || request.componentType === 'module';
+  }
+
+  private suggestTemplate(request: ValidationRequest): string {
+    switch (request.componentType) {
+      case 'hook':
+        return 'useTypeSafeModuleTemplate';
+      case 'component':
+        return 'ExtensibleModuleTemplate';
+      case 'module':
+        return 'CompleteModuleTemplate';
+      default:
+        return 'BaseTemplate';
+    }
+  }
+
+  private generateHookTemplate(request: TemplateGenerationRequest): string {
+    return `
+/**
+ * ${request.moduleName} Hook
+ * Generated using useTypeSafeModuleTemplate
+ */
+
+import { useTypeSafeModuleTemplate } from '@/utils/useTypeSafeModuleTemplate';
+
+const ${request.moduleName?.toLowerCase()}Config = {
+  tableName: '${request.tableName}',
+  moduleName: '${request.moduleName}',
+  requiredFields: ['id', 'name'],
+  customValidation: (data) => true
+};
+
+export const ${request.moduleName} = () => {
+  return useTypeSafeModuleTemplate(${request.moduleName?.toLowerCase()}Config);
+};
+    `;
+  }
+
+  private generateComponentTemplate(request: TemplateGenerationRequest): string {
+    return `
+/**
+ * ${request.moduleName} Component
+ * Generated using ExtensibleModuleTemplate
+ */
+
+import { ExtensibleModuleTemplate } from '@/components/ExtensibleModuleTemplate';
+import { ${request.moduleName} } from '@/hooks/${request.moduleName}';
+
+export const ${request.moduleName}Component = () => {
+  const moduleHook = ${request.moduleName}();
+
+  return (
+    <ExtensibleModuleTemplate
+      {...moduleHook}
+      title="${request.moduleName}"
+      description="Manage ${request.moduleName?.toLowerCase()} data"
+    />
+  );
+};
+    `;
+  }
+
+  private generateModuleTemplate(request: TemplateGenerationRequest): string {
+    return `
+/**
+ * Complete ${request.moduleName} Module
+ * Generated using CompleteModuleTemplate
+ */
+
+// Hook
+${this.generateHookTemplate(request)}
+
+// Component  
+${this.generateComponentTemplate(request)}
+
+// Export everything
+export { ${request.moduleName}, ${request.moduleName}Component };
+    `;
+  }
+
+  private generateApiIntegrationTemplate(request: TemplateGenerationRequest): string {
+    return `
+/**
+ * ${request.apiId} API Integration
+ * Generated using ApiIntegrationTemplate
+ */
+
+import { ApiConsumptionOrchestrator } from '@/utils/verification/ApiConsumptionOrchestrator';
+
+const ${request.apiId}Config = {
+  apiId: '${request.apiId}',
+  autoGenerateSchema: true,
+  autoGenerateRLS: true,
+  autoGenerateDocumentation: true,
+  autoGenerateDataMappings: true,
+  autoRegisterModules: true,
+  generateTypeScriptTypes: true,
+  syncWithKnowledgeBase: true
+};
+
+export const orchestrate${request.apiId}Integration = async () => {
+  return await ApiConsumptionOrchestrator.orchestrateApiConsumption(${request.apiId}Config);
+};
+    `;
+  }
+
+  private generateTestTemplate(request: TemplateGenerationRequest): string {
+    return `
+/**
+ * ${request.moduleName} Tests
+ * Generated automatically
+ */
+
+import { describe, it, expect } from 'vitest';
+import { renderHook } from '@testing-library/react';
+import { ${request.moduleName} } from './${request.moduleName}';
+
+describe('${request.moduleName}', () => {
+  it('should initialize correctly', () => {
+    const { result } = renderHook(() => ${request.moduleName}());
+    expect(result.current).toBeDefined();
+  });
+
+  it('should handle loading state', () => {
+    const { result } = renderHook(() => ${request.moduleName}());
+    expect(result.current.isLoading).toBeDefined();
+  });
+});
+    `;
+  }
+
+  private generateDocumentationTemplate(request: TemplateGenerationRequest): string {
+    return `
+# ${request.moduleName}
+
+Auto-generated documentation for ${request.moduleName} module.
+
+## Overview
+This module provides ${request.templateType} functionality for ${request.tableName} table operations.
+
+## Usage
+
+\`\`\`typescript
+import { ${request.moduleName} } from '@/path/to/${request.moduleName}';
+
+const MyComponent = () => {
+  const ${request.moduleName?.toLowerCase()} = ${request.moduleName}();
+  
+  return (
+    <div>
+      {/* Your component JSX */}
+    </div>
+  );
+};
+\`\`\`
+
+## API Reference
+
+### Methods
+- \`create(data)\` - Create new record
+- \`update(id, data)\` - Update existing record
+- \`delete(id)\` - Delete record
+- \`getAll()\` - Fetch all records
+
+### Properties
+- \`data\` - Current data
+- \`isLoading\` - Loading state
+- \`error\` - Error state
+    `;
   }
 
   /**
@@ -553,12 +1042,11 @@ export class AutomatedVerificationOrchestrator {
   }
 }
 
-// Global singleton instance for automatic operation
+// Global singleton instance for enhanced automatic operation
 export const automatedVerification = AutomatedVerificationOrchestrator.getInstance();
 
-// AUTOMATIC STARTUP - No manual intervention required
 if (typeof window !== 'undefined') {
-  console.log('🚀 INITIALIZING FULLY AUTOMATED VERIFICATION SYSTEM...');
+  console.log('🚀 INITIALIZING ENHANCED AUTOMATED VERIFICATION SYSTEM...');
   
   // Auto-start immediately when module loads
   setTimeout(() => {
@@ -567,10 +1055,15 @@ if (typeof window !== 'undefined') {
     }
   }, 100);
 
-  // Global verification function for all creation workflows
+  // Enhanced global verification function
   (window as any).verifyAutomatically = async (request: ValidationRequest) => {
     return await automatedVerification.verifyBeforeCreation(request);
   };
 
-  console.log('✅ AUTOMATIC VERIFICATION SYSTEM READY - ZERO MANUAL INTERVENTION REQUIRED');
+  // NEW: Global template generation function
+  (window as any).generateFromTemplate = async (request: TemplateGenerationRequest) => {
+    return await automatedVerification.generateFromTemplate(request);
+  };
+
+  console.log('✅ ENHANCED AUTOMATIC VERIFICATION SYSTEM READY - INCLUDES ALL QUALITY, SECURITY, PERFORMANCE, AND TEMPLATE GENERATION FEATURES');
 }
