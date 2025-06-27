@@ -7,9 +7,9 @@ import { UserManagementDialogs } from '@/components/admin/UserManagement/UserMan
 
 interface ConsistentUsersContentProps {
   onCreateUser: () => void;
-  onAssignRole: (userId: string, userName: string) => void;
-  onRemoveRole: (userId: string, userName: string) => void;
-  onAssignFacility: (userId: string, userName: string) => void;
+  onAssignRole: (userId: string) => void;
+  onRemoveRole: (userId: string) => void;
+  onAssignFacility: (userId: string) => void;
   onEditUser: (userId: string) => void;
   
   // Dialog states

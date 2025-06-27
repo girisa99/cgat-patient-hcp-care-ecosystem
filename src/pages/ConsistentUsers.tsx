@@ -52,22 +52,6 @@ const ConsistentUsers = () => {
       : user?.email || '';
   };
 
-  // Wrapper functions to handle the userName parameter
-  const handleAssignRoleWithName = (userId: string) => {
-    const userName = getUserName(userId);
-    handleAssignRole(userId, userName);
-  };
-
-  const handleRemoveRoleWithName = (userId: string) => {
-    const userName = getUserName(userId);
-    handleRemoveRole(userId, userName);
-  };
-
-  const handleAssignFacilityWithName = (userId: string) => {
-    const userName = getUserName(userId);
-    handleAssignFacility(userId, userName);
-  };
-
   return (
     <ConsistentUsersLayout
       showAlert={debugMode}
@@ -82,9 +66,9 @@ const ConsistentUsers = () => {
 
       <ConsistentUsersContent
         onCreateUser={() => setCreateUserOpen(true)}
-        onAssignRole={handleAssignRoleWithName}
-        onRemoveRole={handleRemoveRoleWithName}
-        onAssignFacility={handleAssignFacilityWithName}
+        onAssignRole={handleAssignRole}
+        onRemoveRole={handleRemoveRole}
+        onAssignFacility={handleAssignFacility}
         onEditUser={handleEditUser}
         createUserOpen={createUserOpen}
         setCreateUserOpen={setCreateUserOpen}
