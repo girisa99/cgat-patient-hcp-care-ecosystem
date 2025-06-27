@@ -267,10 +267,15 @@ const validateWithMergeDetection = async (request: ValidationRequest) => {
 const generateCodeFromTemplate = async (request: TemplateGenerationRequest): Promise<TemplateGenerationResult> => {
   console.log('🏗️ Generating code from template...');
   
-  // Fix: Use only properties that exist in TemplateGenerationResult
+  // Fix: Include all required properties for TemplateGenerationResult
   return {
     success: true,
-    templateUsed: request.templateType || 'default'
+    templateUsed: request.templateType || 'default',
+    filesGenerated: [],
+    codeGenerated: '',
+    testsGenerated: '',
+    documentationGenerated: '',
+    errors: []
   };
 };
 
