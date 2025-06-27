@@ -1,12 +1,11 @@
-import React, { useState } from 'react';
+
+import React from 'react';
 import { useExternalApis } from '@/hooks/useExternalApis';
-import { externalApiSyncManager } from '@/utils/api/ExternalApiSyncManager';
 import { useToast } from '@/hooks/use-toast';
-import { ApiCard } from './ApiCard';
-import { ApiEmptyState } from './ApiEmptyState';
-import { DuplicateDetectionDialog } from './DuplicateDetectionDialog';
-import ExternalApiConfigDialog from './ExternalApiConfigDialog';
-import ExternalApiAnalyticsDialog from './ExternalApiAnalyticsDialog';
+import { ApiSectionState } from './ApiSectionState';
+import { useApiOperationHandlers } from './ApiOperationHandlers';
+import { useDuplicateDetectionHandler } from './DuplicateDetectionHandler';
+import { useApiDialogManager } from './ApiDialogManager';
 
 interface ApiOverviewSectionProps {
   title: string;
@@ -27,138 +26,22 @@ export const ApiOverviewSection = ({
 }: ApiOverviewSectionProps) => {
   const { toast } = useToast();
   const { updateApiStatus, isUpdatingStatus } = useExternalApis();
-  const [showConfigDialog, setShowConfigDialog] = useState<boolean>(false);
-  const [showAnalyticsDialog, setShowAnalyticsDialog] = useState<boolean>(false);
-  const [configApi, setConfigApi] = useState<any>(null);
-  const [analyticsApi, setAnalyticsApi] = useState<any>(null);
-  const [isDuplicateDialogOpen, setIsDuplicateDialogOpen] = useState<boolean>(false);
-  const [duplicateInfo, setDuplicateInfo] = useState<any>(null);
-  const [isProcessing, setIsProcessing] = useState<string | null>(null);
+  
+  // Use custom hooks for different concerns
+  const { 
+    isProcessing, 
+    setIsProcessing, 
+    handleRevertToDraft, 
+    handleCancelPublication 
+  } = useApiOperationHandlers();
 
-  const handlePublishClick = async (api: any) => {
-    if (type !== 'internal') return;
-    
-    try {
-      setIsProcessing(`publish-${api.id}`);
-      const existingApi = await externalApiSyncManager.checkForDuplicateApi(api.id, api.name);
-      
-      if (existingApi) {
-        setDuplicateInfo({
-          existingApi,
-          internalApiId: api.id,
-          proposedName: api.name,
-          sourceApi: api
-        });
-        setIsDuplicateDialogOpen(true);
-        setIsProcessing(null);
-        return;
-      }
-    } catch (error) {
-      setIsProcessing(null);
-    }
-    
-    // If no duplicate, proceed with publishing
-    if (onPublishApi) {
-      onPublishApi(api.id, api.name);
-    }
-    setIsProcessing(null);
-  };
+  const { handlePublishClick, DuplicateDialog } = useDuplicateDetectionHandler({
+    isProcessing,
+    setIsProcessing,
+    onPublishApi
+  });
 
-  const handleDuplicateSync = async () => {
-    if (!duplicateInfo) return;
-    
-    try {
-      setIsProcessing('sync');
-      const result = await externalApiSyncManager.syncEndpointsOnly(
-        duplicateInfo.existingApi.id,
-        duplicateInfo.internalApiId
-      );
-      
-      toast({
-        title: "Endpoints Synchronized",
-        description: `${result.new_endpoints} new endpoints added to existing API.`,
-      });
-      
-      setIsDuplicateDialogOpen(false);
-      setDuplicateInfo(null);
-      
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
-    } catch (error: any) {
-      toast({
-        title: "Sync Failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setIsProcessing(null);
-    }
-  };
-
-  const handleForceRepublish = () => {
-    if (!duplicateInfo || !onPublishApi) return;
-    
-    onPublishApi(duplicateInfo.internalApiId, duplicateInfo.proposedName);
-    setIsDuplicateDialogOpen(false);
-    setDuplicateInfo(null);
-  };
-
-  const handleConfigureApi = (api: any) => {
-    setConfigApi(api);
-    setShowConfigDialog(true);
-  };
-
-  const handleViewAnalytics = (api: any) => {
-    setAnalyticsApi(api);
-    setShowAnalyticsDialog(true);
-  };
-
-  const handleRevertToDraft = async (api: any) => {
-    try {
-      setIsProcessing(`revert-${api.id}`);
-      await externalApiSyncManager.revertPublication(api.id);
-      toast({
-        title: "API Reverted",
-        description: `${api.external_name || api.name} has been reverted to draft status.`,
-      });
-      
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
-    } catch (error: any) {
-      toast({
-        title: "Revert Failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setIsProcessing(null);
-    }
-  };
-
-  const handleCancelPublication = async (api: any) => {
-    try {
-      setIsProcessing(`cancel-${api.id}`);
-      await externalApiSyncManager.cancelPublication(api.id);
-      toast({
-        title: "Publication Canceled",
-        description: `${api.external_name || api.name} has been completely removed.`,
-      });
-      
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
-    } catch (error: any) {
-      toast({
-        title: "Cancel Failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setIsProcessing(null);
-    }
-  };
+  const { handleConfigureApi, handleViewAnalytics, ApiDialogs } = useApiDialogManager();
 
   const handleStatusUpdate = async (apiId: string, newStatus: string) => {
     try {
@@ -189,62 +72,25 @@ export const ApiOverviewSection = ({
       <div className="space-y-6">
         <h3 className="text-lg font-semibold">{title}</h3>
 
-        {/* Empty State */}
-        {apis.length === 0 ? (
-          <ApiEmptyState title={title} type={type} icon={icon} />
-        ) : (
-          <div className="grid gap-6 lg:grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3">
-            {apis.slice(0, 3).map((api) => (
-              <ApiCard
-                key={api.id}
-                api={api}
-                type={type}
-                isProcessing={isProcessing}
-                onPublish={handlePublishClick}
-                onConfigure={handleConfigureApi}
-                onViewAnalytics={handleViewAnalytics}
-                onRevertToDraft={handleRevertToDraft}
-                onCancelPublication={handleCancelPublication}
-                onStatusUpdate={handleStatusUpdate}
-                onViewDetails={onViewDetails}
-                isUpdatingStatus={isUpdatingStatus}
-              />
-            ))}
-            
-            {apis.length > 3 && (
-              <div className="col-span-full text-center py-6 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
-                <p className="text-sm text-muted-foreground">
-                  +{apis.length - 3} more {title.toLowerCase()}
-                </p>
-              </div>
-            )}
-          </div>
-        )}
+        <ApiSectionState
+          apis={apis}
+          type={type}
+          title={title}
+          icon={icon}
+          isProcessing={isProcessing}
+          onPublish={type === 'internal' ? handlePublishClick : undefined}
+          onConfigure={handleConfigureApi}
+          onViewAnalytics={handleViewAnalytics}
+          onRevertToDraft={handleRevertToDraft}
+          onCancelPublication={handleCancelPublication}
+          onStatusUpdate={handleStatusUpdate}
+          onViewDetails={onViewDetails}
+          isUpdatingStatus={isUpdatingStatus}
+        />
       </div>
 
-      {/* Duplicate Detection Dialog */}
-      <DuplicateDetectionDialog
-        isOpen={isDuplicateDialogOpen}
-        onOpenChange={setIsDuplicateDialogOpen}
-        duplicateInfo={duplicateInfo}
-        isProcessing={isProcessing}
-        onSyncEndpoints={handleDuplicateSync}
-        onForceRepublish={handleForceRepublish}
-      />
-
-      {/* Configuration Dialog */}
-      <ExternalApiConfigDialog
-        open={showConfigDialog}
-        onOpenChange={setShowConfigDialog}
-        api={configApi}
-      />
-
-      {/* Analytics Dialog */}
-      <ExternalApiAnalyticsDialog
-        open={showAnalyticsDialog}
-        onOpenChange={setShowAnalyticsDialog}
-        api={analyticsApi}
-      />
+      <DuplicateDialog />
+      <ApiDialogs />
     </>
   );
 };
