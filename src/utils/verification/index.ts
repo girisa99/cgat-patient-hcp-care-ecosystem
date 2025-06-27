@@ -180,7 +180,6 @@ export type * from './ApiContractValidator';
 export type * from './ApiContractIntegration';
 export type * from './MergeVerificationHandler';
 export type * from './DatabaseSchemaValidator';
-export type * from './PerformanceMonitor';
 export type * from './ComponentRegistryScanner';
 export type * from './TypeScriptDatabaseValidator';
 export type * from './AutomatedVerificationOrchestrator';
@@ -196,6 +195,26 @@ export type * from './RuntimeSecurityMonitor';
 export type * from './RealUserMonitor';
 export type * from './AutomatedAlertingSystem';
 export type * from './EnhancedSecurityPerformanceOrchestrator';
+
+// Export PerformanceMonitor types explicitly to avoid conflicts
+export type { 
+  PerformanceMetrics,
+  PerformanceIssue,
+  DatabaseQueryPerformance
+} from './PerformanceMonitor';
+
+// Export RealUserMonitor types with renamed PerformanceRecommendation
+export type {
+  RUMMetrics,
+  CoreWebVitals,
+  NetworkPerformance,
+  UserInteraction,
+  ResourceLoadTime,
+  MemoryUsage,
+  MemoryLeak,
+  DatabaseQueryMetrics,
+  RUMPerformanceRecommendation
+} from './RealUserMonitor';
 
 // Import specific types to avoid conflicts, exclude overlapped ones
 export type {

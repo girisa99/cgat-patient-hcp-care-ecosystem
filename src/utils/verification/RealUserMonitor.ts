@@ -11,12 +11,12 @@ export interface RUMMetrics {
   memoryUsage: MemoryUsage;
   databaseQueryPerformance: DatabaseQueryMetrics[];
   performanceScore: number;
-  recommendations: PerformanceRecommendation[];
+  recommendations: RUMPerformanceRecommendation[];
 }
 
 export interface CoreWebVitals {
   lcp: number; // Largest Contentful Paint
-  fid: number; // First Input Delay
+  fid: number; // First Input Delay (deprecated, but kept for compatibility)
   cls: number; // Cumulative Layout Shift
   fcp: number; // First Contentful Paint
   ttfb: number; // Time to First Byte
@@ -72,7 +72,7 @@ export interface DatabaseQueryMetrics {
   optimizationSuggestion?: string;
 }
 
-export interface PerformanceRecommendation {
+export interface RUMPerformanceRecommendation {
   category: 'loading' | 'rendering' | 'interaction' | 'memory' | 'network';
   priority: 'critical' | 'high' | 'medium' | 'low';
   title: string;
@@ -180,13 +180,15 @@ export class RealUserMonitor {
 
       // Try to use Web Vitals API if available
       try {
-        import('web-vitals').then(({ onLCP, onFID, onCLS, onFCP, onTTFB, onINP }) => {
+        import('web-vitals').then(({ onLCP, onCLS, onFCP, onTTFB, onINP }) => {
           onLCP((metric) => vitals.lcp = metric.value);
-          onFID((metric) => vitals.fid = metric.value);
           onCLS((metric) => vitals.cls = metric.value);
           onFCP((metric) => vitals.fcp = metric.value);
           onTTFB((metric) => vitals.ttfb = metric.value);
-          onINP((metric) => vitals.inp = metric.value);
+          onINP((metric) => {
+            vitals.inp = metric.value;
+            vitals.fid = metric.value; // Use INP as fallback for FID
+          });
 
           setTimeout(() => {
             resolve({
@@ -342,7 +344,7 @@ export class RealUserMonitor {
 
     // Core Web Vitals scoring
     if (metrics.coreWebVitals.lcp > 2500) score -= 20;
-    if (metrics.coreWebVitals.fid > 100) score -= 15;
+    if (metrics.coreWebVitals.inp > 200) score -= 15; // Use INP instead of FID
     if (metrics.coreWebVitals.cls > 0.1) score -= 15;
 
     // Database performance scoring
@@ -357,8 +359,8 @@ export class RealUserMonitor {
     return Math.max(0, score);
   }
 
-  private generatePerformanceRecommendations(metrics: any): PerformanceRecommendation[] {
-    const recommendations: PerformanceRecommendation[] = [];
+  private generatePerformanceRecommendations(metrics: any): RUMPerformanceRecommendation[] {
+    const recommendations: RUMPerformanceRecommendation[] = [];
 
     // Core Web Vitals recommendations
     if (metrics.coreWebVitals.lcp > 2500) {
