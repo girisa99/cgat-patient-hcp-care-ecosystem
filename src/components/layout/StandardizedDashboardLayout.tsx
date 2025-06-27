@@ -45,70 +45,61 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
 
   return (
     <DesignSystemProvider>
-      <div className={cn("min-h-screen bg-background", className)}>
+      <div className={cn("min-h-screen bg-background flex flex-col", className)}>
         {/* Debug Overlay */}
         {debugMode && <LayoutDebugOverlay isEnabled={debugMode} />}
         
-        {/* Fixed Header */}
+        {/* Fixed Header - always 64px */}
         <Header />
         
-        {/* Sidebar */}
-        <Sidebar 
-          isOpen={sidebarOpen} 
-          onClose={() => setSidebarOpen(false)} 
-        />
-        
-        {/* Mobile menu button */}
+        {/* Mobile menu bar - 48px when visible */}
         {isMobile && (
-          <div className="fixed top-16 left-0 right-0 z-40 bg-background border-b px-4 py-2 md:hidden">
-            <div className="flex justify-between items-center">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => setSidebarOpen(true)}
-                className="flex items-center space-x-2"
-              >
-                <Menu className="h-4 w-4" />
-                <span>Menu</span>
-              </Button>
-              
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setDebugMode(!debugMode)}
-                className={cn(
-                  "flex items-center space-x-1",
-                  debugMode && "bg-red-100 text-red-700"
-                )}
-              >
-                <Bug className="h-3 w-3" />
-                <span className="text-xs">Debug</span>
-              </Button>
-            </div>
+          <div className="flex-shrink-0 h-12 bg-background border-b px-4 py-2 md:hidden flex justify-between items-center">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setSidebarOpen(true)}
+              className="flex items-center space-x-2"
+            >
+              <Menu className="h-4 w-4" />
+              <span>Menu</span>
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setDebugMode(!debugMode)}
+              className={cn(
+                "flex items-center space-x-1",
+                debugMode && "bg-red-100 text-red-700"
+              )}
+            >
+              <Bug className="h-3 w-3" />
+              <span className="text-xs">Debug</span>
+            </Button>
           </div>
         )}
         
-        {/* Main content area */}
-        <main 
-          className={cn(
-            "transition-all duration-200",
-            // Sidebar spacing
-            isMobile ? "ml-0" : "md:ml-64",
-            // Top spacing calculation:
-            // Mobile: header (64px) + mobile menu (48px) = 112px total
-            // Desktop: header (64px) only
-            isMobile ? "pt-28" : "pt-16",
-            debugMode && "border-2 border-dashed border-blue-500"
-          )}
-          style={{
-            minHeight: isMobile ? 'calc(100vh - 112px)' : 'calc(100vh - 64px)'
-          }}
-        >
-          {/* Content wrapper with padding */}
-          <div className="p-6">
+        {/* Main content area - flex grow to fill remaining space */}
+        <div className="flex flex-1 overflow-hidden">
+          {/* Sidebar */}
+          <Sidebar 
+            isOpen={sidebarOpen} 
+            onClose={() => setSidebarOpen(false)} 
+          />
+          
+          {/* Main content */}
+          <main 
+            className={cn(
+              "flex-1 overflow-auto",
+              // Only apply left margin on desktop when sidebar is visible
+              !isMobile && "md:ml-64",
+              debugMode && "border-2 border-dashed border-blue-500"
+            )}
+          >
             {children}
-          </div>
-        </main>
+          </main>
+        </div>
       </div>
     </DesignSystemProvider>
   );
