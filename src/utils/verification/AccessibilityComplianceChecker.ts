@@ -1,4 +1,3 @@
-
 /**
  * Accessibility Compliance Checker
  * Validates WCAG compliance, accessibility best practices, and user experience
@@ -12,6 +11,13 @@ export interface AccessibilityResult {
   improvements: AccessibilityImprovement[];
   complianceRecommendations: ComplianceRecommendation[];
   testingRequirements: AccessibilityTestingRequirement[];
+}
+
+// NEW: Export the result interface that UIUXOrchestrator needs
+export interface AccessibilityComplianceResult {
+  overallScore: number;
+  criticalIssues: string[];
+  recommendations: string[];
 }
 
 export interface AccessibilityViolation {
@@ -72,7 +78,7 @@ export class AccessibilityComplianceChecker {
   /**
    * Check accessibility compliance across the application
    */
-  static async checkAccessibilityCompliance(): Promise<AccessibilityResult> {
+  static async checkAccessibilityCompliance(): Promise<AccessibilityComplianceResult> {
     console.log('♿ Checking accessibility compliance...');
 
     const violations = this.detectAccessibilityViolations();
@@ -84,14 +90,19 @@ export class AccessibilityComplianceChecker {
     const complianceScore = this.calculateComplianceScore(violations, warnings);
     const wcagLevel = this.determineWCAGLevel(violations);
 
-    const result: AccessibilityResult = {
-      complianceScore,
-      wcagLevel,
-      violations,
-      warnings,
-      improvements,
-      complianceRecommendations,
-      testingRequirements
+    // Generate the simplified result for UIUXOrchestrator
+    const criticalIssues = violations
+      .filter(v => v.severity === 'critical')
+      .map(v => v.description);
+
+    const recommendations = improvements
+      .filter(i => i.effort === 'low')
+      .map(i => i.description);
+
+    const result: AccessibilityComplianceResult = {
+      overallScore: complianceScore,
+      criticalIssues,
+      recommendations
     };
 
     console.log(`📊 Accessibility check complete: ${complianceScore}% compliance, WCAG ${wcagLevel}`);
