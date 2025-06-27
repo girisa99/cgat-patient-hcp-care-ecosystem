@@ -2,19 +2,21 @@
 /**
  * Duplicate Detection and Prevention Utility
  * 
- * This utility scans the codebase for duplicate components and hooks
+ * This utility scans the component registry for duplicate components and hooks
  * to maintain the canonical source of truth pattern.
+ * 
+ * Browser-compatible version that works with the component registry.
  */
 
-import { readdir, readFile } from 'fs/promises';
-import { join } from 'path';
+import { ComponentRegistryScanner } from './ComponentRegistryScanner';
+import type { ComponentInventory } from './ComponentRegistryScanner';
 
 interface ComponentInfo {
   name: string;
   path: string;
   exports: string[];
   isPrimary: boolean;
-  lastModified: Date;
+  type: 'component' | 'hook' | 'utility';
 }
 
 interface DuplicateAnalysis {
@@ -36,132 +38,61 @@ export class DuplicateDetector {
     ['SimplifiedValidator', 'src/utils/verification/SimplifiedValidator.ts']
   ]);
 
-  private sourceDirectories = [
-    'src/components',
-    'src/hooks',
-    'src/utils',
-    'src/pages'
-  ];
-
   /**
-   * Scan for duplicate components and hooks
+   * Scan for duplicate components and hooks using component registry
    */
   async scanForDuplicates(): Promise<DuplicateAnalysis[]> {
-    const allComponents = await this.scanAllComponents();
-    return this.analyzeDuplicates(allComponents);
+    try {
+      // Use the component registry scanner instead of filesystem access
+      const componentInventory = await ComponentRegistryScanner.scanAllComponents();
+      const allComponents = this.convertInventoryToComponentInfo(componentInventory);
+      return this.analyzeDuplicates(allComponents);
+    } catch (error) {
+      console.warn('Error scanning for duplicates:', error);
+      return [];
+    }
   }
 
   /**
-   * Scan all component and hook files
+   * Convert component inventory to our internal format
    */
-  private async scanAllComponents(): Promise<ComponentInfo[]> {
+  private convertInventoryToComponentInfo(inventory: ComponentInventory): ComponentInfo[] {
     const components: ComponentInfo[] = [];
 
-    for (const dir of this.sourceDirectories) {
-      try {
-        const files = await this.scanDirectory(dir);
-        components.push(...files);
-      } catch (error) {
-        console.warn(`Could not scan directory ${dir}:`, error);
-      }
-    }
+    // Add components
+    inventory.components.forEach(comp => {
+      components.push({
+        name: comp.name,
+        path: comp.path,
+        exports: [comp.name], // Simplified - assuming component name is the main export
+        isPrimary: this.isPrimaryComponent(comp.name, comp.path),
+        type: 'component'
+      });
+    });
+
+    // Add hooks
+    inventory.hooks.forEach(hook => {
+      components.push({
+        name: hook.name,
+        path: hook.path,
+        exports: [hook.name],
+        isPrimary: this.isPrimaryComponent(hook.name, hook.path),
+        type: 'hook'
+      });
+    });
+
+    // Add utilities
+    inventory.utilities.forEach(util => {
+      components.push({
+        name: util.name,
+        path: util.path,
+        exports: [util.name],
+        isPrimary: this.isPrimaryComponent(util.name, util.path),
+        type: 'utility'
+      });
+    });
 
     return components;
-  }
-
-  /**
-   * Recursively scan a directory for components
-   */
-  private async scanDirectory(dirPath: string): Promise<ComponentInfo[]> {
-    const components: ComponentInfo[] = [];
-    
-    try {
-      const entries = await readdir(dirPath, { withFileTypes: true });
-      
-      for (const entry of entries) {
-        const fullPath = join(dirPath, entry.name);
-        
-        if (entry.isDirectory()) {
-          const subComponents = await this.scanDirectory(fullPath);
-          components.push(...subComponents);
-        } else if (this.isReactFile(entry.name)) {
-          const component = await this.analyzeFile(fullPath);
-          if (component) {
-            components.push(component);
-          }
-        }
-      }
-    } catch (error) {
-      console.warn(`Error scanning directory ${dirPath}:`, error);
-    }
-    
-    return components;
-  }
-
-  /**
-   * Check if file is a React component or hook
-   */
-  private isReactFile(filename: string): boolean {
-    return (
-      (filename.endsWith('.tsx') || filename.endsWith('.ts')) &&
-      !filename.endsWith('.test.tsx') &&
-      !filename.endsWith('.test.ts') &&
-      !filename.endsWith('.d.ts')
-    );
-  }
-
-  /**
-   * Analyze a single file for component/hook information
-   */
-  private async analyzeFile(filePath: string): Promise<ComponentInfo | null> {
-    try {
-      const content = await readFile(filePath, 'utf-8');
-      const exports = this.extractExports(content);
-      
-      if (exports.length === 0) return null;
-
-      const componentName = exports[0]; // Primary export
-      const isPrimary = this.isPrimaryComponent(componentName, filePath);
-      
-      return {
-        name: componentName,
-        path: filePath,
-        exports,
-        isPrimary,
-        lastModified: new Date()
-      };
-    } catch (error) {
-      console.warn(`Error analyzing file ${filePath}:`, error);
-      return null;
-    }
-  }
-
-  /**
-   * Extract exported component/hook names from file content
-   */
-  private extractExports(content: string): string[] {
-    const exports: string[] = [];
-    
-    // Match default exports
-    const defaultExportMatch = content.match(/export\s+default\s+(\w+)/);
-    if (defaultExportMatch) {
-      exports.push(defaultExportMatch[1]);
-    }
-
-    // Match named exports
-    const namedExportMatches = content.matchAll(/export\s+(?:const|function|class)\s+(\w+)/g);
-    for (const match of namedExportMatches) {
-      exports.push(match[1]);
-    }
-
-    // Match export { ... } statements
-    const exportStatements = content.matchAll(/export\s*{\s*([^}]+)\s*}/g);
-    for (const match of exportStatements) {
-      const exportList = match[1].split(',').map(item => item.trim().split(' as ')[0]);
-      exports.push(...exportList);
-    }
-
-    return exports.filter(name => name && name.length > 0);
   }
 
   /**
@@ -287,6 +218,25 @@ export class DuplicateDetector {
     }
 
     return report;
+  }
+
+  /**
+   * Get summary statistics about duplicates
+   */
+  async getDuplicateStats(): Promise<{
+    totalDuplicates: number;
+    highRiskDuplicates: number;
+    mediumRiskDuplicates: number;
+    lowRiskDuplicates: number;
+  }> {
+    const analyses = await this.scanForDuplicates();
+    
+    return {
+      totalDuplicates: analyses.length,
+      highRiskDuplicates: analyses.filter(a => a.riskLevel === 'high').length,
+      mediumRiskDuplicates: analyses.filter(a => a.riskLevel === 'medium').length,
+      lowRiskDuplicates: analyses.filter(a => a.riskLevel === 'low').length,
+    };
   }
 }
 

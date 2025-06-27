@@ -1,4 +1,3 @@
-
 /**
  * Automated Verification Orchestrator
  * 
@@ -107,47 +106,53 @@ export class AutomatedVerificationOrchestrator {
 
     const timestamp = new Date().toISOString();
 
-    // Run validation
-    const validationResult = SimplifiedValidator.validate(request);
-    
-    // Run component audit for related components
-    const auditor = new ComponentAuditor();
-    const auditResults = await auditor.auditComponentUsage();
-    
-    // Check for duplicates
-    const duplicateDetector = new DuplicateDetector();
-    const duplicates = await duplicateDetector.scanForDuplicates();
-    const duplicateReport = duplicateDetector.generateReport(duplicates);
+    try {
+      // Run validation
+      const validationResult = SimplifiedValidator.validate(request);
+      
+      // Run component audit for related components
+      const auditor = new ComponentAuditor();
+      const auditResults = await auditor.auditComponentUsage();
+      
+      // Check for duplicates using updated detector
+      const duplicateDetector = new DuplicateDetector();
+      const duplicates = await duplicateDetector.scanForDuplicates();
+      const duplicateReport = duplicateDetector.generateReport(duplicates);
 
-    // Validate canonical sources
-    const canonicalValidator = new CanonicalSourceValidator();
-    const canonicalValidation = canonicalValidator.generateValidationReport([]);
+      // Validate canonical sources
+      const canonicalValidator = new CanonicalSourceValidator();
+      const canonicalValidation = canonicalValidator.generateValidationReport([]);
 
-    const summary = this.createSummary(
-      timestamp,
-      validationResult,
-      auditResults,
-      duplicateReport,
-      canonicalValidation
-    );
+      const summary = this.createSummary(
+        timestamp,
+        validationResult,
+        auditResults,
+        duplicateReport,
+        canonicalValidation
+      );
 
-    // Handle critical issues
-    if (summary.criticalIssues > 0 && this.config.blockOnCriticalIssues) {
-      console.error('🚫 CRITICAL ISSUES DETECTED - Creation blocked');
-      this.notifyDeveloper(summary, 'CRITICAL');
+      // Handle critical issues
+      if (summary.criticalIssues > 0 && this.config.blockOnCriticalIssues) {
+        console.error('🚫 CRITICAL ISSUES DETECTED - Creation blocked');
+        this.notifyDeveloper(summary, 'CRITICAL');
+      }
+
+      // Auto-fix simple issues
+      if (this.config.autoFixSimpleIssues) {
+        const autoFixes = await this.autoFixIssues(summary);
+        summary.autoFixesApplied = autoFixes;
+      }
+
+      // Notify on issues
+      if (summary.issuesFound > 0 && this.config.notifyOnIssues) {
+        this.notifyDeveloper(summary, 'WARNING');
+      }
+
+      return summary;
+    } catch (error) {
+      console.error('❌ Error during verification:', error);
+      return this.createEmptySummary();
     }
-
-    // Auto-fix simple issues
-    if (this.config.autoFixSimpleIssues) {
-      await this.autoFixIssues(summary);
-    }
-
-    // Notify on issues
-    if (summary.issuesFound > 0 && this.config.notifyOnIssues) {
-      this.notifyDeveloper(summary, 'WARNING');
-    }
-
-    return summary;
   }
 
   /**
@@ -179,38 +184,45 @@ export class AutomatedVerificationOrchestrator {
 
     const timestamp = new Date().toISOString();
     
-    // Run all verification systems
-    const [auditResults, duplicates] = await Promise.all([
-      new ComponentAuditor().auditComponentUsage(),
-      new DuplicateDetector().scanForDuplicates()
-    ]);
+    try {
+      // Run all verification systems
+      const auditor = new ComponentAuditor();
+      const duplicateDetector = new DuplicateDetector();
+      
+      const [auditResults, duplicates] = await Promise.all([
+        auditor.auditComponentUsage(),
+        duplicateDetector.scanForDuplicates()
+      ]);
 
-    const duplicateDetector = new DuplicateDetector();
-    const duplicateReport = duplicateDetector.generateReport(duplicates);
+      const duplicateReport = duplicateDetector.generateReport(duplicates);
 
-    const canonicalValidator = new CanonicalSourceValidator();
-    const canonicalValidation = canonicalValidator.generateValidationReport([]);
+      const canonicalValidator = new CanonicalSourceValidator();
+      const canonicalValidation = canonicalValidator.generateValidationReport([]);
 
-    // Create baseline validation result
-    const validationResult: ValidationResult = {
-      canProceed: true,
-      issues: [],
-      warnings: [],
-      recommendations: ['Comprehensive scan completed'],
-      shouldUseTemplate: false
-    };
+      // Create baseline validation result
+      const validationResult: ValidationResult = {
+        canProceed: true,
+        issues: [],
+        warnings: [],
+        recommendations: ['Comprehensive scan completed'],
+        shouldUseTemplate: false
+      };
 
-    const summary = this.createSummary(
-      timestamp,
-      validationResult,
-      auditResults,
-      duplicateReport,
-      canonicalValidation
-    );
+      const summary = this.createSummary(
+        timestamp,
+        validationResult,
+        auditResults,
+        duplicateReport,
+        canonicalValidation
+      );
 
-    console.log(`📊 Comprehensive scan complete: ${summary.issuesFound} issues, ${summary.recommendations.length} recommendations`);
-    
-    return summary;
+      console.log(`📊 Comprehensive scan complete: ${summary.issuesFound} issues, ${summary.recommendations.length} recommendations`);
+      
+      return summary;
+    } catch (error) {
+      console.error('❌ Comprehensive scan failed:', error);
+      return this.createEmptySummary();
+    }
   }
 
   /**
