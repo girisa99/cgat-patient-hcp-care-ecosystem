@@ -98,7 +98,7 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
           onClose={() => setSidebarOpen(false)} 
         />
         
-        {/* Mobile menu button */}
+        {/* Mobile menu button - only show on mobile/tablet */}
         {(isMobile || isTablet) && (
           <div className="md:hidden fixed top-16 left-0 right-0 z-40 bg-background/95 backdrop-blur border-b px-4 py-2">
             <div className="flex justify-between items-center">
@@ -128,21 +128,20 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
           </div>
         )}
         
-        {/* Main content area - COMPLETELY remove all padding/margins */}
+        {/* Main content area */}
         <div className="flex">
           <main 
             className={cn(
               "flex-1 min-h-screen",
               // Sidebar spacing
               isMobile ? "ml-0" : "md:ml-64",
-              // Minimal top spacing - just enough for header
-              "pt-16", // Fixed header height only
-              // Additional spacing for mobile menu
-              (isMobile || isTablet) && "pt-[104px]", // Header (64px) + mobile menu (40px)
+              // Header spacing - just the fixed header height
+              "pt-16",
+              // Mobile menu spacing - only add when mobile menu is actually shown
+              (isMobile || isTablet) && "md:pt-16 pt-[104px]", // 64px header + 40px mobile menu
               debugMode && "border-4 border-dashed border-red-500"
             )}
           >
-            {/* Content container - NO PADDING AT ALL - let AdminPageWrapper handle it */}
             {children}
           </main>
         </div>
