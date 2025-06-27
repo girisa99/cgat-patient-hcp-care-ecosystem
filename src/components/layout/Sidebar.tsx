@@ -48,10 +48,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         />
       )}
       
-      {/* Sidebar with proper z-index layering */}
+      {/* Sidebar */}
       <div className={cn(
-        "fixed left-0 top-0 z-50 h-full w-64 transform bg-white border-r border-gray-200 transition-transform duration-300 ease-in-out md:translate-x-0 md:static md:z-auto shadow-lg md:shadow-none",
-        isOpen ? "translate-x-0" : "-translate-x-full"
+        "fixed left-0 top-0 z-50 h-full w-64 transform bg-white border-r border-gray-200 transition-transform duration-200 ease-in-out shadow-lg",
+        // Desktop: always visible, positioned statically within layout
+        "md:translate-x-0 md:static md:z-auto md:shadow-none",
+        // Mobile: slide in/out behavior
+        isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
       )}>
         {/* Header section */}
         <div className="flex h-16 shrink-0 items-center px-6 bg-white border-b">
@@ -59,6 +62,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           <span className="ml-2 text-xl font-semibold text-gray-900">
             Healthcare Admin
           </span>
+          {/* Close button - only show on mobile */}
           {onClose && (
             <button
               onClick={onClose}
@@ -70,7 +74,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         </div>
         
         {/* Navigation section */}
-        <nav className="flex flex-1 flex-col px-6 py-4 bg-white">
+        <nav className="flex flex-1 flex-col px-6 py-4 bg-white overflow-y-auto">
           <ul role="list" className="flex flex-1 flex-col gap-y-7">
             <li>
               <ul role="list" className="-mx-2 space-y-1">

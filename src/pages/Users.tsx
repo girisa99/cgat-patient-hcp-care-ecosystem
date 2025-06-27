@@ -1,6 +1,7 @@
+
 import React, { useState } from 'react';
-import UnifiedDashboardLayout from '@/components/layout/UnifiedDashboardLayout';
-import { PageContent } from '@/components/layout/PageContent';
+import MainLayout from '@/components/layout/MainLayout';
+import { PageContainer } from '@/components/layout/PageContainer';
 import { AdminStatsGrid, StatCard } from '@/components/layout/AdminPageWrapper';
 import { Card, CardContent } from '@/components/ui/card';
 import { Users as UsersIcon, UserPlus, Settings, Shield } from 'lucide-react';
@@ -72,57 +73,57 @@ const Users = () => {
   );
 
   return (
-    <UnifiedDashboardLayout>
-      <PageContent
+    <MainLayout>
+      <PageContainer
         title="Users Management"
         subtitle="Manage system users, roles, and permissions across the healthcare platform"
         headerActions={headerActions}
-        maxWidth="full"
-        padding="md"
       >
-        {/* Stats Grid */}
-        <AdminStatsGrid columns={4}>
-          <StatCard
-            title="Total Users"
-            value={totalUsers}
-            icon={UsersIcon}
-            description="All system users"
-          />
-          <StatCard
-            title="With Roles"
-            value={usersWithRoles}
-            icon={Shield}
-            description="Users with assigned roles"
-          />
-          <StatCard
-            title="Active Users"
-            value={activeUsers}
-            icon={Settings}
-            description="Currently active users"
-          />
-          <StatCard
-            title="With Facilities"
-            value={usersWithFacilities}
-            icon={Settings}
-            description="Users assigned to facilities"
-          />
-        </AdminStatsGrid>
-
-        {/* Bulk Role Assignment */}
-        <BulkRoleAssignment />
-
-        {/* Users List */}
-        <Card className="shadow-sm">
-          <CardContent className="p-6">
-            <UsersList
-              onCreateUser={handleCreateUser}
-              onAssignRole={handleAssignRole}
-              onRemoveRole={handleRemoveRole}
-              onAssignFacility={handleAssignFacility}
-              onEditUser={handleEditUser}
+        <div className="space-y-6">
+          {/* Stats Grid */}
+          <AdminStatsGrid columns={4}>
+            <StatCard
+              title="Total Users"
+              value={totalUsers}
+              icon={UsersIcon}
+              description="All system users"
             />
-          </CardContent>
-        </Card>
+            <StatCard
+              title="With Roles"
+              value={usersWithRoles}
+              icon={Shield}
+              description="Users with assigned roles"
+            />
+            <StatCard
+              title="Active Users"
+              value={activeUsers}
+              icon={Settings}
+              description="Currently active users"
+            />
+            <StatCard
+              title="With Facilities"
+              value={usersWithFacilities}
+              icon={Settings}
+              description="Users assigned to facilities"
+            />
+          </AdminStatsGrid>
+
+          {/* Bulk Role Assignment */}
+          <BulkRoleAssignment />
+
+          {/* Users List */}
+          <Card className="shadow-sm">
+            <CardContent className="p-6">
+              <UsersList
+                onCreateUser={handleCreateUser}
+                onAssignRole={handleAssignRole}
+                onRemoveRole={handleRemoveRole}
+                onAssignFacility={handleAssignFacility}
+                onEditUser={handleEditUser}
+              />
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Dialogs */}
         <CreateUserDialog
@@ -156,8 +157,8 @@ const Users = () => {
           userId={selectedUserId}
           userName={selectedUserName}
         />
-      </PageContent>
-    </UnifiedDashboardLayout>
+      </PageContainer>
+    </MainLayout>
   );
 };
 

@@ -1,21 +1,22 @@
 
 import React from 'react';
-import UnifiedDashboardLayout from '@/components/layout/UnifiedDashboardLayout';
-import { PageContent } from '@/components/layout/PageContent';
+import MainLayout from '@/components/layout/MainLayout';
+import { PageContainer } from '@/components/layout/PageContainer';
 import SystemAssessmentDashboard from '@/components/admin/SystemAssessment/SystemAssessmentDashboard';
 
 const SystemAssessment = () => {
   return (
-    <UnifiedDashboardLayout>
-      <PageContent
+    <MainLayout>
+      <PageContainer
         title="System Assessment"
         subtitle="Comprehensive analysis of system health and performance"
-        maxWidth="full"
-        padding="md"
+        fluid
       >
-        <SystemAssessmentDashboard />
-      </PageContent>
-    </UnifiedDashboardLayout>
+        <div className="p-6">
+          <SystemAssessmentDashboard />
+        </div>
+      </PageContainer>
+    </MainLayout>
   );
 };
 

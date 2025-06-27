@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
-import StandardizedDashboardLayout from '@/components/layout/StandardizedDashboardLayout';
+import MainLayout from '@/components/layout/MainLayout';
+import { PageContainer } from '@/components/layout/PageContainer';
 import { ModuleList } from '@/components/modules/ModuleList';
 import { ModuleStats } from '@/components/modules/ModuleStats';
 import AutoModuleManager from '@/components/admin/AutoModuleManager';
@@ -34,41 +35,41 @@ const Modules = () => {
   const activeModules = moduleList.filter(m => m.is_active).length;
   const inactiveModules = totalModules - activeModules;
 
-  return (
-    <StandardizedDashboardLayout>
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Modules</h1>
-            <p className="text-muted-foreground">
-              Manage system modules and their configurations
-            </p>
-          </div>
-          <Button onClick={() => setShowCreateDialog(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Module
-          </Button>
-        </div>
-        
-        <ModuleStats 
-          totalModules={totalModules}
-          activeModules={activeModules}
-          inactiveModules={inactiveModules}
-        />
-        <AutoModuleManager />
-        <ModuleList 
-          modules={moduleList}
-          onAssignUsers={handleAssignUsers}
-          onAssignRoles={handleAssignRoles}
-          onDeleteModule={handleDeleteModule}
-        />
+  const headerActions = (
+    <Button onClick={() => setShowCreateDialog(true)}>
+      <Plus className="h-4 w-4 mr-2" />
+      Add Module
+    </Button>
+  );
 
-        <CreateModuleDialog
-          open={showCreateDialog}
-          onOpenChange={setShowCreateDialog}
-        />
-      </div>
-    </StandardizedDashboardLayout>
+  return (
+    <MainLayout>
+      <PageContainer
+        title="Modules"
+        subtitle="Manage system modules and their configurations"
+        headerActions={headerActions}
+      >
+        <div className="space-y-6">
+          <ModuleStats 
+            totalModules={totalModules}
+            activeModules={activeModules}
+            inactiveModules={inactiveModules}
+          />
+          <AutoModuleManager />
+          <ModuleList 
+            modules={moduleList}
+            onAssignUsers={handleAssignUsers}
+            onAssignRoles={handleAssignRoles}
+            onDeleteModule={handleDeleteModule}
+          />
+
+          <CreateModuleDialog
+            open={showCreateDialog}
+            onOpenChange={setShowCreateDialog}
+          />
+        </div>
+      </PageContainer>
+    </MainLayout>
   );
 };
 

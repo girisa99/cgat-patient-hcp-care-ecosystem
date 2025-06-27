@@ -1,21 +1,22 @@
 
 import React from 'react';
-import UnifiedDashboardLayout from '@/components/layout/UnifiedDashboardLayout';
-import { PageContent } from '@/components/layout/PageContent';
+import MainLayout from '@/components/layout/MainLayout';
+import { PageContainer } from '@/components/layout/PageContainer';
 import ApiIntegrationsManager from '@/components/admin/ApiIntegrations/ApiIntegrationsManager';
 
 const ApiIntegrations = () => {
   return (
-    <UnifiedDashboardLayout>
-      <PageContent
+    <MainLayout>
+      <PageContainer
         title="API Integrations"
         subtitle="Manage internal APIs, external integrations, and developer tools"
-        maxWidth="full"
-        padding="md"
+        fluid
       >
-        <ApiIntegrationsManager />
-      </PageContent>
-    </UnifiedDashboardLayout>
+        <div className="p-6">
+          <ApiIntegrationsManager />
+        </div>
+      </PageContainer>
+    </MainLayout>
   );
 };
 

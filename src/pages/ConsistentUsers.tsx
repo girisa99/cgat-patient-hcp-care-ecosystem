@@ -1,19 +1,16 @@
 
 import React from 'react';
-import UnifiedDashboardLayout from '@/components/layout/UnifiedDashboardLayout';
-import { PageContent } from '@/components/layout/PageContent';
+import MainLayout from '@/components/layout/MainLayout';
+import { PageContainer } from '@/components/layout/PageContainer';
 import ConsistentUsersLayout from '@/components/users/ConsistentUsersLayout';
 
 const ConsistentUsers = () => {
   return (
-    <UnifiedDashboardLayout>
-      <PageContent
-        maxWidth="full"
-        padding="none"
-      >
+    <MainLayout>
+      <PageContainer fluid>
         <ConsistentUsersLayout />
-      </PageContent>
-    </UnifiedDashboardLayout>
+      </PageContainer>
+    </MainLayout>
   );
 };
 
