@@ -2,8 +2,9 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Play, Wrench, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Play, Wrench, CheckCircle, AlertTriangle, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { automatedFixHandler, FixableIssue } from '@/utils/verification/AutomatedFixHandler';
 
 interface Issue {
   type: string;
@@ -20,20 +21,80 @@ interface IssueActionButtonProps {
 const IssueActionButton: React.FC<IssueActionButtonProps> = ({ issue, onAction }) => {
   const { toast } = useToast();
   const [isRunning, setIsRunning] = React.useState(false);
+  const [isFixing, setIsFixing] = React.useState(false);
 
   const handleAction = async (actionType: 'run' | 'fix') => {
+    if (actionType === 'fix') {
+      await handleAutomatedFix();
+    } else {
+      await handleTestRun();
+    }
+  };
+
+  const handleAutomatedFix = async () => {
+    setIsFixing(true);
+    try {
+      // Convert issue to FixableIssue format
+      const fixableIssues = automatedFixHandler.getAvailableFixes([issue]);
+      const fixableIssue = fixableIssues[0];
+
+      if (!fixableIssue) {
+        throw new Error('No automated fix available for this issue type');
+      }
+
+      console.log('🔧 Applying automated fix for:', fixableIssue.type);
+      
+      const result = await automatedFixHandler.applyFix(fixableIssue);
+
+      if (result.success) {
+        toast({
+          title: "🔧 Fix Applied Successfully",
+          description: result.fixApplied || `Successfully fixed ${issue.type}`,
+          variant: "default",
+        });
+
+        if (result.auditLogId) {
+          console.log(`📋 Fix logged to audit with ID: ${result.auditLogId}`);
+        }
+
+        if (result.requiresUserAction && result.nextSteps) {
+          toast({
+            title: "📋 Additional Steps Required",
+            description: result.nextSteps.join(', '),
+            variant: "default",
+          });
+        }
+
+        // Call the original onAction to update parent state
+        await onAction(issue, 'fix');
+      } else {
+        throw new Error(result.error || 'Unknown error occurred');
+      }
+    } catch (error) {
+      console.error('❌ Automated fix failed:', error);
+      toast({
+        title: "❌ Fix Failed",
+        description: `Failed to apply automated fix: ${error}`,
+        variant: "destructive",
+      });
+    } finally {
+      setIsFixing(false);
+    }
+  };
+
+  const handleTestRun = async () => {
     setIsRunning(true);
     try {
-      await onAction(issue, actionType);
+      await onAction(issue, 'run');
       toast({
-        title: `${actionType === 'run' ? 'Test' : 'Fix'} Complete`,
-        description: `Successfully ${actionType === 'run' ? 'executed test for' : 'applied fix to'} ${issue.type}`,
+        title: "✅ Test Complete",
+        description: `Successfully executed test for ${issue.type}`,
         variant: "default",
       });
     } catch (error) {
       toast({
-        title: `${actionType === 'run' ? 'Test' : 'Fix'} Failed`,
-        description: `Failed to ${actionType} issue: ${error}`,
+        title: "❌ Test Failed",
+        description: `Failed to execute test: ${error}`,
         variant: "destructive",
       });
     } finally {
@@ -48,11 +109,20 @@ const IssueActionButton: React.FC<IssueActionButtonProps> = ({ issue, onAction }
           size="sm"
           variant="destructive"
           onClick={() => handleAction('fix')}
-          disabled={isRunning}
+          disabled={isFixing || isRunning}
           className="flex items-center gap-1"
         >
-          <Wrench className="h-3 w-3" />
-          {isRunning ? 'Fixing...' : 'Fix Now'}
+          {isFixing ? (
+            <>
+              <Loader2 className="h-3 w-3 animate-spin" />
+              Fixing...
+            </>
+          ) : (
+            <>
+              <Wrench className="h-3 w-3" />
+              Fix Now
+            </>
+          )}
         </Button>
       );
     }
@@ -63,21 +133,39 @@ const IssueActionButton: React.FC<IssueActionButtonProps> = ({ issue, onAction }
           size="sm"
           variant="outline"
           onClick={() => handleAction('run')}
-          disabled={isRunning}
+          disabled={isRunning || isFixing}
           className="flex items-center gap-1"
         >
-          <Play className="h-3 w-3" />
-          Test
+          {isRunning ? (
+            <>
+              <Loader2 className="h-3 w-3 animate-spin" />
+              Testing...
+            </>
+          ) : (
+            <>
+              <Play className="h-3 w-3" />
+              Test
+            </>
+          )}
         </Button>
         <Button
           size="sm"
           variant="default"
           onClick={() => handleAction('fix')}
-          disabled={isRunning}
+          disabled={isFixing || isRunning}
           className="flex items-center gap-1"
         >
-          <Wrench className="h-3 w-3" />
-          Fix
+          {isFixing ? (
+            <>
+              <Loader2 className="h-3 w-3 animate-spin" />
+              Fixing...
+            </>
+          ) : (
+            <>
+              <Wrench className="h-3 w-3" />
+              Fix
+            </>
+          )}
         </Button>
       </div>
     );

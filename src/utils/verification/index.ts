@@ -58,6 +58,24 @@ export {
   enhancedSecurityPerformanceOrchestrator
 } from './EnhancedSecurityPerformanceOrchestrator';
 
+// NEW: Automated Fix System
+export {
+  AutomatedFixHandler,
+  automatedFixHandler
+} from './AutomatedFixHandler';
+
+// NEW: System Assessment
+export {
+  SystemAssessment,
+  systemAssessment
+} from './SystemAssessment';
+
+// Admin Module Verification
+export {
+  AdminModuleVerificationRunner,
+  adminModuleVerificationRunner
+} from './AdminModuleVerificationRunner';
+
 // Individual verification components
 export { UnusedCodeDetector, unusedCodeDetector } from './UnusedCodeDetector';
 export { DependencyManager, dependencyManager } from './DependencyManager';
@@ -113,6 +131,8 @@ import { enhancedSecurityPerformanceOrchestrator } from './EnhancedSecurityPerfo
 import { runtimeSecurityMonitor } from './RuntimeSecurityMonitor';
 import { realUserMonitor } from './RealUserMonitor';
 import { automatedAlertingSystem } from './AutomatedAlertingSystem';
+import { automatedFixHandler } from './AutomatedFixHandler';
+import { systemAssessment } from './SystemAssessment';
 
 export const startComprehensiveMonitoring = async () => {
   console.log('🚀 Starting comprehensive security and performance monitoring...');
@@ -127,6 +147,25 @@ export const getComprehensiveSystemSummary = async () => {
 export const executeAutomatedSystemFixes = async (fixIds: string[]) => {
   console.log('🔧 Executing automated system fixes...');
   return await enhancedSecurityPerformanceOrchestrator.executeAutomatedFixes(fixIds);
+};
+
+// NEW: Automated fix system functions
+export const applyAutomatedFix = async (issue: any) => {
+  console.log('🔧 Applying individual automated fix...');
+  const fixableIssues = automatedFixHandler.getAvailableFixes([issue]);
+  return await automatedFixHandler.applyFix(fixableIssues[0]);
+};
+
+export const applyBulkAutomatedFixes = async (issues: any[], mode: 'sequential' | 'parallel' = 'sequential') => {
+  console.log(`🔧 Applying bulk automated fixes (${mode} mode)...`);
+  const fixableIssues = automatedFixHandler.getAvailableFixes(issues);
+  return await automatedFixHandler.applyBulkFixes(fixableIssues, mode);
+};
+
+// NEW: System assessment functions
+export const getSystemAssessment = () => {
+  console.log('📊 Generating comprehensive system assessment...');
+  return systemAssessment.generateComprehensiveAssessment();
 };
 
 // Main validation functions
@@ -196,6 +235,15 @@ export type * from './RealUserMonitor';
 export type * from './AutomatedAlertingSystem';
 export type * from './EnhancedSecurityPerformanceOrchestrator';
 
+// NEW: Automated Fix Types
+export type * from './AutomatedFixHandler';
+
+// NEW: System Assessment Types
+export type * from './SystemAssessment';
+
+// NEW: Admin Verification Types
+export type * from './AdminModuleVerificationRunner';
+
 // Export PerformanceMonitor types explicitly to avoid conflicts
 export type { 
   PerformanceMetrics,
@@ -244,9 +292,9 @@ export type {
   AccessibilityComplianceResult
 } from './types';
 
-// Global initialization with UI/UX capabilities
+// Global initialization with enhanced automated fix capabilities
 if (typeof window !== 'undefined') {
-  console.log('🚀 ENHANCED VERIFICATION SYSTEM WITH COMPREHENSIVE MONITORING INITIALIZING...');
+  console.log('🚀 ENHANCED VERIFICATION SYSTEM WITH AUTOMATED FIXES INITIALIZING...');
   
   (window as any).automaticVerification = {
     // Existing functions
@@ -265,6 +313,13 @@ if (typeof window !== 'undefined') {
     getComprehensiveSystemSummary,
     executeAutomatedSystemFixes,
     
+    // NEW: Automated fix functions
+    applyAutomatedFix,
+    applyBulkAutomatedFixes,
+    
+    // NEW: System assessment functions
+    getSystemAssessment,
+    
     // NEW: Individual monitoring system access
     runtimeSecurity: () => runtimeSecurityMonitor.getRuntimeSecurityAnalysis(),
     realUserMetrics: () => realUserMonitor.getRUMMetrics(),
@@ -280,6 +335,10 @@ if (typeof window !== 'undefined') {
     hasMemoryLeakDetection: true,
     hasDependencyScanning: true,
     hasComplianceTracking: true,
+    hasAutomatedFixes: true,
+    hasBulkFixes: true,
+    hasAuditLogging: true,
+    hasSystemAssessment: true,
     isAutomatic: true,
     isRefactored: true,
     isModular: true,
@@ -291,9 +350,10 @@ if (typeof window !== 'undefined') {
     validatesRoleBasedUI: true
   };
   
-  console.log('✅ ENHANCED VERIFICATION SYSTEM WITH COMPREHENSIVE MONITORING READY');
+  console.log('✅ ENHANCED VERIFICATION SYSTEM WITH AUTOMATED FIXES READY');
   console.log('🛡️ Security Features: Runtime monitoring, threat detection, vulnerability scanning');
   console.log('📊 Performance Features: RUM, Core Web Vitals, memory leak detection');
   console.log('🚨 Alerting Features: Real-time alerts, automated responses, incident management');
-  console.log('🔧 Automation Features: Automated fixes, dependency updates, optimization');
+  console.log('🔧 Fix Features: Individual fixes, bulk fixes, audit logging, assessment reports');
+  console.log('📋 Assessment Features: Comprehensive system assessment with improvement roadmap');
 }
