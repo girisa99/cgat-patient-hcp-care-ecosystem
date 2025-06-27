@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,7 +14,7 @@ import ExternalApiPublisher from './ExternalApiPublisher';
 import ApiKeyManager from './ApiKeyManager';
 import { ApiTestingInterface } from './ApiTestingInterface';
 import IntegrationDetailView from './IntegrationDetailView';
-import { DeveloperPortal } from './DeveloperPortal';
+import DeveloperPortal from './DeveloperPortal';
 import { LoadingState } from '../shared/LoadingState';
 import { ErrorState } from '../shared/ErrorState';
 
