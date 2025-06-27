@@ -42,6 +42,16 @@ export interface ValidationRequest {
   skipValidation?: boolean;
 }
 
+// NEW: Additional request type that was being imported
+export interface VerificationRequest {
+  tableName?: string;
+  moduleName?: string;
+  componentType: 'hook' | 'component' | 'module' | 'template';
+  description: string;
+  targetPath?: string;
+  skipValidation?: boolean;
+}
+
 // Verification Results
 export interface VerificationResult {
   isValid: boolean;
@@ -60,6 +70,42 @@ export interface EnhancedVerificationResult extends VerificationResult {
   roleBasedValidation?: any;
   accessibilityScore?: number;
   timestamp: string;
+}
+
+// NEW: Component Scan Results
+export interface ComponentScanResult {
+  existingHooks: string[];
+  existingComponents: string[];
+  existingTemplates: string[];
+  reuseOpportunities: string[];
+}
+
+// NEW: Database Alignment Results
+export interface DatabaseAlignmentResult {
+  tablesExist: boolean;
+  missingTables: string[];
+  rlsPoliciesValid: boolean;
+  foreignKeysValid: boolean;
+}
+
+// NEW: TypeScript Validation Results
+export interface TypeScriptValidationResult {
+  isValid: boolean;
+  missingTypes: string[];
+  conflictingTypes: string[];
+  schemaAlignment: boolean;
+}
+
+// NEW: Pre-Implementation Check Results
+export interface PreImplementationCheckResult {
+  canProceed: boolean;
+  issues: string[];
+  warnings: string[];
+  recommendations: string[];
+  existingComponents: ComponentScanResult;
+  typescriptValidation: TypeScriptValidationResult;
+  databaseAlignment: DatabaseAlignmentResult;
+  templateEnforcement: PatternEnforcementResult;
 }
 
 // Merge and Duplicate Detection
@@ -195,4 +241,11 @@ export interface SecurityCompliance {
   encryption: number;
   auditTrail: number;
   compliance: string[];
+}
+
+// NEW: Accessibility Compliance Results (needed by UIUXOrchestrator)
+export interface AccessibilityComplianceResult {
+  overallScore: number;
+  criticalIssues: string[];
+  recommendations: string[];
 }

@@ -1,3 +1,4 @@
+
 /**
  * Enhanced Automated Verification System - Main Export 
  * 
@@ -73,6 +74,13 @@ export {
   runSimplifiedValidation
 } from './SimplifiedValidator';
 
+// NEW: Pre-implementation validation components
+export { PreImplementationChecker } from './PreImplementationChecker';
+export { ComponentScanner } from './ComponentScanner';
+export { TypeScriptValidator } from './TypeScriptValidator';
+export { DatabaseAlignmentValidator } from './DatabaseAlignmentValidator';
+export { GuidelinesValidator } from './GuidelinesValidator';
+
 // Import instances for the main validation functions
 import { coreVerificationOrchestrator } from './CoreVerificationOrchestrator';
 import { VerificationSummaryGenerator } from './VerificationSummaryGenerator';
@@ -111,7 +119,7 @@ export const validateComponentDesign = async (components: string[]) => {
   return await uiuxOrchestrator.performQuickUIValidation(components);
 };
 
-// Export types - excluding conflicts and adding new UI/UX types
+// Export types - being selective to avoid conflicts
 export type * from './CoreVerificationOrchestrator';
 export type * from './VerificationSummaryGenerator';
 export type * from './UnusedCodeDetector';
@@ -129,14 +137,10 @@ export type * from './AccessibilityComplianceChecker';
 export type * from './ApiContractValidator';
 export type * from './ApiContractIntegration';
 export type * from './MergeVerificationHandler';
-export type * from './DatabaseGuidelinesValidator';
 export type * from './DatabaseSchemaValidator';
 export type * from './PerformanceMonitor';
-export type * from './SecurityScanner';
-export type * from './CodeQualityAnalyzer';
 export type * from './ComponentRegistryScanner';
 export type * from './TypeScriptDatabaseValidator';
-export type * from './SimplifiedValidator';
 export type * from './AutomatedVerificationOrchestrator';
 export type * from './EnhancedIntegrationOrchestrator';
 
@@ -144,7 +148,29 @@ export type * from './EnhancedIntegrationOrchestrator';
 export type * from './DesignSystemValidator';
 export type * from './RoleBasedUIValidator';
 export type * from './UIUXOrchestrator';
-export type * from './types';
+
+// Import specific types to avoid conflicts, exclude overlapped ones
+export type {
+  TemplateRecommendation,
+  PatternEnforcementResult,
+  ComponentCreationRequest,
+  ValidationRequest,
+  VerificationRequest,
+  VerificationResult,
+  EnhancedVerificationResult,
+  ComponentScanResult,
+  DatabaseAlignmentResult,
+  TypeScriptValidationResult,
+  PreImplementationCheckResult,
+  DuplicateDetection,
+  SystemAssessmentResult,
+  AssessmentRecommendation,
+  CriticalIssue,
+  DatabaseIssue,
+  PerformanceBottleneck,
+  SecurityCompliance,
+  AccessibilityComplianceResult
+} from './types';
 
 // Global initialization with UI/UX capabilities
 if (typeof window !== 'undefined') {
