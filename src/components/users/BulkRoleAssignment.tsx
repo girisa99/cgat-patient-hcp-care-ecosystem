@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,7 +23,8 @@ const BulkRoleAssignment: React.FC = () => {
     { value: 'onboardingTeam', label: 'Onboarding Team' },
     { value: 'caseManager', label: 'Case Manager' },
     { value: 'patientCaregiver', label: 'Patient Caregiver' },
-    { value: 'readOnlyUser', label: 'Read Only User' }
+    { value: 'healthcareProvider', label: 'Healthcare Provider' },
+    { value: 'nurse', label: 'Nurse' }
   ];
 
   const handleUserSelection = (userId: string, checked: boolean) => {
