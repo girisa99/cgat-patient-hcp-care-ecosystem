@@ -4,10 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield } from 'lucide-react';
 import UsersList from '@/components/users/UsersList';
 import BulkRoleAssignment from '@/components/users/BulkRoleAssignment';
-import DatabaseHealthCheck from '@/components/users/DatabaseHealthCheck';
-import { UserManagementHeader } from '@/components/admin/UserManagement/UserManagementHeader';
-import { PermissionSystemCard } from '@/components/admin/UserManagement/PermissionSystemCard';
-import { RoleStatisticsCard } from '@/components/admin/UserManagement/RoleStatisticsCard';
 import { UserManagementDialogs } from '@/components/admin/UserManagement/UserManagementDialogs';
 import { useConsistentUsers } from '@/hooks/useConsistentUsers';
 
@@ -20,17 +16,6 @@ const Users = () => {
   const [assignFacilityOpen, setAssignFacilityOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<any>(null);
-  const [debugMode, setDebugMode] = useState(false);
-
-  const userStats = useMemo(() => {
-    if (!users) return { totalUsers: 0, usersWithRoles: 0, usersWithoutRoles: 0 };
-    
-    const totalUsers = users.length;
-    const usersWithRoles = users.filter(user => user.user_roles && user.user_roles.length > 0).length;
-    const usersWithoutRoles = totalUsers - usersWithRoles;
-    
-    return { totalUsers, usersWithRoles, usersWithoutRoles };
-  }, [users]);
 
   const selectedUserForRole = useMemo(() => {
     return users?.find(u => u.id === selectedUserId);
@@ -63,18 +48,18 @@ const Users = () => {
 
   return (
     <div className="space-y-6">
-      <UserManagementHeader meta={meta} />
-      <PermissionSystemCard />
-      <DatabaseHealthCheck />
-      
-      <RoleStatisticsCard
-        userStats={userStats}
-        debugMode={debugMode}
-        onToggleDebug={() => setDebugMode(!debugMode)}
-      />
+      {/* Header Section */}
+      <div>
+        <h2 className="text-3xl font-bold tracking-tight">User Management</h2>
+        <p className="text-muted-foreground">
+          Manage user accounts, roles, permissions, and facility assignments
+        </p>
+      </div>
 
+      {/* Bulk Operations */}
       <BulkRoleAssignment />
       
+      {/* Users List */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -93,6 +78,7 @@ const Users = () => {
         </CardContent>
       </Card>
 
+      {/* Dialogs */}
       <UserManagementDialogs
         createUserOpen={createUserOpen}
         setCreateUserOpen={setCreateUserOpen}
