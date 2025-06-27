@@ -1,3 +1,4 @@
+
 /**
  * Fully Automated Verification Orchestrator
  * 
@@ -318,7 +319,7 @@ export class AutomatedVerificationOrchestrator {
       
       if (summary.issuesFound > 0) {
         console.log(`⚠️ AUTOMATIC PERIODIC SCAN: ${summary.issuesFound} issues detected`);
-        this.sendAutomaticNotifications(summary);
+        this.sendEnhancedAutomaticNotifications(summary);
       } else {
         console.log('✅ AUTOMATIC PERIODIC SCAN: All clear');
       }
