@@ -48,7 +48,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         />
       )}
       
-      {/* Sidebar */}
+      {/* Single Sidebar Instance */}
       <div className={cn(
         "fixed left-0 top-0 z-50 h-full w-64 transform bg-white border-r border-gray-200 transition-transform duration-300 ease-in-out md:translate-x-0 md:static md:z-auto",
         isOpen ? "translate-x-0" : "-translate-x-full"
@@ -58,7 +58,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           <span className="ml-2 text-xl font-semibold text-gray-900">
             Healthcare Admin
           </span>
-          {/* Mobile Close Button */}
           {onClose && (
             <button
               onClick={onClose}
@@ -78,7 +77,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     <li key={item.name}>
                       <Link
                         to={item.href}
-                        onClick={onClose} // Close sidebar on mobile when clicking a link
+                        onClick={onClose}
                         className={cn(
                           isActive
                             ? 'bg-blue-50 text-blue-600'
