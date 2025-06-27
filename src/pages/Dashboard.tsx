@@ -3,7 +3,6 @@ import React from 'react';
 import { useDashboard } from '@/hooks/useDashboard';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import DashboardLoading from '@/components/dashboard/DashboardLoading';
-import StatusAlerts from '@/components/dashboard/StatusAlerts';
 import ProfileCard from '@/components/dashboard/ProfileCard';
 import UserRolesCard from '@/components/dashboard/UserRolesCard';
 import SystemStatusCard from '@/components/dashboard/SystemStatusCard';
@@ -31,12 +30,6 @@ const Dashboard = () => {
         userRoles={userRoles}
         onRefresh={handleRefresh}
         onAssignTestRole={handleAssignTestRole}
-      />
-
-      <StatusAlerts
-        user={user}
-        profile={profile}
-        userRoles={userRoles}
       />
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 w-full">
