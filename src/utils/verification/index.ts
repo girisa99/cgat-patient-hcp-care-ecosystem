@@ -14,8 +14,15 @@ import {
   runSimplifiedValidation
 } from './SimplifiedValidator';
 
+// Automated verification system
+import { 
+  AutomatedVerificationOrchestrator, 
+  automatedVerification 
+} from './AutomatedVerificationOrchestrator';
+
 // Simplified types
 import type { ValidationRequest, ValidationResult } from './SimplifiedValidator';
+import type { VerificationSummary, AutomatedVerificationConfig } from './AutomatedVerificationOrchestrator';
 
 // Keep legacy components for backward compatibility but mark as deprecated
 import { PreImplementationChecker } from './PreImplementationChecker';
@@ -44,8 +51,19 @@ export {
   runSimplifiedValidation
 };
 
+// Export automated verification system (NEW)
+export { 
+  AutomatedVerificationOrchestrator,
+  automatedVerification
+};
+
 // Export simplified types (RECOMMENDED)
-export type { ValidationRequest, ValidationResult };
+export type { 
+  ValidationRequest, 
+  ValidationResult,
+  VerificationSummary,
+  AutomatedVerificationConfig
+};
 
 // Export component registry scanner (still useful)
 export { ComponentRegistryScanner };
@@ -71,18 +89,21 @@ export {
  * Quick validation function - RECOMMENDED APPROACH
  */
 export const validateBeforeImplementation = async (request: ValidationRequest) => {
-  console.log('🚀 Running simplified pre-implementation validation...');
+  console.log('🚀 Running automated pre-implementation validation...');
   
-  const result = SimplifiedValidator.validate(request);
-  const plan = SimplifiedValidator.generateImplementationPlan(result);
+  // Use automated verification system
+  const summary = await automatedVerification.verifyBeforeCreation(request);
   
-  console.log('📋 Validation Summary:');
-  plan.forEach(item => console.log(item));
+  console.log('📋 Automated Validation Summary:');
+  console.log(`   Issues: ${summary.issuesFound}`);
+  console.log(`   Critical: ${summary.criticalIssues}`);
+  console.log(`   Auto-fixes: ${summary.autoFixesApplied}`);
+  console.log(`   Can Proceed: ${summary.validationResult.canProceed}`);
   
   return {
-    validationResult: result,
-    implementationPlan: plan,
-    canProceed: result.canProceed
+    validationSummary: summary,
+    implementationPlan: summary.recommendations,
+    canProceed: summary.validationResult.canProceed
   };
 };
 
@@ -100,9 +121,11 @@ export const getSimplifiedValidationSummary = async () => {
       reusableComponents: componentInventory.components.filter(c => c.reusable).length,
       availableTemplates: componentInventory.templates.length,
       typescriptAlignment: typescriptAlignment.isAligned,
-      alignmentIssues: typescriptAlignment.missingTables.length + typescriptAlignment.typeConflicts.length
+      alignmentIssues: typescriptAlignment.missingTables.length + typescriptAlignment.typeConflicts.length,
+      automatedVerificationActive: automatedVerification.getStatus().isRunning
     },
     componentInventory,
-    typescriptAlignment
+    typescriptAlignment,
+    verificationStatus: automatedVerification.getStatus()
   };
 };

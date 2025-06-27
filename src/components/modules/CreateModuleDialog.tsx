@@ -13,7 +13,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { useModules } from '@/hooks/useModules';
-import { Plus } from 'lucide-react';
+import { useAutomatedVerification } from '@/hooks/useAutomatedVerification';
+import { Plus, Shield } from 'lucide-react';
 
 interface CreateModuleDialogProps {
   open: boolean;
@@ -29,30 +30,53 @@ const CreateModuleDialog: React.FC<CreateModuleDialogProps> = ({
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [isActive, setIsActive] = useState(true);
+  const [isVerifying, setIsVerifying] = useState(false);
   
   const { createModule, isCreating } = useModules();
+  const { verifyBeforeCreation } = useAutomatedVerification();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!name.trim()) return;
     
-    const moduleData = {
-      name: name.trim(),
-      description: description.trim() || null,
-      is_active: isActive
-    };
-
-    if (onSubmit) {
-      await onSubmit(moduleData);
-    } else {
-      await createModule(moduleData);
-    }
+    // Run automated verification before creating module
+    setIsVerifying(true);
     
-    onOpenChange(false);
-    setName('');
-    setDescription('');
-    setIsActive(true);
+    try {
+      const canProceed = await verifyBeforeCreation({
+        moduleName: name.trim(),
+        componentType: 'module',
+        description: `Module: ${description.trim() || 'No description provided'}`
+      });
+      
+      if (!canProceed) {
+        console.log('🚫 Module creation blocked by verification system');
+        setIsVerifying(false);
+        return;
+      }
+      
+      const moduleData = {
+        name: name.trim(),
+        description: description.trim() || null,
+        is_active: isActive
+      };
+
+      if (onSubmit) {
+        await onSubmit(moduleData);
+      } else {
+        await createModule(moduleData);
+      }
+      
+      onOpenChange(false);
+      setName('');
+      setDescription('');
+      setIsActive(true);
+    } catch (error) {
+      console.error('❌ Error during module creation:', error);
+    } finally {
+      setIsVerifying(false);
+    }
   };
 
   return (
@@ -63,8 +87,9 @@ const CreateModuleDialog: React.FC<CreateModuleDialogProps> = ({
             <Plus className="h-5 w-5" />
             Create New Module
           </DialogTitle>
-          <DialogDescription>
-            Create a new system module that can be assigned to users and roles.
+          <DialogDescription className="flex items-center gap-2">
+            <Shield className="h-4 w-4 text-blue-500" />
+            Create a new system module with automated verification.
           </DialogDescription>
         </DialogHeader>
         
@@ -111,10 +136,19 @@ const CreateModuleDialog: React.FC<CreateModuleDialogProps> = ({
             </Button>
             <Button
               type="submit"
-              disabled={!name.trim() || isCreating}
+              disabled={!name.trim() || isCreating || isVerifying}
               className="flex-1"
             >
-              {isCreating ? 'Creating...' : 'Create Module'}
+              {isVerifying ? (
+                <>
+                  <Shield className="mr-2 h-4 w-4 animate-spin" />
+                  Verifying...
+                </>
+              ) : isCreating ? (
+                'Creating...'
+              ) : (
+                'Create Module'
+              )}
             </Button>
           </div>
         </form>
