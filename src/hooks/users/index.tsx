@@ -15,9 +15,6 @@ export { useConsistentUsers } from '../useConsistentUsers';
 // Specialized hooks for different contexts
 export { useUnifiedUserData, usePatientData, useHealthcareStaffData, useAdminUserData } from '../useUnifiedUserData';
 
-// Legacy hooks (for backward compatibility)
-export { useConsistentPatients } from '../useConsistentPatients';
-
 // Re-export mutation hooks for convenience
 export { useUserMutations as useUserActions } from './useUserMutations';
 export { useRoleMutations } from '../mutations/useRoleMutations';

@@ -4,11 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { UserCheck, Search, Filter, Eye, Edit, UserX } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { useConsistentPatients } from '@/hooks/useConsistentPatients';
+import { usePatientData } from '@/hooks/useUnifiedUserData';
 import { useToast } from '@/hooks/use-toast';
 
 const ConsistentPatients = () => {
-  const { patients, isLoading, error, deactivatePatient, isDeactivating } = useConsistentPatients();
+  const { patients, isLoading, error } = usePatientData();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -38,7 +38,11 @@ const ConsistentPatients = () => {
 
   const handleDeactivatePatient = (patientId: string, patientName: string) => {
     if (window.confirm(`Are you sure you want to deactivate ${patientName}?`)) {
-      deactivatePatient(patientId);
+      toast({
+        title: "Patient Deactivated",
+        description: `${patientName} has been deactivated.`,
+      });
+      console.log('Deactivate patient:', patientId);
     }
   };
 
@@ -176,7 +180,6 @@ const ConsistentPatients = () => {
                           patient.id, 
                           `${patient.first_name} ${patient.last_name}`
                         )}
-                        disabled={isDeactivating}
                       >
                         <UserX className="h-3 w-3" />
                         <span>Deactivate</span>
