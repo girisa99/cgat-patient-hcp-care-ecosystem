@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { useApiIntegrations } from '@/hooks/useApiIntegrations';
+import { useApiIntegrations } from '@/hooks/useApiIntegrations.tsx'; // Use the .tsx version
 import { useEnhancedExternalApis } from '@/hooks/useEnhancedExternalApis';
 import AutoIntegrationBanner from './AutoIntegrationBanner';
 import ApiKeyIntegrationMonitor from './ApiKeyIntegrationMonitor';
@@ -30,7 +30,7 @@ const ApiIntegrationsManager = () => {
     externalApis
   } = useApiIntegrations();
   
-  const { externalApis: publishedApis, isLoadingPublished } = useEnhancedExternalApis();
+  const { externalApis: publishedApis, isLoading: isLoadingPublished } = useEnhancedExternalApis();
   const [activeTab, setActiveTab] = useState('overview');
 
   if (isLoading) return <LoadingState title="API Integrations" description="Loading API integrations..." />;
@@ -102,7 +102,7 @@ const ApiIntegrationsManager = () => {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Internal APIs</CardTitle>
-                <CreateIntegrationDialog type="internal" />
+                <CreateIntegrationDialog />
               </div>
               <p className="text-sm text-muted-foreground">
                 APIs developed and managed internally.
@@ -111,7 +111,6 @@ const ApiIntegrationsManager = () => {
             <CardContent>
               <InternalApiEndpointsList 
                 apis={internalApis || []} 
-                onSelectIntegration={setSelectedIntegration} 
               />
             </CardContent>
           </Card>
@@ -122,7 +121,7 @@ const ApiIntegrationsManager = () => {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>External APIs</CardTitle>
-                <CreateIntegrationDialog type="external" />
+                <CreateIntegrationDialog />
               </div>
               <p className="text-sm text-muted-foreground">
                 APIs consumed from external sources.
@@ -131,7 +130,6 @@ const ApiIntegrationsManager = () => {
             <CardContent>
               <ExternalApiEndpointsList 
                 apis={externalApis || []}
-                onSelectIntegration={setSelectedIntegration}
               />
             </CardContent>
           </Card>
@@ -139,7 +137,7 @@ const ApiIntegrationsManager = () => {
 
         <TabsContent value="published" className="space-y-6">
           <PublishedApisSection 
-            externalApis={publishedApis || []} 
+            publishedApis={publishedApis || []} 
             isLoading={isLoadingPublished || false} 
           />
           <ExternalApiPublisher />
@@ -150,7 +148,10 @@ const ApiIntegrationsManager = () => {
         </TabsContent>
 
         <TabsContent value="testing" className="space-y-6">
-          <ApiTestingInterface />
+          <ApiTestingInterface 
+            integration={integrations?.[0]} 
+            onClose={() => setActiveTab('overview')}
+          />
         </TabsContent>
       </Tabs>
     </div>
