@@ -50,32 +50,34 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       
       {/* Sidebar */}
       <div className={cn(
-        "bg-white border-r border-gray-200 h-full shadow-sm",
+        "bg-white h-full",
         // Mobile: Fixed overlay positioning
-        onClose && "fixed left-0 top-0 z-50 w-64 transition-transform duration-200 ease-in-out",
+        onClose && "fixed left-0 top-0 z-50 w-64 transition-transform duration-200 ease-in-out border-r border-gray-200 shadow-lg",
         onClose && (isOpen ? "translate-x-0" : "-translate-x-full"),
-        // Desktop: Static positioning, full height
-        !onClose && "w-64 h-screen relative"
+        // Desktop: Full height within container
+        !onClose && "w-full h-full"
       )}>
-        {/* Header section */}
-        <div className="flex h-16 shrink-0 items-center px-6 bg-white border-b">
-          <Code className="h-8 w-8 text-blue-600" />
-          <span className="ml-2 text-xl font-semibold text-gray-900">
-            Healthcare Admin
-          </span>
-          {/* Close button - only show on mobile */}
-          {onClose && (
+        {/* Header section - only show on mobile */}
+        {onClose && (
+          <div className="flex h-16 shrink-0 items-center px-6 bg-white border-b">
+            <Code className="h-8 w-8 text-blue-600" />
+            <span className="ml-2 text-xl font-semibold text-gray-900">
+              Healthcare Admin
+            </span>
             <button
               onClick={onClose}
               className="ml-auto p-2 hover:bg-gray-100 rounded-md transition-colors"
             >
               <X className="h-5 w-5" />
             </button>
-          )}
-        </div>
+          </div>
+        )}
         
         {/* Navigation section */}
-        <nav className="flex flex-1 flex-col px-6 py-4 bg-white overflow-y-auto">
+        <nav className={cn(
+          "flex flex-1 flex-col px-6 py-4 bg-white overflow-y-auto",
+          onClose ? "pt-4" : "pt-6"
+        )}>
           <ul role="list" className="flex flex-1 flex-col gap-y-7">
             <li>
               <ul role="list" className="-mx-2 space-y-1">

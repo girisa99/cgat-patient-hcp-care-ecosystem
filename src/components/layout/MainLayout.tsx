@@ -38,7 +38,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       <div className="flex pt-16 min-h-screen">
         {/* Desktop Sidebar - Fixed width, always visible */}
         {!isMobile && (
-          <div className="w-64 flex-shrink-0 fixed left-0 top-16 h-full z-30">
+          <div className="w-64 flex-shrink-0 fixed left-0 top-16 bottom-0 z-20 bg-white border-r border-gray-200">
             <Sidebar 
               isOpen={false} 
               onClose={() => {}} 
