@@ -7,7 +7,7 @@ import { AutoModuleManager } from '@/components/admin/AutoModuleManager';
 import { useModules } from '@/hooks/useModules';
 
 const Modules = () => {
-  const { modules, isLoading } = useModules();
+  const { modules, isLoadingModules } = useModules();
   const [selectedModule, setSelectedModule] = useState(null);
 
   const handleAssignUsers = (module: any) => {
