@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useApiIntegrations } from '@/hooks/useApiIntegrations.tsx';
 import { useEnhancedExternalApis } from '@/hooks/useEnhancedExternalApis';
-import AutoIntegrationBanner from './AutoIntegrationBanner';
 import ApiKeyIntegrationMonitor from './ApiKeyIntegrationMonitor';
 import ApiOverviewDashboard from './ApiOverviewDashboard';
 import { InternalApiEndpointsList } from './InternalApiEndpointsList';
@@ -70,9 +69,6 @@ const ApiIntegrationsManager = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8 max-w-7xl">
-        {/* Auto Integration Banner */}
-        <AutoIntegrationBanner />
-
         {/* Header Section - Left Aligned */}
         <div className="mb-8 text-left">
           <h1 className="text-4xl font-bold tracking-tight text-gray-900 mb-2">API Management</h1>
@@ -88,9 +84,8 @@ const ApiIntegrationsManager = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid grid-cols-7 w-full">
+          <TabsList className="grid grid-cols-6 w-full">
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="auto-keys">Smart Setup</TabsTrigger>
             <TabsTrigger value="internal">Internal APIs</TabsTrigger>
             <TabsTrigger value="external">External APIs</TabsTrigger>
             <TabsTrigger value="published">Published APIs</TabsTrigger>
@@ -100,23 +95,6 @@ const ApiIntegrationsManager = () => {
 
           <TabsContent value="overview" className="space-y-6">
             <ApiOverviewDashboard />
-          </TabsContent>
-
-          <TabsContent value="auto-keys" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  🤖 Smart API Setup
-                  <Badge variant="secondary">Automated</Badge>
-                </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  API keys automatically set up everything needed: database, security, documentation, and integration.
-                </p>
-              </CardHeader>
-              <CardContent>
-                <ApiKeyIntegrationMonitor />
-              </CardContent>
-            </Card>
           </TabsContent>
 
           <TabsContent value="internal" className="space-y-6">
@@ -179,7 +157,20 @@ const ApiIntegrationsManager = () => {
           </TabsContent>
 
           <TabsContent value="keys" className="space-y-6">
-            <ApiKeyManager />
+            <Card>
+              <CardHeader>
+                <CardTitle>API Key Management</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Manage your API keys and access tokens
+                </p>
+              </CardHeader>
+              <CardContent>
+                <ApiKeyManager />
+                <div className="mt-6">
+                  <ApiKeyIntegrationMonitor />
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="testing" className="space-y-6">
