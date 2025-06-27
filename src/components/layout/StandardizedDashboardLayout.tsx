@@ -94,13 +94,14 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
             "transition-all duration-200",
             // Sidebar spacing
             isMobile ? "ml-0" : "md:ml-64",
-            // Top spacing - header (64px) + mobile menu (48px if mobile)
-            "pt-16", // Base header height
-            isMobile && "mt-12", // Additional space for mobile menu
+            // Top spacing calculation:
+            // Mobile: header (64px) + mobile menu (48px) = 112px total
+            // Desktop: header (64px) only
+            isMobile ? "pt-28" : "pt-16",
             debugMode && "border-2 border-dashed border-blue-500"
           )}
           style={{
-            minHeight: 'calc(100vh - 64px)' // Subtract header height
+            minHeight: isMobile ? 'calc(100vh - 112px)' : 'calc(100vh - 64px)'
           }}
         >
           {/* Content wrapper with padding */}
