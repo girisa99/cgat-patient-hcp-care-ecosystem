@@ -1,13 +1,63 @@
 
 import { useAuthContext } from '@/components/auth/AuthProvider';
 import { useAuthActions } from '@/hooks/useAuthActions';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+
+interface DashboardData {
+  totalUsers: number;
+  totalFacilities: number;
+  activeModules: number;
+  systemHealth: 'healthy' | 'warning' | 'error';
+}
+
+const fetchDashboardData = async (): Promise<DashboardData> => {
+  // Fetch total users
+  const { count: totalUsers } = await supabase
+    .from('profiles')
+    .select('*', { count: 'exact', head: true });
+
+  // Fetch total facilities
+  const { count: totalFacilities } = await supabase
+    .from('facilities')
+    .select('*', { count: 'exact', head: true })
+    .eq('is_active', true);
+
+  // Fetch active modules
+  const { count: activeModules } = await supabase
+    .from('modules')
+    .select('*', { count: 'exact', head: true })
+    .eq('is_active', true);
+
+  return {
+    totalUsers: totalUsers || 0,
+    totalFacilities: totalFacilities || 0,
+    activeModules: activeModules || 0,
+    systemHealth: 'healthy'
+  };
+};
 
 export const useDashboard = () => {
   const { profile, userRoles, loading, user, refreshUserData } = useAuthContext();
   const { assignUserRole } = useAuthActions();
 
+  // Dashboard data query
+  const { 
+    data: dashboardData, 
+    isLoading, 
+    error, 
+    refetch 
+  } = useQuery({
+    queryKey: ['dashboard-data'],
+    queryFn: fetchDashboardData,
+    enabled: !!user, // Only fetch when user is authenticated
+  });
+
   const handleRefresh = async () => {
-    await refreshUserData();
+    await Promise.all([
+      refreshUserData(),
+      refetch()
+    ]);
   };
 
   const handleAssignTestRole = async () => {
@@ -52,6 +102,10 @@ export const useDashboard = () => {
     userRoles,
     loading,
     user,
+    dashboardData,
+    isLoading,
+    error,
+    refetch: handleRefresh,
     handleRefresh,
     handleAssignTestRole,
     getRoleColor,
