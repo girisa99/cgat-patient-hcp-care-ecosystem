@@ -27,7 +27,7 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
   className,
 }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [debugMode, setDebugMode] = useState(false);
+  const [debugMode, setDebugMode] = useState(true); // Enable debug by default temporarily
   const { isMobile, isTablet } = useResponsiveLayout();
 
   // Debug keyboard shortcut
@@ -43,15 +43,37 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [debugMode]);
 
-  // Debug info logging
+  // Enhanced debug info logging
   useEffect(() => {
     if (debugMode) {
-      console.log('🔍 Current Layout State:');
+      console.log('🔍 Layout Analysis:');
       console.log('- isMobile:', isMobile);
       console.log('- isTablet:', isTablet);
       console.log('- sidebarOpen:', sidebarOpen);
       console.log('- showPageHeader:', showPageHeader);
       console.log('- pageTitle:', pageTitle);
+      
+      // Get actual measurements
+      setTimeout(() => {
+        const header = document.querySelector('header');
+        const mobileMenu = document.querySelector('[data-mobile-menu]');
+        const main = document.querySelector('main');
+        
+        console.log('📐 Actual Layout Measurements:');
+        console.log('- Header height:', header?.offsetHeight);
+        console.log('- Mobile menu height:', mobileMenu?.offsetHeight);
+        console.log('- Main top position:', main?.getBoundingClientRect().top);
+        console.log('- Main padding-top:', main ? getComputedStyle(main).paddingTop : 'N/A');
+        console.log('- Main margin-top:', main ? getComputedStyle(main).marginTop : 'N/A');
+        console.log('- Window height:', window.innerHeight);
+        
+        // Check for any other elements that might be affecting layout
+        const allFixedElements = document.querySelectorAll('[style*="position: fixed"], .fixed');
+        console.log('🔍 Fixed position elements:', allFixedElements.length);
+        allFixedElements.forEach((el, index) => {
+          console.log(`  ${index + 1}:`, el.tagName, el.className, el.getBoundingClientRect());
+        });
+      }, 100);
     }
   }, [debugMode, isMobile, isTablet, sidebarOpen, showPageHeader, pageTitle]);
 
@@ -74,8 +96,13 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
               onClick={() => {
                 const main = document.querySelector('main');
                 if (main) {
-                  console.log('📐 Main element styles:', {
-                    computed: getComputedStyle(main),
+                  console.log('📐 Main element details:', {
+                    computed: {
+                      paddingTop: getComputedStyle(main).paddingTop,
+                      marginTop: getComputedStyle(main).marginTop,
+                      top: getComputedStyle(main).top,
+                      position: getComputedStyle(main).position,
+                    },
                     classes: main.className,
                     rect: main.getBoundingClientRect(),
                   });
@@ -100,7 +127,10 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
         
         {/* Mobile menu button - only show on mobile/tablet */}
         {(isMobile || isTablet) && (
-          <div className="md:hidden fixed top-16 left-0 right-0 z-40 bg-background/95 backdrop-blur border-b px-4 py-2">
+          <div 
+            data-mobile-menu
+            className="md:hidden fixed top-16 left-0 right-0 z-40 bg-background/95 backdrop-blur border-b px-4 py-2"
+          >
             <div className="flex justify-between items-center">
               <Button 
                 variant="ghost" 
@@ -135,8 +165,8 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
               "flex-1 min-h-screen",
               // Sidebar spacing
               isMobile ? "ml-0" : "md:ml-64",
-              // Responsive top spacing
-              (isMobile || isTablet) ? "pt-[104px]" : "pt-16", // Mobile/tablet: header + mobile menu, Desktop: header only
+              // Let's temporarily use a simpler approach to test
+              "pt-16", // Just header height first
               debugMode && "border-4 border-dashed border-red-500"
             )}
           >
