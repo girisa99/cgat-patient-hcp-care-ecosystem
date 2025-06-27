@@ -17,10 +17,10 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   onAssignTestRole 
 }) => {
   return (
-    <div className="flex justify-between items-center">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
-        <p className="text-muted-foreground">
+    <div className="flex justify-between items-center w-full">
+      <div className="text-left">
+        <h2 className="text-3xl font-bold tracking-tight text-left">Dashboard</h2>
+        <p className="text-muted-foreground text-left">
           Welcome to your healthcare portal dashboard
         </p>
       </div>

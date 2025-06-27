@@ -12,8 +12,8 @@ interface ContainerProps {
 
 export const Container: React.FC<ContainerProps> = ({
   children,
-  size = 'xl',
-  padding = 'md',
+  size = 'full',
+  padding = 'none',
   className,
 }) => {
   const { spacing } = useDesignSystem();
@@ -23,7 +23,7 @@ export const Container: React.FC<ContainerProps> = ({
     md: 'max-w-4xl',
     lg: 'max-w-6xl',
     xl: 'max-w-7xl',
-    full: 'max-w-full',
+    full: 'w-full',
   };
 
   const paddingClasses = {
@@ -36,14 +36,11 @@ export const Container: React.FC<ContainerProps> = ({
   return (
     <div
       className={cn(
-        'mx-auto w-full',
-        sizeClasses[size],
+        'w-full',
+        size === 'full' ? 'w-full' : `${sizeClasses[size]} mx-auto`,
         paddingClasses[padding],
         className
       )}
-      style={{
-        '--container-padding': spacing[padding === 'sm' ? 'sm' : padding === 'lg' ? 'lg' : 'md'],
-      } as React.CSSProperties}
     >
       {children}
     </div>

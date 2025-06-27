@@ -1,7 +1,6 @@
 
 import React, { useState } from 'react';
 import { DesignSystemProvider } from '@/components/ui/design-system/DesignSystemProvider';
-import { PageLayout } from '@/components/ui/layout/PageLayout';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import Header from './Header';
 import Sidebar from './Sidebar';
@@ -24,8 +23,8 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
   pageTitle,
   pageSubtitle,
   headerActions,
-  containerSize = 'xl',
-  showPageHeader = true,
+  containerSize = 'full',
+  showPageHeader = false,
   className,
 }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -36,18 +35,15 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
       <div className={cn("min-h-screen bg-background", className)}>
         <Header />
         <div className="flex">
-          {/* Desktop Sidebar - Always visible and properly positioned */}
           <Sidebar 
             isOpen={sidebarOpen} 
             onClose={() => setSidebarOpen(false)} 
           />
           
-          {/* Main Content Area */}
           <main className={cn(
-            "flex-1 transition-all duration-300 ease-in-out",
+            "flex-1 transition-all duration-300 ease-in-out w-full",
             isMobile ? "ml-0" : "md:ml-64"
           )}>
-            {/* Mobile Menu Button */}
             {(isMobile || isTablet) && (
               <div className="md:hidden p-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
                 <Button 
@@ -62,17 +58,35 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
               </div>
             )}
             
-            {/* Page Content with standardized layout */}
-            <PageLayout
-              title={pageTitle}
-              subtitle={pageSubtitle}
-              headerActions={headerActions}
-              containerSize={containerSize}
-              showHeader={showPageHeader}
-              className="min-h-[calc(100vh-4rem)]"
-            >
-              {children}
-            </PageLayout>
+            <div className="w-full px-6 py-6">
+              {showPageHeader && (pageTitle || pageSubtitle || headerActions) && (
+                <div className="mb-8 w-full">
+                  <div className="flex items-start justify-between w-full">
+                    <div className="flex-1 text-left">
+                      {pageTitle && (
+                        <h1 className="text-3xl font-bold tracking-tight text-gray-900 mb-2 text-left">
+                          {pageTitle}
+                        </h1>
+                      )}
+                      {pageSubtitle && (
+                        <p className="text-muted-foreground text-lg text-left">
+                          {pageSubtitle}
+                        </p>
+                      )}
+                    </div>
+                    {headerActions && (
+                      <div className="flex items-center gap-3 ml-6">
+                        {headerActions}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+              
+              <div className="w-full">
+                {children}
+              </div>
+            </div>
           </main>
         </div>
       </div>

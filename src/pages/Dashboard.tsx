@@ -25,7 +25,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="w-full space-y-6">
       <DashboardHeader
         user={user}
         userRoles={userRoles}
@@ -39,7 +39,7 @@ const Dashboard = () => {
         userRoles={userRoles}
       />
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 w-full">
         <ProfileCard
           profile={profile}
           user={user}

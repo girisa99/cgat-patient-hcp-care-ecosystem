@@ -20,25 +20,25 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
   subtitle,
   headerActions,
   className,
-  containerSize = 'xl',
+  containerSize = 'full',
   showHeader = true,
 }) => {
   const { spacing } = useDesignSystem();
 
   return (
-    <div className={cn('min-h-full', className)}>
-      <Container size={containerSize} padding="lg">
+    <div className={cn('min-h-full w-full', className)}>
+      <div className="w-full px-6 py-6">
         {showHeader && (title || subtitle || headerActions) && (
-          <div className="mb-8">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
+          <div className="mb-8 w-full">
+            <div className="flex items-start justify-between w-full">
+              <div className="flex-1 text-left">
                 {title && (
-                  <h1 className="text-3xl font-bold tracking-tight text-gray-900 mb-2">
+                  <h1 className="text-3xl font-bold tracking-tight text-gray-900 mb-2 text-left">
                     {title}
                   </h1>
                 )}
                 {subtitle && (
-                  <p className="text-muted-foreground text-lg">
+                  <p className="text-muted-foreground text-lg text-left">
                     {subtitle}
                   </p>
                 )}
@@ -52,10 +52,10 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
           </div>
         )}
         
-        <div className="space-y-6">
+        <div className="w-full">
           {children}
         </div>
-      </Container>
+      </div>
     </div>
   );
 };
