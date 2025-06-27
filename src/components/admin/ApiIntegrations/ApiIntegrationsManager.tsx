@@ -1,25 +1,20 @@
 
 import React, { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Grid, GridItem } from '@/components/ui/layout/Grid';
-import { Section } from '@/components/ui/layout/Section';
+import { Tabs } from '@/components/ui/tabs';
 import { useApiIntegrations } from '@/hooks/useApiIntegrations.tsx';
 import { useEnhancedExternalApis } from '@/hooks/useEnhancedExternalApis';
-import ApiKeyIntegrationMonitor from './ApiKeyIntegrationMonitor';
-import ApiOverviewDashboard from './ApiOverviewDashboard';
-import { InternalApiEndpointsList } from './InternalApiEndpointsList';
-import { ExternalApiEndpointsList } from './ExternalApiEndpointsList';
-import PublishedApisSection from './PublishedApisSection';
-import { CreateIntegrationDialog } from './CreateIntegrationDialog';
-import ExternalApiPublisher from './ExternalApiPublisher';
-import ApiKeyManager from './ApiKeyManager';
-import { ApiTestingInterface } from './ApiTestingInterface';
 import IntegrationDetailView from './IntegrationDetailView';
-import DeveloperPortal from './DeveloperPortal';
 import { LoadingState } from '../shared/LoadingState';
 import { ErrorState } from '../shared/ErrorState';
+import { ApiIntegrationsStats } from './ApiIntegrationsStats';
+import { ApiIntegrationsTabs } from './ApiIntegrationsTabs';
+import { OverviewTabContent } from './tabs/OverviewTabContent';
+import { InternalApisTabContent } from './tabs/InternalApisTabContent';
+import { ExternalApisTabContent } from './tabs/ExternalApisTabContent';
+import { PublishedApisTabContent } from './tabs/PublishedApisTabContent';
+import { DeveloperTabContent } from './tabs/DeveloperTabContent';
+import { ApiKeysTabContent } from './tabs/ApiKeysTabContent';
+import { TestingTabContent } from './tabs/TestingTabContent';
 
 const ApiIntegrationsManager = () => {
   const { 
@@ -49,7 +44,6 @@ const ApiIntegrationsManager = () => {
   };
 
   const handleViewDocumentation = (integrationId: string) => {
-    // Navigate to documentation view
     console.log('View documentation for:', integrationId);
   };
 
@@ -69,117 +63,52 @@ const ApiIntegrationsManager = () => {
     );
   }
 
-  const statsBadges = (
-    <div className="flex gap-2 flex-wrap">
-      <Badge variant="outline">{integrations?.length || 0} Total</Badge>
-      <Badge variant="default">{internalApis?.length || 0} Internal</Badge>
-      <Badge variant="secondary">{externalApis?.length || 0} External</Badge>
-      <Badge variant="outline">{publishedApis?.length || 0} Published</Badge>
-    </div>
-  );
-
   return (
     <div className="space-y-6">
-      {/* Stats Overview */}
-      <Section>
-        {statsBadges}
-      </Section>
+      <ApiIntegrationsStats
+        integrations={integrations || []}
+        internalApis={internalApis || []}
+        externalApis={externalApis || []}
+        publishedApis={publishedApis || []}
+      />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid grid-cols-7 w-full">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="internal">Internal APIs</TabsTrigger>
-          <TabsTrigger value="external">External APIs</TabsTrigger>
-          <TabsTrigger value="published">Published APIs</TabsTrigger>
-          <TabsTrigger value="developer">Developer</TabsTrigger>
-          <TabsTrigger value="keys">API Keys</TabsTrigger>
-          <TabsTrigger value="testing">Testing</TabsTrigger>
-        </TabsList>
+        <ApiIntegrationsTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
-        <TabsContent value="overview" className="space-y-6">
-          <ApiOverviewDashboard />
-        </TabsContent>
+        <OverviewTabContent />
 
-        <TabsContent value="internal" className="space-y-6">
-          <Section 
-            variant="card" 
-            title="Internal APIs" 
-            subtitle={`APIs developed and managed internally (${internalApis?.length || 0} total).`}
-            headerActions={
-              <CreateIntegrationDialog 
-                open={createDialogOpen}
-                onOpenChange={setCreateDialogOpen}
-              />
-            }
-          >
-            <InternalApiEndpointsList 
-              apis={internalApis || []} 
-              searchTerm={searchTerm}
-              onDownloadCollection={handleDownloadCollection}
-              onViewDetails={handleViewDetails}
-              onViewDocumentation={handleViewDocumentation}
-              onCopyUrl={handleCopyUrl}
-            />
-          </Section>
-        </TabsContent>
+        <InternalApisTabContent
+          internalApis={internalApis || []}
+          searchTerm={searchTerm}
+          createDialogOpen={createDialogOpen}
+          setCreateDialogOpen={setCreateDialogOpen}
+          onDownloadCollection={handleDownloadCollection}
+          onViewDetails={handleViewDetails}
+          onViewDocumentation={handleViewDocumentation}
+          onCopyUrl={handleCopyUrl}
+        />
 
-        <TabsContent value="external" className="space-y-6">
-          <Section 
-            variant="card" 
-            title="External APIs" 
-            subtitle={`APIs from external sources (${externalApis?.length || 0} total).`}
-            headerActions={
-              <CreateIntegrationDialog 
-                open={createDialogOpen}
-                onOpenChange={setCreateDialogOpen}
-              />
-            }
-          >
-            <ExternalApiEndpointsList 
-              apis={externalApis || []}
-              searchTerm={searchTerm}
-              onDownloadCollection={handleDownloadCollection}
-              onViewDetails={handleViewDetails}
-              onViewDocumentation={handleViewDocumentation}
-              onCopyUrl={handleCopyUrl}
-            />
-          </Section>
-        </TabsContent>
+        <ExternalApisTabContent
+          externalApis={externalApis || []}
+          searchTerm={searchTerm}
+          createDialogOpen={createDialogOpen}
+          setCreateDialogOpen={setCreateDialogOpen}
+          onDownloadCollection={handleDownloadCollection}
+          onViewDetails={handleViewDetails}
+          onViewDocumentation={handleViewDocumentation}
+          onCopyUrl={handleCopyUrl}
+        />
 
-        <TabsContent value="published" className="space-y-6">
-          <Grid cols={12} gap="lg">
-            <GridItem span={12}>
-              <PublishedApisSection />
-            </GridItem>
-            <GridItem span={12}>
-              <ExternalApiPublisher />
-            </GridItem>
-          </Grid>
-        </TabsContent>
+        <PublishedApisTabContent />
 
-        <TabsContent value="developer" className="space-y-6">
-          <DeveloperPortal />
-        </TabsContent>
+        <DeveloperTabContent />
 
-        <TabsContent value="keys" className="space-y-6">
-          <Section 
-            variant="card" 
-            title="API Key Management" 
-            subtitle="Manage your API keys and access tokens"
-          >
-            <div className="space-y-6">
-              <ApiKeyManager />
-              <ApiKeyIntegrationMonitor />
-            </div>
-          </Section>
-        </TabsContent>
+        <ApiKeysTabContent />
 
-        <TabsContent value="testing" className="space-y-6">
-          <ApiTestingInterface 
-            integration={integrations?.[0]} 
-            onClose={() => setActiveTab('overview')}
-          />
-        </TabsContent>
+        <TestingTabContent
+          integrations={integrations || []}
+          onClose={() => setActiveTab('overview')}
+        />
       </Tabs>
     </div>
   );
