@@ -106,21 +106,22 @@ export const AdminPageWrapper: React.FC<AdminPageWrapperProps> = ({
   contentPadding = 'md',
   variant = 'default'
 }) => {
-  const paddingClasses = {
-    none: 'p-4',
-    sm: 'p-4',
-    md: 'p-6',
-    lg: 'p-8'
+  // No padding classes since StandardizedDashboardLayout handles the outer padding
+  const spacingClasses = {
+    none: 'space-y-4',
+    sm: 'space-y-4',
+    md: 'space-y-6',
+    lg: 'space-y-8'
   };
 
   const containerClasses = {
-    default: 'space-y-6',
-    contained: 'space-y-6 max-w-7xl mx-auto',
-    'full-width': 'space-y-6 w-full'
+    default: spacingClasses[contentPadding],
+    contained: cn(spacingClasses[contentPadding], 'max-w-7xl'),
+    'full-width': cn(spacingClasses[contentPadding], 'w-full')
   };
 
   return (
-    <div className={cn(containerClasses[variant], paddingClasses[contentPadding], className)}>
+    <div className={cn(containerClasses[variant], className)}>
       {/* Page Header */}
       {(title || subtitle || headerActions) && (
         <div className="flex justify-between items-start gap-6">

@@ -109,7 +109,7 @@ const Users = () => {
         showStats={true}
         statsContent={statsContent}
         variant="full-width"
-        contentPadding="none"
+        contentPadding="md"
       >
         <div className="space-y-6">
           {/* Bulk Role Assignment */}
@@ -117,7 +117,7 @@ const Users = () => {
 
           {/* Users List */}
           <Card className="shadow-sm">
-            <CardContent className="p-0">
+            <CardContent className="p-6">
               <UsersList
                 onCreateUser={handleCreateUser}
                 onAssignRole={handleAssignRole}
