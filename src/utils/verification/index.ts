@@ -1,3 +1,4 @@
+
 /**
  * Pre-Implementation Verification System - Main Export
  * 
@@ -8,7 +9,22 @@
 // Main pre-implementation checker
 import { PreImplementationChecker } from './PreImplementationChecker';
 import { validateModuleCreation, validateComponentCreation, validateHookCreation } from './PreImplementationChecker';
-import type { PreImplementationCheckResult, ComponentScanResult, TypeScriptValidationResult, DatabaseAlignmentResult } from './PreImplementationChecker';
+
+// Component scanners
+import { ComponentScanner } from './ComponentScanner';
+import { TypeScriptValidator } from './TypeScriptValidator';
+import { DatabaseAlignmentValidator } from './DatabaseAlignmentValidator';
+import { GuidelinesValidator } from './GuidelinesValidator';
+
+// Types
+import type { 
+  PreImplementationCheckResult, 
+  ComponentScanResult, 
+  TypeScriptValidationResult, 
+  DatabaseAlignmentResult,
+  PatternEnforcementResult,
+  VerificationRequest
+} from './types';
 
 // Component registry scanner
 import { ComponentRegistryScanner } from './ComponentRegistryScanner';
@@ -20,11 +36,23 @@ import type { TypeScriptDatabaseAlignment, TypeConflict } from './TypeScriptData
 
 // Template enforcement
 import { TemplateEnforcement, enforceTemplateUsage } from './TemplateEnforcement';
-import type { TemplateRecommendation, PatternEnforcementResult } from './TemplateEnforcement';
+import type { TemplateRecommendation } from './TemplateEnforcement';
 
 // Export main pre-implementation checker
 export { PreImplementationChecker, validateModuleCreation, validateComponentCreation, validateHookCreation };
-export type { PreImplementationCheckResult, ComponentScanResult, TypeScriptValidationResult, DatabaseAlignmentResult };
+
+// Export component scanners
+export { ComponentScanner, TypeScriptValidator, DatabaseAlignmentValidator, GuidelinesValidator };
+
+// Export types
+export type { 
+  PreImplementationCheckResult, 
+  ComponentScanResult, 
+  TypeScriptValidationResult, 
+  DatabaseAlignmentResult,
+  PatternEnforcementResult,
+  VerificationRequest
+};
 
 // Export component registry scanner
 export { ComponentRegistryScanner };
@@ -36,17 +64,12 @@ export type { TypeScriptDatabaseAlignment, TypeConflict };
 
 // Export template enforcement
 export { TemplateEnforcement, enforceTemplateUsage };
-export type { TemplateRecommendation, PatternEnforcementResult };
+export type { TemplateRecommendation };
 
 /**
  * Quick validation function - runs all pre-implementation checks
  */
-export const runPreImplementationChecks = async (request: {
-  tableName?: string;
-  moduleName?: string;
-  componentType: 'hook' | 'component' | 'module' | 'template';
-  description: string;
-}) => {
+export const runPreImplementationChecks = async (request: VerificationRequest) => {
   console.log('🚀 Running complete pre-implementation verification...');
   
   const result = await PreImplementationChecker.runPreFlightCheck(request);
