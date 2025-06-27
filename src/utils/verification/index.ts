@@ -58,6 +58,11 @@ export {
   runSimplifiedValidation
 } from './SimplifiedValidator';
 
+// Import instances for the main validation functions
+import { coreVerificationOrchestrator } from './CoreVerificationOrchestrator';
+import { VerificationSummaryGenerator } from './VerificationSummaryGenerator';
+import { ModuleValidationOrchestrator } from './ModuleValidationOrchestrator';
+
 // Main validation functions
 export const validateBeforeImplementation = async (request: any) => {
   return await coreVerificationOrchestrator.validateBeforeImplementation(request);
@@ -79,11 +84,15 @@ export const createModuleWithAutomaticValidation = async (config: any) => {
   return await ModuleValidationOrchestrator.createModuleWithAutomaticValidation(config);
 };
 
-// Export all types
+// Export types - excluding conflicting SecurityVulnerability from DependencyManager
 export type * from './CoreVerificationOrchestrator';
 export type * from './VerificationSummaryGenerator';
 export type * from './UnusedCodeDetector';
-export type * from './DependencyManager';
+export type { 
+  DependencyManagementResult, 
+  OutdatedPackage, 
+  DependencyConflict 
+} from './DependencyManager';
 export type * from './DocumentationConsistencyChecker';
 export type * from './DatabaseMigrationSafetyChecker';
 export type * from './EnvironmentConfigValidator';
