@@ -4,7 +4,7 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/components/auth/AuthProvider';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
-import DashboardLayout from '@/components/layout/DashboardLayout';
+import StandardizedDashboardLayout from '@/components/layout/StandardizedDashboardLayout';
 import Index from '@/pages/Index';
 import Dashboard from '@/pages/Dashboard';
 import Users from '@/pages/Users';
@@ -31,9 +31,9 @@ function App() {
                 path="/dashboard"
                 element={
                   <ProtectedRoute>
-                    <DashboardLayout>
+                    <StandardizedDashboardLayout pageTitle="Dashboard" pageSubtitle="Healthcare System Overview">
                       <Dashboard />
-                    </DashboardLayout>
+                    </StandardizedDashboardLayout>
                   </ProtectedRoute>
                 }
               />
@@ -41,9 +41,9 @@ function App() {
                 path="/users"
                 element={
                   <ProtectedRoute>
-                    <DashboardLayout>
+                    <StandardizedDashboardLayout pageTitle="User Management" pageSubtitle="Manage user accounts, roles, and permissions">
                       <Users />
-                    </DashboardLayout>
+                    </StandardizedDashboardLayout>
                   </ProtectedRoute>
                 }
               />
@@ -51,9 +51,9 @@ function App() {
                 path="/facilities"
                 element={
                   <ProtectedRoute>
-                    <DashboardLayout>
+                    <StandardizedDashboardLayout pageTitle="Facilities" pageSubtitle="Manage healthcare facilities and locations">
                       <Facilities />
-                    </DashboardLayout>
+                    </StandardizedDashboardLayout>
                   </ProtectedRoute>
                 }
               />
@@ -61,9 +61,9 @@ function App() {
                 path="/patients"
                 element={
                   <ProtectedRoute>
-                    <DashboardLayout>
+                    <StandardizedDashboardLayout pageTitle="Patients" pageSubtitle="Manage patient records and information">
                       <Patients />
-                    </DashboardLayout>
+                    </StandardizedDashboardLayout>
                   </ProtectedRoute>
                 }
               />
@@ -71,9 +71,9 @@ function App() {
                 path="/settings"
                 element={
                   <ProtectedRoute>
-                    <DashboardLayout>
+                    <StandardizedDashboardLayout pageTitle="Settings" pageSubtitle="System configuration and preferences">
                       <Settings />
-                    </DashboardLayout>
+                    </StandardizedDashboardLayout>
                   </ProtectedRoute>
                 }
               />
@@ -81,9 +81,9 @@ function App() {
                 path="/onboarding"
                 element={
                   <ProtectedRoute>
-                    <DashboardLayout>
+                    <StandardizedDashboardLayout pageTitle="Onboarding" pageSubtitle="User onboarding and setup workflows">
                       <Onboarding />
-                    </DashboardLayout>
+                    </StandardizedDashboardLayout>
                   </ProtectedRoute>
                 }
               />
@@ -91,9 +91,9 @@ function App() {
                 path="/modules"
                 element={
                   <ProtectedRoute>
-                    <DashboardLayout>
+                    <StandardizedDashboardLayout pageTitle="Modules" pageSubtitle="System modules and components management">
                       <Modules />
-                    </DashboardLayout>
+                    </StandardizedDashboardLayout>
                   </ProtectedRoute>
                 }
               />
@@ -101,9 +101,9 @@ function App() {
                 path="/audit-log"
                 element={
                   <ProtectedRoute>
-                    <DashboardLayout>
+                    <StandardizedDashboardLayout pageTitle="Audit Log" pageSubtitle="System activity and security audit trail">
                       <AuditLog />
-                    </DashboardLayout>
+                    </StandardizedDashboardLayout>
                   </ProtectedRoute>
                 }
               />
@@ -111,9 +111,9 @@ function App() {
                 path="/api-integrations"
                 element={
                   <ProtectedRoute>
-                    <DashboardLayout>
+                    <StandardizedDashboardLayout pageTitle="API Management" pageSubtitle="Manage API integrations and access keys">
                       <ApiIntegrations />
-                    </DashboardLayout>
+                    </StandardizedDashboardLayout>
                   </ProtectedRoute>
                 }
               />

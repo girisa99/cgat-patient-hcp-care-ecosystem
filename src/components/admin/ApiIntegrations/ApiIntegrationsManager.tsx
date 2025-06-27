@@ -1,7 +1,10 @@
+
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Grid, GridItem } from '@/components/ui/layout/Grid';
+import { Section } from '@/components/ui/layout/Section';
 import { useApiIntegrations } from '@/hooks/useApiIntegrations.tsx';
 import { useEnhancedExternalApis } from '@/hooks/useEnhancedExternalApis';
 import ApiKeyIntegrationMonitor from './ApiKeyIntegrationMonitor';
@@ -66,21 +69,21 @@ const ApiIntegrationsManager = () => {
     );
   }
 
+  const statsBadges = (
+    <div className="flex gap-2 flex-wrap">
+      <Badge variant="outline">{integrations?.length || 0} Total</Badge>
+      <Badge variant="default">{internalApis?.length || 0} Internal</Badge>
+      <Badge variant="secondary">{externalApis?.length || 0} External</Badge>
+      <Badge variant="outline">{publishedApis?.length || 0} Published</Badge>
+    </div>
+  );
+
   return (
     <div className="space-y-6">
-      {/* Header Section - Left Aligned */}
-      <div className="text-left">
-        <h2 className="text-3xl font-bold tracking-tight text-gray-900">API Management</h2>
-        <p className="text-muted-foreground mt-1">
-          Manage your APIs, integrations, and access keys
-        </p>
-        <div className="flex gap-2 mt-4">
-          <Badge variant="outline">{integrations?.length || 0} Total</Badge>
-          <Badge variant="default">{internalApis?.length || 0} Internal</Badge>
-          <Badge variant="secondary">{externalApis?.length || 0} External</Badge>
-          <Badge variant="outline">{publishedApis?.length || 0} Published</Badge>
-        </div>
-      </div>
+      {/* Stats Overview */}
+      <Section>
+        {statsBadges}
+      </Section>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid grid-cols-7 w-full">
@@ -98,62 +101,60 @@ const ApiIntegrationsManager = () => {
         </TabsContent>
 
         <TabsContent value="internal" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Internal APIs</CardTitle>
-                <CreateIntegrationDialog 
-                  open={createDialogOpen}
-                  onOpenChange={setCreateDialogOpen}
-                />
-              </div>
-              <p className="text-sm text-muted-foreground">
-                APIs developed and managed internally ({internalApis?.length || 0} total).
-              </p>
-            </CardHeader>
-            <CardContent>
-              <InternalApiEndpointsList 
-                apis={internalApis || []} 
-                searchTerm={searchTerm}
-                onDownloadCollection={handleDownloadCollection}
-                onViewDetails={handleViewDetails}
-                onViewDocumentation={handleViewDocumentation}
-                onCopyUrl={handleCopyUrl}
+          <Section 
+            variant="card" 
+            title="Internal APIs" 
+            subtitle={`APIs developed and managed internally (${internalApis?.length || 0} total).`}
+            headerActions={
+              <CreateIntegrationDialog 
+                open={createDialogOpen}
+                onOpenChange={setCreateDialogOpen}
               />
-            </CardContent>
-          </Card>
+            }
+          >
+            <InternalApiEndpointsList 
+              apis={internalApis || []} 
+              searchTerm={searchTerm}
+              onDownloadCollection={handleDownloadCollection}
+              onViewDetails={handleViewDetails}
+              onViewDocumentation={handleViewDocumentation}
+              onCopyUrl={handleCopyUrl}
+            />
+          </Section>
         </TabsContent>
 
         <TabsContent value="external" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>External APIs</CardTitle>
-                <CreateIntegrationDialog 
-                  open={createDialogOpen}
-                  onOpenChange={setCreateDialogOpen}
-                />
-              </div>
-              <p className="text-sm text-muted-foreground">
-                APIs from external sources ({externalApis?.length || 0} total).
-              </p>
-            </CardHeader>
-            <CardContent>
-              <ExternalApiEndpointsList 
-                apis={externalApis || []}
-                searchTerm={searchTerm}
-                onDownloadCollection={handleDownloadCollection}
-                onViewDetails={handleViewDetails}
-                onViewDocumentation={handleViewDocumentation}
-                onCopyUrl={handleCopyUrl}
+          <Section 
+            variant="card" 
+            title="External APIs" 
+            subtitle={`APIs from external sources (${externalApis?.length || 0} total).`}
+            headerActions={
+              <CreateIntegrationDialog 
+                open={createDialogOpen}
+                onOpenChange={setCreateDialogOpen}
               />
-            </CardContent>
-          </Card>
+            }
+          >
+            <ExternalApiEndpointsList 
+              apis={externalApis || []}
+              searchTerm={searchTerm}
+              onDownloadCollection={handleDownloadCollection}
+              onViewDetails={handleViewDetails}
+              onViewDocumentation={handleViewDocumentation}
+              onCopyUrl={handleCopyUrl}
+            />
+          </Section>
         </TabsContent>
 
         <TabsContent value="published" className="space-y-6">
-          <PublishedApisSection />
-          <ExternalApiPublisher />
+          <Grid cols={12} gap="lg">
+            <GridItem span={12}>
+              <PublishedApisSection />
+            </GridItem>
+            <GridItem span={12}>
+              <ExternalApiPublisher />
+            </GridItem>
+          </Grid>
         </TabsContent>
 
         <TabsContent value="developer" className="space-y-6">
@@ -161,20 +162,16 @@ const ApiIntegrationsManager = () => {
         </TabsContent>
 
         <TabsContent value="keys" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>API Key Management</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Manage your API keys and access tokens
-              </p>
-            </CardHeader>
-            <CardContent>
+          <Section 
+            variant="card" 
+            title="API Key Management" 
+            subtitle="Manage your API keys and access tokens"
+          >
+            <div className="space-y-6">
               <ApiKeyManager />
-              <div className="mt-6">
-                <ApiKeyIntegrationMonitor />
-              </div>
-            </CardContent>
-          </Card>
+              <ApiKeyIntegrationMonitor />
+            </div>
+          </Section>
         </TabsContent>
 
         <TabsContent value="testing" className="space-y-6">
