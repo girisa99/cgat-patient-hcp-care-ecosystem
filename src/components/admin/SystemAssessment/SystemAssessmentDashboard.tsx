@@ -22,7 +22,6 @@ const SystemAssessmentDashboard = () => {
     generateCleanupScript,
     generateMigrationPlan,
     hasCriticalFindings,
-    mockDataSeverity,
     totalTablesReviewed,
     unnecessaryTablesCount,
     emptyTablesCount
@@ -116,21 +115,7 @@ const SystemAssessmentDashboard = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2">
-                  <Code className="h-4 w-4" />
-                  <span className="text-sm font-medium">Mock Data</span>
-                </div>
-                <div className="mt-2">
-                  <Badge variant={getSeverityColor(mockDataSeverity || 'low')}>
-                    {(mockDataSeverity || 'unknown').toUpperCase()}
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-            
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center gap-2">
@@ -182,9 +167,8 @@ const SystemAssessmentDashboard = () => {
 
       {/* Detailed Assessment Tabs */}
       <Tabs defaultValue="critical" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="critical">Critical Findings</TabsTrigger>
-          <TabsTrigger value="mock-data">Mock Data</TabsTrigger>
           <TabsTrigger value="database">Database</TabsTrigger>
           <TabsTrigger value="sync">Real-time Sync</TabsTrigger>
           <TabsTrigger value="recommendations">Actions</TabsTrigger>
@@ -206,36 +190,6 @@ const SystemAssessmentDashboard = () => {
                     <AlertDescription>{finding}</AlertDescription>
                   </Alert>
                 ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="mock-data" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Mock Data Assessment</CardTitle>
-              <CardDescription>Analysis of mock data usage across the codebase</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <h4 className="font-medium mb-2">Files with Mock Data:</h4>
-                  <ul className="list-disc list-inside space-y-1 text-sm">
-                    {assessmentReport.detailedFindings.mockDataAssessment.filesWithMockData.map((file, index) => (
-                      <li key={index}>{file}</li>
-                    ))}
-                  </ul>
-                </div>
-                
-                <div>
-                  <h4 className="font-medium mb-2">Cleanup Recommendations:</h4>
-                  <ul className="list-disc list-inside space-y-1 text-sm">
-                    {assessmentReport.detailedFindings.mockDataAssessment.cleanupRecommendations.map((rec, index) => (
-                      <li key={index}>{rec}</li>
-                    ))}
-                  </ul>
-                </div>
               </div>
             </CardContent>
           </Card>
