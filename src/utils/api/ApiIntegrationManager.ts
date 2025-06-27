@@ -86,21 +86,9 @@ export class ApiIntegrationManager {
   }
 
   /**
-   * Generate Postman collection for integration
-   */
-  static async generatePostmanCollection(integrationId: string): Promise<any> {
-    const integration = this.getIntegrationById(integrationId);
-    if (!integration) {
-      throw new Error(`Integration with ID ${integrationId} not found`);
-    }
-    
-    return await PostmanCollectionGenerator.generatePostmanCollection(integration);
-  }
-
-  /**
    * Get integration statistics
    */
-  static getStatistics() {
+  static getIntegrationStats() {
     return {
       total: this.integrations.length,
       byType: {
@@ -116,5 +104,91 @@ export class ApiIntegrationManager {
       totalEndpoints: this.integrations.reduce((sum, i) => sum + i.endpoints.length, 0),
       totalSchemas: this.integrations.reduce((sum, i) => sum + Object.keys(i.schemas).length, 0)
     };
+  }
+
+  /**
+   * Register new integration
+   */
+  static async registerIntegration(config: Omit<ApiIntegration, 'id' | 'createdAt' | 'updatedAt'>): Promise<ApiIntegration> {
+    const integration: ApiIntegration = {
+      ...config,
+      id: `integration-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    
+    this.addIntegration(integration);
+    return integration;
+  }
+
+  /**
+   * Execute integration
+   */
+  static async executeIntegration(integrationId: string, operation: 'sync' | 'webhook' | 'manual', data?: any) {
+    const integration = this.getIntegrationById(integrationId);
+    if (!integration) {
+      throw new Error(`Integration with ID ${integrationId} not found`);
+    }
+    
+    console.log(`Executing ${operation} operation for integration:`, integration.name);
+    
+    // Mock execution result
+    return {
+      success: true,
+      operation,
+      integrationId,
+      data: data || {},
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  /**
+   * Export Postman collection
+   */
+  static async exportPostmanCollection(integrationId: string): Promise<string> {
+    const integration = this.getIntegrationById(integrationId);
+    if (!integration) {
+      throw new Error(`Integration with ID ${integrationId} not found`);
+    }
+    
+    return await PostmanCollectionGenerator.generatePostmanCollection(integration);
+  }
+
+  /**
+   * Export API documentation
+   */
+  static async exportApiDocumentation() {
+    const allIntegrations = this.getIntegrations();
+    
+    return {
+      metadata: {
+        total_integrations: allIntegrations.length,
+        total_endpoints: allIntegrations.reduce((sum, i) => sum + i.endpoints.length, 0),
+        total_rls_policies: allIntegrations.reduce((sum, i) => sum + i.rlsPolicies.length, 0),
+        total_data_mappings: allIntegrations.reduce((sum, i) => sum + i.mappings.length, 0),
+        export_timestamp: new Date().toISOString()
+      },
+      integrations: allIntegrations.map(integration => ({
+        id: integration.id,
+        name: integration.name,
+        type: integration.type,
+        endpoints: integration.endpoints,
+        schemas: integration.schemas,
+        rlsPolicies: integration.rlsPolicies,
+        mappings: integration.mappings
+      }))
+    };
+  }
+
+  /**
+   * Generate Postman collection for integration
+   */
+  static async generatePostmanCollection(integrationId: string): Promise<any> {
+    const integration = this.getIntegrationById(integrationId);
+    if (!integration) {
+      throw new Error(`Integration with ID ${integrationId} not found`);
+    }
+    
+    return await PostmanCollectionGenerator.generatePostmanCollection(integration);
   }
 }

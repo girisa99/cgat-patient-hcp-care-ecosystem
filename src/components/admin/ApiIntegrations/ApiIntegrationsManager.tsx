@@ -174,10 +174,7 @@ const ApiIntegrationsManager = () => {
         </TabsContent>
 
         <TabsContent value="published" className="space-y-6">
-          <PublishedApisSection 
-            externalApis={publishedApis || []} 
-            isLoading={isLoadingPublished || false} 
-          />
+          <PublishedApisSection />
           <ExternalApiPublisher />
         </TabsContent>
 

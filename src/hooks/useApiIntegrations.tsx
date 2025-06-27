@@ -1,3 +1,4 @@
+
 /**
  * Enhanced hook for managing API integrations with real data detection
  */
@@ -8,9 +9,6 @@ import { ApiIntegrationManager } from '@/utils/api/ApiIntegrationManager';
 import { ApiIntegration } from '@/utils/api/ApiIntegrationTypes';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-
-// Create an instance of the manager
-const apiIntegrationManager = new ApiIntegrationManager();
 
 export const useApiIntegrations = () => {
   const { toast } = useToast();
@@ -25,7 +23,7 @@ export const useApiIntegrations = () => {
     queryKey: ['api-integrations'],
     queryFn: async () => {
       console.log('Fetching real API integrations...');
-      const realIntegrations = await apiIntegrationManager.getIntegrations();
+      const realIntegrations = ApiIntegrationManager.getIntegrations();
       console.log('Loaded integrations:', realIntegrations);
       return realIntegrations;
     },
@@ -40,7 +38,7 @@ export const useApiIntegrations = () => {
     queryKey: ['api-integration-stats'],
     queryFn: async () => {
       console.log('Fetching integration statistics...');
-      const stats = await apiIntegrationManager.getIntegrationStats();
+      const stats = ApiIntegrationManager.getIntegrationStats();
       console.log('Integration stats:', stats);
       return stats;
     },
@@ -52,7 +50,7 @@ export const useApiIntegrations = () => {
   const registerIntegrationMutation = useMutation({
     mutationFn: async (config: Omit<ApiIntegration, 'id' | 'createdAt' | 'updatedAt'>) => {
       console.log('Registering new integration:', config);
-      return await apiIntegrationManager.registerIntegration(config);
+      return await ApiIntegrationManager.registerIntegration(config);
     },
     onSuccess: (integration) => {
       queryClient.invalidateQueries({ queryKey: ['api-integrations'] });
@@ -79,7 +77,7 @@ export const useApiIntegrations = () => {
       data?: any;
     }) => {
       console.log('Executing integration:', { integrationId, operation, data });
-      return await apiIntegrationManager.executeIntegration(integrationId, operation, data);
+      return await ApiIntegrationManager.executeIntegration(integrationId, operation, data);
     },
     onSuccess: (result) => {
       console.log('Integration execution successful:', result);
@@ -156,7 +154,7 @@ export const useApiIntegrations = () => {
   const downloadPostmanCollection = async (integrationId: string) => {
     try {
       console.log('Downloading Postman collection for:', integrationId);
-      const collectionJson = await apiIntegrationManager.exportPostmanCollection(integrationId);
+      const collectionJson = await ApiIntegrationManager.exportPostmanCollection(integrationId);
       const integration = integrations?.find(i => i.id === integrationId);
       
       const blob = new Blob([collectionJson], { type: 'application/json' });
@@ -190,7 +188,7 @@ export const useApiIntegrations = () => {
   const exportApiDocumentation = async () => {
     try {
       console.log('Exporting complete API documentation...');
-      const docs = await apiIntegrationManager.exportApiDocumentation();
+      const docs = await ApiIntegrationManager.exportApiDocumentation();
       const blob = new Blob([JSON.stringify(docs, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
