@@ -6,7 +6,7 @@ import { LayoutDebugOverlay } from '@/components/debug/LayoutDebugOverlay';
 import Header from './Header';
 import Sidebar from './Sidebar';
 import { Button } from '@/components/ui/button';
-import { Menu, Bug, Ruler } from 'lucide-react';
+import { Menu, Bug } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface StandardizedDashboardLayoutProps {
@@ -46,7 +46,7 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
   return (
     <DesignSystemProvider>
       <div className={cn("min-h-screen bg-background", className)}>
-        {/* Debug Overlay - Only show if debug mode is on */}
+        {/* Debug Overlay */}
         {debugMode && <LayoutDebugOverlay isEnabled={debugMode} />}
         
         {/* Fixed Header */}
@@ -58,18 +58,15 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
           onClose={() => setSidebarOpen(false)} 
         />
         
-        {/* Mobile menu button - only show on mobile */}
+        {/* Mobile menu button */}
         {isMobile && (
-          <div 
-            data-mobile-menu
-            className="fixed top-16 left-0 right-0 z-40 bg-background/95 backdrop-blur border-b px-4 py-2 md:hidden"
-          >
+          <div className="fixed top-16 left-0 right-0 z-40 bg-background border-b px-4 py-2 md:hidden">
             <div className="flex justify-between items-center">
               <Button 
                 variant="ghost" 
                 size="sm" 
                 onClick={() => setSidebarOpen(true)}
-                className="flex items-center space-x-2 hover:bg-accent transition-colors"
+                className="flex items-center space-x-2"
               >
                 <Menu className="h-4 w-4" />
                 <span>Menu</span>
@@ -91,32 +88,22 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
           </div>
         )}
         
-        {/* Main content area - FIXED */}
+        {/* Main content area */}
         <main 
           className={cn(
-            "flex-1 min-h-screen",
+            "transition-all duration-200",
             // Sidebar spacing
             isMobile ? "ml-0" : "md:ml-64",
-            // Top spacing - only one padding-top class
-            isMobile ? "pt-24" : "pt-16", // 24 = header + mobile menu, 16 = header only
-            debugMode && "border-4 border-dashed border-red-500"
+            // Top spacing - header (64px) + mobile menu (48px if mobile)
+            "pt-16", // Base header height
+            isMobile && "mt-12", // Additional space for mobile menu
+            debugMode && "border-2 border-dashed border-blue-500"
           )}
+          style={{
+            minHeight: 'calc(100vh - 64px)' // Subtract header height
+          }}
         >
-          {/* Debug info inside main */}
-          {debugMode && (
-            <div className="bg-yellow-100 border border-yellow-400 p-4 mb-4 text-sm">
-              <div className="font-bold mb-2">🔍 Main Element Debug</div>
-              <div>Mobile: {isMobile ? 'Yes' : 'No'}</div>
-              <div>Tablet: {isTablet ? 'Yes' : 'No'}</div>
-              <div>Expected top: {isMobile ? '96px (header + mobile menu)' : '64px (header only)'}</div>
-              <div>Applied classes: {cn(
-                "flex-1 min-h-screen",
-                isMobile ? "ml-0" : "md:ml-64",
-                isMobile ? "pt-24" : "pt-16"
-              )}</div>
-            </div>
-          )}
-          
+          {/* Content wrapper with padding */}
           <div className="p-6">
             {children}
           </div>
