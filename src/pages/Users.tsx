@@ -7,7 +7,11 @@ const Users = () => {
   return (
     <StandardizedDashboardLayout>
       <ConsistentUsersLayout>
-        {/* The ConsistentUsersLayout will handle its own content */}
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">
+            User management functionality will be available here.
+          </p>
+        </div>
       </ConsistentUsersLayout>
     </StandardizedDashboardLayout>
   );

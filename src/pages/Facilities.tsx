@@ -4,8 +4,10 @@ import StandardizedDashboardLayout from '@/components/layout/StandardizedDashboa
 import FacilitiesList from '@/components/facilities/FacilitiesList';
 import CreateFacilityDialog from '@/components/facilities/CreateFacilityDialog';
 import EditFacilityDialog from '@/components/facilities/EditFacilityDialog';
+import { useFacilities } from '@/hooks/useFacilities';
 
 const Facilities = () => {
+  const { facilities, isLoading } = useFacilities();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedFacilityId, setSelectedFacilityId] = useState<string | null>(null);
@@ -18,6 +20,10 @@ const Facilities = () => {
     setSelectedFacilityId(facilityId);
     setEditDialogOpen(true);
   };
+
+  const selectedFacility = selectedFacilityId 
+    ? facilities?.find(f => f.id === selectedFacilityId) 
+    : null;
 
   return (
     <StandardizedDashboardLayout>
@@ -39,9 +45,9 @@ const Facilities = () => {
           onOpenChange={setCreateDialogOpen}
         />
 
-        {selectedFacilityId && (
+        {selectedFacility && (
           <EditFacilityDialog
-            facilityId={selectedFacilityId}
+            facility={selectedFacility}
             open={editDialogOpen}
             onOpenChange={setEditDialogOpen}
           />
