@@ -37,8 +37,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             </Button>
           </div>
           
-          {/* Page Content */}
-          <div className="p-6">
+          {/* Page Content with consistent padding */}
+          <div className="p-6 max-w-7xl mx-auto">
             {children}
           </div>
         </main>

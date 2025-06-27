@@ -1,6 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Shield } from 'lucide-react';
 import UsersList from '@/components/users/UsersList';
 import BulkRoleAssignment from '@/components/users/BulkRoleAssignment';
@@ -46,18 +47,50 @@ const Users = () => {
     setEditUserOpen(true);
   };
 
+  // Calculate user statistics
+  const userStats = useMemo(() => {
+    if (!users) return { total: 0, active: 0, roles: {} };
+    
+    const stats = {
+      total: users.length,
+      active: users.filter(u => u.status === 'active').length,
+      roles: {} as Record<string, number>
+    };
+
+    users.forEach(user => {
+      if (user.role) {
+        stats.roles[user.role] = (stats.roles[user.role] || 0) + 1;
+      }
+    });
+
+    return stats;
+  }, [users]);
+
   return (
     <div className="space-y-6">
-      {/* Header Section */}
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">User Management</h2>
-        <p className="text-muted-foreground">
+      {/* Header Section - Left Aligned */}
+      <div className="text-left">
+        <h2 className="text-3xl font-bold tracking-tight text-gray-900">User Management</h2>
+        <p className="text-muted-foreground mt-1">
           Manage user accounts, roles, permissions, and facility assignments
         </p>
+        <div className="flex gap-2 mt-4">
+          <Badge variant="outline">{userStats.total} Total</Badge>
+          <Badge variant="default">{userStats.active} Active</Badge>
+          {Object.entries(userStats.roles).map(([role, count]) => (
+            <Badge key={role} variant="secondary" className="capitalize">
+              {count} {role}
+            </Badge>
+          ))}
+        </div>
       </div>
 
       {/* Bulk Operations */}
-      <BulkRoleAssignment />
+      <Card>
+        <CardContent className="pt-6">
+          <BulkRoleAssignment />
+        </CardContent>
+      </Card>
       
       {/* Users List */}
       <Card>
