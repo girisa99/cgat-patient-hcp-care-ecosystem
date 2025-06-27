@@ -2,11 +2,13 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { EnhancedTabs, EnhancedTabsList, EnhancedTabsTrigger, EnhancedTabsContent } from '@/components/ui/enhanced-tabs';
-import { Shield, CheckCircle, AlertTriangle, Lock } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Shield, CheckCircle, AlertTriangle, Lock, Bug } from 'lucide-react';
 import { AdminModuleVerificationResult } from '@/utils/verification/AdminModuleVerificationRunner';
+import { useFixedIssuesTracker } from '@/hooks/useFixedIssuesTracker';
 import EnhancedImplementationTracker from './EnhancedImplementationTracker';
 import IssuesTab from '@/components/security/IssuesTab';
+import FixedIssuesTracker from '@/components/security/FixedIssuesTracker';
 
 interface VerificationResultsTabsProps {
   verificationResult: AdminModuleVerificationResult;
@@ -19,6 +21,11 @@ const VerificationResultsTabs: React.FC<VerificationResultsTabsProps> = ({
   onReRunVerification,
   isReRunning = false
 }) => {
+  const { 
+    fixedIssues, 
+    getTotalFixedCount 
+  } = useFixedIssuesTracker();
+
   const getStatusBadge = () => {
     if (verificationResult.isLockedForCurrentState) {
       return <Badge variant="default" className="bg-green-600"><Lock className="h-3 w-3 mr-1" />Production Ready</Badge>;
@@ -36,6 +43,11 @@ const VerificationResultsTabs: React.FC<VerificationResultsTabsProps> = ({
     return 'text-red-600';
   };
 
+  // Calculate active issues (excluding fixed ones)
+  const totalIssues = verificationResult.criticalIssues.length + verificationResult.failedChecks.length;
+  const activeIssues = Math.max(0, totalIssues - getTotalFixedCount());
+  const fixedCount = getTotalFixedCount();
+
   return (
     <Card>
       <CardHeader>
@@ -49,33 +61,54 @@ const VerificationResultsTabs: React.FC<VerificationResultsTabsProps> = ({
               Comprehensive analysis of the admin module
             </CardDescription>
           </div>
-          {getStatusBadge()}
+          <div className="flex items-center gap-2">
+            {getStatusBadge()}
+            {fixedCount > 0 && (
+              <Badge variant="default" className="bg-green-100 text-green-800">
+                <CheckCircle className="h-3 w-3 mr-1" />
+                {fixedCount} Fixed
+              </Badge>
+            )}
+          </div>
         </div>
       </CardHeader>
       <CardContent>
-        <EnhancedTabs defaultValue="issues" className="w-full">
-          <EnhancedTabsList>
-            <EnhancedTabsTrigger value="issues">Issues</EnhancedTabsTrigger>
-            <EnhancedTabsTrigger value="implementation">Implementation</EnhancedTabsTrigger>
-            <EnhancedTabsTrigger value="overview">Overview</EnhancedTabsTrigger>
-            <EnhancedTabsTrigger value="checks">Checks</EnhancedTabsTrigger>
-            <EnhancedTabsTrigger value="recommendations">Recommendations</EnhancedTabsTrigger>
-            <EnhancedTabsTrigger value="plan">Plan</EnhancedTabsTrigger>
-          </EnhancedTabsList>
+        <Tabs defaultValue="issues" className="w-full">
+          <TabsList className="grid w-full grid-cols-6">
+            <TabsTrigger value="issues" className="flex items-center">
+              <Bug className="h-4 w-4 mr-1" />
+              Issues ({activeIssues})
+            </TabsTrigger>
+            <TabsTrigger value="fixed" className="flex items-center">
+              <CheckCircle className="h-4 w-4 mr-1" />
+              Fixed ({fixedCount})
+            </TabsTrigger>
+            <TabsTrigger value="implementation">Implementation</TabsTrigger>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="checks">Checks</TabsTrigger>
+            <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
+          </TabsList>
 
-          <EnhancedTabsContent value="issues">
+          <TabsContent value="issues">
             <IssuesTab 
               verificationSummary={verificationResult.comprehensiveResults}
               onReRunVerification={onReRunVerification}
               isReRunning={isReRunning}
             />
-          </EnhancedTabsContent>
+          </TabsContent>
 
-          <EnhancedTabsContent value="implementation">
+          <TabsContent value="fixed">
+            <FixedIssuesTracker 
+              fixedIssues={fixedIssues} 
+              totalFixesApplied={fixedCount}
+            />
+          </TabsContent>
+
+          <TabsContent value="implementation">
             <EnhancedImplementationTracker />
-          </EnhancedTabsContent>
+          </TabsContent>
 
-          <EnhancedTabsContent value="overview">
+          <TabsContent value="overview">
             <div className="grid gap-4 md:grid-cols-2">
               <div>
                 <h4 className="font-semibold mb-2">Stability Report</h4>
@@ -101,6 +134,16 @@ const VerificationResultsTabs: React.FC<VerificationResultsTabsProps> = ({
                     <span className="font-medium">{verificationResult.uiuxValidationResults?.overallScore || 'N/A'}/100</span>
                   </div>
                   <div className="flex justify-between">
+                    <span>Active Issues:</span>
+                    <span className={activeIssues > 0 ? 'text-red-600 font-medium' : 'text-green-600 font-medium'}>
+                      {activeIssues}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Fixed Issues:</span>
+                    <span className="text-green-600 font-medium">{fixedCount}</span>
+                  </div>
+                  <div className="flex justify-between">
                     <span>Status:</span>
                     <span className={verificationResult.isStable ? 'text-green-600 font-medium' : 'text-red-600 font-medium'}>
                       {verificationResult.isStable ? 'Stable' : 'Unstable'}
@@ -109,9 +152,9 @@ const VerificationResultsTabs: React.FC<VerificationResultsTabsProps> = ({
                 </div>
               </div>
             </div>
-          </EnhancedTabsContent>
+          </TabsContent>
 
-          <EnhancedTabsContent value="checks">
+          <TabsContent value="checks">
             <div className="grid gap-4 md:grid-cols-2">
               <div>
                 <h4 className="font-semibold mb-2 text-green-600">✅ Passed Checks</h4>
@@ -128,30 +171,37 @@ const VerificationResultsTabs: React.FC<VerificationResultsTabsProps> = ({
                     <p key={index} className="text-sm">{check}</p>
                   ))}
                 </div>
+                {fixedCount > 0 && (
+                  <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded">
+                    <p className="text-sm text-green-800">
+                      <CheckCircle className="h-4 w-4 inline mr-1" />
+                      {fixedCount} issues have been automatically resolved
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
-          </EnhancedTabsContent>
+          </TabsContent>
 
-          <EnhancedTabsContent value="recommendations">
+          <TabsContent value="recommendations">
             <div className="space-y-2">
               {verificationResult.recommendations.map((rec, index) => (
                 <p key={index} className={rec.startsWith('🔧') || rec.startsWith('📋') || rec.startsWith('🎨') || rec.startsWith('👥') ? 'font-semibold text-blue-600' : 'text-sm pl-4'}>
                   {rec}
                 </p>
               ))}
+              {fixedCount > 0 && (
+                <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded">
+                  <h5 className="font-semibold text-green-800 mb-2">✅ Completed Actions</h5>
+                  <p className="text-sm text-green-700">
+                    {fixedCount} issues were automatically fixed and removed from the active issues list. 
+                    View the "Fixed" tab to see details of all resolved issues.
+                  </p>
+                </div>
+              )}
             </div>
-          </EnhancedTabsContent>
-
-          <EnhancedTabsContent value="plan">
-            <div className="space-y-2">
-              {verificationResult.improvementPlan.map((item, index) => (
-                <p key={index} className={item.startsWith('📋') || item.startsWith('🚨') || item.startsWith('⚡') || item.startsWith('🔧') ? 'font-semibold text-blue-600' : 'text-sm pl-4'}>
-                  {item}
-                </p>
-              ))}
-            </div>
-          </EnhancedTabsContent>
-        </EnhancedTabs>
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );
