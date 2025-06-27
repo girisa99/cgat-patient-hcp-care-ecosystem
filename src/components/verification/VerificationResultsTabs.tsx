@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -5,13 +6,18 @@ import { EnhancedTabs, EnhancedTabsList, EnhancedTabsTrigger, EnhancedTabsConten
 import { Shield, CheckCircle, AlertTriangle, Lock } from 'lucide-react';
 import { AdminModuleVerificationResult } from '@/utils/verification/AdminModuleVerificationRunner';
 import EnhancedImplementationTracker from './EnhancedImplementationTracker';
+import IssuesTab from '@/components/security/IssuesTab';
 
 interface VerificationResultsTabsProps {
   verificationResult: AdminModuleVerificationResult;
+  onReRunVerification?: () => void;
+  isReRunning?: boolean;
 }
 
 const VerificationResultsTabs: React.FC<VerificationResultsTabsProps> = ({
-  verificationResult
+  verificationResult,
+  onReRunVerification,
+  isReRunning = false
 }) => {
   const getStatusBadge = () => {
     if (verificationResult.isLockedForCurrentState) {
@@ -47,15 +53,23 @@ const VerificationResultsTabs: React.FC<VerificationResultsTabsProps> = ({
         </div>
       </CardHeader>
       <CardContent>
-        <EnhancedTabs defaultValue="implementation" className="w-full">
+        <EnhancedTabs defaultValue="issues" className="w-full">
           <EnhancedTabsList>
+            <EnhancedTabsTrigger value="issues">Issues</EnhancedTabsTrigger>
             <EnhancedTabsTrigger value="implementation">Implementation</EnhancedTabsTrigger>
             <EnhancedTabsTrigger value="overview">Overview</EnhancedTabsTrigger>
             <EnhancedTabsTrigger value="checks">Checks</EnhancedTabsTrigger>
             <EnhancedTabsTrigger value="recommendations">Recommendations</EnhancedTabsTrigger>
-            <EnhancedTabsTrigger value="issues">Issues</EnhancedTabsTrigger>
             <EnhancedTabsTrigger value="plan">Plan</EnhancedTabsTrigger>
           </EnhancedTabsList>
+
+          <EnhancedTabsContent value="issues">
+            <IssuesTab 
+              verificationSummary={verificationResult.comprehensiveResults}
+              onReRunVerification={onReRunVerification}
+              isReRunning={isReRunning}
+            />
+          </EnhancedTabsContent>
 
           <EnhancedTabsContent value="implementation">
             <EnhancedImplementationTracker />
@@ -126,25 +140,6 @@ const VerificationResultsTabs: React.FC<VerificationResultsTabsProps> = ({
                 </p>
               ))}
             </div>
-          </EnhancedTabsContent>
-
-          <EnhancedTabsContent value="issues">
-            {verificationResult.criticalIssues.length > 0 ? (
-              <div className="space-y-2">
-                <h4 className="font-semibold text-red-600">🚨 Critical Issues</h4>
-                {verificationResult.criticalIssues.map((issue, index) => (
-                  <p key={index} className="text-sm bg-red-50 p-2 rounded border-l-4 border-red-500">
-                    {issue}
-                  </p>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-                <h4 className="font-semibold text-green-600">No Critical Issues Detected</h4>
-                <p className="text-muted-foreground">The admin module is free of critical issues.</p>
-              </div>
-            )}
           </EnhancedTabsContent>
 
           <EnhancedTabsContent value="plan">

@@ -64,7 +64,11 @@ const AdminVerificationTest = () => {
 
           {/* Results Tabs */}
           {verificationResult && !isRunning && (
-            <VerificationResultsTabs verificationResult={verificationResult} />
+            <VerificationResultsTabs 
+              verificationResult={verificationResult}
+              onReRunVerification={runVerification}
+              isReRunning={isRunning}
+            />
           )}
         </div>
       </PageContainer>
