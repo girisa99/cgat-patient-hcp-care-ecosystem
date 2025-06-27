@@ -10,6 +10,7 @@ import EditUserDialog from '@/components/users/EditUserDialog';
 import AssignRoleDialog from '@/components/users/AssignRoleDialog';
 import RemoveRoleDialog from '@/components/users/RemoveRoleDialog';
 import AssignFacilityDialog from '@/components/users/AssignFacilityDialog';
+import BulkRoleAssignment from '@/components/users/BulkRoleAssignment';
 import { Button } from '@/components/ui/button';
 import { useUsers } from '@/hooks/useUsers';
 
@@ -110,18 +111,23 @@ const Users = () => {
         variant="full-width"
         contentPadding="none"
       >
-        {/* Users List */}
-        <Card className="shadow-sm">
-          <CardContent className="p-0">
-            <UsersList
-              onCreateUser={handleCreateUser}
-              onAssignRole={handleAssignRole}
-              onRemoveRole={handleRemoveRole}
-              onAssignFacility={handleAssignFacility}
-              onEditUser={handleEditUser}
-            />
-          </CardContent>
-        </Card>
+        <div className="space-y-6">
+          {/* Bulk Role Assignment */}
+          <BulkRoleAssignment />
+
+          {/* Users List */}
+          <Card className="shadow-sm">
+            <CardContent className="p-0">
+              <UsersList
+                onCreateUser={handleCreateUser}
+                onAssignRole={handleAssignRole}
+                onRemoveRole={handleRemoveRole}
+                onAssignFacility={handleAssignFacility}
+                onEditUser={handleEditUser}
+              />
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Dialogs */}
         <CreateUserDialog
