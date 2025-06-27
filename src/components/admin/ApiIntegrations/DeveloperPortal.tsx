@@ -39,6 +39,7 @@ import { PostmanCollectionDownloader } from '@/utils/api/PostmanCollectionDownlo
 import { ApiDocumentationGenerator } from '@/utils/api/ApiDocumentationGenerator';
 import PublishedApisSection from './PublishedApisSection';
 import DeveloperNotificationBanner from './DeveloperNotificationBanner';
+import AutoIntegrationBanner from './AutoIntegrationBanner';
 
 interface ApiKey {
   id: string;
@@ -428,6 +429,7 @@ const DeveloperPortal = () => {
         </Dialog>
       </div>
 
+      <AutoIntegrationBanner />
       <DeveloperNotificationBanner />
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
