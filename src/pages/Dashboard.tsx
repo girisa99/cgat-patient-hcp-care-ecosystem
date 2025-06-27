@@ -5,7 +5,6 @@ import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import SystemStatusCard from '@/components/dashboard/SystemStatusCard';
 import UserRolesCard from '@/components/dashboard/UserRolesCard';
 import ProfileCard from '@/components/dashboard/ProfileCard';
-import StatusAlerts from '@/components/dashboard/StatusAlerts';
 import { useDashboard } from '@/hooks/useDashboard';
 
 const Dashboard = () => {
@@ -19,6 +18,13 @@ const Dashboard = () => {
     getRoleDescription
   } = useDashboard();
 
+  console.log('🔍 Dashboard Debug Info:', {
+    user: user ? 'Present' : 'Missing',
+    profile: profile ? 'Present' : 'Missing',
+    userRoles: userRoles.length,
+    currentRoute: '/dashboard'
+  });
+
   return (
     <StandardizedDashboardLayout>
       <div className="space-y-6">
@@ -27,11 +33,6 @@ const Dashboard = () => {
           userRoles={userRoles}
           onRefresh={handleRefresh}
           onAssignTestRole={handleAssignTestRole}
-        />
-        <StatusAlerts 
-          user={user}
-          profile={profile}
-          userRoles={userRoles}
         />
         
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">

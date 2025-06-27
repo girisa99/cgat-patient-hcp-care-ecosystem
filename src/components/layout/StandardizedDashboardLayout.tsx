@@ -63,8 +63,8 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
         
         {/* Debug Controls */}
         {debugMode && (
-          <div className="fixed top-16 right-4 z-[9998] bg-blue-500 text-white p-2 rounded text-xs space-y-1">
-            <div className="font-bold flex items-center gap-1">
+          <div className="fixed top-16 right-4 z-[9998] bg-red-500 text-white p-2 rounded text-xs space-y-1">
+            <div className="mb-2 font-bold flex items-center gap-1">
               <Bug className="h-3 w-3" />
               Debug Controls
             </div>
@@ -128,23 +128,23 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
           </div>
         )}
         
-        {/* Main content area with correct positioning */}
+        {/* Main content area with optimized positioning */}
         <div className="flex">
           <main 
             className={cn(
               "flex-1 min-h-screen",
               // Sidebar spacing
               isMobile ? "ml-0" : "md:ml-64",
-              // Top spacing - CRITICAL FIX: Only account for header, no extra padding
-              "mt-16", // Fixed header height
+              // Minimal top spacing - just enough for header
+              "pt-16", // Fixed header height only
               // Additional spacing for mobile menu
-              (isMobile || isTablet) && "mt-[104px]", // Header (64px) + mobile menu (40px)
+              (isMobile || isTablet) && "pt-[104px]", // Header (64px) + mobile menu (40px)
               debugMode && "border-4 border-dashed border-red-500"
             )}
           >
-            {/* Content container - starts immediately, no extra padding */}
+            {/* Content container - minimal padding to maximize space */}
             <div className={cn(
-              "w-full max-w-7xl mx-auto px-6 py-6",
+              "w-full max-w-7xl mx-auto px-4 py-4", // Reduced padding from px-6 py-6
               debugMode && "border-4 border-dashed border-green-500"
             )}>
               {children}
