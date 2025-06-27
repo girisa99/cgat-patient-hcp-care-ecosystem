@@ -27,32 +27,27 @@ export const ExternalApisTabContent: React.FC<ExternalApisTabContentProps> = ({
   onCopyUrl
 }) => {
   return (
-    <TabsContent value="external" className="w-full space-y-6">
-      <div className="w-full">
-        <Section 
-          variant="card" 
-          title="External APIs" 
-          subtitle={`APIs from external sources (${externalApis?.length || 0} total).`}
-          headerActions={
-            <CreateIntegrationDialog 
-              open={createDialogOpen}
-              onOpenChange={setCreateDialogOpen}
-            />
-          }
-          className="w-full"
-        >
-          <div className="w-full">
-            <ExternalApiEndpointsList 
-              apis={externalApis || []}
-              searchTerm={searchTerm}
-              onDownloadCollection={onDownloadCollection}
-              onViewDetails={onViewDetails}
-              onViewDocumentation={onViewDocumentation}
-              onCopyUrl={onCopyUrl}
-            />
-          </div>
-        </Section>
-      </div>
+    <TabsContent value="external" className="space-y-6">
+      <Section 
+        variant="card" 
+        title="External APIs" 
+        subtitle={`APIs from external sources (${externalApis?.length || 0} total).`}
+        headerActions={
+          <CreateIntegrationDialog 
+            open={createDialogOpen}
+            onOpenChange={setCreateDialogOpen}
+          />
+        }
+      >
+        <ExternalApiEndpointsList 
+          apis={externalApis || []}
+          searchTerm={searchTerm}
+          onDownloadCollection={onDownloadCollection}
+          onViewDetails={onViewDetails}
+          onViewDocumentation={onViewDocumentation}
+          onCopyUrl={onCopyUrl}
+        />
+      </Section>
     </TabsContent>
   );
 };

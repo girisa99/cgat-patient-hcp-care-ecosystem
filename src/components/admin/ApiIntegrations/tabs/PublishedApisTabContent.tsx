@@ -6,15 +6,9 @@ import ExternalApiPublisher from '../ExternalApiPublisher';
 
 export const PublishedApisTabContent: React.FC = () => {
   return (
-    <TabsContent value="published" className="w-full space-y-6">
-      <div className="w-full space-y-6">
-        <div className="w-full">
-          <PublishedApisSection />
-        </div>
-        <div className="w-full">
-          <ExternalApiPublisher />
-        </div>
-      </div>
+    <TabsContent value="published" className="space-y-6">
+      <PublishedApisSection />
+      <ExternalApiPublisher />
     </TabsContent>
   );
 };

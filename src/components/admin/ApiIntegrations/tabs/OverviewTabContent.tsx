@@ -5,10 +5,8 @@ import ApiOverviewDashboard from '../ApiOverviewDashboard';
 
 export const OverviewTabContent: React.FC = () => {
   return (
-    <TabsContent value="overview" className="w-full space-y-6">
-      <div className="w-full">
-        <ApiOverviewDashboard />
-      </div>
+    <TabsContent value="overview" className="space-y-6">
+      <ApiOverviewDashboard />
     </TabsContent>
   );
 };

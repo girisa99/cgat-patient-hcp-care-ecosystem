@@ -64,60 +64,52 @@ const ApiIntegrationsManager = () => {
   }
 
   return (
-    <div className="w-full space-y-6">
-      <div className="w-full">
-        <ApiIntegrationsStats
-          integrations={integrations || []}
+    <div className="space-y-6">
+      <ApiIntegrationsStats
+        integrations={integrations || []}
+        internalApis={internalApis || []}
+        externalApis={externalApis || []}
+        publishedApis={publishedApis || []}
+      />
+
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <ApiIntegrationsTabs activeTab={activeTab} onTabChange={setActiveTab} />
+
+        <OverviewTabContent />
+
+        <InternalApisTabContent
           internalApis={internalApis || []}
-          externalApis={externalApis || []}
-          publishedApis={publishedApis || []}
+          searchTerm={searchTerm}
+          createDialogOpen={createDialogOpen}
+          setCreateDialogOpen={setCreateDialogOpen}
+          onDownloadCollection={handleDownloadCollection}
+          onViewDetails={handleViewDetails}
+          onViewDocumentation={handleViewDocumentation}
+          onCopyUrl={handleCopyUrl}
         />
-      </div>
 
-      <div className="w-full">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-6">
-          <div className="w-full">
-            <ApiIntegrationsTabs activeTab={activeTab} onTabChange={setActiveTab} />
-          </div>
+        <ExternalApisTabContent
+          externalApis={externalApis || []}
+          searchTerm={searchTerm}
+          createDialogOpen={createDialogOpen}
+          setCreateDialogOpen={setCreateDialogOpen}
+          onDownloadCollection={handleDownloadCollection}
+          onViewDetails={handleViewDetails}
+          onViewDocumentation={handleViewDocumentation}
+          onCopyUrl={handleCopyUrl}
+        />
 
-          <div className="w-full">
-            <OverviewTabContent />
+        <PublishedApisTabContent />
 
-            <InternalApisTabContent
-              internalApis={internalApis || []}
-              searchTerm={searchTerm}
-              createDialogOpen={createDialogOpen}
-              setCreateDialogOpen={setCreateDialogOpen}
-              onDownloadCollection={handleDownloadCollection}
-              onViewDetails={handleViewDetails}
-              onViewDocumentation={handleViewDocumentation}
-              onCopyUrl={handleCopyUrl}
-            />
+        <DeveloperTabContent />
 
-            <ExternalApisTabContent
-              externalApis={externalApis || []}
-              searchTerm={searchTerm}
-              createDialogOpen={createDialogOpen}
-              setCreateDialogOpen={setCreateDialogOpen}
-              onDownloadCollection={handleDownloadCollection}
-              onViewDetails={handleViewDetails}
-              onViewDocumentation={handleViewDocumentation}
-              onCopyUrl={handleCopyUrl}
-            />
+        <ApiKeysTabContent />
 
-            <PublishedApisTabContent />
-
-            <DeveloperTabContent />
-
-            <ApiKeysTabContent />
-
-            <TestingTabContent
-              integrations={integrations || []}
-              onClose={() => setActiveTab('overview')}
-            />
-          </div>
-        </Tabs>
-      </div>
+        <TestingTabContent
+          integrations={integrations || []}
+          onClose={() => setActiveTab('overview')}
+        />
+      </Tabs>
     </div>
   );
 };
