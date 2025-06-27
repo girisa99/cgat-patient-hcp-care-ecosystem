@@ -1,213 +1,176 @@
 
-import React, { useState, useEffect } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Shield, Package, Clock } from 'lucide-react';
 import { useModules } from '@/hooks/useModules';
-import { CalendarIcon, Shield } from 'lucide-react';
 
 interface ModuleAssignmentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  selectedModule?: any;
-  userId?: string;
-  userName?: string;
+  userId: string | null;
+  userName: string;
 }
-
-// Mock users data - in a real app, this would come from a useUsers hook
-const mockUsers = [
-  { id: '1', name: 'John Doe', email: 'john@example.com' },
-  { id: '2', name: 'Jane Smith', email: 'jane@example.com' },
-  { id: '3', name: 'Bob Johnson', email: 'bob@example.com' },
-];
 
 const ModuleAssignmentDialog: React.FC<ModuleAssignmentDialogProps> = ({
   open,
   onOpenChange,
-  selectedModule,
   userId,
   userName
 }) => {
-  const [selectedUserId, setSelectedUserId] = useState<string>('');
-  const [selectedModuleId, setSelectedModuleId] = useState<string>('');
-  const [expiresAt, setExpiresAt] = useState<string>('');
-  
-  const { modules, assignModule, isAssigning } = useModules();
+  const { modules, isLoadingModules } = useModules();
+  const [selectedModules, setSelectedModules] = useState<Record<string, boolean>>({});
+  const [accessLevels, setAccessLevels] = useState<Record<string, 'read' | 'write' | 'admin'>>({});
 
-  // Determine if we're in "user-first" mode (coming from Users page) or "module-first" mode (coming from Modules page)
-  const isUserFirstMode = !!userId;
-  const isModuleFirstMode = !!selectedModule;
+  const handleModuleToggle = (moduleId: string, enabled: boolean) => {
+    setSelectedModules(prev => ({
+      ...prev,
+      [moduleId]: enabled
+    }));
 
-  // Reset form when dialog opens/closes or props change
-  useEffect(() => {
-    if (!open) {
-      setSelectedUserId('');
-      setSelectedModuleId('');
-      setExpiresAt('');
-    } else {
-      // Pre-populate fields based on props
-      if (userId) {
-        setSelectedUserId(userId);
-      }
-      if (selectedModule) {
-        setSelectedModuleId(selectedModule.id);
-      }
+    if (enabled && !accessLevels[moduleId]) {
+      setAccessLevels(prev => ({
+        ...prev,
+        [moduleId]: 'read'
+      }));
     }
-  }, [open, userId, selectedModule]);
+  };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    const finalUserId = isUserFirstMode ? userId : selectedUserId;
-    const finalModuleId = isModuleFirstMode ? selectedModule?.id : selectedModuleId;
-    
-    if (!finalUserId || !finalModuleId) return;
-    
-    await assignModule({
-      userId: finalUserId,
-      moduleId: finalModuleId,
-      expiresAt: expiresAt || null
-    });
-    
+  const handleAccessLevelChange = (moduleId: string, level: 'read' | 'write' | 'admin') => {
+    setAccessLevels(prev => ({
+      ...prev,
+      [moduleId]: level
+    }));
+  };
+
+  const handleSave = () => {
+    const assignments = Object.entries(selectedModules)
+      .filter(([_, enabled]) => enabled)
+      .map(([moduleId]) => ({
+        moduleId,
+        accessLevel: accessLevels[moduleId] || 'read'
+      }));
+
+    console.log('Saving module assignments for user:', userId, assignments);
+    // TODO: Implement module assignment logic
     onOpenChange(false);
   };
 
-  const getDialogTitle = () => {
-    if (isUserFirstMode) {
-      return `Assign Module to ${userName}`;
-    }
-    return 'Assign Module Access';
-  };
-
-  const getDialogDescription = () => {
-    if (isUserFirstMode) {
-      return `Select a module to assign to ${userName}`;
-    }
-    return `Grant access to module: ${selectedModule?.name || 'Selected Module'}`;
-  };
-
-  const canSubmit = () => {
-    const hasUser = isUserFirstMode ? !!userId : !!selectedUserId;
-    const hasModule = isModuleFirstMode ? !!selectedModule : !!selectedModuleId;
-    return hasUser && hasModule && !isAssigning;
-  };
+  if (isLoadingModules) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[600px]">
+          <div className="flex justify-center items-center p-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Shield className="h-5 w-5" />
-            {getDialogTitle()}
+            Assign Modules to {userName}
           </DialogTitle>
-          <DialogDescription>
-            {getDialogDescription()}
-          </DialogDescription>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* User Selection - only show if not in user-first mode */}
-          {!isUserFirstMode && (
-            <div className="space-y-2">
-              <Label htmlFor="user">Select User</Label>
-              <Select value={selectedUserId} onValueChange={setSelectedUserId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a user" />
-                </SelectTrigger>
-                <SelectContent>
-                  {mockUsers.map((user) => (
-                    <SelectItem key={user.id} value={user.id}>
-                      <div className="flex flex-col">
-                        <span className="font-medium">{user.name}</span>
-                        <span className="text-xs text-gray-500">{user.email}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {/* Module Selection - only show if not in module-first mode */}
-          {!isModuleFirstMode && (
-            <div className="space-y-2">
-              <Label htmlFor="module">Select Module</Label>
-              <Select value={selectedModuleId} onValueChange={setSelectedModuleId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a module" />
-                </SelectTrigger>
-                <SelectContent>
-                  {modules?.map((module) => (
-                    <SelectItem key={module.id} value={module.id}>
-                      <div className="flex flex-col">
-                        <span className="font-medium">{module.name}</span>
-                        <span className="text-xs text-gray-500">{module.description || 'No description'}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {/* Show selected module info in user-first mode */}
-          {isUserFirstMode && selectedModuleId && (
-            <div className="p-3 bg-muted rounded-lg">
-              <h4 className="font-medium">
-                {modules?.find(m => m.id === selectedModuleId)?.name}
-              </h4>
-              <p className="text-sm text-muted-foreground">
-                {modules?.find(m => m.id === selectedModuleId)?.description || 'No description available'}
-              </p>
-            </div>
-          )}
-
-          <div className="space-y-2">
-            <Label htmlFor="expires">Expires At (Optional)</Label>
-            <div className="relative">
-              <CalendarIcon className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <Input
-                id="expires"
-                type="datetime-local"
-                value={expiresAt}
-                onChange={(e) => setExpiresAt(e.target.value)}
-                className="pl-10"
-              />
-            </div>
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 p-3 bg-purple-50 rounded-lg">
+            <Package className="h-4 w-4 text-purple-600" />
+            <span className="text-sm text-purple-800">
+              Grant access to specific modules and set appropriate access levels
+            </span>
           </div>
 
-          <div className="flex gap-2 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              className="flex-1"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={!canSubmit()}
-              className="flex-1"
-            >
-              {isAssigning ? 'Assigning...' : 'Assign Module'}
-            </Button>
+          {modules && modules.length > 0 ? (
+            <div className="space-y-3">
+              {modules.map((module) => (
+                <Card key={module.id} className={selectedModules[module.id] ? 'border-blue-200 bg-blue-50/30' : ''}>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Switch
+                          id={`module-${module.id}`}
+                          checked={selectedModules[module.id] || false}
+                          onCheckedChange={(checked) => handleModuleToggle(module.id, checked)}
+                        />
+                        <div>
+                          <CardTitle className="text-base">{module.name}</CardTitle>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {module.description || 'No description available'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={module.is_active ? "default" : "secondary"}>
+                          {module.is_active ? "Active" : "Inactive"}
+                        </Badge>
+                        {selectedModules[module.id] && (
+                          <Badge variant="outline" className="text-green-700 border-green-200">
+                            Assigned
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </CardHeader>
+                  
+                  {selectedModules[module.id] && (
+                    <CardContent className="pt-0">
+                      <div className="flex items-center gap-4 p-3 bg-white rounded-lg border">
+                        <Label className="text-sm font-medium">Access Level:</Label>
+                        <div className="flex gap-2">
+                          {['read', 'write', 'admin'].map((level) => (
+                            <Button
+                              key={level}
+                              variant={accessLevels[module.id] === level ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => handleAccessLevelChange(module.id, level as 'read' | 'write' | 'admin')}
+                            >
+                              {level.charAt(0).toUpperCase() + level.slice(1)}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                    </CardContent>
+                  )}
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <Package className="h-12 w-12 mx-auto mb-2 opacity-50" />
+              <p>No modules available for assignment</p>
+            </div>
+          )}
+          
+          <div className="flex justify-between items-center pt-4 border-t">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Clock className="h-4 w-4" />
+              <span>
+                {Object.values(selectedModules).filter(Boolean).length} modules selected
+              </span>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleSave}>
+                Save Assignments
+              </Button>
+            </div>
           </div>
-        </form>
+        </div>
       </DialogContent>
     </Dialog>
   );

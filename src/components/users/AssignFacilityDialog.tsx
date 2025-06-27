@@ -1,22 +1,11 @@
 
 import React, { useState } from 'react';
-import { useUsers } from '@/hooks/useUsers';
-import { useFacilities } from '@/hooks/useFacilities';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useUsers } from '@/hooks/useUsers';
+import { useFacilities } from '@/hooks/useFacilities';
 
 interface AssignFacilityDialogProps {
   open: boolean;
@@ -24,12 +13,6 @@ interface AssignFacilityDialogProps {
   userId: string | null;
   userName: string;
 }
-
-const accessLevels = [
-  { value: 'read', label: 'Read Only' },
-  { value: 'write', label: 'Read & Write' },
-  { value: 'admin', label: 'Administrator' },
-] as const;
 
 const AssignFacilityDialog: React.FC<AssignFacilityDialogProps> = ({
   open,
@@ -39,83 +22,87 @@ const AssignFacilityDialog: React.FC<AssignFacilityDialogProps> = ({
 }) => {
   const { assignFacility, isAssigningFacility } = useUsers();
   const { facilities } = useFacilities();
-  const [selectedFacility, setSelectedFacility] = useState('');
-  const [selectedAccessLevel, setSelectedAccessLevel] = useState<'read' | 'write' | 'admin'>('read');
+  const [selectedFacilityId, setSelectedFacilityId] = useState<string>('');
+  const [accessLevel, setAccessLevel] = useState<'read' | 'write' | 'admin'>('read');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!userId || !selectedFacility) {
-      return;
-    }
+    if (!userId || !selectedFacilityId) return;
 
-    assignFacility({ 
-      userId, 
-      facilityId: selectedFacility, 
-      accessLevel: selectedAccessLevel 
-    });
-    
-    setSelectedFacility('');
-    setSelectedAccessLevel('read');
-    onOpenChange(false);
+    try {
+      await assignFacility({ 
+        userId, 
+        facilityId: selectedFacilityId, 
+        accessLevel 
+      });
+      
+      setSelectedFacilityId('');
+      setAccessLevel('read');
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Failed to assign facility:', error);
+    }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-[400px]">
         <DialogHeader>
-          <DialogTitle>Assign Facility Access to {userName}</DialogTitle>
+          <DialogTitle>Assign Facility to {userName}</DialogTitle>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
+          <div className="space-y-2">
             <Label htmlFor="facility">Select Facility</Label>
             <Select
-              value={selectedFacility}
-              onValueChange={setSelectedFacility}
+              value={selectedFacilityId}
+              onValueChange={setSelectedFacilityId}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select a facility" />
+                <SelectValue placeholder="Choose a facility to assign" />
               </SelectTrigger>
               <SelectContent>
                 {facilities?.map((facility) => (
                   <SelectItem key={facility.id} value={facility.id}>
-                    {facility.name} ({facility.facility_type})
+                    {facility.name}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
-          <div>
+          <div className="space-y-2">
             <Label htmlFor="access_level">Access Level</Label>
             <Select
-              value={selectedAccessLevel}
-              onValueChange={(value: 'read' | 'write' | 'admin') => setSelectedAccessLevel(value)}
+              value={accessLevel}
+              onValueChange={(value: 'read' | 'write' | 'admin') => setAccessLevel(value)}
             >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {accessLevels.map((level) => (
-                  <SelectItem key={level.value} value={level.value}>
-                    {level.label}
-                  </SelectItem>
-                ))}
+                <SelectItem value="read">Read Only</SelectItem>
+                <SelectItem value="write">Read & Write</SelectItem>
+                <SelectItem value="admin">Admin</SelectItem>
               </SelectContent>
             </Select>
           </div>
-
-          <div className="flex justify-end space-x-2">
+          
+          <div className="flex justify-end space-x-2 pt-4">
             <Button
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
+              disabled={isAssigningFacility}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isAssigningFacility || !selectedFacility}>
-              {isAssigningFacility ? 'Assigning...' : 'Assign Access'}
+            <Button 
+              type="submit" 
+              disabled={isAssigningFacility || !selectedFacilityId}
+            >
+              {isAssigningFacility ? 'Assigning...' : 'Assign Facility'}
             </Button>
           </div>
         </form>

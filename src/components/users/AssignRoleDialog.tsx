@@ -1,23 +1,11 @@
 
 import React, { useState } from 'react';
-import { useUsers } from '@/hooks/useUsers';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useUsers } from '@/hooks/useUsers';
 import { Database } from '@/integrations/supabase/types';
-import { Badge } from '@/components/ui/badge';
 
 type UserRole = Database['public']['Enums']['user_role'];
 
@@ -28,108 +16,77 @@ interface AssignRoleDialogProps {
   userName: string;
 }
 
-const roleOptions: { value: UserRole; label: string }[] = [
-  { value: 'superAdmin', label: 'Super Administrator' },
-  { value: 'healthcareProvider', label: 'Healthcare Provider' },
-  { value: 'nurse', label: 'Nurse' },
-  { value: 'caseManager', label: 'Case Manager' },
-  { value: 'onboardingTeam', label: 'Onboarding Team' },
-  { value: 'patientCaregiver', label: 'Patient/Caregiver' },
-];
-
 const AssignRoleDialog: React.FC<AssignRoleDialogProps> = ({
   open,
   onOpenChange,
   userId,
   userName
 }) => {
-  const { assignRole, isAssigningRole, users } = useUsers();
+  const { assignRole, isAssigningRole } = useUsers();
   const [selectedRole, setSelectedRole] = useState<UserRole | ''>('');
 
-  // Find current user to show current roles
-  const currentUser = users?.find(u => u.id === userId);
-  const currentRoles = currentUser?.user_roles || [];
-  
-  console.log('🔍 AssignRoleDialog - Current user roles:', currentRoles);
+  const roles: { value: UserRole; label: string }[] = [
+    { value: 'superAdmin', label: 'Super Admin' },
+    { value: 'onboardingTeam', label: 'Onboarding Team' },
+    { value: 'caseManager', label: 'Case Manager' },
+    { value: 'patientCaregiver', label: 'Patient Caregiver' },
+    { value: 'readOnlyUser', label: 'Read Only User' }
+  ];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!userId || !selectedRole) {
-      console.log('❌ Missing required data for role assignment:', { userId, selectedRole });
-      return;
+    if (!userId || !selectedRole) return;
+
+    try {
+      await assignRole({ userId, roleName: selectedRole });
+      setSelectedRole('');
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Failed to assign role:', error);
     }
-
-    console.log('🔄 Attempting to assign role:', selectedRole, 'to user:', userId);
-    assignRole({ userId, roleName: selectedRole });
-    setSelectedRole('');
-    onOpenChange(false);
-  };
-
-  const hasRole = (roleName: UserRole) => {
-    return currentRoles.some(ur => ur.roles.name === roleName);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-[400px]">
         <DialogHeader>
           <DialogTitle>Assign Role to {userName}</DialogTitle>
         </DialogHeader>
         
-        {/* Show current roles */}
-        {currentUser && (
-          <div className="space-y-3">
-            <div>
-              <Label className="text-sm font-medium">Current Roles:</Label>
-              <div className="flex flex-wrap gap-2 mt-1">
-                {currentRoles.length > 0 ? (
-                  currentRoles.map((ur, index) => (
-                    <Badge key={index} variant="secondary">
-                      {ur.roles.name}
-                    </Badge>
-                  ))
-                ) : (
-                  <span className="text-sm text-gray-500">No roles assigned</span>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-        
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="role">Add New Role</Label>
+          <div className="space-y-2">
+            <Label htmlFor="role">Select Role</Label>
             <Select
               value={selectedRole}
               onValueChange={(value: UserRole) => setSelectedRole(value)}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select a role to assign" />
+                <SelectValue placeholder="Choose a role to assign" />
               </SelectTrigger>
               <SelectContent>
-                {roleOptions.map((role) => (
-                  <SelectItem 
-                    key={role.value} 
-                    value={role.value}
-                    disabled={hasRole(role.value)}
-                  >
-                    {role.label} {hasRole(role.value) && '(Already assigned)'}
+                {roles.map((role) => (
+                  <SelectItem key={role.value} value={role.value}>
+                    {role.label}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
-
-          <div className="flex justify-end space-x-2">
+          
+          <div className="flex justify-end space-x-2 pt-4">
             <Button
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
+              disabled={isAssigningRole}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isAssigningRole || !selectedRole}>
+            <Button 
+              type="submit" 
+              disabled={isAssigningRole || !selectedRole}
+            >
               {isAssigningRole ? 'Assigning...' : 'Assign Role'}
             </Button>
           </div>
