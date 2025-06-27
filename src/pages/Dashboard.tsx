@@ -3,118 +3,180 @@ import React from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { AdminStatsGrid, StatCard } from '@/components/layout/AdminStatsGrid';
-import { Card, CardContent } from '@/components/ui/card';
-import SystemStatusCard from '@/components/dashboard/SystemStatusCard';
-import UserRolesCard from '@/components/dashboard/UserRolesCard';
-import ProfileCard from '@/components/dashboard/ProfileCard';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, UserPlus, Users, Shield, Activity, Database } from 'lucide-react';
+import { 
+  Users, 
+  Building2, 
+  Activity, 
+  Shield, 
+  RefreshCw,
+  AlertTriangle,
+  CheckCircle
+} from 'lucide-react';
 import { useDashboard } from '@/hooks/useDashboard';
+import { useAuth } from '@/hooks/useAuth';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { useToast } from '@/hooks/use-toast';
 
 const Dashboard = () => {
-  const {
-    user,
-    profile,
-    userRoles,
-    handleRefresh,
-    handleAssignTestRole,
-    getRoleColor,
-    getRoleDescription
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const { 
+    dashboardData, 
+    isLoading, 
+    error, 
+    refetch 
   } = useDashboard();
 
+  const handleRefresh = async () => {
+    try {
+      await refetch();
+      toast({
+        title: "Dashboard Refreshed",
+        description: "Dashboard data has been refreshed successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Refresh Failed",
+        description: "Failed to refresh dashboard data. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const headerActions = (
-    <div className="flex space-x-2">
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={handleRefresh}
-        className="flex items-center gap-2"
-      >
-        <RefreshCw className="h-4 w-4" />
-        Refresh Data
-      </Button>
-      {user && userRoles.length === 0 && (
-        <Button
-          variant="default"
-          size="sm"
-          onClick={handleAssignTestRole}
-          className="flex items-center gap-2"
-        >
-          <UserPlus className="h-4 w-4" />
-          Test Role Assignment
-        </Button>
-      )}
-    </div>
+    <Button 
+      variant="outline" 
+      onClick={handleRefresh}
+      disabled={isLoading}
+    >
+      <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+      Refresh
+    </Button>
   );
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <PageContainer
+          title="Dashboard"
+          subtitle="Loading dashboard data..."
+        >
+          <div className="flex justify-center items-center min-h-[400px]">
+            <LoadingSpinner size="lg" />
+          </div>
+        </PageContainer>
+      </MainLayout>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <MainLayout>
+        <PageContainer
+          title="Dashboard"
+          subtitle="Error loading dashboard data"
+        >
+          <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+            <AlertTriangle className="h-12 w-12 text-red-500" />
+            <p className="text-red-600">Failed to load dashboard: {error.message}</p>
+            <Button onClick={handleRefresh} variant="outline">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Try Again
+            </Button>
+          </div>
+        </PageContainer>
+      </MainLayout>
+    );
+  }
+
+  // Use dashboard data or fallback to default values
+  const stats = dashboardData || {
+    totalUsers: 0,
+    totalFacilities: 0,
+    activeModules: 0,
+    systemHealth: 'healthy'
+  };
 
   return (
     <MainLayout>
       <PageContainer
-        title="Dashboard"
-        subtitle="Welcome to your healthcare portal dashboard"
+        title="Healthcare Admin Dashboard"
+        subtitle={`Welcome back, ${user?.email || 'Administrator'}`}
         headerActions={headerActions}
       >
         <div className="space-y-6">
-          {/* Quick Stats */}
+          {/* Stats Grid */}
           <AdminStatsGrid columns={4}>
             <StatCard
-              title="System Status"
-              value={user ? "Active" : "Inactive"}
-              icon={Activity}
-              description="Current system status"
-            />
-            <StatCard
-              title="User Roles"
-              value={userRoles.length}
-              icon={Shield}
-              description="Assigned roles"
-            />
-            <StatCard
-              title="Profile Status"
-              value={profile ? "Complete" : "Incomplete"}
+              title="Total Users"
+              value={stats.totalUsers}
               icon={Users}
-              description="Profile completion"
+              description="Registered system users"
             />
             <StatCard
-              title="Data Access"
-              value={user ? "Granted" : "Denied"}
-              icon={Database}
-              description="System access level"
+              title="Active Facilities"
+              value={stats.totalFacilities}
+              icon={Building2}
+              description="Healthcare facilities"
+            />
+            <StatCard
+              title="Active Modules"
+              value={stats.activeModules}
+              icon={Activity}
+              description="System modules running"
+            />
+            <StatCard
+              title="System Health"
+              value={stats.systemHealth === 'healthy' ? 'Good' : 'Issues'}
+              icon={stats.systemHealth === 'healthy' ? CheckCircle : AlertTriangle}
+              description="Overall system status"
             />
           </AdminStatsGrid>
 
-          {/* Dashboard Cards */}
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            <Card className="shadow-sm">
-              <CardContent className="p-0">
-                <SystemStatusCard 
-                  user={user}
-                  profile={profile}
-                  userRoles={userRoles}
-                />
-              </CardContent>
-            </Card>
-            
-            <Card className="shadow-sm">
-              <CardContent className="p-0">
-                <UserRolesCard 
-                  userRoles={userRoles}
-                  user={user}
-                  getRoleColor={getRoleColor}
-                  getRoleDescription={getRoleDescription}
-                />
-              </CardContent>
-            </Card>
-            
-            <Card className="shadow-sm">
-              <CardContent className="p-0">
-                <ProfileCard 
-                  profile={profile}
-                  user={user}
-                />
-              </CardContent>
-            </Card>
-          </div>
+          {/* Quick Actions */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Shield className="h-5 w-5 mr-2" />
+                Quick Actions
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Button variant="outline" className="h-20 flex-col">
+                  <Users className="h-6 w-6 mb-2" />
+                  Manage Users
+                </Button>
+                <Button variant="outline" className="h-20 flex-col">
+                  <Building2 className="h-6 w-6 mb-2" />
+                  Manage Facilities
+                </Button>
+                <Button variant="outline" className="h-20 flex-col">
+                  <Activity className="h-6 w-6 mb-2" />
+                  View Analytics
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* System Status */}
+          <Card>
+            <CardHeader>
+              <CardTitle>System Status</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center space-x-2">
+                <CheckCircle className="h-5 w-5 text-green-500" />
+                <span className="text-sm text-muted-foreground">
+                  All systems operational
+                </span>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </PageContainer>
     </MainLayout>
