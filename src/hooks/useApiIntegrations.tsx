@@ -1,4 +1,3 @@
-
 /**
  * Enhanced hook for managing API integrations with real data detection
  */
@@ -22,11 +21,32 @@ export const useApiIntegrations = () => {
   } = useQuery({
     queryKey: ['api-integrations'],
     queryFn: async () => {
-      console.log('Initializing API integrations...');
-      // This is the key fix - we need to call initializeIntegrations()
-      const realIntegrations = await ApiIntegrationManager.initializeIntegrations();
-      console.log('Loaded integrations:', realIntegrations);
-      return realIntegrations;
+      console.log('🔄 Starting API integrations initialization...');
+      
+      try {
+        const realIntegrations = await ApiIntegrationManager.initializeIntegrations();
+        
+        console.log('✅ Successfully loaded integrations:', {
+          count: realIntegrations.length,
+          integrations: realIntegrations.map(i => ({
+            id: i.id,
+            name: i.name,
+            type: i.type,
+            endpoints: i.endpoints.length,
+            rlsPolicies: i.rlsPolicies.length,
+            mappings: i.mappings.length
+          }))
+        });
+        
+        if (realIntegrations.length === 0) {
+          console.warn('⚠️ No integrations returned from ApiIntegrationManager');
+        }
+        
+        return realIntegrations;
+      } catch (error) {
+        console.error('❌ Failed to initialize integrations:', error);
+        throw error;
+      }
     },
     staleTime: 30000,
     refetchOnWindowFocus: false,
@@ -183,7 +203,12 @@ export const useApiIntegrations = () => {
   };
 
   const getIntegrationsByType = (type: 'internal' | 'external') => {
-    return integrations?.filter(integration => integration.type === type) || [];
+    const filtered = integrations?.filter(integration => integration.type === type) || [];
+    console.log(`🔍 Filtered ${type} integrations:`, {
+      count: filtered.length,
+      names: filtered.map(i => i.name)
+    });
+    return filtered;
   };
 
   const exportApiDocumentation = async () => {
@@ -217,7 +242,7 @@ export const useApiIntegrations = () => {
   // Log current state for debugging
   React.useEffect(() => {
     if (integrations) {
-      console.log('Current integrations state:', {
+      console.log('📊 Current integrations state in hook:', {
         total: integrations.length,
         internal: getIntegrationsByType('internal').length,
         external: getIntegrationsByType('external').length,
@@ -230,6 +255,8 @@ export const useApiIntegrations = () => {
           mappings: i.mappings.length
         }))
       });
+    } else {
+      console.log('⚠️ Integrations is null/undefined in hook');
     }
   }, [integrations]);
 

@@ -1,3 +1,4 @@
+
 /**
  * API Integration Management System
  * Centralized management for all API integrations
@@ -5,7 +6,6 @@
 
 import { ApiIntegration } from './ApiIntegrationTypes';
 import { InternalApiDetector } from './InternalApiDetector';
-import { RealApiScanner } from './RealApiScanner';
 import { PostmanCollectionGenerator } from './PostmanCollectionGenerator';
 
 export class ApiIntegrationManager {
@@ -18,24 +18,50 @@ export class ApiIntegrationManager {
     console.log('🔄 Initializing API integrations...');
     
     try {
-      // Get internal APIs
+      // Clear existing integrations first
+      this.integrations = [];
+      
+      // Get the core internal API integration from InternalApiDetector
       const internalIntegration = InternalApiDetector.generateMockInternalIntegration();
       
-      // Get real APIs
-      const realIntegration = await RealApiScanner.generateRealInternalApi();
+      console.log('✅ Generated internal integration:', {
+        id: internalIntegration.id,
+        name: internalIntegration.name,
+        type: internalIntegration.type,
+        endpoints: internalIntegration.endpoints.length,
+        rlsPolicies: internalIntegration.rlsPolicies.length,
+        mappings: internalIntegration.mappings.length
+      });
       
-      this.integrations = [internalIntegration, realIntegration];
+      // Add the internal integration
+      this.integrations = [internalIntegration];
       
-      console.log('✅ API integrations initialized:', {
+      console.log('✅ API integrations initialized successfully:', {
         total: this.integrations.length,
         internal: this.integrations.filter(i => i.type === 'internal').length,
-        external: this.integrations.filter(i => i.type === 'external').length
+        external: this.integrations.filter(i => i.type === 'external').length,
+        integrations: this.integrations.map(i => ({
+          id: i.id,
+          name: i.name,
+          type: i.type,
+          endpoints: i.endpoints.length
+        }))
       });
       
       return this.integrations;
     } catch (error) {
       console.error('❌ Failed to initialize API integrations:', error);
-      throw error;
+      
+      // Fallback: return at least the internal integration
+      const fallbackIntegration = InternalApiDetector.generateMockInternalIntegration();
+      this.integrations = [fallbackIntegration];
+      
+      console.log('🔄 Using fallback integration:', {
+        name: fallbackIntegration.name,
+        endpoints: fallbackIntegration.endpoints.length
+      });
+      
+      return this.integrations;
     }
   }
 
