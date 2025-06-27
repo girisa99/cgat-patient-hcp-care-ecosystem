@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,13 +14,15 @@ import {
   Lock,
   Eye,
   RefreshCw,
-  TrendingUp
+  TrendingUp,
+  Bug
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAutomatedVerification } from '@/hooks/useAutomatedVerification';
 import SecurityMetrics from './SecurityMetrics';
 import PerformanceMonitor from './PerformanceMonitor';
 import ComplianceStatus from './ComplianceStatus';
+import IssuesTab from './IssuesTab';
 
 const SecurityDashboard: React.FC = () => {
   const [isScanning, setIsScanning] = useState(false);
@@ -236,10 +237,14 @@ const SecurityDashboard: React.FC = () => {
 
       {/* Main Dashboard Tabs */}
       <Tabs defaultValue="security" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="security" className="flex items-center">
             <Shield className="h-4 w-4 mr-2" />
             Security
+          </TabsTrigger>
+          <TabsTrigger value="issues" className="flex items-center">
+            <Bug className="h-4 w-4 mr-2" />
+            Issues
           </TabsTrigger>
           <TabsTrigger value="performance" className="flex items-center">
             <Activity className="h-4 w-4 mr-2" />
@@ -253,6 +258,10 @@ const SecurityDashboard: React.FC = () => {
 
         <TabsContent value="security" className="space-y-6">
           <SecurityMetrics verificationSummary={lastSummary} />
+        </TabsContent>
+
+        <TabsContent value="issues" className="space-y-6">
+          <IssuesTab verificationSummary={lastSummary} />
         </TabsContent>
 
         <TabsContent value="performance" className="space-y-6">
