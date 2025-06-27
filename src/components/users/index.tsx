@@ -24,10 +24,10 @@ export { default as UserPermissionsBadge } from './UserPermissionsBadge';
 export { default as UserPermissionsSummary } from './UserPermissionsSummary';
 export { default as RoleAssignmentDebugger } from './RoleAssignmentDebugger';
 
-// Layout components
-export { default as ConsistentUsersLayout } from './ConsistentUsersLayout';
-export { default as ConsistentUsersHeader } from './ConsistentUsersHeader';
-export { default as ConsistentUsersContent } from './ConsistentUsersContent';
+// Layout components - using named exports
+export { ConsistentUsersLayout } from './ConsistentUsersLayout';
+export { ConsistentUsersHeader } from './ConsistentUsersHeader';
+export { ConsistentUsersContent } from './ConsistentUsersContent';
 
 // Utility components
 export { default as DatabaseHealthCheck } from './DatabaseHealthCheck';
