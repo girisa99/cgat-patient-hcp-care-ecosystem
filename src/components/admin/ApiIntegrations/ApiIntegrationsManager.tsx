@@ -15,6 +15,7 @@ import ExternalApiPublisher from './ExternalApiPublisher';
 import ApiKeyManager from './ApiKeyManager';
 import { ApiTestingInterface } from './ApiTestingInterface';
 import IntegrationDetailView from './IntegrationDetailView';
+import { DeveloperPortal } from './DeveloperPortal';
 import { LoadingState } from '../shared/LoadingState';
 import { ErrorState } from '../shared/ErrorState';
 
@@ -83,11 +84,12 @@ const ApiIntegrationsManager = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid grid-cols-6 w-full">
+        <TabsList className="grid grid-cols-7 w-full">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="internal">Internal APIs</TabsTrigger>
           <TabsTrigger value="external">External APIs</TabsTrigger>
           <TabsTrigger value="published">Published APIs</TabsTrigger>
+          <TabsTrigger value="developer">Developer</TabsTrigger>
           <TabsTrigger value="keys">API Keys</TabsTrigger>
           <TabsTrigger value="testing">Testing</TabsTrigger>
         </TabsList>
@@ -153,6 +155,10 @@ const ApiIntegrationsManager = () => {
         <TabsContent value="published" className="space-y-6">
           <PublishedApisSection />
           <ExternalApiPublisher />
+        </TabsContent>
+
+        <TabsContent value="developer" className="space-y-6">
+          <DeveloperPortal />
         </TabsContent>
 
         <TabsContent value="keys" className="space-y-6">

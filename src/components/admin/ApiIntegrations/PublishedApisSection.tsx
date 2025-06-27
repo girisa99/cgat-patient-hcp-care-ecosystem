@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,8 +16,7 @@ import {
   Settings,
   TrendingUp,
   RotateCcw,
-  Trash2,
-  Bug
+  Trash2
 } from 'lucide-react';
 import { usePublishedApiIntegration, PublishedApiForDevelopers } from '@/hooks/usePublishedApiIntegration';
 import { useEnhancedPublishedApiDetails, ApiIntegrationDetails } from '@/hooks/useEnhancedPublishedApiDetails';
@@ -38,7 +38,6 @@ const PublishedApisSection = ({ showInDeveloperPortal = false }: PublishedApisSe
   const [showApiDialog, setShowApiDialog] = useState(false);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   const [isForceRefreshing, setIsForceRefreshing] = useState(false);
-  const [debugMode, setDebugMode] = useState(false);
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
   
   // Dialog states
@@ -243,50 +242,12 @@ const PublishedApisSection = ({ showInDeveloperPortal = false }: PublishedApisSe
         </div>
         <div className="flex items-center gap-2">
           <Badge variant="secondary">{publishedApisForDevelopers.length} APIs</Badge>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setDebugMode(!debugMode)}
-            className="bg-yellow-50 hover:bg-yellow-100 border-yellow-200"
-          >
-            <Bug className="h-4 w-4 mr-2" />
-            Debug: {debugMode ? 'ON' : 'OFF'}
-          </Button>
           <Button variant="outline" size="sm" onClick={handleRefreshData}>
             <RefreshCw className="h-4 w-4 mr-1" />
             Refresh
           </Button>
         </div>
       </div>
-
-      {/* Debug Panel */}
-      {debugMode && (
-        <Card className="border-yellow-200 bg-yellow-50">
-          <CardContent className="p-4">
-            <div className="space-y-2 text-sm">
-              <div><strong>Component:</strong> PublishedApisSection</div>
-              <div><strong>Show In Developer Portal:</strong> {showInDeveloperPortal ? 'YES' : 'NO'}</div>
-              <div><strong>Total Published APIs:</strong> {publishedApisForDevelopers.length}</div>
-              <div><strong>Loading:</strong> {isLoadingPublishedApis ? 'YES' : 'NO'}</div>
-              <div><strong>Processing:</strong> {isProcessing || 'None'}</div>
-              <div><strong>Config Dialog Open:</strong> {showConfigDialog ? 'YES' : 'NO'}</div>
-              <div><strong>Analytics Dialog Open:</strong> {showAnalyticsDialog ? 'YES' : 'NO'}</div>
-              <div><strong>Selected API for Config:</strong> {selectedApiForConfig?.external_name || 'None'}</div>
-              <div><strong>Selected API for Analytics:</strong> {selectedApiForAnalytics?.external_name || 'None'}</div>
-              <details className="mt-2">
-                <summary className="cursor-pointer font-medium">View APIs Data</summary>
-                <pre className="mt-2 text-xs bg-white p-2 rounded border overflow-auto max-h-40">
-                  {JSON.stringify(publishedApisForDevelopers.map(api => ({
-                    id: api.id,
-                    name: api.external_name,
-                    endpoints: api.endpoints?.length || 0
-                  })), null, 2)}
-                </pre>
-              </details>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {publishedApisForDevelopers.map((api) => (
@@ -352,19 +313,6 @@ const PublishedApisSection = ({ showInDeveloperPortal = false }: PublishedApisSe
                   </div>
                 )}
               </div>
-
-              {/* Debug Info Panel */}
-              {debugMode && (
-                <div className="mt-2 p-2 bg-gray-50 border rounded text-xs">
-                  <div className="font-medium mb-1">API Debug Info:</div>
-                  <div className="grid grid-cols-2 gap-1">
-                    <div>ID: {api.id}</div>
-                    <div>Endpoints: {api.endpoints?.length || 0}</div>
-                    <div>Published: {api.published_at ? 'YES' : 'NO'}</div>
-                    <div>Category: {api.category || 'None'}</div>
-                  </div>
-                </div>
-              )}
 
               <div className="flex flex-wrap gap-1 pt-2">
                 <Button size="sm" onClick={() => handleViewApi(api)} className="bg-blue-600 hover:bg-blue-700">
