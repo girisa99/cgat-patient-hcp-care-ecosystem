@@ -53,11 +53,11 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
       console.log('- showPageHeader:', showPageHeader);
       console.log('- pageTitle:', pageTitle);
       
-      // Get actual measurements
+      // Get actual measurements with proper type casting
       setTimeout(() => {
-        const header = document.querySelector('header');
-        const mobileMenu = document.querySelector('[data-mobile-menu]');
-        const main = document.querySelector('main');
+        const header = document.querySelector('header') as HTMLElement;
+        const mobileMenu = document.querySelector('[data-mobile-menu]') as HTMLElement;
+        const main = document.querySelector('main') as HTMLElement;
         
         console.log('📐 Actual Layout Measurements:');
         console.log('- Header height:', header?.offsetHeight);
@@ -94,7 +94,7 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
               size="sm"
               variant="secondary"
               onClick={() => {
-                const main = document.querySelector('main');
+                const main = document.querySelector('main') as HTMLElement;
                 if (main) {
                   console.log('📐 Main element details:', {
                     computed: {
@@ -165,8 +165,8 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
               "flex-1 min-h-screen",
               // Sidebar spacing
               isMobile ? "ml-0" : "md:ml-64",
-              // Let's temporarily use a simpler approach to test
-              "pt-16", // Just header height first
+              // Fixed top spacing - match actual header height (65px) + mobile menu if present
+              (isMobile || isTablet) ? "pt-[118px]" : "pt-[65px]", // Mobile: 65px header + 53px menu, Desktop: 65px header only
               debugMode && "border-4 border-dashed border-red-500"
             )}
           >
