@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import SimplifiedDashboardLayout from '@/components/layout/SimplifiedDashboardLayout';
-import { SimplePageContainer } from '@/components/layout/SimplePageContainer';
+import UnifiedDashboardLayout from '@/components/layout/UnifiedDashboardLayout';
+import { PageContent } from '@/components/layout/PageContent';
 import { AdminStatsGrid, StatCard } from '@/components/layout/AdminPageWrapper';
 import { Card, CardContent } from '@/components/ui/card';
 import { Users as UsersIcon, UserPlus, Settings, Shield } from 'lucide-react';
@@ -72,59 +72,57 @@ const Users = () => {
   );
 
   return (
-    <SimplifiedDashboardLayout>
-      <SimplePageContainer
+    <UnifiedDashboardLayout>
+      <PageContent
         title="Users Management"
         subtitle="Manage system users, roles, and permissions across the healthcare platform"
         headerActions={headerActions}
         maxWidth="full"
         padding="md"
       >
-        <div className="space-y-8">
-          {/* Stats Grid */}
-          <AdminStatsGrid columns={4}>
-            <StatCard
-              title="Total Users"
-              value={totalUsers}
-              icon={UsersIcon}
-              description="All system users"
-            />
-            <StatCard
-              title="With Roles"
-              value={usersWithRoles}
-              icon={Shield}
-              description="Users with assigned roles"
-            />
-            <StatCard
-              title="Active Users"
-              value={activeUsers}
-              icon={Settings}
-              description="Currently active users"
-            />
-            <StatCard
-              title="With Facilities"
-              value={usersWithFacilities}
-              icon={Settings}
-              description="Users assigned to facilities"
-            />
-          </AdminStatsGrid>
+        {/* Stats Grid */}
+        <AdminStatsGrid columns={4}>
+          <StatCard
+            title="Total Users"
+            value={totalUsers}
+            icon={UsersIcon}
+            description="All system users"
+          />
+          <StatCard
+            title="With Roles"
+            value={usersWithRoles}
+            icon={Shield}
+            description="Users with assigned roles"
+          />
+          <StatCard
+            title="Active Users"
+            value={activeUsers}
+            icon={Settings}
+            description="Currently active users"
+          />
+          <StatCard
+            title="With Facilities"
+            value={usersWithFacilities}
+            icon={Settings}
+            description="Users assigned to facilities"
+          />
+        </AdminStatsGrid>
 
-          {/* Bulk Role Assignment */}
-          <BulkRoleAssignment />
+        {/* Bulk Role Assignment */}
+        <BulkRoleAssignment />
 
-          {/* Users List */}
-          <Card className="shadow-sm">
-            <CardContent className="p-6">
-              <UsersList
-                onCreateUser={handleCreateUser}
-                onAssignRole={handleAssignRole}
-                onRemoveRole={handleRemoveRole}
-                onAssignFacility={handleAssignFacility}
-                onEditUser={handleEditUser}
-              />
-            </CardContent>
-          </Card>
-        </div>
+        {/* Users List */}
+        <Card className="shadow-sm">
+          <CardContent className="p-6">
+            <UsersList
+              onCreateUser={handleCreateUser}
+              onAssignRole={handleAssignRole}
+              onRemoveRole={handleRemoveRole}
+              onAssignFacility={handleAssignFacility}
+              onEditUser={handleEditUser}
+            />
+          </CardContent>
+        </Card>
 
         {/* Dialogs */}
         <CreateUserDialog
@@ -158,8 +156,8 @@ const Users = () => {
           userId={selectedUserId}
           userName={selectedUserName}
         />
-      </SimplePageContainer>
-    </SimplifiedDashboardLayout>
+      </PageContent>
+    </UnifiedDashboardLayout>
   );
 };
 

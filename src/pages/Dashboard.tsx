@@ -1,7 +1,8 @@
 
 import React from 'react';
-import StandardizedDashboardLayout from '@/components/layout/StandardizedDashboardLayout';
-import { AdminPageWrapper, AdminStatsGrid, StatCard } from '@/components/layout/AdminPageWrapper';
+import UnifiedDashboardLayout from '@/components/layout/UnifiedDashboardLayout';
+import { PageContent } from '@/components/layout/PageContent';
+import { AdminStatsGrid, StatCard } from '@/components/layout/AdminPageWrapper';
 import { Card, CardContent } from '@/components/ui/card';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import SystemStatusCard from '@/components/dashboard/SystemStatusCard';
@@ -29,36 +30,6 @@ const Dashboard = () => {
     currentRoute: '/dashboard'
   });
 
-  // Quick stats for dashboard overview
-  const statsContent = (
-    <AdminStatsGrid columns={4}>
-      <StatCard
-        title="System Status"
-        value={user ? "Active" : "Inactive"}
-        icon={Activity}
-        description="Current system status"
-      />
-      <StatCard
-        title="User Roles"
-        value={userRoles.length}
-        icon={Shield}
-        description="Assigned roles"
-      />
-      <StatCard
-        title="Profile Status"
-        value={profile ? "Complete" : "Incomplete"}
-        icon={Users}
-        description="Profile completion"
-      />
-      <StatCard
-        title="Data Access"
-        value={user ? "Granted" : "Denied"}
-        icon={Database}
-        description="System access level"
-      />
-    </AdminStatsGrid>
-  );
-
   const headerActions = (
     <div className="flex space-x-2">
       <Button
@@ -85,16 +56,43 @@ const Dashboard = () => {
   );
 
   return (
-    <StandardizedDashboardLayout>
-      <AdminPageWrapper
+    <UnifiedDashboardLayout>
+      <PageContent
         title="Dashboard"
         subtitle="Welcome to your healthcare portal dashboard"
         headerActions={headerActions}
-        showStats={true}
-        statsContent={statsContent}
-        variant="full-width"
-        contentPadding="none"
+        maxWidth="full"
+        padding="md"
       >
+        {/* Quick Stats */}
+        <AdminStatsGrid columns={4}>
+          <StatCard
+            title="System Status"
+            value={user ? "Active" : "Inactive"}
+            icon={Activity}
+            description="Current system status"
+          />
+          <StatCard
+            title="User Roles"
+            value={userRoles.length}
+            icon={Shield}
+            description="Assigned roles"
+          />
+          <StatCard
+            title="Profile Status"
+            value={profile ? "Complete" : "Incomplete"}
+            icon={Users}
+            description="Profile completion"
+          />
+          <StatCard
+            title="Data Access"
+            value={user ? "Granted" : "Denied"}
+            icon={Database}
+            description="System access level"
+          />
+        </AdminStatsGrid>
+
+        {/* Dashboard Cards */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           <Card className="shadow-sm">
             <CardContent className="p-0">
@@ -126,8 +124,8 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         </div>
-      </AdminPageWrapper>
-    </StandardizedDashboardLayout>
+      </PageContent>
+    </UnifiedDashboardLayout>
   );
 };
 

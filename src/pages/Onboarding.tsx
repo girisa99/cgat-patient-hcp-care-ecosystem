@@ -1,7 +1,6 @@
-
 import React, { useState } from 'react';
-import StandardizedDashboardLayout from '@/components/layout/StandardizedDashboardLayout';
-import { SimplePageContainer } from '@/components/layout/SimplePageContainer';
+import UnifiedDashboardLayout from '@/components/layout/UnifiedDashboardLayout';
+import { PageContent } from '@/components/layout/PageContent';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -96,8 +95,8 @@ const Onboarding = () => {
   };
 
   return (
-    <StandardizedDashboardLayout>
-      <SimplePageContainer
+    <UnifiedDashboardLayout>
+      <PageContent
         title="Onboarding"
         subtitle="Set up new facilities and users in the system"
         maxWidth="lg"
@@ -336,8 +335,8 @@ const Onboarding = () => {
             </CardContent>
           </Card>
         )}
-      </SimplePageContainer>
-    </StandardizedDashboardLayout>
+      </PageContent>
+    </UnifiedDashboardLayout>
   );
 };
 
