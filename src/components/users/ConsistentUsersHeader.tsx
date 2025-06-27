@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Users, Shield, Database, Activity } from 'lucide-react';
+import { Users, Shield, Activity, Settings } from 'lucide-react';
 
 interface UserStats {
   total: number;
@@ -44,7 +44,7 @@ export const ConsistentUsersHeader: React.FC<ConsistentUsersHeaderProps> = ({
       {/* Roles Distribution Card */}
       <Card className="bg-white shadow-sm hover:shadow-md transition-shadow">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium text-gray-600">Roles</CardTitle>
+          <CardTitle className="text-sm font-medium text-gray-600">User Roles</CardTitle>
           <Shield className="h-4 w-4 text-green-600" />
         </CardHeader>
         <CardContent>
@@ -64,7 +64,7 @@ export const ConsistentUsersHeader: React.FC<ConsistentUsersHeaderProps> = ({
       {/* Status Overview Card */}
       <Card className="bg-white shadow-sm hover:shadow-md transition-shadow">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium text-gray-600">Status</CardTitle>
+          <CardTitle className="text-sm font-medium text-gray-600">Account Status</CardTitle>
           <Activity className="h-4 w-4 text-orange-600" />
         </CardHeader>
         <CardContent>
@@ -84,11 +84,11 @@ export const ConsistentUsersHeader: React.FC<ConsistentUsersHeaderProps> = ({
         </CardContent>
       </Card>
 
-      {/* Debug Controls Card */}
+      {/* System Tools Card */}
       <Card className="bg-white shadow-sm hover:shadow-md transition-shadow">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium text-gray-600">Debug Tools</CardTitle>
-          <Database className="h-4 w-4 text-purple-600" />
+          <CardTitle className="text-sm font-medium text-gray-600">System Tools</CardTitle>
+          <Settings className="h-4 w-4 text-purple-600" />
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
@@ -98,12 +98,11 @@ export const ConsistentUsersHeader: React.FC<ConsistentUsersHeaderProps> = ({
               size="sm"
               className="w-full"
             >
-              {debugMode ? "Hide Debug" : "Show Debug"}
+              {debugMode ? "Hide Details" : "Show Details"}
             </Button>
             {meta && (
               <div className="text-xs text-gray-500">
-                <div>Source: {meta.source || 'Database'}</div>
-                <div>Updated: {meta.lastUpdated ? new Date(meta.lastUpdated).toLocaleTimeString() : 'Just now'}</div>
+                <div>Last Updated: {meta.lastUpdated ? new Date(meta.lastUpdated).toLocaleTimeString() : 'Just now'}</div>
               </div>
             )}
           </div>

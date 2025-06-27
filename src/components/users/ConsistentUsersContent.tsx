@@ -65,7 +65,7 @@ export const ConsistentUsersContent: React.FC<ConsistentUsersContentProps> = ({
       {/* Users List Section */}
       <Card className="bg-white shadow-sm">
         <CardHeader>
-          <CardTitle className="text-xl font-semibold text-gray-900">Users Directory</CardTitle>
+          <CardTitle className="text-xl font-semibold text-gray-900">All Users</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           <UserManagementList

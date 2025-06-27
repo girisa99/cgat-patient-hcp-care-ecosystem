@@ -14,8 +14,8 @@ interface ConsistentUsersLayoutProps {
 
 export const ConsistentUsersLayout: React.FC<ConsistentUsersLayoutProps> = ({
   children,
-  title = "Users Management (Unified)",
-  description = "Manage user accounts, roles, permissions using unified data source",
+  title = "User Management",
+  description = "Manage user accounts and permissions",
   showAlert = false,
   alertMessage
 }) => {

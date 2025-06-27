@@ -55,8 +55,8 @@ const ApiIntegrationsManager = () => {
     navigator.clipboard.writeText(url);
   };
 
-  if (isLoading) return <LoadingState title="API Integrations" description="Loading API integrations..." />;
-  if (error) return <ErrorState title="API Integrations" error={error} />;
+  if (isLoading) return <LoadingState title="API Management" description="Loading API integrations..." />;
+  if (error) return <ErrorState title="API Management" error={error} />;
 
   if (selectedIntegration) {
     return (
@@ -74,9 +74,9 @@ const ApiIntegrationsManager = () => {
 
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">API Integrations</h1>
+          <h1 className="text-3xl font-bold">API Management</h1>
           <p className="text-muted-foreground mt-2">
-            Manage internal APIs, external integrations, and auto-activated API keys
+            Manage your APIs, integrations, and access keys
           </p>
         </div>
         <div className="flex gap-2">
@@ -90,7 +90,7 @@ const ApiIntegrationsManager = () => {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid grid-cols-7 w-full">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="auto-keys">Auto-Keys</TabsTrigger>
+          <TabsTrigger value="auto-keys">Smart Setup</TabsTrigger>
           <TabsTrigger value="internal">Internal APIs</TabsTrigger>
           <TabsTrigger value="external">External APIs</TabsTrigger>
           <TabsTrigger value="published">Published APIs</TabsTrigger>
@@ -106,11 +106,11 @@ const ApiIntegrationsManager = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                🤖 Auto-Activated API Integrations
-                <Badge variant="secondary">Framework Automation</Badge>
+                🤖 Smart API Setup
+                <Badge variant="secondary">Automated</Badge>
               </CardTitle>
               <p className="text-sm text-muted-foreground">
-                API keys automatically trigger framework components: schemas, RLS policies, documentation, and module registration.
+                API keys automatically set up everything needed: database, security, documentation, and integration.
               </p>
             </CardHeader>
             <CardContent>
@@ -130,7 +130,7 @@ const ApiIntegrationsManager = () => {
                 />
               </div>
               <p className="text-sm text-muted-foreground">
-                APIs developed and managed internally with {internalApis?.length || 0} integrations.
+                APIs developed and managed internally ({internalApis?.length || 0} total).
               </p>
             </CardHeader>
             <CardContent>
@@ -157,7 +157,7 @@ const ApiIntegrationsManager = () => {
                 />
               </div>
               <p className="text-sm text-muted-foreground">
-                APIs consumed from external sources with {externalApis?.length || 0} integrations.
+                APIs from external sources ({externalApis?.length || 0} total).
               </p>
             </CardHeader>
             <CardContent>

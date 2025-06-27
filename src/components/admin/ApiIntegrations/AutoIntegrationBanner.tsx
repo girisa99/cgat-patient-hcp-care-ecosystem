@@ -1,8 +1,4 @@
 
-/**
- * Auto Integration Banner - Shows automatic integration status and triggers
- */
-
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -42,13 +38,13 @@ const AutoIntegrationBanner = () => {
     if (recentKeys > 0) {
       return { 
         status: 'auto-active', 
-        message: `${recentKeys} API key${recentKeys > 1 ? 's' : ''} auto-activated`, 
+        message: `${recentKeys} API key${recentKeys > 1 ? 's' : ''} activated`, 
         color: 'default' 
       };
     }
 
     if (!orchestrationResults || orchestrationResults.length === 0) {
-      return { status: 'idle', message: 'Auto-integration ready', color: 'secondary' };
+      return { status: 'idle', message: 'System ready', color: 'secondary' };
     }
 
     const totalResults = orchestrationResults.length;
@@ -56,11 +52,11 @@ const AutoIntegrationBanner = () => {
     const failedResults = totalResults - successfulResults;
 
     if (failedResults === 0) {
-      return { status: 'success', message: 'All integrations automated', color: 'default' };
+      return { status: 'success', message: 'All integrations active', color: 'default' };
     } else if (successfulResults > 0) {
-      return { status: 'partial', message: `${successfulResults}/${totalResults} integrations automated`, color: 'secondary' };
+      return { status: 'partial', message: `${successfulResults}/${totalResults} integrations active`, color: 'secondary' };
     } else {
-      return { status: 'failed', message: 'Integration automation failed', color: 'destructive' };
+      return { status: 'failed', message: 'Integration setup failed', color: 'destructive' };
     }
   };
 
@@ -106,9 +102,9 @@ const AutoIntegrationBanner = () => {
               <Zap className="h-5 w-5 text-blue-600" />
             </div>
             <div>
-              <h3 className="font-semibold text-lg">Framework Auto-Integration</h3>
+              <h3 className="font-semibold text-lg">Smart API Setup</h3>
               <p className="text-sm text-muted-foreground">
-                Automatic schema, RLS, documentation, and TypeScript generation from API keys
+                Automatic configuration and documentation for your APIs
               </p>
             </div>
           </div>
@@ -145,7 +141,7 @@ const AutoIntegrationBanner = () => {
               <Shield className="h-4 w-4 text-green-600 mr-1" />
               <span className="font-semibold text-lg">{stats.policies}</span>
             </div>
-            <p className="text-xs text-muted-foreground">RLS Policies</p>
+            <p className="text-xs text-muted-foreground">Security</p>
           </div>
           <div className="text-center">
             <div className="flex items-center justify-center mb-1">
@@ -166,7 +162,7 @@ const AutoIntegrationBanner = () => {
               <Code2 className="h-4 w-4 text-indigo-600 mr-1" />
               <span className="font-semibold text-lg">{stats.types}</span>
             </div>
-            <p className="text-xs text-muted-foreground">TS Types</p>
+            <p className="text-xs text-muted-foreground">Types</p>
           </div>
           <div className="text-center">
             <div className="flex items-center justify-center mb-1">
@@ -181,8 +177,8 @@ const AutoIntegrationBanner = () => {
         <div className="flex items-center justify-between">
           <div className="flex-1 mr-4">
             <div className="flex items-center justify-between text-sm mb-1">
-              <span>Framework Alignment</span>
-              <span>{totalComponents} components generated</span>
+              <span>Setup Progress</span>
+              <span>{totalComponents} components configured</span>
             </div>
             <Progress 
               value={totalComponents > 0 ? Math.min(100, (totalComponents / 20) * 100) : 0} 
@@ -210,17 +206,17 @@ const AutoIntegrationBanner = () => {
               ) : (
                 <Brain className="h-4 w-4 mr-2" />
               )}
-              Trigger Auto-Integration
+              Setup APIs
             </Button>
           </div>
         </div>
 
-        {/* Framework Alignment Notice */}
+        {/* Simplified Notice */}
         <div className="mt-3 p-3 bg-blue-50 rounded-lg">
           <p className="text-sm text-blue-800">
-            <strong>🔑 API Key Automation:</strong> When you create an API key, the framework automatically:
-            generates database schemas, creates RLS policies, builds documentation, registers modules, 
-            and syncs with the knowledge base. All integrations are activated instantly upon key creation.
+            <strong>🔑 Automatic Setup:</strong> When you create an API key, the system automatically 
+            configures everything needed: database setup, security, documentation, and more. 
+            Everything is ready to use instantly.
           </p>
         </div>
       </CardContent>
