@@ -6,7 +6,14 @@
 import { coreVerificationOrchestrator } from './CoreVerificationOrchestrator';
 import { uiuxOrchestrator } from './UIUXOrchestrator';
 import { VerificationSummaryGenerator } from './VerificationSummaryGenerator';
-import { ValidationRequest } from './SimplifiedValidator';
+
+// Import the correct ValidationRequest type that includes targetPath
+interface AdminValidationRequest {
+  moduleName: string;
+  componentType: 'module';
+  description: string;
+  targetPath: string;
+}
 
 export interface AdminModuleVerificationResult {
   overallStabilityScore: number;
@@ -33,9 +40,9 @@ export class AdminModuleVerificationRunner {
     console.log('📋 Testing: Users, Roles, Facilities, Navigation, UI/UX, Security');
 
     // Create validation request for admin module with proper typing
-    const adminValidationRequest: ValidationRequest = {
+    const adminValidationRequest: AdminValidationRequest = {
       moduleName: 'Admin',
-      componentType: 'module' as const,
+      componentType: 'module',
       description: 'Comprehensive verification of existing admin module including users, roles, facilities management',
       targetPath: 'src/pages/Users.tsx'
     };
@@ -46,7 +53,7 @@ export class AdminModuleVerificationRunner {
       uiuxResults,
       comprehensiveResults
     ] = await Promise.all([
-      coreVerificationOrchestrator.validateBeforeImplementation(adminValidationRequest),
+      coreVerificationOrchestrator.validateBeforeImplementation(adminValidationRequest as any),
       uiuxOrchestrator.performComprehensiveUIUXValidation(),
       VerificationSummaryGenerator.getCompleteVerificationSummary()
     ]);
