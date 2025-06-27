@@ -67,7 +67,8 @@ const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
     { value: 'onboardingTeam', label: 'Onboarding Team' },
     { value: 'caseManager', label: 'Case Manager' },
     { value: 'patientCaregiver', label: 'Patient Caregiver' },
-    { value: 'readOnlyUser', label: 'Read Only User' }
+    { value: 'healthcareProvider', label: 'Healthcare Provider' },
+    { value: 'nurse', label: 'Nurse' }
   ];
 
   return (

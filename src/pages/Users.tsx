@@ -1,7 +1,8 @@
 
 import React, { useState } from 'react';
 import StandardizedDashboardLayout from '@/components/layout/StandardizedDashboardLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { AdminPageWrapper, AdminStatsGrid, StatCard } from '@/components/layout/AdminPageWrapper';
+import { Card, CardContent } from '@/components/ui/card';
 import { Users as UsersIcon, UserPlus, Settings, Shield } from 'lucide-react';
 import UsersList from '@/components/users/UsersList';
 import CreateUserDialog from '@/components/users/CreateUserDialog';
@@ -56,71 +57,60 @@ const Users = () => {
     setAssignFacilityOpen(true);
   };
 
+  // Calculate stats
+  const totalUsers = users?.length || 0;
+  const usersWithRoles = users?.filter(u => u.user_roles && u.user_roles.length > 0).length || 0;
+  const usersWithFacilities = users?.filter(u => u.facilities).length || 0;
+  const activeUsers = totalUsers; // All fetched users are active
+
+  const statsContent = (
+    <AdminStatsGrid columns={4}>
+      <StatCard
+        title="Total Users"
+        value={totalUsers}
+        icon={UsersIcon}
+        description="All system users"
+      />
+      <StatCard
+        title="With Roles"
+        value={usersWithRoles}
+        icon={Shield}
+        description="Users with assigned roles"
+      />
+      <StatCard
+        title="Active Users"
+        value={activeUsers}
+        icon={Settings}
+        description="Currently active users"
+      />
+      <StatCard
+        title="With Facilities"
+        value={usersWithFacilities}
+        icon={Settings}
+        description="Users assigned to facilities"
+      />
+    </AdminStatsGrid>
+  );
+
+  const headerActions = (
+    <Button onClick={handleCreateUser}>
+      <UserPlus className="h-4 w-4 mr-2" />
+      Add User
+    </Button>
+  );
+
   return (
     <StandardizedDashboardLayout>
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Users Management</h1>
-            <p className="text-muted-foreground">
-              Manage system users, roles, and permissions
-            </p>
-          </div>
-          <Button onClick={handleCreateUser}>
-            <UserPlus className="h-4 w-4 mr-2" />
-            Add User
-          </Button>
-        </div>
-
-        {/* User Stats */}
-        <div className="grid gap-4 md:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-              <UsersIcon className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{users?.length || 0}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">With Roles</CardTitle>
-              <Shield className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {users?.filter(u => u.user_roles && u.user_roles.length > 0).length || 0}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active</CardTitle>
-              <Settings className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{users?.length || 0}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Facilities</CardTitle>
-              <Settings className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {users?.filter(u => u.facilities).length || 0}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
+      <AdminPageWrapper
+        title="Users Management"
+        subtitle="Manage system users, roles, and permissions across the healthcare platform"
+        headerActions={headerActions}
+        showStats={true}
+        statsContent={statsContent}
+        variant="contained"
+      >
         {/* Users List */}
-        <Card>
+        <Card className="shadow-sm">
           <CardContent className="p-0">
             <UsersList
               onCreateUser={handleCreateUser}
@@ -164,7 +154,7 @@ const Users = () => {
           userId={selectedUserId}
           userName={selectedUserName}
         />
-      </div>
+      </AdminPageWrapper>
     </StandardizedDashboardLayout>
   );
 };
