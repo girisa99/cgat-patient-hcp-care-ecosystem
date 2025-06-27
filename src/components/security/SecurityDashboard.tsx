@@ -58,7 +58,7 @@ const SecurityDashboard: React.FC = () => {
           } else if (lastSummary.issuesFound > 0) {
             toast({
               title: "⚠️ Security Scan Complete",
-              description: `Scan completed with ${lastSummary.issuesFound} issues and ${lastSummary.warningsCount || 0} warnings to review.`,
+              description: `Scan completed with ${lastSummary.issuesFound} issues and ${lastSummary.validationResult.warnings.length || 0} warnings to review.`,
               variant: "default",
             });
           } else {
@@ -177,11 +177,11 @@ const SecurityDashboard: React.FC = () => {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
               <div className="text-center p-4 border rounded-lg bg-blue-50">
-                <div className="text-3xl font-bold text-blue-600 mb-2">{lastSummary.recommendationsCount || 0}</div>
+                <div className="text-3xl font-bold text-blue-600 mb-2">{lastSummary.recommendations.length || 0}</div>
                 <p className="text-sm text-blue-800">Recommendations</p>
               </div>
               <div className="text-center p-4 border rounded-lg bg-yellow-50">
-                <div className="text-3xl font-bold text-yellow-600 mb-2">{lastSummary.warningsCount || 0}</div>
+                <div className="text-3xl font-bold text-yellow-600 mb-2">{lastSummary.validationResult.warnings.length || 0}</div>
                 <p className="text-sm text-yellow-800">Warnings</p>
               </div>
               <div className="text-center p-4 border rounded-lg bg-orange-50">
@@ -219,13 +219,13 @@ const SecurityDashboard: React.FC = () => {
               </div>
               <div className="text-center p-4 border rounded-lg bg-blue-50">
                 <div className="text-3xl font-bold text-blue-600 mb-2">
-                  {lastSummary.databaseIssues || 0}
+                  {lastSummary.databaseValidation?.violations.length || 0}
                 </div>
                 <p className="text-sm text-blue-800">Database Issues</p>
               </div>
               <div className="text-center p-4 border rounded-lg bg-purple-50">
                 <div className="text-3xl font-bold text-purple-600 mb-2">
-                  {lastSummary.securityVulnerabilities || 0}
+                  {lastSummary.securityScan?.vulnerabilities.length || 0}
                 </div>
                 <p className="text-sm text-purple-800">Security Vulnerabilities</p>
               </div>

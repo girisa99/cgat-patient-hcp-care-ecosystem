@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -47,8 +48,8 @@ const SecurityMetrics: React.FC<SecurityMetricsProps> = ({ verificationSummary }
     },
     {
       title: 'Database Security',
-      score: verificationSummary?.databaseErrors ? 
-        Math.max(60, 100 - (verificationSummary.databaseErrors * 10)) : 88,
+      score: verificationSummary?.databaseValidation?.violations.length ? 
+        Math.max(60, 100 - (verificationSummary.databaseValidation.violations.length * 10)) : 88,
       status: 'good',
       icon: Database,
       details: 'RLS policies implemented'
@@ -115,33 +116,33 @@ const SecurityMetrics: React.FC<SecurityMetricsProps> = ({ verificationSummary }
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
               <div className="p-4 border rounded-lg text-center">
                 <Database className="h-8 w-8 mx-auto mb-2 text-blue-500" />
-                <div className="text-2xl font-bold">{verificationSummary.databaseIssues || 0}</div>
+                <div className="text-2xl font-bold">{verificationSummary.databaseValidation?.violations.length || 0}</div>
                 <p className="text-sm text-muted-foreground">Database Issues</p>
-                {verificationSummary.databaseAutoFixes && (
-                  <p className="text-xs text-green-600">{verificationSummary.databaseAutoFixes} auto-fixed</p>
+                {verificationSummary.databaseValidation?.autoFixesApplied && (
+                  <p className="text-xs text-green-600">{verificationSummary.databaseValidation.autoFixesApplied} auto-fixed</p>
                 )}
               </div>
               
               <div className="p-4 border rounded-lg text-center">
                 <Code className="h-8 w-8 mx-auto mb-2 text-purple-500" />
-                <div className="text-2xl font-bold">{verificationSummary.codeQualityIssues || 0}</div>
+                <div className="text-2xl font-bold">{verificationSummary.codeQuality?.issues.length || 0}</div>
                 <p className="text-sm text-muted-foreground">Code Quality Issues</p>
-                <p className="text-xs text-blue-600">Score: {verificationSummary.codeQualityScore || 'N/A'}</p>
+                <p className="text-xs text-blue-600">Score: {verificationSummary.qualityScore || 'N/A'}</p>
               </div>
 
               <div className="p-4 border rounded-lg text-center">
                 <Shield className="h-8 w-8 mx-auto mb-2 text-red-500" />
-                <div className="text-2xl font-bold">{verificationSummary.securityVulnerabilities || 0}</div>
+                <div className="text-2xl font-bold">{verificationSummary.securityScan?.vulnerabilities.length || 0}</div>
                 <p className="text-sm text-muted-foreground">Security Vulnerabilities</p>
                 <p className="text-xs text-orange-600">Score: {verificationSummary.securityScore || 'N/A'}</p>
               </div>
 
               <div className="p-4 border rounded-lg text-center">
                 <Settings className="h-8 w-8 mx-auto mb-2 text-green-500" />
-                <div className="text-2xl font-bold">{verificationSummary.schemaIssues || 0}</div>
+                <div className="text-2xl font-bold">{verificationSummary.schemaValidation?.violations.length || 0}</div>
                 <p className="text-sm text-muted-foreground">Schema Issues</p>
-                {verificationSummary.schemaAutoFixes && (
-                  <p className="text-xs text-green-600">{verificationSummary.schemaAutoFixes} auto-fixed</p>
+                {verificationSummary.schemaValidation?.autoFixesAvailable && (
+                  <p className="text-xs text-green-600">{verificationSummary.schemaValidation.autoFixesAvailable.length} auto-fixes available</p>
                 )}
               </div>
             </div>
@@ -168,7 +169,7 @@ const SecurityMetrics: React.FC<SecurityMetricsProps> = ({ verificationSummary }
                   </div>
                   <div>
                     <span className="font-medium">SQL Fixes:</span>
-                    <span className="ml-2 text-blue-600">{verificationSummary.sqlAutoFixesGenerated}</span>
+                    <span className="ml-2 text-blue-600">{verificationSummary.sqlAutoFixes?.length || 0}</span>
                   </div>
                 </div>
               </div>
@@ -195,7 +196,7 @@ const SecurityMetrics: React.FC<SecurityMetricsProps> = ({ verificationSummary }
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="text-center p-4 border rounded-lg">
               <div className="text-3xl font-bold mb-2">
-                {verificationSummary?.warningsCount || 0}
+                {verificationSummary?.validationResult.warnings.length || 0}
               </div>
               <Badge className="bg-yellow-100 text-yellow-800">
                 Warnings
