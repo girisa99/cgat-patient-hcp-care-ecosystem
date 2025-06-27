@@ -1,9 +1,8 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { UserManagementActions } from '@/components/admin/UserManagement/UserManagementActions';
-import { UserManagementList } from '@/components/admin/UserManagement/UserManagementList';
-import { UserManagementDialogs } from '@/components/admin/UserManagement/UserManagementDialogs';
+import { UsersList } from '@/components/users';
+import { BulkRoleAssignment } from '@/components/users';
 
 interface ConsistentUsersContentProps {
   onCreateUser: () => void;
@@ -52,17 +51,17 @@ export const ConsistentUsersContent: React.FC<ConsistentUsersContentProps> = ({
 }) => {
   return (
     <div className="space-y-6">
-      {/* Actions Section */}
+      {/* Bulk Role Assignment */}
       <Card className="bg-white shadow-sm">
         <CardContent className="pt-6">
-          <UserManagementActions />
+          <BulkRoleAssignment />
         </CardContent>
       </Card>
 
       {/* Users List Section */}
       <Card className="bg-white shadow-sm">
         <CardContent className="p-0">
-          <UserManagementList
+          <UsersList
             onCreateUser={onCreateUser}
             onAssignRole={onAssignRole}
             onRemoveRole={onRemoveRole}
@@ -71,23 +70,6 @@ export const ConsistentUsersContent: React.FC<ConsistentUsersContentProps> = ({
           />
         </CardContent>
       </Card>
-
-      {/* Dialogs */}
-      <UserManagementDialogs
-        createUserOpen={createUserOpen}
-        setCreateUserOpen={setCreateUserOpen}
-        editUserOpen={editUserOpen}
-        setEditUserOpen={setEditUserOpen}
-        assignRoleOpen={assignRoleOpen}
-        setAssignRoleOpen={setAssignRoleOpen}
-        removeRoleOpen={removeRoleOpen}
-        setRemoveRoleOpen={setRemoveRoleOpen}
-        assignFacilityOpen={assignFacilityOpen}
-        setAssignFacilityOpen={setAssignFacilityOpen}
-        selectedUserId={selectedUserId}
-        selectedUser={selectedUser}
-        selectedUserName={selectedUserName}
-      />
     </div>
   );
 };
