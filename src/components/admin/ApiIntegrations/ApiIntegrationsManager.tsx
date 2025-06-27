@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,16 +8,16 @@ import { useEnhancedExternalApis } from '@/hooks/useEnhancedExternalApis';
 import AutoIntegrationBanner from './AutoIntegrationBanner';
 import ApiKeyIntegrationMonitor from './ApiKeyIntegrationMonitor';
 import ApiOverviewDashboard from './ApiOverviewDashboard';
-import InternalApiEndpointsList from './InternalApiEndpointsList';
-import ExternalApiEndpointsList from './ExternalApiEndpointsList';
+import { InternalApiEndpointsList } from './InternalApiEndpointsList';
+import { ExternalApiEndpointsList } from './ExternalApiEndpointsList';
 import PublishedApisSection from './PublishedApisSection';
-import CreateIntegrationDialog from './CreateIntegrationDialog';
+import { CreateIntegrationDialog } from './CreateIntegrationDialog';
 import ExternalApiPublisher from './ExternalApiPublisher';
 import ApiKeyManager from './ApiKeyManager';
-import ApiTestingInterface from './ApiTestingInterface';
+import { ApiTestingInterface } from './ApiTestingInterface';
 import IntegrationDetailView from './IntegrationDetailView';
-import LoadingState from '../shared/LoadingState';
-import ErrorState from '../shared/ErrorState';
+import { LoadingState } from '../shared/LoadingState';
+import { ErrorState } from '../shared/ErrorState';
 
 const ApiIntegrationsManager = () => {
   const { 
@@ -29,11 +30,11 @@ const ApiIntegrationsManager = () => {
     externalApis
   } = useApiIntegrations();
   
-  const { externalApis: publishedApis, isLoading: isLoadingPublished } = useEnhancedExternalApis();
+  const { externalApis: publishedApis, isLoadingPublished } = useEnhancedExternalApis();
   const [activeTab, setActiveTab] = useState('overview');
 
-  if (isLoading) return <LoadingState />;
-  if (error) return <ErrorState error={error} />;
+  if (isLoading) return <LoadingState title="API Integrations" description="Loading API integrations..." />;
+  if (error) return <ErrorState title="API Integrations" error={error} />;
 
   if (selectedIntegration) {
     return (
@@ -58,8 +59,8 @@ const ApiIntegrationsManager = () => {
         </div>
         <div className="flex gap-2">
           <Badge variant="outline">{integrations?.length || 0} Total</Badge>
-          <Badge variant="default">{internalApis.length} Internal</Badge>
-          <Badge variant="secondary">{externalApis.length} External</Badge>
+          <Badge variant="default">{internalApis?.length || 0} Internal</Badge>
+          <Badge variant="secondary">{externalApis?.length || 0} External</Badge>
           <Badge variant="outline">{publishedApis?.length || 0} Published</Badge>
         </div>
       </div>
@@ -109,7 +110,7 @@ const ApiIntegrationsManager = () => {
             </CardHeader>
             <CardContent>
               <InternalApiEndpointsList 
-                apis={internalApis} 
+                apis={internalApis || []} 
                 onSelectIntegration={setSelectedIntegration} 
               />
             </CardContent>
@@ -129,7 +130,7 @@ const ApiIntegrationsManager = () => {
             </CardHeader>
             <CardContent>
               <ExternalApiEndpointsList 
-                apis={externalApis}
+                apis={externalApis || []}
                 onSelectIntegration={setSelectedIntegration}
               />
             </CardContent>
@@ -138,8 +139,8 @@ const ApiIntegrationsManager = () => {
 
         <TabsContent value="published" className="space-y-6">
           <PublishedApisSection 
-            publishedApis={publishedApis} 
-            isLoading={isLoadingPublished} 
+            externalApis={publishedApis || []} 
+            isLoading={isLoadingPublished || false} 
           />
           <ExternalApiPublisher />
         </TabsContent>

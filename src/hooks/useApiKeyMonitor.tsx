@@ -131,7 +131,7 @@ export const useApiKeyMonitor = () => {
           visibility: apiType === 'internal' ? 'private' : 'public',
           pricing_model: 'free',
           category: 'healthcare',
-          tags: ['auto-generated', apiType, keyType],
+          tags: ['auto-generated', apiType, apiKey.type],
           authentication_methods: ['api_key'],
           rate_limits: {
             requests: apiKey.type === 'production' ? 10000 : 1000,
