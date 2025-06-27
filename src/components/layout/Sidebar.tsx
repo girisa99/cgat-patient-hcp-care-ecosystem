@@ -74,10 +74,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         )}
         
         {/* Navigation section */}
-        <nav className={cn(
-          "flex flex-1 flex-col px-6 py-4 bg-white overflow-y-auto",
-          onClose ? "pt-4" : "pt-6"
-        )}>
+        <nav className="flex flex-1 flex-col px-6 py-6 bg-white overflow-y-auto">
           <ul role="list" className="flex flex-1 flex-col gap-y-7">
             <li>
               <ul role="list" className="-mx-2 space-y-1">

@@ -34,15 +34,17 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         </div>
       )}
       
-      {/* Main Container with Flex Layout */}
-      <div className="flex pt-16 min-h-screen">
-        {/* Desktop Sidebar - Fixed width, always visible */}
+      {/* Main Container */}
+      <div className="flex pt-16">
+        {/* Desktop Sidebar */}
         {!isMobile && (
-          <div className="w-64 flex-shrink-0 fixed left-0 top-16 bottom-0 z-20 bg-white border-r border-gray-200">
-            <Sidebar 
-              isOpen={false} 
-              onClose={() => {}} 
-            />
+          <div className="w-64 flex-shrink-0">
+            <div className="fixed left-0 top-16 w-64 h-[calc(100vh-4rem)] bg-white border-r border-gray-200 overflow-y-auto">
+              <Sidebar 
+                isOpen={true} 
+                onClose={() => {}} 
+              />
+            </div>
           </div>
         )}
         
@@ -54,11 +56,11 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           />
         )}
         
-        {/* Content Area - Takes remaining space */}
+        {/* Content Area */}
         <main className={`
           flex-1 
-          min-h-screen 
-          ${isMobile ? 'pt-12' : 'ml-64'} 
+          min-h-[calc(100vh-4rem)]
+          ${isMobile ? 'pt-12' : ''} 
           overflow-x-hidden
         `}>
           {children}
