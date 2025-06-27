@@ -36,6 +36,35 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, onClose }) => {
     { name: 'Admin Verification', href: '/admin-verification', icon: Activity },
   ];
 
+  const NavigationItems = () => (
+    <nav className="flex-1 space-y-1 px-2 py-4">
+      {navigation.map((item) => {
+        const isActive = location.pathname === item.href;
+        return (
+          <NavLink
+            key={item.name}
+            to={item.href}
+            onClick={onClose}
+            className={cn(
+              'group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors',
+              isActive
+                ? 'bg-blue-100 text-blue-900'
+                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+            )}
+          >
+            <item.icon
+              className={cn(
+                'mr-3 h-5 w-5 flex-shrink-0',
+                isActive ? 'text-blue-500' : 'text-gray-400 group-hover:text-gray-500'
+              )}
+            />
+            {item.name}
+          </NavLink>
+        );
+      })}
+    </nav>
+  );
+
   // Mobile overlay - only when onClose is provided (indicating mobile usage)
   if (onClose) {
     return (
@@ -59,32 +88,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, onClose }) => {
                 </button>
               </div>
               
-              <nav className="flex-1 space-y-1 px-2 py-4">
-                {navigation.map((item) => {
-                  const isActive = location.pathname === item.href;
-                  return (
-                    <NavLink
-                      key={item.name}
-                      to={item.href}
-                      onClick={onClose}
-                      className={cn(
-                        'group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors',
-                        isActive
-                          ? 'bg-blue-100 text-blue-900'
-                          : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                      )}
-                    >
-                      <item.icon
-                        className={cn(
-                          'mr-3 h-5 w-5 flex-shrink-0',
-                          isActive ? 'text-blue-500' : 'text-gray-400 group-hover:text-gray-500'
-                        )}
-                      />
-                      {item.name}
-                    </NavLink>
-                  );
-                })}
-              </nav>
+              <NavigationItems />
             </div>
           </div>
         )}
@@ -99,31 +103,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, onClose }) => {
         <h1 className="text-xl font-bold text-gray-900">Healthcare Admin</h1>
       </div>
       
-      <nav className="flex-1 space-y-1 px-2 py-4">
-        {navigation.map((item) => {
-          const isActive = location.pathname === item.href;
-          return (
-            <NavLink
-              key={item.name}
-              to={item.href}
-              className={cn(
-                'group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors',
-                isActive
-                  ? 'bg-blue-100 text-blue-900'
-                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-              )}
-            >
-              <item.icon
-                className={cn(
-                  'mr-3 h-5 w-5 flex-shrink-0',
-                  isActive ? 'text-blue-500' : 'text-gray-400 group-hover:text-gray-500'
-                )}
-              />
-              {item.name}
-            </NavLink>
-          );
-        })}
-      </nav>
+      <NavigationItems />
     </div>
   );
 };

@@ -36,14 +36,11 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       
       {/* Main Container */}
       <div className="flex pt-16">
-        {/* Desktop Sidebar */}
+        {/* Desktop Sidebar - Always visible on desktop */}
         {!isMobile && (
           <div className="w-64 flex-shrink-0">
-            <div className="fixed left-0 top-16 w-64 h-[calc(100vh-4rem)] bg-white border-r border-gray-200 overflow-y-auto">
-              <Sidebar 
-                isOpen={true} 
-                onClose={() => {}} 
-              />
+            <div className="fixed left-0 top-16 w-64 h-[calc(100vh-4rem)] bg-gray-50 border-r border-gray-200 overflow-y-auto">
+              <Sidebar />
             </div>
           </div>
         )}
