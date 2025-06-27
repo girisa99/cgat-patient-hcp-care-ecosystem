@@ -1,4 +1,3 @@
-
 /**
  * Admin Module Verification Runner
  * Specialized verification runner for testing the existing admin module
@@ -7,7 +6,7 @@
 import { coreVerificationOrchestrator } from './CoreVerificationOrchestrator';
 import { uiuxOrchestrator } from './UIUXOrchestrator';
 import { VerificationSummaryGenerator } from './VerificationSummaryGenerator';
-import { ValidationRequest } from './types';
+import { ValidationRequest } from './SimplifiedValidator';
 
 export interface AdminModuleVerificationResult {
   overallStabilityScore: number;
@@ -33,10 +32,10 @@ export class AdminModuleVerificationRunner {
     console.log('🔍 STARTING COMPREHENSIVE ADMIN MODULE VERIFICATION...');
     console.log('📋 Testing: Users, Roles, Facilities, Navigation, UI/UX, Security');
 
-    // Create validation request for admin module
+    // Create validation request for admin module with proper typing
     const adminValidationRequest: ValidationRequest = {
       moduleName: 'Admin',
-      componentType: 'module',
+      componentType: 'module' as const,
       description: 'Comprehensive verification of existing admin module including users, roles, facilities management',
       targetPath: 'src/pages/Users.tsx'
     };
