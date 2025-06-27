@@ -16,6 +16,7 @@ import NotFound from '@/pages/NotFound';
 import Modules from '@/pages/Modules';
 import AuditLog from '@/pages/AuditLog';
 import ApiIntegrations from '@/pages/ApiIntegrations';
+import SystemAssessment from '@/pages/SystemAssessment';
 
 const queryClient = new QueryClient();
 
@@ -114,6 +115,14 @@ function App() {
                     <StandardizedDashboardLayout pageTitle="API Management" pageSubtitle="Manage API integrations and access keys">
                       <ApiIntegrations />
                     </StandardizedDashboardLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/system-assessment"
+                element={
+                  <ProtectedRoute>
+                    <SystemAssessment />
                   </ProtectedRoute>
                 }
               />

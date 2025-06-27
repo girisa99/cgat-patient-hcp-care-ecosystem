@@ -13,7 +13,8 @@ import {
   FileText,
   Code,
   ExternalLink,
-  X
+  X,
+  Activity
 } from 'lucide-react';
 
 const navigation = [
@@ -24,6 +25,7 @@ const navigation = [
   { name: 'Onboarding', href: '/onboarding', icon: UserPlus },
   { name: 'Modules', href: '/modules', icon: Package },
   { name: 'API Integrations', href: '/api-integrations', icon: ExternalLink },
+  { name: 'System Assessment', href: '/system-assessment', icon: Activity },
   { name: 'Audit Log', href: '/audit-log', icon: FileText },
   { name: 'Settings', href: '/settings', icon: Settings },
 ];

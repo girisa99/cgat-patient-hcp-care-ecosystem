@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AlertTriangle, CheckCircle, Database, Code, Zap, FileText, Download, RefreshCw } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Database, Zap, RefreshCw } from 'lucide-react';
 import { useSystemAssessment } from '@/hooks/useSystemAssessment';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
@@ -19,8 +19,6 @@ const SystemAssessmentDashboard = () => {
     isLoadingAssessment,
     assessmentError,
     refetchAssessment,
-    generateCleanupScript,
-    generateMigrationPlan,
     hasCriticalFindings,
     totalTablesReviewed,
     unnecessaryTablesCount,
@@ -88,31 +86,13 @@ const SystemAssessmentDashboard = () => {
       {/* Executive Summary */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Database className="h-5 w-5" />
-                System Assessment Dashboard
-              </CardTitle>
-              <CardDescription>
-                Comprehensive analysis of system health, performance, and optimization opportunities
-              </CardDescription>
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={generateCleanupScript}>
-                <Download className="h-4 w-4 mr-2" />
-                Download Cleanup Script
-              </Button>
-              <Button variant="outline" onClick={generateMigrationPlan}>
-                <FileText className="h-4 w-4 mr-2" />
-                Migration Plan
-              </Button>
-              <Button onClick={() => refetchAssessment()}>
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh
-              </Button>
-            </div>
-          </div>
+          <CardTitle className="flex items-center gap-2">
+            <Database className="h-5 w-5" />
+            System Overview
+          </CardTitle>
+          <CardDescription>
+            Key metrics and health indicators
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
