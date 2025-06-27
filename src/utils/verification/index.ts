@@ -245,6 +245,37 @@ export {
 };
 
 /**
+ * Validate with merge detection - stub implementation
+ */
+const validateWithMergeDetection = async (request: ValidationRequest) => {
+  console.log('🔍 Validating with merge detection...');
+  const mergeHandler = new MergeVerificationHandler();
+  const mergeResult = await mergeHandler.checkForMergeConflicts();
+  const validationResult = await enhancedIntegrationOrchestrator.performIntegratedVerification(request);
+  
+  return {
+    validationResult,
+    mergeResult,
+    canProceed: validationResult.overallStatus !== 'blocked' && mergeResult.conflictCount === 0
+  };
+};
+
+/**
+ * Generate code from template - stub implementation
+ */
+const generateCodeFromTemplate = async (request: TemplateGenerationRequest): Promise<TemplateGenerationResult> => {
+  console.log('🏗️ Generating code from template...');
+  
+  return {
+    success: true,
+    generatedFiles: [],
+    templateUsed: request.templateType || 'default',
+    generatedCode: '',
+    recommendations: []
+  };
+};
+
+/**
  * COMPLETE AUTOMATIC validation function - ALL VERIFICATION TYPES
  */
 export const validateBeforeImplementation = async (request: ValidationRequest) => {
@@ -410,7 +441,7 @@ export const getCompleteVerificationSummary = async () => {
       schemaValidation: schemaValidation.isValid,
       schemaIssues: schemaValidation.violations.length,
       securityScore: securityScan.securityScore,
-      securityVulnerabilities: securityScan.vulnerabilities.length, // FIXED: Added securityScan prefix
+      securityVulnerabilities: securityScan.vulnerabilities.length,
       qualityScore: codeQuality.overallScore,
       qualityIssues: codeQuality.issues.length,
       performanceMonitoring: performanceMonitor.getStatus().isMonitoring,
@@ -619,7 +650,7 @@ export {
   ComponentRegistryScanner,
   validateTableSchema, 
   ensureTypescriptDatabaseAlignment,
-  enforceTemplateUsage // FIXED: Single export
+  enforceTemplateUsage
 };
 
 // Export individual validation functions (for specific use cases)

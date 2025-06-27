@@ -1,4 +1,3 @@
-
 /**
  * Environment Configuration Validator
  * Validates environment variables, configuration files, and deployment settings
@@ -234,9 +233,12 @@ export class EnvironmentConfigValidator {
     invalid: InvalidValue[],
     security: SecurityIssue[]
   ): DeploymentReadiness {
+    const criticalMissingVars = missing.filter(m => m.impact === 'critical');
+    const criticalSecurityIssues = security.filter(s => s.severity === 'critical');
+    
     const criticalIssues = [
-      ...missing.filter(m => m.impact === 'critical'),
-      ...security.filter(s => s.severity === 'critical')
+      ...criticalMissingVars,
+      ...criticalSecurityIssues
     ];
 
     const warnings = [
@@ -248,14 +250,39 @@ export class EnvironmentConfigValidator {
     const ready = criticalIssues.length === 0;
     const score = Math.max(0, 100 - (criticalIssues.length * 25) - (warnings.length * 5));
 
+    const blockers: string[] = [];
+    
+    // Handle missing variables
+    criticalMissingVars.forEach(variable => {
+      blockers.push(`Missing critical variable: ${variable.name}`);
+    });
+    
+    // Handle security issues
+    criticalSecurityIssues.forEach(issue => {
+      blockers.push(`Security issue: ${issue.variable}`);
+    });
+
+    const warningMessages: string[] = [];
+    
+    // Handle non-critical missing variables
+    missing.filter(m => m.impact !== 'critical').forEach(variable => {
+      warningMessages.push(`Missing variable: ${variable.name}`);
+    });
+    
+    // Handle invalid values
+    invalid.forEach(value => {
+      warningMessages.push(`Invalid value for ${value.name}`);
+    });
+    
+    // Handle non-critical security issues
+    security.filter(s => s.severity !== 'critical').forEach(issue => {
+      warningMessages.push(`Security concern: ${issue.variable}`);
+    });
+
     return {
       ready,
-      blockers: criticalIssues.map(issue => 
-        'variable' in issue ? `Missing critical variable: ${issue.name}` : `Security issue: ${issue.variable}`
-      ),
-      warnings: warnings.map(issue => 
-        'name' in issue ? `Invalid value for ${issue.name}` : `Configuration warning`
-      ),
+      blockers,
+      warnings: warningMessages,
       score,
       environments: {
         development: ready && score > 80 ? 'ready' : score > 60 ? 'warning' : 'blocked',
