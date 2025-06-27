@@ -1,3 +1,4 @@
+
 /**
  * Enhanced Automated Verification System - Main Export 
  * 
@@ -109,6 +110,9 @@ import { uiuxOrchestrator } from './UIUXOrchestrator';
 
 // NEW: Enhanced main validation functions with comprehensive monitoring
 import { enhancedSecurityPerformanceOrchestrator } from './EnhancedSecurityPerformanceOrchestrator';
+import { runtimeSecurityMonitor } from './RuntimeSecurityMonitor';
+import { realUserMonitor } from './RealUserMonitor';
+import { automatedAlertingSystem } from './AutomatedAlertingSystem';
 
 export const startComprehensiveMonitoring = async () => {
   console.log('🚀 Starting comprehensive security and performance monitoring...');
@@ -186,6 +190,12 @@ export type * from './EnhancedIntegrationOrchestrator';
 export type * from './DesignSystemValidator';
 export type * from './RoleBasedUIValidator';
 export type * from './UIUXOrchestrator';
+
+// NEW: Comprehensive Security & Performance Types
+export type * from './RuntimeSecurityMonitor';
+export type * from './RealUserMonitor';
+export type * from './AutomatedAlertingSystem';
+export type * from './EnhancedSecurityPerformanceOrchestrator';
 
 // Import specific types to avoid conflicts, exclude overlapped ones
 export type {

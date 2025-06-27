@@ -1,4 +1,3 @@
-
 /**
  * Real User Monitor (RUM)
  * Monitors real user performance metrics and Core Web Vitals
@@ -179,27 +178,39 @@ export class RealUserMonitor {
 
       const vitals: Partial<CoreWebVitals> = {};
 
-      // Use Web Vitals API
-      import('web-vitals').then(({ onLCP, onFID, onCLS, onFCP, onTTFB, onINP }) => {
-        onLCP((metric) => vitals.lcp = metric.value);
-        onFID((metric) => vitals.fid = metric.value);
-        onCLS((metric) => vitals.cls = metric.value);
-        onFCP((metric) => vitals.fcp = metric.value);
-        onTTFB((metric) => vitals.ttfb = metric.value);
-        onINP((metric) => vitals.inp = metric.value);
+      // Try to use Web Vitals API if available
+      try {
+        import('web-vitals').then(({ onLCP, onFID, onCLS, onFCP, onTTFB, onINP }) => {
+          onLCP((metric) => vitals.lcp = metric.value);
+          onFID((metric) => vitals.fid = metric.value);
+          onCLS((metric) => vitals.cls = metric.value);
+          onFCP((metric) => vitals.fcp = metric.value);
+          onTTFB((metric) => vitals.ttfb = metric.value);
+          onINP((metric) => vitals.inp = metric.value);
 
-        setTimeout(() => {
+          setTimeout(() => {
+            resolve({
+              lcp: vitals.lcp || 2500,
+              fid: vitals.fid || 100,
+              cls: vitals.cls || 0.1,
+              fcp: vitals.fcp || 1800,
+              ttfb: vitals.ttfb || 600,
+              inp: vitals.inp || 200
+            });
+          }, 1000);
+        }).catch(() => {
+          // Fallback values if web-vitals fails
           resolve({
-            lcp: vitals.lcp || 2500,
-            fid: vitals.fid || 100,
-            cls: vitals.cls || 0.1,
-            fcp: vitals.fcp || 1800,
-            ttfb: vitals.ttfb || 600,
-            inp: vitals.inp || 200
+            lcp: 2500,
+            fid: 100,
+            cls: 0.1,
+            fcp: 1800,
+            ttfb: 600,
+            inp: 200
           });
-        }, 1000);
-      }).catch(() => {
-        // Fallback values
+        });
+      } catch (error) {
+        // Fallback values if import fails
         resolve({
           lcp: 2500,
           fid: 100,
@@ -208,7 +219,7 @@ export class RealUserMonitor {
           ttfb: 600,
           inp: 200
         });
-      });
+      }
     });
   }
 
@@ -263,7 +274,7 @@ export class RealUserMonitor {
     return resources.map(resource => ({
       url: resource.name,
       type: this.getResourceType(resource.name),
-      loadTime: resource.loadEventEnd - resource.loadEventStart,
+      loadTime: resource.duration || 0, // Use duration instead of loadEventEnd - loadEventStart
       size: resource.transferSize || 0,
       cached: resource.transferSize === 0 && resource.decodedBodySize > 0
     }));
