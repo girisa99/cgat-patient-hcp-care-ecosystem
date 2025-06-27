@@ -1,115 +1,68 @@
 
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import {
-  Home,
   Users,
-  Building2,
-  UserCheck,
   Settings,
-  UserPlus,
-  Package,
-  FileText,
-  Code,
-  ExternalLink,
-  X,
-  Activity
+  Home,
+  UserCheck,
+  Hospital,
+  Layers,
+  Database,
+  Shield,
+  Activity,
+  FileText
 } from 'lucide-react';
 
-const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: Home },
-  { name: 'Users', href: '/users', icon: Users },
-  { name: 'Facilities', href: '/facilities', icon: Building2 },
-  { name: 'Patients', href: '/patients', icon: UserCheck },
-  { name: 'Onboarding', href: '/onboarding', icon: UserPlus },
-  { name: 'Modules', href: '/modules', icon: Package },
-  { name: 'API Integrations', href: '/api-integrations', icon: ExternalLink },
-  { name: 'System Assessment', href: '/system-assessment', icon: Activity },
-  { name: 'Audit Log', href: '/audit-log', icon: FileText },
-  { name: 'Settings', href: '/settings', icon: Settings },
-];
-
-interface SidebarProps {
-  isOpen?: boolean;
-  onClose?: () => void;
-}
-
-const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
+const Sidebar = () => {
   const location = useLocation();
+  
+  const navigation = [
+    { name: 'Dashboard', href: '/dashboard', icon: Home },
+    { name: 'Users', href: '/users', icon: Users },
+    { name: 'Consistent Users', href: '/consistent-users', icon: UserCheck },
+    { name: 'Patients', href: '/patients', icon: Users },
+    { name: 'Facilities', href: '/facilities', icon: Hospital },
+    { name: 'Modules', href: '/modules', icon: Layers },
+    { name: 'API Management', href: '/api-management', icon: Database },
+    { name: 'API Integrations', href: '/api-integrations', icon: Settings },
+    { name: 'Audit Log', href: '/audit-log', icon: Shield },
+    { name: 'Admin Verification', href: '/admin-verification', icon: Activity },
+  ];
 
   return (
-    <>
-      {/* Mobile Overlay */}
-      {isOpen && onClose && (
-        <div 
-          className="fixed inset-0 z-40 bg-black/50 md:hidden" 
-          onClick={onClose}
-        />
-      )}
-      
-      {/* Sidebar */}
-      <div className={cn(
-        "bg-white h-full",
-        // Mobile: Fixed overlay positioning
-        onClose && "fixed left-0 top-0 z-50 w-64 transition-transform duration-200 ease-in-out border-r border-gray-200 shadow-lg",
-        onClose && (isOpen ? "translate-x-0" : "-translate-x-full"),
-        // Desktop: Full height within container
-        !onClose && "w-full h-full"
-      )}>
-        {/* Header section - only show on mobile */}
-        {onClose && (
-          <div className="flex h-16 shrink-0 items-center px-6 bg-white border-b">
-            <Code className="h-8 w-8 text-blue-600" />
-            <span className="ml-2 text-xl font-semibold text-gray-900">
-              Healthcare Admin
-            </span>
-            <button
-              onClick={onClose}
-              className="ml-auto p-2 hover:bg-gray-100 rounded-md transition-colors"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-        )}
-        
-        {/* Navigation section */}
-        <nav className="flex flex-1 flex-col px-6 py-6 bg-white overflow-y-auto">
-          <ul role="list" className="flex flex-1 flex-col gap-y-7">
-            <li>
-              <ul role="list" className="-mx-2 space-y-1">
-                {navigation.map((item) => {
-                  const isActive = location.pathname === item.href;
-                  return (
-                    <li key={item.name}>
-                      <Link
-                        to={item.href}
-                        onClick={onClose}
-                        className={cn(
-                          isActive
-                            ? 'bg-blue-50 text-blue-600 border-r-2 border-blue-600'
-                            : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50',
-                          'group flex gap-x-3 rounded-md p-2 text-sm font-medium transition-colors'
-                        )}
-                      >
-                        <item.icon
-                          className={cn(
-                            isActive ? 'text-blue-600' : 'text-gray-400 group-hover:text-blue-600',
-                            'h-5 w-5 shrink-0'
-                          )}
-                          aria-hidden="true"
-                        />
-                        {item.name}
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            </li>
-          </ul>
-        </nav>
+    <div className="flex h-full w-64 flex-col bg-gray-50 border-r border-gray-200">
+      <div className="flex h-16 items-center justify-center border-b border-gray-200">
+        <h1 className="text-xl font-bold text-gray-900">Healthcare Admin</h1>
       </div>
-    </>
+      
+      <nav className="flex-1 space-y-1 px-2 py-4">
+        {navigation.map((item) => {
+          const isActive = location.pathname === item.href;
+          return (
+            <NavLink
+              key={item.name}
+              to={item.href}
+              className={cn(
+                'group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors',
+                isActive
+                  ? 'bg-blue-100 text-blue-900'
+                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+              )}
+            >
+              <item.icon
+                className={cn(
+                  'mr-3 h-5 w-5 flex-shrink-0',
+                  isActive ? 'text-blue-500' : 'text-gray-400 group-hover:text-gray-500'
+                )}
+              />
+              {item.name}
+            </NavLink>
+          );
+        })}
+      </nav>
+    </div>
   );
 };
 
