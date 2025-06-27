@@ -1,19 +1,16 @@
 
 import React from 'react';
-import StandardizedDashboardLayout from '@/components/layout/StandardizedDashboardLayout';
+import MainLayout from '@/components/layout/MainLayout';
+import { PageContainer } from '@/components/layout/PageContainer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const Settings = () => {
   return (
-    <StandardizedDashboardLayout>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-          <p className="text-muted-foreground">
-            Manage application settings and preferences
-          </p>
-        </div>
-        
+    <MainLayout>
+      <PageContainer
+        title="Settings"
+        subtitle="Manage application settings and preferences"
+      >
         <div className="grid gap-6">
           <Card>
             <CardHeader>
@@ -26,8 +23,8 @@ const Settings = () => {
             </CardContent>
           </Card>
         </div>
-      </div>
-    </StandardizedDashboardLayout>
+      </PageContainer>
+    </MainLayout>
   );
 };
 
