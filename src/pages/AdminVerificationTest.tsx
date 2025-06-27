@@ -1,4 +1,3 @@
-
 /**
  * Admin Verification Test Page
  * Test page to run and display admin module verification results
@@ -25,6 +24,7 @@ import {
   Lock
 } from 'lucide-react';
 import { adminModuleVerificationRunner, AdminModuleVerificationResult } from '@/utils/verification/AdminModuleVerificationRunner';
+import { ImplementationTracker } from '@/components/verification/ImplementationTracker';
 
 const AdminVerificationTest = () => {
   const [verificationResult, setVerificationResult] = useState<AdminModuleVerificationResult | null>(null);
@@ -191,14 +191,19 @@ const AdminVerificationTest = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                <Tabs defaultValue="overview" className="w-full">
-                  <TabsList className="grid w-full grid-cols-5">
+                <Tabs defaultValue="implementation" className="w-full">
+                  <TabsList className="grid w-full grid-cols-6">
+                    <TabsTrigger value="implementation">Implementation</TabsTrigger>
                     <TabsTrigger value="overview">Overview</TabsTrigger>
                     <TabsTrigger value="checks">Checks</TabsTrigger>
                     <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
                     <TabsTrigger value="issues">Issues</TabsTrigger>
                     <TabsTrigger value="plan">Plan</TabsTrigger>
                   </TabsList>
+
+                  <TabsContent value="implementation" className="space-y-4">
+                    <ImplementationTracker />
+                  </TabsContent>
 
                   <TabsContent value="overview" className="space-y-4">
                     <div className="grid gap-4 md:grid-cols-2">
