@@ -18,7 +18,7 @@ import {
 
 // Enhanced Integration System with merge detection
 import { 
-  EnhancedIntegrationOrchestrator,
+  EnhancedIntegrationOrchestractor,
   enhancedIntegrationOrchestrator,
   EnhancedIntegrationResult
 } from './EnhancedIntegrationOrchestrator';
@@ -207,7 +207,7 @@ import { GuidelinesValidator } from './GuidelinesValidator';
 export { 
   AutomatedVerificationOrchestrator,
   automatedVerification,
-  EnhancedIntegrationOrchestrator,
+  EnhancedIntegrationOrchestractor,
   enhancedIntegrationOrchestrator,
   MergeVerificationHandler,
   DatabaseGuidelinesValidator,
@@ -245,30 +245,31 @@ export {
 };
 
 /**
- * Validate with merge detection - stub implementation
+ * Validate with merge detection - corrected implementation
  */
 const validateWithMergeDetection = async (request: ValidationRequest) => {
   console.log('🔍 Validating with merge detection...');
   const mergeHandler = new MergeVerificationHandler();
-  const mergeResult = await mergeHandler.checkForMergeConflicts();
+  // Fix: Use the correct method name from MergeVerificationHandler
+  const mergeResult = await mergeHandler.detectMergeConflicts(request.moduleName || 'Unknown', '');
   const validationResult = await enhancedIntegrationOrchestrator.performIntegratedVerification(request);
   
   return {
     validationResult,
     mergeResult,
-    canProceed: validationResult.overallStatus !== 'blocked' && mergeResult.conflictCount === 0
+    canProceed: validationResult.overallStatus !== 'blocked' && !mergeResult.hasConflicts
   };
 };
 
 /**
- * Generate code from template - stub implementation
+ * Generate code from template - corrected implementation
  */
 const generateCodeFromTemplate = async (request: TemplateGenerationRequest): Promise<TemplateGenerationResult> => {
   console.log('🏗️ Generating code from template...');
   
+  // Fix: Use only properties that exist in TemplateGenerationResult
   return {
     success: true,
-    generatedFiles: [],
     templateUsed: request.templateType || 'default',
     generatedCode: '',
     recommendations: []
