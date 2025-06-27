@@ -38,55 +38,55 @@ const StandardizedDashboardLayout: React.FC<StandardizedDashboardLayoutProps> = 
           onClose={() => setSidebarOpen(false)} 
         />
         
+        {/* Mobile menu button */}
+        {(isMobile || isTablet) && (
+          <div className="md:hidden fixed top-16 left-0 right-0 z-40 p-2 border-b bg-background/95 backdrop-blur">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setSidebarOpen(true)}
+              className="flex items-center space-x-2 hover:bg-accent transition-colors"
+            >
+              <Menu className="h-4 w-4" />
+              <span>Menu</span>
+            </Button>
+          </div>
+        )}
+        
+        {/* Main content area */}
         <main className={cn(
-          "min-h-screen transition-all duration-300 ease-in-out",
-          isMobile ? "ml-0" : "md:ml-64"
+          "transition-all duration-300 ease-in-out",
+          isMobile ? "ml-0 pt-16" : "md:ml-64 pt-16",
+          (isMobile || isTablet) ? "pt-20" : ""
         )}>
-          {(isMobile || isTablet) && (
-            <div className="md:hidden p-2 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 fixed top-16 left-0 right-0 z-40">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => setSidebarOpen(true)}
-                className="flex items-center space-x-2 hover:bg-accent transition-colors"
-              >
-                <Menu className="h-4 w-4" />
-                <span>Menu</span>
-              </Button>
+          {/* Page header section */}
+          {showPageHeader && (pageTitle || pageSubtitle || headerActions) && (
+            <div className="border-b bg-background">
+              <div className="flex items-start justify-between w-full max-w-7xl mx-auto px-6 py-4">
+                <div className="flex-1">
+                  {pageTitle && (
+                    <h1 className="text-2xl font-bold tracking-tight text-gray-900 mb-1">
+                      {pageTitle}
+                    </h1>
+                  )}
+                  {pageSubtitle && (
+                    <p className="text-muted-foreground">
+                      {pageSubtitle}
+                    </p>
+                  )}
+                </div>
+                {headerActions && (
+                  <div className="flex items-center gap-3 ml-6">
+                    {headerActions}
+                  </div>
+                )}
+              </div>
             </div>
           )}
           
-          <div className={cn(
-            "pt-16",
-            (isMobile || isTablet) ? "pt-20" : "pt-16"
-          )}>
-            {showPageHeader && (pageTitle || pageSubtitle || headerActions) && (
-              <div className="px-6 py-6 bg-background border-b">
-                <div className="flex items-start justify-between w-full max-w-7xl mx-auto">
-                  <div className="flex-1">
-                    {pageTitle && (
-                      <h1 className="text-3xl font-bold tracking-tight text-gray-900 mb-2">
-                        {pageTitle}
-                      </h1>
-                    )}
-                    {pageSubtitle && (
-                      <p className="text-muted-foreground text-lg">
-                        {pageSubtitle}
-                      </p>
-                    )}
-                  </div>
-                  {headerActions && (
-                    <div className="flex items-center gap-3 ml-6">
-                      {headerActions}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-            
-            <div className="w-full max-w-7xl mx-auto px-6 py-6">
-              {children}
-            </div>
+          {/* Main content */}
+          <div className="w-full max-w-7xl mx-auto px-6 py-4">
+            {children}
           </div>
         </main>
       </div>
