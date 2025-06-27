@@ -9,8 +9,12 @@ interface DeveloperApplication {
   email: string;
   description: string;
   requested_modules: string[];
-  status: 'pending' | 'approved' | 'rejected';
+  status: string; // Changed from specific union type to string to match database
   created_at: string;
+  user_id?: string;
+  reviewed_by?: string;
+  reviewed_at?: string;
+  updated_at?: string;
 }
 
 interface CreateApplicationData {

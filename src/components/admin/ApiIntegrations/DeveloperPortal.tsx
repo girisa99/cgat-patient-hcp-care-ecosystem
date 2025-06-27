@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,12 +24,16 @@ import {
   FileText,
   Clock,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Download
 } from 'lucide-react';
 import { useApiKeys } from '@/hooks/useApiKeys';
 import { useDeveloperApplications } from '@/hooks/useDeveloperApplications';
 import { usePublishedApiIntegration } from '@/hooks/usePublishedApiIntegration';
+import { useEnhancedPublishedApiDetails } from '@/hooks/useEnhancedPublishedApiDetails';
 import { useToast } from '@/hooks/use-toast';
+import { PostmanCollectionDownloader } from '@/utils/api/PostmanCollectionDownloader';
+import { ApiDocumentationGenerator } from '@/utils/api/ApiDocumentationGenerator';
 import PublishedApisSection from './PublishedApisSection';
 import DeveloperNotificationBanner from './DeveloperNotificationBanner';
 
@@ -65,6 +68,7 @@ const DeveloperPortal = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('overview');
   const [showApplicationDialog, setShowApplicationDialog] = useState(false);
+  const [selectedApiForDocs, setSelectedApiForDocs] = useState<string | null>(null);
 
   const {
     apiKeys,
@@ -86,6 +90,13 @@ const DeveloperPortal = () => {
     isLoadingPublishedApis
   } = usePublishedApiIntegration();
 
+  // Get enhanced details for the first published API (for sandbox/docs)
+  const firstPublishedApi = publishedApisForDevelopers.length > 0 ? publishedApisForDevelopers[0] : null;
+  const {
+    apiDetails,
+    isLoadingDetails
+  } = useEnhancedPublishedApiDetails(firstPublishedApi?.id || '');
+
   const availableModules = [
     { id: 'patients', name: 'Patient Management', description: 'Access patient data and records' },
     { id: 'facilities', name: 'Facility Management', description: 'Manage healthcare facilities' },
@@ -95,12 +106,71 @@ const DeveloperPortal = () => {
   ];
 
   const handleGenerateTestUrl = (apiKey: any) => {
-    const testUrl = `${window.location.origin}/api/sandbox?key=${apiKey.key_prefix}&modules=${apiKey.modules.join(',')}`;
+    if (!firstPublishedApi) {
+      toast({
+        title: "No API Available",
+        description: "No published APIs available for testing.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const testUrl = `${window.location.origin}/api/sandbox/${firstPublishedApi.id}?key=${apiKey.key_prefix}&modules=${apiKey.modules.join(',')}`;
     navigator.clipboard.writeText(testUrl);
     toast({
       title: "Test URL Generated",
       description: "Sandbox URL has been copied to your clipboard.",
     });
+  };
+
+  const handleViewDocumentation = () => {
+    if (!firstPublishedApi || !apiDetails) {
+      toast({
+        title: "Documentation Not Available",
+        description: "API details are not loaded yet or no APIs are available.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      ApiDocumentationGenerator.viewDocumentation(apiDetails);
+      toast({
+        title: "Documentation Opened",
+        description: "API documentation opened in a new window.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to open API documentation.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDownloadPostmanCollection = () => {
+    if (!firstPublishedApi || !apiDetails) {
+      toast({
+        title: "Collection Not Available", 
+        description: "API details are not loaded yet or no APIs are available.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      PostmanCollectionDownloader.generateAndDownload(apiDetails);
+      toast({
+        title: "Collection Downloaded",
+        description: "Postman collection has been downloaded successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Download Failed",
+        description: "Failed to download Postman collection.",
+        variant: "destructive"
+      });
+    }
   };
 
   const ApplicationForm = () => {
@@ -244,7 +314,6 @@ const DeveloperPortal = () => {
         </Dialog>
       </div>
 
-      {/* Add notification banner */}
       <DeveloperNotificationBanner />
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -484,55 +553,76 @@ const DeveloperPortal = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="p-4 bg-blue-50 rounded-lg">
-                <h4 className="font-medium mb-2">Sandbox Base URL</h4>
-                <code className="text-sm bg-white p-2 rounded border">
-                  {window.location.origin}/api/sandbox
-                </code>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <h4 className="font-medium">Available Endpoints</h4>
-                  <div className="space-y-1 text-sm">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary">GET</Badge>
-                      <code>/patients</code>
+              {firstPublishedApi && apiDetails ? (
+                <>
+                  <div className="p-4 bg-blue-50 rounded-lg">
+                    <h4 className="font-medium mb-2">Sandbox Base URL</h4>
+                    <code className="text-sm bg-white p-2 rounded border">
+                      {apiDetails.base_url || `${window.location.origin}/api/sandbox/${firstPublishedApi.id}`}
+                    </code>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <h4 className="font-medium">Available Endpoints ({apiDetails.endpoints?.length || 0})</h4>
+                      <div className="space-y-1 text-sm max-h-40 overflow-y-auto">
+                        {apiDetails.endpoints && apiDetails.endpoints.length > 0 ? (
+                          apiDetails.endpoints.slice(0, 8).map((endpoint: any, index: number) => (
+                            <div key={index} className="flex items-center gap-2">
+                              <Badge variant="secondary" className="text-xs">
+                                {endpoint.method?.toUpperCase() || 'GET'}
+                              </Badge>
+                              <code className="text-xs">{endpoint.external_path || endpoint.path}</code>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-muted-foreground">Loading endpoints...</div>
+                        )}
+                        {apiDetails.endpoints && apiDetails.endpoints.length > 8 && (
+                          <div className="text-xs text-muted-foreground">
+                            ... and {apiDetails.endpoints.length - 8} more endpoints
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary">POST</Badge>
-                      <code>/patients</code>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary">GET</Badge>
-                      <code>/facilities</code>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary">GET</Badge>
-                      <code>/users</code>
+                    
+                    <div className="space-y-2">
+                      <h4 className="font-medium">Authentication</h4>
+                      <div className="text-sm space-y-1">
+                        <p>Header: <code>Authorization: Bearer YOUR_API_KEY</code></p>
+                        <p>Or Query: <code>?api_key=YOUR_API_KEY</code></p>
+                      </div>
                     </div>
                   </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <h4 className="font-medium">Authentication</h4>
-                  <div className="text-sm space-y-1">
-                    <p>Header: <code>Authorization: Bearer YOUR_API_KEY</code></p>
-                    <p>Or Query: <code>?api_key=YOUR_API_KEY</code></p>
+                  
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline"
+                      onClick={handleViewDocumentation}
+                      disabled={isLoadingDetails}
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      View API Documentation
+                    </Button>
+                    <Button 
+                      variant="outline"
+                      onClick={handleDownloadPostmanCollection}
+                      disabled={isLoadingDetails}
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Download Postman Collection
+                    </Button>
                   </div>
+                </>
+              ) : (
+                <div className="text-center py-8">
+                  <TestTube className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-medium mb-2">No APIs Available</h3>
+                  <p className="text-muted-foreground">
+                    No published APIs are currently available for sandbox testing.
+                  </p>
                 </div>
-              </div>
-              
-              <div className="flex gap-2">
-                <Button variant="outline">
-                  <FileText className="h-4 w-4 mr-2" />
-                  View API Documentation
-                </Button>
-                <Button variant="outline">
-                  <Code className="h-4 w-4 mr-2" />
-                  Download Postman Collection
-                </Button>
-              </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
