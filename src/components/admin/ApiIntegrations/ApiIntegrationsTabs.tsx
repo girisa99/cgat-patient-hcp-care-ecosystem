@@ -52,40 +52,54 @@ export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = ({
         <TabsTrigger value="testing">Testing</TabsTrigger>
       </TabsList>
 
-      <OverviewTabContent />
+      <TabsContent value="overview" className="space-y-6">
+        <OverviewTabContent />
+      </TabsContent>
 
-      <InternalApisTabContent
-        internalApis={internalApis}
-        searchTerm={searchTerm}
-        createDialogOpen={createDialogOpen}
-        setCreateDialogOpen={setCreateDialogOpen}
-        onDownloadCollection={onDownloadCollection}
-        onViewDetails={onViewDetails}
-        onViewDocumentation={onViewDocumentation}
-        onCopyUrl={onCopyUrl}
-      />
+      <TabsContent value="internal" className="space-y-6">
+        <InternalApisTabContent
+          internalApis={internalApis}
+          searchTerm={searchTerm}
+          createDialogOpen={createDialogOpen}
+          setCreateDialogOpen={setCreateDialogOpen}
+          onDownloadCollection={onDownloadCollection}
+          onViewDetails={onViewDetails}
+          onViewDocumentation={onViewDocumentation}
+          onCopyUrl={onCopyUrl}
+        />
+      </TabsContent>
 
-      <ExternalApisTabContent
-        externalApis={externalApis}
-        searchTerm={searchTerm}
-        createDialogOpen={createDialogOpen}
-        setCreateDialogOpen={setCreateDialogOpen}
-        onDownloadCollection={onDownloadCollection}
-        onViewDetails={onViewDetails}
-        onViewDocumentation={onViewDocumentation}
-        onCopyUrl={onCopyUrl}
-      />
+      <TabsContent value="external" className="space-y-6">
+        <ExternalApisTabContent
+          externalApis={externalApis}
+          searchTerm={searchTerm}
+          createDialogOpen={createDialogOpen}
+          setCreateDialogOpen={setCreateDialogOpen}
+          onDownloadCollection={onDownloadCollection}
+          onViewDetails={onViewDetails}
+          onViewDocumentation={onViewDocumentation}
+          onCopyUrl={onCopyUrl}
+        />
+      </TabsContent>
 
-      <PublishedApisTabContent />
+      <TabsContent value="published" className="space-y-6">
+        <PublishedApisTabContent />
+      </TabsContent>
 
-      <DeveloperTabContent />
+      <TabsContent value="developer" className="space-y-6">
+        <DeveloperTabContent />
+      </TabsContent>
 
-      <ApiKeysTabContent />
+      <TabsContent value="keys" className="space-y-6">
+        <ApiKeysTabContent />
+      </TabsContent>
 
-      <TestingTabContent
-        integrations={integrations}
-        onClose={onClose}
-      />
+      <TabsContent value="testing" className="space-y-6">
+        <TestingTabContent
+          integrations={integrations}
+          onClose={onClose}
+        />
+      </TabsContent>
     </Tabs>
   );
 };
