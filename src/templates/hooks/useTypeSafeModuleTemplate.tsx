@@ -40,7 +40,7 @@ export const useTypeSafeModuleTemplate = <T extends DatabaseTables>(
     isUpdating: mutationsHook.isUpdating,
     
     // Validation
-    isTableValid: validationHook.isTableValid,
+    isTableValid: validationHook.isValid,
     validateRequiredFields: validationHook.validateRequiredFields,
     validateCustomRules: validationHook.validateCustomRules,
     getMissingFields: validationHook.getMissingFields,
@@ -49,7 +49,7 @@ export const useTypeSafeModuleTemplate = <T extends DatabaseTables>(
     meta: {
       ...dataHook.meta,
       validationStatus: {
-        isTableValid: validationHook.isTableValid,
+        isTableValid: validationHook.isValid,
         hasRequiredFields: !!config.requiredFields,
         hasCustomValidation: !!config.customValidation
       }
