@@ -7,17 +7,24 @@ import ApiKeyIntegrationMonitor from '../ApiKeyIntegrationMonitor';
 
 export const ApiKeysTabContent: React.FC = () => {
   return (
-    <TabsContent value="keys" className="space-y-6">
-      <Section 
-        variant="card" 
-        title="API Key Management" 
-        subtitle="Manage your API keys and access tokens"
-      >
-        <div className="space-y-6">
-          <ApiKeyManager />
-          <ApiKeyIntegrationMonitor />
-        </div>
-      </Section>
+    <TabsContent value="keys" className="w-full space-y-6">
+      <div className="w-full">
+        <Section 
+          variant="card" 
+          title="API Key Management" 
+          subtitle="Manage your API keys and access tokens"
+          className="w-full"
+        >
+          <div className="w-full space-y-6">
+            <div className="w-full">
+              <ApiKeyManager />
+            </div>
+            <div className="w-full">
+              <ApiKeyIntegrationMonitor />
+            </div>
+          </div>
+        </Section>
+      </div>
     </TabsContent>
   );
 };

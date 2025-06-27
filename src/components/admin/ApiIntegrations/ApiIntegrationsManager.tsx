@@ -64,52 +64,60 @@ const ApiIntegrationsManager = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <ApiIntegrationsStats
-        integrations={integrations || []}
-        internalApis={internalApis || []}
-        externalApis={externalApis || []}
-        publishedApis={publishedApis || []}
-      />
-
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <ApiIntegrationsTabs activeTab={activeTab} onTabChange={setActiveTab} />
-
-        <OverviewTabContent />
-
-        <InternalApisTabContent
-          internalApis={internalApis || []}
-          searchTerm={searchTerm}
-          createDialogOpen={createDialogOpen}
-          setCreateDialogOpen={setCreateDialogOpen}
-          onDownloadCollection={handleDownloadCollection}
-          onViewDetails={handleViewDetails}
-          onViewDocumentation={handleViewDocumentation}
-          onCopyUrl={handleCopyUrl}
-        />
-
-        <ExternalApisTabContent
-          externalApis={externalApis || []}
-          searchTerm={searchTerm}
-          createDialogOpen={createDialogOpen}
-          setCreateDialogOpen={setCreateDialogOpen}
-          onDownloadCollection={handleDownloadCollection}
-          onViewDetails={handleViewDetails}
-          onViewDocumentation={handleViewDocumentation}
-          onCopyUrl={handleCopyUrl}
-        />
-
-        <PublishedApisTabContent />
-
-        <DeveloperTabContent />
-
-        <ApiKeysTabContent />
-
-        <TestingTabContent
+    <div className="w-full space-y-6">
+      <div className="w-full">
+        <ApiIntegrationsStats
           integrations={integrations || []}
-          onClose={() => setActiveTab('overview')}
+          internalApis={internalApis || []}
+          externalApis={externalApis || []}
+          publishedApis={publishedApis || []}
         />
-      </Tabs>
+      </div>
+
+      <div className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-6">
+          <div className="w-full">
+            <ApiIntegrationsTabs activeTab={activeTab} onTabChange={setActiveTab} />
+          </div>
+
+          <div className="w-full">
+            <OverviewTabContent />
+
+            <InternalApisTabContent
+              internalApis={internalApis || []}
+              searchTerm={searchTerm}
+              createDialogOpen={createDialogOpen}
+              setCreateDialogOpen={setCreateDialogOpen}
+              onDownloadCollection={handleDownloadCollection}
+              onViewDetails={handleViewDetails}
+              onViewDocumentation={handleViewDocumentation}
+              onCopyUrl={handleCopyUrl}
+            />
+
+            <ExternalApisTabContent
+              externalApis={externalApis || []}
+              searchTerm={searchTerm}
+              createDialogOpen={createDialogOpen}
+              setCreateDialogOpen={setCreateDialogOpen}
+              onDownloadCollection={handleDownloadCollection}
+              onViewDetails={handleViewDetails}
+              onViewDocumentation={handleViewDocumentation}
+              onCopyUrl={handleCopyUrl}
+            />
+
+            <PublishedApisTabContent />
+
+            <DeveloperTabContent />
+
+            <ApiKeysTabContent />
+
+            <TestingTabContent
+              integrations={integrations || []}
+              onClose={() => setActiveTab('overview')}
+            />
+          </div>
+        </Tabs>
+      </div>
     </div>
   );
 };

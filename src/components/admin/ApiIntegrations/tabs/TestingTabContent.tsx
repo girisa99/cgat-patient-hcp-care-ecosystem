@@ -13,11 +13,13 @@ export const TestingTabContent: React.FC<TestingTabContentProps> = ({
   onClose
 }) => {
   return (
-    <TabsContent value="testing" className="space-y-6">
-      <ApiTestingInterface 
-        integration={integrations?.[0]} 
-        onClose={onClose}
-      />
+    <TabsContent value="testing" className="w-full space-y-6">
+      <div className="w-full">
+        <ApiTestingInterface 
+          integration={integrations?.[0]} 
+          onClose={onClose}
+        />
+      </div>
     </TabsContent>
   );
 };

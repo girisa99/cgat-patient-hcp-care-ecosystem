@@ -27,27 +27,32 @@ export const InternalApisTabContent: React.FC<InternalApisTabContentProps> = ({
   onCopyUrl
 }) => {
   return (
-    <TabsContent value="internal" className="space-y-6">
-      <Section 
-        variant="card" 
-        title="Internal APIs" 
-        subtitle={`APIs developed and managed internally (${internalApis?.length || 0} total).`}
-        headerActions={
-          <CreateIntegrationDialog 
-            open={createDialogOpen}
-            onOpenChange={setCreateDialogOpen}
-          />
-        }
-      >
-        <InternalApiEndpointsList 
-          apis={internalApis || []} 
-          searchTerm={searchTerm}
-          onDownloadCollection={onDownloadCollection}
-          onViewDetails={onViewDetails}
-          onViewDocumentation={onViewDocumentation}
-          onCopyUrl={onCopyUrl}
-        />
-      </Section>
+    <TabsContent value="internal" className="w-full space-y-6">
+      <div className="w-full">
+        <Section 
+          variant="card" 
+          title="Internal APIs" 
+          subtitle={`APIs developed and managed internally (${internalApis?.length || 0} total).`}
+          headerActions={
+            <CreateIntegrationDialog 
+              open={createDialogOpen}
+              onOpenChange={setCreateDialogOpen}
+            />
+          }
+          className="w-full"
+        >
+          <div className="w-full">
+            <InternalApiEndpointsList 
+              apis={internalApis || []} 
+              searchTerm={searchTerm}
+              onDownloadCollection={onDownloadCollection}
+              onViewDetails={onViewDetails}
+              onViewDocumentation={onViewDocumentation}
+              onCopyUrl={onCopyUrl}
+            />
+          </div>
+        </Section>
+      </div>
     </TabsContent>
   );
 };
