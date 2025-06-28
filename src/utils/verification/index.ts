@@ -1,5 +1,11 @@
 
+
 export * from './AutomatedVerificationOrchestrator';
+export * from './AutomatedVerificationTypes';
+export * from './TemplateGenerator';
+export * from './VerificationSummaryBuilder';
+export * from './VerificationRunner';
+export * from './AutoFixHandler';
 export * from './CoreVerificationOrchestrator';
 export * from './UIUXOrchestrator';
 export * from './GuidelinesValidator';
@@ -24,3 +30,4 @@ export type {
   CodeQualityResult,
   DatabaseIssue 
 } from './types';
+

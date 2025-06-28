@@ -1,88 +1,22 @@
 /**
- * Fully Automated Verification Orchestrator - ENHANCED UNIFIED SYSTEM
+ * Automated Verification Orchestrator - Refactored Main Controller
  * 
- * Coordinates all verification systems and triggers them automatically
- * with ZERO manual intervention required
- * 
- * NOW INCLUDES: Database Schema Validation, Performance Monitoring, 
- * Security Scanning, Code Quality Analysis, and Template-based Generation
+ * Coordinates all verification systems with ZERO manual intervention required
  */
 
-import { SimplifiedValidator, ValidationRequest, ValidationResult } from './SimplifiedValidator';
-import { ComponentAuditor, AuditResult } from './ComponentAuditor';
-import { DuplicateDetector } from './DuplicateDetector';
+import { 
+  AutomatedVerificationConfig,
+  VerificationSummary,
+  TemplateGenerationRequest,
+  TemplateGenerationResult
+} from './AutomatedVerificationTypes';
+import { ValidationRequest, ValidationResult } from './SimplifiedValidator';
 import { CanonicalSourceValidator } from './CanonicalSourceValidator';
-import { DatabaseGuidelinesValidator, DatabaseValidationResult } from './DatabaseGuidelinesValidator';
-import { DatabaseSchemaValidator, SchemaValidationResult } from './DatabaseSchemaValidator';
-import { PerformanceMonitor, PerformanceMetrics, performanceMonitor } from './PerformanceMonitor';
-import { SecurityScanner, SecurityScanResult } from './SecurityScanner';
-import { CodeQualityAnalyzer, CodeQualityResult } from './CodeQualityAnalyzer';
-
-export interface AutomatedVerificationConfig {
-  enableRealTimeChecks: boolean;
-  enablePeriodicScans: boolean;
-  scanIntervalMinutes: number;
-  autoFixSimpleIssues: boolean;
-  notifyOnIssues: boolean;
-  blockOnCriticalIssues: boolean;
-  autoStartOnAppLoad: boolean;
-  mandatoryVerification: boolean;
-  enableDatabaseValidation: boolean;
-  enableWorkflowSuggestions: boolean;
-  enableAutoSQLGeneration: boolean;
-  // NEW ENHANCED FEATURES
-  enableSchemaValidation: boolean;
-  enablePerformanceMonitoring: boolean;
-  enableSecurityScanning: boolean;
-  enableCodeQualityAnalysis: boolean;
-  enableTemplateGeneration: boolean;
-  enableAutomatedRefactoring: boolean;
-}
-
-export interface VerificationSummary {
-  timestamp: string;
-  validationResult: ValidationResult;
-  auditResults: AuditResult[];
-  duplicateReport: string;
-  canonicalValidation: string;
-  databaseValidation?: DatabaseValidationResult;
-  // NEW ENHANCED RESULTS
-  schemaValidation?: SchemaValidationResult;
-  performanceMetrics?: PerformanceMetrics;
-  securityScan?: SecurityScanResult;
-  codeQuality?: CodeQualityResult;
-  issuesFound: number;
-  criticalIssues: number;
-  autoFixesApplied: number;
-  recommendations: string[];
-  sqlAutoFixes?: string[];
-  workflowSuggestions?: string[];
-  // NEW ENHANCED METRICS
-  overallHealthScore: number;
-  securityScore: number;
-  qualityScore: number;
-  performanceScore: number;
-}
-
-// NEW: Template Generation Interface
-export interface TemplateGenerationRequest {
-  templateType: 'hook' | 'component' | 'module' | 'api_integration';
-  tableName?: string;
-  moduleName?: string;
-  apiId?: string;
-  generateTests: boolean;
-  generateDocumentation: boolean;
-}
-
-export interface TemplateGenerationResult {
-  success: boolean;
-  filesGenerated: string[];
-  templateUsed: string;
-  codeGenerated: string;
-  testsGenerated: string;
-  documentationGenerated: string;
-  errors: string[];
-}
+import { DuplicateDetector } from './DuplicateDetector';
+import { TemplateGenerator } from './TemplateGenerator';
+import { VerificationSummaryBuilder } from './VerificationSummaryBuilder';
+import { VerificationRunner } from './VerificationRunner';
+import { AutoFixHandler } from './AutoFixHandler';
 
 export class AutomatedVerificationOrchestrator {
   private config: AutomatedVerificationConfig;
@@ -90,6 +24,11 @@ export class AutomatedVerificationOrchestrator {
   private intervalId?: NodeJS.Timeout;
   private lastScanTimestamp?: string;
   private static instance: AutomatedVerificationOrchestrator;
+  
+  private templateGenerator: TemplateGenerator;
+  private summaryBuilder: VerificationSummaryBuilder;
+  private verificationRunner: VerificationRunner;
+  private autoFixHandler: AutoFixHandler;
 
   constructor(config: Partial<AutomatedVerificationConfig> = {}) {
     this.config = {
@@ -104,7 +43,6 @@ export class AutomatedVerificationOrchestrator {
       enableDatabaseValidation: true,
       enableWorkflowSuggestions: true,
       enableAutoSQLGeneration: true,
-      // NEW ENHANCED DEFAULTS
       enableSchemaValidation: true,
       enablePerformanceMonitoring: true,
       enableSecurityScanning: true,
@@ -113,6 +51,12 @@ export class AutomatedVerificationOrchestrator {
       enableAutomatedRefactoring: true,
       ...config
     };
+
+    // Initialize service classes
+    this.templateGenerator = new TemplateGenerator();
+    this.summaryBuilder = new VerificationSummaryBuilder();
+    this.verificationRunner = new VerificationRunner(this.config);
+    this.autoFixHandler = new AutoFixHandler(this.config);
 
     // Auto-start enhanced verification system immediately
     if (this.config.autoStartOnAppLoad && typeof window !== 'undefined') {
@@ -138,11 +82,6 @@ export class AutomatedVerificationOrchestrator {
 
     console.log('🚀 STARTING ENHANCED AUTOMATED VERIFICATION SYSTEM...');
     this.isRunning = true;
-
-    // Start performance monitoring
-    if (this.config.enablePerformanceMonitoring) {
-      performanceMonitor.startMonitoring();
-    }
 
     // Set up periodic scans (AUTOMATIC)
     if (this.config.enablePeriodicScans) {
@@ -187,21 +126,21 @@ export class AutomatedVerificationOrchestrator {
         securityScan,
         codeQuality
       ] = await Promise.all([
-        this.runValidation(request),
-        this.runComponentAudit(),
-        this.runDuplicateDetection(),
-        this.config.enableDatabaseValidation ? this.runDatabaseValidation(request) : Promise.resolve(null),
-        this.config.enableSchemaValidation ? this.runSchemaValidation(request) : Promise.resolve(null),
-        this.config.enablePerformanceMonitoring ? this.runPerformanceAnalysis() : Promise.resolve(null),
-        this.config.enableSecurityScanning ? this.runSecurityScan() : Promise.resolve(null),
-        this.config.enableCodeQualityAnalysis ? this.runCodeQualityAnalysis() : Promise.resolve(null)
+        this.verificationRunner.runValidation(request),
+        this.verificationRunner.runComponentAudit(),
+        this.verificationRunner.runDuplicateDetection(),
+        this.verificationRunner.runDatabaseValidation(request),
+        this.verificationRunner.runSchemaValidation(request),
+        this.verificationRunner.runPerformanceAnalysis(),
+        this.verificationRunner.runSecurityScan(),
+        this.verificationRunner.runCodeQualityAnalysis()
       ]);
 
       const duplicateReport = new DuplicateDetector().generateReport(duplicates);
       const canonicalValidator = new CanonicalSourceValidator();
       const canonicalValidation = canonicalValidator.generateValidationReport([]);
 
-      const summary = this.createEnhancedSummary(
+      const summary = this.summaryBuilder.createEnhancedSummary(
         timestamp,
         validationResult,
         auditResults,
@@ -218,7 +157,7 @@ export class AutomatedVerificationOrchestrator {
       await this.handleEnhancedVerificationResults(summary, request);
 
       // ENHANCED CRITICAL ISSUES = AUTOMATIC BLOCKING
-      const hasCriticalIssues = this.hasCriticalIssues(summary);
+      const hasCriticalIssues = this.autoFixHandler.hasCriticalIssues(summary);
 
       if (hasCriticalIssues && this.config.blockOnCriticalIssues) {
         console.error('🚫 CRITICAL ISSUES DETECTED (enhanced verification) - CREATION AUTOMATICALLY BLOCKED');
@@ -228,7 +167,7 @@ export class AutomatedVerificationOrchestrator {
 
       // ENHANCED AUTOMATIC fixes
       if (this.config.autoFixSimpleIssues && summary.issuesFound > 0) {
-        const autoFixes = await this.applyEnhancedAutoFixes(summary);
+        const autoFixes = await this.autoFixHandler.applyEnhancedAutoFixes(summary);
         summary.autoFixesApplied = autoFixes;
         console.log(`🔧 AUTOMATICALLY APPLIED ${autoFixes} enhanced fixes`);
       }
@@ -255,136 +194,10 @@ export class AutomatedVerificationOrchestrator {
   }
 
   /**
-   * NEW: Template-based code generation
+   * Template-based code generation
    */
   async generateFromTemplate(request: TemplateGenerationRequest): Promise<TemplateGenerationResult> {
-    console.log('🎯 GENERATING CODE FROM TEMPLATE:', request.templateType);
-
-    const result: TemplateGenerationResult = {
-      success: false,
-      filesGenerated: [],
-      templateUsed: '',
-      codeGenerated: '',
-      testsGenerated: '',
-      documentationGenerated: '',
-      errors: []
-    };
-
-    try {
-      switch (request.templateType) {
-        case 'hook':
-          result.templateUsed = 'useTypeSafeModuleTemplate';
-          result.codeGenerated = this.generateHookTemplate(request);
-          break;
-        case 'component':
-          result.templateUsed = 'ExtensibleModuleTemplate';
-          result.codeGenerated = this.generateComponentTemplate(request);
-          break;
-        case 'module':
-          result.templateUsed = 'CompleteModuleTemplate';
-          result.codeGenerated = this.generateModuleTemplate(request);
-          break;
-        case 'api_integration':
-          result.templateUsed = 'ApiIntegrationTemplate';
-          result.codeGenerated = this.generateApiIntegrationTemplate(request);
-          break;
-      }
-
-      if (request.generateTests) {
-        result.testsGenerated = this.generateTestTemplate(request);
-      }
-
-      if (request.generateDocumentation) {
-        result.documentationGenerated = this.generateDocumentationTemplate(request);
-      }
-
-      result.success = true;
-      console.log('✅ Template generation completed successfully');
-
-    } catch (error) {
-      result.errors.push(`Template generation failed: ${error.message}`);
-      console.error('❌ Template generation failed:', error);
-    }
-
-    return result;
-  }
-
-  /**
-   * Run validation automatically
-   */
-  private async runValidation(request: ValidationRequest): Promise<ValidationResult> {
-    return SimplifiedValidator.validate(request);
-  }
-
-  /**
-   * Run component audit automatically
-   */
-  private async runComponentAudit(): Promise<AuditResult[]> {
-    const auditor = new ComponentAuditor();
-    return await auditor.auditComponentUsage();
-  }
-
-  /**
-   * Run duplicate detection automatically
-   */
-  private async runDuplicateDetection() {
-    const duplicateDetector = new DuplicateDetector();
-    return await duplicateDetector.scanForDuplicates();
-  }
-
-  /**
-   * Run database validation automatically
-   */
-  private async runDatabaseValidation(request: ValidationRequest): Promise<DatabaseValidationResult | null> {
-    if (!this.config.enableDatabaseValidation) return null;
-
-    console.log('🗄️ RUNNING DATABASE GUIDELINES VALIDATION...');
-    
-    // Extract table names from request
-    const tableNames = request.tableName ? [request.tableName] : [];
-    
-    return await DatabaseGuidelinesValidator.validateDatabase(tableNames);
-  }
-
-  /**
-   * NEW: Run schema validation automatically
-   */
-  private async runSchemaValidation(request: ValidationRequest): Promise<SchemaValidationResult | null> {
-    if (!this.config.enableSchemaValidation) return null;
-
-    console.log('🗄️ RUNNING DATABASE SCHEMA VALIDATION...');
-    const tableNames = request.tableName ? [request.tableName] : [];
-    return await DatabaseSchemaValidator.validateSchema(tableNames);
-  }
-
-  /**
-   * NEW: Run performance analysis automatically
-   */
-  private async runPerformanceAnalysis(): Promise<PerformanceMetrics | null> {
-    if (!this.config.enablePerformanceMonitoring) return null;
-
-    console.log('📊 RUNNING PERFORMANCE ANALYSIS...');
-    return await performanceMonitor.getPerformanceMetrics();
-  }
-
-  /**
-   * NEW: Run security scan automatically
-   */
-  private async runSecurityScan(): Promise<SecurityScanResult | null> {
-    if (!this.config.enableSecurityScanning) return null;
-
-    console.log('🔒 RUNNING SECURITY SCAN...');
-    return await SecurityScanner.performSecurityScan();
-  }
-
-  /**
-   * NEW: Run code quality analysis automatically
-   */
-  private async runCodeQualityAnalysis(): Promise<CodeQualityResult | null> {
-    if (!this.config.enableCodeQualityAnalysis) return null;
-
-    console.log('📊 RUNNING CODE QUALITY ANALYSIS...');
-    return await CodeQualityAnalyzer.analyzeCodeQuality();
+    return await this.templateGenerator.generateFromTemplate(request);
   }
 
   /**
@@ -529,13 +342,13 @@ export class AutomatedVerificationOrchestrator {
     
     try {
       const [auditResults, duplicates, databaseValidation, schemaValidation, securityScan, codeQuality, performanceMetrics] = await Promise.all([
-        this.runComponentAudit(),
-        this.runDuplicateDetection(),
-        this.config.enableDatabaseValidation ? DatabaseGuidelinesValidator.validateDatabase() : Promise.resolve(null),
-        this.config.enableSchemaValidation ? DatabaseSchemaValidator.validateSchema() : Promise.resolve(null),
-        this.config.enableSecurityScanning ? SecurityScanner.performSecurityScan() : Promise.resolve(null),
-        this.config.enableCodeQualityAnalysis ? CodeQualityAnalyzer.analyzeCodeQuality() : Promise.resolve(null),
-        this.config.enablePerformanceMonitoring ? performanceMonitor.getPerformanceMetrics() : Promise.resolve(null)
+        this.verificationRunner.runComponentAudit(),
+        this.verificationRunner.runDuplicateDetection(),
+        this.verificationRunner.runDatabaseValidation({ componentType: 'comprehensive', moduleName: 'system' }),
+        this.verificationRunner.runSchemaValidation({ componentType: 'comprehensive', moduleName: 'system' }),
+        this.verificationRunner.runSecurityScan(),
+        this.verificationRunner.runCodeQualityAnalysis(),
+        this.verificationRunner.runPerformanceAnalysis()
       ]);
 
       const duplicateReport = new DuplicateDetector().generateReport(duplicates);
@@ -550,7 +363,7 @@ export class AutomatedVerificationOrchestrator {
         shouldUseTemplate: false
       };
 
-      const summary = this.createEnhancedSummary(
+      const summary = this.summaryBuilder.createEnhancedSummary(
         timestamp,
         validationResult,
         auditResults,
@@ -567,268 +380,15 @@ export class AutomatedVerificationOrchestrator {
 
       console.log(`📊 COMPREHENSIVE AUTOMATIC SCAN COMPLETE: ${summary.issuesFound} issues, ${summary.recommendations.length} recommendations`);
       
-      // Generate and log database guidelines report
-      if (summary.databaseValidation) {
-        const guidelinesReport = DatabaseGuidelinesValidator.generateGuidelinesReport(summary.databaseValidation);
-        console.log(guidelinesReport);
-      }
-      
       return summary;
     } catch (error) {
       console.error('❌ COMPREHENSIVE AUTOMATIC SCAN FAILED:', error);
-      return this.createEmptySummary();
+      return this.summaryBuilder.createEmptySummary();
     }
   }
 
   /**
-   * Auto-fix simple issues automatically
-   */
-  private async applyEnhancedAutoFixes(summary: VerificationSummary): Promise<number> {
-    let fixesApplied = 0;
-
-    // Apply existing fixes
-    for (const issue of summary.validationResult.issues) {
-      if (issue.includes('PascalCase')) {
-        console.log('🔧 AUTOMATICALLY FIXING: Naming convention issue...');
-        fixesApplied++;
-      }
-    }
-
-    for (const auditResult of summary.auditResults) {
-      if (auditResult.issues.some(issue => issue.includes('non-canonical imports'))) {
-        console.log('🔧 AUTOMATICALLY FIXING: Import paths...');
-        fixesApplied++;
-      }
-    }
-
-    // Apply database fixes
-    if (summary.databaseValidation && this.config.enableAutoSQLGeneration) {
-      const databaseFixes = summary.databaseValidation.autoFixesApplied;
-      fixesApplied += databaseFixes;
-      
-      if (summary.sqlAutoFixes && summary.sqlAutoFixes.length > 0) {
-        console.log('🗄️ AUTOMATICALLY GENERATED SQL FIXES:');
-        summary.sqlAutoFixes.forEach((sql, index) => {
-          console.log(`   ${index + 1}. ${sql}`);
-        });
-      }
-    }
-
-    // Apply schema fixes
-    if (summary.schemaValidation && this.config.enableAutoSQLGeneration) {
-      const schemaFixesCount = summary.schemaValidation.autoFixesAvailable.length;
-      fixesApplied += schemaFixesCount;
-    }
-
-    if (fixesApplied > 0) {
-      console.log(`✅ AUTOMATICALLY APPLIED ${fixesApplied} fixes (including database and schema fixes)`);
-    }
-
-    return fixesApplied;
-  }
-
-  /**
-   * Create enhanced verification summary with database validation
-   */
-  private createEnhancedSummary(
-    timestamp: string,
-    validationResult: ValidationResult,
-    auditResults: AuditResult[],
-    duplicateReport: string,
-    canonicalValidation: string,
-    databaseValidation: DatabaseValidationResult | null,
-    schemaValidation: SchemaValidationResult | null,
-    performanceMetrics: PerformanceMetrics | null,
-    securityScan: SecurityScanResult | null,
-    codeQuality: CodeQualityResult | null
-  ): VerificationSummary {
-    const baseIssuesFound = validationResult.issues.length + 
-                          auditResults.reduce((sum, audit) => sum + audit.issues.length, 0);
-    
-    const databaseIssuesFound = databaseValidation?.violations.length || 0;
-    const schemaIssuesFound = schemaValidation?.violations.length || 0;
-    const securityIssuesFound = securityScan?.vulnerabilities.length || 0;
-    const qualityIssuesFound = codeQuality?.issues.length || 0;
-    
-    const issuesFound = baseIssuesFound + databaseIssuesFound + schemaIssuesFound + securityIssuesFound + qualityIssuesFound;
-    
-    const baseCriticalIssues = validationResult.issues.filter(issue => 
-      issue.toLowerCase().includes('critical') || 
-      issue.toLowerCase().includes('blocked')
-    ).length;
-    
-    const databaseCriticalIssues = databaseValidation?.violations.filter(v => v.severity === 'error').length || 0;
-    const schemaCriticalIssues = schemaValidation?.violations.filter(v => v.severity === 'error').length || 0;
-    const securityCriticalIssues = securityScan?.vulnerabilities.filter(v => 
-      v.severity === 'critical' || v.severity === 'high').length || 0;
-    const qualityCriticalIssues = codeQuality?.issues.filter(i => i.severity === 'error').length || 0;
-    
-    const criticalIssues = baseCriticalIssues + databaseCriticalIssues + schemaCriticalIssues + 
-                          securityCriticalIssues + qualityCriticalIssues;
-
-    const allRecommendations = [
-      ...validationResult.recommendations,
-      ...auditResults.flatMap(audit => audit.recommendations)
-    ];
-
-    // Add enhanced system recommendations
-    if (databaseValidation) {
-      allRecommendations.push(...databaseValidation.violations.map(v => v.recommendation));
-    }
-    if (schemaValidation) {
-      allRecommendations.push(...schemaValidation.recommendations);
-    }
-    if (securityScan) {
-      // Convert SecurityRecommendation objects to strings by extracting title
-      allRecommendations.push(...securityScan.recommendations.map(r => 
-        typeof r === 'string' ? r : r.title || r.description || 'Security recommendation'
-      ));
-    }
-    if (codeQuality) {
-      allRecommendations.push(...codeQuality.recommendations);
-    }
-
-    // Generate SQL auto-fixes
-    const sqlAutoFixes = this.config.enableAutoSQLGeneration && databaseValidation 
-      ? DatabaseGuidelinesValidator.generateAutoFixSQL(databaseValidation.violations)
-      : [];
-
-    // Add schema SQL fixes
-    if (this.config.enableAutoSQLGeneration && schemaValidation) {
-      sqlAutoFixes.push(...DatabaseSchemaValidator.generateAutoFixSQL(schemaValidation.autoFixesAvailable));
-    }
-
-    // Generate workflow suggestions
-    const workflowSuggestions = this.config.enableWorkflowSuggestions && databaseValidation
-      ? databaseValidation.workflowSuggestions.map(ws => ws.description)
-      : [];
-
-    // Calculate health scores
-    const overallHealthScore = this.calculateOverallHealthScore({
-      validationScore: issuesFound === 0 ? 100 : Math.max(0, 100 - (issuesFound * 5)),
-      securityScore: securityScan?.securityScore || 100,
-      qualityScore: codeQuality?.overallScore || 100,
-      performanceScore: this.calculatePerformanceScore(performanceMetrics)
-    });
-
-    return {
-      timestamp,
-      validationResult,
-      auditResults,
-      duplicateReport,
-      canonicalValidation,
-      databaseValidation,
-      schemaValidation,
-      performanceMetrics,
-      securityScan,
-      codeQuality,
-      issuesFound,
-      criticalIssues,
-      autoFixesApplied: 0,
-      recommendations: allRecommendations,
-      sqlAutoFixes,
-      workflowSuggestions,
-      overallHealthScore,
-      securityScore: securityScan?.securityScore || 100,
-      qualityScore: codeQuality?.overallScore || 100,
-      performanceScore: this.calculatePerformanceScore(performanceMetrics)
-    };
-  }
-
-  private calculateOverallHealthScore(scores: {
-    validationScore: number;
-    securityScore: number;
-    qualityScore: number;
-    performanceScore: number;
-  }): number {
-    const weights = {
-      validation: 0.25,
-      security: 0.35,
-      quality: 0.25,
-      performance: 0.15
-    };
-
-    return Math.round(
-      scores.validationScore * weights.validation +
-      scores.securityScore * weights.security +
-      scores.qualityScore * weights.quality +
-      scores.performanceScore * weights.performance
-    );
-  }
-
-  private calculatePerformanceScore(metrics: PerformanceMetrics | null): number {
-    if (!metrics) return 100;
-
-    let score = 100;
-    
-    // Deduct for slow components
-    const slowComponents = metrics.componentRenderTimes.filter(c => c.averageRenderTime > 16);
-    score -= slowComponents.length * 10;
-
-    // Deduct for bundle size
-    if (metrics.bundleSize.totalSize > 3 * 1024 * 1024) { // 3MB
-      score -= 20;
-    }
-
-    return Math.max(0, score);
-  }
-
-  /**
-   * Create empty summary for disabled checks
-   */
-  private createEmptySummary(): VerificationSummary {
-    return {
-      timestamp: new Date().toISOString(),
-      validationResult: {
-        canProceed: true,
-        issues: [],
-        warnings: [],
-        recommendations: [],
-        shouldUseTemplate: false
-      },
-      auditResults: [],
-      duplicateReport: 'No verification data available',
-      canonicalValidation: 'No verification data available',
-      databaseValidation: null,
-      schemaValidation: null,
-      performanceMetrics: null,
-      securityScan: null,
-      codeQuality: null,
-      issuesFound: 0,
-      criticalIssues: 0,
-      autoFixesApplied: 0,
-      recommendations: [],
-      sqlAutoFixes: [],
-      workflowSuggestions: [],
-      overallHealthScore: 100,
-      securityScore: 100,
-      qualityScore: 100,
-      performanceScore: 100
-    };
-  }
-
-  /**
-   * NEW: Check for critical issues across all verification systems
-   */
-  private hasCriticalIssues(summary: VerificationSummary): boolean {
-    // Database critical issues
-    const databaseErrors = summary.databaseValidation?.violations.some(v => v.severity === 'error') || false;
-    
-    // Schema critical issues
-    const schemaErrors = summary.schemaValidation?.violations.some(v => v.severity === 'error') || false;
-    
-    // Security critical issues
-    const securityCritical = summary.securityScan?.vulnerabilities.some(v => 
-      v.severity === 'critical' || v.severity === 'high') || false;
-    
-    // Code quality critical issues
-    const qualityCritical = summary.codeQuality?.issues.some(i => i.severity === 'error') || false;
-
-    return summary.criticalIssues > 0 || databaseErrors || schemaErrors || securityCritical || qualityCritical;
-  }
-
-  /**
-   * NEW: Template suggestion logic
+   * Template suggestion logic
    */
   private shouldGenerateTemplate(request: ValidationRequest): boolean {
     return request.componentType === 'hook' || request.componentType === 'component' || request.componentType === 'module';
@@ -845,161 +405,6 @@ export class AutomatedVerificationOrchestrator {
       default:
         return 'BaseTemplate';
     }
-  }
-
-  private generateHookTemplate(request: TemplateGenerationRequest): string {
-    return `
-/**
- * ${request.moduleName} Hook
- * Generated using useTypeSafeModuleTemplate
- */
-
-import { useTypeSafeModuleTemplate } from '@/utils/useTypeSafeModuleTemplate';
-
-const ${request.moduleName?.toLowerCase()}Config = {
-  tableName: '${request.tableName}',
-  moduleName: '${request.moduleName}',
-  requiredFields: ['id', 'name'],
-  customValidation: (data) => true
-};
-
-export const ${request.moduleName} = () => {
-  return useTypeSafeModuleTemplate(${request.moduleName?.toLowerCase()}Config);
-};
-    `;
-  }
-
-  private generateComponentTemplate(request: TemplateGenerationRequest): string {
-    return `
-/**
- * ${request.moduleName} Component
- * Generated using ExtensibleModuleTemplate
- */
-
-import { ExtensibleModuleTemplate } from '@/components/ExtensibleModuleTemplate';
-import { ${request.moduleName} } from '@/hooks/${request.moduleName}';
-
-export const ${request.moduleName}Component = () => {
-  const moduleHook = ${request.moduleName}();
-
-  return (
-    <ExtensibleModuleTemplate
-      {...moduleHook}
-      title="${request.moduleName}"
-      description="Manage ${request.moduleName?.toLowerCase()} data"
-    />
-  );
-};
-    `;
-  }
-
-  private generateModuleTemplate(request: TemplateGenerationRequest): string {
-    return `
-/**
- * Complete ${request.moduleName} Module
- * Generated using CompleteModuleTemplate
- */
-
-// Hook
-${this.generateHookTemplate(request)}
-
-// Component  
-${this.generateComponentTemplate(request)}
-
-// Export everything
-export { ${request.moduleName}, ${request.moduleName}Component };
-    `;
-  }
-
-  private generateApiIntegrationTemplate(request: TemplateGenerationRequest): string {
-    return `
-/**
- * ${request.apiId} API Integration
- * Generated using ApiIntegrationTemplate
- */
-
-import { ApiConsumptionOrchestrator } from '@/utils/verification/ApiConsumptionOrchestrator';
-
-const ${request.apiId}Config = {
-  apiId: '${request.apiId}',
-  autoGenerateSchema: true,
-  autoGenerateRLS: true,
-  autoGenerateDocumentation: true,
-  autoGenerateDataMappings: true,
-  autoRegisterModules: true,
-  generateTypeScriptTypes: true,
-  syncWithKnowledgeBase: true
-};
-
-export const orchestrate${request.apiId}Integration = async () => {
-  return await ApiConsumptionOrchestrator.orchestrateApiConsumption(${request.apiId}Config);
-};
-    `;
-  }
-
-  private generateTestTemplate(request: TemplateGenerationRequest): string {
-    return `
-/**
- * ${request.moduleName} Tests
- * Generated automatically
- */
-
-import { describe, it, expect } from 'vitest';
-import { renderHook } from '@testing-library/react';
-import { ${request.moduleName} } from './${request.moduleName}';
-
-describe('${request.moduleName}', () => {
-  it('should initialize correctly', () => {
-    const { result } = renderHook(() => ${request.moduleName}());
-    expect(result.current).toBeDefined();
-  });
-
-  it('should handle loading state', () => {
-    const { result } = renderHook(() => ${request.moduleName}());
-    expect(result.current.isLoading).toBeDefined();
-  });
-});
-    `;
-  }
-
-  private generateDocumentationTemplate(request: TemplateGenerationRequest): string {
-    return `
-# ${request.moduleName}
-
-Auto-generated documentation for ${request.moduleName} module.
-
-## Overview
-This module provides ${request.templateType} functionality for ${request.tableName} table operations.
-
-## Usage
-
-\`\`\`typescript
-import { ${request.moduleName} } from '@/path/to/${request.moduleName}';
-
-const MyComponent = () => {
-  const ${request.moduleName?.toLowerCase()} = ${request.moduleName}();
-  
-  return (
-    <div>
-      {/* Your component JSX */}
-    </div>
-  );
-};
-\`\`\`
-
-## API Reference
-
-### Methods
-- \`create(data)\` - Create new record
-- \`update(id, data)\` - Update existing record
-- \`delete(id)\` - Delete record
-- \`getAll()\` - Fetch all records
-
-### Properties
-- \`data\` - Current data
-- \`isLoading\` - Loading state
-- \`error\` - Error state
-    `;
   }
 
   /**
@@ -1038,6 +443,10 @@ const MyComponent = () => {
     this.config = { ...this.config, ...newConfig };
     console.log('⚙️ ENHANCED AUTOMATIC VERIFICATION CONFIG UPDATED:', newConfig);
     
+    // Update service class configurations
+    this.verificationRunner = new VerificationRunner(this.config);
+    this.autoFixHandler = new AutoFixHandler(this.config);
+    
     if (this.isRunning) {
       this.stop();
       this.start();
@@ -1063,10 +472,18 @@ if (typeof window !== 'undefined') {
     return await automatedVerification.verifyBeforeCreation(request);
   };
 
-  // NEW: Global template generation function
+  // Global template generation function
   (window as any).generateFromTemplate = async (request: TemplateGenerationRequest) => {
     return await automatedVerification.generateFromTemplate(request);
   };
 
   console.log('✅ ENHANCED AUTOMATIC VERIFICATION SYSTEM READY - INCLUDES ALL QUALITY, SECURITY, PERFORMANCE, AND TEMPLATE GENERATION FEATURES');
 }
+
+// Export types for external usage
+export type { 
+  AutomatedVerificationConfig,
+  VerificationSummary,
+  TemplateGenerationRequest,
+  TemplateGenerationResult
+} from './AutomatedVerificationTypes';
