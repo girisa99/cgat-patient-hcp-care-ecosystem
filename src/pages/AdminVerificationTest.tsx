@@ -10,7 +10,7 @@ import { PageContainer } from '@/components/layout/PageContainer';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Shield, AlertTriangle, CheckCircle, Activity, RefreshCw, Database } from 'lucide-react';
+import { Shield, AlertTriangle, CheckCircle, Activity, RefreshCw, Database, Play } from 'lucide-react';
 import { useDatabaseIssues } from '@/hooks/useDatabaseIssues';
 import { useStableHealthScore } from '@/hooks/useStableHealthScore';
 import CleanIssuesTab from '@/components/security/CleanIssuesTab';
@@ -18,6 +18,7 @@ import CleanIssuesTab from '@/components/security/CleanIssuesTab';
 const AdminVerificationTest = () => {
   const [isManualScanRunning, setIsManualScanRunning] = useState(false);
   const [lastManualUpdate, setLastManualUpdate] = useState<Date | null>(null);
+  const [autoTriggered, setAutoTriggered] = useState(false);
   const { toast } = useToast();
 
   const {
@@ -85,11 +86,18 @@ const AdminVerificationTest = () => {
     }
   };
 
-  // Only run initial data load, no automatic syncing
+  // Auto-trigger verification on page load
   useEffect(() => {
-    console.log('🎯 System Verification Dashboard: Loading initial data from database');
-    refreshIssues().catch(console.error);
-  }, []);
+    if (!autoTriggered) {
+      console.log('🎯 System Verification Dashboard: Auto-triggering verification system...');
+      setAutoTriggered(true);
+      
+      // Add a small delay to ensure components are ready
+      setTimeout(() => {
+        runManualVerification();
+      }, 1000);
+    }
+  }, [autoTriggered]);
 
   return (
     <MainLayout>
@@ -98,6 +106,27 @@ const AdminVerificationTest = () => {
         subtitle="Database-first system health and verification monitoring"
       >
         <div className="space-y-6">
+          {/* Verification Trigger Status */}
+          <Card className="bg-blue-50 border-blue-200">
+            <CardHeader>
+              <CardTitle className="text-blue-800 flex items-center gap-2">
+                <Play className="h-5 w-5" />
+                Verification System Status
+              </CardTitle>
+              <CardDescription className="text-blue-700">
+                {autoTriggered ? 
+                  "✅ Verification system has been automatically triggered on page load" :
+                  "⏳ Preparing to trigger verification system..."
+                }
+                <br />
+                {isManualScanRunning && "🔄 Verification currently running..."}
+                {lastManualUpdate && !isManualScanRunning && 
+                  `Last run: ${lastManualUpdate.toLocaleTimeString()}`
+                }
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
           {/* System Health Status */}
           <Card className={isStable ? "bg-green-50 border-green-200" : "bg-yellow-50 border-yellow-200"}>
             <CardHeader>
@@ -187,7 +216,7 @@ const AdminVerificationTest = () => {
                 <br />
                 ✅ Real-time sync between active_issues and issue_fixes tables.
                 <br />
-                ✅ Manual updates only - no automatic background processes.
+                ✅ Auto-triggered verification on page load with manual override available.
                 <br />
                 ✅ Database function fixed - DELETE operations now work properly.
               </CardDescription>
