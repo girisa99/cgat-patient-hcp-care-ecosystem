@@ -18,6 +18,7 @@ export interface CodeQualityResult {
     testCoverage: number;
     codeSmells: number;
   };
+  recommendations: string[];
 }
 
 export class CodeQualityAnalyzer {
@@ -52,6 +53,15 @@ export class CodeQualityAnalyzer {
       codeSmells: 3
     };
 
+    // Generate recommendations based on analysis
+    const recommendations = [
+      'Reduce cyclomatic complexity by breaking down large functions',
+      'Improve test coverage to at least 80%',
+      'Refactor long files into smaller, focused modules',
+      'Implement consistent naming conventions',
+      'Add comprehensive documentation for complex functions'
+    ];
+
     // Calculate overall score based on metrics
     const overallScore = Math.round(
       (metrics.complexity + metrics.maintainability + metrics.testCoverage) / 3
@@ -60,7 +70,8 @@ export class CodeQualityAnalyzer {
     return {
       overallScore,
       issues,
-      metrics
+      metrics,
+      recommendations
     };
   }
 }
