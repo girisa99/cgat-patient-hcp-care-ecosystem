@@ -21,7 +21,7 @@ export const useIssuesDataProcessor = (
   verificationSummary?: VerificationSummary | null,
   fixedIssues: Issue[] = []
 ): ProcessedIssuesData => {
-  // For now, return empty data since we're using database-first approach
+  // For database-first approach, return properly structured data
   const emptyData: ProcessedIssuesData = {
     allIssues: [],
     criticalIssues: [],

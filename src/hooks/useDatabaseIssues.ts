@@ -19,6 +19,10 @@ interface DatabaseIssuesData {
   };
 }
 
+const isValidSeverity = (severity: string): severity is 'critical' | 'high' | 'medium' | 'low' => {
+  return ['critical', 'high', 'medium', 'low'].includes(severity);
+};
+
 export const useDatabaseIssues = (): DatabaseIssuesData & {
   refreshIssues: () => Promise<void>;
   syncActiveIssues: () => Promise<void>;
@@ -43,7 +47,7 @@ export const useDatabaseIssues = (): DatabaseIssuesData & {
         type: row.issue_type,
         message: row.issue_message,
         source: row.issue_source,
-        severity: row.issue_severity,
+        severity: isValidSeverity(row.issue_severity) ? row.issue_severity : 'medium' as const,
         issueId: row.id,
         lastSeen: row.last_seen,
         firstDetected: row.first_detected,

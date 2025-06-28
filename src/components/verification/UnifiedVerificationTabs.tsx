@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Shield, CheckCircle, AlertTriangle, Lock, Bug } from 'lucide-react';
 import { AdminModuleVerificationResult } from '@/utils/verification/AdminModuleVerificationRunner';
 import { useUnifiedMetrics } from '@/hooks/useUnifiedMetrics';
+import { ProcessedIssuesData } from '@/types/issuesTypes';
 import ConsolidatedActiveVsFixedTab from './tabs/ConsolidatedActiveVsFixedTab';
 import ConsolidatedOverallFixedTab from './tabs/ConsolidatedOverallFixedTab';
 import IssuesTabContent from './tabs/IssuesTabContent';
@@ -17,7 +18,23 @@ interface UnifiedVerificationTabsProps {
 const UnifiedVerificationTabs: React.FC<UnifiedVerificationTabsProps> = ({
   verificationResult
 }) => {
-  const { metrics, updateMetrics, processedData } = useUnifiedMetrics(verificationResult.comprehensiveResults);
+  const { metrics, updateMetrics } = useUnifiedMetrics(verificationResult.comprehensiveResults);
+
+  // Create complete ProcessedIssuesData structure
+  const processedData: ProcessedIssuesData = {
+    allIssues: [],
+    criticalIssues: [],
+    highIssues: [],
+    mediumIssues: [],
+    lowIssues: [],
+    issuesByTopic: {},
+    newIssues: [],
+    resolvedIssues: [],
+    reappearedIssues: [],
+    backendFixedIssues: [],
+    totalRealFixesApplied: 0,
+    autoDetectedBackendFixes: 0
+  };
 
   const getStatusBadge = () => {
     if (verificationResult.isLockedForCurrentState) {

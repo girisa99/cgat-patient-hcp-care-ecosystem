@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Bug, CheckCircle, Shield, Database, Code, Zap, TrendingUp, TrendingDown, AlertCircle } from 'lucide-react';
@@ -23,6 +22,25 @@ interface IssuesTabProps {
   isReRunning?: boolean;
 }
 
+// Helper function to convert FixedIssue to Issue  
+const convertFixedIssuesToIssues = (fixedIssues: any[]): Issue[] => {
+  return fixedIssues.map(fixedIssue => ({
+    type: fixedIssue.type,
+    message: fixedIssue.message,
+    source: fixedIssue.source,
+    severity: ['critical', 'high', 'medium', 'low'].includes(fixedIssue.severity) 
+      ? fixedIssue.severity as 'critical' | 'high' | 'medium' | 'low'
+      : 'medium' as const,
+    issueId: fixedIssue.issueId,
+    lastSeen: fixedIssue.lastSeen,
+    firstDetected: fixedIssue.firstDetected,
+    status: fixedIssue.status || 'resolved' as const,
+    details: fixedIssue.details,
+    backendFixed: fixedIssue.backendFixed,
+    autoDetectedFix: fixedIssue.autoDetectedFix
+  }));
+};
+
 const IssuesTab: React.FC<IssuesTabProps> = ({ 
   verificationSummary, 
   onReRunVerification,
@@ -45,7 +63,8 @@ const IssuesTab: React.FC<IssuesTabProps> = ({
   
   const [lastScanTime, setLastScanTime] = React.useState(new Date());
 
-  // Enhanced processing with manual trigger only
+  // Enhanced processing with manual trigger only - use converted fixed issues
+  const convertedFixedIssues = convertFixedIssuesToIssues(fixedIssues);
   const {
     allIssues: displayIssues,
     criticalIssues,
@@ -58,7 +77,7 @@ const IssuesTab: React.FC<IssuesTabProps> = ({
     backendFixedIssues,
     totalRealFixesApplied,
     autoDetectedBackendFixes
-  } = useIssuesDataProcessor(verificationSummary, fixedIssues);
+  } = useIssuesDataProcessor(verificationSummary, convertedFixedIssues);
 
   // Create sync data for consolidated metrics
   const syncData = {

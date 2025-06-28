@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Bug, CheckCircle, Shield, Database, Code, Zap } from 'lucide-react';
@@ -21,6 +22,25 @@ interface EnhancedIssuesTabProps {
   isReRunning?: boolean;
 }
 
+// Helper function to convert FixedIssue to Issue
+const convertFixedIssuesToIssues = (fixedIssues: any[]): Issue[] => {
+  return fixedIssues.map(fixedIssue => ({
+    type: fixedIssue.type,
+    message: fixedIssue.message,
+    source: fixedIssue.source,
+    severity: ['critical', 'high', 'medium', 'low'].includes(fixedIssue.severity) 
+      ? fixedIssue.severity as 'critical' | 'high' | 'medium' | 'low'
+      : 'medium' as const,
+    issueId: fixedIssue.issueId,
+    lastSeen: fixedIssue.lastSeen,
+    firstDetected: fixedIssue.firstDetected,
+    status: fixedIssue.status || 'resolved' as const,
+    details: fixedIssue.details,
+    backendFixed: fixedIssue.backendFixed,
+    autoDetectedFix: fixedIssue.autoDetectedFix
+  }));
+};
+
 const EnhancedIssuesTab: React.FC<EnhancedIssuesTabProps> = ({ 
   verificationSummary, 
   onReRunVerification,
@@ -42,14 +62,15 @@ const EnhancedIssuesTab: React.FC<EnhancedIssuesTabProps> = ({
     timestamp: string;
   }>>([]);
 
-  // Process issues data using the custom hook
+  // Process issues data using the custom hook with converted fixed issues
+  const convertedFixedIssues = convertFixedIssuesToIssues(fixedIssues);
   const {
     allIssues: displayIssues,
     criticalIssues,
     highIssues,
     mediumIssues,
     issuesByTopic
-  } = useIssuesDataProcessor(verificationSummary, fixedIssues);
+  } = useIssuesDataProcessor(verificationSummary, convertedFixedIssues);
 
   // Update active issues when verification summary changes
   React.useEffect(() => {

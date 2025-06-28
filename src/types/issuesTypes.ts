@@ -13,6 +13,14 @@ export interface Issue {
   autoDetectedFix?: boolean;
 }
 
+export interface IssueSnapshot {
+  timestamp: string;
+  issues: Issue[];
+  verificationId: string;
+  realFixesCount: number;
+  backendFixesDetected: string[];
+}
+
 export interface ProcessedIssuesData {
   allIssues: Issue[];
   criticalIssues: Issue[];
