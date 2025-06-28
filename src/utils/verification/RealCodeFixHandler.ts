@@ -8,6 +8,14 @@ export interface CodeFix {
   type: 'code' | 'sql' | 'config';
 }
 
+export interface FixResult {
+  success: boolean;
+  message: string;
+  validationPassed?: boolean;
+  validationResults?: string[];
+  actualChangesApplied?: boolean;
+}
+
 export class RealCodeFixHandler {
   static generateCodeFix(issue: Issue): CodeFix | null {
     console.log('🔧 Generating code fix for:', issue.type);
@@ -26,3 +34,6 @@ export class RealCodeFixHandler {
     return true;
   }
 }
+
+// Export instance for backward compatibility
+export const realCodeFixHandler = RealCodeFixHandler;

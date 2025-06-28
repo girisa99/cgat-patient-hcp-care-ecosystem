@@ -3,15 +3,14 @@ export interface Issue {
   type: string;
   message: string;
   source: string;
-  severity: string;
-  details?: string; // Add optional details property
+  severity: 'critical' | 'high' | 'medium' | 'low';
   issueId?: string;
-  firstDetected?: string;
   lastSeen?: string;
-  status?: 'new' | 'existing' | 'resolved' | 'reappeared' | 'backend_fixed';
+  firstDetected?: string;
+  status?: 'new' | 'existing' | 'resolved';
+  details?: string;
   backendFixed?: boolean;
   autoDetectedFix?: boolean;
-  fixKey?: string; // Add the missing fixKey property
 }
 
 export interface ProcessedIssuesData {
@@ -27,19 +26,4 @@ export interface ProcessedIssuesData {
   backendFixedIssues: Issue[];
   totalRealFixesApplied: number;
   autoDetectedBackendFixes: number;
-}
-
-export interface IssueSnapshot {
-  timestamp: string;
-  issues: Issue[];
-  verificationId: string;
-  realFixesCount?: number;
-  backendFixesDetected?: string[];
-}
-
-export interface BackendFixDetection {
-  fixType: string;
-  implemented: boolean;
-  detectionMethod: string;
-  issuePatterns: string[];
 }
