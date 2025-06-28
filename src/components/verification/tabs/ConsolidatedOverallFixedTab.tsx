@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -6,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CheckCircle, TrendingUp, Calendar, BarChart3, Shield, Eye, Database, Code } from 'lucide-react';
 import { UnifiedMetrics } from '@/hooks/useUnifiedMetrics';
 import { ProcessedIssuesData } from '@/types/issuesTypes';
+import DailyProgressTab from './DailyProgressTab';
 
 interface ConsolidatedOverallFixedTabProps {
   metrics: UnifiedMetrics;
@@ -74,10 +74,11 @@ const ConsolidatedOverallFixedTab: React.FC<ConsolidatedOverallFixedTabProps> = 
 
       {/* Subtabs */}
       <Tabs defaultValue="by-category" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="by-category">By Category</TabsTrigger>
           <TabsTrigger value="by-severity">By Severity</TabsTrigger>
           <TabsTrigger value="implementation-status">Implementation Status</TabsTrigger>
+          <TabsTrigger value="daily-progress">Daily Progress</TabsTrigger>
         </TabsList>
 
         <TabsContent value="by-category" className="mt-6">
@@ -239,6 +240,10 @@ const ConsolidatedOverallFixedTab: React.FC<ConsolidatedOverallFixedTabProps> = 
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="daily-progress" className="mt-6">
+          <DailyProgressTab />
         </TabsContent>
       </Tabs>
     </div>

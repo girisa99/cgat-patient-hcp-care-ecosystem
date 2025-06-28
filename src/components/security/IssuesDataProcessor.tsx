@@ -1,325 +1,152 @@
-import { useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { VerificationSummary } from '@/utils/verification/AutomatedVerificationOrchestrator';
-import { FixedIssue } from '@/hooks/useFixedIssuesTracker';
 import { Issue, ProcessedIssuesData } from '@/types/issuesTypes';
-import { 
-  generateIssueId, 
-  getResolvedIssues, 
-  saveIssueSnapshot,
-  REAL_FIXES_APPLIED_KEY
-} from '@/utils/issues/issueStorageUtils';
+import { FixedIssue } from '@/hooks/useFixedIssuesTracker';
+import { saveIssueSnapshot, markIssueAsResolved, generateIssueId } from '@/utils/issues/issueStorageUtils';
+import { recordFixedIssue } from '@/utils/dailyProgressTracker';
 import { scanForActualSecurityIssues } from '@/utils/issues/issueScanner';
-import { handleBackendFixedIssues, compareIssuesWithHistory } from '@/utils/issues/issueProcessing';
-import { 
-  checkAndSetUIUXImprovements, 
-  checkAndSetCodeQualityImprovements, 
-  checkForSecurityComponentUsage 
-} from '@/utils/issues/backendFixDetection';
-
-// Track real fixes globally with enhanced synchronization
-let globalRealFixesApplied: Issue[] = [];
-
-export const markIssueAsReallyFixed = (issue: Issue) => {
-  console.log('🎯 Marking issue as really fixed with ENHANCED METRICS update:', issue.type);
-  
-  const { markIssueAsResolved } = require('@/utils/issues/issueStorageUtils');
-  markIssueAsResolved(issue);
-  globalRealFixesApplied.push(issue);
-  
-  const currentCount = getRealFixesAppliedCount();
-  console.log('🎯 Real fix applied - ENHANCED SYNCHRONIZED count updated:', currentCount);
-  
-  window.dispatchEvent(new StorageEvent('storage', {
-    key: REAL_FIXES_APPLIED_KEY,
-    newValue: currentCount.toString()
-  }));
-};
-
-const getRealFixesAppliedCount = (): number => {
-  try {
-    // Security fixes
-    const mfaImplemented = localStorage.getItem('mfa_enforcement_implemented') === 'true';
-    const rbacImplemented = localStorage.getItem('rbac_implementation_active') === 'true';
-    const logSanitizationActive = localStorage.getItem('log_sanitization_active') === 'true';
-    const debugSecurityActive = localStorage.getItem('debug_security_implemented') === 'true';
-    const apiAuthImplemented = localStorage.getItem('api_authorization_implemented') === 'true';
-    const securityComponentsActive = localStorage.getItem('security_components_implemented') === 'true';
-    
-    // UI/UX fixes (now auto-detected)
-    const uiuxFixed = checkAndSetUIUXImprovements();
-    
-    // Code Quality fixes (now auto-detected)
-    const codeQualityFixed = checkAndSetCodeQualityImprovements();
-    
-    const implementedFixes = [
-      mfaImplemented, 
-      rbacImplemented, 
-      logSanitizationActive, 
-      debugSecurityActive, 
-      apiAuthImplemented,
-      securityComponentsActive,
-      uiuxFixed,
-      codeQualityFixed
-    ];
-    const count = implementedFixes.filter(Boolean).length;
-    
-    localStorage.setItem(REAL_FIXES_APPLIED_KEY, count.toString());
-    
-    console.log('📊 ENHANCED SYNCHRONIZED real fixes count calculation (ALL TYPES):', {
-      security: { mfaImplemented, rbacImplemented, logSanitizationActive, debugSecurityActive, apiAuthImplemented, securityComponentsActive },
-      uiux: { uiuxFixed },
-      codeQuality: { codeQualityFixed },
-      totalCount: count
-    });
-    
-    return count;
-  } catch (error) {
-    console.error('Error calculating enhanced real fixes count:', error);
-    return 0;
-  }
-};
 
 export const useIssuesDataProcessor = (
   verificationSummary?: VerificationSummary | null,
   fixedIssues: FixedIssue[] = []
 ): ProcessedIssuesData => {
-  return useMemo(() => {
-    console.log('🔍 ENHANCED real-time scanning with ALL TYPES BACKEND FIX DETECTION...');
-    
-    // Force re-run the detection functions to set localStorage
-    checkAndSetUIUXImprovements();
-    checkAndSetCodeQualityImprovements();
-    checkForSecurityComponentUsage();
-    
-    const totalRealFixesApplied = getRealFixesAppliedCount();
-    console.log('📊 Current enhanced real fixes applied count (ALL TYPES):', totalRealFixesApplied);
-    
-    // ENHANCED: Scan for all types of issues with auto-detection
-    const realTimeIssues = scanForActualSecurityIssues();
-    console.log('🔒 Enhanced comprehensive scan found:', realTimeIssues.length, 'active issues (ALL TYPES)');
+  const [allIssues, setAllIssues] = useState<Issue[]>([]);
+  const [criticalIssues, setCriticalIssues] = useState<Issue[]>([]);
+  const [highIssues, setHighIssues] = useState<Issue[]>([]);
+  const [mediumIssues, setMediumIssues] = useState<Issue[]>([]);
+  const [lowIssues, setLowIssues] = useState<Issue[]>([]);
+  const [issuesByTopic, setIssuesByTopic] = useState<{ [topic: string]: Issue[] }>({});
+  const [newIssues, setNewIssues] = useState<Issue[]>([]);
+  const [resolvedIssues, setResolvedIssues] = useState<Issue[]>([]);
+  const [reappearedIssues, setReappearedIssues] = useState<Issue[]>([]);
+  const [backendFixedIssues, setBackendFixedIssues] = useState<Issue[]>([]);
+  const [totalRealFixesApplied, setTotalRealFixesApplied] = useState(0);
+  const [autoDetectedBackendFixes, setAutoDetectedBackendFixes] = useState(0);
 
-    let allIssues: Issue[] = [...realTimeIssues];
-
+  useEffect(() => {
     if (verificationSummary) {
-      
-      if (verificationSummary.validationResult?.issues) {
-        verificationSummary.validationResult.issues.forEach(issue => {
-          const issueObj = {
-            type: 'Validation Error',
-            message: issue,
-            source: 'Validation System',
-            severity: 'high'
-          };
-          const issueKey = generateIssueId(issueObj);
-          const resolvedIssues = getResolvedIssues();
-          
-          if (!resolvedIssues.has(issueKey)) {
-            allIssues.push(issueObj);
-          }
-        });
-      }
+      setTotalRealFixesApplied(verificationSummary.realFixesApplied || 0);
+    }
+  }, [verificationSummary]);
 
-      if (verificationSummary.validationResult?.warnings) {
-        verificationSummary.validationResult.warnings.forEach(warning => {
-          const issueObj = {
-            type: 'Validation Warning',
-            message: warning,
-            source: 'Validation System',
-            severity: 'medium'
-          };
-          const issueKey = generateIssueId(issueObj);
-          const resolvedIssues = getResolvedIssues();
-          
-          if (!resolvedIssues.has(issueKey)) {
-            allIssues.push(issueObj);
-          }
-        });
-      }
+  useEffect(() => {
+    // Enhanced scanning for actual security issues with backend fix detection
+    const securityIssues = scanForActualSecurityIssues();
+    setAllIssues(securityIssues);
+  }, []);
 
-      if (verificationSummary.auditResults) {
-        verificationSummary.auditResults.forEach(audit => {
-          audit.issues.forEach(issue => {
-            const issueObj = {
-              type: 'Security Issue',
-              message: issue,
-              source: audit.componentName,
-              severity: 'critical'
-            };
-            const issueKey = generateIssueId(issueObj);
-            const resolvedIssues = getResolvedIssues();
+  useEffect(() => {
+    if (allIssues.length > 0) {
+      const critical = allIssues.filter(issue => issue.severity === 'critical');
+      const high = allIssues.filter(issue => issue.severity === 'high');
+      const medium = allIssues.filter(issue => issue.severity === 'medium');
+      const low = allIssues.filter(issue => issue.severity === 'low');
 
-            if (!resolvedIssues.has(issueKey)) {
-              allIssues.push(issueObj);
-            }
-          });
-        });
-      }
+      setCriticalIssues(critical);
+      setHighIssues(high);
+      setMediumIssues(medium);
+      setLowIssues(low);
 
-      if (verificationSummary.performanceMetrics?.recommendations) {
-        verificationSummary.performanceMetrics.recommendations.forEach((recommendation) => {
-          const issueObj = {
-            type: 'Performance Issue',
-            message: recommendation.description || 'Performance optimization needed',
-            source: 'Performance Monitor',
-            severity: recommendation.priority === 'high' ? 'high' : 'medium'
-          };
-          const issueKey = generateIssueId(issueObj);
-          const resolvedIssues = getResolvedIssues();
+      // Group issues by topic
+      const groupedByTopic: { [topic: string]: Issue[] } = allIssues.reduce((acc: { [topic: string]: Issue[] }, issue) => {
+        const topic = issue.source || 'System Issues';
+        acc[topic] = acc[topic] || [];
+        acc[topic].push(issue);
+        return acc;
+      }, {});
+      setIssuesByTopic(groupedByTopic);
+    }
+  }, [allIssues]);
 
-          if (!resolvedIssues.has(issueKey)) {
-            allIssues.push(issueObj);
-          }
-        });
-      }
+  useEffect(() => {
+    if (verificationSummary) {
+      saveIssueSnapshot(allIssues, verificationSummary.backendFixesDetected || []);
+    }
+  }, [allIssues, verificationSummary]);
 
-      if (verificationSummary.databaseValidation?.violations) {
-        verificationSummary.databaseValidation.violations.forEach(violation => {
-          const issueObj = {
-            type: 'Database Issue',
-            message: violation.description || 'Database validation issue',
-            source: 'Database Validator',
-            severity: violation.severity === 'error' ? 'critical' : 'high'
-          };
-          const issueKey = generateIssueId(issueObj);
-          const resolvedIssues = getResolvedIssues();
+  useEffect(() => {
+    // Track backend-detected fixes
+    const backendFixes: string[] = [];
+    let detectedFixesCount = 0;
 
-          if (!resolvedIssues.has(issueKey)) {
-            allIssues.push(issueObj);
-          }
-        });
-      }
-
-      if (verificationSummary.schemaValidation?.violations) {
-        verificationSummary.schemaValidation.violations.forEach(violation => {
-          const issueObj = {
-            type: 'Schema Issue',
-            message: violation.description || 'Schema validation issue',
-            source: 'Schema Validator',
-            severity: violation.severity === 'error' ? 'critical' : 'high'
-          };
-          const issueKey = generateIssueId(issueObj);
-          const resolvedIssues = getResolvedIssues();
-
-          if (!resolvedIssues.has(issueKey)) {
-            allIssues.push(issueObj);
-          }
-        });
-      }
-
-      if (verificationSummary.securityScan?.vulnerabilities) {
-        console.log('🔒 Processing security vulnerabilities:', verificationSummary.securityScan.vulnerabilities);
-        verificationSummary.securityScan.vulnerabilities.forEach(vulnerability => {
-          const issueObj = {
-            type: 'Security Vulnerability',
-            message: vulnerability.description || 'Security vulnerability detected',
-            source: 'Security Scanner',
-            severity: vulnerability.severity
-          };
-          const issueKey = generateIssueId(issueObj);
-          const resolvedIssues = getResolvedIssues();
-
-          if (!resolvedIssues.has(issueKey)) {
-            allIssues.push(issueObj);
-          }
-        });
-      }
-
-      if (verificationSummary.codeQuality?.issues) {
-        verificationSummary.codeQuality.issues.forEach(issue => {
-          const issueObj = {
-            type: 'Code Quality Issue',
-            message: issue.description || 'Code quality issue',
-            source: 'Code Quality Analyzer',
-            severity: issue.severity
-          };
-          const issueKey = generateIssueId(issueObj);
-          const resolvedIssues = getResolvedIssues();
-
-          if (!resolvedIssues.has(issueKey)) {
-            allIssues.push(issueObj);
-          }
-        });
-      }
+    if (verificationSummary && verificationSummary.backendFixesDetected) {
+      Object.keys(verificationSummary.backendFixesDetected).forEach(issueId => {
+        const issue = allIssues.find(issue => generateIssueId(issue) === issueId);
+        if (issue) {
+          backendFixes.push(issueId);
+          detectedFixesCount++;
+        }
+      });
     }
 
-    // ENHANCED: Handle backend fixed issues with ALL TYPES
-    const { activeIssues, backendFixedIssues, autoMovedCount } = handleBackendFixedIssues(allIssues);
-    console.log('🎯 ENHANCED Backend detection results:', { 
-      original: allIssues.length, 
-      active: activeIssues.length, 
-      backendFixed: backendFixedIssues.length,
-      autoMoved: autoMovedCount
-    });
+    setBackendFixedIssues(allIssues.filter(issue => backendFixes.includes(generateIssueId(issue))));
+    setAutoDetectedBackendFixes(detectedFixesCount);
+  }, [verificationSummary, allIssues]);
 
-    // Use active issues (after backend detection)
-    allIssues = activeIssues;
+  useEffect(() => {
+    // Track new, resolved, and reappeared issues
+    const previousSnapshot = localStorage.getItem('issue-tracking-history') ? JSON.parse(localStorage.getItem('issue-tracking-history') || '[]')[0] : null;
+    let newDetected: Issue[] = [];
+    let resolvedDetected: Issue[] = [];
+    let reappearedDetected: Issue[] = [];
 
-    // Compare with history for change tracking
-    const { newIssues, resolvedIssues, reappearedIssues, enhancedIssues } = compareIssuesWithHistory(allIssues);
+    if (previousSnapshot) {
+      // Get issues from the previous snapshot
+      const previousIssues = previousSnapshot.issues || [];
 
-    // Save current snapshot
-    saveIssueSnapshot(allIssues, backendFixedIssues.map(issue => issue.type));
+      // Identify new issues
+      newDetected = allIssues.filter(issue => !previousIssues.find(pi => pi.issueId === generateIssueId(issue)));
 
-    // Categorize by severity
-    const criticalIssues = allIssues.filter(issue => issue.severity === 'critical');
-    const highIssues = allIssues.filter(issue => issue.severity === 'high');
-    const mediumIssues = allIssues.filter(issue => issue.severity === 'medium');
+      // Identify resolved issues
+      resolvedDetected = previousIssues.filter(issue => !allIssues.find(ai => generateIssueId(ai) === issue.issueId));
 
-    // Group by topic/category
-    const issuesByTopic: Record<string, Issue[]> = {
-      'Security Issues': allIssues.filter(issue => 
-        issue.type.includes('Security') || 
-        issue.source.includes('Security Scanner')
-      ),
-      'UI/UX Issues': allIssues.filter(issue => 
-        issue.type.includes('UI/UX') || 
-        issue.source.includes('UI/UX')
-      ),
-      'Code Quality': allIssues.filter(issue => 
-        issue.type.includes('Code Quality') || 
-        issue.source.includes('Code Quality')
-      ),
-      'Database Issues': allIssues.filter(issue => 
-        issue.type.includes('Database') || 
-        issue.source.includes('Database')
-      ),
-      'System Issues': allIssues.filter(issue => 
-        !issue.type.includes('Security') && 
-        !issue.type.includes('UI/UX') && 
-        !issue.type.includes('Code Quality') && 
-        !issue.type.includes('Database')
-      )
-    };
+      // Identify reappeared issues
+      const currentIssueIds = allIssues.map(ai => generateIssueId(ai));
+      reappearedDetected = previousIssues.filter(pi => currentIssueIds.includes(pi.issueId) && !fixedIssues.find(fi => generateIssueId(fi) === pi.issueId));
+    } else {
+      newDetected = allIssues;
+    }
 
-    console.log('📊 ENHANCED Final processing results (ALL TYPES):', {
-      totalActiveIssues: allIssues.length,
-      backendFixedCount: backendFixedIssues.length,
-      criticalCount: criticalIssues.length,
-      highCount: highIssues.length,
-      mediumCount: mediumIssues.length,
-      realFixesApplied: totalRealFixesApplied,
-      autoDetectedBackendFixes: autoMovedCount,
-      issuesByTopic: Object.keys(issuesByTopic).map(topic => ({
-        topic,
-        count: issuesByTopic[topic].length
-      }))
-    });
+    setNewIssues(newDetected);
+    setResolvedIssues(resolvedDetected);
+    setReappearedIssues(reappearedDetected);
+  }, [allIssues, fixedIssues]);
 
-    return {
-      allIssues,
-      criticalIssues,
-      highIssues,
-      mediumIssues,
-      issuesByTopic,
-      newIssues,
-      resolvedIssues,
-      reappearedIssues,
-      backendFixedIssues,
-      totalRealFixesApplied,
-      autoDetectedBackendFixes: autoMovedCount
-    };
-  }, [verificationSummary, fixedIssues]);
+  // Enhanced mark as really fixed function with daily progress tracking
+  const markIssueAsReallyFixed = (issue: Issue) => {
+    markIssueAsResolved(issue);
+    
+    // Record in daily progress tracker
+    recordFixedIssue({
+      type: issue.type,
+      message: issue.message,
+      severity: issue.severity || 'medium',
+      category: issue.source || 'System',
+      description: `${issue.type}: ${issue.message}`
+    }, 'manual');
+    
+    console.log('🔧 Issue marked as really fixed and recorded in daily progress:', issue.type);
+  };
+
+  const processedData = useMemo(() => ({
+    allIssues,
+    criticalIssues,
+    highIssues,
+    mediumIssues,
+    lowIssues,
+    issuesByTopic,
+    newIssues,
+    resolvedIssues,
+    reappearedIssues,
+    backendFixedIssues,
+    totalRealFixesApplied,
+    autoDetectedBackendFixes
+  }), [allIssues, criticalIssues, highIssues, mediumIssues, lowIssues, issuesByTopic, newIssues, resolvedIssues, reappearedIssues, backendFixedIssues, totalRealFixesApplied, autoDetectedBackendFixes]);
+
+  return {
+    ...processedData,
+  };
 };
 
-// Re-export types and functions for backward compatibility
-export type { Issue, ProcessedIssuesData };
+// Export the enhanced function
+export { markIssueAsReallyFixed };

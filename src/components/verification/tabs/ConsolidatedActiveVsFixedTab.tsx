@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -124,17 +123,16 @@ const ConsolidatedActiveVsFixedTab: React.FC<ConsolidatedActiveVsFixedTabProps> 
         </CardContent>
       </Card>
 
-      {/* Subtabs */}
-      <Tabs defaultValue="by-category" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="by-category">By Category</TabsTrigger>
-          <TabsTrigger value="by-severity">By Severity</TabsTrigger>
-          <TabsTrigger value="daily-progress">Daily Progress</TabsTrigger>
+      {/* Subtabs - Default to "by-category-severity" */}
+      <Tabs defaultValue="by-category-severity" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="by-category-severity">By Category & Severity</TabsTrigger>
+          <TabsTrigger value="by-severity">By Severity Only</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="by-category" className="mt-6">
+        <TabsContent value="by-category-severity" className="mt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Active Issues by Category */}
+            {/* Active Issues by Category with Descriptions */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -143,35 +141,42 @@ const ConsolidatedActiveVsFixedTab: React.FC<ConsolidatedActiveVsFixedTabProps> 
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 bg-red-50 rounded border">
-                    <div className="flex items-center gap-2">
-                      <Shield className="h-4 w-4 text-red-600" />
-                      <span className="text-sm font-medium">Security</span>
-                    </div>
-                    <Badge variant="destructive">{activeIssues.security}</Badge>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-blue-50 rounded border">
-                    <div className="flex items-center gap-2">
-                      <Eye className="h-4 w-4 text-blue-600" />
-                      <span className="text-sm font-medium">UI/UX</span>
-                    </div>
-                    <Badge className="bg-blue-600">{activeIssues.uiux}</Badge>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-green-50 rounded border">
-                    <div className="flex items-center gap-2">
-                      <Database className="h-4 w-4 text-green-600" />
-                      <span className="text-sm font-medium">Database</span>
-                    </div>
-                    <Badge className="bg-green-600">{activeIssues.database}</Badge>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-purple-50 rounded border">
-                    <div className="flex items-center gap-2">
-                      <Code className="h-4 w-4 text-purple-600" />
-                      <span className="text-sm font-medium">Code Quality</span>
-                    </div>
-                    <Badge className="bg-purple-600">{activeIssues.codeQuality}</Badge>
-                  </div>
+                <div className="space-y-4">
+                  {Object.entries(processedData.issuesByTopic).map(([category, issues]) => {
+                    if (issues.length === 0) return null;
+                    
+                    return (
+                      <div key={category} className="border rounded-lg p-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-sm">{category}</span>
+                            <Badge variant="destructive">{issues.length}</Badge>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          {issues.slice(0, 3).map((issue, idx) => (
+                            <div key={idx} className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
+                              <div className="flex items-center gap-2 mb-1">
+                                <Badge className="text-xs" variant={
+                                  issue.severity === 'critical' ? 'destructive' :
+                                  issue.severity === 'high' ? 'default' : 'outline'
+                                }>
+                                  {issue.severity || 'medium'}
+                                </Badge>
+                                <span className="font-medium">{issue.type}</span>
+                              </div>
+                              <p>{issue.message}</p>
+                            </div>
+                          ))}
+                          {issues.length > 3 && (
+                            <p className="text-xs text-gray-500">
+                              +{issues.length - 3} more issues...
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>
@@ -276,25 +281,6 @@ const ConsolidatedActiveVsFixedTab: React.FC<ConsolidatedActiveVsFixedTabProps> 
               </CardContent>
             </Card>
           </div>
-        </TabsContent>
-
-        <TabsContent value="daily-progress" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Daily Progress Tracking
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8 text-gray-500">
-                <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                <p className="font-medium mb-2">Daily Progress Tracking</p>
-                <p className="text-sm">Track incremental fixes by date, category, and severity</p>
-                <p className="text-xs mt-2">Feature in development - will show historical fix progress</p>
-              </div>
-            </CardContent>
-          </Card>
         </TabsContent>
       </Tabs>
     </div>
