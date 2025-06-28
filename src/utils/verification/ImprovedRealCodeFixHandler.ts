@@ -79,6 +79,25 @@ class ImprovedRealCodeFixHandler {
       }
     }
 
+    // API Authorization Fix - NEW
+    if (issue.message.includes('API endpoints') || issue.message.includes('authorization checks') || issue.message.includes('proper authorization')) {
+      const success = await actualCodeModifier.applyAPIAuthorizationFix();
+      if (success) {
+        return {
+          id: `security_api_auth_${Date.now()}`,
+          type: 'security',
+          description: 'API endpoint authorization middleware implemented',
+          filePath: 'src/utils/auth/ApiAuthorizationMiddleware.ts',
+          validationChecks: [
+            'API authorization middleware active',
+            'Endpoint protection implemented',
+            'Authentication validation working'
+          ],
+          codeChanges: 'Created API authorization middleware with endpoint protection'
+        };
+      }
+    }
+
     // Log Sanitization Fix
     if (issue.message.includes('Sensitive data') || issue.message.includes('logged') || issue.message.includes('sanitized')) {
       const success = await actualCodeModifier.applyLogSanitizationFix();
@@ -210,6 +229,11 @@ class ImprovedRealCodeFixHandler {
     // For RBAC checks  
     if (check.includes('role') || check.includes('permission') || check.includes('access control') || check.includes('hierarchy')) {
       return localStorage.getItem('rbac_implementation_active') === 'true';
+    }
+
+    // For API authorization checks - NEW
+    if (check.includes('API authorization') || check.includes('Endpoint protection') || check.includes('Authentication validation')) {
+      return localStorage.getItem('api_authorization_implemented') === 'true';
     }
 
     // For log sanitization checks - be more lenient on pattern detection
