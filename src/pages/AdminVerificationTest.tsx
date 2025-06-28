@@ -1,24 +1,22 @@
 
 /**
  * System Verification Dashboard
- * Database-first verification system with stable health assessment
+ * Manual-only verification system with no automatic syncing
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Shield, AlertTriangle, CheckCircle, RefreshCw, Database } from 'lucide-react';
+import { Shield, AlertTriangle, CheckCircle, Database } from 'lucide-react';
 import { useDatabaseIssues } from '@/hooks/useDatabaseIssues';
 import { useStableHealthScore } from '@/hooks/useStableHealthScore';
 import CleanIssuesTab from '@/components/security/CleanIssuesTab';
 
 const AdminVerificationTest = () => {
-  const [isManualScanRunning, setIsManualScanRunning] = useState(false);
-  const [lastManualUpdate, setLastManualUpdate] = useState<Date | null>(null);
-  const [autoTriggered, setAutoTriggered] = useState(false);
+  const [isManualRefreshRunning, setIsManualRefreshRunning] = useState(false);
   const { toast } = useToast();
 
   const {
@@ -27,7 +25,6 @@ const AdminVerificationTest = () => {
     categorizedIssues,
     isLoading,
     error,
-    syncActiveIssues,
     refreshIssues
   } = useDatabaseIssues();
 
@@ -41,69 +38,49 @@ const AdminVerificationTest = () => {
     recalculate: recalculateHealth
   } = useStableHealthScore();
 
-  const runManualVerification = async () => {
-    setIsManualScanRunning(true);
-    console.log('🔍 RUNNING MANUAL VERIFICATION (Database-First)...');
+  const handleManualRefresh = async () => {
+    setIsManualRefreshRunning(true);
+    console.log('🔄 Manual refresh requested - loading data from database only');
 
     try {
       toast({
-        title: "🔍 Manual Verification Started",
-        description: "Syncing active issues with database and recalculating health score...",
+        title: "🔄 Manual Refresh Started",
+        description: "Loading current data from database...",
         variant: "default",
       });
 
-      // Sync active issues with database (this will now work with the fixed function)
-      await syncActiveIssues();
-      console.log('✅ Active issues synced successfully with database');
-      
-      // Refresh all data from database
+      // Only refresh data from database - no syncing
       await refreshIssues();
-      console.log('✅ Issues data refreshed from database');
+      console.log('✅ Database data refreshed');
       
-      // Recalculate health score
+      // Recalculate health score based on current database state
       await recalculateHealth();
-      console.log('✅ Health score recalculated');
-      
-      // Update last manual update time
-      setLastManualUpdate(new Date());
+      console.log('✅ Health score recalculated from database');
       
       toast({
-        title: "✅ Manual Verification Complete",
-        description: `System verification completed successfully. Health Score: ${healthScore}/100`,
+        title: "✅ Manual Refresh Complete",
+        description: `Data refreshed from database. Health Score: ${healthScore}/100`,
         variant: "default",
       });
       
-      console.log('✅ Manual verification completed successfully');
+      console.log('✅ Manual refresh completed successfully');
     } catch (error) {
-      console.error('❌ Manual verification failed:', error);
+      console.error('❌ Manual refresh failed:', error);
       toast({
-        title: "❌ Verification Failed",
-        description: error instanceof Error ? error.message : "Failed to complete system verification",
+        title: "❌ Refresh Failed",
+        description: error instanceof Error ? error.message : "Failed to refresh data from database",
         variant: "destructive",
       });
     } finally {
-      setIsManualScanRunning(false);
+      setIsManualRefreshRunning(false);
     }
   };
-
-  // Auto-trigger verification on page load
-  useEffect(() => {
-    if (!autoTriggered) {
-      console.log('🎯 System Verification Dashboard: Auto-triggering verification system...');
-      setAutoTriggered(true);
-      
-      // Add a small delay to ensure components are ready
-      setTimeout(() => {
-        runManualVerification();
-      }, 1000);
-    }
-  }, [autoTriggered]);
 
   return (
     <MainLayout>
       <PageContainer
         title="System Verification Dashboard"
-        subtitle="Database-first system health and verification monitoring"
+        subtitle="Manual database verification monitoring - no automatic syncing"
       >
         <div className="space-y-6">
           {/* System Health Status */}
@@ -115,36 +92,28 @@ const AdminVerificationTest = () => {
                     <CheckCircle className="h-5 w-5 mr-2" /> : 
                     <AlertTriangle className="h-5 w-5 mr-2" />
                   }
-                  System Health: {healthScore}/100 (Database-Driven)
+                  System Health: {healthScore}/100 (Database Only)
                 </div>
                 <div className="flex items-center gap-2">
                   <Button 
-                    onClick={runManualVerification} 
-                    disabled={isManualScanRunning || isLoading}
+                    onClick={handleManualRefresh} 
+                    disabled={isManualRefreshRunning || isLoading}
                     variant="outline"
                     size="sm"
                   >
-                    <RefreshCw className={`h-4 w-4 mr-2 ${isManualScanRunning ? 'animate-spin' : ''}`} />
-                    {isManualScanRunning ? 'Running...' : 'Manual Verification'}
+                    <Database className={`h-4 w-4 mr-2 ${isManualRefreshRunning ? 'animate-spin' : ''}`} />
+                    {isManualRefreshRunning ? 'Refreshing...' : 'Refresh Data'}
                   </Button>
-                  <div className="flex items-center gap-1">
-                    <Database className="h-4 w-4 text-blue-600" />
-                    <span className="text-sm text-blue-600">DB Only</span>
-                  </div>
                 </div>
               </CardTitle>
               <CardDescription className={isStable ? 'text-green-700' : 'text-yellow-700'}>
                 Last calculated: {lastCalculated.toLocaleTimeString()}
-                {lastManualUpdate && (
-                  <>
-                    <br />
-                    Last manual update: {lastManualUpdate.toLocaleTimeString()}
-                  </>
-                )}
                 <br />
                 Critical Issues: {criticalIssuesCount} | Total Active: {totalActiveIssues} | Fixed: {totalFixedIssues}
                 <br />
                 System is {isStable ? 'stable and reliable' : 'improving but needs attention'}
+                <br />
+                <span className="text-xs font-medium">Manual refresh only - no automatic syncing</span>
               </CardDescription>
             </CardHeader>
           </Card>
@@ -191,17 +160,15 @@ const AdminVerificationTest = () => {
                 </CardTitle>
                 <CardDescription className="text-red-700">
                   {error}
-                  <br />
-                  <span className="text-xs">Note: Database function has been updated to fix sync issues.</span>
                 </CardDescription>
               </CardHeader>
             </Card>
           )}
 
-          {/* Issues Management */}
+          {/* Issues Management - No sync functionality */}
           <CleanIssuesTab 
-            onReRunVerification={runManualVerification}
-            isReRunning={isManualScanRunning}
+            onReRunVerification={handleManualRefresh}
+            isReRunning={isManualRefreshRunning}
           />
         </div>
       </PageContainer>

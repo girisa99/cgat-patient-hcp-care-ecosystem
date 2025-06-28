@@ -25,7 +25,6 @@ const isValidSeverity = (severity: string): severity is 'critical' | 'high' | 'm
 
 export const useDatabaseIssues = (): DatabaseIssuesData & {
   refreshIssues: () => Promise<void>;
-  syncActiveIssues: () => Promise<void>;
 } => {
   const [activeIssues, setActiveIssues] = useState<Issue[]>([]);
   const [totalFixedCount, setTotalFixedCount] = useState(0);
@@ -33,10 +32,10 @@ export const useDatabaseIssues = (): DatabaseIssuesData & {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Load active issues from database
+  // Load active issues from database only
   const loadActiveIssues = async () => {
     try {
-      setError(null); // Clear any previous errors
+      setError(null);
       const { data, error } = await supabase
         .from('active_issues')
         .select('*')
@@ -58,122 +57,48 @@ export const useDatabaseIssues = (): DatabaseIssuesData & {
 
       setActiveIssues(issues);
       setLastScanTime(new Date());
-      console.log('✅ Active issues loaded successfully from database:', issues.length);
+      console.log('✅ Active issues loaded from database:', issues.length);
     } catch (err) {
       console.error('❌ Error loading active issues:', err);
       setError(err instanceof Error ? err.message : 'Failed to load issues');
     }
   };
 
-  // Load fixed issues count from database
+  // Load fixed issues count from database only
   const loadFixedCount = async () => {
     try {
-      setError(null); // Clear any previous errors
+      setError(null);
       const { count, error } = await supabase
         .from('issue_fixes')
         .select('*', { count: 'exact', head: true });
 
       if (error) throw error;
       setTotalFixedCount(count || 0);
-      console.log('✅ Fixed issues count loaded successfully:', count || 0);
+      console.log('✅ Fixed issues count loaded:', count || 0);
     } catch (err) {
       console.error('❌ Error loading fixed count:', err);
-      // Don't set error for fixed count as it's not critical
     }
   };
 
-  // Sync current system state to database with correct field names
-  const syncActiveIssues = async () => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      console.log('🔄 Syncing active issues to database...');
-      
-      // Define current system issues with correct field names that match the database function expectations
-      const currentIssues = [
-        {
-          type: 'Security Vulnerability',
-          message: 'Multi-Factor Authentication is not implemented for admin users',
-          source: 'Security Scanner',
-          severity: 'critical'
-        },
-        {
-          type: 'Security Vulnerability',
-          message: 'Role-Based Access Control is not properly implemented',
-          source: 'Security Scanner',
-          severity: 'critical'
-        },
-        {
-          type: 'Security Vulnerability',
-          message: 'API keys and user data may be logged - logs are not sanitized',
-          source: 'Security Scanner',
-          severity: 'high'
-        },
-        {
-          type: 'Security Vulnerability',
-          message: 'API endpoints lack proper authorization checks',
-          source: 'Security Scanner',
-          severity: 'high'
-        },
-        {
-          type: 'Code Quality Issue',
-          message: 'Code lacks proper error handling and TypeScript type definitions',
-          source: 'Code Quality Scanner',
-          severity: 'medium'
-        },
-        {
-          type: 'Database Issue',
-          message: 'Database queries lack proper validation and sanitization',
-          source: 'Database Scanner',
-          severity: 'high'
-        }
-      ];
-
-      console.log('📊 Syncing issues data:', currentIssues);
-
-      // Use the updated sync function (field names now match the database function)
-      const { error } = await supabase.rpc('sync_active_issues', {
-        issues_data: currentIssues
-      });
-
-      if (error) {
-        console.error('❌ Database sync error:', error);
-        throw new Error(`Database sync failed: ${error.message}`);
-      }
-
-      console.log('✅ Active issues synced to database successfully');
-      
-      // Reload data after successful sync
-      await loadActiveIssues();
-      
-    } catch (err) {
-      console.error('❌ Error syncing active issues:', err);
-      setError(err instanceof Error ? err.message : 'Failed to sync issues with database');
-      throw err; // Re-throw to let caller handle it
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Refresh all data from database
+  // Manual refresh only - no automatic syncing
   const refreshIssues = async () => {
     setIsLoading(true);
     setError(null);
     try {
+      console.log('🔄 Manual refresh: Loading data from database only');
       await Promise.all([loadActiveIssues(), loadFixedCount()]);
-      console.log('✅ All issues data refreshed from database');
+      console.log('✅ Manual refresh completed');
     } catch (err) {
-      console.error('❌ Error refreshing issues:', err);
-      setError(err instanceof Error ? err.message : 'Failed to refresh issues');
+      console.error('❌ Error during manual refresh:', err);
+      setError(err instanceof Error ? err.message : 'Failed to refresh data');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Load data on mount only (no automatic updates)
+  // Load data on mount only - no automatic updates
   useEffect(() => {
-    console.log('🎯 DatabaseIssues hook: Initial data load');
+    console.log('🎯 DatabaseIssues hook: Initial data load (manual only)');
     refreshIssues();
   }, []);
 
@@ -199,7 +124,6 @@ export const useDatabaseIssues = (): DatabaseIssuesData & {
     isLoading,
     error,
     categorizedIssues,
-    refreshIssues,
-    syncActiveIssues
+    refreshIssues
   };
 };
