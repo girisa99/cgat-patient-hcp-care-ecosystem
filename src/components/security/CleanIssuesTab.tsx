@@ -1,14 +1,15 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Bug, CheckCircle, Shield, Database, Code, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useAccurateIssuesProcessor } from './AccurateIssuesProcessor';
+import { useDatabaseIssues } from '@/hooks/useDatabaseIssues';
 import EnhancedIssueTopicGroup from './EnhancedIssueTopicGroup';
 import { CodeFix } from '@/utils/verification/ImprovedRealCodeFixHandler';
 import { Issue } from '@/types/issuesTypes';
-import { markIssueAsReallyFixed } from './IssuesDataProcessor';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 interface CleanIssuesTabProps {
   onReRunVerification?: () => void;
@@ -25,11 +26,12 @@ const CleanIssuesTab: React.FC<CleanIssuesTabProps> = ({
     activeIssues,
     totalFixedCount,
     lastScanTime,
-    performComprehensiveScan,
-    getCategorizedIssues
-  } = useAccurateIssuesProcessor();
-
-  const categorizedIssues = getCategorizedIssues();
+    categorizedIssues,
+    isLoading,
+    error,
+    refreshIssues,
+    syncActiveIssues
+  } = useDatabaseIssues();
 
   const topicIcons = {
     'Security Scanner': Shield,
@@ -44,11 +46,36 @@ const CleanIssuesTab: React.FC<CleanIssuesTabProps> = ({
     console.log('🔧 Manual fix applied:', { issue: issue.type, fix: fix.description });
     
     try {
-      // Mark issue as really fixed in database
-      await markIssueAsReallyFixed(issue);
-      
-      // Trigger fresh scan to update display
-      await performComprehensiveScan();
+      // Record the fix in the database
+      const { error: insertError } = await supabase
+        .from('issue_fixes')
+        .insert({
+          issue_type: issue.type,
+          issue_message: issue.message,
+          issue_source: issue.source,
+          issue_severity: issue.severity || 'medium',
+          category: issue.source?.includes('Security') ? 'Security' : 
+                   issue.source?.includes('Database') ? 'Database' :
+                   issue.source?.includes('Code') ? 'Code Quality' : 'System',
+          fix_method: 'manual',
+          user_id: (await supabase.auth.getUser()).data.user?.id,
+          metadata: { fix_description: fix.description }
+        });
+
+      if (insertError) throw insertError;
+
+      // Remove from active issues
+      if (issue.issueId) {
+        const { error: deleteError } = await supabase
+          .from('active_issues')
+          .delete()
+          .eq('id', issue.issueId);
+
+        if (deleteError) throw deleteError;
+      }
+
+      // Refresh the data
+      await refreshIssues();
       
       toast({
         title: "🛡️ Fix Applied Successfully",
@@ -65,6 +92,40 @@ const CleanIssuesTab: React.FC<CleanIssuesTabProps> = ({
     }
   };
 
+  const handleManualSync = async () => {
+    try {
+      await syncActiveIssues();
+      toast({
+        title: "🔄 System Synced",
+        description: "Active issues have been synced with the database",
+        variant: "default",
+      });
+    } catch (error) {
+      toast({
+        title: "❌ Sync Failed",
+        description: "Failed to sync with database",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <AlertTriangle className="h-5 w-5 text-red-600" />
+            <h3 className="font-medium text-red-900">Database Error</h3>
+          </div>
+          <p className="text-sm text-red-700 mb-4">{error}</p>
+          <Button onClick={refreshIssues} variant="outline" size="sm">
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* System Status Header */}
@@ -73,12 +134,20 @@ const CleanIssuesTab: React.FC<CleanIssuesTabProps> = ({
           <div>
             <div className="flex items-center gap-2 mb-2">
               <Shield className="h-5 w-5 text-blue-600" />
-              <h3 className="font-medium text-blue-900">System Issues Management</h3>
+              <h3 className="font-medium text-blue-900">Database-First Issues Management</h3>
             </div>
             <p className="text-sm text-blue-700">
-              Comprehensive issue tracking and resolution system.
+              All data sourced directly from database tables.
               {lastScanTime && ` Last updated: ${lastScanTime.toLocaleTimeString()}`}
             </p>
+          </div>
+          <div className="flex gap-2">
+            <Button onClick={handleManualSync} variant="outline" size="sm" disabled={isLoading}>
+              {isLoading ? 'Syncing...' : 'Sync Issues'}
+            </Button>
+            <Button onClick={refreshIssues} variant="outline" size="sm" disabled={isLoading}>
+              {isLoading ? 'Loading...' : 'Refresh'}
+            </Button>
           </div>
         </div>
       </div>
@@ -142,13 +211,21 @@ const CleanIssuesTab: React.FC<CleanIssuesTabProps> = ({
           })}
 
           {/* No Issues State */}
-          {categorizedIssues.total === 0 && (
+          {categorizedIssues.total === 0 && !isLoading && (
             <div className="bg-green-50 border border-green-200 rounded-lg p-8 text-center">
               <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-600" />
               <h3 className="text-lg font-medium text-green-900 mb-2">No Active Issues Found</h3>
               <p className="text-green-700">
                 All identified issues have been resolved. Total fixes applied: {totalFixedCount}
               </p>
+            </div>
+          )}
+
+          {/* Loading State */}
+          {isLoading && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-8 text-center">
+              <div className="animate-spin h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+              <p className="text-blue-700">Loading issues from database...</p>
             </div>
           )}
         </TabsContent>

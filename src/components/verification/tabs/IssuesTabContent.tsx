@@ -1,16 +1,12 @@
 
 import React from 'react';
-import { VerificationSummary } from '@/utils/verification/AutomatedVerificationOrchestrator';
 import CleanIssuesTab from '@/components/security/CleanIssuesTab';
 
 interface IssuesTabContentProps {
-  verificationSummary: VerificationSummary | undefined;
+  // No longer needed - database-first approach
 }
 
-const IssuesTabContent: React.FC<IssuesTabContentProps> = ({
-  verificationSummary
-}) => {
-  // Use the new clean issues tab instead of the problematic old one
+const IssuesTabContent: React.FC<IssuesTabContentProps> = () => {
   return <CleanIssuesTab />;
 };
 
