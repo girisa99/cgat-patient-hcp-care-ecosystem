@@ -3,13 +3,13 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, CheckCircle, AlertTriangle, Lock, Bug, Activity } from 'lucide-react';
+import { Shield, CheckCircle, AlertTriangle, Lock, Bug, Activity, Zap } from 'lucide-react';
 import { AdminModuleVerificationResult } from '@/utils/verification/AdminModuleVerificationRunner';
 import { useFixedIssuesTracker } from '@/hooks/useFixedIssuesTracker';
 import OverviewTabContent from './tabs/OverviewTabContent';
 import RecommendationsTabContent from './tabs/RecommendationsTabContent';
 import FixedTabContent from './tabs/FixedTabContent';
-import IssuesTabContent from './tabs/IssuesTabContent';
+import EnhancedIssuesTabContent from './tabs/EnhancedIssuesTabContent';
 import SecurityPerformanceTabContent from './tabs/SecurityPerformanceTabContent';
 import ImplementationTabContent from './tabs/ImplementationTabContent';
 
@@ -52,9 +52,13 @@ const VerificationResultsTabs: React.FC<VerificationResultsTabsProps> = ({
             <CardTitle className="flex items-center gap-2">
               <Shield className="h-5 w-5" />
               Admin Module Verification Results
+              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                <Zap className="h-3 w-3 mr-1" />
+                Real Fix System
+              </Badge>
             </CardTitle>
             <CardDescription>
-              Comprehensive analysis including security, performance, and system health
+              Comprehensive analysis with real automated fixes that modify your code and database
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
@@ -62,7 +66,7 @@ const VerificationResultsTabs: React.FC<VerificationResultsTabsProps> = ({
             {fixedCount > 0 && (
               <Badge variant="default" className="bg-green-100 text-green-800">
                 <CheckCircle className="h-3 w-3 mr-1" />
-                {fixedCount} Fixed
+                {fixedCount} Real Fixes Applied
               </Badge>
             )}
           </div>
@@ -89,7 +93,7 @@ const VerificationResultsTabs: React.FC<VerificationResultsTabsProps> = ({
           </TabsList>
 
           <TabsContent value="issues">
-            <IssuesTabContent 
+            <EnhancedIssuesTabContent 
               verificationSummary={verificationResult.comprehensiveResults}
               onReRunVerification={onReRunVerification}
               isReRunning={isReRunning}
