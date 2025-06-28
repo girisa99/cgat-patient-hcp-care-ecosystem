@@ -10,7 +10,7 @@ import ImprovedRealIssueActionButton from './ImprovedRealIssueActionButton';
 interface EnhancedIssueTopicGroupProps {
   topic: string;
   issues: Issue[];
-  icon?: LucideIcon;
+  icon: LucideIcon;
   onIssueFixed: (issue: Issue, fix: CodeFix) => void;
 }
 
@@ -29,55 +29,33 @@ const EnhancedIssueTopicGroup: React.FC<EnhancedIssueTopicGroupProps> = ({
     }
   };
 
-  const getStatusBadge = (issue: Issue) => {
-    if (issue.status === 'new') {
-      return <Badge variant="destructive" className="text-xs">NEW</Badge>;
-    }
-    if (issue.status === 'reappeared') {
-      return <Badge variant="outline" className="text-xs bg-yellow-50 text-yellow-700 border-yellow-200">REAPPEARED</Badge>;
-    }
-    return null;
-  };
-
   return (
     <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          {Icon && <Icon className="h-5 w-5" />}
-          {topic}
-          <Badge variant="outline" className="ml-auto">
-            {issues.length} issue{issues.length !== 1 ? 's' : ''}
-          </Badge>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Icon className="h-5 w-5" />
+          {topic} ({issues.length})
         </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
           {issues.map((issue, index) => (
-            <div 
-              key={`${issue.type}-${index}`}
-              className={`p-3 rounded-lg border ${getSeverityColor(issue.severity)} space-y-2`}
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex-1 space-y-1">
-                  <div className="flex items-center gap-2">
-                    <h4 className="font-medium text-sm">{issue.type}</h4>
-                    {getStatusBadge(issue)}
-                    <Badge 
-                      variant="outline" 
-                      className={`text-xs ${getSeverityColor(issue.severity)}`}
-                    >
-                      {issue.severity.toUpperCase()}
-                    </Badge>
-                  </div>
-                  <p className="text-sm opacity-90">{issue.message}</p>
-                  <p className="text-xs opacity-75">Source: {issue.source}</p>
+            <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <Badge className={getSeverityColor(issue.severity)}>
+                    {issue.severity}
+                  </Badge>
+                  <span className="text-sm font-medium">{issue.type}</span>
                 </div>
-                <div className="flex-shrink-0">
-                  <ImprovedRealIssueActionButton
-                    issue={issue}
-                    onIssueFixed={onIssueFixed}
-                  />
-                </div>
+                <p className="text-sm text-muted-foreground">{issue.message}</p>
+                <p className="text-xs text-muted-foreground mt-1">Source: {issue.source}</p>
+              </div>
+              <div className="ml-4">
+                <ImprovedRealIssueActionButton
+                  issue={issue}
+                  onIssueFixed={onIssueFixed}
+                />
               </div>
             </div>
           ))}
