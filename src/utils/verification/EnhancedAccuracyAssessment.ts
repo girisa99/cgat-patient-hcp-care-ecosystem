@@ -1,4 +1,3 @@
-
 /**
  * Enhanced Accuracy Assessment
  * Provides comprehensive verification of actual issue status vs reported status
@@ -94,13 +93,13 @@ export class EnhancedAccuracyAssessment {
       } else if (verificationResult.isFalsePositive) {
         falsePositives.push({
           ...issue,
-          status: 'false_positive',
-          details: verificationResult.reason
+          status: 'resolved', // Use 'resolved' instead of 'false_positive'
+          details: `False positive: ${verificationResult.reason}`
         });
       } else {
         stillActiveIssues.push({
           ...issue,
-          status: 'active',
+          status: 'existing', // Use 'existing' instead of 'active'
           details: verificationResult.reason
         });
       }
