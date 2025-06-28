@@ -62,14 +62,14 @@ export const useIssuesDataProcessor = (
       });
     }
 
-    // Add performance issues - use bottlenecks instead of non-existent issues property
-    if (verificationSummary.performanceMetrics?.bottlenecks) {
-      verificationSummary.performanceMetrics.bottlenecks.forEach((bottleneck) => {
+    // Add performance issues - use recommendations from PerformanceMetrics
+    if (verificationSummary.performanceMetrics?.recommendations) {
+      verificationSummary.performanceMetrics.recommendations.forEach((recommendation) => {
         allIssues.push({
           type: 'Performance Issue',
-          message: bottleneck.description || 'Performance bottleneck detected',
+          message: recommendation.description || 'Performance optimization needed',
           source: 'Performance Monitor',
-          severity: bottleneck.impact === 'high' ? 'high' : 'medium'
+          severity: recommendation.priority === 'high' ? 'high' : 'medium'
         });
       });
     }
