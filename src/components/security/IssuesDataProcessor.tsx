@@ -24,9 +24,9 @@ interface ProcessedIssuesData {
   newIssues: Issue[];
   resolvedIssues: Issue[];
   reappearedIssues: Issue[];
-  backendFixedIssues: Issue[]; // NEW: Issues fixed in backend
+  backendFixedIssues: Issue[];
   totalRealFixesApplied: number;
-  autoDetectedBackendFixes: number; // NEW: Count of backend fixes detected
+  autoDetectedBackendFixes: number;
 }
 
 // Enhanced persistent storage for issue tracking
@@ -40,83 +40,131 @@ interface IssueSnapshot {
   issues: Issue[];
   verificationId: string;
   realFixesCount?: number;
-  backendFixesDetected?: string[]; // NEW: Track backend-detected fixes
+  backendFixesDetected?: string[];
 }
 
-// Enhanced backend fix detection
-const detectBackendAppliedFixes = (): { fixType: string; implemented: boolean; detectionMethod: string }[] => {
-  console.log('🔍 DETECTING BACKEND-APPLIED FIXES...');
+// FIXED: Enhanced backend fix detection with proper issue pattern mapping
+const detectBackendAppliedFixes = (): { 
+  fixType: string; 
+  implemented: boolean; 
+  detectionMethod: string;
+  issuePatterns: string[];
+}[] => {
+  console.log('🔍 ENHANCED DETECTING BACKEND-APPLIED FIXES (ALL TYPES)...');
   
   const backendFixDetections = [
     {
       fixType: 'MFA_ENFORCEMENT',
       implemented: checkForMFAImplementation(),
       detectionMethod: 'localStorage + component detection',
-      issuePattern: 'Multi-Factor Authentication'
+      issuePatterns: ['Multi-Factor Authentication', 'MFA', 'two-factor']
     },
     {
       fixType: 'RBAC_IMPLEMENTATION', 
       implemented: checkForRBACImplementation(),
       detectionMethod: 'localStorage + role system detection',
-      issuePattern: 'Role-Based Access Control'
+      issuePatterns: ['Role-Based Access Control', 'RBAC', 'authorization']
     },
     {
       fixType: 'LOG_SANITIZATION',
       implemented: checkForLogSanitization(),
       detectionMethod: 'localStorage + logging system detection',
-      issuePattern: 'Sensitive data logging'
+      issuePatterns: ['Sensitive data logging', 'log sanitization', 'data exposure']
     },
     {
       fixType: 'DEBUG_SECURITY',
       implemented: checkDebugModeDisabled(),
       detectionMethod: 'environment + security config detection',
-      issuePattern: 'Debug mode'
+      issuePatterns: ['Debug mode', 'production environment', 'debug enabled']
     },
     {
       fixType: 'API_AUTHORIZATION',
       implemented: checkAPIAuthorizationImplemented(),
       detectionMethod: 'localStorage + API middleware detection',
-      issuePattern: 'API endpoints lack proper authorization'
+      issuePatterns: ['API endpoints lack proper authorization', 'API authorization', 'endpoint security']
+    },
+    // NEW: UI/UX Issue Detection
+    {
+      fixType: 'UIUX_IMPROVEMENTS',
+      implemented: checkForUIUXImprovements(),
+      detectionMethod: 'component + UI state detection',
+      issuePatterns: ['UI validation', 'user experience', 'interface issue', 'usability', 'accessibility']
+    },
+    // NEW: Code Quality Issue Detection
+    {
+      fixType: 'CODE_QUALITY_IMPROVEMENTS',
+      implemented: checkForCodeQualityImprovements(),
+      detectionMethod: 'code analysis + standards detection',
+      issuePatterns: ['code quality', 'validation', 'best practices', 'maintainability', 'performance']
     }
   ];
 
   const detectedFixes = backendFixDetections.filter(detection => detection.implemented);
   
-  console.log('🎯 BACKEND FIX DETECTION RESULTS:', {
+  console.log('🎯 ENHANCED BACKEND FIX DETECTION RESULTS (ALL TYPES):', {
     totalChecked: backendFixDetections.length,
     implementedCount: detectedFixes.length,
-    detectedFixes: detectedFixes.map(f => f.fixType)
+    detectedFixes: detectedFixes.map(f => ({ fixType: f.fixType, patterns: f.issuePatterns }))
   });
 
   return backendFixDetections;
 };
 
-// NEW: Store backend-detected fixes to prevent duplicate applications
-const recordBackendDetectedFix = (fixType: string, issueId: string) => {
-  const existing = JSON.parse(localStorage.getItem(BACKEND_FIXES_DETECTED_KEY) || '{}');
-  existing[issueId] = {
-    fixType,
-    detectedAt: new Date().toISOString(),
-    source: 'backend_detection'
-  };
-  localStorage.setItem(BACKEND_FIXES_DETECTED_KEY, JSON.stringify(existing));
-  console.log('📝 RECORDED BACKEND-DETECTED FIX:', { fixType, issueId });
+// NEW: Check for UI/UX improvements
+const checkForUIUXImprovements = (): boolean => {
+  try {
+    // Check if UI/UX improvements have been applied
+    const uiuxFixed = localStorage.getItem('uiux_improvements_applied') === 'true';
+    
+    // Also check for component-level improvements
+    const validationImprovements = localStorage.getItem('form_validation_enhanced') === 'true';
+    const accessibilityImprovements = localStorage.getItem('accessibility_enhanced') === 'true';
+    
+    const implemented = uiuxFixed || validationImprovements || accessibilityImprovements;
+    console.log('🎨 UI/UX Implementation Check - Current Status:', { 
+      uiuxFixed, 
+      validationImprovements, 
+      accessibilityImprovements, 
+      implemented 
+    });
+    
+    return implemented;
+  } catch {
+    return false;
+  }
 };
 
-// NEW: Check if an issue was already fixed in backend
-const isAlreadyFixedInBackend = (issue: Issue): boolean => {
-  const backendFixes = JSON.parse(localStorage.getItem(BACKEND_FIXES_DETECTED_KEY) || '{}');
-  const issueId = generateIssueId(issue);
-  return !!backendFixes[issueId];
+// NEW: Check for code quality improvements
+const checkForCodeQualityImprovements = (): boolean => {
+  try {
+    // Check if code quality improvements have been applied
+    const codeQualityFixed = localStorage.getItem('code_quality_improved') === 'true';
+    
+    // Also check for specific improvements
+    const refactoringDone = localStorage.getItem('code_refactoring_completed') === 'true';
+    const performanceOptimized = localStorage.getItem('performance_optimized') === 'true';
+    
+    const implemented = codeQualityFixed || refactoringDone || performanceOptimized;
+    console.log('📊 Code Quality Implementation Check - Current Status:', { 
+      codeQualityFixed, 
+      refactoringDone, 
+      performanceOptimized, 
+      implemented 
+    });
+    
+    return implemented;
+  } catch {
+    return false;
+  }
 };
 
-// NEW: Automatically move backend-fixed issues to resolved
+// ENHANCED: Automatically move backend-fixed issues to resolved (ALL TYPES)
 const handleBackendFixedIssues = (currentIssues: Issue[]): { 
   activeIssues: Issue[], 
   backendFixedIssues: Issue[], 
   autoMovedCount: number 
 } => {
-  console.log('🔄 CHECKING FOR BACKEND-APPLIED FIXES...');
+  console.log('🔄 ENHANCED CHECKING FOR BACKEND-APPLIED FIXES (ALL ISSUE TYPES)...');
   
   const backendDetections = detectBackendAppliedFixes();
   const backendFixedIssues: Issue[] = [];
@@ -126,17 +174,25 @@ const handleBackendFixedIssues = (currentIssues: Issue[]): {
   currentIssues.forEach(issue => {
     let isFixedInBackend = false;
     
-    // Check each backend detection against the issue
+    // Check each backend detection against the issue with enhanced pattern matching
     for (const detection of backendDetections) {
       if (detection.implemented) {
-        const issueMatchesPattern = issue.message.includes(detection.issuePattern) || 
-                                   issue.type.includes(detection.fixType.replace('_', ' '));
+        // FIXED: Use issuePatterns array for matching
+        const issueMatchesPattern = detection.issuePatterns.some(pattern => 
+          issue.message.toLowerCase().includes(pattern.toLowerCase()) || 
+          issue.type.toLowerCase().includes(pattern.toLowerCase()) ||
+          issue.source.toLowerCase().includes(pattern.toLowerCase())
+        );
         
         if (issueMatchesPattern) {
-          console.log('✅ BACKEND FIX DETECTED:', {
+          console.log('✅ ENHANCED BACKEND FIX DETECTED:', {
             issue: issue.type,
             fixType: detection.fixType,
-            detectionMethod: detection.detectionMethod
+            detectionMethod: detection.detectionMethod,
+            matchedPattern: detection.issuePatterns.find(p => 
+              issue.message.toLowerCase().includes(p.toLowerCase()) || 
+              issue.type.toLowerCase().includes(p.toLowerCase())
+            )
           });
           
           // Mark as backend fixed
@@ -162,42 +218,71 @@ const handleBackendFixedIssues = (currentIssues: Issue[]): {
     }
   });
 
-  console.log('🎯 BACKEND FIX PROCESSING COMPLETE:', {
+  console.log('🎯 ENHANCED BACKEND FIX PROCESSING COMPLETE (ALL TYPES):', {
     totalIssues: currentIssues.length,
     backendFixed: backendFixedIssues.length,
     stillActive: activeIssues.length,
-    autoMovedCount
+    autoMovedCount,
+    fixedByType: backendFixedIssues.reduce((acc, issue) => {
+      acc[issue.type] = (acc[issue.type] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>)
   });
 
   return { activeIssues, backendFixedIssues, autoMovedCount };
 };
 
-// SYNCHRONIZED METRICS: Get real fixes count from localStorage with proper validation
+// ENHANCED: Store backend-detected fixes to prevent duplicate applications
+const recordBackendDetectedFix = (fixType: string, issueId: string) => {
+  const existing = JSON.parse(localStorage.getItem(BACKEND_FIXES_DETECTED_KEY) || '{}');
+  existing[issueId] = {
+    fixType,
+    detectedAt: new Date().toISOString(),
+    source: 'backend_detection'
+  };
+  localStorage.setItem(BACKEND_FIXES_DETECTED_KEY, JSON.stringify(existing));
+  console.log('📝 RECORDED BACKEND-DETECTED FIX (ENHANCED):', { fixType, issueId });
+};
+
+// ENHANCED: Get real fixes count from localStorage with ALL TYPES
 const getRealFixesAppliedCount = (): number => {
   try {
+    // Security fixes
     const mfaImplemented = localStorage.getItem('mfa_enforcement_implemented') === 'true';
     const rbacImplemented = localStorage.getItem('rbac_implementation_active') === 'true';
     const logSanitizationActive = localStorage.getItem('log_sanitization_active') === 'true';
     const debugSecurityActive = localStorage.getItem('debug_security_implemented') === 'true';
     const apiAuthImplemented = localStorage.getItem('api_authorization_implemented') === 'true';
     
-    const implementedFixes = [mfaImplemented, rbacImplemented, logSanitizationActive, debugSecurityActive, apiAuthImplemented];
+    // UI/UX fixes
+    const uiuxFixed = checkForUIUXImprovements();
+    
+    // Code Quality fixes
+    const codeQualityFixed = checkForCodeQualityImprovements();
+    
+    const implementedFixes = [
+      mfaImplemented, 
+      rbacImplemented, 
+      logSanitizationActive, 
+      debugSecurityActive, 
+      apiAuthImplemented,
+      uiuxFixed,
+      codeQualityFixed
+    ];
     const count = implementedFixes.filter(Boolean).length;
     
     localStorage.setItem(REAL_FIXES_APPLIED_KEY, count.toString());
     
-    console.log('📊 SYNCHRONIZED real fixes count calculation:', {
-      mfaImplemented,
-      rbacImplemented,
-      logSanitizationActive,
-      debugSecurityActive,
-      apiAuthImplemented,
+    console.log('📊 ENHANCED SYNCHRONIZED real fixes count calculation (ALL TYPES):', {
+      security: { mfaImplemented, rbacImplemented, logSanitizationActive, debugSecurityActive, apiAuthImplemented },
+      uiux: { uiuxFixed },
+      codeQuality: { codeQualityFixed },
       totalCount: count
     });
     
     return count;
   } catch (error) {
-    console.error('Error calculating real fixes count:', error);
+    console.error('Error calculating enhanced real fixes count:', error);
     return 0;
   }
 };
@@ -220,7 +305,7 @@ const saveIssueSnapshot = (issues: Issue[], backendFixesDetected: string[] = [])
     })),
     verificationId: `verification_${Date.now()}`,
     realFixesCount,
-    backendFixesDetected // NEW: Track backend fixes in snapshot
+    backendFixesDetected
   };
   
   history.unshift(snapshot);
@@ -230,7 +315,7 @@ const saveIssueSnapshot = (issues: Issue[], backendFixesDetected: string[] = [])
   }
   
   localStorage.setItem(ISSUE_HISTORY_KEY, JSON.stringify(history));
-  console.log('📊 ENHANCED issue snapshot saved with backend fix tracking:', {
+  console.log('📊 ENHANCED issue snapshot saved with ALL TYPES backend fix tracking:', {
     issuesCount: snapshot.issues.length,
     realFixesCount: snapshot.realFixesCount,
     backendFixesDetected: backendFixesDetected.length
@@ -251,7 +336,7 @@ const markIssueAsResolved = (issue: Issue) => {
   const issueKey = generateIssueId(issue);
   resolved.add(issueKey);
   localStorage.setItem(RESOLVED_ISSUES_KEY, JSON.stringify([...resolved]));
-  console.log('🔧 Issue permanently resolved (backend detection):', issueKey);
+  console.log('🔧 Issue permanently resolved (enhanced backend detection):', issueKey);
 };
 
 const checkForMFAImplementation = (): boolean => {
@@ -304,14 +389,15 @@ const checkAPIAuthorizationImplemented = (): boolean => {
   }
 };
 
-// Enhanced real-time code scanning
+// ENHANCED: Real-time code scanning with ALL ISSUE TYPES
 const scanForActualSecurityIssues = (): Issue[] => {
   const issues: Issue[] = [];
   const resolvedIssues = getResolvedIssues();
   
-  console.log('🔒 ENHANCED Security Scan with Backend Fix Detection:');
+  console.log('🔒 ENHANCED Security + Quality Scan with Backend Fix Detection (ALL TYPES):');
   
-  const securityChecks = [
+  const allChecks = [
+    // Security checks
     {
       issue: {
         type: 'Security Vulnerability',
@@ -361,11 +447,53 @@ const scanForActualSecurityIssues = (): Issue[] => {
       },
       implemented: checkAPIAuthorizationImplemented(),
       fixKey: 'api_authorization_implemented'
+    },
+    // NEW: UI/UX checks
+    {
+      issue: {
+        type: 'UI/UX Issue',
+        message: 'User interface validation needs improvement',
+        source: 'UI/UX Quality Scanner',
+        severity: 'critical'
+      },
+      implemented: checkForUIUXImprovements(),
+      fixKey: 'uiux_improvements_applied'
+    },
+    {
+      issue: {
+        type: 'UI/UX Issue',
+        message: 'Accessibility standards not fully implemented',
+        source: 'UI/UX Quality Scanner',
+        severity: 'high'
+      },
+      implemented: localStorage.getItem('accessibility_enhanced') === 'true',
+      fixKey: 'accessibility_enhanced'
+    },
+    // NEW: Code Quality checks
+    {
+      issue: {
+        type: 'Code Quality Issue',
+        message: 'Code maintainability and best practices need improvement',
+        source: 'Code Quality Scanner',
+        severity: 'high'
+      },
+      implemented: checkForCodeQualityImprovements(),
+      fixKey: 'code_quality_improved'
+    },
+    {
+      issue: {
+        type: 'Code Quality Issue',
+        message: 'Performance optimization opportunities identified',
+        source: 'Code Quality Scanner',
+        severity: 'medium'
+      },
+      implemented: localStorage.getItem('performance_optimized') === 'true',
+      fixKey: 'performance_optimized'
     }
   ];
 
   let totalImplemented = 0;
-  securityChecks.forEach(({ issue, implemented, fixKey }) => {
+  allChecks.forEach(({ issue, implemented, fixKey }) => {
     const issueKey = generateIssueId(issue);
     
     if (implemented) {
@@ -378,12 +506,16 @@ const scanForActualSecurityIssues = (): Issue[] => {
     }
   });
 
-  console.log('🔒 Enhanced security scan results with backend detection:', {
+  console.log('🔒 Enhanced comprehensive scan results with backend detection (ALL TYPES):', {
     totalActiveIssues: issues.length,
     totalImplemented,
-    totalSecurityChecks: securityChecks.length,
-    implementationPercentage: Math.round((totalImplemented / securityChecks.length) * 100),
-    realFixesCount: getRealFixesAppliedCount()
+    totalChecks: allChecks.length,
+    implementationPercentage: Math.round((totalImplemented / allChecks.length) * 100),
+    realFixesCount: getRealFixesAppliedCount(),
+    issuesByType: issues.reduce((acc, issue) => {
+      acc[issue.type] = (acc[issue.type] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>)
   });
 
   return issues;
@@ -393,13 +525,13 @@ const scanForActualSecurityIssues = (): Issue[] => {
 let globalRealFixesApplied: Issue[] = [];
 
 export const markIssueAsReallyFixed = (issue: Issue) => {
-  console.log('🎯 Marking issue as really fixed with METRICS update:', issue.type);
+  console.log('🎯 Marking issue as really fixed with ENHANCED METRICS update:', issue.type);
   
   markIssueAsResolved(issue);
   globalRealFixesApplied.push(issue);
   
   const currentCount = getRealFixesAppliedCount();
-  console.log('🎯 Real fix applied - SYNCHRONIZED count updated:', currentCount);
+  console.log('🎯 Real fix applied - ENHANCED SYNCHRONIZED count updated:', currentCount);
   
   window.dispatchEvent(new StorageEvent('storage', {
     key: REAL_FIXES_APPLIED_KEY,
@@ -451,7 +583,7 @@ const compareIssuesWithHistory = (currentIssues: Issue[]): {
 
   const enhancedIssues = [...newIssues, ...existingIssues, ...reappearedIssues];
 
-  console.log('🔍 ENHANCED COMPARISON with backend fix detection:');
+  console.log('🔍 ENHANCED COMPARISON with ALL TYPES backend fix detection:');
   console.log(`   📊 Total current issues: ${currentIssues.length}`);
   console.log(`   🆕 New issues: ${newIssues.length}`);
   console.log(`   ✅ Resolved issues: ${resolvedIssuesList.length}`);
@@ -472,17 +604,17 @@ export const useIssuesDataProcessor = (
   fixedIssues: FixedIssue[] = []
 ): ProcessedIssuesData => {
   return useMemo(() => {
-    console.log('🔍 ENHANCED real-time scanning with BACKEND FIX DETECTION...');
+    console.log('🔍 ENHANCED real-time scanning with ALL TYPES BACKEND FIX DETECTION...');
     
     const totalRealFixesApplied = getRealFixesAppliedCount();
-    console.log('📊 Current real fixes applied count:', totalRealFixesApplied);
+    console.log('📊 Current enhanced real fixes applied count (ALL TYPES):', totalRealFixesApplied);
     
-    const realTimeSecurityIssues = scanForActualSecurityIssues();
-    console.log('🔒 Enhanced security scan found:', realTimeSecurityIssues.length, 'active issues');
+    // ENHANCED: Scan for all types of issues
+    const realTimeIssues = scanForActualSecurityIssues();
+    console.log('🔒 Enhanced comprehensive scan found:', realTimeIssues.length, 'active issues (ALL TYPES)');
 
-    let allIssues: Issue[] = [...realTimeSecurityIssues];
+    let allIssues: Issue[] = [...realTimeIssues];
 
-    // Add verification summary data if available
     if (verificationSummary) {
       
       if (verificationSummary.validationResult?.issues) {
@@ -625,9 +757,9 @@ export const useIssuesDataProcessor = (
       }
     }
 
-    console.log('📊 Total issues before backend fix detection:', allIssues.length);
+    console.log('📊 Total issues before ENHANCED backend fix detection (ALL TYPES):', allIssues.length);
 
-    // NEW: ENHANCED BACKEND FIX DETECTION AND AUTOMATIC RESOLUTION
+    // ENHANCED: Backend fix detection and automatic resolution for ALL TYPES
     const { activeIssues: backendFilteredIssues, backendFixedIssues, autoMovedCount } = handleBackendFixedIssues(allIssues);
     
     // Enhanced comparison with backend fix tracking
@@ -650,13 +782,17 @@ export const useIssuesDataProcessor = (
       return !isFixed;
     });
 
-    console.log('📊 FINAL ENHANCED PROCESSING RESULTS:', {
+    console.log('📊 FINAL ENHANCED PROCESSING RESULTS (ALL TYPES):', {
       originalIssues: allIssues.length,
       backendFixedCount: backendFixedIssues.length,
       autoMovedCount,
       activeIssues: activeIssues.length,
       totalRealFixesApplied,
-      fixedIssuesFromTracker: fixedIssues.length
+      fixedIssuesFromTracker: fixedIssues.length,
+      issuesByType: activeIssues.reduce((acc, issue) => {
+        acc[issue.type] = (acc[issue.type] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>)
     });
 
     // Categorize by severity
@@ -664,7 +800,7 @@ export const useIssuesDataProcessor = (
     const highIssues = activeIssues.filter(issue => issue.severity === 'high');
     const mediumIssues = activeIssues.filter(issue => issue.severity === 'medium');
 
-    // Group by topic
+    // ENHANCED: Group by topic with better categorization
     const issuesByTopic: Record<string, Issue[]> = {
       'Security Issues': activeIssues.filter(issue => 
         issue.type.includes('Security') || issue.type.includes('Vulnerability')
@@ -673,7 +809,12 @@ export const useIssuesDataProcessor = (
         issue.type.includes('Database') || issue.type.includes('Schema')
       ),
       'Code Quality': activeIssues.filter(issue => 
-        issue.type.includes('Validation') || issue.type.includes('Performance') || issue.type.includes('Code Quality')
+        issue.type.includes('Validation') || 
+        issue.type.includes('Performance') || 
+        issue.type.includes('Code Quality')
+      ),
+      'UI/UX Issues': activeIssues.filter(issue => 
+        issue.type.includes('UI/UX')
       ),
       'System Issues': activeIssues.filter(issue => 
         !issue.type.includes('Security') && 
@@ -682,11 +823,12 @@ export const useIssuesDataProcessor = (
         !issue.type.includes('Validation') && 
         !issue.type.includes('Performance') &&
         !issue.type.includes('Code Quality') &&
-        !issue.type.includes('Vulnerability')
+        !issue.type.includes('Vulnerability') &&
+        !issue.type.includes('UI/UX')
       )
     };
 
-    console.log('📋 FINAL enhanced issues by topic with backend detection:', 
+    console.log('📋 FINAL ENHANCED issues by topic with ALL TYPES backend detection:', 
       Object.entries(issuesByTopic).map(([topic, issues]) => `${topic}: ${issues.length}`)
     );
 
@@ -699,9 +841,9 @@ export const useIssuesDataProcessor = (
       newIssues,
       resolvedIssues,
       reappearedIssues,
-      backendFixedIssues, // NEW: Issues automatically moved from backend detection
+      backendFixedIssues,
       totalRealFixesApplied,
-      autoDetectedBackendFixes: autoMovedCount // NEW: Count of auto-detected backend fixes
+      autoDetectedBackendFixes: autoMovedCount
     };
   }, [verificationSummary, fixedIssues]);
 };

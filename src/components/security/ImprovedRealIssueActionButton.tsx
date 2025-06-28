@@ -20,7 +20,7 @@ const ImprovedRealIssueActionButton: React.FC<ImprovedRealIssueActionButtonProps
   const [isBackendFixed, setIsBackendFixed] = useState(false);
   const { toast } = useToast();
 
-  // Check if this issue is already fixed in backend
+  // ENHANCED: Check if this issue is already fixed in backend (ALL TYPES)
   useEffect(() => {
     const checkBackendFixStatus = () => {
       // Check if issue was marked as backend fixed
@@ -30,7 +30,7 @@ const ImprovedRealIssueActionButton: React.FC<ImprovedRealIssueActionButtonProps
         return;
       }
 
-      // Check specific implementation status for security issues
+      // SECURITY ISSUES
       if (issue.message.includes('Multi-Factor Authentication')) {
         const implemented = localStorage.getItem('mfa_enforcement_implemented') === 'true';
         if (implemented) {
@@ -62,6 +62,36 @@ const ImprovedRealIssueActionButton: React.FC<ImprovedRealIssueActionButtonProps
           setIsFixed(true);
         }
       }
+      // NEW: UI/UX ISSUES
+      else if (issue.type.includes('UI/UX') || issue.message.includes('interface validation') || issue.message.includes('user experience')) {
+        const uiuxFixed = localStorage.getItem('uiux_improvements_applied') === 'true';
+        const validationEnhanced = localStorage.getItem('form_validation_enhanced') === 'true';
+        if (uiuxFixed || validationEnhanced) {
+          setIsBackendFixed(true);
+          setIsFixed(true);
+        }
+      } else if (issue.message.includes('Accessibility')) {
+        const implemented = localStorage.getItem('accessibility_enhanced') === 'true';
+        if (implemented) {
+          setIsBackendFixed(true);
+          setIsFixed(true);
+        }
+      }
+      // NEW: CODE QUALITY ISSUES
+      else if (issue.type.includes('Code Quality') || issue.message.includes('maintainability') || issue.message.includes('best practices')) {
+        const codeQualityFixed = localStorage.getItem('code_quality_improved') === 'true';
+        const refactoringDone = localStorage.getItem('code_refactoring_completed') === 'true';
+        if (codeQualityFixed || refactoringDone) {
+          setIsBackendFixed(true);
+          setIsFixed(true);
+        }
+      } else if (issue.message.includes('Performance optimization')) {
+        const implemented = localStorage.getItem('performance_optimized') === 'true';
+        if (implemented) {
+          setIsBackendFixed(true);
+          setIsFixed(true);
+        }
+      }
     };
 
     checkBackendFixStatus();
@@ -79,7 +109,7 @@ const ImprovedRealIssueActionButton: React.FC<ImprovedRealIssueActionButtonProps
     }
 
     setIsApplying(true);
-    console.log('🔧 Applying improved real fix for issue:', issue.type);
+    console.log('🔧 Applying ENHANCED real fix for issue:', issue.type);
 
     try {
       // Generate and apply the real fix using the improved handler
@@ -94,12 +124,12 @@ const ImprovedRealIssueActionButton: React.FC<ImprovedRealIssueActionButtonProps
           onIssueFixed(issue, fix);
           
           toast({
-            title: "🎯 Real Fix Applied Successfully",
+            title: "🎯 ENHANCED Real Fix Applied Successfully",
             description: `${fix.description} - Changes validated and synchronized`,
             variant: "default",
           });
           
-          console.log('✅ Real fix applied and validated:', {
+          console.log('✅ ENHANCED real fix applied and validated:', {
             issue: issue.type,
             fix: fix.description,
             validationPassed: result.validationPassed,
@@ -116,7 +146,7 @@ const ImprovedRealIssueActionButton: React.FC<ImprovedRealIssueActionButtonProps
         });
       }
     } catch (error) {
-      console.error('❌ Failed to apply real fix:', error);
+      console.error('❌ Failed to apply ENHANCED real fix:', error);
       toast({
         title: "❌ Fix Application Failed",
         description: `Failed to apply fix: ${error}`,
@@ -180,3 +210,4 @@ const ImprovedRealIssueActionButton: React.FC<ImprovedRealIssueActionButtonProps
 };
 
 export default ImprovedRealIssueActionButton;
+
