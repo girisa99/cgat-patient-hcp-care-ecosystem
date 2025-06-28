@@ -23,8 +23,33 @@ const AdminVerificationTest = () => {
   const [hasRun, setHasRun] = useState(false);
   const { toast } = useToast();
 
+  // Transform enhanced result to expected format for VerificationResultsTabs
+  const transformToLegacyFormat = (enhancedResult: EnhancedAdminModuleVerificationResult) => {
+    // Extract critical issues from database report
+    const criticalIssues = enhancedResult.databaseReport.validationSummary.issues
+      .filter(issue => issue.severity === 'critical')
+      .map(issue => issue.description);
+
+    // Extract failed checks from all issues
+    const failedChecks = enhancedResult.databaseReport.validationSummary.issues
+      .filter(issue => issue.severity !== 'info')
+      .map(issue => issue.description);
+
+    return {
+      isStable: enhancedResult.overallStabilityScore >= 80,
+      isLockedForCurrentState: enhancedResult.overallStabilityScore >= 95,
+      criticalIssues,
+      failedChecks,
+      comprehensiveResults: enhancedResult.verificationSummary,
+      overallStabilityScore: enhancedResult.overallStabilityScore,
+      databaseReport: enhancedResult.databaseReport,
+      recommendations: enhancedResult.recommendations
+    };
+  };
+
   const runEnhancedVerification = async () => {
     setIsRunning(true);
+    setHasRun(false); // Reset to allow fresh run
     console.log('🚀 Starting Enhanced Admin Module Verification with Database Fixes...');
 
     try {
@@ -33,6 +58,9 @@ const AdminVerificationTest = () => {
         description: "Running comprehensive verification with database fixes...",
         variant: "default",
       });
+
+      // Clear previous results to ensure fresh scan
+      setVerificationResult(null);
 
       const result = await EnhancedAdminModuleVerificationRunner.runEnhancedVerification();
       setVerificationResult(result);
@@ -69,10 +97,10 @@ const AdminVerificationTest = () => {
 
   // Auto-run verification on component mount
   useEffect(() => {
-    if (!hasRun) {
+    if (!hasRun && !isRunning) {
       runEnhancedVerification();
     }
-  }, [hasRun]);
+  }, [hasRun, isRunning]);
 
   return (
     <MainLayout>
@@ -162,7 +190,7 @@ const AdminVerificationTest = () => {
                   </div>
                   <div>
                     <div className="text-2xl font-bold text-green-800">
-                      {verificationResult.databaseReport.validationSummary.autoFixableIssues}
+                      {verificationResult.databaseReport.validationSummary.autoFixableIssues || 0}
                     </div>
                     <div className="text-sm text-green-600">Auto-fixable</div>
                   </div>
@@ -174,7 +202,10 @@ const AdminVerificationTest = () => {
                   </div>
                   <div>
                     <div className="text-2xl font-bold text-green-800">
-                      {Math.round((verificationResult.databaseReport.totalIssuesFixed / verificationResult.databaseReport.totalIssuesFound) * 100)}%
+                      {verificationResult.databaseReport.totalIssuesFound > 0 ? 
+                        Math.round((verificationResult.databaseReport.totalIssuesFixed / verificationResult.databaseReport.totalIssuesFound) * 100) : 
+                        100
+                      }%
                     </div>
                     <div className="text-sm text-green-600">Success Rate</div>
                   </div>
@@ -204,7 +235,7 @@ const AdminVerificationTest = () => {
           {/* Results Tabs */}
           {verificationResult && !isRunning && (
             <VerificationResultsTabs 
-              verificationResult={verificationResult as any}
+              verificationResult={transformToLegacyFormat(verificationResult)}
               onReRunVerification={runEnhancedVerification}
               isReRunning={isRunning}
             />
