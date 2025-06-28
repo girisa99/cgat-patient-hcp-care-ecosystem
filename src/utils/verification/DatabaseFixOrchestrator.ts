@@ -4,7 +4,7 @@
  * Coordinates comprehensive database issue resolution
  */
 
-import { enhancedDatabaseValidator, DatabaseValidationSummary, DatabaseIssue } from './EnhancedDatabaseValidator';
+import { EnhancedDatabaseValidator, DatabaseValidationSummary, DatabaseIssue } from './EnhancedDatabaseValidator';
 import { TypeScriptDatabaseValidator } from './TypeScriptDatabaseValidator';
 import { DatabaseGuidelinesValidator } from './DatabaseGuidelinesValidator';
 
@@ -28,7 +28,7 @@ export class DatabaseFixOrchestrator {
 
     // Step 1: Enhanced database validation
     console.log('📋 Step 1: Running enhanced database validation...');
-    const validationSummary = await enhancedDatabaseValidator.validateDatabase();
+    const validationSummary = await EnhancedDatabaseValidator.validateDatabase();
 
     // Step 2: TypeScript alignment check
     console.log('📋 Step 2: Checking TypeScript-Database alignment...');
@@ -40,7 +40,7 @@ export class DatabaseFixOrchestrator {
 
     // Step 4: Apply automatic fixes
     console.log('🔧 Step 4: Applying automatic fixes...');
-    const fixesApplied = await enhancedDatabaseValidator.applyAutoFixes(validationSummary.issues);
+    const fixesApplied = await EnhancedDatabaseValidator.applyAutoFixes(validationSummary.issues);
     validationSummary.autoFixesApplied = fixesApplied;
 
     // Step 5: Calculate overall metrics
@@ -97,7 +97,7 @@ export class DatabaseFixOrchestrator {
 
     // Enhanced Database Validation Results
     output += '🔍 ENHANCED DATABASE VALIDATION:\n';
-    output += enhancedDatabaseValidator.generateFixReport(report.validationSummary);
+    output += EnhancedDatabaseValidator.generateFixReport(report.validationSummary);
     output += '\n';
 
     // TypeScript Alignment Results

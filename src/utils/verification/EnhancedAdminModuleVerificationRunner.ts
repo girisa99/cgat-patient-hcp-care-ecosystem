@@ -4,8 +4,8 @@
  * Includes comprehensive database issue detection and fixing
  */
 
-import { databaseFixOrchestrator, ComprehensiveDatabaseReport } from './DatabaseFixOrchestrator';
-import { enhancedDatabaseValidator } from './EnhancedDatabaseValidator';
+import { DatabaseFixOrchestrator, ComprehensiveDatabaseReport } from './DatabaseFixOrchestrator';
+import { EnhancedDatabaseValidator } from './EnhancedDatabaseValidator';
 import { CodeQualityAnalyzer } from './CodeQualityAnalyzer';
 import { verificationCore } from './core/VerificationCore';
 
@@ -39,7 +39,7 @@ export class EnhancedAdminModuleVerificationRunner {
 
       // Step 2: Comprehensive database analysis and fixes
       console.log('🗄️ Step 2: Running comprehensive database analysis and fixes...');
-      const databaseReport = await databaseFixOrchestrator.runComprehensiveDatabaseFix();
+      const databaseReport = await DatabaseFixOrchestrator.runComprehensiveDatabaseFix();
 
       // Step 3: Code quality analysis
       console.log('📊 Step 3: Analyzing code quality...');
@@ -213,7 +213,7 @@ export class EnhancedAdminModuleVerificationRunner {
 
     // Database Report Summary
     report += '🗄️ DATABASE ANALYSIS:\n';
-    report += `   Tables Validated: ${enhancedDatabaseValidator.constructor.name}\n`;
+    report += `   Tables Validated: ${EnhancedDatabaseValidator.constructor.name}\n`;
     report += `   RLS Policies Checked: ✅\n`;
     report += `   Schema Compliance: ${result.databaseReport.guidelinesValidation.isValid ? '✅' : '❌'}\n`;
     report += `   TypeScript Alignment: ${result.databaseReport.typescriptAlignment.isAligned ? '✅' : '❌'}\n\n`;

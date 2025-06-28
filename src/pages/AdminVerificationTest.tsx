@@ -7,7 +7,7 @@
 import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { PageContainer } from '@/components/layout/PageContainer';
-import { enhancedAdminModuleVerificationRunner, EnhancedAdminModuleVerificationResult } from '@/utils/verification/EnhancedAdminModuleVerificationRunner';
+import { EnhancedAdminModuleVerificationRunner, EnhancedAdminModuleVerificationResult } from '@/utils/verification/EnhancedAdminModuleVerificationRunner';
 import AdminVerificationHeader from '@/components/verification/AdminVerificationHeader';
 import VerificationStatusOverview from '@/components/verification/VerificationStatusOverview';
 import VerificationLoadingState from '@/components/verification/VerificationLoadingState';
@@ -34,7 +34,7 @@ const AdminVerificationTest = () => {
         variant: "default",
       });
 
-      const result = await enhancedAdminModuleVerificationRunner.runEnhancedVerification();
+      const result = await EnhancedAdminModuleVerificationRunner.runEnhancedVerification();
       setVerificationResult(result);
       setHasRun(true);
       
