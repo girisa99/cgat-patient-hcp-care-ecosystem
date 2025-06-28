@@ -679,7 +679,10 @@ export class AutomatedVerificationOrchestrator {
       allRecommendations.push(...schemaValidation.recommendations);
     }
     if (securityScan) {
-      allRecommendations.push(...securityScan.recommendations);
+      // Convert SecurityRecommendation objects to strings by extracting title
+      allRecommendations.push(...securityScan.recommendations.map(r => 
+        typeof r === 'string' ? r : r.title || r.description || 'Security recommendation'
+      ));
     }
     if (codeQuality) {
       allRecommendations.push(...codeQuality.recommendations);

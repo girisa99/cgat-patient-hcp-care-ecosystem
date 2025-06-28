@@ -4,7 +4,6 @@ export * from './CoreVerificationOrchestrator';
 export * from './UIUXOrchestrator';
 export * from './GuidelinesValidator';
 export * from './VerificationSummaryGenerator';
-export * from './types';
 export * from './DatabaseGuidelinesValidator';
 export * from './CodeQualityAnalyzer';
 export * from './EnhancedDatabaseValidator';
@@ -18,3 +17,10 @@ export {
   validateTableSchema, 
   ensureTypescriptDatabaseAlignment 
 } from './TypeScriptDatabaseValidator';
+
+// Export types only from types module to avoid conflicts
+export type { 
+  DatabaseValidationResult,
+  CodeQualityResult,
+  DatabaseIssue 
+} from './types';
