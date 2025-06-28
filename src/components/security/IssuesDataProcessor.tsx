@@ -62,41 +62,62 @@ export const useIssuesDataProcessor = (
       });
     }
 
-    // Add issues from comprehensive results if available
-    if (verificationSummary.comprehensiveResults) {
-      // Check if comprehensive results has performance data
-      if (verificationSummary.comprehensiveResults.performanceMetrics?.issues) {
-        verificationSummary.comprehensiveResults.performanceMetrics.issues.forEach((issue: string) => {
-          allIssues.push({
-            type: 'Performance Issue',
-            message: issue,
-            source: 'Performance Monitor',
-            severity: 'medium'
-          });
+    // Add performance issues from performanceMetrics
+    if (verificationSummary.performanceMetrics?.issues) {
+      verificationSummary.performanceMetrics.issues.forEach((issue: string) => {
+        allIssues.push({
+          type: 'Performance Issue',
+          message: issue,
+          source: 'Performance Monitor',
+          severity: 'medium'
         });
-      }
-
-      // Check if comprehensive results has database validation data
-      if (verificationSummary.comprehensiveResults.databaseValidation?.issues) {
-        verificationSummary.comprehensiveResults.databaseValidation.issues.forEach((issue: string) => {
-          allIssues.push({
-            type: 'Database Issue',
-            message: issue,
-            source: 'Database Validator',
-            severity: 'high'
-          });
-        });
-      }
+      });
     }
 
-    // Add general issues if available
-    if (verificationSummary.issues && verificationSummary.issues.length > 0) {
-      verificationSummary.issues.forEach(issue => {
+    // Add database validation issues
+    if (verificationSummary.databaseValidation?.violations) {
+      verificationSummary.databaseValidation.violations.forEach(violation => {
         allIssues.push({
-          type: 'System Issue',
-          message: issue,
-          source: 'Verification System',
-          severity: 'medium'
+          type: 'Database Issue',
+          message: violation.message || violation.description || 'Database validation issue',
+          source: 'Database Validator',
+          severity: violation.severity === 'error' ? 'critical' : 'high'
+        });
+      });
+    }
+
+    // Add schema validation issues
+    if (verificationSummary.schemaValidation?.violations) {
+      verificationSummary.schemaValidation.violations.forEach(violation => {
+        allIssues.push({
+          type: 'Schema Issue',
+          message: violation.message || violation.description || 'Schema validation issue',
+          source: 'Schema Validator',
+          severity: violation.severity === 'error' ? 'critical' : 'high'
+        });
+      });
+    }
+
+    // Add security scan issues
+    if (verificationSummary.securityScan?.vulnerabilities) {
+      verificationSummary.securityScan.vulnerabilities.forEach(vulnerability => {
+        allIssues.push({
+          type: 'Security Vulnerability',
+          message: vulnerability.description || 'Security vulnerability detected',
+          source: 'Security Scanner',
+          severity: vulnerability.severity
+        });
+      });
+    }
+
+    // Add code quality issues
+    if (verificationSummary.codeQuality?.issues) {
+      verificationSummary.codeQuality.issues.forEach(issue => {
+        allIssues.push({
+          type: 'Code Quality Issue',
+          message: issue.description || 'Code quality issue',
+          source: 'Code Quality Analyzer',
+          severity: issue.severity
         });
       });
     }
@@ -115,12 +136,24 @@ export const useIssuesDataProcessor = (
 
     // Group by topic
     const issuesByTopic: Record<string, Issue[]> = {
-      'Security Issues': activeIssues.filter(issue => issue.type.includes('Security')),
-      'Database Issues': activeIssues.filter(issue => issue.type.includes('Database')),
-      'Code Quality': activeIssues.filter(issue => 
-        issue.type.includes('Validation') || issue.type.includes('Performance')
+      'Security Issues': activeIssues.filter(issue => 
+        issue.type.includes('Security') || issue.type.includes('Vulnerability')
       ),
-      'System Issues': activeIssues.filter(issue => issue.type.includes('System'))
+      'Database Issues': activeIssues.filter(issue => 
+        issue.type.includes('Database') || issue.type.includes('Schema')
+      ),
+      'Code Quality': activeIssues.filter(issue => 
+        issue.type.includes('Validation') || issue.type.includes('Performance') || issue.type.includes('Code Quality')
+      ),
+      'System Issues': activeIssues.filter(issue => 
+        !issue.type.includes('Security') && 
+        !issue.type.includes('Database') && 
+        !issue.type.includes('Schema') &&
+        !issue.type.includes('Validation') && 
+        !issue.type.includes('Performance') &&
+        !issue.type.includes('Code Quality') &&
+        !issue.type.includes('Vulnerability')
+      )
     };
 
     return {
