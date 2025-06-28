@@ -1,145 +1,144 @@
-interface FixedIssueRecord {
-  id: string;
-  issue: {
-    type: string;
-    message: string;
-    severity: string;
-    category: string;
-    description: string;
-  };
-  fixedDate: string; // YYYY-MM-DD format
-  fixedTimestamp: string; // ISO string
-  fixMethod: 'manual' | 'automatic';
+
+import { supabase } from '@/integrations/supabase/client';
+
+export interface FixedIssueData {
+  type: string;
+  message: string;
+  severity: string;
+  category: string;
+  description: string;
 }
 
-export const recordFixedIssue = (
-  issue: {
-    type: string;
-    message: string;
-    severity: string;
-    category?: string;
-    description?: string;
-  },
-  fixMethod: 'manual' | 'automatic' = 'manual'
-): void => {
+export interface DailyFixStats {
+  fix_date: string;
+  category: string;
+  fix_count: number;
+  severity_breakdown: Record<string, number>;
+}
+
+// Record a fixed issue in the database
+export const recordFixedIssue = async (
+  issueData: FixedIssueData, 
+  fixMethod: 'manual' | 'automatic' | 'backend_detected' = 'manual'
+) => {
   try {
-    const now = new Date();
-    const fixedDate = now.toISOString().split('T')[0];
+    const { data: { user } } = await supabase.auth.getUser();
     
-    // Determine category from issue type if not provided
-    let category = issue.category || 'System';
-    if (issue.type.toLowerCase().includes('security')) {
-      category = 'Security';
-    } else if (issue.type.toLowerCase().includes('ui') || issue.type.toLowerCase().includes('ux')) {
-      category = 'UI/UX';
-    } else if (issue.type.toLowerCase().includes('database') || issue.type.toLowerCase().includes('db')) {
-      category = 'Database';
-    } else if (issue.type.toLowerCase().includes('code') || issue.type.toLowerCase().includes('quality')) {
-      category = 'Code Quality';
+    if (!user) {
+      console.error('User not authenticated');
+      return false;
     }
 
-    const record: FixedIssueRecord = {
-      id: `fix_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      issue: {
-        type: issue.type,
-        message: issue.message,
-        severity: issue.severity || 'medium',
-        category,
-        description: issue.description || issue.message
-      },
-      fixedDate,
-      fixedTimestamp: now.toISOString(),
-      fixMethod
-    };
+    const { error } = await supabase
+      .from('issue_fixes')
+      .insert({
+        user_id: user.id,
+        issue_type: issueData.type,
+        issue_message: issueData.message,
+        issue_source: issueData.category + ' Scanner',
+        issue_severity: issueData.severity,
+        category: issueData.category,
+        fix_method: fixMethod,
+        metadata: {
+          description: issueData.description,
+          timestamp: new Date().toISOString()
+        }
+      });
 
-    // Load existing data
-    const existing = localStorage.getItem('daily-progress-history');
-    const data: FixedIssueRecord[] = existing ? JSON.parse(existing) : [];
-    
-    // Add new record
-    data.unshift(record);
-    
-    // Keep only last 365 days of data to prevent localStorage bloat
-    const oneYearAgo = new Date();
-    oneYearAgo.setDate(oneYearAgo.getDate() - 365);
-    const filteredData = data.filter(item => 
-      new Date(item.fixedDate) >= oneYearAgo
-    );
-    
-    // Save back to localStorage
-    localStorage.setItem('daily-progress-history', JSON.stringify(filteredData));
-    
-    console.log('📅 Daily progress: Recorded fixed issue:', {
-      type: issue.type,
-      category,
-      severity: issue.severity,
-      fixMethod,
-      date: fixedDate
-    });
+    if (error) {
+      console.error('Error recording fixed issue:', error);
+      return false;
+    }
 
-    // Trigger storage event for components listening
-    window.dispatchEvent(new StorageEvent('storage', {
-      key: 'daily-progress-history',
-      newValue: JSON.stringify(filteredData),
-      oldValue: existing
-    }));
-
+    console.log('✅ Fixed issue recorded in database:', issueData.type);
+    return true;
   } catch (error) {
-    console.error('Error recording fixed issue for daily progress:', error);
+    console.error('Error in recordFixedIssue:', error);
+    return false;
   }
 };
 
-export const getDailyProgressStats = (days: number = 7) => {
+// Get daily fix statistics
+export const getDailyFixStats = async (daysBack: number = 7): Promise<DailyFixStats[]> => {
   try {
-    const stored = localStorage.getItem('daily-progress-history');
-    const data: FixedIssueRecord[] = stored ? JSON.parse(stored) : [];
+    const { data: { user } } = await supabase.auth.getUser();
     
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - days);
-    
-    const filteredData = data.filter(record => 
-      new Date(record.fixedDate) >= cutoffDate
-    );
-    
-    // Group by date
-    const byDate = filteredData.reduce((acc, record) => {
-      const date = record.fixedDate;
-      if (!acc[date]) {
-        acc[date] = [];
-      }
-      acc[date].push(record);
-      return acc;
-    }, {} as Record<string, FixedIssueRecord[]>);
-    
-    // Group by category
-    const byCategory = filteredData.reduce((acc, record) => {
-      const category = record.issue.category;
-      acc[category] = (acc[category] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-    
-    // Group by severity
-    const bySeverity = filteredData.reduce((acc, record) => {
-      const severity = record.issue.severity;
-      acc[severity] = (acc[severity] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-    
-    return {
-      totalFixes: filteredData.length,
-      byDate,
-      byCategory,
-      bySeverity,
-      data: filteredData
-    };
+    if (!user) {
+      console.error('User not authenticated');
+      return [];
+    }
+
+    const { data, error } = await supabase
+      .rpc('get_daily_fix_stats', {
+        days_back: daysBack,
+        target_user_id: user.id
+      });
+
+    if (error) {
+      console.error('Error fetching daily fix stats:', error);
+      return [];
+    }
+
+    return data || [];
   } catch (error) {
-    console.error('Error getting daily progress stats:', error);
-    return {
-      totalFixes: 0,
-      byDate: {},
-      byCategory: {},
-      bySeverity: {},
-      data: []
-    };
+    console.error('Error in getDailyFixStats:', error);
+    return [];
+  }
+};
+
+// Sync current active issues with the database
+export const syncActiveIssues = async (issues: any[]) => {
+  try {
+    const issuesData = issues.map(issue => ({
+      type: issue.type,
+      message: issue.message,
+      source: issue.source,
+      severity: issue.severity || 'medium'
+    }));
+
+    const { error } = await supabase
+      .rpc('sync_active_issues', {
+        issues_data: issuesData
+      });
+
+    if (error) {
+      console.error('Error syncing active issues:', error);
+      return false;
+    }
+
+    console.log('✅ Active issues synced with database:', issuesData.length);
+    return true;
+  } catch (error) {
+    console.error('Error in syncActiveIssues:', error);
+    return false;
+  }
+};
+
+// Get historical fixed issues from database
+export const getHistoricalFixedIssues = async (limit: number = 100) => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      console.error('User not authenticated');
+      return [];
+    }
+
+    const { data, error } = await supabase
+      .from('issue_fixes')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('fixed_at', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.error('Error fetching historical fixed issues:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error in getHistoricalFixedIssues:', error);
+    return [];
   }
 };

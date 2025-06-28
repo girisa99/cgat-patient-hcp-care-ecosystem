@@ -9,6 +9,48 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      active_issues: {
+        Row: {
+          category: string
+          created_at: string
+          first_detected: string
+          id: string
+          issue_message: string
+          issue_severity: string
+          issue_source: string
+          issue_type: string
+          last_seen: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          first_detected?: string
+          id?: string
+          issue_message: string
+          issue_severity: string
+          issue_source: string
+          issue_type: string
+          last_seen?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          first_detected?: string
+          id?: string
+          issue_message?: string
+          issue_severity?: string
+          issue_source?: string
+          issue_type?: string
+          last_seen?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       api_consumption_logs: {
         Row: {
           api_integration_id: string
@@ -872,6 +914,48 @@ export type Database = {
         }
         Relationships: []
       }
+      issue_fixes: {
+        Row: {
+          category: string
+          created_at: string
+          fix_method: string
+          fixed_at: string
+          id: string
+          issue_message: string
+          issue_severity: string
+          issue_source: string
+          issue_type: string
+          metadata: Json | null
+          user_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          fix_method: string
+          fixed_at?: string
+          id?: string
+          issue_message: string
+          issue_severity: string
+          issue_source: string
+          issue_type: string
+          metadata?: Json | null
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          fix_method?: string
+          fixed_at?: string
+          id?: string
+          issue_message?: string
+          issue_severity?: string
+          issue_source?: string
+          issue_type?: string
+          metadata?: Json | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       marketplace_listings: {
         Row: {
           category: string
@@ -1417,6 +1501,15 @@ export type Database = {
         Args: { key_type: string }
         Returns: string
       }
+      get_daily_fix_stats: {
+        Args: { days_back?: number; target_user_id?: string }
+        Returns: {
+          fix_date: string
+          category: string
+          fix_count: number
+          severity_breakdown: Json
+        }[]
+      }
       get_user_accessible_facilities: {
         Args: { user_id: string }
         Returns: {
@@ -1453,6 +1546,10 @@ export type Database = {
           role_name: Database["public"]["Enums"]["user_role"]
         }
         Returns: boolean
+      }
+      sync_active_issues: {
+        Args: { issues_data: Json }
+        Returns: undefined
       }
       update_api_key_usage: {
         Args: { key_hash: string }

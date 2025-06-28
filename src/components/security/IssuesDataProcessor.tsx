@@ -4,7 +4,7 @@ import { VerificationSummary } from '@/utils/verification/AutomatedVerificationO
 import { Issue, ProcessedIssuesData } from '@/types/issuesTypes';
 import { FixedIssue } from '@/hooks/useFixedIssuesTracker';
 import { saveIssueSnapshot, markIssueAsResolved, generateIssueId } from '@/utils/issues/issueStorageUtils';
-import { recordFixedIssue } from '@/utils/dailyProgressTracker';
+import { recordFixedIssue, syncActiveIssues } from '@/utils/dailyProgressTracker';
 import { scanForActualSecurityIssues } from '@/utils/issues/issueScanner';
 
 export const useIssuesDataProcessor = (
@@ -34,6 +34,11 @@ export const useIssuesDataProcessor = (
     // Enhanced scanning for actual security issues with backend fix detection
     const securityIssues = scanForActualSecurityIssues();
     setAllIssues(securityIssues);
+    
+    // Sync active issues with database
+    syncActiveIssues(securityIssues).catch(error => {
+      console.error('Failed to sync active issues with database:', error);
+    });
   }, []);
 
   useEffect(() => {
@@ -131,12 +136,12 @@ export const useIssuesDataProcessor = (
   return processedData;
 };
 
-// Enhanced mark as really fixed function with daily progress tracking
-export const markIssueAsReallyFixed = (issue: Issue) => {
+// Enhanced mark as really fixed function with database integration
+export const markIssueAsReallyFixed = async (issue: Issue) => {
   markIssueAsResolved(issue);
   
-  // Record in daily progress tracker
-  recordFixedIssue({
+  // Record in database via daily progress tracker
+  const success = await recordFixedIssue({
     type: issue.type,
     message: issue.message,
     severity: issue.severity || 'medium',
@@ -144,5 +149,9 @@ export const markIssueAsReallyFixed = (issue: Issue) => {
     description: `${issue.type}: ${issue.message}`
   }, 'manual');
   
-  console.log('🔧 Issue marked as really fixed and recorded in daily progress:', issue.type);
+  if (success) {
+    console.log('🔧 Issue marked as really fixed and recorded in database:', issue.type);
+  } else {
+    console.error('❌ Failed to record fixed issue in database:', issue.type);
+  }
 };
