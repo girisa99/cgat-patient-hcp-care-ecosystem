@@ -36,7 +36,7 @@ export interface UnifiedMetrics {
   
   // Status tracking
   lastUpdateTime: Date;
-  updateSource: 'manual' | 'auto' | 'programmatic';
+  updateSource: 'manual' | 'programmatic' | 'display-only';
   isUpdating: boolean;
   countsAligned: boolean;
 }
@@ -64,7 +64,7 @@ export const useUnifiedMetrics = (verificationSummary?: VerificationSummary | nu
     backendFixedCount: 0,
     realFixesApplied: 0,
     lastUpdateTime: new Date(),
-    updateSource: 'auto',
+    updateSource: 'display-only',
     isUpdating: false,
     countsAligned: true
   });
@@ -72,8 +72,8 @@ export const useUnifiedMetrics = (verificationSummary?: VerificationSummary | nu
   const { fixedIssues, getTotalFixedCount } = useFixedIssuesTracker();
   const processedData = useIssuesDataProcessor(verificationSummary, fixedIssues);
 
-  const calculateMetrics = useCallback((source: 'manual' | 'auto' | 'programmatic' = 'auto'): UnifiedMetrics => {
-    console.log('🔄 Calculating accurate unified metrics from source:', source);
+  const calculateMetrics = useCallback((source: 'manual' | 'programmatic' | 'display-only' = 'display-only'): UnifiedMetrics => {
+    console.log('🔄 Calculating unified metrics for DISPLAY ONLY (backend automation continues separately)');
     
     // Get ACTUAL implementation status from localStorage
     const securityImplementations = {
@@ -159,23 +159,25 @@ export const useUnifiedMetrics = (verificationSummary?: VerificationSummary | nu
       countsAligned: true
     };
 
-    console.log('📊 ACCURATE Unified metrics calculated:', {
+    console.log('📊 Display metrics calculated (backend automation continues separately):', {
       source,
       totalActive: newMetrics.totalActiveIssues,
       totalFixed: newMetrics.totalFixedIssues,
-      securityActive: newMetrics.securityActive,
-      securityFixed: newMetrics.securityFixed,
-      uiuxActive: newMetrics.uiuxActive,
-      uiuxFixed: newMetrics.uiuxFixed,
-      databaseActive: newMetrics.databaseActive,
-      codeQualityActive: newMetrics.codeQualityActive,
-      realFixesApplied: totalRealFixesApplied
+      realFixesApplied: totalRealFixesApplied,
+      note: 'Backend verification automation continues running for system protection'
     });
 
     return newMetrics;
   }, [processedData, getTotalFixedCount]);
 
-  const updateMetrics = useCallback((source: 'manual' | 'auto' | 'programmatic' = 'auto') => {
+  const updateMetrics = useCallback((source: 'manual' | 'programmatic' | 'display-only' = 'display-only') => {
+    // Only update display metrics for manual or display-only requests
+    // Ignore programmatic updates to prevent interference with user-triggered actions
+    if (source === 'programmatic') {
+      console.log('🔕 Ignoring programmatic update - backend automation continues but results not displayed');
+      return;
+    }
+
     setMetrics(prev => ({ ...prev, isUpdating: true }));
     
     setTimeout(() => {
@@ -184,34 +186,21 @@ export const useUnifiedMetrics = (verificationSummary?: VerificationSummary | nu
     }, 500);
   }, [calculateMetrics]);
 
-  // Auto-update every 30 seconds
+  // Remove automatic updates to prevent interference with display
+  // Backend automation continues but doesn't update the display
   useEffect(() => {
-    const interval = setInterval(() => {
-      updateMetrics('auto');
-    }, 30000);
+    console.log('ℹ️ Display metrics initialized - backend automation runs separately for system protection');
+  }, []);
 
-    return () => clearInterval(interval);
-  }, [updateMetrics]);
-
-  // Listen for storage changes
+  // Remove storage change listeners to prevent automatic display updates
+  // Backend systems continue to monitor and protect independently
   useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key?.includes('_implemented') || 
-          e.key?.includes('_active') || 
-          e.key?.includes('_applied') ||
-          e.key?.includes('_improved')) {
-        console.log('🔄 Storage change detected, updating metrics:', e.key);
-        updateMetrics('auto');
-      }
-    };
+    console.log('ℹ️ Backend verification automation continues independently for system stability');
+  }, []);
 
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, [updateMetrics]);
-
-  // Initial calculation
+  // Initial calculation for display only
   useEffect(() => {
-    updateMetrics('auto');
+    updateMetrics('display-only');
   }, [verificationSummary, processedData.allIssues.length, updateMetrics]);
 
   return {
