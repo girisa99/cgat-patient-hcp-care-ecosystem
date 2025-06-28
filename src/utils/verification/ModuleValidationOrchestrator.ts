@@ -11,11 +11,13 @@ export class ModuleValidationOrchestrator {
     console.log('🔍 Validating module creation request:', request);
     
     try {
-      // Run verification
-      const summary = await AutomatedVerificationOrchestrator.runVerification({
-        componentType: request.componentType,
+      // Run verification with proper type casting
+      const verificationRequest = {
+        componentType: request.componentType as 'hook' | 'component' | 'module' | 'template',
         description: request.description
-      });
+      };
+      
+      const summary = await AutomatedVerificationOrchestrator.runVerification(verificationRequest);
       
       // Check if creation should be blocked
       if (summary.criticalIssues > 0) {
