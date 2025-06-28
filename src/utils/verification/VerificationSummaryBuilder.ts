@@ -5,13 +5,13 @@
  */
 
 import { 
-  VerificationSummary, 
-  PerformanceMetrics 
+  VerificationSummary
 } from './AutomatedVerificationTypes';
 import { ValidationResult } from './SimplifiedValidator';
 import { AuditResult } from './ComponentAuditor';
 import { DatabaseValidationResult, DatabaseGuidelinesValidator } from './DatabaseGuidelinesValidator';
 import { SchemaValidationResult, DatabaseSchemaValidator } from './DatabaseSchemaValidator';
+import { PerformanceMetrics } from './PerformanceMonitor';
 import { SecurityScanResult } from './SecurityScanner';
 import { CodeQualityResult } from './CodeQualityAnalyzer';
 

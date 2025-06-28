@@ -62,7 +62,7 @@ export const useIssuesDataProcessor = (
       });
     }
 
-    // Add performance issues - use recommendations from PerformanceMetrics
+    // Add performance issues - check if recommendations exist and process them
     if (verificationSummary.performanceMetrics?.recommendations) {
       verificationSummary.performanceMetrics.recommendations.forEach((recommendation) => {
         allIssues.push({

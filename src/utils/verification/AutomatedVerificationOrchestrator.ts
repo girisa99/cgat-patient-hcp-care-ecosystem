@@ -1,4 +1,3 @@
-
 /**
  * Automated Verification Orchestrator - Refactored Main Controller
  * 
@@ -345,8 +344,8 @@ export class AutomatedVerificationOrchestrator {
       const [auditResults, duplicates, databaseValidation, schemaValidation, securityScan, codeQuality, performanceMetrics] = await Promise.all([
         this.verificationRunner.runComponentAudit(),
         this.verificationRunner.runDuplicateDetection(),
-        this.verificationRunner.runDatabaseValidation({ componentType: 'module', moduleName: 'system' }),
-        this.verificationRunner.runSchemaValidation({ componentType: 'module', moduleName: 'system' }),
+        this.verificationRunner.runDatabaseValidation({ componentType: 'module', moduleName: 'system', description: 'Comprehensive system scan' }),
+        this.verificationRunner.runSchemaValidation({ componentType: 'module', moduleName: 'system', description: 'Comprehensive schema validation' }),
         this.verificationRunner.runSecurityScan(),
         this.verificationRunner.runCodeQualityAnalysis(),
         this.verificationRunner.runPerformanceAnalysis()

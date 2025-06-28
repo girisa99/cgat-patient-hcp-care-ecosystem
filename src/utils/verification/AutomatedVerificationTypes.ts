@@ -10,29 +10,8 @@ import { SchemaValidationResult } from './DatabaseSchemaValidator';
 import { SecurityScanResult } from './SecurityScanner';
 import { CodeQualityResult } from './CodeQualityAnalyzer';
 
-// Export PerformanceMetrics interface
-export interface PerformanceMetrics {
-  timestamp: string;
-  componentRenderTimes: Array<{
-    componentName: string;
-    averageRenderTime: number;
-    renderCount: number;
-  }>;
-  bundleSize: {
-    totalSize: number;
-    chunkSizes: Record<string, number>;
-  };
-  memoryUsage: {
-    jsHeapSizeLimit: number;
-    totalJSHeapSize: number;
-    usedJSHeapSize: number;
-  };
-  networkMetrics: {
-    apiCallCount: number;
-    averageResponseTime: number;
-    failedRequests: number;
-  };
-}
+// Import and re-export PerformanceMetrics from PerformanceMonitor to avoid conflicts
+export type { PerformanceMetrics } from './PerformanceMonitor';
 
 export interface AutomatedVerificationConfig {
   enableRealTimeChecks: boolean;
@@ -63,7 +42,7 @@ export interface VerificationSummary {
   canonicalValidation: string;
   databaseValidation?: DatabaseValidationResult;
   schemaValidation?: SchemaValidationResult;
-  performanceMetrics?: PerformanceMetrics;
+  performanceMetrics?: import('./PerformanceMonitor').PerformanceMetrics;
   securityScan?: SecurityScanResult;
   codeQuality?: CodeQualityResult;
   issuesFound: number;
