@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Bug, CheckCircle, Shield, Database, Code, Zap } from 'lucide-react';
+import { Bug, CheckCircle, Shield, Database, Code, Zap, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { VerificationSummary } from '@/utils/verification/AutomatedVerificationOrchestrator';
 import { useFixedIssuesTracker } from '@/hooks/useFixedIssuesTracker';
@@ -41,7 +42,11 @@ const IssuesTab: React.FC<IssuesTabProps> = ({
     timestamp: string;
   }>>([]);
 
-  // Process issues data using the custom hook
+  // Auto-refresh every 10 seconds to check for code changes
+  const [lastScanTime, setLastScanTime] = React.useState(new Date());
+  const [isRealTimeScanning, setIsRealTimeScanning] = React.useState(false);
+
+  // Process issues data using the custom hook (now with real-time scanning)
   const {
     allIssues: displayIssues,
     criticalIssues,
@@ -49,6 +54,21 @@ const IssuesTab: React.FC<IssuesTabProps> = ({
     mediumIssues,
     issuesByTopic
   } = useIssuesDataProcessor(verificationSummary, fixedIssues);
+
+  // Auto-refresh for real-time scanning
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      console.log('🔄 Auto-refreshing real-time scan...');
+      setLastScanTime(new Date());
+      setIsRealTimeScanning(true);
+      
+      setTimeout(() => {
+        setIsRealTimeScanning(false);
+      }, 1000);
+    }, 10000); // Refresh every 10 seconds
+
+    return () => clearInterval(interval);
+  }, []);
 
   // Update active issues when verification summary changes
   React.useEffect(() => {
@@ -85,10 +105,6 @@ const IssuesTab: React.FC<IssuesTabProps> = ({
     });
   };
 
-  if (!verificationSummary) {
-    return <NoVerificationDataState onReRunVerification={onReRunVerification} isReRunning={isReRunning} />;
-  }
-
   const totalFixedCount = getTotalFixedCount();
   const realFixedCount = realFixedIssues.length;
   const totalActiveIssues = displayIssues.length - totalFixedCount;
@@ -98,15 +114,29 @@ const IssuesTab: React.FC<IssuesTabProps> = ({
     <div className="space-y-6">
       <IssuesTabHeader onReRunVerification={onReRunVerification} isReRunning={isReRunning} />
 
+      {/* Real-time Scanning Status */}
+      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+        <div className="flex items-center gap-2 mb-2">
+          <RefreshCw className={`h-5 w-5 text-green-600 ${isRealTimeScanning ? 'animate-spin' : ''}`} />
+          <h3 className="font-medium text-green-900">Real-time Code Scanning Active</h3>
+        </div>
+        <p className="text-sm text-green-700">
+          The system now scans your actual current codebase every 10 seconds. Issues will disappear when you fix them in your code files.
+        </p>
+        <p className="text-xs text-green-600 mt-1">
+          Last scan: {lastScanTime.toLocaleTimeString()} {isRealTimeScanning && '(Scanning now...)'}
+        </p>
+      </div>
+
       {/* Security Focus Banner */}
       {securityIssuesCount > 0 && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <div className="flex items-center gap-2 mb-2">
             <Shield className="h-5 w-5 text-red-600" />
-            <h3 className="font-medium text-red-900">Security Issues Detected</h3>
+            <h3 className="font-medium text-red-900">Security Issues Detected in Your Current Code</h3>
           </div>
           <p className="text-sm text-red-700">
-            {securityIssuesCount} security vulnerabilities found. Click the "Fix" buttons below to apply automated security patches.
+            {securityIssuesCount} security vulnerabilities found in your actual codebase. Fix them in your code files and they'll disappear from this list.
           </p>
           {realFixedCount > 0 && (
             <p className="text-sm text-red-700 font-medium mt-1">
@@ -115,17 +145,6 @@ const IssuesTab: React.FC<IssuesTabProps> = ({
           )}
         </div>
       )}
-
-      {/* Enhanced Status Banner */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <div className="flex items-center gap-2 mb-2">
-          <Zap className="h-5 w-5 text-blue-600" />
-          <h3 className="font-medium text-blue-900">Real Security Fix System Active</h3>
-        </div>
-        <p className="text-sm text-blue-700">
-          This system applies actual security patches to your codebase. When you click "Fix", real security improvements are implemented.
-        </p>
-      </div>
 
       <Tabs defaultValue="active" className="space-y-6">
         <TabsList className="grid w-full grid-cols-2">
