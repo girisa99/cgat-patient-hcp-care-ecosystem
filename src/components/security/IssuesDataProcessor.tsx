@@ -33,6 +33,8 @@ export const useIssuesDataProcessor = (
       };
     }
 
+    console.log('🔍 Processing verification summary:', verificationSummary);
+
     // Convert verification summary to issues format
     const allIssues: Issue[] = [];
 
@@ -44,6 +46,18 @@ export const useIssuesDataProcessor = (
           message: issue,
           source: 'Validation System',
           severity: 'high'
+        });
+      });
+    }
+
+    // Add validation warnings as medium severity issues
+    if (verificationSummary.validationResult?.warnings) {
+      verificationSummary.validationResult.warnings.forEach(warning => {
+        allIssues.push({
+          type: 'Validation Warning',
+          message: warning,
+          source: 'Validation System',
+          severity: 'medium'
         });
       });
     }
@@ -98,8 +112,9 @@ export const useIssuesDataProcessor = (
       });
     }
 
-    // Add security scan issues
+    // Add security scan vulnerabilities - THIS WAS MISSING!
     if (verificationSummary.securityScan?.vulnerabilities) {
+      console.log('🔒 Processing security vulnerabilities:', verificationSummary.securityScan.vulnerabilities);
       verificationSummary.securityScan.vulnerabilities.forEach(vulnerability => {
         allIssues.push({
           type: 'Security Vulnerability',
@@ -122,6 +137,8 @@ export const useIssuesDataProcessor = (
       });
     }
 
+    console.log('📊 Total issues found before filtering:', allIssues.length);
+
     // Filter out fixed issues
     const activeIssues = allIssues.filter(issue => 
       !fixedIssues.some(fixed => 
@@ -129,10 +146,14 @@ export const useIssuesDataProcessor = (
       )
     );
 
+    console.log('📊 Active issues after filtering fixed:', activeIssues.length);
+
     // Categorize by severity
     const criticalIssues = activeIssues.filter(issue => issue.severity === 'critical');
     const highIssues = activeIssues.filter(issue => issue.severity === 'high');
     const mediumIssues = activeIssues.filter(issue => issue.severity === 'medium');
+
+    console.log('📊 Issues by severity - Critical:', criticalIssues.length, 'High:', highIssues.length, 'Medium:', mediumIssues.length);
 
     // Group by topic
     const issuesByTopic: Record<string, Issue[]> = {
@@ -155,6 +176,8 @@ export const useIssuesDataProcessor = (
         !issue.type.includes('Vulnerability')
       )
     };
+
+    console.log('📋 Issues by topic:', Object.entries(issuesByTopic).map(([topic, issues]) => `${topic}: ${issues.length}`));
 
     return {
       allIssues: activeIssues,

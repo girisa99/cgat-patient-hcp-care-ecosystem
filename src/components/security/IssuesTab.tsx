@@ -53,7 +53,8 @@ const IssuesTab: React.FC<IssuesTabProps> = ({
   const topicIcons = {
     'Security Issues': Shield,
     'Database Issues': Database,
-    'Code Quality': Code
+    'Code Quality': Code,
+    'System Issues': Bug
   };
 
   // Action handlers
@@ -110,6 +111,16 @@ const IssuesTab: React.FC<IssuesTabProps> = ({
   }
 
   const fixedCount = getTotalFixedCount();
+  const totalActiveIssues = displayIssues.length;
+
+  console.log('🔍 IssuesTab rendering with:', {
+    totalIssues: displayIssues.length,
+    criticalIssues: criticalIssues.length,
+    highIssues: highIssues.length,
+    mediumIssues: mediumIssues.length,
+    fixedCount,
+    issuesByTopic: Object.entries(issuesByTopic).map(([topic, issues]) => `${topic}: ${issues.length}`)
+  });
 
   return (
     <div className="space-y-6">
@@ -119,7 +130,7 @@ const IssuesTab: React.FC<IssuesTabProps> = ({
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="active" className="flex items-center">
             <Bug className="h-4 w-4 mr-2" />
-            Active Issues ({displayIssues.length})
+            Active Issues ({totalActiveIssues})
           </TabsTrigger>
           <TabsTrigger value="fixed" className="flex items-center">
             <CheckCircle className="h-4 w-4 mr-2" />
@@ -135,7 +146,19 @@ const IssuesTab: React.FC<IssuesTabProps> = ({
             fixedCount={fixedCount}
           />
 
-          {/* Issues by Topic with Fix and Run Buttons */}
+          {/* Debug information */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="bg-gray-50 p-4 rounded-lg text-sm">
+              <h4 className="font-medium mb-2">Debug Info:</h4>
+              <p>Total issues processed: {displayIssues.length}</p>
+              <p>Verification summary exists: {verificationSummary ? 'Yes' : 'No'}</p>
+              <p>Security scan vulnerabilities: {verificationSummary?.securityScan?.vulnerabilities?.length || 0}</p>
+              <p>Database validation violations: {verificationSummary?.databaseValidation?.violations?.length || 0}</p>
+              <p>Issues by topic: {JSON.stringify(Object.entries(issuesByTopic).map(([topic, issues]) => `${topic}: ${issues.length}`))}</p>
+            </div>
+          )}
+
+          {/* Issues by Topic */}
           {Object.entries(issuesByTopic).map(([topic, issues]) => {
             if (issues.length === 0) return null;
             
@@ -144,7 +167,7 @@ const IssuesTab: React.FC<IssuesTabProps> = ({
                 key={topic}
                 topic={topic}
                 issues={issues}
-                icon={topicIcons[topic as keyof typeof topicIcons]}
+                icon={topicIcons[topic as keyof typeof topicIcons] || Bug}
                 onIssueAction={handleIssueAction}
                 onBulkAction={handleBulkAction}
               />
@@ -152,7 +175,7 @@ const IssuesTab: React.FC<IssuesTabProps> = ({
           })}
 
           {/* No Active Issues State */}
-          {displayIssues.length === 0 && (
+          {totalActiveIssues === 0 && (
             <NoIssuesState
               fixedCount={fixedCount}
               onReRunVerification={onReRunVerification}
@@ -171,7 +194,7 @@ const IssuesTab: React.FC<IssuesTabProps> = ({
 
       <ScanInformationCard
         verificationSummary={verificationSummary}
-        displayIssuesCount={displayIssues.length}
+        displayIssuesCount={totalActiveIssues}
         fixedCount={fixedCount}
       />
     </div>

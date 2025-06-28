@@ -8,6 +8,7 @@ import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { EnhancedAdminModuleVerificationRunner, EnhancedAdminModuleVerificationResult } from '@/utils/verification/EnhancedAdminModuleVerificationRunner';
+import { automatedVerification } from '@/utils/verification/AutomatedVerificationOrchestrator';
 import AdminVerificationHeader from '@/components/verification/AdminVerificationHeader';
 import VerificationStatusOverview from '@/components/verification/VerificationStatusOverview';
 import VerificationLoadingState from '@/components/verification/VerificationLoadingState';
@@ -85,7 +86,7 @@ const AdminVerificationTest = () => {
 
   const runEnhancedVerification = async () => {
     setIsRunning(true);
-    setHasRun(false); // Reset to allow fresh run
+    setHasRun(false);
     console.log('🚀 Starting Enhanced Admin Module Verification with Database Fixes...');
 
     try {
@@ -98,6 +99,15 @@ const AdminVerificationTest = () => {
       // Clear previous results to ensure fresh scan
       setVerificationResult(null);
 
+      // IMPORTANT: Also trigger the automated verification system to ensure complete scan
+      console.log('🔄 Triggering complete automated verification system...');
+      await automatedVerification.verifyBeforeCreation({
+        componentType: 'module',
+        moduleName: 'admin_verification_test',
+        description: 'Complete admin verification test scan'
+      });
+
+      // Run the enhanced verification
       const result = await EnhancedAdminModuleVerificationRunner.runEnhancedVerification();
       setVerificationResult(result);
       setHasRun(true);
