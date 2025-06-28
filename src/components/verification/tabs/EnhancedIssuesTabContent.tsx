@@ -5,7 +5,8 @@ import { ProcessedIssuesData } from '@/types/issuesTypes';
 import { TabSyncData } from '@/hooks/useTabSynchronization';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, CheckCircle, RefreshCw, TrendingDown, TrendingUp } from 'lucide-react';
+import { AlertTriangle, CheckCircle, RefreshCw } from 'lucide-react';
+import ConsolidatedMetricsDisplay from '@/components/verification/ConsolidatedMetricsDisplay';
 import IssuesTab from '@/components/security/IssuesTab';
 
 interface EnhancedIssuesTabContentProps {
@@ -31,49 +32,17 @@ const EnhancedIssuesTabContent: React.FC<EnhancedIssuesTabContentProps> = ({
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <RefreshCw className={`h-5 w-5 text-blue-600 ${isReRunning ? 'animate-spin' : ''}`} />
-              <span className="text-blue-900">Real-time Issue Tracking</span>
+              <span className="text-blue-900">Issues Overview</span>
             </div>
             <Badge variant="outline" className="bg-white">
-              Synchronized: {syncData.lastUpdateTime.toLocaleTimeString()}
+              Last update: {syncData.lastUpdateTime.toLocaleTimeString()}
             </Badge>
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center p-3 bg-white rounded-lg border">
-              <div className="text-2xl font-bold text-red-600">{syncData.totalActiveCount}</div>
-              <div className="text-sm text-gray-600">Active Issues</div>
-              {processedData.newIssues.length > 0 && (
-                <div className="flex items-center justify-center mt-1">
-                  <TrendingUp className="h-3 w-3 text-red-500 mr-1" />
-                  <span className="text-xs text-red-500">+{processedData.newIssues.length} new</span>
-                </div>
-              )}
-            </div>
-
-            <div className="text-center p-3 bg-white rounded-lg border">
-              <div className="text-2xl font-bold text-green-600">{syncData.totalFixedCount}</div>
-              <div className="text-sm text-gray-600">Fixed Issues</div>
-              {processedData.resolvedIssues.length > 0 && (
-                <div className="flex items-center justify-center mt-1">
-                  <TrendingDown className="h-3 w-3 text-green-500 mr-1" />
-                  <span className="text-xs text-green-500">+{processedData.resolvedIssues.length} resolved</span>
-                </div>
-              )}
-            </div>
-
-            <div className="text-center p-3 bg-white rounded-lg border">
-              <div className="text-2xl font-bold text-purple-600">{syncData.realFixesApplied}</div>
-              <div className="text-sm text-gray-600">Real Fixes Applied</div>
-            </div>
-
-            <div className="text-center p-3 bg-white rounded-lg border">
-              <div className="text-2xl font-bold text-blue-600">{syncData.backendFixedCount}</div>
-              <div className="text-sm text-gray-600">Auto-Detected</div>
-            </div>
-          </div>
-        </CardContent>
       </Card>
+
+      {/* Use Consolidated Metrics instead of duplicate sections */}
+      <ConsolidatedMetricsDisplay syncData={syncData} />
 
       {/* Backend Fix Detection Status */}
       {syncData.backendFixedCount > 0 && (
@@ -86,8 +55,7 @@ const EnhancedIssuesTabContent: React.FC<EnhancedIssuesTabContentProps> = ({
           </CardHeader>
           <CardContent>
             <p className="text-green-700 text-sm">
-              {syncData.backendFixedCount} issues were automatically resolved by backend changes and 
-              moved to the Fixed Issues tab. These don't require manual "Apply Real Fix" actions.
+              {syncData.backendFixedCount} issues were automatically resolved by backend changes.
             </p>
           </CardContent>
         </Card>
@@ -99,19 +67,18 @@ const EnhancedIssuesTabContent: React.FC<EnhancedIssuesTabContentProps> = ({
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-red-900">
               <AlertTriangle className="h-5 w-5" />
-              Critical Security Issues Require Attention
+              Critical Issues Require Attention
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-red-700 text-sm">
-              {syncData.criticalCount} critical issues detected. These require immediate attention 
-              and may block system functionality until resolved.
+              {syncData.criticalCount} critical issues detected that require immediate attention.
             </p>
           </CardContent>
         </Card>
       )}
 
-      {/* Main Issues Tab - Now Synchronized */}
+      {/* Main Issues Tab - Now uses consolidated metrics internally */}
       <IssuesTab 
         verificationSummary={verificationSummary}
         onReRunVerification={onReRunVerification}

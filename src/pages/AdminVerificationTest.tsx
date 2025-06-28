@@ -12,6 +12,7 @@ import AdminVerificationHeader from '@/components/verification/AdminVerification
 import VerificationStatusOverview from '@/components/verification/VerificationStatusOverview';
 import VerificationLoadingState from '@/components/verification/VerificationLoadingState';
 import VerificationResultsTabs from '@/components/verification/VerificationResultsTabs';
+import ConsolidatedMetricsDisplay from '@/components/verification/ConsolidatedMetricsDisplay';
 import { AdminModuleVerificationResult } from '@/utils/verification/AdminModuleVerificationRunner';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -251,6 +252,21 @@ const AdminVerificationTest = () => {
 
   const categoryMetrics = getCategoryMetrics();
 
+  // Create sync data for consolidated metrics
+  const syncData = verificationResult ? {
+    activeIssues: [],
+    fixedIssues: [],
+    totalActiveCount: verificationSummary?.issuesFound || 0,
+    totalFixedCount: categoryMetrics.totalFixed,
+    criticalCount: verificationSummary?.criticalIssues || 0,
+    highCount: 0,
+    mediumCount: 0,
+    securityIssuesCount: Math.max(0, 5 - categoryMetrics.security.fixed),
+    backendFixedCount: 0,
+    realFixesApplied: categoryMetrics.totalFixed,
+    lastUpdateTime: lastRunTime || new Date()
+  } : null;
+
   return (
     <MainLayout>
       <PageContainer
@@ -314,75 +330,11 @@ const AdminVerificationTest = () => {
             </>
           )}
 
-          {/* Results Display with Category-Based Metrics */}
-          {verificationResult && !isRunning && (
+          {/* Results Display with Consolidated Metrics */}
+          {verificationResult && !isRunning && syncData && (
             <>
-              {/* Category-Based Metrics Display */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <Card className="bg-red-50 border-red-200">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium flex items-center text-red-800">
-                      <Shield className="h-4 w-4 mr-2" />
-                      Security Category
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-red-600">{categoryMetrics.security.fixed}/{categoryMetrics.security.total}</div>
-                    <div className="text-sm text-red-600">Issues Fixed</div>
-                    <Badge variant={categoryMetrics.security.fixed === categoryMetrics.security.total ? "default" : "destructive"} className="mt-2">
-                      {categoryMetrics.security.fixed === categoryMetrics.security.total ? "Complete" : `${categoryMetrics.security.total - categoryMetrics.security.fixed} Remaining`}
-                    </Badge>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-blue-50 border-blue-200">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium flex items-center text-blue-800">
-                      <Settings className="h-4 w-4 mr-2" />
-                      UI/UX Category
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-blue-600">{categoryMetrics.uiux.fixed}/{categoryMetrics.uiux.total}</div>
-                    <div className="text-sm text-blue-600">Issues Fixed</div>
-                    <Badge variant={categoryMetrics.uiux.fixed === categoryMetrics.uiux.total ? "default" : "destructive"} className="mt-2">
-                      {categoryMetrics.uiux.fixed === categoryMetrics.uiux.total ? "Complete" : `${categoryMetrics.uiux.total - categoryMetrics.uiux.fixed} Remaining`}
-                    </Badge>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-purple-50 border-purple-200">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium flex items-center text-purple-800">
-                      <Code className="h-4 w-4 mr-2" />
-                      Code Quality
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-purple-600">{categoryMetrics.codeQuality.fixed}/{categoryMetrics.codeQuality.total}</div>
-                    <div className="text-sm text-purple-600">Issues Fixed</div>
-                    <Badge variant={categoryMetrics.codeQuality.fixed === categoryMetrics.codeQuality.total ? "default" : "destructive"} className="mt-2">
-                      {categoryMetrics.codeQuality.fixed === categoryMetrics.codeQuality.total ? "Complete" : `${categoryMetrics.codeQuality.total - categoryMetrics.codeQuality.fixed} Remaining`}
-                    </Badge>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-green-50 border-green-200">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium flex items-center text-green-800">
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      Total Progress
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-green-600">{categoryMetrics.totalFixed}/{categoryMetrics.totalCategories}</div>
-                    <div className="text-sm text-green-600">All Categories</div>
-                    <Badge variant="default" className="mt-2 bg-green-600">
-                      {Math.round((categoryMetrics.totalFixed / categoryMetrics.totalCategories) * 100)}% Complete
-                    </Badge>
-                  </CardContent>
-                </Card>
-              </div>
+              {/* Use Consolidated Metrics Display instead of individual category cards */}
+              <ConsolidatedMetricsDisplay syncData={syncData} />
 
               {/* Overall System Score */}
               <Card className={verificationResult.overallStabilityScore >= 80 ? "bg-green-50 border-green-200" : "bg-yellow-50 border-yellow-200"}>
