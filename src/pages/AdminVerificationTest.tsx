@@ -16,7 +16,7 @@ import { AdminModuleVerificationResult } from '@/utils/verification/AdminModuleV
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Database, Code, CheckCircle, AlertTriangle, RefreshCw, Zap } from 'lucide-react';
+import { Database, Code, CheckCircle, AlertTriangle, RefreshCw, Zap, Shield, Bug, Settings } from 'lucide-react';
 
 const AdminVerificationTest = () => {
   const [verificationResult, setVerificationResult] = useState<EnhancedAdminModuleVerificationResult | null>(null);
@@ -28,9 +28,32 @@ const AdminVerificationTest = () => {
   const [programmaticRunTriggered, setProgrammaticRunTriggered] = useState(false);
   const { toast } = useToast();
 
+  // Get category-based metrics
+  const getCategoryMetrics = () => {
+    const securityFixed = [
+      localStorage.getItem('mfa_enforcement_implemented') === 'true',
+      localStorage.getItem('rbac_implementation_active') === 'true',
+      localStorage.getItem('log_sanitization_active') === 'true',
+      localStorage.getItem('debug_security_implemented') === 'true',
+      localStorage.getItem('api_authorization_implemented') === 'true'
+    ].filter(Boolean).length;
+
+    const uiuxFixed = localStorage.getItem('uiux_improvements_applied') === 'true' ? 1 : 0;
+    const codeQualityFixed = localStorage.getItem('code_quality_improved') === 'true' ? 1 : 0;
+    const performanceFixed = 0; // Can be extended later
+    
+    return {
+      security: { fixed: securityFixed, total: 5 },
+      uiux: { fixed: uiuxFixed, total: 1 },
+      codeQuality: { fixed: codeQualityFixed, total: 1 },
+      performance: { fixed: performanceFixed, total: 0 },
+      totalFixed: securityFixed + uiuxFixed + codeQualityFixed + performanceFixed,
+      totalCategories: 7 // 5 security + 1 uiux + 1 code quality
+    };
+  };
+
   // Transform enhanced result to expected format for VerificationResultsTabs
   const transformToLegacyFormat = (enhancedResult: EnhancedAdminModuleVerificationResult): AdminModuleVerificationResult => {
-    // Extract critical issues from database report
     const criticalIssues = enhancedResult.databaseReport.validationSummary.issues
       .filter(issue => issue.severity === 'critical')
       .map(issue => issue.description);
@@ -161,7 +184,7 @@ const AdminVerificationTest = () => {
       
       // Show fresh scan results
       const scoreImprovement = adjustedScore - previousScore;
-      const expectedIssues = 5 - fixesApplied; // Should detect 5 security issues if no fixes applied
+      const expectedIssues = 5 - fixesApplied;
       
       toast({
         title: "📊 PROGRAMMATIC RE-RUN Complete",
@@ -211,33 +234,22 @@ const AdminVerificationTest = () => {
       console.log('🎯 PROGRAMMATIC COMMAND RECEIVED: Triggering fresh verification re-run...');
       setTimeout(() => {
         runEnhancedVerification();
-      }, 1000); // Small delay to show the intent
+      }, 1000);
     }
   }, [programmaticRunTriggered, isRunning]);
-
-  // Get applied fixes count for display
-  const getAppliedFixesCount = () => {
-    return [
-      localStorage.getItem('mfa_enforcement_implemented') === 'true',
-      localStorage.getItem('rbac_implementation_active') === 'true',
-      localStorage.getItem('log_sanitization_active') === 'true',
-      localStorage.getItem('debug_security_implemented') === 'true',
-      localStorage.getItem('api_authorization_implemented') === 'true'
-    ].filter(Boolean).length;
-  };
 
   console.log('🔍 PROGRAMMATIC RE-RUN State:', {
     programmaticRunTriggered,
     hasVerificationResult: !!verificationResult,
-    hasVerificationSummary: !!verificationSummary,
-    summaryIssuesFound: verificationSummary?.issuesFound || 0,
+    hasVerificationSummary: verificationSummary?.issuesFound || 0,
     overallScore: verificationResult?.overallStabilityScore || 'N/A',
     lastScoreUpdate,
     lastRunTime: lastRunTime?.toLocaleTimeString(),
     isRunning,
-    hasRun,
-    appliedFixesCount: getAppliedFixesCount()
+    hasRun
   });
+
+  const categoryMetrics = getCategoryMetrics();
 
   return (
     <MainLayout>
@@ -283,25 +295,6 @@ const AdminVerificationTest = () => {
             </Card>
           )}
 
-          {/* Current Fix Status Check */}
-          <Card className="bg-gray-50 border-gray-200">
-            <CardHeader>
-              <CardTitle className="text-gray-800 flex items-center">
-                <CheckCircle className="h-5 w-5 mr-2" />
-                Current Security Fix Status (Pre-Scan)
-              </CardTitle>
-              <CardDescription className="text-gray-700">
-                MFA: {localStorage.getItem('mfa_enforcement_implemented') === 'true' ? '✅ Fixed' : '❌ Not Fixed'} | 
-                RBAC: {localStorage.getItem('rbac_implementation_active') === 'true' ? '✅ Fixed' : '❌ Not Fixed'} | 
-                Logs: {localStorage.getItem('log_sanitization_active') === 'true' ? '✅ Fixed' : '❌ Not Fixed'} | 
-                Debug: {localStorage.getItem('debug_security_implemented') === 'true' ? '✅ Fixed' : '❌ Not Fixed'} | 
-                API Auth: {localStorage.getItem('api_authorization_implemented') === 'true' ? '✅ Fixed' : '❌ Not Fixed'}
-                <br />
-                <strong>Total Applied Fixes: {getAppliedFixesCount()}/5</strong>
-              </CardDescription>
-            </CardHeader>
-          </Card>
-
           {/* Loading State */}
           {isRunning && (
             <>
@@ -314,83 +307,93 @@ const AdminVerificationTest = () => {
                   </CardTitle>
                   <CardDescription className="text-blue-700">
                     Running comprehensive security vulnerability detection...
-                    Expected to find {5 - getAppliedFixesCount()} unresolved security issues.
+                    Expected to find {7 - categoryMetrics.totalFixed} unresolved issues across all categories.
                   </CardDescription>
                 </CardHeader>
               </Card>
             </>
           )}
 
-          {/* Results Display */}
+          {/* Results Display with Category-Based Metrics */}
           {verificationResult && !isRunning && (
             <>
-              {/* Score Display */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card className={verificationResult.overallStabilityScore >= 80 ? "bg-green-50 border-green-200" : "bg-yellow-50 border-yellow-200"}>
+              {/* Category-Based Metrics Display */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <Card className="bg-red-50 border-red-200">
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium flex items-center">
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      Fresh Scan Score
+                    <CardTitle className="text-sm font-medium flex items-center text-red-800">
+                      <Shield className="h-4 w-4 mr-2" />
+                      Security Category
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-3xl font-bold">{verificationResult.overallStabilityScore}/100</div>
-                    {lastScoreUpdate && (
-                      <div className="text-sm text-gray-600">
-                        Scanned: {lastRunTime?.toLocaleTimeString()}
-                      </div>
-                    )}
-                    <Badge 
-                      variant={verificationResult.overallStabilityScore >= 80 ? "default" : "destructive"}
-                      className="mt-2"
-                    >
-                      {verificationResult.overallStabilityScore >= 80 ? "🎉 STABLE" : "⚠️ Issues Detected"}
+                    <div className="text-2xl font-bold text-red-600">{categoryMetrics.security.fixed}/{categoryMetrics.security.total}</div>
+                    <div className="text-sm text-red-600">Issues Fixed</div>
+                    <Badge variant={categoryMetrics.security.fixed === categoryMetrics.security.total ? "default" : "destructive"} className="mt-2">
+                      {categoryMetrics.security.fixed === categoryMetrics.security.total ? "Complete" : `${categoryMetrics.security.total - categoryMetrics.security.fixed} Remaining`}
                     </Badge>
                   </CardContent>
                 </Card>
 
-                <Card>
+                <Card className="bg-blue-50 border-blue-200">
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium flex items-center">
-                      <Database className="h-4 w-4 mr-2" />
-                      Issues Found
+                    <CardTitle className="text-sm font-medium flex items-center text-blue-800">
+                      <Settings className="h-4 w-4 mr-2" />
+                      UI/UX Category
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{verificationSummary?.issuesFound || 'N/A'}</div>
-                    <div className="text-sm text-muted-foreground mt-1">
-                      Security vulnerabilities
-                    </div>
+                    <div className="text-2xl font-bold text-blue-600">{categoryMetrics.uiux.fixed}/{categoryMetrics.uiux.total}</div>
+                    <div className="text-sm text-blue-600">Issues Fixed</div>
+                    <Badge variant={categoryMetrics.uiux.fixed === categoryMetrics.uiux.total ? "default" : "destructive"} className="mt-2">
+                      {categoryMetrics.uiux.fixed === categoryMetrics.uiux.total ? "Complete" : `${categoryMetrics.uiux.total - categoryMetrics.uiux.fixed} Remaining`}
+                    </Badge>
                   </CardContent>
                 </Card>
 
-                <Card>
+                <Card className="bg-purple-50 border-purple-200">
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium flex items-center">
+                    <CardTitle className="text-sm font-medium flex items-center text-purple-800">
                       <Code className="h-4 w-4 mr-2" />
-                      Applied Fixes
+                      Code Quality
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{getAppliedFixesCount()}/5</div>
-                    <div className="text-sm text-muted-foreground mt-1">
-                      Security implementations
-                    </div>
+                    <div className="text-2xl font-bold text-purple-600">{categoryMetrics.codeQuality.fixed}/{categoryMetrics.codeQuality.total}</div>
+                    <div className="text-sm text-purple-600">Issues Fixed</div>
+                    <Badge variant={categoryMetrics.codeQuality.fixed === categoryMetrics.codeQuality.total ? "default" : "destructive"} className="mt-2">
+                      {categoryMetrics.codeQuality.fixed === categoryMetrics.codeQuality.total ? "Complete" : `${categoryMetrics.codeQuality.total - categoryMetrics.codeQuality.fixed} Remaining`}
+                    </Badge>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-green-50 border-green-200">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-medium flex items-center text-green-800">
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Total Progress
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-green-600">{categoryMetrics.totalFixed}/{categoryMetrics.totalCategories}</div>
+                    <div className="text-sm text-green-600">All Categories</div>
+                    <Badge variant="default" className="mt-2 bg-green-600">
+                      {Math.round((categoryMetrics.totalFixed / categoryMetrics.totalCategories) * 100)}% Complete
+                    </Badge>
                   </CardContent>
                 </Card>
               </div>
 
-              {/* Outcome Analysis */}
-              <Card className={getAppliedFixesCount() === 0 ? "bg-red-50 border-red-200" : "bg-blue-50 border-blue-200"}>
+              {/* Overall System Score */}
+              <Card className={verificationResult.overallStabilityScore >= 80 ? "bg-green-50 border-green-200" : "bg-yellow-50 border-yellow-200"}>
                 <CardHeader>
-                  <CardTitle className={`flex items-center ${getAppliedFixesCount() === 0 ? 'text-red-800' : 'text-blue-800'}`}>
-                    <AlertTriangle className="h-5 w-5 mr-2" />
-                    PROGRAMMATIC RE-RUN Results Analysis
+                  <CardTitle className={`flex items-center ${verificationResult.overallStabilityScore >= 80 ? 'text-green-800' : 'text-yellow-800'}`}>
+                    <Database className="h-5 w-5 mr-2" />
+                    Overall System Health: {verificationResult.overallStabilityScore}/100
                   </CardTitle>
-                  <CardDescription className={getAppliedFixesCount() === 0 ? 'text-red-700' : 'text-blue-700'}>
-                    {getAppliedFixesCount() === 0 ? 
-                      `✅ EXPECTED OUTCOME: System detected ${verificationSummary?.issuesFound || 5} security vulnerabilities as expected since no "Apply Real Fix" buttons were clicked. The same security issues remain unresolved.` :
-                      `⚡ PARTIAL FIXES DETECTED: ${getAppliedFixesCount()} security fixes have been applied through "Apply Real Fix" buttons, ${5 - getAppliedFixesCount()} vulnerabilities remain unresolved.`}
+                  <CardDescription className={verificationResult.overallStabilityScore >= 80 ? 'text-green-700' : 'text-yellow-700'}>
+                    Category-based analysis shows {categoryMetrics.totalFixed} out of {categoryMetrics.totalCategories} issue categories have been addressed.
+                    {lastRunTime && ` Last scanned: ${lastRunTime.toLocaleTimeString()}`}
                   </CardDescription>
                 </CardHeader>
               </Card>
