@@ -1,3 +1,4 @@
+
 /**
  * Admin Verification Test Page
  * Enhanced with comprehensive database fixes and synchronized real-time scanning
@@ -11,7 +12,6 @@ import { automatedVerification, VerificationSummary } from '@/utils/verification
 import AdminVerificationHeader from '@/components/verification/AdminVerificationHeader';
 import VerificationLoadingState from '@/components/verification/VerificationLoadingState';
 import VerificationResultsTabs from '@/components/verification/VerificationResultsTabs';
-import ConsolidatedMetricsDisplay from '@/components/verification/ConsolidatedMetricsDisplay';
 import { AdminModuleVerificationResult } from '@/utils/verification/AdminModuleVerificationRunner';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -250,21 +250,6 @@ const AdminVerificationTest = () => {
 
   const categoryMetrics = getCategoryMetrics();
 
-  // Create sync data for consolidated metrics
-  const syncData = verificationResult ? {
-    activeIssues: [],
-    fixedIssues: [],
-    totalActiveCount: verificationSummary?.issuesFound || 0,
-    totalFixedCount: categoryMetrics.totalFixed,
-    criticalCount: verificationSummary?.criticalIssues || 0,
-    highCount: 0,
-    mediumCount: 0,
-    securityIssuesCount: Math.max(0, 5 - categoryMetrics.security.fixed),
-    backendFixedCount: 0,
-    realFixesApplied: categoryMetrics.totalFixed,
-    lastUpdateTime: lastRunTime || new Date()
-  } : null;
-
   return (
     <MainLayout>
       <PageContainer
@@ -325,10 +310,8 @@ const AdminVerificationTest = () => {
             </>
           )}
 
-          {verificationResult && !isRunning && syncData && (
+          {verificationResult && !isRunning && (
             <>
-              <ConsolidatedMetricsDisplay syncData={syncData} />
-
               <Card className={verificationResult.overallStabilityScore >= 80 ? "bg-green-50 border-green-200" : "bg-yellow-50 border-yellow-200"}>
                 <CardHeader>
                   <CardTitle className={`flex items-center ${verificationResult.overallStabilityScore >= 80 ? 'text-green-800' : 'text-yellow-800'}`}>
