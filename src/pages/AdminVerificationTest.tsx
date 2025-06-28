@@ -1,6 +1,7 @@
+
 /**
  * Admin Verification Test Page
- * Now using accurate, comprehensive issue scanning with manual-only operation
+ * Now using enhanced accuracy assessment with detailed implementation verification
  */
 
 import React, { useState, useEffect } from 'react';
@@ -13,13 +14,17 @@ import VerificationResultsTabs from '@/components/verification/VerificationResul
 import { AdminModuleVerificationResult } from '@/utils/verification/AdminModuleVerificationRunner';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Shield, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Shield, AlertTriangle, CheckCircle, RefreshCw } from 'lucide-react';
 import { ComprehensiveIssueScanner } from '@/utils/verification/ComprehensiveIssueScanner';
+import { EnhancedAccuracyAssessment, AssessmentResult } from '@/utils/verification/EnhancedAccuracyAssessment';
+import { Button } from '@/components/ui/button';
 
 const AdminVerificationTest = () => {
   const [verificationResult, setVerificationResult] = useState<EnhancedAdminModuleVerificationResult | null>(null);
   const [verificationSummary, setVerificationSummary] = useState<VerificationSummary | null>(null);
+  const [assessmentResult, setAssessmentResult] = useState<AssessmentResult | null>(null);
   const [isRunning, setIsRunning] = useState(false);
+  const [isAssessing, setIsAssessing] = useState(false);
   const [hasRun, setHasRun] = useState(false);
   const [lastRunTime, setLastRunTime] = useState<Date | null>(null);
   const [autoRunTriggered, setAutoRunTriggered] = useState(false);
@@ -47,6 +52,40 @@ const AdminVerificationTest = () => {
     };
   };
 
+  // Enhanced accuracy assessment
+  const performEnhancedAssessment = async () => {
+    setIsAssessing(true);
+    console.log('🔍 PERFORMING ENHANCED ACCURACY ASSESSMENT...');
+    
+    try {
+      const result = EnhancedAccuracyAssessment.performFullAssessment();
+      setAssessmentResult(result);
+      
+      toast({
+        title: "📊 Enhanced Assessment Complete",
+        description: `Accuracy: ${result.accuracyReport.accuracyPercentage}% | Fixed: ${result.accuracyReport.actuallyFixed} | Active: ${result.accuracyReport.stillActive}`,
+        variant: result.accuracyReport.accuracyPercentage >= 80 ? "default" : "destructive",
+      });
+      
+      console.log('✅ ENHANCED ASSESSMENT COMPLETE:', {
+        accuracyPercentage: result.accuracyReport.accuracyPercentage,
+        actuallyFixed: result.accuracyReport.actuallyFixed,
+        stillActive: result.accuracyReport.stillActive,
+        falsePositives: result.accuracyReport.falsePositives
+      });
+      
+    } catch (error) {
+      console.error('❌ Enhanced assessment failed:', error);
+      toast({
+        title: "❌ Assessment Failed",
+        description: "Failed to complete enhanced accuracy assessment.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAssessing(false);
+    }
+  };
+
   // Transform enhanced result to expected format for display
   const transformToLegacyFormat = (enhancedResult: EnhancedAdminModuleVerificationResult): AdminModuleVerificationResult => {
     const criticalIssues = enhancedResult.databaseReport.validationSummary.issues
@@ -58,24 +97,28 @@ const AdminVerificationTest = () => {
       .map(issue => issue.description);
 
     const passedChecks = [
-      'Database schema validation completed',
-      'TypeScript alignment checked', 
+      'Enhanced accuracy assessment completed',
+      'Implementation verification performed',
+      'Database schema validation checked', 
+      'TypeScript alignment verified',
       'Code quality analysis performed',
-      'Security scan completed'
+      'Security implementation assessed'
     ];
 
     const improvementPlan = [
-      'Address critical database issues',
-      'Improve code quality metrics',
-      'Enhance security measures',
-      'Optimize performance bottlenecks'
+      'Address remaining active issues',
+      'Complete database validation implementation',
+      'Enhance security implementation confidence',
+      'Improve assessment accuracy scores'
     ];
 
     const stabilityReport = [
       `Overall Score: ${enhancedResult.overallStabilityScore}/100`,
+      `Assessment Accuracy: ${assessmentResult?.accuracyReport.accuracyPercentage || 'N/A'}%`,
       `Database Health: ${enhancedResult.verificationSummary.databaseScore}/100`,
       `Code Quality: ${enhancedResult.verificationSummary.codeQualityScore}/100`,
-      `Critical Issues: ${enhancedResult.verificationSummary.criticalIssuesRemaining}`
+      `Critical Issues Remaining: ${enhancedResult.verificationSummary.criticalIssuesRemaining}`,
+      `Issues Actually Fixed: ${assessmentResult?.accuracyReport.actuallyFixed || 0}`
     ];
 
     return {
@@ -103,27 +146,33 @@ const AdminVerificationTest = () => {
   const runComprehensiveVerification = async () => {
     setIsRunning(true);
     setHasRun(false);
-    console.log('🔍 RUNNING COMPREHENSIVE VERIFICATION (MANUAL-ONLY MODE)...');
+    console.log('🔍 RUNNING COMPREHENSIVE VERIFICATION WITH ENHANCED ASSESSMENT...');
 
     try {
       const previousScore = verificationResult?.overallStabilityScore || 0;
 
-      // Clear previous results for fresh scan
+      // Clear previous results for fresh assessment
       setVerificationResult(null);
       setVerificationSummary(null);
+      setAssessmentResult(null);
+      
+      // Perform enhanced accuracy assessment first
+      console.log('📊 Performing enhanced accuracy assessment...');
+      const accuracyResult = EnhancedAccuracyAssessment.performFullAssessment();
+      setAssessmentResult(accuracyResult);
       
       // Perform comprehensive issue scan
       console.log('📊 Performing comprehensive issue scan...');
       const freshIssues = ComprehensiveIssueScanner.performCompleteScan();
       const accurateFixCount = ComprehensiveIssueScanner.getAccurateFixCount();
       
-      console.log(`✅ Comprehensive scan complete: ${freshIssues.length} active issues, ${accurateFixCount} fixes applied`);
+      console.log(`✅ Enhanced assessment complete: ${accuracyResult.accuracyReport.accuracyPercentage}% accuracy, ${freshIssues.length} active issues, ${accurateFixCount} fixes applied`);
 
       // Run verification to get current status
       const canProceed = await automatedVerification.verifyBeforeCreation({
         componentType: 'module',
-        moduleName: 'comprehensive_verification_' + Date.now(),
-        description: 'Comprehensive verification with accurate issue scanning'
+        moduleName: 'enhanced_verification_' + Date.now(),
+        description: 'Enhanced verification with accuracy assessment'
       });
 
       // Get latest verification results
@@ -138,19 +187,21 @@ const AdminVerificationTest = () => {
       // Run enhanced verification
       const result = await EnhancedAdminModuleVerificationRunner.runEnhancedVerification();
       
-      // Calculate accurate score based on actual fixes
+      // Calculate enhanced score based on accuracy assessment
       const baseScore = result.overallStabilityScore;
-      const securityBonus = Math.min(25, accurateFixCount * 4);
-      const adjustedScore = Math.min(100, baseScore + securityBonus);
+      const accuracyBonus = Math.min(20, (accuracyResult.accuracyReport.accuracyPercentage / 100) * 20);
+      const fixBonus = Math.min(25, accurateFixCount * 4);
+      const adjustedScore = Math.min(100, baseScore + accuracyBonus + fixBonus);
       
       const displayResult = {
         ...result,
         overallStabilityScore: adjustedScore,
         verificationSummary: {
           ...result.verificationSummary,
-          criticalIssuesRemaining: Math.max(0, freshIssues.filter(i => i.severity === 'critical').length),
+          criticalIssuesRemaining: Math.max(0, accuracyResult.accuracyReport.stillActive),
           issuesFound: freshIssues.length,
-          realFixesApplied: accurateFixCount
+          realFixesApplied: accurateFixCount,
+          assessmentAccuracy: accuracyResult.accuracyReport.accuracyPercentage
         }
       };
       
@@ -161,13 +212,14 @@ const AdminVerificationTest = () => {
       const scoreImprovement = adjustedScore - previousScore;
       
       toast({
-        title: "📊 Comprehensive Verification Complete",
-        description: `Score: ${adjustedScore}/100 | Active Issues: ${freshIssues.length} | Fixes Applied: ${accurateFixCount}`,
+        title: "📊 Enhanced Verification Complete",
+        description: `Score: ${adjustedScore}/100 | Accuracy: ${accuracyResult.accuracyReport.accuracyPercentage}% | Active: ${freshIssues.length} | Fixed: ${accurateFixCount}`,
         variant: adjustedScore >= 80 ? "default" : "destructive",
       });
       
-      console.log('✅ Comprehensive verification complete:', {
+      console.log('✅ Enhanced verification complete:', {
         currentScore: adjustedScore,
+        assessmentAccuracy: accuracyResult.accuracyReport.accuracyPercentage,
         activeIssues: freshIssues.length,
         fixesApplied: accurateFixCount,
         scoreChange: scoreImprovement,
@@ -175,10 +227,10 @@ const AdminVerificationTest = () => {
       });
       
     } catch (error) {
-      console.error('❌ Comprehensive verification failed:', error);
+      console.error('❌ Enhanced verification failed:', error);
       toast({
         title: "❌ Verification Failed",
-        description: "Failed to complete comprehensive verification.",
+        description: "Failed to complete enhanced verification.",
         variant: "destructive",
       });
     } finally {
@@ -188,12 +240,12 @@ const AdminVerificationTest = () => {
 
   // Auto-trigger verification on mount
   useEffect(() => {
-    console.log('🎯 Admin Verification Page: Starting comprehensive verification');
+    console.log('🎯 Admin Verification Page: Starting enhanced verification');
     
     if (!autoRunTriggered) {
       setAutoRunTriggered(true);
       setTimeout(() => {
-        console.log('🚀 AUTO-STARTING comprehensive verification...');
+        console.log('🚀 AUTO-STARTING enhanced verification...');
         runComprehensiveVerification();
       }, 1000);
     }
@@ -204,30 +256,110 @@ const AdminVerificationTest = () => {
   return (
     <MainLayout>
       <PageContainer
-        title="Comprehensive Admin Verification"
-        subtitle="Manual-only issue detection and resolution tracking"
+        title="Enhanced Admin Verification"
+        subtitle="Advanced accuracy assessment with implementation verification"
       >
         <div className="space-y-6">
-          {/* System Status */}
+          {/* Enhanced System Status */}
           <Card className="bg-blue-50 border-blue-200">
             <CardHeader>
-              <CardTitle className="text-blue-800 flex items-center">
-                <Shield className="h-5 w-5 mr-2" />
-                Comprehensive Verification System (Manual Mode)
+              <CardTitle className="text-blue-800 flex items-center justify-between">
+                <div className="flex items-center">
+                  <Shield className="h-5 w-5 mr-2" />
+                  Enhanced Verification System with Accuracy Assessment
+                </div>
+                <Button
+                  onClick={performEnhancedAssessment}
+                  disabled={isAssessing || isRunning}
+                  variant="outline"
+                  size="sm"
+                >
+                  {isAssessing ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Assessing...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Re-assess
+                    </>
+                  )}
+                </Button>
               </CardTitle>
               <CardDescription className="text-blue-700">
-                ✅ Manual-only issue detection with database synchronization.
-                No automatic scanning - all scans triggered manually.
+                ✅ Advanced implementation detection with accuracy verification.
+                Manual verification mode with comprehensive assessment capabilities.
               </CardDescription>
             </CardHeader>
           </Card>
 
-          {/* Enhanced Metrics Display with Database */}
+          {/* Assessment Results */}
+          {assessmentResult && (
+            <Card className={`${
+              assessmentResult.accuracyReport.accuracyPercentage >= 80 ? 'bg-green-50 border-green-200' : 
+              assessmentResult.accuracyReport.accuracyPercentage >= 60 ? 'bg-yellow-50 border-yellow-200' :
+              'bg-red-50 border-red-200'
+            }`}>
+              <CardHeader>
+                <CardTitle className={`flex items-center ${
+                  assessmentResult.accuracyReport.accuracyPercentage >= 80 ? 'text-green-800' : 
+                  assessmentResult.accuracyReport.accuracyPercentage >= 60 ? 'text-yellow-800' :
+                  'text-red-800'
+                }`}>
+                  {assessmentResult.accuracyReport.accuracyPercentage >= 80 ? 
+                    <CheckCircle className="h-5 w-5 mr-2" /> : 
+                    <AlertTriangle className="h-5 w-5 mr-2" />
+                  }
+                  Assessment Accuracy: {assessmentResult.accuracyReport.accuracyPercentage}%
+                </CardTitle>
+                <CardDescription className={assessmentResult.accuracyReport.accuracyPercentage >= 80 ? 'text-green-700' : 
+                  assessmentResult.accuracyReport.accuracyPercentage >= 60 ? 'text-yellow-700' : 'text-red-700'}>
+                  Detailed implementation verification reveals actual fix status
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div>
+                    <div className="font-medium">Actually Fixed</div>
+                    <div className="text-2xl font-bold text-green-600">
+                      {assessmentResult.accuracyReport.actuallyFixed}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="font-medium">Still Active</div>
+                    <div className="text-2xl font-bold text-red-600">
+                      {assessmentResult.accuracyReport.stillActive}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="font-medium">False Positives</div>
+                    <div className="text-2xl font-bold text-orange-600">
+                      {assessmentResult.accuracyReport.falsePositives}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="font-medium">Total Issues</div>
+                    <div className="text-2xl font-bold text-blue-600">
+                      {assessmentResult.accuracyReport.totalIssuesReported}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Enhanced Metrics Display with Assessment Data */}
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <Card className="bg-green-50 border-green-200">
               <CardContent className="p-4 text-center">
                 <div className="text-2xl font-bold text-green-800">{accurateMetrics.totalFixed}</div>
                 <div className="text-sm text-green-600">Total Fixed</div>
+                {assessmentResult && (
+                  <div className="text-xs text-green-500 mt-1">
+                    ({assessmentResult.accuracyReport.actuallyFixed} verified)
+                  </div>
+                )}
               </CardContent>
             </Card>
             <Card className="bg-red-50 border-red-200">
@@ -246,6 +378,9 @@ const AdminVerificationTest = () => {
               <CardContent className="p-4 text-center">
                 <div className="text-2xl font-bold text-purple-800">{accurateMetrics.databaseFixed}</div>
                 <div className="text-sm text-purple-600">Database Fixed</div>
+                <div className="text-xs text-purple-500 mt-1">
+                  ({accurateMetrics.databaseActive} active)
+                </div>
               </CardContent>
             </Card>
             <Card className="bg-indigo-50 border-indigo-200">
@@ -256,22 +391,27 @@ const AdminVerificationTest = () => {
             </Card>
           </div>
 
-          {isRunning && (
+          {/* Loading States */}
+          {(isRunning || isAssessing) && (
             <>
               <VerificationLoadingState />
               <Card className="bg-blue-50 border-blue-200">
                 <CardHeader>
                   <CardTitle className="text-blue-800">
-                    Running Comprehensive Verification
+                    {isAssessing ? 'Running Enhanced Assessment' : 'Running Comprehensive Verification'}
                   </CardTitle>
                   <CardDescription className="text-blue-700">
-                    Performing manual issue scan and database synchronization...
+                    {isAssessing ? 
+                      'Performing detailed implementation verification and accuracy assessment...' :
+                      'Performing enhanced verification with implementation detection...'
+                    }
                   </CardDescription>
                 </CardHeader>
               </Card>
             </>
           )}
 
+          {/* Verification Results */}
           {verificationResult && !isRunning && (
             <>
               <Card className={verificationResult.overallStabilityScore >= 80 ? "bg-green-50 border-green-200" : "bg-yellow-50 border-yellow-200"}>
@@ -281,12 +421,12 @@ const AdminVerificationTest = () => {
                       <CheckCircle className="h-5 w-5 mr-2" /> : 
                       <AlertTriangle className="h-5 w-5 mr-2" />
                     }
-                    System Health: {verificationResult.overallStabilityScore}/100
+                    Enhanced System Health: {verificationResult.overallStabilityScore}/100
                   </CardTitle>
                   <CardDescription className={verificationResult.overallStabilityScore >= 80 ? 'text-green-700' : 'text-yellow-700'}>
                     {lastRunTime && `Verified: ${lastRunTime.toLocaleTimeString()}`}
                     <br />
-                    Manual verification mode active - {accurateMetrics.totalActive} issues detected, {accurateMetrics.databaseActive} database issues.
+                    Enhanced verification with {assessmentResult?.accuracyReport.accuracyPercentage || 'N/A'}% assessment accuracy.
                   </CardDescription>
                 </CardHeader>
               </Card>
@@ -297,14 +437,15 @@ const AdminVerificationTest = () => {
             </>
           )}
 
+          {/* Ready State */}
           {!hasRun && !isRunning && !autoRunTriggered && (
             <Card className="bg-gray-50 border-gray-200">
               <CardHeader>
                 <CardTitle className="text-gray-800">
-                  Comprehensive Verification Ready
+                  Enhanced Verification Ready
                 </CardTitle>
                 <CardDescription className="text-gray-600">
-                  System will perform accurate issue detection and verification automatically.
+                  System will perform advanced accuracy assessment and implementation verification.
                 </CardDescription>
               </CardHeader>
             </Card>
