@@ -9,15 +9,13 @@ import { PageContainer } from '@/components/layout/PageContainer';
 import { EnhancedAdminModuleVerificationRunner, EnhancedAdminModuleVerificationResult } from '@/utils/verification/EnhancedAdminModuleVerificationRunner';
 import { automatedVerification, VerificationSummary } from '@/utils/verification/AutomatedVerificationOrchestrator';
 import AdminVerificationHeader from '@/components/verification/AdminVerificationHeader';
-import VerificationStatusOverview from '@/components/verification/VerificationStatusOverview';
 import VerificationLoadingState from '@/components/verification/VerificationLoadingState';
 import VerificationResultsTabs from '@/components/verification/VerificationResultsTabs';
 import ConsolidatedMetricsDisplay from '@/components/verification/ConsolidatedMetricsDisplay';
 import { AdminModuleVerificationResult } from '@/utils/verification/AdminModuleVerificationRunner';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Database, Code, CheckCircle, AlertTriangle, RefreshCw, Zap, Shield, Bug, Settings } from 'lucide-react';
+import { Database, AlertTriangle, RefreshCw, Zap } from 'lucide-react';
 
 const AdminVerificationTest = () => {
   const [verificationResult, setVerificationResult] = useState<EnhancedAdminModuleVerificationResult | null>(null);
@@ -280,7 +278,7 @@ const AdminVerificationTest = () => {
         }
       >
         <div className="space-y-6">
-          {/* Programmatic Run Status */}
+          {/* Status Cards */}
           <Card className="bg-blue-50 border-blue-200">
             <CardHeader>
               <CardTitle className="text-blue-800 flex items-center">
@@ -295,23 +293,20 @@ const AdminVerificationTest = () => {
             </CardHeader>
           </Card>
 
-          {/* Expected Outcome Banner */}
           {!isRunning && !programmaticRunTriggered && (
             <Card className="bg-yellow-50 border-yellow-200">
               <CardHeader>
                 <CardTitle className="text-yellow-800 flex items-center">
                   <AlertTriangle className="h-5 w-5 mr-2" />
-                  Expected Outcome of Programmatic Re-Run
+                  Expected Outcome
                 </CardTitle>
                 <CardDescription className="text-yellow-700">
-                  Since no "Apply Real Fix" buttons have been clicked, the system should detect the same 5 security vulnerabilities:
-                  ❌ MFA Enforcement, ❌ RBAC Implementation, ❌ Log Sanitization, ❌ Debug Security, ❌ API Authorization
+                  Since no "Apply Real Fix" buttons have been clicked, the system should detect the same 5 security vulnerabilities.
                 </CardDescription>
               </CardHeader>
             </Card>
           )}
 
-          {/* Loading State */}
           {isRunning && (
             <>
               <VerificationLoadingState />
@@ -323,20 +318,17 @@ const AdminVerificationTest = () => {
                   </CardTitle>
                   <CardDescription className="text-blue-700">
                     Running comprehensive security vulnerability detection...
-                    Expected to find {7 - categoryMetrics.totalFixed} unresolved issues across all categories.
+                    Expected to find {7 - categoryMetrics.totalFixed} unresolved issues.
                   </CardDescription>
                 </CardHeader>
               </Card>
             </>
           )}
 
-          {/* Results Display with Consolidated Metrics */}
           {verificationResult && !isRunning && syncData && (
             <>
-              {/* Use Consolidated Metrics Display instead of individual category cards */}
               <ConsolidatedMetricsDisplay syncData={syncData} />
 
-              {/* Overall System Score */}
               <Card className={verificationResult.overallStabilityScore >= 80 ? "bg-green-50 border-green-200" : "bg-yellow-50 border-yellow-200"}>
                 <CardHeader>
                   <CardTitle className={`flex items-center ${verificationResult.overallStabilityScore >= 80 ? 'text-green-800' : 'text-yellow-800'}`}>
@@ -344,13 +336,11 @@ const AdminVerificationTest = () => {
                     Overall System Health: {verificationResult.overallStabilityScore}/100
                   </CardTitle>
                   <CardDescription className={verificationResult.overallStabilityScore >= 80 ? 'text-green-700' : 'text-yellow-700'}>
-                    Category-based analysis shows {categoryMetrics.totalFixed} out of {categoryMetrics.totalCategories} issue categories have been addressed.
-                    {lastRunTime && ` Last scanned: ${lastRunTime.toLocaleTimeString()}`}
+                    {lastRunTime && `Last scanned: ${lastRunTime.toLocaleTimeString()}`}
                   </CardDescription>
                 </CardHeader>
               </Card>
 
-              {/* Results Tabs */}
               <VerificationResultsTabs 
                 verificationResult={transformToLegacyFormat(verificationResult)}
                 onReRunVerification={runEnhancedVerification}
