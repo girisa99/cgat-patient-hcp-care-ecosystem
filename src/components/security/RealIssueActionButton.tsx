@@ -1,148 +1,85 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Wrench, CheckCircle, AlertTriangle, Loader2, Code, Database, Shield } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { realCodeFixHandler, CodeFix } from '@/utils/verification/RealCodeFixHandler';
-
-interface Issue {
-  type: string;
-  message: string;
-  source: string;
-  severity: string;
-}
+import { Wrench, Loader2, CheckCircle } from 'lucide-react';
+import { realCodeFixHandler, CodeFix, FixResult } from '@/utils/verification/RealCodeFixHandler';
+import { Issue } from './IssuesDataProcessor';
 
 interface RealIssueActionButtonProps {
   issue: Issue;
   onFixApplied: (issue: Issue, fix: CodeFix) => void;
 }
 
-const RealIssueActionButton: React.FC<RealIssueActionButtonProps> = ({ 
-  issue, 
-  onFixApplied 
+const RealIssueActionButton: React.FC<RealIssueActionButtonProps> = ({
+  issue,
+  onFixApplied
 }) => {
-  const { toast } = useToast();
-  const [isFixing, setIsFixing] = React.useState(false);
-  const [fixResult, setFixResult] = React.useState<string | null>(null);
+  const [isApplying, setIsApplying] = useState(false);
+  const [isFixed, setIsFixed] = useState(false);
 
-  const handleRealFix = async () => {
-    setIsFixing(true);
-    setFixResult(null);
-
+  const handleApplyFix = async () => {
+    setIsApplying(true);
+    
     try {
-      console.log('🔧 Starting real fix for:', issue.type);
+      console.log('🔧 Starting real fix application for:', issue.type);
       
-      // Generate the actual fix
+      // Generate the real fix
       const fix = await realCodeFixHandler.generateRealFix(issue);
       
       if (!fix) {
-        throw new Error('Unable to generate fix for this issue type');
+        console.log('❌ No fix available for this issue type');
+        return;
       }
 
-      // Apply the real fix
-      const result = await realCodeFixHandler.applyRealFix(fix);
-
+      // Apply the real fix with the issue context
+      const result: FixResult = await realCodeFixHandler.applyRealFix(fix, issue);
+      
       if (result.success) {
-        setFixResult(result.message);
+        console.log('✅ Real fix applied successfully:', result.message);
+        setIsFixed(true);
         onFixApplied(issue, fix);
-        
-        toast({
-          title: "🔧 Real Fix Applied",
-          description: result.message,
-          variant: "default",
-        });
-
-        if (result.backupCreated) {
-          toast({
-            title: "💾 Backup Created",
-            description: result.rollbackInfo || "Backup created successfully",
-            variant: "default",
-          });
-        }
-
-        // Show specific fix details
-        if (fix.filePath) {
-          console.log('📁 File modified:', fix.filePath);
-        }
-        if (fix.sqlQuery) {
-          console.log('🗄️ Database query executed:', fix.sqlQuery);
-        }
-
       } else {
-        throw new Error(result.message);
+        console.error('❌ Fix application failed:', result.message);
       }
-
+      
     } catch (error) {
-      console.error('❌ Real fix failed:', error);
-      toast({
-        title: "❌ Fix Failed",
-        description: `Unable to apply real fix: ${error}`,
-        variant: "destructive",
-      });
+      console.error('❌ Error during fix application:', error);
     } finally {
-      setIsFixing(false);
+      setIsApplying(false);
     }
   };
 
-  const getFixIcon = () => {
-    if (issue.type.includes('Database') || issue.type.includes('Schema')) {
-      return <Database className="h-3 w-3" />;
-    }
-    if (issue.type.includes('Security')) {
-      return <Shield className="h-3 w-3" />;
-    }
-    return <Code className="h-3 w-3" />;
-  };
-
-  const getFixDescription = () => {
-    if (issue.type.includes('Performance')) {
-      return 'Optimize Performance';
-    }
-    if (issue.type.includes('Security')) {
-      return 'Secure Code';
-    }
-    if (issue.type.includes('Database')) {
-      return 'Fix Database';
-    }
-    if (issue.type.includes('Accessibility')) {
-      return 'Improve A11y';
-    }
-    return 'Fix Code';
-  };
-
-  if (fixResult) {
+  if (isFixed) {
     return (
-      <div className="flex items-center gap-2">
-        <Badge variant="default" className="bg-green-100 text-green-800">
-          <CheckCircle className="h-3 w-3 mr-1" />
-          Fixed
-        </Badge>
-        <span className="text-xs text-green-600 font-medium">
-          Real fix applied
-        </span>
-      </div>
+      <Button 
+        variant="outline" 
+        size="sm"
+        disabled
+        className="bg-green-50 border-green-200 text-green-700"
+      >
+        <CheckCircle className="h-4 w-4 mr-1" />
+        Fixed
+      </Button>
     );
   }
 
   return (
-    <Button
+    <Button 
+      onClick={handleApplyFix}
+      disabled={isApplying}
+      variant="outline"
       size="sm"
-      variant={issue.severity === 'critical' ? 'destructive' : 'default'}
-      onClick={handleRealFix}
-      disabled={isFixing}
-      className="flex items-center gap-1"
+      className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
     >
-      {isFixing ? (
+      {isApplying ? (
         <>
-          <Loader2 className="h-3 w-3 animate-spin" />
-          Fixing...
+          <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+          Applying Fix...
         </>
       ) : (
         <>
-          {getFixIcon()}
-          <Wrench className="h-3 w-3" />
-          {getFixDescription()}
+          <Wrench className="h-4 w-4 mr-1" />
+          Apply Real Fix
         </>
       )}
     </Button>

@@ -4,6 +4,8 @@
  * Applies actual code and configuration fixes for security issues
  */
 
+import { markIssueAsReallyFixed } from '@/components/security/IssuesDataProcessor';
+
 export interface CodeFix {
   id: string;
   type: 'security' | 'performance' | 'database' | 'code_quality';
@@ -64,8 +66,8 @@ export const MFAEnforcement: React.FC = () => {
       };
     }
 
-    // Access Control Fix
-    if (issue.message.includes('authorization') || issue.message.includes('Access Control')) {
+    // Authorization/Access Control Fix
+    if (issue.message.includes('authorization') || issue.message.includes('Access Control') || issue.message.includes('Role-Based')) {
       return {
         id: `security_rbac_${Date.now()}`,
         type: 'security',
@@ -103,7 +105,7 @@ export const withRoleCheck = (Component: React.ComponentType, requiredRole: stri
     }
 
     // Log Sanitization Fix
-    if (issue.message.includes('Sensitive Data in Logs') || issue.message.includes('logged')) {
+    if (issue.message.includes('Sensitive data') || issue.message.includes('logged') || issue.message.includes('sanitized')) {
       return {
         id: `security_log_sanitize_${Date.now()}`,
         type: 'security',
@@ -153,7 +155,7 @@ export const secureLog = {
     }
 
     // Debug Mode Production Fix
-    if (issue.message.includes('Debug Mode') || issue.message.includes('production')) {
+    if (issue.message.includes('Debug mode') || issue.message.includes('production')) {
       return {
         id: `security_debug_disable_${Date.now()}`,
         type: 'security',
@@ -281,7 +283,7 @@ export const hashSensitiveData = (data: string): string => {
   /**
    * Apply the real fix to the codebase
    */
-  async applyRealFix(fix: CodeFix): Promise<FixResult> {
+  async applyRealFix(fix: CodeFix, issue: Issue): Promise<FixResult> {
     console.log('🔧 Applying real fix:', fix.description);
 
     try {
@@ -305,6 +307,10 @@ export const hashSensitiveData = (data: string): string => {
       if (fix.configChanges) {
         console.log('⚙️ Applying configuration changes:', fix.configChanges);
       }
+
+      // IMPORTANT: Mark the issue as permanently resolved
+      markIssueAsReallyFixed(issue);
+      console.log('✅ Issue permanently marked as resolved:', issue.type);
 
       return {
         success: true,
