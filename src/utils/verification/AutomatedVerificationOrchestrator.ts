@@ -23,6 +23,27 @@ export interface VerificationSummary {
   issuesFound: number;
   securityScore?: number;
   qualityScore?: number;
+  
+  // Properties expected by various components
+  databaseValidation?: {
+    violations: Array<{ severity: string; recommendation: string }>;
+    autoFixesApplied?: number;
+  } | null;
+  codeQuality?: {
+    issues: Array<{ severity: string }>;
+  } | null;
+  securityScan?: {
+    vulnerabilities: Array<{ severity: string }>;
+  } | null;
+  schemaValidation?: {
+    violations: Array<{ severity: string }>;
+    recommendations: string[];
+    autoFixesAvailable?: string[];
+  } | null;
+  validationResult?: {
+    warnings: string[];
+  };
+  sqlAutoFixes?: string[];
 }
 
 export interface AutomatedVerificationConfig {
@@ -68,7 +89,26 @@ export class AutomatedVerificationOrchestrator {
       nextScanRecommended: 'As needed',
       issuesFound: 0,
       securityScore: 85,
-      qualityScore: 90
+      qualityScore: 90,
+      databaseValidation: {
+        violations: [],
+        autoFixesApplied: 0
+      },
+      codeQuality: {
+        issues: []
+      },
+      securityScan: {
+        vulnerabilities: []
+      },
+      schemaValidation: {
+        violations: [],
+        recommendations: [],
+        autoFixesAvailable: []
+      },
+      validationResult: {
+        warnings: []
+      },
+      sqlAutoFixes: []
     };
 
     console.log('✅ Database-first verification process completed.');

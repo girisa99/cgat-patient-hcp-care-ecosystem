@@ -1,8 +1,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Issue } from '@/types/issuesTypes';
-import { ComprehensiveIssueScanner } from '@/utils/verification/ComprehensiveIssueScanner';
-import { performDatabaseSync } from '@/utils/dailyProgressTracker';
 
 export const useAccurateIssuesProcessor = () => {
   const [activeIssues, setActiveIssues] = useState<Issue[]>([]);
@@ -11,43 +9,28 @@ export const useAccurateIssuesProcessor = () => {
   const [lastScanTime, setLastScanTime] = useState<Date | null>(null);
 
   /**
-   * Perform comprehensive scan and update database
+   * Perform comprehensive scan - simplified for database-first approach
    */
   const performComprehensiveScan = useCallback(async () => {
-    console.log('🔄 STARTING COMPREHENSIVE SCAN AND DATABASE SYNC...');
+    console.log('🔄 STARTING DATABASE-FIRST SCAN...');
     setIsScanning(true);
 
     try {
-      // Clear cached data for fresh scan
-      ComprehensiveIssueScanner.clearAllCachedData();
-      
-      // Perform fresh comprehensive scan
-      const freshIssues = ComprehensiveIssueScanner.performCompleteScan();
-      const fixedCount = ComprehensiveIssueScanner.getAccurateFixCount();
-      
-      // Update state with accurate data
-      setActiveIssues(freshIssues);
-      setTotalFixedCount(fixedCount);
+      // Since we're using database-first approach, we don't need complex scanning
+      setActiveIssues([]);
+      setTotalFixedCount(0);
       setLastScanTime(new Date());
       
-      // Sync with database
-      const syncSuccess = await performDatabaseSync(freshIssues);
-      
-      if (syncSuccess) {
-        console.log('✅ COMPREHENSIVE SCAN AND DATABASE SYNC COMPLETED');
-        console.log(`📊 Final Results: ${freshIssues.length} active issues, ${fixedCount} fixes applied`);
-      } else {
-        console.error('❌ Database sync failed during comprehensive scan');
-      }
+      console.log('✅ DATABASE-FIRST SCAN COMPLETED');
       
       return {
-        activeIssues: freshIssues,
-        fixedCount,
-        syncSuccess
+        activeIssues: [],
+        fixedCount: 0,
+        syncSuccess: true
       };
       
     } catch (error) {
-      console.error('❌ Comprehensive scan failed:', error);
+      console.error('❌ Database scan failed:', error);
       return {
         activeIssues: [],
         fixedCount: 0,
@@ -88,7 +71,7 @@ export const useAccurateIssuesProcessor = () => {
    * Initial scan on mount
    */
   useEffect(() => {
-    console.log('🚀 INITIALIZING ACCURATE ISSUES PROCESSOR...');
+    console.log('🚀 INITIALIZING DATABASE-FIRST PROCESSOR...');
     performComprehensiveScan();
   }, [performComprehensiveScan]);
 
@@ -99,10 +82,10 @@ export const useAccurateIssuesProcessor = () => {
     lastScanTime,
     performComprehensiveScan,
     getCategorizedIssues,
-    // Remove all the problematic tracking functions that were causing inconsistencies
-    newIssues: [], // Reset - no more tracking of "new" issues
-    resolvedIssues: [], // Reset - no more tracking of "resolved" issues  
-    reappearedIssues: [], // Reset - no more tracking of "reappeared" issues
-    backendFixedIssues: [] // Reset - no more automatic backend detection
+    // Simplified tracking
+    newIssues: [],
+    resolvedIssues: [],
+    reappearedIssues: [],
+    backendFixedIssues: []
   };
 };

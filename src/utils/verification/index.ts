@@ -19,9 +19,7 @@ export {
   AutomatedVerificationOrchestrator,
   automatedVerification,
   type VerificationSummary,
-  type AutomatedVerificationConfig,
-  type TemplateGenerationRequest,
-  type TemplateGenerationResult
+  type AutomatedVerificationConfig
 } from './AutomatedVerificationOrchestrator';
 
 // Export specific functions from TypeScriptDatabaseValidator
@@ -35,5 +33,6 @@ export {
 export type { 
   DatabaseValidationResult,
   CodeQualityResult,
-  DatabaseIssue 
+  DatabaseIssue,
+  VerificationRequest
 } from './types';

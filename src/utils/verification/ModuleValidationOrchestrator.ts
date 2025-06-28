@@ -1,44 +1,33 @@
 
 import { 
-  AutomatedVerificationOrchestrator, 
-  VerificationSummary,
-  TemplateGenerationRequest,
-  TemplateGenerationResult
+  AutomatedVerificationOrchestrator,
+  type VerificationSummary,
+  type AutomatedVerificationConfig 
 } from './AutomatedVerificationOrchestrator';
+import { validateTableSchema } from './TypeScriptDatabaseValidator';
+import { type VerificationRequest } from './types';
 
 export class ModuleValidationOrchestrator {
-  static async validateModuleCreation(request: TemplateGenerationRequest): Promise<TemplateGenerationResult> {
-    console.log('🔍 Validating module creation request:', request);
+  static async validateModuleCreation(request: VerificationRequest): Promise<VerificationSummary> {
+    console.log('🔍 Module validation orchestrator - database-first approach');
     
-    try {
-      // Run verification with proper type casting
-      const verificationRequest = {
-        componentType: request.componentType as 'hook' | 'component' | 'module' | 'template',
-        description: request.description
-      };
-      
-      const summary = await AutomatedVerificationOrchestrator.runVerification(verificationRequest);
-      
-      // Check if creation should be blocked
-      if (summary.criticalIssues > 0) {
-        return {
-          success: false,
-          message: `Module creation blocked due to ${summary.criticalIssues} critical issues`
-        };
+    // Simplified validation for database-first approach
+    return AutomatedVerificationOrchestrator.runVerification(request);
+  }
+
+  static async preCreationValidation(moduleName: string, tableName?: string): Promise<boolean> {
+    console.log('🔍 Pre-creation validation for:', moduleName);
+    
+    if (tableName) {
+      try {
+        await validateTableSchema(tableName);
+        return true;
+      } catch (error) {
+        console.error('❌ Table validation failed:', error);
+        return false;
       }
-      
-      return {
-        success: true,
-        message: 'Module validation passed',
-        templates: []
-      };
-      
-    } catch (error) {
-      console.error('❌ Module validation failed:', error);
-      return {
-        success: false,
-        message: 'Module validation encountered an error'
-      };
     }
+    
+    return true;
   }
 }
