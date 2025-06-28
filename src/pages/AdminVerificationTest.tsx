@@ -10,7 +10,7 @@ import { PageContainer } from '@/components/layout/PageContainer';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Shield, AlertTriangle, CheckCircle, Activity, RefreshCw, Database, Play } from 'lucide-react';
+import { Shield, AlertTriangle, CheckCircle, RefreshCw, Database } from 'lucide-react';
 import { useDatabaseIssues } from '@/hooks/useDatabaseIssues';
 import { useStableHealthScore } from '@/hooks/useStableHealthScore';
 import CleanIssuesTab from '@/components/security/CleanIssuesTab';
@@ -106,27 +106,6 @@ const AdminVerificationTest = () => {
         subtitle="Database-first system health and verification monitoring"
       >
         <div className="space-y-6">
-          {/* Verification Trigger Status */}
-          <Card className="bg-blue-50 border-blue-200">
-            <CardHeader>
-              <CardTitle className="text-blue-800 flex items-center gap-2">
-                <Play className="h-5 w-5" />
-                Verification System Status
-              </CardTitle>
-              <CardDescription className="text-blue-700">
-                {autoTriggered ? 
-                  "✅ Verification system has been automatically triggered on page load" :
-                  "⏳ Preparing to trigger verification system..."
-                }
-                <br />
-                {isManualScanRunning && "🔄 Verification currently running..."}
-                {lastManualUpdate && !isManualScanRunning && 
-                  `Last run: ${lastManualUpdate.toLocaleTimeString()}`
-                }
-              </CardDescription>
-            </CardHeader>
-          </Card>
-
           {/* System Health Status */}
           <Card className={isStable ? "bg-green-50 border-green-200" : "bg-yellow-50 border-yellow-200"}>
             <CardHeader>
@@ -201,27 +180,6 @@ const AdminVerificationTest = () => {
               </CardContent>
             </Card>
           </div>
-
-          {/* System Status */}
-          <Card className="bg-blue-50 border-blue-200">
-            <CardHeader>
-              <CardTitle className="text-blue-800 flex items-center">
-                <Shield className="h-5 w-5 mr-2" />
-                Database-First Architecture Status
-              </CardTitle>
-              <CardDescription className="text-blue-700">
-                ✅ All verification data sourced from Supabase database tables.
-                <br />
-                ✅ No localStorage dependencies - single source of truth established.
-                <br />
-                ✅ Real-time sync between active_issues and issue_fixes tables.
-                <br />
-                ✅ Auto-triggered verification on page load with manual override available.
-                <br />
-                ✅ Database function fixed - DELETE operations now work properly.
-              </CardDescription>
-            </CardHeader>
-          </Card>
 
           {/* Error Display */}
           {error && (
