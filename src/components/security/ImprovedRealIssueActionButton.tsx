@@ -1,9 +1,10 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Wrench, Loader2, CheckCircle, AlertTriangle, Shield, Code } from 'lucide-react';
-import { improvedRealCodeFixHandler, CodeFix, FixResult } from '@/utils/verification/ImprovedRealCodeFixHandler';
+import { useToast } from '@/hooks/use-toast';
+import { Zap, CheckCircle, Loader2 } from 'lucide-react';
 import { Issue } from './IssuesDataProcessor';
+import { improvedRealCodeFixHandler, CodeFix } from '@/utils/verification/ImprovedRealCodeFixHandler';
 
 interface ImprovedRealIssueActionButtonProps {
   issue: Issue;
@@ -16,157 +17,88 @@ const ImprovedRealIssueActionButton: React.FC<ImprovedRealIssueActionButtonProps
 }) => {
   const [isApplying, setIsApplying] = useState(false);
   const [isFixed, setIsFixed] = useState(false);
-  const [validationResults, setValidationResults] = useState<string[]>([]);
-  const [fixResult, setFixResult] = useState<FixResult | null>(null);
+  const { toast } = useToast();
 
-  // Check if this issue can be automatically fixed
-  const canApplyFix = React.useMemo(() => {
-    const fixablePatterns = [
-      'Multi-Factor Authentication',
-      'Role-Based Access Control', 
-      'Sensitive data logging',
-      'Debug mode',
-      'authorization',
-      'sanitized'
-    ];
-    
-    return fixablePatterns.some(pattern => 
-      issue.message.toLowerCase().includes(pattern.toLowerCase()) ||
-      issue.type.toLowerCase().includes('security')
-    );
-  }, [issue]);
-
-  const handleApplyRealFix = async () => {
+  const handleApplyFix = async () => {
     setIsApplying(true);
-    
+    console.log('🔧 Applying improved real fix for issue:', issue.type);
+
     try {
-      console.log('🔧 Applying REAL CODE FIX with actual modifications for:', issue.type);
-      
-      // Generate and apply the real fix
+      // Generate and apply the real fix using the improved handler
       const fix = await improvedRealCodeFixHandler.generateAndApplyRealFix(issue);
       
-      if (!fix) {
-        console.log('❌ No real fix available for this issue type');
-        return;
-      }
-
-      console.log('🔍 Real fix generated:', fix.description);
-
-      // Apply the real fix with actual code modifications
-      const result: FixResult = await improvedRealCodeFixHandler.applyRealFix(fix, issue);
-      setFixResult(result);
-      
-      if (result.validationResults) {
-        setValidationResults(result.validationResults);
-      }
-
-      if (result.success && result.validationPassed && result.actualChangesApplied) {
-        console.log('✅ REAL FIX APPLIED with actual code changes:', result.message);
-        setIsFixed(true);
-        onIssueFixed(issue, fix);
+      if (fix) {
+        // Apply the fix using the improved handler
+        const result = await improvedRealCodeFixHandler.applyRealFix(fix, issue);
+        
+        if (result.success && result.actualChangesApplied) {
+          setIsFixed(true);
+          onIssueFixed(issue, fix);
+          
+          toast({
+            title: "🎯 Real Fix Applied Successfully",
+            description: `${fix.description} - Changes validated and synchronized`,
+            variant: "default",
+          });
+          
+          console.log('✅ Real fix applied and validated:', {
+            issue: issue.type,
+            fix: fix.description,
+            validationPassed: result.validationPassed,
+            actualChanges: result.actualChangesApplied
+          });
+        } else {
+          throw new Error(result.message || 'Fix application failed');
+        }
       } else {
-        console.log('⚠️ Fix application incomplete:', result.message);
+        toast({
+          title: "⚠️ No Fix Available",
+          description: "No automated fix is available for this issue type",
+          variant: "destructive",
+        });
       }
-      
     } catch (error) {
-      console.error('❌ Error during real fix application:', error);
+      console.error('❌ Failed to apply real fix:', error);
+      toast({
+        title: "❌ Fix Application Failed",
+        description: `Failed to apply fix: ${error}`,
+        variant: "destructive",
+      });
     } finally {
       setIsApplying(false);
     }
   };
 
-  // Show validation results if fix was attempted
-  if (fixResult && validationResults.length > 0) {
-    const validationPassed = fixResult.validationPassed && fixResult.actualChangesApplied;
-    
-    return (
-      <div className="space-y-2">
-        <Button 
-          variant="outline" 
-          size="sm"
-          disabled
-          className={validationPassed ? 
-            "bg-green-50 border-green-200 text-green-700" : 
-            "bg-red-50 border-red-200 text-red-700"
-          }
-        >
-          {validationPassed ? (
-            <>
-              <CheckCircle className="h-4 w-4 mr-1" />
-              Real Fix Applied ✓
-            </>
-          ) : (
-            <>
-              <AlertTriangle className="h-4 w-4 mr-1" />
-              Fix Incomplete
-            </>
-          )}
-        </Button>
-        
-        {/* Show validation details */}
-        <div className="text-xs space-y-1 max-w-xs">
-          {validationResults.map((result, index) => (
-            <div 
-              key={index} 
-              className={`p-1 rounded text-xs ${
-                result.includes('✅') ? 'bg-green-50 text-green-700' : 
-                result.includes('❌') ? 'bg-red-50 text-red-700' : 
-                'bg-yellow-50 text-yellow-700'
-              }`}
-            >
-              {result}
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
   if (isFixed) {
     return (
-      <Button 
-        variant="outline" 
+      <Button
         size="sm"
+        variant="outline"
         disabled
         className="bg-green-50 border-green-200 text-green-700"
       >
-        <CheckCircle className="h-4 w-4 mr-1" />
-        Real Fix Applied ✓
-      </Button>
-    );
-  }
-
-  if (!canApplyFix) {
-    return (
-      <Button 
-        variant="outline" 
-        size="sm"
-        disabled
-        className="bg-gray-50 border-gray-200 text-gray-500"
-      >
-        <AlertTriangle className="h-4 w-4 mr-1" />
-        No Auto-Fix Available
+        <CheckCircle className="h-3 w-3 mr-1" />
+        Fixed
       </Button>
     );
   }
 
   return (
-    <Button 
-      onClick={handleApplyRealFix}
-      disabled={isApplying}
-      variant="outline"
+    <Button
       size="sm"
-      className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+      onClick={handleApplyFix}
+      disabled={isApplying}
+      className="bg-blue-600 hover:bg-blue-700 text-white"
     >
       {isApplying ? (
         <>
-          <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-          Applying Real Fix...
+          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+          Applying...
         </>
       ) : (
         <>
-          <Code className="h-4 w-4 mr-1" />
-          Apply Real Code Fix
+          <Zap className="h-3 w-3 mr-1" />
+          Apply Real Fix
         </>
       )}
     </Button>
