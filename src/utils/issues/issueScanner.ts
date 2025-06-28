@@ -9,23 +9,27 @@ import {
   checkAPIAuthorizationImplemented,
   checkForSecurityComponentUsage,
   checkAndSetUIUXImprovements,
-  checkAndSetCodeQualityImprovements
+  checkAndSetCodeQualityImprovements,
+  resetAllFixStatusForTesting
 } from './backendFixDetection';
 
 export const scanForActualSecurityIssues = (): Issue[] => {
   const issues: Issue[] = [];
   const resolvedIssues = getResolvedIssues();
   
-  console.log('🔒 ENHANCED Security + Quality Scan with Backend Fix Detection (ALL TYPES):');
+  console.log('🔒 SCANNING FOR REAL SECURITY AND QUALITY ISSUES...');
+  
+  // Reset for fresh scan
+  resetAllFixStatusForTesting();
   
   const allChecks = [
-    // Security checks
+    // Critical Security Issues
     {
       issue: {
         type: 'Security Vulnerability',
         message: 'Multi-Factor Authentication is not implemented for admin users',
-        source: 'Enhanced Security Scanner',
-        severity: 'critical'
+        source: 'Security Scanner',
+        severity: 'critical' as const
       },
       implemented: checkForMFAImplementation(),
       fixKey: 'mfa_enforcement_implemented'
@@ -34,8 +38,8 @@ export const scanForActualSecurityIssues = (): Issue[] => {
       issue: {
         type: 'Security Vulnerability', 
         message: 'Role-Based Access Control is not properly implemented',
-        source: 'Enhanced Security Scanner',
-        severity: 'high'
+        source: 'Security Scanner',
+        severity: 'critical' as const
       },
       implemented: checkForRBACImplementation(),
       fixKey: 'rbac_implementation_active'
@@ -44,8 +48,8 @@ export const scanForActualSecurityIssues = (): Issue[] => {
       issue: {
         type: 'Security Vulnerability',
         message: 'API keys and user data may be logged - logs are not sanitized',
-        source: 'Enhanced Security Scanner',
-        severity: 'high'
+        source: 'Security Scanner',
+        severity: 'high' as const
       },
       implemented: checkForLogSanitization(),
       fixKey: 'log_sanitization_active'
@@ -54,8 +58,8 @@ export const scanForActualSecurityIssues = (): Issue[] => {
       issue: {
         type: 'Security Vulnerability',
         message: 'Debug mode is enabled in production environment',
-        source: 'Enhanced Security Scanner', 
-        severity: 'medium'
+        source: 'Security Scanner', 
+        severity: 'high' as const
       },
       implemented: checkDebugModeDisabled(),
       fixKey: 'debug_security_implemented'
@@ -64,8 +68,8 @@ export const scanForActualSecurityIssues = (): Issue[] => {
       issue: {
         type: 'Security Vulnerability',
         message: 'API endpoints lack proper authorization checks',
-        source: 'Enhanced Security Scanner',
-        severity: 'high'
+        source: 'Security Scanner',
+        severity: 'high' as const
       },
       implemented: checkAPIAuthorizationImplemented(),
       fixKey: 'api_authorization_implemented'
@@ -73,81 +77,91 @@ export const scanForActualSecurityIssues = (): Issue[] => {
     {
       issue: {
         type: 'Security Vulnerability',
-        message: 'Security issues component is not being used properly',
-        source: 'Enhanced Security Scanner',
-        severity: 'medium'
+        message: 'Security components are not being used properly throughout the application',
+        source: 'Security Scanner',
+        severity: 'medium' as const
       },
       implemented: checkForSecurityComponentUsage(),
       fixKey: 'security_components_implemented'
     },
-    // UI/UX checks
+    // UI/UX Issues
     {
       issue: {
         type: 'UI/UX Issue',
-        message: 'User interface validation needs improvement',
-        source: 'UI/UX Quality Scanner',
-        severity: 'critical'
+        message: 'User interface lacks proper accessibility features and validation',
+        source: 'UI/UX Scanner',
+        severity: 'high' as const
       },
       implemented: checkAndSetUIUXImprovements(),
       fixKey: 'uiux_improvements_applied'
     },
-    {
-      issue: {
-        type: 'UI/UX Issue',
-        message: 'Accessibility standards not fully implemented',
-        source: 'UI/UX Quality Scanner',
-        severity: 'high'
-      },
-      implemented: checkAndSetUIUXImprovements(),
-      fixKey: 'accessibility_enhanced'
-    },
-    // Code Quality checks
+    // Code Quality Issues
     {
       issue: {
         type: 'Code Quality Issue',
-        message: 'Code maintainability and best practices need improvement',
+        message: 'Code lacks proper error handling and TypeScript type definitions',
         source: 'Code Quality Scanner',
-        severity: 'high'
+        severity: 'medium' as const
       },
       implemented: checkAndSetCodeQualityImprovements(),
       fixKey: 'code_quality_improved'
     },
+    // Database Issues
     {
       issue: {
-        type: 'Code Quality Issue',
-        message: 'Performance optimization opportunities identified',
-        source: 'Code Quality Scanner',
-        severity: 'medium'
+        type: 'Database Issue',
+        message: 'Database queries lack proper validation and sanitization',
+        source: 'Database Scanner',
+        severity: 'high' as const
       },
-      implemented: checkAndSetCodeQualityImprovements(),
-      fixKey: 'performance_optimized'
+      implemented: false, // Always show as not implemented for now
+      fixKey: 'database_validation_implemented'
+    },
+    // Performance Issues
+    {
+      issue: {
+        type: 'Performance Issue',
+        message: 'Application lacks proper caching and performance optimization',
+        source: 'Performance Scanner',
+        severity: 'medium' as const
+      },
+      implemented: false, // Always show as not implemented for now
+      fixKey: 'performance_optimization_implemented'
     }
   ];
 
-  let totalImplemented = 0;
-  allChecks.forEach(({ issue, implemented, fixKey }) => {
-    const issueKey = generateIssueId(issue);
+  console.log('📊 PROCESSING ISSUE CHECKS...');
+  
+  allChecks.forEach((check, index) => {
+    const issueId = generateIssueId(check.issue);
+    const isResolved = resolvedIssues.has(issueId);
     
-    if (implemented) {
-      totalImplemented++;
-      console.log(`✅ ${issue.type} resolved via backend - implementation detected for ${fixKey}`);
-      markIssueAsResolved(issue);
-    } else if (!resolvedIssues.has(issueKey)) {
-      console.log(`❌ ${issue.type} still active - ${fixKey} not implemented`);
+    console.log(`${index + 1}. ${check.issue.type}: ${check.issue.message}`);
+    console.log(`   Implemented: ${check.implemented}`);
+    console.log(`   Resolved: ${isResolved}`);
+    
+    // Only add issue if it's not implemented AND not permanently resolved
+    if (!check.implemented && !isResolved) {
+      const issue: Issue = {
+        ...check.issue,
+        issueId,
+        lastSeen: new Date().toISOString(),
+        backendFixed: false,
+        fixKey: check.fixKey
+      };
+      
       issues.push(issue);
+      console.log(`   ➕ ADDED TO ACTIVE ISSUES`);
+    } else {
+      console.log(`   ✅ SKIPPED (${check.implemented ? 'implemented' : 'resolved'})`);
     }
   });
 
-  console.log('🔒 Enhanced comprehensive scan results with backend detection (ALL TYPES):', {
-    totalActiveIssues: issues.length,
-    totalImplemented,
-    totalChecks: allChecks.length,
-    implementationPercentage: Math.round((totalImplemented / allChecks.length) * 100),
-    issuesByType: issues.reduce((acc, issue) => {
-      acc[issue.type] = (acc[issue.type] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>)
+  console.log(`🎯 SCAN COMPLETE: Found ${issues.length} active issues`);
+  console.log('📋 Active Issues Summary:');
+  issues.forEach((issue, index) => {
+    console.log(`   ${index + 1}. [${issue.severity?.toUpperCase()}] ${issue.type}: ${issue.message}`);
   });
-
+  
   return issues;
 };

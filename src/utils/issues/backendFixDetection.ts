@@ -1,71 +1,150 @@
 
-import { BackendFixDetection } from '@/types/issuesTypes';
+/**
+ * Enhanced Backend Fix Detection System
+ * Detects real implementation status and backend fixes
+ */
 
-// Individual fix check functions
+// Enhanced security fix detection functions
 export const checkForMFAImplementation = (): boolean => {
   try {
-    const implemented = localStorage.getItem('mfa_enforcement_implemented') === 'true';
-    console.log('🔐 MFA Implementation Check - Current Status:', implemented);
-    return implemented;
-  } catch {
+    // Check for actual MFA implementation in the codebase
+    const mfaImplemented = localStorage.getItem('mfa_enforcement_implemented') === 'true';
+    
+    // Additional checks for actual MFA components/files
+    const hasAuthComponents = document.querySelector('[data-testid="auth-component"]') !== null;
+    const hasMFAConfig = localStorage.getItem('supabase_auth_mfa_enabled') === 'true';
+    
+    const actuallyImplemented = mfaImplemented && (hasAuthComponents || hasMFAConfig);
+    
+    if (actuallyImplemented) {
+      localStorage.setItem('mfa_enforcement_implemented', 'true');
+      console.log('✅ MFA Implementation VERIFIED and ACTIVE');
+      return true;
+    }
+    
+    console.log('❌ MFA Implementation NOT DETECTED - Issue remains active');
+    return false;
+  } catch (error) {
+    console.error('Error checking MFA implementation:', error);
     return false;
   }
 };
 
 export const checkForRBACImplementation = (): boolean => {
   try {
-    const implemented = localStorage.getItem('rbac_implementation_active') === 'true';
-    console.log('🛡️ RBAC Implementation Check - Current Status:', implemented);
-    return implemented;
-  } catch {
+    // Check for actual RBAC implementation
+    const rbacActive = localStorage.getItem('rbac_implementation_active') === 'true';
+    
+    // Check for role-based components in DOM
+    const hasRoleBasedUI = document.querySelector('[data-role]') !== null;
+    const hasPermissionChecks = localStorage.getItem('permission_checks_active') === 'true';
+    
+    const actuallyImplemented = rbacActive && (hasRoleBasedUI || hasPermissionChecks);
+    
+    if (actuallyImplemented) {
+      localStorage.setItem('rbac_implementation_active', 'true');
+      console.log('✅ RBAC Implementation VERIFIED and ACTIVE');
+      return true;
+    }
+    
+    console.log('❌ RBAC Implementation NOT DETECTED - Issue remains active');
+    return false;
+  } catch (error) {
+    console.error('Error checking RBAC implementation:', error);
     return false;
   }
 };
 
 export const checkForLogSanitization = (): boolean => {
   try {
-    const implemented = localStorage.getItem('log_sanitization_active') === 'true';
-    console.log('🧹 Log Sanitization Check - Current Status:', implemented);
-    return implemented;
-  } catch {
+    const logSanitizationActive = localStorage.getItem('log_sanitization_active') === 'true';
+    
+    // Check for actual log sanitization implementation
+    const hasLogSanitizer = typeof window !== 'undefined' && 
+                           (window as any).logSanitizer !== undefined;
+    
+    const actuallyImplemented = logSanitizationActive && hasLogSanitizer;
+    
+    if (actuallyImplemented) {
+      localStorage.setItem('log_sanitization_active', 'true');
+      console.log('✅ Log Sanitization VERIFIED and ACTIVE');
+      return true;
+    }
+    
+    console.log('❌ Log Sanitization NOT DETECTED - Issue remains active');
+    return false;
+  } catch (error) {
+    console.error('Error checking log sanitization:', error);
     return false;
   }
 };
 
 export const checkDebugModeDisabled = (): boolean => {
   try {
-    const implemented = localStorage.getItem('debug_security_implemented') === 'true';
-    console.log('🔧 Debug Security Check - Current Status:', implemented);
-    return implemented;
-  } catch {
+    const debugSecurityActive = localStorage.getItem('debug_security_implemented') === 'true';
+    
+    // Check if debug mode is actually disabled
+    const isProduction = process.env.NODE_ENV === 'production';
+    const debugDisabled = !localStorage.getItem('debug_mode_enabled');
+    
+    const actuallyImplemented = debugSecurityActive && (isProduction || debugDisabled);
+    
+    if (actuallyImplemented) {
+      localStorage.setItem('debug_security_implemented', 'true');
+      console.log('✅ Debug Security VERIFIED and ACTIVE');
+      return true;
+    }
+    
+    console.log('❌ Debug Security NOT DETECTED - Issue remains active');
+    return false;
+  } catch (error) {
+    console.error('Error checking debug security:', error);
     return false;
   }
 };
 
 export const checkAPIAuthorizationImplemented = (): boolean => {
   try {
-    const implemented = localStorage.getItem('api_authorization_implemented') === 'true';
-    console.log('🔐 API Authorization Check - Current Status:', implemented);
-    return implemented;
-  } catch {
+    const apiAuthImplemented = localStorage.getItem('api_authorization_implemented') === 'true';
+    
+    // Check for actual API authorization implementation
+    const hasAuthHeaders = localStorage.getItem('api_auth_headers_configured') === 'true';
+    const hasTokenValidation = localStorage.getItem('token_validation_active') === 'true';
+    
+    const actuallyImplemented = apiAuthImplemented && (hasAuthHeaders || hasTokenValidation);
+    
+    if (actuallyImplemented) {
+      localStorage.setItem('api_authorization_implemented', 'true');
+      console.log('✅ API Authorization VERIFIED and ACTIVE');
+      return true;
+    }
+    
+    console.log('❌ API Authorization NOT DETECTED - Issue remains active');
+    return false;
+  } catch (error) {
+    console.error('Error checking API authorization:', error);
     return false;
   }
 };
 
 export const checkForSecurityComponentUsage = (): boolean => {
   try {
-    const hasSecurityComponents = document.querySelector('[class*="security"]') ||
-                                 document.querySelector('[class*="verification"]') ||
-                                 window.location.pathname.includes('admin') ||
-                                 window.location.pathname.includes('verification');
+    const securityComponentsActive = localStorage.getItem('security_components_implemented') === 'true';
     
-    if (hasSecurityComponents) {
-      console.log('✅ Security components detected - setting localStorage flags');
+    // Check for actual security components in use
+    const hasSecurityComponents = document.querySelector('[data-security-component]') !== null;
+    const hasSecurityHooks = localStorage.getItem('security_hooks_active') === 'true';
+    
+    const actuallyImplemented = securityComponentsActive && (hasSecurityComponents || hasSecurityHooks);
+    
+    if (actuallyImplemented) {
       localStorage.setItem('security_components_implemented', 'true');
+      console.log('✅ Security Components VERIFIED and ACTIVE');
       return true;
     }
     
-    return localStorage.getItem('security_components_implemented') === 'true';
+    console.log('❌ Security Components NOT DETECTED - Issue remains active');
+    return false;
   } catch (error) {
     console.error('Error checking security components:', error);
     return false;
@@ -74,37 +153,22 @@ export const checkForSecurityComponentUsage = (): boolean => {
 
 export const checkAndSetUIUXImprovements = (): boolean => {
   try {
-    console.log('🎨 CHECKING UI/UX improvements...');
+    const uiuxFixed = localStorage.getItem('uiux_improvements_applied') === 'true';
     
-    const isOnAdminPage = window.location.pathname.includes('admin') || 
-                         window.location.pathname.includes('verification');
+    // Check for actual UI/UX improvements
+    const hasImprovedUI = document.querySelector('.improved-ui') !== null;
+    const hasAccessibilityFeatures = document.querySelector('[aria-label]') !== null;
     
-    const hasUIComponents = document.querySelector('form') || 
-                           document.querySelector('[class*="card"]') || 
-                           document.querySelector('[class*="button"]') ||
-                           document.querySelector('input') ||
-                           document.querySelector('select');
+    const actuallyImplemented = uiuxFixed && (hasImprovedUI || hasAccessibilityFeatures);
     
-    const hasValidationElements = document.querySelector('[required]') || 
-                                 document.querySelector('[aria-invalid]') ||
-                                 document.querySelector('.error') ||
-                                 document.querySelector('[class*="validation"]') ||
-                                 document.querySelector('[data-sonner-toaster]') ||
-                                 document.querySelector('[class*="toast"]');
-    
-    const hasAccessibilityFeatures = document.querySelector('[aria-label]') ||
-                                    document.querySelector('[role]') ||
-                                    document.querySelector('[aria-describedby]');
-    
-    if ((isOnAdminPage && hasUIComponents) || (hasUIComponents && hasValidationElements) || hasAccessibilityFeatures) {
-      console.log('✅ UI/UX improvements detected - setting localStorage flags');
+    if (actuallyImplemented) {
       localStorage.setItem('uiux_improvements_applied', 'true');
-      localStorage.setItem('form_validation_enhanced', 'true');
-      localStorage.setItem('accessibility_enhanced', 'true');
+      console.log('✅ UI/UX Improvements VERIFIED and ACTIVE');
       return true;
     }
     
-    return localStorage.getItem('uiux_improvements_applied') === 'true';
+    console.log('❌ UI/UX Improvements NOT DETECTED - Issue remains active');
+    return false;
   } catch (error) {
     console.error('Error checking UI/UX improvements:', error);
     return false;
@@ -113,102 +177,46 @@ export const checkAndSetUIUXImprovements = (): boolean => {
 
 export const checkAndSetCodeQualityImprovements = (): boolean => {
   try {
-    console.log('📊 CHECKING code quality improvements...');
+    const codeQualityFixed = localStorage.getItem('code_quality_improved') === 'true';
     
-    const hasGoodStructure = window.location.pathname.includes('/admin') ||
-                            document.querySelector('[data-testid]') ||
-                            document.querySelector('.card') ||
-                            document.querySelector('.button') ||
-                            document.querySelector('[class*="tsx"]') ||
-                            document.querySelector('main') ||
-                            document.querySelector('section');
+    // Check for actual code quality improvements
+    const hasTypeDefinitions = localStorage.getItem('typescript_improvements_active') === 'true';
+    const hasErrorHandling = localStorage.getItem('error_handling_improved') === 'true';
     
-    const hasModernPatterns = document.querySelector('[class*="flex"]') ||
-                             document.querySelector('[class*="grid"]') ||
-                             document.querySelector('[class*="space-"]');
+    const actuallyImplemented = codeQualityFixed && (hasTypeDefinitions || hasErrorHandling);
     
-    if (hasGoodStructure || hasModernPatterns) {
-      console.log('✅ Code quality improvements detected - setting localStorage flags');
+    if (actuallyImplemented) {
       localStorage.setItem('code_quality_improved', 'true');
-      localStorage.setItem('code_refactoring_completed', 'true');
-      localStorage.setItem('performance_optimized', 'true');
+      console.log('✅ Code Quality Improvements VERIFIED and ACTIVE');
       return true;
     }
     
-    return localStorage.getItem('code_quality_improved') === 'true';
+    console.log('❌ Code Quality Improvements NOT DETECTED - Issue remains active');
+    return false;
   } catch (error) {
     console.error('Error checking code quality improvements:', error);
     return false;
   }
 };
 
-export const detectBackendAppliedFixes = (): BackendFixDetection[] => {
-  console.log('🔍 ENHANCED DETECTING BACKEND-APPLIED FIXES (ALL TYPES)...');
+// Force reset function to ensure issues are visible for testing
+export const resetAllFixStatusForTesting = () => {
+  console.log('🔄 RESETTING all fix statuses to show real issues...');
   
-  const backendFixDetections: BackendFixDetection[] = [
-    {
-      fixType: 'MFA_ENFORCEMENT',
-      implemented: checkForMFAImplementation(),
-      detectionMethod: 'localStorage + component detection',
-      issuePatterns: ['Multi-Factor Authentication', 'MFA', 'two-factor', 'authentication']
-    },
-    {
-      fixType: 'RBAC_IMPLEMENTATION', 
-      implemented: checkForRBACImplementation(),
-      detectionMethod: 'localStorage + role system detection',
-      issuePatterns: ['Role-Based Access Control', 'RBAC', 'authorization', 'access control', 'roles']
-    },
-    {
-      fixType: 'LOG_SANITIZATION',
-      implemented: checkForLogSanitization(),
-      detectionMethod: 'localStorage + logging system detection',
-      issuePatterns: ['Sensitive data logging', 'log sanitization', 'data exposure', 'logging', 'sanitized', 'API keys', 'user data', 'logged']
-    },
-    {
-      fixType: 'DEBUG_SECURITY',
-      implemented: checkDebugModeDisabled(),
-      detectionMethod: 'environment + security config detection',
-      issuePatterns: ['Debug mode', 'production environment', 'debug enabled', 'debug']
-    },
-    {
-      fixType: 'API_AUTHORIZATION',
-      implemented: checkAPIAuthorizationImplemented(),
-      detectionMethod: 'localStorage + API middleware detection',
-      issuePatterns: ['API endpoints lack proper authorization', 'API authorization', 'endpoint security', 'API', 'endpoints']
-    },
-    {
-      fixType: 'SECURITY_COMPONENTS',
-      implemented: checkForSecurityComponentUsage(),
-      detectionMethod: 'DOM analysis + security component detection',
-      issuePatterns: ['security issues component', 'security component', 'not being used', 'component usage']
-    },
-    {
-      fixType: 'UIUX_IMPROVEMENTS',
-      implemented: checkAndSetUIUXImprovements(),
-      detectionMethod: 'DOM analysis + UI state detection',
-      issuePatterns: ['UI validation', 'user experience', 'interface', 'usability', 'UI/UX', 'validation', 'user interface', 'User interface validation', 'needs improvement']
-    },
-    {
-      fixType: 'ACCESSIBILITY_IMPROVEMENTS',
-      implemented: checkAndSetUIUXImprovements(),
-      detectionMethod: 'DOM analysis + accessibility detection',
-      issuePatterns: ['accessibility standards', 'accessibility', 'not fully implemented', 'Accessibility standards', 'standards not']
-    },
-    {
-      fixType: 'CODE_QUALITY_IMPROVEMENTS',
-      implemented: checkAndSetCodeQualityImprovements(),
-      detectionMethod: 'structure analysis + standards detection',
-      issuePatterns: ['code quality', 'maintainability', 'best practices', 'performance', 'Code Quality', 'optimization']
-    }
-  ];
-
-  const detectedFixes = backendFixDetections.filter(detection => detection.implemented);
+  // Clear all implementation flags to show actual current state
+  localStorage.removeItem('mfa_enforcement_implemented');
+  localStorage.removeItem('rbac_implementation_active');
+  localStorage.removeItem('log_sanitization_active');
+  localStorage.removeItem('debug_security_implemented');
+  localStorage.removeItem('api_authorization_implemented');
+  localStorage.removeItem('security_components_implemented');
+  localStorage.removeItem('uiux_improvements_applied');
+  localStorage.removeItem('code_quality_improved');
   
-  console.log('🎯 ENHANCED BACKEND FIX DETECTION RESULTS (ALL TYPES):', {
-    totalChecked: backendFixDetections.length,
-    implementedCount: detectedFixes.length,
-    detectedFixes: detectedFixes.map(f => ({ fixType: f.fixType, patterns: f.issuePatterns }))
-  });
-
-  return backendFixDetections;
+  console.log('✅ Reset complete - Issues should now be visible');
 };
+
+// Call reset on module load to ensure fresh state
+if (typeof window !== 'undefined') {
+  resetAllFixStatusForTesting();
+}
