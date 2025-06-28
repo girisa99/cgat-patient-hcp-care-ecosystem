@@ -109,3 +109,7 @@ export class TypeScriptDatabaseValidator {
     conflicts.push('profiles.created_at: TypeScript expects Date, database has timestamp');
   }
 }
+
+// Export standalone functions for backward compatibility
+export const validateTableSchema = TypeScriptDatabaseValidator.validateTableSchema;
+export const ensureTypescriptDatabaseAlignment = TypeScriptDatabaseValidator.ensureTypescriptDatabaseAlignment;

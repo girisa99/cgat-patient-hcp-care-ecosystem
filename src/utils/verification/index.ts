@@ -1,3 +1,4 @@
+
 export * from './AutomatedVerificationOrchestrator';
 export * from './CoreVerificationOrchestrator';
 export * from './UIUXOrchestrator';
@@ -11,8 +12,9 @@ export * from './DatabaseFixOrchestrator';
 export * from './EnhancedAdminModuleVerificationRunner';
 export * from './AdminModuleVerificationRunner';
 
-// Export missing functions from TypeScriptDatabaseValidator
+// Export specific functions from TypeScriptDatabaseValidator
 export { 
+  TypeScriptDatabaseValidator,
   validateTableSchema, 
   ensureTypescriptDatabaseAlignment 
 } from './TypeScriptDatabaseValidator';

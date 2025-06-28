@@ -679,10 +679,10 @@ export class AutomatedVerificationOrchestrator {
       allRecommendations.push(...schemaValidation.recommendations);
     }
     if (securityScan) {
-      allRecommendations.push(...securityScan.recommendations.map(r => r.title));
+      allRecommendations.push(...securityScan.recommendations);
     }
     if (codeQuality) {
-      allRecommendations.push(...codeQuality.recommendations.map(r => r.title));
+      allRecommendations.push(...codeQuality.recommendations);
     }
 
     // Generate SQL auto-fixes
