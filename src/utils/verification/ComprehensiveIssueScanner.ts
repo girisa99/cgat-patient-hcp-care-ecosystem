@@ -114,7 +114,7 @@ export class ComprehensiveIssueScanner {
           issueId: this.generateIssueId(issueDef),
           lastSeen: timestamp,
           firstDetected: timestamp,
-          status: 'active',
+          status: 'existing',
           fixKey: issueDef.fixKey
         };
         
