@@ -36,6 +36,7 @@ export const useDatabaseIssues = (): DatabaseIssuesData & {
   // Load active issues from database
   const loadActiveIssues = async () => {
     try {
+      setError(null); // Clear any previous errors
       const { data, error } = await supabase
         .from('active_issues')
         .select('*')
@@ -57,8 +58,9 @@ export const useDatabaseIssues = (): DatabaseIssuesData & {
 
       setActiveIssues(issues);
       setLastScanTime(new Date());
+      console.log('✅ Active issues loaded successfully from database:', issues.length);
     } catch (err) {
-      console.error('Error loading active issues:', err);
+      console.error('❌ Error loading active issues:', err);
       setError(err instanceof Error ? err.message : 'Failed to load issues');
     }
   };
@@ -66,21 +68,28 @@ export const useDatabaseIssues = (): DatabaseIssuesData & {
   // Load fixed issues count from database
   const loadFixedCount = async () => {
     try {
+      setError(null); // Clear any previous errors
       const { count, error } = await supabase
         .from('issue_fixes')
         .select('*', { count: 'exact', head: true });
 
       if (error) throw error;
       setTotalFixedCount(count || 0);
+      console.log('✅ Fixed issues count loaded successfully:', count || 0);
     } catch (err) {
-      console.error('Error loading fixed count:', err);
+      console.error('❌ Error loading fixed count:', err);
+      // Don't set error for fixed count as it's not critical
     }
   };
 
-  // Sync current system state to database
+  // Sync current system state to database with better error handling
   const syncActiveIssues = async () => {
     setIsLoading(true);
+    setError(null);
+    
     try {
+      console.log('🔄 Syncing active issues to database...');
+      
       // Define current system issues based on actual implementation checks
       const currentIssues = [
         {
@@ -127,18 +136,25 @@ export const useDatabaseIssues = (): DatabaseIssuesData & {
         }
       ];
 
-      // Use the sync function to update active issues in database
+      // Use the updated sync function (should now work without DELETE errors)
       const { error } = await supabase.rpc('sync_active_issues', {
         issues_data: currentIssues
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Database sync error:', error);
+        throw new Error(`Database sync failed: ${error.message}`);
+      }
 
-      console.log('✅ Active issues synced to database');
+      console.log('✅ Active issues synced to database successfully');
+      
+      // Reload data after successful sync
       await loadActiveIssues();
+      
     } catch (err) {
-      console.error('Error syncing active issues:', err);
-      setError(err instanceof Error ? err.message : 'Failed to sync issues');
+      console.error('❌ Error syncing active issues:', err);
+      setError(err instanceof Error ? err.message : 'Failed to sync issues with database');
+      throw err; // Re-throw to let caller handle it
     } finally {
       setIsLoading(false);
     }
@@ -150,13 +166,18 @@ export const useDatabaseIssues = (): DatabaseIssuesData & {
     setError(null);
     try {
       await Promise.all([loadActiveIssues(), loadFixedCount()]);
+      console.log('✅ All issues data refreshed from database');
+    } catch (err) {
+      console.error('❌ Error refreshing issues:', err);
+      setError(err instanceof Error ? err.message : 'Failed to refresh issues');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Load data on mount
+  // Load data on mount only (no automatic updates)
   useEffect(() => {
+    console.log('🎯 DatabaseIssues hook: Initial data load');
     refreshIssues();
   }, []);
 

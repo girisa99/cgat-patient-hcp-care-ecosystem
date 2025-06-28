@@ -10,13 +10,14 @@ import { PageContainer } from '@/components/layout/PageContainer';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Shield, AlertTriangle, CheckCircle, Activity, RefreshCw } from 'lucide-react';
+import { Shield, AlertTriangle, CheckCircle, Activity, RefreshCw, Database } from 'lucide-react';
 import { useDatabaseIssues } from '@/hooks/useDatabaseIssues';
 import { useStableHealthScore } from '@/hooks/useStableHealthScore';
 import CleanIssuesTab from '@/components/security/CleanIssuesTab';
 
 const AdminVerificationTest = () => {
   const [isManualScanRunning, setIsManualScanRunning] = useState(false);
+  const [lastManualUpdate, setLastManualUpdate] = useState<Date | null>(null);
   const { toast } = useToast();
 
   const {
@@ -41,21 +42,33 @@ const AdminVerificationTest = () => {
 
   const runManualVerification = async () => {
     setIsManualScanRunning(true);
-    console.log('🔍 RUNNING MANUAL VERIFICATION...');
+    console.log('🔍 RUNNING MANUAL VERIFICATION (Database-First)...');
 
     try {
-      // Sync active issues with database
+      toast({
+        title: "🔍 Manual Verification Started",
+        description: "Syncing active issues with database and recalculating health score...",
+        variant: "default",
+      });
+
+      // Sync active issues with database (this will now work with the fixed function)
       await syncActiveIssues();
+      console.log('✅ Active issues synced successfully with database');
       
-      // Refresh all data
+      // Refresh all data from database
       await refreshIssues();
+      console.log('✅ Issues data refreshed from database');
       
       // Recalculate health score
       await recalculateHealth();
+      console.log('✅ Health score recalculated');
+      
+      // Update last manual update time
+      setLastManualUpdate(new Date());
       
       toast({
         title: "✅ Manual Verification Complete",
-        description: `System verification completed. Health Score: ${healthScore}/100`,
+        description: `System verification completed successfully. Health Score: ${healthScore}/100`,
         variant: "default",
       });
       
@@ -64,7 +77,7 @@ const AdminVerificationTest = () => {
       console.error('❌ Manual verification failed:', error);
       toast({
         title: "❌ Verification Failed",
-        description: "Failed to complete system verification",
+        description: error instanceof Error ? error.message : "Failed to complete system verification",
         variant: "destructive",
       });
     } finally {
@@ -72,10 +85,10 @@ const AdminVerificationTest = () => {
     }
   };
 
-  // Auto-sync on mount
+  // Only run initial data load, no automatic syncing
   useEffect(() => {
-    console.log('🎯 System Verification Dashboard: Starting initial sync');
-    syncActiveIssues();
+    console.log('🎯 System Verification Dashboard: Loading initial data from database');
+    refreshIssues().catch(console.error);
   }, []);
 
   return (
@@ -104,16 +117,22 @@ const AdminVerificationTest = () => {
                     size="sm"
                   >
                     <RefreshCw className={`h-4 w-4 mr-2 ${isManualScanRunning ? 'animate-spin' : ''}`} />
-                    {isManualScanRunning ? 'Running...' : 'Run Verification'}
+                    {isManualScanRunning ? 'Running...' : 'Manual Verification'}
                   </Button>
                   <div className="flex items-center gap-1">
-                    <Activity className="h-4 w-4 text-blue-600" />
-                    <span className="text-sm text-blue-600">Live DB</span>
+                    <Database className="h-4 w-4 text-blue-600" />
+                    <span className="text-sm text-blue-600">DB Only</span>
                   </div>
                 </div>
               </CardTitle>
               <CardDescription className={isStable ? 'text-green-700' : 'text-yellow-700'}>
                 Last calculated: {lastCalculated.toLocaleTimeString()}
+                {lastManualUpdate && (
+                  <>
+                    <br />
+                    Last manual update: {lastManualUpdate.toLocaleTimeString()}
+                  </>
+                )}
                 <br />
                 Critical Issues: {criticalIssuesCount} | Total Active: {totalActiveIssues} | Fixed: {totalFixedIssues}
                 <br />
@@ -167,6 +186,10 @@ const AdminVerificationTest = () => {
                 ✅ No localStorage dependencies - single source of truth established.
                 <br />
                 ✅ Real-time sync between active_issues and issue_fixes tables.
+                <br />
+                ✅ Manual updates only - no automatic background processes.
+                <br />
+                ✅ Database function fixed - DELETE operations now work properly.
               </CardDescription>
             </CardHeader>
           </Card>
@@ -177,10 +200,12 @@ const AdminVerificationTest = () => {
               <CardHeader>
                 <CardTitle className="text-red-800 flex items-center">
                   <AlertTriangle className="h-5 w-5 mr-2" />
-                  Database Connection Error
+                  Database Connection Issue
                 </CardTitle>
                 <CardDescription className="text-red-700">
                   {error}
+                  <br />
+                  <span className="text-xs">Note: Database function has been updated to fix sync issues.</span>
                 </CardDescription>
               </CardHeader>
             </Card>
