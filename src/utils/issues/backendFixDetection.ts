@@ -199,6 +199,60 @@ export const checkAndSetCodeQualityImprovements = (): boolean => {
   }
 };
 
+// Add the missing detectBackendAppliedFixes function
+export const detectBackendAppliedFixes = () => {
+  return [
+    {
+      fixType: 'MFA Implementation',
+      implemented: checkForMFAImplementation(),
+      detectionMethod: 'Component and localStorage check',
+      issuePatterns: ['multi-factor authentication', 'mfa', '2fa', 'two-factor']
+    },
+    {
+      fixType: 'RBAC Implementation',
+      implemented: checkForRBACImplementation(),
+      detectionMethod: 'DOM and localStorage check',
+      issuePatterns: ['role-based access control', 'rbac', 'permission', 'access control']
+    },
+    {
+      fixType: 'Log Sanitization',
+      implemented: checkForLogSanitization(),
+      detectionMethod: 'Window object and localStorage check',
+      issuePatterns: ['log sanitization', 'sensitive data', 'logged', 'api keys']
+    },
+    {
+      fixType: 'Debug Security',
+      implemented: checkDebugModeDisabled(),
+      detectionMethod: 'Environment and localStorage check',
+      issuePatterns: ['debug mode', 'production', 'debug security']
+    },
+    {
+      fixType: 'API Authorization',
+      implemented: checkAPIAuthorizationImplemented(),
+      detectionMethod: 'API configuration check',
+      issuePatterns: ['api authorization', 'endpoint', 'authorization check']
+    },
+    {
+      fixType: 'Security Components',
+      implemented: checkForSecurityComponentUsage(),
+      detectionMethod: 'DOM and hook check',
+      issuePatterns: ['security component', 'component usage']
+    },
+    {
+      fixType: 'UI/UX Improvements',
+      implemented: checkAndSetUIUXImprovements(),
+      detectionMethod: 'DOM and localStorage check',
+      issuePatterns: ['ui/ux', 'user interface', 'accessibility', 'validation']
+    },
+    {
+      fixType: 'Code Quality',
+      implemented: checkAndSetCodeQualityImprovements(),
+      detectionMethod: 'Code analysis and localStorage check',
+      issuePatterns: ['code quality', 'error handling', 'typescript', 'best practices']
+    }
+  ];
+};
+
 // Force reset function to ensure issues are visible for testing
 export const resetAllFixStatusForTesting = () => {
   console.log('🔄 RESETTING all fix statuses to show real issues...');

@@ -11,6 +11,7 @@ export interface Issue {
   status?: 'new' | 'existing' | 'resolved' | 'reappeared' | 'backend_fixed';
   backendFixed?: boolean;
   autoDetectedFix?: boolean;
+  fixKey?: string; // Add the missing fixKey property
 }
 
 export interface ProcessedIssuesData {
