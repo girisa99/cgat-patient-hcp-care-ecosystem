@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Bug, CheckCircle, Shield, Database, Code, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Bug, CheckCircle, Shield, Database, Code, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAccurateIssuesProcessor } from './AccurateIssuesProcessor';
 import EnhancedIssueTopicGroup from './EnhancedIssueTopicGroup';
@@ -9,7 +9,6 @@ import { CodeFix } from '@/utils/verification/ImprovedRealCodeFixHandler';
 import { Issue } from '@/types/issuesTypes';
 import { markIssueAsReallyFixed } from './IssuesDataProcessor';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 
 interface CleanIssuesTabProps {
   onReRunVerification?: () => void;
@@ -21,7 +20,6 @@ const CleanIssuesTab: React.FC<CleanIssuesTabProps> = ({
   isReRunning = false 
 }) => {
   const { toast } = useToast();
-  const [isScanning, setIsScanning] = useState(false);
   
   const {
     activeIssues,
@@ -39,30 +37,6 @@ const CleanIssuesTab: React.FC<CleanIssuesTabProps> = ({
     'Code Quality Scanner': Code,
     'UI/UX Scanner': Bug,
     'System Issues': Bug
-  };
-
-  const handleRefreshScan = async () => {
-    setIsScanning(true);
-    console.log('🔍 REFRESHING SYSTEM SCAN...');
-    
-    try {
-      await performComprehensiveScan();
-      
-      toast({
-        title: "🔄 Scan Refreshed",
-        description: "System scan has been updated with latest status",
-        variant: "default",
-      });
-    } catch (error) {
-      console.error('❌ Scan refresh failed:', error);
-      toast({
-        title: "❌ Scan Failed",
-        description: "Failed to refresh system scan",
-        variant: "destructive",
-      });
-    } finally {
-      setIsScanning(false);
-    }
   };
 
   // Handle manual fix application
@@ -103,27 +77,9 @@ const CleanIssuesTab: React.FC<CleanIssuesTabProps> = ({
             </div>
             <p className="text-sm text-blue-700">
               Comprehensive issue tracking and resolution system.
-              {lastScanTime && ` Last scanned: ${lastScanTime.toLocaleTimeString()}`}
+              {lastScanTime && ` Last updated: ${lastScanTime.toLocaleTimeString()}`}
             </p>
           </div>
-          <Button 
-            onClick={handleRefreshScan}
-            disabled={isScanning}
-            variant="outline"
-            className="ml-4"
-          >
-            {isScanning ? (
-              <>
-                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                Scanning...
-              </>
-            ) : (
-              <>
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh Scan
-              </>
-            )}
-          </Button>
         </div>
       </div>
 
@@ -186,25 +142,12 @@ const CleanIssuesTab: React.FC<CleanIssuesTabProps> = ({
           })}
 
           {/* No Issues State */}
-          {categorizedIssues.total === 0 && !isScanning && (
+          {categorizedIssues.total === 0 && (
             <div className="bg-green-50 border border-green-200 rounded-lg p-8 text-center">
               <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-600" />
               <h3 className="text-lg font-medium text-green-900 mb-2">No Active Issues Found</h3>
               <p className="text-green-700">
                 All identified issues have been resolved. Total fixes applied: {totalFixedCount}
-              </p>
-            </div>
-          )}
-
-          {/* Scanning State */}
-          {isScanning && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-8 text-center">
-              <div className="animate-spin h-12 w-12 mx-auto mb-4 border-4 border-blue-200 border-t-blue-600 rounded-full"></div>
-              <h3 className="text-lg font-medium text-blue-900 mb-2">
-                System Scan in Progress
-              </h3>
-              <p className="text-blue-700">
-                Analyzing all system issues and updating status...
               </p>
             </div>
           )}
