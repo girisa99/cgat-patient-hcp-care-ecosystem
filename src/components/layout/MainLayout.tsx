@@ -2,9 +2,9 @@
 import React, { useState } from 'react';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import Header from './Header';
-import Sidebar from './Sidebar';
-import { Button } from '@/components/ui/button';
-import { Menu } from 'lucide-react';
+import MobileMenuBar from './MobileMenuBar';
+import SidebarContainer from './SidebarContainer';
+import ContentArea from './ContentArea';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -21,47 +21,22 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       
       {/* Mobile Menu Bar */}
       {isMobile && (
-        <div className="fixed top-16 left-0 right-0 z-40 h-12 bg-background border-b px-4 flex items-center">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => setSidebarOpen(true)}
-            className="flex items-center space-x-2"
-          >
-            <Menu className="h-4 w-4" />
-            <span>Menu</span>
-          </Button>
-        </div>
+        <MobileMenuBar onMenuClick={() => setSidebarOpen(true)} />
       )}
       
       {/* Main Container */}
       <div className="flex pt-16">
-        {/* Desktop Sidebar - Always visible on desktop */}
-        {!isMobile && (
-          <div className="w-64 flex-shrink-0">
-            <div className="fixed left-0 top-16 w-64 h-[calc(100vh-4rem)] bg-gray-50 border-r border-gray-200 overflow-y-auto">
-              <Sidebar />
-            </div>
-          </div>
-        )}
-        
-        {/* Mobile Sidebar Overlay */}
-        {isMobile && (
-          <Sidebar 
-            isOpen={sidebarOpen} 
-            onClose={() => setSidebarOpen(false)} 
-          />
-        )}
+        {/* Sidebar Container */}
+        <SidebarContainer 
+          isMobile={isMobile}
+          sidebarOpen={sidebarOpen}
+          onSidebarClose={() => setSidebarOpen(false)}
+        />
         
         {/* Content Area */}
-        <main className={`
-          flex-1 
-          min-h-[calc(100vh-4rem)]
-          ${isMobile ? 'pt-12' : ''} 
-          overflow-x-hidden
-        `}>
+        <ContentArea isMobile={isMobile}>
           {children}
-        </main>
+        </ContentArea>
       </div>
     </div>
   );
