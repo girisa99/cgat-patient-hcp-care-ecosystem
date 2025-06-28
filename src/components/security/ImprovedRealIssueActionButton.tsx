@@ -7,12 +7,12 @@ import { Issue } from './IssuesDataProcessor';
 
 interface ImprovedRealIssueActionButtonProps {
   issue: Issue;
-  onFixApplied: (issue: Issue, fix: CodeFix) => void;
+  onIssueFixed: (issue: Issue, fix: CodeFix) => void;
 }
 
 const ImprovedRealIssueActionButton: React.FC<ImprovedRealIssueActionButtonProps> = ({
   issue,
-  onFixApplied
+  onIssueFixed
 }) => {
   const [isApplying, setIsApplying] = useState(false);
   const [isFixed, setIsFixed] = useState(false);
@@ -63,7 +63,7 @@ const ImprovedRealIssueActionButton: React.FC<ImprovedRealIssueActionButtonProps
       if (result.success && result.validationPassed && result.actualChangesApplied) {
         console.log('✅ REAL FIX APPLIED with actual code changes:', result.message);
         setIsFixed(true);
-        onFixApplied(issue, fix);
+        onIssueFixed(issue, fix);
       } else {
         console.log('⚠️ Fix application incomplete:', result.message);
       }
