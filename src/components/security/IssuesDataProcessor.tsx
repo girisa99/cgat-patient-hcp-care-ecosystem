@@ -62,26 +62,41 @@ export const useIssuesDataProcessor = (
       });
     }
 
-    // Add performance issues
-    if (verificationSummary.performanceIssues && verificationSummary.performanceIssues.length > 0) {
-      verificationSummary.performanceIssues.forEach(issue => {
-        allIssues.push({
-          type: 'Performance Issue',
-          message: issue,
-          source: 'Performance Monitor',
-          severity: 'medium'
+    // Add issues from comprehensive results if available
+    if (verificationSummary.comprehensiveResults) {
+      // Check if comprehensive results has performance data
+      if (verificationSummary.comprehensiveResults.performanceMetrics?.issues) {
+        verificationSummary.comprehensiveResults.performanceMetrics.issues.forEach((issue: string) => {
+          allIssues.push({
+            type: 'Performance Issue',
+            message: issue,
+            source: 'Performance Monitor',
+            severity: 'medium'
+          });
         });
-      });
+      }
+
+      // Check if comprehensive results has database validation data
+      if (verificationSummary.comprehensiveResults.databaseValidation?.issues) {
+        verificationSummary.comprehensiveResults.databaseValidation.issues.forEach((issue: string) => {
+          allIssues.push({
+            type: 'Database Issue',
+            message: issue,
+            source: 'Database Validator',
+            severity: 'high'
+          });
+        });
+      }
     }
 
-    // Add database issues
-    if (verificationSummary.databaseIssues && verificationSummary.databaseIssues.length > 0) {
-      verificationSummary.databaseIssues.forEach(issue => {
+    // Add general issues if available
+    if (verificationSummary.issues && verificationSummary.issues.length > 0) {
+      verificationSummary.issues.forEach(issue => {
         allIssues.push({
-          type: 'Database Issue',
+          type: 'System Issue',
           message: issue,
-          source: 'Database Validator',
-          severity: 'high'
+          source: 'Verification System',
+          severity: 'medium'
         });
       });
     }
@@ -104,7 +119,8 @@ export const useIssuesDataProcessor = (
       'Database Issues': activeIssues.filter(issue => issue.type.includes('Database')),
       'Code Quality': activeIssues.filter(issue => 
         issue.type.includes('Validation') || issue.type.includes('Performance')
-      )
+      ),
+      'System Issues': activeIssues.filter(issue => issue.type.includes('System'))
     };
 
     return {
