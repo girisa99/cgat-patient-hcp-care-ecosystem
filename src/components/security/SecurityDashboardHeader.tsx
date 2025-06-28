@@ -2,8 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Shield, Activity, AlertTriangle, CheckCircle, RefreshCw } from 'lucide-react';
+import { Shield, Activity, AlertTriangle, CheckCircle } from 'lucide-react';
 import { ComprehensiveSecurityPerformanceSummary } from '@/utils/verification/EnhancedSecurityPerformanceOrchestrator';
 
 interface SecurityDashboardHeaderProps {
@@ -16,8 +15,7 @@ interface SecurityDashboardHeaderProps {
 const SecurityDashboardHeader: React.FC<SecurityDashboardHeaderProps> = ({
   comprehensiveSummary,
   isMonitoringActive,
-  isScanning,
-  onSecurityScan
+  isScanning
 }) => {
   const getOverallStatus = () => {
     if (!comprehensiveSummary) return { text: 'Initializing', color: 'secondary', icon: Shield };
@@ -55,17 +53,9 @@ const SecurityDashboardHeader: React.FC<SecurityDashboardHeaderProps> = ({
             {isMonitoringActive && (
               <Badge variant="default" className="bg-green-100 text-green-800">
                 <Activity className="h-3 w-3 mr-1" />
-                Live Monitoring
+                Manual Mode
               </Badge>
             )}
-            <Button 
-              onClick={onSecurityScan}
-              disabled={isScanning}
-              variant="outline"
-            >
-              <RefreshCw className={`h-4 w-4 mr-2 ${isScanning ? 'animate-spin' : ''}`} />
-              {isScanning ? 'Scanning...' : 'Full System Scan'}
-            </Button>
           </div>
         </CardTitle>
       </CardHeader>

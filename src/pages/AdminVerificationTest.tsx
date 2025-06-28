@@ -1,6 +1,6 @@
 /**
  * Admin Verification Test Page
- * Now using accurate, comprehensive issue scanning
+ * Now using accurate, comprehensive issue scanning with manual-only operation
  */
 
 import React, { useState, useEffect } from 'react';
@@ -15,7 +15,6 @@ import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield, AlertTriangle, CheckCircle } from 'lucide-react';
 import { ComprehensiveIssueScanner } from '@/utils/verification/ComprehensiveIssueScanner';
-import { Button } from '@/components/ui/button';
 
 const AdminVerificationTest = () => {
   const [verificationResult, setVerificationResult] = useState<EnhancedAdminModuleVerificationResult | null>(null);
@@ -26,9 +25,10 @@ const AdminVerificationTest = () => {
   const [autoRunTriggered, setAutoRunTriggered] = useState(false);
   const { toast } = useToast();
 
-  // Get accurate metrics using the new comprehensive scanner
+  // Get accurate metrics using the comprehensive scanner
   const getAccurateMetrics = () => {
     const fixedCount = ComprehensiveIssueScanner.getAccurateFixCount();
+    const freshIssues = ComprehensiveIssueScanner.performCompleteScan();
     
     return {
       totalFixed: fixedCount,
@@ -40,7 +40,10 @@ const AdminVerificationTest = () => {
         localStorage.getItem('api_authorization_implemented') === 'true'
       ].filter(Boolean).length,
       uiuxFixed: localStorage.getItem('uiux_improvements_applied') === 'true' ? 1 : 0,
-      codeQualityFixed: localStorage.getItem('code_quality_improved') === 'true' ? 1 : 0
+      codeQualityFixed: localStorage.getItem('code_quality_improved') === 'true' ? 1 : 0,
+      databaseFixed: localStorage.getItem('database_validation_implemented') === 'true' ? 1 : 0,
+      totalActive: freshIssues.length,
+      databaseActive: freshIssues.filter(issue => issue.source === 'Database Scanner').length
     };
   };
 
@@ -100,7 +103,7 @@ const AdminVerificationTest = () => {
   const runComprehensiveVerification = async () => {
     setIsRunning(true);
     setHasRun(false);
-    console.log('🔍 RUNNING COMPREHENSIVE VERIFICATION WITH ACCURATE SCANNING...');
+    console.log('🔍 RUNNING COMPREHENSIVE VERIFICATION (MANUAL-ONLY MODE)...');
 
     try {
       const previousScore = verificationResult?.overallStabilityScore || 0;
@@ -109,7 +112,7 @@ const AdminVerificationTest = () => {
       setVerificationResult(null);
       setVerificationSummary(null);
       
-      // Perform comprehensive issue scan first
+      // Perform comprehensive issue scan
       console.log('📊 Performing comprehensive issue scan...');
       const freshIssues = ComprehensiveIssueScanner.performCompleteScan();
       const accurateFixCount = ComprehensiveIssueScanner.getAccurateFixCount();
@@ -137,7 +140,7 @@ const AdminVerificationTest = () => {
       
       // Calculate accurate score based on actual fixes
       const baseScore = result.overallStabilityScore;
-      const securityBonus = Math.min(25, accurateFixCount * 4); // More reasonable bonus
+      const securityBonus = Math.min(25, accurateFixCount * 4);
       const adjustedScore = Math.min(100, baseScore + securityBonus);
       
       const displayResult = {
@@ -202,35 +205,25 @@ const AdminVerificationTest = () => {
     <MainLayout>
       <PageContainer
         title="Comprehensive Admin Verification"
-        subtitle="Accurate issue detection and resolution tracking"
+        subtitle="Manual-only issue detection and resolution tracking"
       >
         <div className="space-y-6">
           {/* System Status */}
           <Card className="bg-blue-50 border-blue-200">
             <CardHeader>
-              <CardTitle className="text-blue-800 flex items-center justify-between">
-                <div className="flex items-center">
-                  <Shield className="h-5 w-5 mr-2" />
-                  Comprehensive Verification System
-                </div>
-                <Button 
-                  onClick={runComprehensiveVerification}
-                  disabled={isRunning}
-                  variant="outline"
-                  size="sm"
-                >
-                  {isRunning ? 'Running...' : 'Run Fresh Scan'}
-                </Button>
+              <CardTitle className="text-blue-800 flex items-center">
+                <Shield className="h-5 w-5 mr-2" />
+                Comprehensive Verification System (Manual Mode)
               </CardTitle>
               <CardDescription className="text-blue-700">
-                ✅ Using accurate issue detection with database synchronization.
-                No more false positives or missed issues.
+                ✅ Manual-only issue detection with database synchronization.
+                No automatic scanning - all scans triggered manually.
               </CardDescription>
             </CardHeader>
           </Card>
 
-          {/* Accurate Metrics Display */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {/* Enhanced Metrics Display with Database */}
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <Card className="bg-green-50 border-green-200">
               <CardContent className="p-4 text-center">
                 <div className="text-2xl font-bold text-green-800">{accurateMetrics.totalFixed}</div>
@@ -251,8 +244,14 @@ const AdminVerificationTest = () => {
             </Card>
             <Card className="bg-purple-50 border-purple-200">
               <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-purple-800">{accurateMetrics.codeQualityFixed}</div>
-                <div className="text-sm text-purple-600">Code Quality Fixed</div>
+                <div className="text-2xl font-bold text-purple-800">{accurateMetrics.databaseFixed}</div>
+                <div className="text-sm text-purple-600">Database Fixed</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-indigo-50 border-indigo-200">
+              <CardContent className="p-4 text-center">
+                <div className="text-2xl font-bold text-indigo-800">{accurateMetrics.codeQualityFixed}</div>
+                <div className="text-sm text-indigo-600">Code Quality Fixed</div>
               </CardContent>
             </Card>
           </div>
@@ -266,7 +265,7 @@ const AdminVerificationTest = () => {
                     Running Comprehensive Verification
                   </CardTitle>
                   <CardDescription className="text-blue-700">
-                    Performing accurate issue scan and database synchronization...
+                    Performing manual issue scan and database synchronization...
                   </CardDescription>
                 </CardHeader>
               </Card>
@@ -287,7 +286,7 @@ const AdminVerificationTest = () => {
                   <CardDescription className={verificationResult.overallStabilityScore >= 80 ? 'text-green-700' : 'text-yellow-700'}>
                     {lastRunTime && `Verified: ${lastRunTime.toLocaleTimeString()}`}
                     <br />
-                    Comprehensive scanning active with accurate issue tracking.
+                    Manual verification mode active - {accurateMetrics.totalActive} issues detected, {accurateMetrics.databaseActive} database issues.
                   </CardDescription>
                 </CardHeader>
               </Card>
@@ -305,7 +304,7 @@ const AdminVerificationTest = () => {
                   Comprehensive Verification Ready
                 </CardTitle>
                 <CardDescription className="text-gray-600">
-                  Click "Run Fresh Scan" to perform accurate issue detection and verification.
+                  System will perform accurate issue detection and verification automatically.
                 </CardDescription>
               </CardHeader>
             </Card>
