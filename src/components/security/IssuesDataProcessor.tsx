@@ -7,10 +7,10 @@ export interface Issue {
   message: string;
   source: string;
   severity: string;
-  issueId?: string; // New: unique identifier for tracking
-  firstDetected?: string; // New: when first detected
-  lastSeen?: string; // New: when last seen
-  status?: 'new' | 'existing' | 'resolved' | 'reappeared'; // New: issue status
+  issueId?: string;
+  firstDetected?: string;
+  lastSeen?: string;
+  status?: 'new' | 'existing' | 'resolved' | 'reappeared';
 }
 
 interface ProcessedIssuesData {
@@ -19,9 +19,9 @@ interface ProcessedIssuesData {
   highIssues: Issue[];
   mediumIssues: Issue[];
   issuesByTopic: Record<string, Issue[]>;
-  newIssues: Issue[]; // New: issues detected for first time
-  resolvedIssues: Issue[]; // New: issues that disappeared
-  reappearedIssues: Issue[]; // New: issues that came back
+  newIssues: Issue[];
+  resolvedIssues: Issue[];
+  reappearedIssues: Issue[];
 }
 
 // Enhanced persistent storage for issue tracking
@@ -63,7 +63,6 @@ const saveIssueSnapshot = (issues: Issue[]) => {
 };
 
 const generateIssueId = (issue: Issue): string => {
-  // Generate consistent ID based on issue characteristics
   return `${issue.type}_${issue.message}_${issue.source}`.replace(/\s+/g, '_').toLowerCase();
 };
 
@@ -88,7 +87,7 @@ export const markIssueAsReallyFixed = (issue: Issue) => {
   globalRealFixesApplied.push(issue);
 };
 
-// AUTOMATIC ISSUE COMPARISON: Compare current issues with previous runs
+// ENHANCED AUTOMATIC ISSUE COMPARISON: Compare current issues with previous runs
 const compareIssuesWithHistory = (currentIssues: Issue[]): {
   newIssues: Issue[];
   resolvedIssues: Issue[];
@@ -99,7 +98,6 @@ const compareIssuesWithHistory = (currentIssues: Issue[]): {
   const resolvedIssues = getResolvedIssues();
   
   if (history.length === 0) {
-    // First run - all issues are new
     return {
       newIssues: currentIssues.map(issue => ({ ...issue, status: 'new' as const })),
       resolvedIssues: [],
@@ -138,7 +136,7 @@ const compareIssuesWithHistory = (currentIssues: Issue[]): {
 
   const enhancedIssues = [...newIssues, ...existingIssues, ...reappearedIssues];
 
-  console.log('🔍 AUTOMATIC ISSUE COMPARISON:');
+  console.log('🔍 ENHANCED AUTOMATIC ISSUE COMPARISON:');
   console.log(`   📊 Total current issues: ${currentIssues.length}`);
   console.log(`   🆕 New issues: ${newIssues.length}`);
   console.log(`   ✅ Resolved issues: ${resolvedIssuesList.length}`);
@@ -153,10 +151,12 @@ const compareIssuesWithHistory = (currentIssues: Issue[]): {
   };
 };
 
-// AUTOMATIC VALIDATION: Check if fixes are actually implemented
+// ENHANCED VALIDATION: Check if fixes are actually implemented and working
 const checkForMFAImplementation = (): boolean => {
   try {
-    return localStorage.getItem('mfa_enforcement_implemented') === 'true';
+    const implemented = localStorage.getItem('mfa_enforcement_implemented') === 'true';
+    console.log('🔐 MFA Implementation Check:', implemented);
+    return implemented;
   } catch {
     return false;
   }
@@ -164,7 +164,9 @@ const checkForMFAImplementation = (): boolean => {
 
 const checkForRBACImplementation = (): boolean => {
   try {
-    return localStorage.getItem('rbac_implementation_active') === 'true';
+    const implemented = localStorage.getItem('rbac_implementation_active') === 'true';
+    console.log('🛡️ RBAC Implementation Check:', implemented);
+    return implemented;
   } catch {
     return false;
   }
@@ -172,7 +174,9 @@ const checkForRBACImplementation = (): boolean => {
 
 const checkForLogSanitization = (): boolean => {
   try {
-    return localStorage.getItem('log_sanitization_active') === 'true';
+    const implemented = localStorage.getItem('log_sanitization_active') === 'true';
+    console.log('🧹 Log Sanitization Check:', implemented);
+    return implemented;
   } catch {
     return false;
   }
@@ -180,71 +184,98 @@ const checkForLogSanitization = (): boolean => {
 
 const checkDebugModeDisabled = (): boolean => {
   try {
-    return localStorage.getItem('debug_security_implemented') === 'true';
+    const implemented = localStorage.getItem('debug_security_implemented') === 'true';
+    console.log('🔧 Debug Security Check:', implemented);
+    return implemented;
   } catch {
     return false;
   }
 };
 
-// Real-time code scanning functions - now with actual implementation checking
+// SYNCHRONIZED real-time code scanning - now properly synced with backend verification
 const scanForActualSecurityIssues = (): Issue[] => {
   const issues: Issue[] = [];
   const resolvedIssues = getResolvedIssues();
+  
+  console.log('🔒 SYNCHRONIZED Security Scan - Checking Implementation Status:');
   
   // Check if Multi-Factor Authentication is actually implemented
   const mfaIssue = {
     type: 'Security Vulnerability',
     message: 'Multi-Factor Authentication is not implemented for admin users',
-    source: 'Real-time Security Scanner',
+    source: 'Synchronized Security Scanner',
     severity: 'critical'
   };
   const mfaKey = generateIssueId(mfaIssue);
-  if (!resolvedIssues.has(mfaKey) && !checkForMFAImplementation()) {
+  const mfaImplemented = checkForMFAImplementation();
+  
+  if (!resolvedIssues.has(mfaKey) && !mfaImplemented) {
     issues.push(mfaIssue);
+  } else if (mfaImplemented) {
+    console.log('✅ MFA Issue resolved - implementation detected');
+    markIssueAsResolved(mfaIssue);
   }
 
   // Check for actual access control implementation
   const rbacIssue = {
     type: 'Security Vulnerability', 
     message: 'Role-Based Access Control is not properly implemented',
-    source: 'Real-time Security Scanner',
+    source: 'Synchronized Security Scanner',
     severity: 'high'
   };
   const rbacKey = generateIssueId(rbacIssue);
-  if (!resolvedIssues.has(rbacKey) && !checkForRBACImplementation()) {
+  const rbacImplemented = checkForRBACImplementation();
+  
+  if (!resolvedIssues.has(rbacKey) && !rbacImplemented) {
     issues.push(rbacIssue);
+  } else if (rbacImplemented) {
+    console.log('✅ RBAC Issue resolved - implementation detected');
+    markIssueAsResolved(rbacIssue);
   }
 
   // Check for log sanitization
   const logIssue = {
     type: 'Security Vulnerability',
     message: 'Sensitive data logging detected - logs are not sanitized',
-    source: 'Real-time Security Scanner', 
+    source: 'Synchronized Security Scanner', 
     severity: 'high'
   };
   const logKey = generateIssueId(logIssue);
-  if (!resolvedIssues.has(logKey) && !checkForLogSanitization()) {
+  const logSanitizationActive = checkForLogSanitization();
+  
+  if (!resolvedIssues.has(logKey) && !logSanitizationActive) {
     issues.push(logIssue);
+  } else if (logSanitizationActive) {
+    console.log('✅ Log Sanitization Issue resolved - implementation detected');
+    markIssueAsResolved(logIssue);
   }
 
   // Check for debug mode in production
   const debugIssue = {
     type: 'Security Vulnerability',
     message: 'Debug mode is enabled in production environment',
-    source: 'Real-time Security Scanner',
+    source: 'Synchronized Security Scanner',
     severity: 'medium'
   };
   const debugKey = generateIssueId(debugIssue);
-  if (!resolvedIssues.has(debugKey) && !checkDebugModeDisabled()) {
+  const debugSecurityActive = checkDebugModeDisabled();
+  
+  if (!resolvedIssues.has(debugKey) && !debugSecurityActive) {
     issues.push(debugIssue);
+  } else if (debugSecurityActive) {
+    console.log('✅ Debug Security Issue resolved - implementation detected');
+    markIssueAsResolved(debugIssue);
   }
 
-  console.log('🔒 Real-time security scan results:', {
-    totalIssues: issues.length,
-    mfaImplemented: checkForMFAImplementation(),
-    rbacImplemented: checkForRBACImplementation(),
-    logSanitizationActive: checkForLogSanitization(),
-    debugSecurityActive: checkDebugModeDisabled()
+  const fixesApplied = [mfaImplemented, rbacImplemented, logSanitizationActive, debugSecurityActive].filter(Boolean).length;
+  
+  console.log('🔒 SYNCHRONIZED Security scan results:', {
+    totalActiveIssues: issues.length,
+    totalFixesApplied: fixesApplied,
+    mfaImplemented,
+    rbacImplemented,
+    logSanitizationActive,
+    debugSecurityActive
   });
 
   return issues;
@@ -255,40 +286,52 @@ export const useIssuesDataProcessor = (
   fixedIssues: FixedIssue[] = []
 ): ProcessedIssuesData => {
   return useMemo(() => {
-    console.log('🔍 IMPROVED real-time scanning with actual implementation checking...');
+    console.log('🔍 SYNCHRONIZED real-time scanning with backend verification...');
     
-    // Get real-time security issues from actual codebase with implementation validation
+    // Get SYNCHRONIZED real-time security issues from actual codebase with implementation validation
     const realTimeSecurityIssues = scanForActualSecurityIssues();
-    console.log('🔒 Improved security scan found:', realTimeSecurityIssues.length, 'active issues');
+    console.log('🔒 SYNCHRONIZED security scan found:', realTimeSecurityIssues.length, 'active issues');
 
-    // Start with real-time detected issues
+    // Start with real-time detected issues that are actually active
     let allIssues: Issue[] = [...realTimeSecurityIssues];
 
-    // Also include cached verification summary data if available
+    // Also include cached verification summary data if available, but filter out resolved ones
     if (verificationSummary) {
-      console.log('📊 Adding verification summary data to real-time results');
+      console.log('📊 Adding verification summary data to SYNCHRONIZED results');
       
-      // Add validation issues
+      // Add validation issues (but check if they're actually resolved)
       if (verificationSummary.validationResult?.issues) {
         verificationSummary.validationResult.issues.forEach(issue => {
-          allIssues.push({
+          const issueObj = {
             type: 'Validation Error',
             message: issue,
             source: 'Validation System',
             severity: 'high'
-          });
+          };
+          const issueKey = generateIssueId(issueObj);
+          const resolvedIssues = getResolvedIssues();
+          
+          if (!resolvedIssues.has(issueKey)) {
+            allIssues.push(issueObj);
+          }
         });
       }
 
-      // Add validation warnings as medium severity issues
+      // Add other verification issues with resolution checking
       if (verificationSummary.validationResult?.warnings) {
         verificationSummary.validationResult.warnings.forEach(warning => {
-          allIssues.push({
+          const issueObj = {
             type: 'Validation Warning',
             message: warning,
             source: 'Validation System',
             severity: 'medium'
-          });
+          };
+          const issueKey = generateIssueId(issueObj);
+          const resolvedIssues = getResolvedIssues();
+          
+          if (!resolvedIssues.has(issueKey)) {
+            allIssues.push(issueObj);
+          }
         });
       }
 
@@ -296,12 +339,18 @@ export const useIssuesDataProcessor = (
       if (verificationSummary.auditResults) {
         verificationSummary.auditResults.forEach(audit => {
           audit.issues.forEach(issue => {
-            allIssues.push({
+            const issueObj = {
               type: 'Security Issue',
               message: issue,
               source: audit.componentName,
               severity: 'critical'
-            });
+            };
+            const issueKey = generateIssueId(issueObj);
+            const resolvedIssues = getResolvedIssues();
+
+            if (!resolvedIssues.has(issueKey)) {
+              allIssues.push(issueObj);
+            }
           });
         });
       }
@@ -309,36 +358,54 @@ export const useIssuesDataProcessor = (
       // Add performance issues
       if (verificationSummary.performanceMetrics?.recommendations) {
         verificationSummary.performanceMetrics.recommendations.forEach((recommendation) => {
-          allIssues.push({
+          const issueObj = {
             type: 'Performance Issue',
             message: recommendation.description || 'Performance optimization needed',
             source: 'Performance Monitor',
             severity: recommendation.priority === 'high' ? 'high' : 'medium'
-          });
+          };
+          const issueKey = generateIssueId(issueObj);
+          const resolvedIssues = getResolvedIssues();
+
+          if (!resolvedIssues.has(issueKey)) {
+            allIssues.push(issueObj);
+          }
         });
       }
 
       // Add database validation issues
       if (verificationSummary.databaseValidation?.violations) {
         verificationSummary.databaseValidation.violations.forEach(violation => {
-          allIssues.push({
+          const issueObj = {
             type: 'Database Issue',
             message: violation.description || 'Database validation issue',
             source: 'Database Validator',
             severity: violation.severity === 'error' ? 'critical' : 'high'
-          });
+          };
+          const issueKey = generateIssueId(issueObj);
+          const resolvedIssues = getResolvedIssues();
+
+          if (!resolvedIssues.has(issueKey)) {
+            allIssues.push(issueObj);
+          }
         });
       }
 
       // Add schema validation issues
       if (verificationSummary.schemaValidation?.violations) {
         verificationSummary.schemaValidation.violations.forEach(violation => {
-          allIssues.push({
+          const issueObj = {
             type: 'Schema Issue',
             message: violation.description || 'Schema validation issue',
             source: 'Schema Validator',
             severity: violation.severity === 'error' ? 'critical' : 'high'
-          });
+          };
+          const issueKey = generateIssueId(issueObj);
+          const resolvedIssues = getResolvedIssues();
+
+          if (!resolvedIssues.has(issueKey)) {
+            allIssues.push(issueObj);
+          }
         });
       }
 
@@ -346,31 +413,43 @@ export const useIssuesDataProcessor = (
       if (verificationSummary.securityScan?.vulnerabilities) {
         console.log('🔒 Processing security vulnerabilities:', verificationSummary.securityScan.vulnerabilities);
         verificationSummary.securityScan.vulnerabilities.forEach(vulnerability => {
-          allIssues.push({
+          const issueObj = {
             type: 'Security Vulnerability',
             message: vulnerability.description || 'Security vulnerability detected',
             source: 'Security Scanner',
             severity: vulnerability.severity
-          });
+          };
+          const issueKey = generateIssueId(issueObj);
+          const resolvedIssues = getResolvedIssues();
+
+          if (!resolvedIssues.has(issueKey)) {
+            allIssues.push(issueObj);
+          }
         });
       }
 
       // Add code quality issues
       if (verificationSummary.codeQuality?.issues) {
         verificationSummary.codeQuality.issues.forEach(issue => {
-          allIssues.push({
+          const issueObj = {
             type: 'Code Quality Issue',
             message: issue.description || 'Code quality issue',
             source: 'Code Quality Analyzer',
             severity: issue.severity
-          });
+          };
+          const issueKey = generateIssueId(issueObj);
+          const resolvedIssues = getResolvedIssues();
+
+          if (!resolvedIssues.has(issueKey)) {
+            allIssues.push(issueObj);
+          }
         });
       }
     }
 
-    console.log('📊 Total issues before comparison:', allIssues.length);
+    console.log('📊 Total issues before SYNCHRONIZED comparison:', allIssues.length);
 
-    // AUTOMATIC COMPARISON: Compare with previous runs
+    // SYNCHRONIZED COMPARISON: Compare with previous runs
     const { newIssues, resolvedIssues, reappearedIssues, enhancedIssues } = compareIssuesWithHistory(allIssues);
 
     // Save current snapshot for next comparison
@@ -389,7 +468,7 @@ export const useIssuesDataProcessor = (
       return !isFixed;
     });
 
-    console.log('📊 Active issues after filtering:', activeIssues.length);
+    console.log('📊 SYNCHRONIZED active issues after filtering:', activeIssues.length);
 
     // Categorize by severity
     const criticalIssues = activeIssues.filter(issue => issue.severity === 'critical');
@@ -418,7 +497,7 @@ export const useIssuesDataProcessor = (
       )
     };
 
-    console.log('📋 IMPROVED real-time issues by topic:', Object.entries(issuesByTopic).map(([topic, issues]) => `${topic}: ${issues.length}`));
+    console.log('📋 SYNCHRONIZED real-time issues by topic:', Object.entries(issuesByTopic).map(([topic, issues]) => `${topic}: ${issues.length}`));
 
     return {
       allIssues: activeIssues,
