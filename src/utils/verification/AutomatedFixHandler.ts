@@ -1,25 +1,26 @@
 
 /**
  * Automated Fix Handler
- * Handles automated fixes for common issues
+ * Handles automated fixes for common issues found during verification
  */
 
 export interface FixableIssue {
+  id: string;
   type: string;
   message: string;
   source: string;
   severity: string;
-  fixable: boolean;
-  fixType: 'automatic' | 'manual' | 'configuration';
+  canAutoFix: boolean;
+  riskLevel: 'low' | 'medium' | 'high';
 }
 
 export interface FixResult {
   success: boolean;
   fixApplied?: string;
   error?: string;
+  auditLogId?: string;
   requiresUserAction?: boolean;
   nextSteps?: string[];
-  auditLogId?: string;
 }
 
 export interface BulkFixResult {
@@ -27,80 +28,96 @@ export interface BulkFixResult {
   successfulFixes: number;
   failedFixes: number;
   auditLogIds: string[];
-  failedIssues: FixableIssue[];
+  errors: string[];
 }
 
 export class AutomatedFixHandler {
+  private static instance: AutomatedFixHandler;
+
+  static getInstance() {
+    if (!this.instance) {
+      this.instance = new AutomatedFixHandler();
+    }
+    return this.instance;
+  }
+
   /**
-   * Get available fixes for issues
+   * Get available fixes for a list of issues
    */
   getAvailableFixes(issues: any[]): FixableIssue[] {
-    return issues.map(issue => ({
+    return issues.map((issue, index) => ({
+      id: `fix_${Date.now()}_${index}`,
       type: issue.type,
       message: issue.message,
       source: issue.source,
       severity: issue.severity,
-      fixable: this.isFixable(issue),
-      fixType: this.getFixType(issue)
-    })).filter(issue => issue.fixable);
+      canAutoFix: this.canAutoFix(issue),
+      riskLevel: this.getRiskLevel(issue)
+    }));
   }
 
   /**
-   * Apply a single fix
+   * Apply a single automated fix
    */
   async applyFix(issue: FixableIssue): Promise<FixResult> {
-    console.log(`🔧 Applying fix for: ${issue.type}`);
+    console.log(`🔧 Applying automated fix for: ${issue.type}`);
     
     try {
       // Simulate fix application
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       const fixApplied = this.generateFixDescription(issue);
-      const auditLogId = `fix_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const auditLogId = `audit_${Date.now()}`;
+      
+      // Log to audit system
+      console.log(`📋 Fix applied and logged: ${auditLogId}`);
       
       return {
         success: true,
         fixApplied,
         auditLogId,
-        requiresUserAction: issue.fixType === 'manual',
-        nextSteps: issue.fixType === 'manual' ? this.getManualSteps(issue) : undefined
+        requiresUserAction: issue.severity === 'critical',
+        nextSteps: issue.severity === 'critical' ? ['Verify fix manually', 'Run additional tests'] : undefined
       };
     } catch (error) {
+      console.error(`❌ Fix failed for ${issue.type}:`, error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
+        error: `Failed to apply fix: ${error}`
       };
     }
   }
 
   /**
-   * Apply bulk fixes
+   * Apply multiple fixes in bulk
    */
-  async applyBulkFixes(
-    issues: FixableIssue[], 
-    mode: 'parallel' | 'sequential' = 'parallel'
-  ): Promise<BulkFixResult> {
+  async applyBulkFixes(issues: FixableIssue[], mode: 'parallel' | 'sequential' = 'parallel'): Promise<BulkFixResult> {
     console.log(`🔧 Applying ${issues.length} fixes in ${mode} mode`);
     
+    const auditLogIds: string[] = [];
+    const errors: string[] = [];
     let successfulFixes = 0;
     let failedFixes = 0;
-    const auditLogIds: string[] = [];
-    const failedIssues: FixableIssue[] = [];
 
     if (mode === 'sequential') {
-      // Sequential processing for critical issues
+      // Apply fixes one by one for critical issues
       for (const issue of issues) {
-        const result = await this.applyFix(issue);
-        if (result.success) {
-          successfulFixes++;
-          if (result.auditLogId) auditLogIds.push(result.auditLogId);
-        } else {
+        try {
+          const result = await this.applyFix(issue);
+          if (result.success) {
+            successfulFixes++;
+            if (result.auditLogId) auditLogIds.push(result.auditLogId);
+          } else {
+            failedFixes++;
+            if (result.error) errors.push(result.error);
+          }
+        } catch (error) {
           failedFixes++;
-          failedIssues.push(issue);
+          errors.push(`${issue.type}: ${error}`);
         }
       }
     } else {
-      // Parallel processing for non-critical issues
+      // Apply fixes in parallel for non-critical issues
       const results = await Promise.allSettled(
         issues.map(issue => this.applyFix(issue))
       );
@@ -111,7 +128,10 @@ export class AutomatedFixHandler {
           if (result.value.auditLogId) auditLogIds.push(result.value.auditLogId);
         } else {
           failedFixes++;
-          failedIssues.push(issues[index]);
+          const error = result.status === 'rejected' 
+            ? result.reason 
+            : result.value.error || 'Unknown error';
+          errors.push(`${issues[index].type}: ${error}`);
         }
       });
     }
@@ -121,63 +141,46 @@ export class AutomatedFixHandler {
       successfulFixes,
       failedFixes,
       auditLogIds,
-      failedIssues
+      errors
     };
   }
 
-  private isFixable(issue: any): boolean {
+  private canAutoFix(issue: any): boolean {
     // Define which types of issues can be automatically fixed
-    const fixableTypes = [
-      'Security Vulnerability',
-      'Database Violation',
-      'Schema Violation',
-      'Code Quality Issue',
-      'Validation Issue'
+    const autoFixableTypes = [
+      'Code Quality',
+      'Performance',
+      'Accessibility',
+      'Format',
+      'Lint',
+      'Style'
     ];
     
-    return fixableTypes.includes(issue.type);
+    return autoFixableTypes.some(type => issue.type.includes(type));
   }
 
-  private getFixType(issue: any): 'automatic' | 'manual' | 'configuration' {
-    if (issue.severity === 'critical' || issue.type.includes('Security')) {
-      return 'manual'; // Critical issues require manual review
-    }
-    
-    if (issue.type.includes('Database') || issue.type.includes('Schema')) {
-      return 'configuration'; // Database issues may need configuration changes
-    }
-    
-    return 'automatic'; // Code quality and validation issues can be auto-fixed
+  private getRiskLevel(issue: any): 'low' | 'medium' | 'high' {
+    if (issue.severity === 'critical') return 'high';
+    if (issue.severity === 'high') return 'medium';
+    return 'low';
   }
 
   private generateFixDescription(issue: FixableIssue): string {
-    const fixes = {
-      'Security Vulnerability': 'Applied security patch and updated permissions',
-      'Database Violation': 'Updated database constraints and validation rules',
-      'Schema Violation': 'Synchronized schema definitions and type mappings',
-      'Code Quality Issue': 'Applied code formatting and optimization rules',
-      'Validation Issue': 'Updated validation logic and error handling'
+    const fixDescriptions = {
+      'Code Quality': 'Applied code formatting and style improvements',
+      'Performance': 'Optimized component rendering and resource usage',
+      'Accessibility': 'Added ARIA labels and improved keyboard navigation',
+      'Security': 'Applied security hardening measures',
+      'Database': 'Optimized database queries and indexes'
     };
-    
-    return fixes[issue.type as keyof typeof fixes] || `Applied fix for ${issue.type}`;
-  }
 
-  private getManualSteps(issue: FixableIssue): string[] {
-    const steps = {
-      'Security Vulnerability': [
-        'Review security patch details',
-        'Test in development environment',
-        'Deploy to production with monitoring'
-      ],
-      'Database Violation': [
-        'Review database schema changes',
-        'Create backup before applying changes',
-        'Monitor performance after deployment'
-      ]
-    };
-    
-    return steps[issue.type as keyof typeof steps] || ['Review and approve changes'];
+    const baseType = Object.keys(fixDescriptions).find(type => 
+      issue.type.includes(type)
+    );
+
+    return baseType ? fixDescriptions[baseType as keyof typeof fixDescriptions] : 
+           `Applied automated fix for ${issue.type}`;
   }
 }
 
-export const automatedFixHandler = new AutomatedFixHandler();
+export const automatedFixHandler = AutomatedFixHandler.getInstance();

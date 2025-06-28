@@ -1,6 +1,7 @@
 
-import React from 'react';
+import { useMemo } from 'react';
 import { VerificationSummary } from '@/utils/verification/AutomatedVerificationOrchestrator';
+import { FixedIssue } from '@/hooks/useFixedIssuesTracker';
 
 export interface Issue {
   type: string;
@@ -14,107 +15,104 @@ interface ProcessedIssuesData {
   criticalIssues: Issue[];
   highIssues: Issue[];
   mediumIssues: Issue[];
-  issuesByTopic: {
-    'Security Issues': Issue[];
-    'Database Issues': Issue[];
-    'Code Quality': Issue[];
-  };
+  issuesByTopic: Record<string, Issue[]>;
 }
 
 export const useIssuesDataProcessor = (
   verificationSummary?: VerificationSummary | null,
-  fixedIssues: any[] = []
+  fixedIssues: FixedIssue[] = []
 ): ProcessedIssuesData => {
-  // Helper function to extract string message from various issue types
-  const extractMessage = (issue: any): string => {
-    if (typeof issue === 'string') {
-      return issue;
+  return useMemo(() => {
+    if (!verificationSummary) {
+      return {
+        allIssues: [],
+        criticalIssues: [],
+        highIssues: [],
+        mediumIssues: [],
+        issuesByTopic: {}
+      };
     }
-    if (issue && typeof issue === 'object') {
-      return issue.description || issue.message || issue.violation || issue.issue || JSON.stringify(issue);
+
+    // Convert verification summary to issues format
+    const allIssues: Issue[] = [];
+
+    // Add validation issues
+    if (verificationSummary.validationResult?.issues) {
+      verificationSummary.validationResult.issues.forEach(issue => {
+        allIssues.push({
+          type: 'Validation Error',
+          message: issue,
+          source: 'Validation System',
+          severity: 'high'
+        });
+      });
     }
-    return String(issue);
-  };
 
-  // Collect all issues from different sources with proper severity mapping
-  const allIssues: Issue[] = React.useMemo(() => {
-    if (!verificationSummary) return [];
+    // Add audit issues
+    if (verificationSummary.auditResults) {
+      verificationSummary.auditResults.forEach(audit => {
+        audit.issues.forEach(issue => {
+          allIssues.push({
+            type: 'Security Issue',
+            message: issue,
+            source: audit.componentName,
+            severity: 'critical'
+          });
+        });
+      });
+    }
 
-    return [
-      // Security vulnerabilities (Critical)
-      ...(verificationSummary?.securityScan?.vulnerabilities || []).map(vuln => ({
-        type: 'Security Vulnerability',
-        message: extractMessage(vuln),
-        source: 'Security',
-        severity: 'critical'
-      })),
-      
-      // Database validation violations (High)
-      ...(verificationSummary?.databaseValidation?.violations || []).map(violation => ({
-        type: 'Database Violation',
-        message: extractMessage(violation),
-        source: 'Database',
-        severity: 'high'
-      })),
-      
-      // Schema validation violations (High)
-      ...(verificationSummary?.schemaValidation?.violations || []).map(violation => ({
-        type: 'Schema Violation',
-        message: extractMessage(violation),
-        source: 'Schema',
-        severity: 'high'
-      })),
-      
-      // Code quality issues (Medium)
-      ...(verificationSummary?.codeQuality?.issues || []).map(issue => ({
-        type: 'Code Quality Issue',
-        message: extractMessage(issue),
-        source: 'Code Quality',
-        severity: 'medium'
-      })),
-      
-      // Validation result issues (Medium)
-      ...(verificationSummary?.validationResult?.issues || []).map(issue => ({
-        type: 'Validation Issue',
-        message: extractMessage(issue),
-        source: 'Validation',
-        severity: 'medium'
-      }))
-    ];
-  }, [verificationSummary]);
+    // Add performance issues
+    if (verificationSummary.performanceIssues && verificationSummary.performanceIssues.length > 0) {
+      verificationSummary.performanceIssues.forEach(issue => {
+        allIssues.push({
+          type: 'Performance Issue',
+          message: issue,
+          source: 'Performance Monitor',
+          severity: 'medium'
+        });
+      });
+    }
 
-  // Filter out fixed issues from active display
-  const displayIssues = React.useMemo(() => {
-    return allIssues.filter(issue => 
+    // Add database issues
+    if (verificationSummary.databaseIssues && verificationSummary.databaseIssues.length > 0) {
+      verificationSummary.databaseIssues.forEach(issue => {
+        allIssues.push({
+          type: 'Database Issue',
+          message: issue,
+          source: 'Database Validator',
+          severity: 'high'
+        });
+      });
+    }
+
+    // Filter out fixed issues
+    const activeIssues = allIssues.filter(issue => 
       !fixedIssues.some(fixed => 
         fixed.type === issue.type && fixed.message === issue.message
       )
     );
-  }, [allIssues, fixedIssues]);
 
-  // Group issues by topic/category
-  const issuesByTopic = React.useMemo(() => ({
-    'Security Issues': displayIssues.filter(issue => 
-      issue.source === 'Security' || issue.type.includes('Security')
-    ),
-    'Database Issues': displayIssues.filter(issue => 
-      issue.source === 'Database' || issue.source === 'Schema'
-    ),
-    'Code Quality': displayIssues.filter(issue => 
-      issue.source === 'Code Quality' || issue.source === 'Validation'
-    )
-  }), [displayIssues]);
+    // Categorize by severity
+    const criticalIssues = activeIssues.filter(issue => issue.severity === 'critical');
+    const highIssues = activeIssues.filter(issue => issue.severity === 'high');
+    const mediumIssues = activeIssues.filter(issue => issue.severity === 'medium');
 
-  // Count issues by severity (only active issues)
-  const criticalIssues = displayIssues.filter(issue => issue.severity === 'critical');
-  const highIssues = displayIssues.filter(issue => issue.severity === 'high');
-  const mediumIssues = displayIssues.filter(issue => issue.severity === 'medium');
+    // Group by topic
+    const issuesByTopic: Record<string, Issue[]> = {
+      'Security Issues': activeIssues.filter(issue => issue.type.includes('Security')),
+      'Database Issues': activeIssues.filter(issue => issue.type.includes('Database')),
+      'Code Quality': activeIssues.filter(issue => 
+        issue.type.includes('Validation') || issue.type.includes('Performance')
+      )
+    };
 
-  return {
-    allIssues: displayIssues,
-    criticalIssues,
-    highIssues,
-    mediumIssues,
-    issuesByTopic
-  };
+    return {
+      allIssues: activeIssues,
+      criticalIssues,
+      highIssues,
+      mediumIssues,
+      issuesByTopic
+    };
+  }, [verificationSummary, fixedIssues]);
 };

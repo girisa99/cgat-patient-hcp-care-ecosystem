@@ -12,23 +12,43 @@ import AdminVerificationHeader from '@/components/verification/AdminVerification
 import VerificationStatusOverview from '@/components/verification/VerificationStatusOverview';
 import VerificationLoadingState from '@/components/verification/VerificationLoadingState';
 import VerificationResultsTabs from '@/components/verification/VerificationResultsTabs';
+import { useToast } from '@/hooks/use-toast';
 
 const AdminVerificationTest = () => {
   const [verificationResult, setVerificationResult] = useState<AdminModuleVerificationResult | null>(null);
   const [isRunning, setIsRunning] = useState(false);
   const [hasRun, setHasRun] = useState(false);
+  const { toast } = useToast();
 
   const runVerification = async () => {
     setIsRunning(true);
     console.log('🚀 Starting Admin Module Verification...');
 
     try {
+      toast({
+        title: "🔍 Verification Started",
+        description: "Running comprehensive admin module verification...",
+        variant: "default",
+      });
+
       const result = await adminModuleVerificationRunner.runAdminModuleVerification();
       setVerificationResult(result);
       setHasRun(true);
+      
+      toast({
+        title: "✅ Verification Complete",
+        description: `Stability Score: ${result.overallStabilityScore}/100`,
+        variant: "default",
+      });
+      
       console.log('✅ Admin Module Verification Complete:', result);
     } catch (error) {
       console.error('❌ Verification failed:', error);
+      toast({
+        title: "❌ Verification Failed",
+        description: "An error occurred during verification. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsRunning(false);
     }
