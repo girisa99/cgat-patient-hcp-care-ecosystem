@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Wrench, Loader2, CheckCircle, AlertTriangle, Shield } from 'lucide-react';
 import { realCodeFixHandler, CodeFix, FixResult } from '@/utils/verification/RealCodeFixHandler';
-import { Issue } from './IssuesDataProcessor';
+import { Issue } from '@/types/issuesTypes';
 
 interface RealIssueActionButtonProps {
   issue: Issue;

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Zap, CheckCircle, Loader2, AlertTriangle } from 'lucide-react';
 import { Issue } from '@/types/issuesTypes';
-import { improvedRealCodeFixHandler, CodeFix } from '@/utils/verification/ImprovedRealCodeFixHandler';
+import { ImprovedRealCodeFixHandler, CodeFix } from '@/utils/verification/ImprovedRealCodeFixHandler';
 
 interface ImprovedRealIssueActionButtonProps {
   issue: Issue;
@@ -112,12 +112,12 @@ const ImprovedRealIssueActionButton: React.FC<ImprovedRealIssueActionButtonProps
     console.log('🔧 Applying ENHANCED real fix for issue:', issue.type);
 
     try {
-      // Generate and apply the real fix using the improved handler
-      const fix = await improvedRealCodeFixHandler.generateAndApplyRealFix(issue);
+      // Generate and apply the real fix using the improved handler (FIXED: using static methods)
+      const fix = await ImprovedRealCodeFixHandler.generateAndApplyRealFix(issue);
       
       if (fix) {
-        // Apply the fix using the improved handler
-        const result = await improvedRealCodeFixHandler.applyRealFix(fix, issue);
+        // Apply the fix using the improved handler (FIXED: using static methods)
+        const result = await ImprovedRealCodeFixHandler.applyRealFix(fix, issue);
         
         if (result.success && result.actualChangesApplied) {
           setIsFixed(true);
@@ -210,4 +210,3 @@ const ImprovedRealIssueActionButton: React.FC<ImprovedRealIssueActionButtonProps
 };
 
 export default ImprovedRealIssueActionButton;
-
