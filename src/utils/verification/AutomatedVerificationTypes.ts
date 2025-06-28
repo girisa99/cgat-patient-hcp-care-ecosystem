@@ -7,9 +7,32 @@ import { ValidationRequest, ValidationResult } from './SimplifiedValidator';
 import { AuditResult } from './ComponentAuditor';
 import { DatabaseValidationResult } from './DatabaseGuidelinesValidator';
 import { SchemaValidationResult } from './DatabaseSchemaValidator';
-import { PerformanceMetrics } from './PerformanceMonitor';
 import { SecurityScanResult } from './SecurityScanner';
 import { CodeQualityResult } from './CodeQualityAnalyzer';
+
+// Export PerformanceMetrics interface
+export interface PerformanceMetrics {
+  timestamp: string;
+  componentRenderTimes: Array<{
+    componentName: string;
+    averageRenderTime: number;
+    renderCount: number;
+  }>;
+  bundleSize: {
+    totalSize: number;
+    chunkSizes: Record<string, number>;
+  };
+  memoryUsage: {
+    jsHeapSizeLimit: number;
+    totalJSHeapSize: number;
+    usedJSHeapSize: number;
+  };
+  networkMetrics: {
+    apiCallCount: number;
+    averageResponseTime: number;
+    failedRequests: number;
+  };
+}
 
 export interface AutomatedVerificationConfig {
   enableRealTimeChecks: boolean;
