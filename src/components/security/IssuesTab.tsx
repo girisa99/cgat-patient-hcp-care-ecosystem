@@ -42,7 +42,7 @@ const IssuesTab: React.FC<IssuesTabProps> = ({
     timestamp: string;
   }>>([]);
 
-  // Auto-refresh every 10 seconds to check for code changes
+  // Auto-refresh every 30 minutes to check for code changes
   const [lastScanTime, setLastScanTime] = React.useState(new Date());
   const [isRealTimeScanning, setIsRealTimeScanning] = React.useState(false);
 
@@ -65,7 +65,7 @@ const IssuesTab: React.FC<IssuesTabProps> = ({
       setTimeout(() => {
         setIsRealTimeScanning(false);
       }, 1000);
-    }, 10000); // Refresh every 10 seconds
+    }, 1800000); // Refresh every 30 minutes
 
     return () => clearInterval(interval);
   }, []);
@@ -121,7 +121,7 @@ const IssuesTab: React.FC<IssuesTabProps> = ({
           <h3 className="font-medium text-green-900">Real-time Code Scanning Active</h3>
         </div>
         <p className="text-sm text-green-700">
-          The system now scans your actual current codebase every 10 seconds. Issues will disappear when you fix them in your code files.
+          The system now scans your actual current codebase every 30 minutes. Issues will disappear when you fix them in your code files.
         </p>
         <p className="text-xs text-green-600 mt-1">
           Last scan: {lastScanTime.toLocaleTimeString()} {isRealTimeScanning && '(Scanning now...)'}
