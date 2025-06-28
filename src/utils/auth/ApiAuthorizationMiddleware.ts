@@ -26,13 +26,17 @@ export class ApiAuthorizationMiddleware {
         return null;
       }
 
-      // Get user roles
-      const { data: userRoles } = await supabase
+      // Get user roles by joining user_roles with roles table
+      const { data: userRolesData } = await supabase
         .from('user_roles')
-        .select('role')
+        .select(`
+          roles (
+            name
+          )
+        `)
         .eq('user_id', session.user.id);
 
-      const roles = userRoles?.map(ur => ur.role) || [];
+      const roles = userRolesData?.map(ur => ur.roles?.name).filter(Boolean) || [];
 
       // Check required role
       if (requiredRole && !roles.includes(requiredRole)) {
