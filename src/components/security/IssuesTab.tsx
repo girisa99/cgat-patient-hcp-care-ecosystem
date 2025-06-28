@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Bug, CheckCircle, Shield, Database, Code, Zap, RefreshCw, TrendingUp, TrendingDown, AlertCircle } from 'lucide-react';
@@ -112,6 +111,7 @@ const IssuesTab: React.FC<IssuesTabProps> = ({
     'Security Issues': Shield,
     'Database Issues': Database,
     'Code Quality': Code,
+    'UI/UX Issues': Bug,
     'System Issues': Bug
   };
 
