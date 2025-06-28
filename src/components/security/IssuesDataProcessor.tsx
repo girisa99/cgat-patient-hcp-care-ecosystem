@@ -62,36 +62,36 @@ export const useIssuesDataProcessor = (
       });
     }
 
-    // Add performance issues from performanceMetrics
-    if (verificationSummary.performanceMetrics?.issues) {
-      verificationSummary.performanceMetrics.issues.forEach((issue: string) => {
+    // Add performance issues - use bottlenecks instead of non-existent issues property
+    if (verificationSummary.performanceMetrics?.bottlenecks) {
+      verificationSummary.performanceMetrics.bottlenecks.forEach((bottleneck) => {
         allIssues.push({
           type: 'Performance Issue',
-          message: issue,
+          message: bottleneck.description || 'Performance bottleneck detected',
           source: 'Performance Monitor',
-          severity: 'medium'
+          severity: bottleneck.impact === 'high' ? 'high' : 'medium'
         });
       });
     }
 
-    // Add database validation issues
+    // Add database validation issues - use description instead of message
     if (verificationSummary.databaseValidation?.violations) {
       verificationSummary.databaseValidation.violations.forEach(violation => {
         allIssues.push({
           type: 'Database Issue',
-          message: violation.message || violation.description || 'Database validation issue',
+          message: violation.description || 'Database validation issue',
           source: 'Database Validator',
           severity: violation.severity === 'error' ? 'critical' : 'high'
         });
       });
     }
 
-    // Add schema validation issues
+    // Add schema validation issues - use description instead of message
     if (verificationSummary.schemaValidation?.violations) {
       verificationSummary.schemaValidation.violations.forEach(violation => {
         allIssues.push({
           type: 'Schema Issue',
-          message: violation.message || violation.description || 'Schema validation issue',
+          message: violation.description || 'Schema validation issue',
           source: 'Schema Validator',
           severity: violation.severity === 'error' ? 'critical' : 'high'
         });
