@@ -3,19 +3,11 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, CheckCircle, AlertTriangle, Lock, Zap, RefreshCw, Bug, Database, Code, Eye } from 'lucide-react';
+import { Shield, CheckCircle, AlertTriangle, Lock, Zap, RefreshCw } from 'lucide-react';
 import { AdminModuleVerificationResult } from '@/utils/verification/AdminModuleVerificationRunner';
 import { useUnifiedMetrics } from '@/hooks/useUnifiedMetrics';
-import ActiveIssuesTab from './tabs/ActiveIssuesTab';
-import FixedIssuesTab from './tabs/FixedIssuesTab';
-import OverallFixedTab from './tabs/OverallFixedTab';
-import SecurityTab from './tabs/SecurityTab';
-import UIUXTab from './tabs/UIUXTab';
-import DatabaseTab from './tabs/DatabaseTab';
-import CodeQualityTab from './tabs/CodeQualityTab';
-import ImplementationTabContent from './tabs/ImplementationTabContent';
-import OverviewTabContent from './tabs/OverviewTabContent';
-import RecommendationsTabContent from './tabs/RecommendationsTabContent';
+import ConsolidatedActiveVsFixedTab from './tabs/ConsolidatedActiveVsFixedTab';
+import ConsolidatedOverallFixedTab from './tabs/ConsolidatedOverallFixedTab';
 
 interface UnifiedVerificationTabsProps {
   verificationResult: AdminModuleVerificationResult;
@@ -68,14 +60,14 @@ const UnifiedVerificationTabs: React.FC<UnifiedVerificationTabsProps> = ({
           <div>
             <CardTitle className="flex items-center gap-2">
               <Shield className="h-5 w-5" />
-              Unified Verification System
+              Consolidated Verification Dashboard
               <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
                 <Zap className="h-3 w-3 mr-1" />
                 Real-time Sync
               </Badge>
             </CardTitle>
             <CardDescription>
-              Synchronized metrics with programmatic and auto-detection capabilities
+              Comprehensive metrics with accurate counting and consolidated display
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
@@ -124,106 +116,29 @@ const UnifiedVerificationTabs: React.FC<UnifiedVerificationTabsProps> = ({
         </div>
 
         <Tabs defaultValue="active-vs-fixed" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="active-vs-fixed" className="flex items-center">
-              <Bug className="h-3 w-3 mr-1" />
-              Active vs Fixed
+              <AlertTriangle className="h-4 w-4 mr-2" />
+              Active vs Fixed Issues
             </TabsTrigger>
             <TabsTrigger value="overall-fixed" className="flex items-center">
-              <CheckCircle className="h-3 w-3 mr-1" />
-              Overall Fixed
-            </TabsTrigger>
-            <TabsTrigger value="security" className="flex items-center">
-              <Shield className="h-3 w-3 mr-1" />
-              Security ({metrics.securityActive})
-            </TabsTrigger>
-            <TabsTrigger value="uiux" className="flex items-center">
-              <Eye className="h-3 w-3 mr-1" />
-              UI/UX ({metrics.uiuxActive})
-            </TabsTrigger>
-            <TabsTrigger value="database" className="flex items-center">
-              <Database className="h-3 w-3 mr-1" />
-              Database ({metrics.databaseActive})
-            </TabsTrigger>
-            <TabsTrigger value="code-quality" className="flex items-center">
-              <Code className="h-3 w-3 mr-1" />
-              Code Quality ({metrics.codeQualityActive})
-            </TabsTrigger>
-            <TabsTrigger value="implementation" className="flex items-center">
-              Implementation
-            </TabsTrigger>
-            <TabsTrigger value="overview" className="flex items-center">
-              Overview
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Overall Fixed Summary
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="active-vs-fixed" className="mt-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <ActiveIssuesTab 
-                metrics={metrics}
-                processedData={processedData}
-                onUpdate={() => updateMetrics('manual')}
-              />
-              <FixedIssuesTab 
-                metrics={metrics}
-                processedData={processedData}
-              />
-            </div>
+            <ConsolidatedActiveVsFixedTab 
+              metrics={metrics}
+              processedData={processedData}
+              onUpdate={() => updateMetrics('manual')}
+            />
           </TabsContent>
 
           <TabsContent value="overall-fixed" className="mt-6">
-            <OverallFixedTab metrics={metrics} />
-          </TabsContent>
-
-          <TabsContent value="security" className="mt-6">
-            <SecurityTab 
+            <ConsolidatedOverallFixedTab 
               metrics={metrics}
-              issues={processedData.issuesByTopic['Security Issues'] || []}
-              onUpdate={() => updateMetrics('manual')}
-            />
-          </TabsContent>
-
-          <TabsContent value="uiux" className="mt-6">
-            <UIUXTab 
-              metrics={metrics}
-              issues={processedData.issuesByTopic['UI/UX Issues'] || []}
-              onUpdate={() => updateMetrics('manual')}
-            />
-          </TabsContent>
-
-          <TabsContent value="database" className="mt-6">
-            <DatabaseTab 
-              metrics={metrics}
-              issues={processedData.issuesByTopic['Database Issues'] || []}
-              onUpdate={() => updateMetrics('manual')}
-            />
-          </TabsContent>
-
-          <TabsContent value="code-quality" className="mt-6">
-            <CodeQualityTab 
-              metrics={metrics}
-              issues={processedData.issuesByTopic['Code Quality'] || []}
-              onUpdate={() => updateMetrics('manual')}
-            />
-          </TabsContent>
-
-          <TabsContent value="implementation" className="mt-6">
-            <ImplementationTabContent syncData={syncData} />
-          </TabsContent>
-
-          <TabsContent value="overview" className="mt-6">
-            <OverviewTabContent
-              verificationResult={verificationResult}
-              fixedCount={metrics.totalFixedIssues}
-              syncData={syncData}
-            />
-          </TabsContent>
-
-          <TabsContent value="recommendations" className="mt-6">
-            <RecommendationsTabContent
-              verificationResult={verificationResult}
-              fixedCount={metrics.totalFixedIssues}
-              syncData={syncData}
+              processedData={processedData}
             />
           </TabsContent>
         </Tabs>
