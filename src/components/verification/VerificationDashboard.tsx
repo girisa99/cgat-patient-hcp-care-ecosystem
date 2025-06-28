@@ -126,7 +126,7 @@ const VerificationDashboard: React.FC = () => {
               <div className="flex items-center space-x-2">
                 <Switch
                   id="real-time"
-                  checked={config.enableRealTimeChecks}
+                  checked={config.enableRealTimeChecks || false}
                   onCheckedChange={(checked) => 
                     updateConfig({ enableRealTimeChecks: checked })
                   }
@@ -137,7 +137,7 @@ const VerificationDashboard: React.FC = () => {
               <div className="flex items-center space-x-2">
                 <Switch
                   id="periodic"
-                  checked={config.enablePeriodicScans}
+                  checked={config.enablePeriodicScans || false}
                   onCheckedChange={(checked) => 
                     updateConfig({ enablePeriodicScans: checked })
                   }
@@ -148,7 +148,7 @@ const VerificationDashboard: React.FC = () => {
               <div className="flex items-center space-x-2">
                 <Switch
                   id="auto-fix"
-                  checked={config.autoFixSimpleIssues}
+                  checked={config.autoFixSimpleIssues || false}
                   onCheckedChange={(checked) => 
                     updateConfig({ autoFixSimpleIssues: checked })
                   }
@@ -159,7 +159,7 @@ const VerificationDashboard: React.FC = () => {
               <div className="flex items-center space-x-2">
                 <Switch
                   id="block-critical"
-                  checked={config.blockOnCriticalIssues}
+                  checked={config.blockOnCriticalIssues || false}
                   onCheckedChange={(checked) => 
                     updateConfig({ blockOnCriticalIssues: checked })
                   }
@@ -227,7 +227,7 @@ const VerificationDashboard: React.FC = () => {
       )}
 
       {/* Recent Issues */}
-      {lastSummary && lastSummary.issuesFound > 0 && (
+      {lastSummary && lastSummary.issuesFound > 0 && lastSummary.validationResult?.issues && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -247,13 +247,13 @@ const VerificationDashboard: React.FC = () => {
                 </div>
               ))}
               
-              {lastSummary.auditResults.flatMap(audit => 
-                audit.issues.map((issue, index) => (
+              {lastSummary.auditResults && lastSummary.auditResults.flatMap(audit => 
+                audit.issues?.map((issue: any, index: number) => (
                   <div key={`audit-${index}`} className="flex items-center gap-2 p-2 bg-yellow-50 rounded">
                     <Bug className="h-4 w-4 text-yellow-500" />
                     <span className="text-sm">{audit.componentName}: {issue}</span>
                   </div>
-                ))
+                )) || []
               )}
             </div>
           </CardContent>

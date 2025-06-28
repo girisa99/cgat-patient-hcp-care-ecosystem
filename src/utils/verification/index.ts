@@ -1,7 +1,4 @@
 
-
-export * from './AutomatedVerificationOrchestrator';
-export * from './AutomatedVerificationTypes';
 export * from './TemplateGenerator';
 export * from './VerificationSummaryBuilder';
 export * from './VerificationRunner';
@@ -17,6 +14,16 @@ export * from './DatabaseFixOrchestrator';
 export * from './EnhancedAdminModuleVerificationRunner';
 export * from './AdminModuleVerificationRunner';
 
+// Export the main orchestrator and its types
+export { 
+  AutomatedVerificationOrchestrator,
+  automatedVerification,
+  type VerificationSummary,
+  type AutomatedVerificationConfig,
+  type TemplateGenerationRequest,
+  type TemplateGenerationResult
+} from './AutomatedVerificationOrchestrator';
+
 // Export specific functions from TypeScriptDatabaseValidator
 export { 
   TypeScriptDatabaseValidator,
@@ -30,4 +37,3 @@ export type {
   CodeQualityResult,
   DatabaseIssue 
 } from './types';
-

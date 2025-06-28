@@ -48,8 +48,9 @@ export interface VerificationSummary {
   sqlAutoFixes?: any[];
   validationResult?: {
     warnings: any[];
+    issues?: any[];
   };
-  auditResults?: any;
+  auditResults?: any[];
 }
 
 export interface AutomatedVerificationConfig {
@@ -57,9 +58,33 @@ export interface AutomatedVerificationConfig {
   periodicScanInterval: number;
   autoFixEnabled: boolean;
   criticalIssueBlocking: boolean;
+  enableRealTimeChecks?: boolean;
+  enablePeriodicScans?: boolean;
+  autoFixSimpleIssues?: boolean;
+  blockOnCriticalIssues?: boolean;
+}
+
+export interface TemplateGenerationRequest {
+  componentType: string;
+  moduleName?: string;
+  description: string;
+}
+
+export interface TemplateGenerationResult {
+  success: boolean;
+  message: string;
+  templates?: any[];
 }
 
 export class AutomatedVerificationOrchestrator {
+  private static instance: AutomatedVerificationOrchestrator;
+
+  static getInstance(): AutomatedVerificationOrchestrator {
+    if (!AutomatedVerificationOrchestrator.instance) {
+      AutomatedVerificationOrchestrator.instance = new AutomatedVerificationOrchestrator();
+    }
+    return AutomatedVerificationOrchestrator.instance;
+  }
 
   static async runVerification(request: VerificationRequest): Promise<VerificationSummary> {
     console.log('Starting automated verification process...');
@@ -115,9 +140,10 @@ export class AutomatedVerificationOrchestrator {
       },
       sqlAutoFixes: [],
       validationResult: {
-        warnings: []
+        warnings: [],
+        issues: []
       },
-      auditResults: {}
+      auditResults: []
     };
 
     console.log('Automated verification process completed.');
@@ -132,7 +158,11 @@ class AutomatedVerificationSystem {
     enabled: true,
     periodicScanInterval: 30000,
     autoFixEnabled: true,
-    criticalIssueBlocking: true
+    criticalIssueBlocking: true,
+    enableRealTimeChecks: true,
+    enablePeriodicScans: true,
+    autoFixSimpleIssues: true,
+    blockOnCriticalIssues: true
   };
 
   start() {
