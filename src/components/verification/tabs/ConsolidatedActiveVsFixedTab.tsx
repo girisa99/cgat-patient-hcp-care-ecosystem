@@ -6,12 +6,11 @@ import { Button } from '@/components/ui/button';
 import { 
   AlertTriangle, 
   CheckCircle, 
-  TrendingUp, 
-  RefreshCw, 
   Shield,
   Database,
   Code,
-  Palette
+  Palette,
+  Bug
 } from 'lucide-react';
 import { UnifiedMetrics } from '@/hooks/useUnifiedMetrics';
 import { ProcessedIssuesData } from '@/types/issuesTypes';
@@ -28,6 +27,47 @@ const ConsolidatedActiveVsFixedTab: React.FC<ConsolidatedActiveVsFixedTabProps> 
   processedData,
   onUpdate
 }) => {
+  // Properly categorize issues based on their actual content
+  const categorizeIssues = (issues: any[]) => {
+    const categories = {
+      security: 0,
+      database: 0,
+      codeQuality: 0,
+      uiux: 0,
+      performance: 0
+    };
+
+    issues.forEach(issue => {
+      const type = issue.type?.toLowerCase() || '';
+      const message = issue.message?.toLowerCase() || '';
+      const source = issue.source?.toLowerCase() || '';
+
+      if (type.includes('security') || message.includes('security') || 
+          message.includes('authentication') || message.includes('authorization') ||
+          message.includes('mfa') || message.includes('rbac') || 
+          message.includes('sanitiz') || message.includes('debug')) {
+        categories.security++;
+      } else if (type.includes('database') || message.includes('database') ||
+                 message.includes('query') || message.includes('validation')) {
+        categories.database++;
+      } else if (type.includes('code quality') || message.includes('code') ||
+                 message.includes('typescript') || message.includes('error handling')) {
+        categories.codeQuality++;
+      } else if (type.includes('ui/ux') || message.includes('ui') || 
+                 message.includes('accessibility') || message.includes('interface')) {
+        categories.uiux++;
+      } else if (type.includes('performance') || message.includes('performance') ||
+                 message.includes('caching') || message.includes('optimization')) {
+        categories.performance++;
+      }
+    });
+
+    return categories;
+  };
+
+  const activeCategories = categorizeIssues(processedData.allIssues || []);
+  const fixedCategories = categorizeIssues(processedData.backendFixedIssues || []);
+
   return (
     <div className="space-y-6">
       {/* Active vs Fixed Overview */}
@@ -41,20 +81,20 @@ const ConsolidatedActiveVsFixedTab: React.FC<ConsolidatedActiveVsFixedTabProps> 
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-red-800 mb-4">
-              {metrics.totalActiveIssues}
+              {processedData.allIssues?.length || 0}
             </div>
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <span className="text-sm text-red-700">Critical</span>
-                <Badge className="bg-red-600">{metrics.criticalActive}</Badge>
+                <Badge className="bg-red-600">{processedData.criticalIssues?.length || 0}</Badge>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-red-700">High</span>
-                <Badge className="bg-orange-600">{metrics.highActive}</Badge>
+                <Badge className="bg-orange-600">{processedData.highIssues?.length || 0}</Badge>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-red-700">Medium</span>
-                <Badge className="bg-yellow-600">{metrics.mediumActive}</Badge>
+                <Badge className="bg-yellow-600">{processedData.mediumIssues?.length || 0}</Badge>
               </div>
             </div>
           </CardContent>
@@ -69,16 +109,16 @@ const ConsolidatedActiveVsFixedTab: React.FC<ConsolidatedActiveVsFixedTabProps> 
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-green-800 mb-4">
-              {metrics.totalFixedIssues}
+              {processedData.totalRealFixesApplied || 0}
             </div>
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <span className="text-sm text-green-700">Backend Detected</span>
-                <Badge className="bg-green-600">{metrics.backendFixedCount}</Badge>
+                <Badge className="bg-green-600">{processedData.autoDetectedBackendFixes || 0}</Badge>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-green-700">Real Fixes Applied</span>
-                <Badge className="bg-blue-600">{metrics.realFixesApplied}</Badge>
+                <Badge className="bg-blue-600">{processedData.totalRealFixesApplied || 0}</Badge>
               </div>
             </div>
           </CardContent>
@@ -89,20 +129,19 @@ const ConsolidatedActiveVsFixedTab: React.FC<ConsolidatedActiveVsFixedTabProps> 
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
             Issues by Category
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-200">
               <div className="flex items-center gap-2">
                 <Shield className="h-5 w-5 text-red-600" />
                 <span className="font-medium text-red-900">Security</span>
               </div>
               <div className="flex flex-col items-end">
-                <Badge className="bg-red-600">{metrics.securityActive} active</Badge>
-                <Badge className="bg-green-600 mt-1">{metrics.securityFixed} fixed</Badge>
+                <Badge className="bg-red-600">{activeCategories.security} active</Badge>
+                <Badge className="bg-green-600 mt-1">{fixedCategories.security} fixed</Badge>
               </div>
             </div>
 
@@ -112,8 +151,8 @@ const ConsolidatedActiveVsFixedTab: React.FC<ConsolidatedActiveVsFixedTabProps> 
                 <span className="font-medium text-blue-900">Database</span>
               </div>
               <div className="flex flex-col items-end">
-                <Badge className="bg-blue-600">{metrics.databaseActive} active</Badge>
-                <Badge className="bg-green-600 mt-1">{metrics.databaseFixed} fixed</Badge>
+                <Badge className="bg-blue-600">{activeCategories.database} active</Badge>
+                <Badge className="bg-green-600 mt-1">{fixedCategories.database} fixed</Badge>
               </div>
             </div>
 
@@ -123,8 +162,8 @@ const ConsolidatedActiveVsFixedTab: React.FC<ConsolidatedActiveVsFixedTabProps> 
                 <span className="font-medium text-purple-900">Code Quality</span>
               </div>
               <div className="flex flex-col items-end">
-                <Badge className="bg-purple-600">{metrics.codeQualityActive} active</Badge>
-                <Badge className="bg-green-600 mt-1">{metrics.codeQualityFixed} fixed</Badge>
+                <Badge className="bg-purple-600">{activeCategories.codeQuality} active</Badge>
+                <Badge className="bg-green-600 mt-1">{fixedCategories.codeQuality} fixed</Badge>
               </div>
             </div>
 
@@ -134,61 +173,27 @@ const ConsolidatedActiveVsFixedTab: React.FC<ConsolidatedActiveVsFixedTabProps> 
                 <span className="font-medium text-orange-900">UI/UX</span>
               </div>
               <div className="flex flex-col items-end">
-                <Badge className="bg-orange-600">{metrics.uiuxActive} active</Badge>
-                <Badge className="bg-green-600 mt-1">{metrics.uiuxFixed} fixed</Badge>
+                <Badge className="bg-orange-600">{activeCategories.uiux} active</Badge>
+                <Badge className="bg-green-600 mt-1">{fixedCategories.uiux} fixed</Badge>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+              <div className="flex items-center gap-2">
+                <Bug className="h-5 w-5 text-gray-600" />
+                <span className="font-medium text-gray-900">Performance</span>
+              </div>
+              <div className="flex flex-col items-end">
+                <Badge className="bg-gray-600">{activeCategories.performance} active</Badge>
+                <Badge className="bg-green-600 mt-1">{fixedCategories.performance} fixed</Badge>
               </div>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Database-Powered Daily Progress */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Database className="h-5 w-5 text-green-600" />
-              Database-Powered Daily Progress
-            </div>
-            <Button onClick={onUpdate} size="sm" variant="outline">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
-            </Button>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <EnhancedDailyProgressTab />
-        </CardContent>
-      </Card>
-
-      {/* Metrics Status */}
-      <Card className={metrics.countsAligned ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'}>
-        <CardHeader>
-          <CardTitle className={`flex items-center gap-2 ${metrics.countsAligned ? 'text-green-900' : 'text-yellow-900'}`}>
-            <RefreshCw className={`h-5 w-5 ${metrics.isUpdating ? 'animate-spin' : ''}`} />
-            System Status
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className={`text-sm ${metrics.countsAligned ? 'text-green-700' : 'text-yellow-700'}`}>
-                {metrics.countsAligned ? 
-                  '✅ All metrics synchronized with database' : 
-                  '🔄 Synchronizing metrics...'
-                }
-              </p>
-              <p className="text-xs text-gray-600 mt-1">
-                Last updated: {metrics.lastUpdateTime.toLocaleTimeString()} | Source: {metrics.updateSource}
-              </p>
-            </div>
-            <Button onClick={onUpdate} size="sm" disabled={metrics.isUpdating}>
-              <RefreshCw className={`h-4 w-4 mr-2 ${metrics.isUpdating ? 'animate-spin' : ''}`} />
-              {metrics.isUpdating ? 'Updating...' : 'Refresh Now'}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Daily Progress */}
+      <EnhancedDailyProgressTab />
     </div>
   );
 };

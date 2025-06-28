@@ -14,7 +14,7 @@ import VerificationResultsTabs from '@/components/verification/VerificationResul
 import { AdminModuleVerificationResult } from '@/utils/verification/AdminModuleVerificationRunner';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Database, Shield, RefreshCw, Settings } from 'lucide-react';
+import { Shield } from 'lucide-react';
 
 const AdminVerificationTest = () => {
   const [verificationResult, setVerificationResult] = useState<EnhancedAdminModuleVerificationResult | null>(null);
@@ -109,12 +109,6 @@ const AdminVerificationTest = () => {
     console.log('🔍 RUNNING LATEST VERIFICATION: Getting current system status...');
 
     try {
-      toast({
-        title: "🔍 Loading Latest System Status",
-        description: "Retrieving current verification results and system health...",
-        variant: "default",
-      });
-
       const previousScore = verificationResult?.overallStabilityScore || 0;
 
       // Clear previous results for fresh display
@@ -234,59 +228,12 @@ const AdminVerificationTest = () => {
             </CardHeader>
           </Card>
 
-          {/* Auto-Loading Status */}
-          {autoRunTriggered && !hasRun && (
-            <Card className="bg-blue-50 border-blue-200">
-              <CardHeader>
-                <CardTitle className="text-blue-800 flex items-center">
-                  <RefreshCw className="h-5 w-5 mr-2 animate-spin" />
-                  Loading Current System Status
-                </CardTitle>
-                <CardDescription className="text-blue-700">
-                  Retrieving the latest system health metrics and verification status...
-                </CardDescription>
-              </CardHeader>
-            </Card>
-          )}
-
-          {/* Status Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className="bg-blue-50 border-blue-200">
-              <CardContent className="p-4 text-center">
-                <Database className="h-8 w-8 mx-auto mb-2 text-blue-600" />
-                <div className="text-lg font-semibold text-blue-800">Backend Automation</div>
-                <div className="text-sm text-blue-600">
-                  {backendAutomationActive ? 'Running Continuously' : 'Inactive'}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-purple-50 border-purple-200">
-              <CardContent className="p-4 text-center">
-                <Settings className="h-8 w-8 mx-auto mb-2 text-purple-600" />
-                <div className="text-lg font-semibold text-purple-800">Display Mode</div>
-                <div className="text-sm text-purple-600">Current Status</div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-orange-50 border-orange-200">
-              <CardContent className="p-4 text-center">
-                <RefreshCw className="h-8 w-8 mx-auto mb-2 text-orange-600" />
-                <div className="text-lg font-semibold text-orange-800">Last Updated</div>
-                <div className="text-sm text-orange-600">
-                  {lastRunTime ? lastRunTime.toLocaleTimeString() : 'Loading...'}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
           {isRunning && (
             <>
               <VerificationLoadingState />
               <Card className="bg-blue-50 border-blue-200">
                 <CardHeader>
-                  <CardTitle className="text-blue-800 flex items-center">
-                    <RefreshCw className="h-5 w-5 mr-2 animate-spin" />
+                  <CardTitle className="text-blue-800">
                     Retrieving Current System Status
                   </CardTitle>
                   <CardDescription className="text-blue-700">
@@ -302,7 +249,7 @@ const AdminVerificationTest = () => {
               <Card className={verificationResult.overallStabilityScore >= 80 ? "bg-green-50 border-green-200" : "bg-yellow-50 border-yellow-200"}>
                 <CardHeader>
                   <CardTitle className={`flex items-center ${verificationResult.overallStabilityScore >= 80 ? 'text-green-800' : 'text-yellow-800'}`}>
-                    <Database className="h-5 w-5 mr-2" />
+                    <Shield className="h-5 w-5 mr-2" />
                     Current System Health: {verificationResult.overallStabilityScore}/100
                   </CardTitle>
                   <CardDescription className={verificationResult.overallStabilityScore >= 80 ? 'text-green-700' : 'text-yellow-700'}>

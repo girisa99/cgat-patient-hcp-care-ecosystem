@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, TrendingUp, CheckCircle, Clock, Database } from 'lucide-react';
+import { Calendar, CheckCircle, Clock } from 'lucide-react';
 import { getDailyFixStats, getHistoricalFixedIssues, DailyFixStats } from '@/utils/dailyProgressTracker';
 
 interface EnhancedDailyProgressTabProps {
@@ -33,14 +33,10 @@ const EnhancedDailyProgressTab: React.FC<EnhancedDailyProgressTabProps> = ({ cla
     const loadData = async () => {
       setLoading(true);
       try {
-        console.log('📊 Loading daily progress data from database...');
-        
         const [stats, fixes] = await Promise.all([
           getDailyFixStats(dateRange),
           getHistoricalFixedIssues(50)
         ]);
-        
-        console.log('✅ Loaded data:', { statsCount: stats.length, fixesCount: fixes.length });
         
         setDailyStats(stats);
         setHistoricalFixes(fixes as HistoricalFix[]);
@@ -98,8 +94,7 @@ const EnhancedDailyProgressTab: React.FC<EnhancedDailyProgressTabProps> = ({ cla
       <div className={`space-y-6 ${className}`}>
         <Card>
           <CardContent className="text-center py-8">
-            <Database className="h-12 w-12 mx-auto mb-4 text-gray-400 animate-pulse" />
-            <p className="text-gray-500 font-medium">Loading daily progress data from database...</p>
+            <p className="text-gray-500 font-medium">Loading progress data...</p>
           </CardContent>
         </Card>
       </div>
@@ -108,27 +103,6 @@ const EnhancedDailyProgressTab: React.FC<EnhancedDailyProgressTabProps> = ({ cla
 
   return (
     <div className={`space-y-6 ${className}`}>
-      {/* Database Integration Status */}
-      <Card className="bg-green-50 border-green-200">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-green-900">
-            <Database className="h-5 w-5" />
-            Database-Powered Daily Progress Tracking
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-green-700 text-sm">
-            ✅ Connected to Supabase database for persistent issue tracking
-            <br />
-            📊 Displaying {Array.isArray(historicalFixes) ? historicalFixes.length : 0} historical fixes from database
-            <br />
-            📈 Daily statistics calculated from real database records
-            <br />
-            🔄 Database syncs automatically whenever verification system runs
-          </p>
-        </CardContent>
-      </Card>
-
       {/* Summary Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
@@ -169,9 +143,9 @@ const EnhancedDailyProgressTab: React.FC<EnhancedDailyProgressTabProps> = ({ cla
           <Card>
             <CardContent className="text-center py-8">
               <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-              <p className="text-gray-500 font-medium">No fixes recorded in database yet</p>
+              <p className="text-gray-500 font-medium">No fixes recorded yet</p>
               <p className="text-sm text-gray-400 mt-2">
-                Start fixing issues to see your daily progress here. Data syncs automatically with each verification run.
+                Start fixing issues to see your daily progress here.
               </p>
             </CardContent>
           </Card>
@@ -226,40 +200,6 @@ const EnhancedDailyProgressTab: React.FC<EnhancedDailyProgressTabProps> = ({ cla
             ))
         )}
       </div>
-
-      {/* Daily Statistics Summary */}
-      {dailyStats.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-green-600" />
-              Daily Statistics Summary (Database-Powered)
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {dailyStats.map((stat, index) => (
-                <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">{formatDate(stat.fix_date)}</span>
-                    <Badge variant="outline">{stat.category}</Badge>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-600">{stat.fix_count} fixes</span>
-                    <div className="flex gap-1">
-                      {Object.entries(stat.severity_breakdown).map(([severity, count]) => (
-                        <Badge key={severity} className={getSeverityColor(severity)} variant="outline">
-                          {severity}: {count}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 };
