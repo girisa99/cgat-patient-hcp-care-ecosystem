@@ -5,10 +5,13 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import { Database } from '@/integrations/supabase/types';
+
+type UserRole = Database['public']['Enums']['user_role'];
 
 export interface AuthorizedRequest {
   userId: string;
-  userRoles: string[];
+  userRoles: UserRole[];
   permissions: string[];
 }
 
@@ -16,7 +19,7 @@ export class ApiAuthorizationMiddleware {
   /**
    * Validate API request authorization
    */
-  static async validateRequest(requiredRole?: string, requiredPermission?: string): Promise<AuthorizedRequest | null> {
+  static async validateRequest(requiredRole?: UserRole, requiredPermission?: string): Promise<AuthorizedRequest | null> {
     try {
       // Get current session
       const { data: { session }, error } = await supabase.auth.getSession();
@@ -36,7 +39,7 @@ export class ApiAuthorizationMiddleware {
         `)
         .eq('user_id', session.user.id);
 
-      const roles = userRolesData?.map(ur => ur.roles?.name).filter(Boolean) || [];
+      const roles = userRolesData?.map(ur => ur.roles?.name).filter(Boolean) as UserRole[] || [];
 
       // Check required role
       if (requiredRole && !roles.includes(requiredRole)) {
@@ -70,7 +73,7 @@ export class ApiAuthorizationMiddleware {
    */
   static async protectEndpoint(
     endpoint: string, 
-    requiredRole?: string, 
+    requiredRole?: UserRole, 
     requiredPermission?: string
   ): Promise<boolean> {
     console.log('🔐 Protecting API endpoint:', endpoint);
