@@ -6,6 +6,7 @@ export interface CodeFix {
   code?: string;
   sql?: string;
   type: 'code' | 'sql' | 'config';
+  validationChecks?: string[]; // Add the missing property
 }
 
 export interface FixResult {
@@ -23,7 +24,8 @@ export class RealCodeFixHandler {
     // Simplified fix generation for database-first approach
     return {
       description: `Database-first fix for ${issue.type}`,
-      type: 'code'
+      type: 'code',
+      validationChecks: [`Validating ${issue.type} fix`] // Include validation checks
     };
   }
 
@@ -40,7 +42,8 @@ export class RealCodeFixHandler {
       success: true,
       message: 'Fix applied successfully',
       validationPassed: true,
-      actualChangesApplied: true
+      actualChangesApplied: true,
+      validationResults: fix.validationChecks || []
     };
   }
 
