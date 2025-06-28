@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useMemo } from 'react';
 import { VerificationSummary } from '@/utils/verification/AutomatedVerificationOrchestrator';
 import { Issue, ProcessedIssuesData } from '@/types/issuesTypes';
@@ -60,7 +61,7 @@ export const useIssuesDataProcessor = (
 
   useEffect(() => {
     if (verificationSummary) {
-      saveIssueSnapshot(allIssues, verificationSummary.backendFixesDetected || []);
+      saveIssueSnapshot(allIssues, verificationSummary.backendFixesDetected ? Object.keys(verificationSummary.backendFixesDetected) : []);
     }
   }, [allIssues, verificationSummary]);
 
@@ -69,7 +70,7 @@ export const useIssuesDataProcessor = (
     const backendFixes: string[] = [];
     let detectedFixesCount = 0;
 
-    if (verificationSummary && verificationSummary.backendFixesDetected) {
+    if (verificationSummary?.backendFixesDetected) {
       Object.keys(verificationSummary.backendFixesDetected).forEach(issueId => {
         const issue = allIssues.find(issue => generateIssueId(issue) === issueId);
         if (issue) {
@@ -112,22 +113,6 @@ export const useIssuesDataProcessor = (
     setReappearedIssues(reappearedDetected);
   }, [allIssues, fixedIssues]);
 
-  // Enhanced mark as really fixed function with daily progress tracking
-  const markIssueAsReallyFixed = (issue: Issue) => {
-    markIssueAsResolved(issue);
-    
-    // Record in daily progress tracker
-    recordFixedIssue({
-      type: issue.type,
-      message: issue.message,
-      severity: issue.severity || 'medium',
-      category: issue.source || 'System',
-      description: `${issue.type}: ${issue.message}`
-    }, 'manual');
-    
-    console.log('🔧 Issue marked as really fixed and recorded in daily progress:', issue.type);
-  };
-
   const processedData = useMemo(() => ({
     allIssues,
     criticalIssues,
@@ -143,10 +128,21 @@ export const useIssuesDataProcessor = (
     autoDetectedBackendFixes
   }), [allIssues, criticalIssues, highIssues, mediumIssues, lowIssues, issuesByTopic, newIssues, resolvedIssues, reappearedIssues, backendFixedIssues, totalRealFixesApplied, autoDetectedBackendFixes]);
 
-  return {
-    ...processedData,
-  };
+  return processedData;
 };
 
-// Export the enhanced function
-export { markIssueAsReallyFixed };
+// Enhanced mark as really fixed function with daily progress tracking
+export const markIssueAsReallyFixed = (issue: Issue) => {
+  markIssueAsResolved(issue);
+  
+  // Record in daily progress tracker
+  recordFixedIssue({
+    type: issue.type,
+    message: issue.message,
+    severity: issue.severity || 'medium',
+    category: issue.source || 'System',
+    description: `${issue.type}: ${issue.message}`
+  }, 'manual');
+  
+  console.log('🔧 Issue marked as really fixed and recorded in daily progress:', issue.type);
+};

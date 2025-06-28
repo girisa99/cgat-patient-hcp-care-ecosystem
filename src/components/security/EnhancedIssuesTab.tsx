@@ -1,11 +1,11 @@
-
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Bug, CheckCircle, Shield, Database, Code, Zap } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { VerificationSummary } from '@/utils/verification/AutomatedVerificationOrchestrator';
 import { useFixedIssuesTracker } from '@/hooks/useFixedIssuesTracker';
-import { CodeFix } from '@/utils/verification/RealCodeFixHandler';
+import { CodeFix } from '@/utils/verification/ImprovedRealCodeFixHandler';
+import { Issue } from '@/types/issuesTypes';
 import EnhancedIssueTopicGroup from './EnhancedIssueTopicGroup';
 import FixedIssuesTracker from './FixedIssuesTracker';
 import IssuesTabHeader from './IssuesTabHeader';
@@ -13,7 +13,7 @@ import IssuesSummaryCard from './IssuesSummaryCard';
 import ScanInformationCard from './ScanInformationCard';
 import NoIssuesState from './NoIssuesState';
 import NoVerificationDataState from './NoVerificationDataState';
-import { useIssuesDataProcessor, Issue } from './IssuesDataProcessor';
+import { useIssuesDataProcessor } from './IssuesDataProcessor';
 
 interface EnhancedIssuesTabProps {
   verificationSummary?: VerificationSummary | null;

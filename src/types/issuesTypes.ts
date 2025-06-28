@@ -4,6 +4,7 @@ export interface Issue {
   message: string;
   source: string;
   severity: string;
+  details?: string; // Add optional details property
   issueId?: string;
   firstDetected?: string;
   lastSeen?: string;
@@ -17,6 +18,7 @@ export interface ProcessedIssuesData {
   criticalIssues: Issue[];
   highIssues: Issue[];
   mediumIssues: Issue[];
+  lowIssues: Issue[];
   issuesByTopic: Record<string, Issue[]>;
   newIssues: Issue[];
   resolvedIssues: Issue[];
