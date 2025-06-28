@@ -2,10 +2,11 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, CheckCircle, AlertTriangle, Lock, Bug, Activity, Zap } from 'lucide-react';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
+import { Shield, CheckCircle, AlertTriangle, Lock, Zap } from 'lucide-react';
 import { AdminModuleVerificationResult } from '@/utils/verification/AdminModuleVerificationRunner';
-import { useFixedIssuesTracker } from '@/hooks/useFixedIssuesTracker';
+import { useTabSynchronization } from '@/hooks/useTabSynchronization';
+import SynchronizedTabHeader from './SynchronizedTabHeader';
 import OverviewTabContent from './tabs/OverviewTabContent';
 import RecommendationsTabContent from './tabs/RecommendationsTabContent';
 import FixedTabContent from './tabs/FixedTabContent';
@@ -24,10 +25,7 @@ const VerificationResultsTabs: React.FC<VerificationResultsTabsProps> = ({
   onReRunVerification,
   isReRunning = false
 }) => {
-  const { 
-    fixedIssues, 
-    getTotalFixedCount 
-  } = useFixedIssuesTracker();
+  const { syncData, triggerSync, processedData } = useTabSynchronization(verificationResult.comprehensiveResults);
 
   const getStatusBadge = () => {
     if (verificationResult.isLockedForCurrentState) {
@@ -39,11 +37,6 @@ const VerificationResultsTabs: React.FC<VerificationResultsTabsProps> = ({
     }
   };
 
-  // Calculate active issues (excluding fixed ones)
-  const totalIssues = verificationResult.criticalIssues.length + verificationResult.failedChecks.length;
-  const activeIssues = Math.max(0, totalIssues - getTotalFixedCount());
-  const fixedCount = getTotalFixedCount();
-
   return (
     <Card>
       <CardHeader>
@@ -54,19 +47,19 @@ const VerificationResultsTabs: React.FC<VerificationResultsTabsProps> = ({
               Admin Module Verification Results
               <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
                 <Zap className="h-3 w-3 mr-1" />
-                Real Fix System
+                Synchronized Tab System
               </Badge>
             </CardTitle>
             <CardDescription>
-              Comprehensive analysis with real automated fixes that modify your code and database
+              Real-time synchronized tabs with enhanced fix tracking and backend detection
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
             {getStatusBadge()}
-            {fixedCount > 0 && (
+            {syncData.totalFixedCount > 0 && (
               <Badge variant="default" className="bg-green-100 text-green-800">
                 <CheckCircle className="h-3 w-3 mr-1" />
-                {fixedCount} Real Fixes Applied
+                {syncData.totalFixedCount} Total Fixes
               </Badge>
             )}
           </div>
@@ -74,60 +67,57 @@ const VerificationResultsTabs: React.FC<VerificationResultsTabsProps> = ({
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="issues" className="w-full">
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="issues" className="flex items-center">
-              <Bug className="h-4 w-4 mr-1" />
-              Issues ({activeIssues})
-            </TabsTrigger>
-            <TabsTrigger value="fixed" className="flex items-center">
-              <CheckCircle className="h-4 w-4 mr-1" />
-              Fixed ({fixedCount})
-            </TabsTrigger>
-            <TabsTrigger value="security-performance" className="flex items-center">
-              <Activity className="h-4 w-4 mr-1" />
-              Security & Performance
-            </TabsTrigger>
-            <TabsTrigger value="implementation">Implementation</TabsTrigger>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
-          </TabsList>
+          <SynchronizedTabHeader 
+            syncData={syncData}
+            onRefresh={triggerSync}
+            isRefreshing={isReRunning}
+          />
 
-          <TabsContent value="issues">
+          <TabsContent value="issues" className="mt-6">
             <EnhancedIssuesTabContent 
               verificationSummary={verificationResult.comprehensiveResults}
+              processedData={processedData}
+              syncData={syncData}
               onReRunVerification={onReRunVerification}
               isReRunning={isReRunning}
             />
           </TabsContent>
 
-          <TabsContent value="fixed">
+          <TabsContent value="fixed" className="mt-6">
             <FixedTabContent 
-              fixedIssues={fixedIssues} 
-              totalFixesApplied={fixedCount}
+              fixedIssues={syncData.fixedIssues}
+              totalFixesApplied={syncData.totalFixedCount}
+              backendFixedCount={syncData.backendFixedCount}
+              realFixesApplied={syncData.realFixesApplied}
             />
           </TabsContent>
 
-          <TabsContent value="security-performance">
+          <TabsContent value="security-performance" className="mt-6">
             <SecurityPerformanceTabContent 
               verificationSummary={verificationResult.comprehensiveResults}
+              syncData={syncData}
             />
           </TabsContent>
 
-          <TabsContent value="implementation">
-            <ImplementationTabContent />
+          <TabsContent value="implementation" className="mt-6">
+            <ImplementationTabContent 
+              syncData={syncData}
+            />
           </TabsContent>
 
-          <TabsContent value="overview">
+          <TabsContent value="overview" className="mt-6">
             <OverviewTabContent
               verificationResult={verificationResult}
-              fixedCount={fixedCount}
+              fixedCount={syncData.totalFixedCount}
+              syncData={syncData}
             />
           </TabsContent>
 
-          <TabsContent value="recommendations">
+          <TabsContent value="recommendations" className="mt-6">
             <RecommendationsTabContent
               verificationResult={verificationResult}
-              fixedCount={fixedCount}
+              fixedCount={syncData.totalFixedCount}
+              syncData={syncData}
             />
           </TabsContent>
         </Tabs>
