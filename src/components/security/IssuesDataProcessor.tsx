@@ -24,6 +24,7 @@ export const useIssuesDataProcessor = (
 ): ProcessedIssuesData => {
   return useMemo(() => {
     if (!verificationSummary) {
+      console.log('⚠️ No verification summary provided to IssuesDataProcessor');
       return {
         allIssues: [],
         criticalIssues: [],
@@ -33,7 +34,17 @@ export const useIssuesDataProcessor = (
       };
     }
 
-    console.log('🔍 Processing verification summary:', verificationSummary);
+    console.log('🔍 Processing verification summary:', {
+      hasValidationResult: !!verificationSummary.validationResult,
+      validationIssues: verificationSummary.validationResult?.issues?.length || 0,
+      validationWarnings: verificationSummary.validationResult?.warnings?.length || 0,
+      auditResults: verificationSummary.auditResults?.length || 0,
+      databaseViolations: verificationSummary.databaseValidation?.violations?.length || 0,
+      schemaViolations: verificationSummary.schemaValidation?.violations?.length || 0,
+      securityVulnerabilities: verificationSummary.securityScan?.vulnerabilities?.length || 0,
+      codeQualityIssues: verificationSummary.codeQuality?.issues?.length || 0,
+      performanceRecommendations: verificationSummary.performanceMetrics?.recommendations?.length || 0
+    });
 
     // Convert verification summary to issues format
     const allIssues: Issue[] = [];
@@ -112,7 +123,7 @@ export const useIssuesDataProcessor = (
       });
     }
 
-    // Add security scan vulnerabilities - THIS WAS MISSING!
+    // Add security scan vulnerabilities
     if (verificationSummary.securityScan?.vulnerabilities) {
       console.log('🔒 Processing security vulnerabilities:', verificationSummary.securityScan.vulnerabilities);
       verificationSummary.securityScan.vulnerabilities.forEach(vulnerability => {
@@ -138,6 +149,7 @@ export const useIssuesDataProcessor = (
     }
 
     console.log('📊 Total issues found before filtering:', allIssues.length);
+    console.log('📋 Issues breakdown:', allIssues.map(issue => `${issue.type}: ${issue.message.substring(0, 50)}...`));
 
     // Filter out fixed issues
     const activeIssues = allIssues.filter(issue => 

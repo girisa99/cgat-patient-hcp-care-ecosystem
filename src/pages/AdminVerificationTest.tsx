@@ -8,7 +8,7 @@ import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { EnhancedAdminModuleVerificationRunner, EnhancedAdminModuleVerificationResult } from '@/utils/verification/EnhancedAdminModuleVerificationRunner';
-import { automatedVerification } from '@/utils/verification/AutomatedVerificationOrchestrator';
+import { automatedVerification, VerificationSummary } from '@/utils/verification/AutomatedVerificationOrchestrator';
 import AdminVerificationHeader from '@/components/verification/AdminVerificationHeader';
 import VerificationStatusOverview from '@/components/verification/VerificationStatusOverview';
 import VerificationLoadingState from '@/components/verification/VerificationLoadingState';
@@ -21,6 +21,7 @@ import { Database, Code, CheckCircle, AlertTriangle } from 'lucide-react';
 
 const AdminVerificationTest = () => {
   const [verificationResult, setVerificationResult] = useState<EnhancedAdminModuleVerificationResult | null>(null);
+  const [verificationSummary, setVerificationSummary] = useState<VerificationSummary | null>(null);
   const [isRunning, setIsRunning] = useState(false);
   const [hasRun, setHasRun] = useState(false);
   const { toast } = useToast();
@@ -67,7 +68,7 @@ const AdminVerificationTest = () => {
       isLockedForCurrentState: enhancedResult.overallStabilityScore >= 95,
       criticalIssues,
       failedChecks,
-      comprehensiveResults: enhancedResult.verificationSummary,
+      comprehensiveResults: verificationSummary || undefined,
       recommendations: enhancedResult.recommendations,
       // Add the missing required properties
       coreVerificationResults: {
@@ -98,23 +99,34 @@ const AdminVerificationTest = () => {
 
       // Clear previous results to ensure fresh scan
       setVerificationResult(null);
+      setVerificationSummary(null);
 
-      // IMPORTANT: Also trigger the automated verification system to ensure complete scan
-      console.log('🔄 Triggering complete automated verification system...');
-      await automatedVerification.verifyBeforeCreation({
+      // STEP 1: Run automated verification to get proper VerificationSummary
+      console.log('🔄 Step 1: Running automated verification system...');
+      const canProceed = await automatedVerification.verifyBeforeCreation({
         componentType: 'module',
         moduleName: 'admin_verification_test',
         description: 'Complete admin verification test scan'
       });
 
-      // Run the enhanced verification
+      // Get the latest verification results from storage
+      const storedResults = JSON.parse(localStorage.getItem('verification-results') || '[]');
+      const latestSummary = storedResults[0] as VerificationSummary;
+      
+      if (latestSummary) {
+        console.log('✅ Got verification summary with issues:', latestSummary.issuesFound);
+        setVerificationSummary(latestSummary);
+      }
+
+      // STEP 2: Run enhanced verification
+      console.log('🔄 Step 2: Running enhanced verification...');
       const result = await EnhancedAdminModuleVerificationRunner.runEnhancedVerification();
       setVerificationResult(result);
       setHasRun(true);
       
       toast({
         title: "✅ Enhanced Verification Complete",
-        description: `Overall Score: ${result.overallStabilityScore}/100 | Database Fixes: ${result.databaseReport.totalIssuesFixed}`,
+        description: `Overall Score: ${result.overallStabilityScore}/100 | Issues Found: ${latestSummary?.issuesFound || 0}`,
         variant: "default",
       });
       
@@ -147,6 +159,14 @@ const AdminVerificationTest = () => {
       runEnhancedVerification();
     }
   }, [hasRun, isRunning]);
+
+  console.log('🔍 AdminVerificationTest State:', {
+    hasVerificationResult: !!verificationResult,
+    hasVerificationSummary: !!verificationSummary,
+    summaryIssuesFound: verificationSummary?.issuesFound || 0,
+    isRunning,
+    hasRun
+  });
 
   return (
     <MainLayout>
@@ -214,6 +234,21 @@ const AdminVerificationTest = () => {
             </div>
           )}
 
+          {/* Issues Summary Alert */}
+          {verificationSummary && !isRunning && verificationSummary.issuesFound > 0 && (
+            <Card className="bg-yellow-50 border-yellow-200">
+              <CardHeader>
+                <CardTitle className="text-yellow-800 flex items-center">
+                  <AlertTriangle className="h-5 w-5 mr-2" />
+                  Issues Detected
+                </CardTitle>
+                <CardDescription className="text-yellow-700">
+                  Found {verificationSummary.issuesFound} issues including {verificationSummary.criticalIssues} critical ones
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          )}
+
           {/* Database Fixes Summary */}
           {verificationResult && !isRunning && verificationResult.databaseReport.totalIssuesFixed > 0 && (
             <Card className="bg-green-50 border-green-200">
@@ -278,7 +313,7 @@ const AdminVerificationTest = () => {
           {/* Loading State */}
           {isRunning && <VerificationLoadingState />}
 
-          {/* Results Tabs */}
+          {/* Results Tabs - Pass the correct verification summary */}
           {verificationResult && !isRunning && (
             <VerificationResultsTabs 
               verificationResult={transformToLegacyFormat(verificationResult)}
