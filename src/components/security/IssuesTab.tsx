@@ -13,7 +13,8 @@ import IssuesSummaryCard from './IssuesSummaryCard';
 import ScanInformationCard from './ScanInformationCard';
 import NoIssuesState from './NoIssuesState';
 import NoVerificationDataState from './NoVerificationDataState';
-import { useIssuesDataProcessor, Issue } from './IssuesDataProcessor';
+import { useIssuesDataProcessor, markIssueAsReallyFixed } from './IssuesDataProcessor';
+import { Issue } from '@/types/issuesTypes';
 
 interface IssuesTabProps {
   verificationSummary?: VerificationSummary | null;
@@ -170,6 +171,9 @@ const IssuesTab: React.FC<IssuesTabProps> = ({
 
     // Move to fixed tracker
     moveToFixed([issue], 'automatic');
+    
+    // Mark as really fixed using the utility function
+    markIssueAsReallyFixed(issue);
     
     // Trigger metrics update
     setLastScanTime(new Date());
