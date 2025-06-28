@@ -1,7 +1,6 @@
-
 import { useState, useCallback } from 'react';
 
-interface FixedIssue {
+export interface FixedIssue {
   id: string;
   type: string;
   message: string;
