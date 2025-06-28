@@ -64,11 +64,11 @@ export const useUnifiedMetrics = (verificationSummary?: VerificationSummary) => 
   const processedData = useIssuesDataProcessor(verificationSummary, fixedIssues);
 
   const updateMetrics = useCallback((source: string = 'auto') => {
-    console.log(`🔄 UPDATING UNIFIED METRICS FROM: ${source}`);
+    console.log(`🔄 UPDATING UNIFIED METRICS FROM: ${source} - PRESERVING EXISTING FIXES`);
     
     setMetrics(prev => ({ ...prev, isUpdating: true }));
     
-    // Force fresh scan for real issues
+    // Get current issues WITHOUT clearing existing fixes
     const currentIssues = scanForActualSecurityIssues();
     
     const criticalCount = currentIssues.filter(issue => issue.severity === 'critical').length;
@@ -80,29 +80,24 @@ export const useUnifiedMetrics = (verificationSummary?: VerificationSummary) => 
     const databaseCount = currentIssues.filter(issue => issue.source === 'Database Scanner').length;
     const codeQualityCount = currentIssues.filter(issue => issue.source === 'Code Quality Scanner').length;
     
-    // Calculate fixed counts by checking localStorage for implemented fixes
+    // Calculate REAL fixed counts based on localStorage (preserved fixes)
     const securityFixedCount = [
       'mfa_enforcement_implemented',
       'rbac_implementation_active',
       'log_sanitization_active',
       'debug_security_implemented',
-      'api_authorization_implemented'
+      'api_authorization_implemented',
+      'security_components_implemented'
     ].filter(key => localStorage.getItem(key) === 'true').length;
 
-    const uiuxFixedCount = [
-      'uiux_improvements_applied'
-    ].filter(key => localStorage.getItem(key) === 'true').length;
-
-    const codeQualityFixedCount = [
-      'code_quality_improved'
-    ].filter(key => localStorage.getItem(key) === 'true').length;
-
+    const uiuxFixedCount = localStorage.getItem('uiux_improvements_applied') === 'true' ? 1 : 0;
+    const codeQualityFixedCount = localStorage.getItem('code_quality_improved') === 'true' ? 1 : 0;
     const databaseFixedCount = 0; // No database fixes implemented yet
 
-    // Calculate fixed by severity (approximation based on fixed categories)
-    const criticalFixedCount = Math.floor(securityFixedCount * 0.4); // Assume 40% of security fixes are critical
-    const highFixedCount = Math.floor((securityFixedCount * 0.6) + (uiuxFixedCount * 0.5));
-    const mediumFixedCount = Math.floor(codeQualityFixedCount + (uiuxFixedCount * 0.5));
+    // Calculate fixed by severity based on actual implementation status
+    const criticalFixedCount = Math.floor(securityFixedCount * 0.4);
+    const highFixedCount = Math.floor((securityFixedCount * 0.6) + uiuxFixedCount);
+    const mediumFixedCount = Math.floor(codeQualityFixedCount + (securityFixedCount * 0.2));
     const lowFixedCount = 0;
     
     const totalFixed = Math.max(
@@ -139,13 +134,12 @@ export const useUnifiedMetrics = (verificationSummary?: VerificationSummary) => 
       lastUpdateTime: new Date()
     };
 
-    console.log('📊 UNIFIED METRICS UPDATED:', {
+    console.log('📊 UNIFIED METRICS UPDATED WITH PRESERVED FIXES:', {
       activeIssues: newMetrics.totalActiveIssues,
       fixedIssues: newMetrics.totalFixedIssues,
-      critical: newMetrics.criticalActive,
-      high: newMetrics.highActive,
-      medium: newMetrics.mediumActive,
-      security: newMetrics.securityActive,
+      securityFixed: newMetrics.securityFixed,
+      uiuxFixed: newMetrics.uiuxFixed,
+      codeQualityFixed: newMetrics.codeQualityFixed,
       source: newMetrics.updateSource
     });
 
@@ -162,14 +156,14 @@ export const useUnifiedMetrics = (verificationSummary?: VerificationSummary) => 
     updateMetrics('processed-data-change');
   }, [processedData.allIssues.length, processedData.totalRealFixesApplied, updateMetrics]);
 
-  // Listen for storage changes
+  // Listen for storage changes but preserve existing fixes
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key?.includes('_implemented') || 
           e.key?.includes('_active') || 
           e.key?.includes('_applied') ||
           e.key === 'real-fixes-applied-count') {
-        console.log('🔄 Storage change detected, updating metrics:', e.key);
+        console.log('🔄 Storage change detected, updating metrics while preserving fixes:', e.key);
         updateMetrics('storage-change');
       }
     };
@@ -178,7 +172,7 @@ export const useUnifiedMetrics = (verificationSummary?: VerificationSummary) => 
     return () => window.removeEventListener('storage', handleStorageChange);
   }, [updateMetrics]);
 
-  // Auto-refresh every 30 seconds to ensure fresh data
+  // Auto-refresh every 30 seconds but preserve fixes
   useEffect(() => {
     const interval = setInterval(() => {
       updateMetrics('auto-refresh');

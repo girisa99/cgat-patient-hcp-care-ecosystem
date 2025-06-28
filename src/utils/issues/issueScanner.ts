@@ -10,7 +10,7 @@ import {
   checkForSecurityComponentUsage,
   checkAndSetUIUXImprovements,
   checkAndSetCodeQualityImprovements,
-  resetAllFixStatusForTesting
+  preserveExistingFixes
 } from './backendFixDetection';
 
 export const scanForActualSecurityIssues = (): Issue[] => {
@@ -19,8 +19,8 @@ export const scanForActualSecurityIssues = (): Issue[] => {
   
   console.log('🔒 SCANNING FOR REAL SECURITY AND QUALITY ISSUES...');
   
-  // Reset for fresh scan
-  resetAllFixStatusForTesting();
+  // PRESERVE existing fixes instead of resetting them
+  preserveExistingFixes();
   
   const allChecks = [
     // Critical Security Issues
@@ -130,7 +130,7 @@ export const scanForActualSecurityIssues = (): Issue[] => {
     }
   ];
 
-  console.log('📊 PROCESSING ISSUE CHECKS...');
+  console.log('📊 PROCESSING ISSUE CHECKS WITH PRESERVED FIX STATUS...');
   
   allChecks.forEach((check, index) => {
     const issueId = generateIssueId(check.issue);
