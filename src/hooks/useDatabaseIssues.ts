@@ -82,7 +82,7 @@ export const useDatabaseIssues = (): DatabaseIssuesData & {
     }
   };
 
-  // Sync current system state to database with better error handling
+  // Sync current system state to database with correct field names
   const syncActiveIssues = async () => {
     setIsLoading(true);
     setError(null);
@@ -90,53 +90,49 @@ export const useDatabaseIssues = (): DatabaseIssuesData & {
     try {
       console.log('🔄 Syncing active issues to database...');
       
-      // Define current system issues based on actual implementation checks
+      // Define current system issues with correct field names that match the database function expectations
       const currentIssues = [
         {
-          issue_type: 'Security Vulnerability',
-          issue_message: 'Multi-Factor Authentication is not implemented for admin users',
-          issue_source: 'Security Scanner',
-          issue_severity: 'critical',
-          category: 'Security'
+          type: 'Security Vulnerability',
+          message: 'Multi-Factor Authentication is not implemented for admin users',
+          source: 'Security Scanner',
+          severity: 'critical'
         },
         {
-          issue_type: 'Security Vulnerability',
-          issue_message: 'Role-Based Access Control is not properly implemented',
-          issue_source: 'Security Scanner',
-          issue_severity: 'critical',
-          category: 'Security'
+          type: 'Security Vulnerability',
+          message: 'Role-Based Access Control is not properly implemented',
+          source: 'Security Scanner',
+          severity: 'critical'
         },
         {
-          issue_type: 'Security Vulnerability',
-          issue_message: 'API keys and user data may be logged - logs are not sanitized',
-          issue_source: 'Security Scanner',
-          issue_severity: 'high',
-          category: 'Security'
+          type: 'Security Vulnerability',
+          message: 'API keys and user data may be logged - logs are not sanitized',
+          source: 'Security Scanner',
+          severity: 'high'
         },
         {
-          issue_type: 'Security Vulnerability',
-          issue_message: 'API endpoints lack proper authorization checks',
-          issue_source: 'Security Scanner',
-          issue_severity: 'high',
-          category: 'Security'
+          type: 'Security Vulnerability',
+          message: 'API endpoints lack proper authorization checks',
+          source: 'Security Scanner',
+          severity: 'high'
         },
         {
-          issue_type: 'Code Quality Issue',
-          issue_message: 'Code lacks proper error handling and TypeScript type definitions',
-          issue_source: 'Code Quality Scanner',
-          issue_severity: 'medium',
-          category: 'Code Quality'
+          type: 'Code Quality Issue',
+          message: 'Code lacks proper error handling and TypeScript type definitions',
+          source: 'Code Quality Scanner',
+          severity: 'medium'
         },
         {
-          issue_type: 'Database Issue',
-          issue_message: 'Database queries lack proper validation and sanitization',
-          issue_source: 'Database Scanner',
-          issue_severity: 'high',
-          category: 'Database'
+          type: 'Database Issue',
+          message: 'Database queries lack proper validation and sanitization',
+          source: 'Database Scanner',
+          severity: 'high'
         }
       ];
 
-      // Use the updated sync function (should now work without DELETE errors)
+      console.log('📊 Syncing issues data:', currentIssues);
+
+      // Use the updated sync function (field names now match the database function)
       const { error } = await supabase.rpc('sync_active_issues', {
         issues_data: currentIssues
       });
