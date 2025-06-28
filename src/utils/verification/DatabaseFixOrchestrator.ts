@@ -1,4 +1,3 @@
-
 /**
  * Database Fix Orchestrator
  * Coordinates comprehensive database issue resolution
@@ -60,7 +59,8 @@ export class DatabaseFixOrchestrator {
     const recommendations = [
       ...validationSummary.recommendations,
       ...typescriptAlignment.recommendations,
-      ...guidelinesValidation.recommendations.slice(0, 5), // Top 5 guidelines recommendations
+      // Generate recommendations from guidelines violations
+      ...guidelinesValidation.violations.slice(0, 5).map((violation: any) => violation.recommendation),
       'Implement automated database health monitoring',
       'Set up database backup and recovery procedures',
       'Create database migration scripts for schema changes'
