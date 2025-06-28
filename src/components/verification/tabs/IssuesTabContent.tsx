@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { VerificationSummary } from '@/utils/verification/AutomatedVerificationOrchestrator';
-import IssuesTab from '@/components/security/IssuesTab';
+import CleanIssuesTab from '@/components/security/CleanIssuesTab';
 
 interface IssuesTabContentProps {
   verificationSummary: VerificationSummary | undefined;
@@ -10,11 +10,8 @@ interface IssuesTabContentProps {
 const IssuesTabContent: React.FC<IssuesTabContentProps> = ({
   verificationSummary
 }) => {
-  return (
-    <IssuesTab 
-      verificationSummary={verificationSummary}
-    />
-  );
+  // Use the new clean issues tab instead of the problematic old one
+  return <CleanIssuesTab />;
 };
 
 export default IssuesTabContent;
