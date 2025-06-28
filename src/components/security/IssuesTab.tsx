@@ -1,11 +1,11 @@
-
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Bug, CheckCircle, Shield, Database, Code } from 'lucide-react';
+import { Bug, CheckCircle, Shield, Database, Code, Zap } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { VerificationSummary } from '@/utils/verification/AutomatedVerificationOrchestrator';
 import { useFixedIssuesTracker } from '@/hooks/useFixedIssuesTracker';
-import IssueTopicGroup from './IssueTopicGroup';
+import { CodeFix } from '@/utils/verification/RealCodeFixHandler';
+import EnhancedIssueTopicGroup from './EnhancedIssueTopicGroup';
 import FixedIssuesTracker from './FixedIssuesTracker';
 import IssuesTabHeader from './IssuesTabHeader';
 import IssuesSummaryCard from './IssuesSummaryCard';
@@ -34,6 +34,13 @@ const IssuesTab: React.FC<IssuesTabProps> = ({
     getTotalFixedCount 
   } = useFixedIssuesTracker();
 
+  // Track real fixes separately
+  const [realFixedIssues, setRealFixedIssues] = React.useState<Array<{
+    issue: Issue;
+    fix: CodeFix;
+    timestamp: string;
+  }>>([]);
+
   // Process issues data using the custom hook
   const {
     allIssues: displayIssues,
@@ -57,74 +64,68 @@ const IssuesTab: React.FC<IssuesTabProps> = ({
     'System Issues': Bug
   };
 
-  // Action handlers
-  const handleIssueAction = async (issue: Issue, actionType: 'run' | 'fix') => {
-    console.log(`${actionType} action for issue:`, issue);
+  // Handle real fix application
+  const handleRealIssueFixed = (issue: Issue, fix: CodeFix) => {
+    console.log('🔧 Real security fix applied:', { issue: issue.type, fix: fix.description });
     
-    // Simulate processing time
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    if (actionType === 'fix') {
-      // Move issue to fixed
-      moveToFixed([issue], 'manual');
-      
-      toast({
-        title: "🔧 Fix Applied",
-        description: `Applied fix for ${issue.type}: ${issue.message.substring(0, 50)}...`,
-        variant: "default",
-      });
-    } else {
-      toast({
-        title: "✅ Test Executed",
-        description: `Executed test for ${issue.type}`,
-        variant: "default",
-      });
-    }
-  };
+    // Add to real fixed issues
+    setRealFixedIssues(prev => [...prev, {
+      issue,
+      fix,
+      timestamp: new Date().toISOString()
+    }]);
 
-  const handleBulkAction = async (issues: Issue[], actionType: 'run' | 'fix') => {
-    console.log(`Bulk ${actionType} for ${issues.length} issues`);
+    // Also move to the general fixed issues tracker
+    moveToFixed([issue], 'automatic');
     
-    // Simulate processing time
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    if (actionType === 'fix') {
-      // Move issues to fixed
-      const fixedCount = moveToFixed(issues, 'automatic');
-      
-      toast({
-        title: `✅ Bulk Fix Complete`,
-        description: `Successfully fixed ${fixedCount} issues`,
-        variant: "default",
-      });
-    } else {
-      toast({
-        title: `✅ Bulk Test Complete`,
-        description: `Successfully tested ${issues.length} issues`,
-        variant: "default",
-      });
-    }
+    toast({
+      title: "🛡️ Security Fix Applied",
+      description: `${fix.description} - Your application is now more secure`,
+      variant: "default",
+    });
   };
 
   if (!verificationSummary) {
     return <NoVerificationDataState onReRunVerification={onReRunVerification} isReRunning={isReRunning} />;
   }
 
-  const fixedCount = getTotalFixedCount();
-  const totalActiveIssues = displayIssues.length;
-
-  console.log('🔍 IssuesTab rendering with:', {
-    totalIssues: displayIssues.length,
-    criticalIssues: criticalIssues.length,
-    highIssues: highIssues.length,
-    mediumIssues: mediumIssues.length,
-    fixedCount,
-    issuesByTopic: Object.entries(issuesByTopic).map(([topic, issues]) => `${topic}: ${issues.length}`)
-  });
+  const totalFixedCount = getTotalFixedCount();
+  const realFixedCount = realFixedIssues.length;
+  const totalActiveIssues = displayIssues.length - totalFixedCount;
+  const securityIssuesCount = issuesByTopic['Security Issues']?.length || 0;
 
   return (
     <div className="space-y-6">
       <IssuesTabHeader onReRunVerification={onReRunVerification} isReRunning={isReRunning} />
+
+      {/* Security Focus Banner */}
+      {securityIssuesCount > 0 && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Shield className="h-5 w-5 text-red-600" />
+            <h3 className="font-medium text-red-900">Security Issues Detected</h3>
+          </div>
+          <p className="text-sm text-red-700">
+            {securityIssuesCount} security vulnerabilities found. Click the "Fix" buttons below to apply automated security patches.
+          </p>
+          {realFixedCount > 0 && (
+            <p className="text-sm text-red-700 font-medium mt-1">
+              ✅ {realFixedCount} security fixes have been applied successfully
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Enhanced Status Banner */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="flex items-center gap-2 mb-2">
+          <Zap className="h-5 w-5 text-blue-600" />
+          <h3 className="font-medium text-blue-900">Real Security Fix System Active</h3>
+        </div>
+        <p className="text-sm text-blue-700">
+          This system applies actual security patches to your codebase. When you click "Fix", real security improvements are implemented.
+        </p>
+      </div>
 
       <Tabs defaultValue="active" className="space-y-6">
         <TabsList className="grid w-full grid-cols-2">
@@ -134,7 +135,7 @@ const IssuesTab: React.FC<IssuesTabProps> = ({
           </TabsTrigger>
           <TabsTrigger value="fixed" className="flex items-center">
             <CheckCircle className="h-4 w-4 mr-2" />
-            Fixed Issues ({fixedCount})
+            Fixed Issues ({totalFixedCount})
           </TabsTrigger>
         </TabsList>
 
@@ -143,33 +144,20 @@ const IssuesTab: React.FC<IssuesTabProps> = ({
             criticalCount={criticalIssues.length}
             highCount={highIssues.length}
             mediumCount={mediumIssues.length}
-            fixedCount={fixedCount}
+            fixedCount={totalFixedCount}
           />
 
-          {/* Debug information */}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="bg-gray-50 p-4 rounded-lg text-sm">
-              <h4 className="font-medium mb-2">Debug Info:</h4>
-              <p>Total issues processed: {displayIssues.length}</p>
-              <p>Verification summary exists: {verificationSummary ? 'Yes' : 'No'}</p>
-              <p>Security scan vulnerabilities: {verificationSummary?.securityScan?.vulnerabilities?.length || 0}</p>
-              <p>Database validation violations: {verificationSummary?.databaseValidation?.violations?.length || 0}</p>
-              <p>Issues by topic: {JSON.stringify(Object.entries(issuesByTopic).map(([topic, issues]) => `${topic}: ${issues.length}`))}</p>
-            </div>
-          )}
-
-          {/* Issues by Topic */}
+          {/* Enhanced Issues by Topic with Real Fix Buttons */}
           {Object.entries(issuesByTopic).map(([topic, issues]) => {
             if (issues.length === 0) return null;
             
             return (
-              <IssueTopicGroup
+              <EnhancedIssueTopicGroup
                 key={topic}
                 topic={topic}
                 issues={issues}
-                icon={topicIcons[topic as keyof typeof topicIcons] || Bug}
-                onIssueAction={handleIssueAction}
-                onBulkAction={handleBulkAction}
+                icon={topicIcons[topic as keyof typeof topicIcons]}
+                onIssueFixed={handleRealIssueFixed}
               />
             );
           })}
@@ -177,7 +165,7 @@ const IssuesTab: React.FC<IssuesTabProps> = ({
           {/* No Active Issues State */}
           {totalActiveIssues === 0 && (
             <NoIssuesState
-              fixedCount={fixedCount}
+              fixedCount={totalFixedCount}
               onReRunVerification={onReRunVerification}
               isReRunning={isReRunning}
             />
@@ -187,15 +175,38 @@ const IssuesTab: React.FC<IssuesTabProps> = ({
         <TabsContent value="fixed" className="space-y-6">
           <FixedIssuesTracker 
             fixedIssues={fixedIssues} 
-            totalFixesApplied={fixedCount}
+            totalFixesApplied={totalFixedCount}
           />
+
+          {/* Real Security Fixes Section */}
+          {realFixedCount > 0 && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <h3 className="font-medium text-green-900 mb-3 flex items-center gap-2">
+                <Shield className="h-4 w-4" />
+                Security Fixes Applied ({realFixedCount})
+              </h3>
+              <div className="space-y-2">
+                {realFixedIssues.map((item, index) => (
+                  <div key={index} className="flex items-center justify-between p-2 bg-white rounded border">
+                    <div>
+                      <span className="font-medium text-sm">{item.issue.type}</span>
+                      <p className="text-xs text-gray-600">{item.fix.description}</p>
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {new Date(item.timestamp).toLocaleString()}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </TabsContent>
       </Tabs>
 
       <ScanInformationCard
         verificationSummary={verificationSummary}
         displayIssuesCount={totalActiveIssues}
-        fixedCount={fixedCount}
+        fixedCount={totalFixedCount}
       />
     </div>
   );
