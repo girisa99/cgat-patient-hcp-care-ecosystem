@@ -2,7 +2,6 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { 
   AlertTriangle, 
   CheckCircle, 
@@ -113,12 +112,8 @@ const ConsolidatedActiveVsFixedTab: React.FC<ConsolidatedActiveVsFixedTabProps> 
             </div>
             <div className="space-y-2">
               <div className="flex justify-between items-center">
-                <span className="text-sm text-green-700">Backend Detected</span>
-                <Badge className="bg-green-600">{processedData.autoDetectedBackendFixes || 0}</Badge>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-green-700">Real Fixes Applied</span>
-                <Badge className="bg-blue-600">{processedData.totalRealFixesApplied || 0}</Badge>
+                <span className="text-sm text-green-700">Manual Fixes</span>
+                <Badge className="bg-green-600">{processedData.totalRealFixesApplied || 0}</Badge>
               </div>
             </div>
           </CardContent>
