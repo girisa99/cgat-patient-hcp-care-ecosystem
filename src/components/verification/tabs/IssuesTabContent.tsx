@@ -5,20 +5,14 @@ import IssuesTab from '@/components/security/IssuesTab';
 
 interface IssuesTabContentProps {
   verificationSummary: VerificationSummary | undefined;
-  onReRunVerification?: () => void;
-  isReRunning?: boolean;
 }
 
 const IssuesTabContent: React.FC<IssuesTabContentProps> = ({
-  verificationSummary,
-  onReRunVerification,
-  isReRunning = false
+  verificationSummary
 }) => {
   return (
     <IssuesTab 
       verificationSummary={verificationSummary}
-      onReRunVerification={onReRunVerification}
-      isReRunning={isReRunning}
     />
   );
 };

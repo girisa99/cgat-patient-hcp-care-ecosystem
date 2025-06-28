@@ -11,22 +11,15 @@ import ConsolidatedOverallFixedTab from './tabs/ConsolidatedOverallFixedTab';
 
 interface UnifiedVerificationTabsProps {
   verificationResult: AdminModuleVerificationResult;
-  onReRunVerification?: () => void;
-  isReRunning?: boolean;
 }
 
 const UnifiedVerificationTabs: React.FC<UnifiedVerificationTabsProps> = ({
-  verificationResult,
-  onReRunVerification,
-  isReRunning = false
+  verificationResult
 }) => {
   const { metrics, updateMetrics, processedData } = useUnifiedMetrics(verificationResult.comprehensiveResults);
 
   const handleManualUpdate = () => {
     updateMetrics('manual');
-    if (onReRunVerification) {
-      onReRunVerification();
-    }
   };
 
   const getStatusBadge = () => {
@@ -60,14 +53,14 @@ const UnifiedVerificationTabs: React.FC<UnifiedVerificationTabsProps> = ({
           <div>
             <CardTitle className="flex items-center gap-2">
               <Shield className="h-5 w-5" />
-              Consolidated Verification Dashboard
+              System Verification Dashboard
               <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
                 <Zap className="h-3 w-3 mr-1" />
-                Real-time Sync
+                Real-time Status
               </Badge>
             </CardTitle>
             <CardDescription>
-              Comprehensive metrics with accurate counting and consolidated display
+              Current system metrics with automated backend monitoring
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
@@ -81,7 +74,7 @@ const UnifiedVerificationTabs: React.FC<UnifiedVerificationTabsProps> = ({
               ) : (
                 <RefreshCw className="h-3 w-3 mr-1" />
               )}
-              {metrics.countsAligned ? "Aligned" : "Syncing"}
+              {metrics.countsAligned ? "Synchronized" : "Updating"}
             </Badge>
           </div>
         </div>
@@ -96,12 +89,12 @@ const UnifiedVerificationTabs: React.FC<UnifiedVerificationTabsProps> = ({
             <div className="flex items-center gap-2">
               <RefreshCw className={`h-4 w-4 ${metrics.isUpdating ? 'animate-spin text-blue-600' : 'text-green-600'}`} />
               <span className="text-sm font-medium">
-                {metrics.isUpdating ? 'Updating metrics...' : 
-                 metrics.countsAligned ? 'Metrics synchronized' : 'Alignment in progress'}
+                {metrics.isUpdating ? 'Updating system metrics...' : 
+                 metrics.countsAligned ? 'System metrics current' : 'Synchronizing data'}
               </span>
             </div>
             <div className="flex items-center gap-2 text-xs text-gray-600">
-              <span>Last update: {metrics.updateSource}</span>
+              <span>Source: {metrics.updateSource}</span>
               <span>•</span>
               <span>{metrics.lastUpdateTime.toLocaleTimeString()}</span>
               <button 
@@ -109,7 +102,7 @@ const UnifiedVerificationTabs: React.FC<UnifiedVerificationTabsProps> = ({
                 className="ml-2 px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
                 disabled={metrics.isUpdating}
               >
-                Manual Run
+                Refresh
               </button>
             </div>
           </div>
@@ -123,7 +116,7 @@ const UnifiedVerificationTabs: React.FC<UnifiedVerificationTabsProps> = ({
             </TabsTrigger>
             <TabsTrigger value="overall-fixed" className="flex items-center">
               <CheckCircle className="h-4 w-4 mr-2" />
-              Overall Fixed Summary
+              Overall Status Summary
             </TabsTrigger>
           </TabsList>
 

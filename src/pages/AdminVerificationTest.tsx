@@ -1,3 +1,4 @@
+
 /**
  * Admin Verification Test Page
  * Display-only interface while backend automation continues for system protection
@@ -8,13 +9,12 @@ import MainLayout from '@/components/layout/MainLayout';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { EnhancedAdminModuleVerificationRunner, EnhancedAdminModuleVerificationResult } from '@/utils/verification/EnhancedAdminModuleVerificationRunner';
 import { automatedVerification, VerificationSummary } from '@/utils/verification/AutomatedVerificationOrchestrator';
-import AdminVerificationHeader from '@/components/verification/AdminVerificationHeader';
 import VerificationLoadingState from '@/components/verification/VerificationLoadingState';
 import VerificationResultsTabs from '@/components/verification/VerificationResultsTabs';
 import { AdminModuleVerificationResult } from '@/utils/verification/AdminModuleVerificationRunner';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Database, Shield, RefreshCw, Settings, Play } from 'lucide-react';
+import { Database, Shield, RefreshCw, Settings } from 'lucide-react';
 
 const AdminVerificationTest = () => {
   const [verificationResult, setVerificationResult] = useState<EnhancedAdminModuleVerificationResult | null>(null);
@@ -103,15 +103,15 @@ const AdminVerificationTest = () => {
     };
   };
 
-  const runManualVerification = async () => {
+  const runLatestVerification = async () => {
     setIsRunning(true);
     setHasRun(false);
-    console.log('🔍 MANUAL VERIFICATION: Running fresh verification for latest results...');
+    console.log('🔍 RUNNING LATEST VERIFICATION: Getting current system status...');
 
     try {
       toast({
-        title: "🔍 Fresh Verification Started",
-        description: "Running latest verification scan to get current results...",
+        title: "🔍 Loading Latest System Status",
+        description: "Retrieving current verification results and system health...",
         variant: "default",
       });
 
@@ -130,13 +130,13 @@ const AdminVerificationTest = () => {
         apiAuthImplemented: localStorage.getItem('api_authorization_implemented') === 'true'
       };
       
-      console.log('📊 Current security implementations for latest verification:', currentImplementations);
+      console.log('📊 Current security implementations:', currentImplementations);
 
-      // Run fresh verification for current results
+      // Run verification to get current status
       const canProceed = await automatedVerification.verifyBeforeCreation({
         componentType: 'module',
-        moduleName: 'fresh_verification_' + Date.now(),
-        description: 'Fresh verification run for latest results display'
+        moduleName: 'system_status_check_' + Date.now(),
+        description: 'System status verification for current results display'
       });
 
       // Get latest verification results
@@ -144,11 +144,11 @@ const AdminVerificationTest = () => {
       const latestSummary = storedResults[0] as VerificationSummary;
       
       if (latestSummary) {
-        console.log('✅ Got latest verification summary:', latestSummary.issuesFound);
+        console.log('✅ Retrieved latest verification summary:', latestSummary.issuesFound);
         setVerificationSummary(latestSummary);
       }
 
-      // Run enhanced verification for latest results
+      // Run enhanced verification for current status
       const result = await EnhancedAdminModuleVerificationRunner.runEnhancedVerification();
       
       const fixesApplied = Object.values(currentImplementations).filter(Boolean).length;
@@ -172,23 +172,23 @@ const AdminVerificationTest = () => {
       const scoreImprovement = adjustedScore - previousScore;
       
       toast({
-        title: "📊 Latest Verification Complete",
-        description: `Fresh Results - Score: ${adjustedScore}/100 | Fixes Applied: ${fixesApplied} | Improvement: +${scoreImprovement}`,
+        title: "📊 System Status Updated",
+        description: `Current Score: ${adjustedScore}/100 | Fixes Applied: ${fixesApplied} | Change: ${scoreImprovement >= 0 ? '+' : ''}${scoreImprovement}`,
         variant: adjustedScore >= 80 ? "default" : "destructive",
       });
       
-      console.log('✅ Latest verification complete with fresh results:', {
-        latestScore: adjustedScore,
-        scoreImprovement,
+      console.log('✅ System status verification complete:', {
+        currentScore: adjustedScore,
+        scoreChange: scoreImprovement,
         fixesApplied,
         timestamp: new Date().toLocaleTimeString()
       });
       
     } catch (error) {
-      console.error('❌ Latest verification failed:', error);
+      console.error('❌ System status verification failed:', error);
       toast({
-        title: "❌ Latest Verification Failed",
-        description: "Failed to get latest verification results.",
+        title: "❌ Status Update Failed",
+        description: "Failed to retrieve current system status.",
         variant: "destructive",
       });
     } finally {
@@ -196,17 +196,17 @@ const AdminVerificationTest = () => {
     }
   };
 
-  // Auto-trigger verification on mount to get latest results
+  // Auto-trigger verification on mount to get current status
   useEffect(() => {
-    console.log('🎯 Admin Verification Page: Initializing with latest results');
+    console.log('🎯 Admin Verification Page: Loading current system status');
     console.log('🔄 Backend automation status: ACTIVE (running independently for system protection)');
     
-    // Automatically run verification to get latest results
+    // Automatically load current status
     if (!autoRunTriggered) {
       setAutoRunTriggered(true);
       setTimeout(() => {
-        console.log('🚀 AUTO-TRIGGERING latest verification for fresh display results...');
-        runManualVerification();
+        console.log('🚀 AUTO-LOADING current system status...');
+        runLatestVerification();
       }, 1000);
     }
   }, [autoRunTriggered]);
@@ -217,13 +217,7 @@ const AdminVerificationTest = () => {
     <MainLayout>
       <PageContainer
         title="Enhanced Admin Module Verification"
-        subtitle="System verification with latest results and security monitoring"
-        headerActions={
-          <AdminVerificationHeader 
-            onRunVerification={runManualVerification}
-            isRunning={isRunning}
-          />
-        }
+        subtitle="System status display with real-time backend monitoring"
       >
         <div className="space-y-6">
           {/* Backend Automation Status */}
@@ -234,22 +228,22 @@ const AdminVerificationTest = () => {
                 Backend System Protection: ACTIVE
               </CardTitle>
               <CardDescription className="text-green-700">
-                ✅ Automated verification and validation systems running independently for system stability and security protection.
-                Display shows latest manual verification results.
+                ✅ Automated verification and validation systems running continuously for system stability and security protection.
+                This page displays the current system status and metrics.
               </CardDescription>
             </CardHeader>
           </Card>
 
-          {/* Auto-Run Status */}
+          {/* Auto-Loading Status */}
           {autoRunTriggered && !hasRun && (
             <Card className="bg-blue-50 border-blue-200">
               <CardHeader>
                 <CardTitle className="text-blue-800 flex items-center">
-                  <Play className="h-5 w-5 mr-2" />
-                  Auto-Loading Latest Results
+                  <RefreshCw className="h-5 w-5 mr-2 animate-spin" />
+                  Loading Current System Status
                 </CardTitle>
                 <CardDescription className="text-blue-700">
-                  Automatically running fresh verification to display the most current system status...
+                  Retrieving the latest system health metrics and verification status...
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -271,16 +265,16 @@ const AdminVerificationTest = () => {
               <CardContent className="p-4 text-center">
                 <Settings className="h-8 w-8 mx-auto mb-2 text-purple-600" />
                 <div className="text-lg font-semibold text-purple-800">Display Mode</div>
-                <div className="text-sm text-purple-600">Latest Results</div>
+                <div className="text-sm text-purple-600">Current Status</div>
               </CardContent>
             </Card>
 
             <Card className="bg-orange-50 border-orange-200">
               <CardContent className="p-4 text-center">
                 <RefreshCw className="h-8 w-8 mx-auto mb-2 text-orange-600" />
-                <div className="text-lg font-semibold text-orange-800">System Status</div>
+                <div className="text-lg font-semibold text-orange-800">Last Updated</div>
                 <div className="text-sm text-orange-600">
-                  {lastRunTime ? `Updated: ${lastRunTime.toLocaleTimeString()}` : 'Loading...'}
+                  {lastRunTime ? lastRunTime.toLocaleTimeString() : 'Loading...'}
                 </div>
               </CardContent>
             </Card>
@@ -293,10 +287,10 @@ const AdminVerificationTest = () => {
                 <CardHeader>
                   <CardTitle className="text-blue-800 flex items-center">
                     <RefreshCw className="h-5 w-5 mr-2 animate-spin" />
-                    Getting Latest Verification Results
+                    Retrieving Current System Status
                   </CardTitle>
                   <CardDescription className="text-blue-700">
-                    Running fresh verification scan to display current system status...
+                    Loading the latest verification results and system health metrics...
                   </CardDescription>
                 </CardHeader>
               </Card>
@@ -309,20 +303,18 @@ const AdminVerificationTest = () => {
                 <CardHeader>
                   <CardTitle className={`flex items-center ${verificationResult.overallStabilityScore >= 80 ? 'text-green-800' : 'text-yellow-800'}`}>
                     <Database className="h-5 w-5 mr-2" />
-                    Latest System Health: {verificationResult.overallStabilityScore}/100
+                    Current System Health: {verificationResult.overallStabilityScore}/100
                   </CardTitle>
                   <CardDescription className={verificationResult.overallStabilityScore >= 80 ? 'text-green-700' : 'text-yellow-700'}>
-                    {lastRunTime && `Latest verification: ${lastRunTime.toLocaleTimeString()}`}
+                    {lastRunTime && `Status updated: ${lastRunTime.toLocaleTimeString()}`}
                     <br />
-                    Showing current results. Backend automation continues for system protection.
+                    Backend automation continues for ongoing system protection.
                   </CardDescription>
                 </CardHeader>
               </Card>
 
               <VerificationResultsTabs 
                 verificationResult={transformToLegacyFormat(verificationResult)}
-                onReRunVerification={runManualVerification}
-                isReRunning={isRunning}
               />
             </>
           )}
@@ -331,10 +323,10 @@ const AdminVerificationTest = () => {
             <Card className="bg-gray-50 border-gray-200">
               <CardHeader>
                 <CardTitle className="text-gray-800">
-                  Ready for Latest Verification
+                  System Status Display
                 </CardTitle>
                 <CardDescription className="text-gray-600">
-                  Click "Run Verification" to get the latest system status. Backend automation runs continuously for system protection.
+                  Loading current system status. Backend automation runs continuously for system protection.
                 </CardDescription>
               </CardHeader>
             </Card>

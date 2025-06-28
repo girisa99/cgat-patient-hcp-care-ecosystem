@@ -5,23 +5,19 @@ import { ProcessedIssuesData } from '@/types/issuesTypes';
 import { TabSyncData } from '@/hooks/useTabSynchronization';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, CheckCircle, RefreshCw, TrendingUp } from 'lucide-react';
+import { AlertTriangle, CheckCircle, TrendingUp } from 'lucide-react';
 import IssuesTab from '@/components/security/IssuesTab';
 
 interface EnhancedIssuesTabContentProps {
   verificationSummary?: VerificationSummary;
   processedData: ProcessedIssuesData;
   syncData: TabSyncData;
-  onReRunVerification?: () => void;
-  isReRunning?: boolean;
 }
 
 const EnhancedIssuesTabContent: React.FC<EnhancedIssuesTabContentProps> = ({
   verificationSummary,
   processedData,
-  syncData,
-  onReRunVerification,
-  isReRunning = false
+  syncData
 }) => {
   return (
     <div className="space-y-6">
@@ -90,8 +86,6 @@ const EnhancedIssuesTabContent: React.FC<EnhancedIssuesTabContentProps> = ({
 
       <IssuesTab 
         verificationSummary={verificationSummary}
-        onReRunVerification={onReRunVerification}
-        isReRunning={isReRunning}
       />
     </div>
   );
