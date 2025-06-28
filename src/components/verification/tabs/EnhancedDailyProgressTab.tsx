@@ -9,9 +9,23 @@ interface EnhancedDailyProgressTabProps {
   className?: string;
 }
 
+interface HistoricalFix {
+  id: string;
+  user_id: string;
+  issue_type: string;
+  issue_message: string;
+  issue_source: string;
+  issue_severity: string;
+  category: string;
+  fix_method: string;
+  fixed_at: string;
+  created_at: string;
+  metadata?: Record<string, any>;
+}
+
 const EnhancedDailyProgressTab: React.FC<EnhancedDailyProgressTabProps> = ({ className }) => {
   const [dailyStats, setDailyStats] = useState<DailyFixStats[]>([]);
-  const [historicalFixes, setHistoricalFixes] = useState<any[]>([]);
+  const [historicalFixes, setHistoricalFixes] = useState<HistoricalFix[]>([]);
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState(7);
 
@@ -19,13 +33,17 @@ const EnhancedDailyProgressTab: React.FC<EnhancedDailyProgressTabProps> = ({ cla
     const loadData = async () => {
       setLoading(true);
       try {
+        console.log('📊 Loading daily progress data from database...');
+        
         const [stats, fixes] = await Promise.all([
           getDailyFixStats(dateRange),
           getHistoricalFixedIssues(50)
         ]);
         
+        console.log('✅ Loaded data:', { statsCount: stats.length, fixesCount: fixes.length });
+        
         setDailyStats(stats);
-        setHistoricalFixes(fixes);
+        setHistoricalFixes(fixes as HistoricalFix[]);
       } catch (error) {
         console.error('Error loading daily progress data:', error);
       } finally {
@@ -65,15 +83,15 @@ const EnhancedDailyProgressTab: React.FC<EnhancedDailyProgressTabProps> = ({ cla
     }
   };
 
-  // Group fixes by date
-  const groupedFixes = historicalFixes.reduce((acc, fix) => {
+  // Group fixes by date with proper type checking
+  const groupedFixes = historicalFixes.reduce((acc: Record<string, HistoricalFix[]>, fix) => {
     const date = new Date(fix.fixed_at).toISOString().split('T')[0];
     if (!acc[date]) {
       acc[date] = [];
     }
     acc[date].push(fix);
     return acc;
-  }, {} as Record<string, any[]>);
+  }, {});
 
   if (loading) {
     return (
@@ -81,7 +99,7 @@ const EnhancedDailyProgressTab: React.FC<EnhancedDailyProgressTabProps> = ({ cla
         <Card>
           <CardContent className="text-center py-8">
             <Database className="h-12 w-12 mx-auto mb-4 text-gray-400 animate-pulse" />
-            <p className="text-gray-500 font-medium">Loading daily progress data...</p>
+            <p className="text-gray-500 font-medium">Loading daily progress data from database...</p>
           </CardContent>
         </Card>
       </div>
@@ -102,9 +120,11 @@ const EnhancedDailyProgressTab: React.FC<EnhancedDailyProgressTabProps> = ({ cla
           <p className="text-green-700 text-sm">
             ✅ Connected to Supabase database for persistent issue tracking
             <br />
-            📊 Displaying {historicalFixes.length} historical fixes from database
+            📊 Displaying {Array.isArray(historicalFixes) ? historicalFixes.length : 0} historical fixes from database
             <br />
             📈 Daily statistics calculated from real database records
+            <br />
+            🔄 Database syncs automatically whenever verification system runs
           </p>
         </CardContent>
       </Card>
@@ -113,7 +133,9 @@ const EnhancedDailyProgressTab: React.FC<EnhancedDailyProgressTabProps> = ({ cla
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-blue-600">{historicalFixes.length}</div>
+            <div className="text-2xl font-bold text-blue-600">
+              {Array.isArray(historicalFixes) ? historicalFixes.length : 0}
+            </div>
             <div className="text-sm text-gray-600">Total Fixes</div>
           </CardContent>
         </Card>
@@ -147,9 +169,9 @@ const EnhancedDailyProgressTab: React.FC<EnhancedDailyProgressTabProps> = ({ cla
           <Card>
             <CardContent className="text-center py-8">
               <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-              <p className="text-gray-500 font-medium">No fixes recorded yet</p>
+              <p className="text-gray-500 font-medium">No fixes recorded in database yet</p>
               <p className="text-sm text-gray-400 mt-2">
-                Start fixing issues to see your daily progress here
+                Start fixing issues to see your daily progress here. Data syncs automatically with each verification run.
               </p>
             </CardContent>
           </Card>
@@ -164,7 +186,7 @@ const EnhancedDailyProgressTab: React.FC<EnhancedDailyProgressTabProps> = ({ cla
                     <div className="flex items-center gap-2">
                       <Calendar className="h-5 w-5 text-blue-600" />
                       {formatDate(date)}
-                      <Badge variant="outline">{fixes.length} fixes</Badge>
+                      <Badge variant="outline">{Array.isArray(fixes) ? fixes.length : 0} fixes</Badge>
                     </div>
                     <div className="text-sm text-gray-500">
                       {new Date(date).toLocaleDateString()}
@@ -173,7 +195,7 @@ const EnhancedDailyProgressTab: React.FC<EnhancedDailyProgressTabProps> = ({ cla
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {fixes.map((fix) => (
+                    {Array.isArray(fixes) && fixes.map((fix) => (
                       <div key={fix.id} className="border rounded-lg p-4 bg-gray-50">
                         <div className="flex items-start justify-between mb-2">
                           <div className="flex items-center gap-2">
@@ -193,7 +215,7 @@ const EnhancedDailyProgressTab: React.FC<EnhancedDailyProgressTabProps> = ({ cla
                           </div>
                         </div>
                         <p className="text-sm text-gray-700 mb-2">
-                          {fix.metadata?.description || 'No description available'}
+                          {fix.metadata?.description || fix.issue_message || 'No description available'}
                         </p>
                         <p className="text-xs text-gray-500">{fix.issue_message}</p>
                       </div>
@@ -211,7 +233,7 @@ const EnhancedDailyProgressTab: React.FC<EnhancedDailyProgressTabProps> = ({ cla
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-green-600" />
-              Daily Statistics Summary
+              Daily Statistics Summary (Database-Powered)
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -224,6 +246,13 @@ const EnhancedDailyProgressTab: React.FC<EnhancedDailyProgressTabProps> = ({ cla
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-600">{stat.fix_count} fixes</span>
+                    <div className="flex gap-1">
+                      {Object.entries(stat.severity_breakdown).map(([severity, count]) => (
+                        <Badge key={severity} className={getSeverityColor(severity)} variant="outline">
+                          {severity}: {count}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
                 </div>
               ))}

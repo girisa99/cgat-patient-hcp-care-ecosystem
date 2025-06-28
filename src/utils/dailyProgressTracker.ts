@@ -58,7 +58,7 @@ export const recordFixedIssue = async (
   }
 };
 
-// Get daily fix statistics
+// Get daily fix statistics with proper type handling
 export const getDailyFixStats = async (daysBack: number = 7): Promise<DailyFixStats[]> => {
   try {
     const { data: { user } } = await supabase.auth.getUser();
@@ -79,14 +79,24 @@ export const getDailyFixStats = async (daysBack: number = 7): Promise<DailyFixSt
       return [];
     }
 
-    return data || [];
+    // Transform the data to ensure proper typing
+    const transformedData: DailyFixStats[] = (data || []).map((item: any) => ({
+      fix_date: item.fix_date,
+      category: item.category,
+      fix_count: Number(item.fix_count),
+      severity_breakdown: typeof item.severity_breakdown === 'string' 
+        ? JSON.parse(item.severity_breakdown)
+        : (item.severity_breakdown || {})
+    }));
+
+    return transformedData;
   } catch (error) {
     console.error('Error in getDailyFixStats:', error);
     return [];
   }
 };
 
-// Sync current active issues with the database
+// Sync current active issues with the database - THIS IS THE KEY SYNC FUNCTION
 export const syncActiveIssues = async (issues: any[]) => {
   try {
     const issuesData = issues.map(issue => ({
@@ -106,7 +116,7 @@ export const syncActiveIssues = async (issues: any[]) => {
       return false;
     }
 
-    console.log('✅ Active issues synced with database:', issuesData.length);
+    console.log('✅ Active issues synced with database:', issuesData.length, 'issues');
     return true;
   } catch (error) {
     console.error('Error in syncActiveIssues:', error);
@@ -140,5 +150,69 @@ export const getHistoricalFixedIssues = async (limit: number = 100) => {
   } catch (error) {
     console.error('Error in getHistoricalFixedIssues:', error);
     return [];
+  }
+};
+
+// NEW: Get current active issues from database
+export const getActiveIssuesFromDatabase = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('active_issues')
+      .select('*')
+      .eq('status', 'active')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching active issues from database:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error in getActiveIssuesFromDatabase:', error);
+    return [];
+  }
+};
+
+// NEW: Comprehensive sync function that runs during verification
+export const performDatabaseSync = async (currentIssues: any[]) => {
+  console.log('🔄 PERFORMING COMPREHENSIVE DATABASE SYNC...');
+  
+  try {
+    // 1. Sync current active issues
+    const syncResult = await syncActiveIssues(currentIssues);
+    
+    if (syncResult) {
+      console.log('✅ Database sync completed successfully');
+      console.log(`📊 Synced ${currentIssues.length} active issues to database`);
+      
+      // 2. Log sync event for tracking
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase
+          .from('issue_fixes')
+          .insert({
+            user_id: user.id,
+            issue_type: 'SYSTEM_SYNC',
+            issue_message: `Database sync completed: ${currentIssues.length} active issues`,
+            issue_source: 'System Sync',
+            issue_severity: 'low',
+            category: 'System',
+            fix_method: 'automatic',
+            metadata: {
+              sync_timestamp: new Date().toISOString(),
+              issues_count: currentIssues.length,
+              sync_type: 'verification_run'
+            }
+          });
+      }
+      
+      return true;
+    }
+    
+    return false;
+  } catch (error) {
+    console.error('❌ Database sync failed:', error);
+    return false;
   }
 };

@@ -4,7 +4,7 @@ import { VerificationSummary } from '@/utils/verification/AutomatedVerificationO
 import { Issue, ProcessedIssuesData } from '@/types/issuesTypes';
 import { FixedIssue } from '@/hooks/useFixedIssuesTracker';
 import { saveIssueSnapshot, markIssueAsResolved, generateIssueId } from '@/utils/issues/issueStorageUtils';
-import { recordFixedIssue, syncActiveIssues } from '@/utils/dailyProgressTracker';
+import { recordFixedIssue, performDatabaseSync } from '@/utils/dailyProgressTracker';
 import { scanForActualSecurityIssues } from '@/utils/issues/issueScanner';
 
 export const useIssuesDataProcessor = (
@@ -31,13 +31,20 @@ export const useIssuesDataProcessor = (
   }, [verificationSummary]);
 
   useEffect(() => {
-    // Enhanced scanning for actual security issues with backend fix detection
+    // Enhanced scanning for actual security issues with database sync
+    console.log('🔍 SCANNING ISSUES AND SYNCING WITH DATABASE...');
     const securityIssues = scanForActualSecurityIssues();
     setAllIssues(securityIssues);
     
-    // Sync active issues with database
-    syncActiveIssues(securityIssues).catch(error => {
-      console.error('Failed to sync active issues with database:', error);
+    // CRITICAL: Sync active issues with database whenever issues are scanned
+    performDatabaseSync(securityIssues).then(success => {
+      if (success) {
+        console.log('✅ DATABASE SYNC COMPLETED - Issues synchronized with Supabase');
+      } else {
+        console.error('❌ DATABASE SYNC FAILED - Please check connection');
+      }
+    }).catch(error => {
+      console.error('❌ Database sync error:', error);
     });
   }, []);
 
@@ -138,6 +145,9 @@ export const useIssuesDataProcessor = (
 
 // Enhanced mark as really fixed function with database integration
 export const markIssueAsReallyFixed = async (issue: Issue) => {
+  console.log('🔧 MARKING ISSUE AS REALLY FIXED AND SYNCING TO DATABASE...');
+  
+  // Mark in local storage
   markIssueAsResolved(issue);
   
   // Record in database via daily progress tracker
@@ -150,8 +160,10 @@ export const markIssueAsReallyFixed = async (issue: Issue) => {
   }, 'manual');
   
   if (success) {
-    console.log('🔧 Issue marked as really fixed and recorded in database:', issue.type);
+    console.log('✅ Issue marked as really fixed and recorded in Supabase database:', issue.type);
   } else {
     console.error('❌ Failed to record fixed issue in database:', issue.type);
   }
+  
+  return success;
 };
