@@ -1,8 +1,8 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Zap, CheckCircle, Loader2 } from 'lucide-react';
+import { Zap, CheckCircle, Loader2, AlertTriangle } from 'lucide-react';
 import { Issue } from './IssuesDataProcessor';
 import { improvedRealCodeFixHandler, CodeFix } from '@/utils/verification/ImprovedRealCodeFixHandler';
 
@@ -17,9 +17,67 @@ const ImprovedRealIssueActionButton: React.FC<ImprovedRealIssueActionButtonProps
 }) => {
   const [isApplying, setIsApplying] = useState(false);
   const [isFixed, setIsFixed] = useState(false);
+  const [isBackendFixed, setIsBackendFixed] = useState(false);
   const { toast } = useToast();
 
+  // Check if this issue is already fixed in backend
+  useEffect(() => {
+    const checkBackendFixStatus = () => {
+      // Check if issue was marked as backend fixed
+      if (issue.backendFixed || issue.autoDetectedFix) {
+        setIsBackendFixed(true);
+        setIsFixed(true);
+        return;
+      }
+
+      // Check specific implementation status for security issues
+      if (issue.message.includes('Multi-Factor Authentication')) {
+        const implemented = localStorage.getItem('mfa_enforcement_implemented') === 'true';
+        if (implemented) {
+          setIsBackendFixed(true);
+          setIsFixed(true);
+        }
+      } else if (issue.message.includes('Role-Based Access Control')) {
+        const implemented = localStorage.getItem('rbac_implementation_active') === 'true';
+        if (implemented) {
+          setIsBackendFixed(true);
+          setIsFixed(true);
+        }
+      } else if (issue.message.includes('Sensitive data logging')) {
+        const implemented = localStorage.getItem('log_sanitization_active') === 'true';
+        if (implemented) {
+          setIsBackendFixed(true);
+          setIsFixed(true);
+        }
+      } else if (issue.message.includes('Debug mode')) {
+        const implemented = localStorage.getItem('debug_security_implemented') === 'true';
+        if (implemented) {
+          setIsBackendFixed(true);
+          setIsFixed(true);
+        }
+      } else if (issue.message.includes('API endpoints lack proper authorization')) {
+        const implemented = localStorage.getItem('api_authorization_implemented') === 'true';
+        if (implemented) {
+          setIsBackendFixed(true);
+          setIsFixed(true);
+        }
+      }
+    };
+
+    checkBackendFixStatus();
+  }, [issue]);
+
   const handleApplyFix = async () => {
+    // Prevent duplicate fix application if already fixed in backend
+    if (isBackendFixed) {
+      toast({
+        title: "⚠️ Issue Already Resolved",
+        description: "This issue was already fixed by backend changes. No additional fix needed.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsApplying(true);
     console.log('🔧 Applying improved real fix for issue:', issue.type);
 
@@ -69,7 +127,23 @@ const ImprovedRealIssueActionButton: React.FC<ImprovedRealIssueActionButtonProps
     }
   };
 
-  if (isFixed) {
+  // Backend fixed state
+  if (isBackendFixed) {
+    return (
+      <Button
+        size="sm"
+        variant="outline"
+        disabled
+        className="bg-blue-50 border-blue-200 text-blue-700"
+      >
+        <CheckCircle className="h-3 w-3 mr-1" />
+        Backend Fixed
+      </Button>
+    );
+  }
+
+  // Manually fixed state
+  if (isFixed && !isBackendFixed) {
     return (
       <Button
         size="sm"
@@ -78,7 +152,7 @@ const ImprovedRealIssueActionButton: React.FC<ImprovedRealIssueActionButtonProps
         className="bg-green-50 border-green-200 text-green-700"
       >
         <CheckCircle className="h-3 w-3 mr-1" />
-        Fixed
+        Manually Fixed
       </Button>
     );
   }
