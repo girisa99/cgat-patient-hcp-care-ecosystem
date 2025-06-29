@@ -1,24 +1,32 @@
 
-import { validateDataArchitectureCompliance, fetchAllAuthUsers, fetchSupplementaryProfiles, fetchUserRoles, combineUserDataStandardized } from '../_shared/user-data-utils.ts';
+import { validateDataArchitectureCompliance, fetchAllAuthUsers, fetchSupplementaryProfiles, fetchUserRoles, fetchUserFacilityAccess, combineUserDataStandardized } from '../_shared/user-data-utils.ts';
 
 export async function listAllUsers(supabase: any) {
   validateDataArchitectureCompliance('manage-user-profiles/listAllUsers');
   
-  console.log('🔄 [MANAGE-USER-PROFILES] Starting user list operation with standardized utilities');
+  console.log('🔄 [MANAGE-USER-PROFILES] Starting user list operation with enhanced data fetching');
 
   try {
     // Fetch users from auth.users (PRIMARY SOURCE)
     const authUsers = await fetchAllAuthUsers(supabase);
     const userIds = authUsers.map(user => user.id);
 
-    // Fetch supplementary data
-    const profiles = await fetchSupplementaryProfiles(supabase, userIds);
-    const userRoles = await fetchUserRoles(supabase, userIds);
+    // Fetch supplementary data in parallel for better performance
+    const [profiles, userRoles, facilityAccess] = await Promise.all([
+      fetchSupplementaryProfiles(supabase, userIds),
+      fetchUserRoles(supabase, userIds),
+      fetchUserFacilityAccess(supabase, userIds)
+    ]);
 
-    // Combine all data using standardized utility
-    const combinedUsers = combineUserDataStandardized(authUsers, profiles, userRoles);
+    // Combine all data using standardized utility with facility access
+    const combinedUsers = combineUserDataStandardized(authUsers, profiles, userRoles, facilityAccess);
 
-    console.log('✅ [MANAGE-USER-PROFILES] User list operation completed using standardized pattern');
+    console.log('✅ [MANAGE-USER-PROFILES] User list operation completed with enhanced data');
+    console.log('📊 [MANAGE-USER-PROFILES] Stats:');
+    console.log(`   - Total users: ${combinedUsers.length}`);
+    console.log(`   - Users with names: ${combinedUsers.filter(u => u.first_name || u.last_name).length}`);
+    console.log(`   - Users with facilities: ${combinedUsers.filter(u => u.facilities).length}`);
+    
     return { data: combinedUsers, error: null };
 
   } catch (error: any) {

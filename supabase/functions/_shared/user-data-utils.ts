@@ -61,16 +61,10 @@ export async function fetchSupplementaryProfiles(supabase: any, userIds: string[
 
   console.log('📝 [USER-DATA-UTILS] Fetching supplementary profiles for:', userIds.length, 'users');
 
+  // First get basic profiles
   const { data: profiles, error: profilesError } = await supabase
     .from('profiles')
-    .select(`
-      *,
-      facilities (
-        id,
-        name,
-        facility_type
-      )
-    `)
+    .select('*')
     .in('id', userIds);
 
   if (profilesError) {
@@ -78,8 +72,25 @@ export async function fetchSupplementaryProfiles(supabase: any, userIds: string[
     // Don't throw error - profiles are supplementary only
   }
 
-  console.log('✅ [USER-DATA-UTILS] Supplementary profiles fetched:', profiles?.length || 0);
-  return profiles || [];
+  console.log('✅ [USER-DATA-UTILS] Basic profiles fetched:', profiles?.length || 0);
+  
+  // Get facilities separately
+  const facilitiesPromises = (profiles || []).map(async (profile) => {
+    if (!profile.facility_id) return { ...profile, facilities: null };
+    
+    const { data: facility } = await supabase
+      .from('facilities')
+      .select('id, name, facility_type')
+      .eq('id', profile.facility_id)
+      .single();
+    
+    return { ...profile, facilities: facility };
+  });
+
+  const profilesWithFacilities = await Promise.all(facilitiesPromises);
+  console.log('✅ [USER-DATA-UTILS] Profiles with facilities processed:', profilesWithFacilities.length);
+  
+  return profilesWithFacilities || [];
 }
 
 /**
@@ -115,13 +126,48 @@ export async function fetchUserRoles(supabase: any, userIds: string[]) {
 }
 
 /**
+ * Fetches user facility access data
+ */
+export async function fetchUserFacilityAccess(supabase: any, userIds: string[]) {
+  if (userIds.length === 0) {
+    return [];
+  }
+
+  console.log('🏢 [USER-DATA-UTILS] Fetching facility access for:', userIds.length, 'users');
+
+  const { data: facilityAccess, error: accessError } = await supabase
+    .from('user_facility_access')
+    .select(`
+      user_id,
+      facility_id,
+      access_level,
+      facilities!inner (
+        id,
+        name,
+        facility_type
+      )
+    `)
+    .in('user_id', userIds)
+    .eq('is_active', true);
+
+  if (accessError) {
+    console.error('❌ [USER-DATA-UTILS] Error fetching facility access:', accessError);
+  } else {
+    console.log('✅ [USER-DATA-UTILS] Facility access fetched:', facilityAccess?.length || 0);
+  }
+
+  return facilityAccess || [];
+}
+
+/**
  * Combines auth.users data (primary) with supplementary data
  * This is the ONLY way to create complete user objects
  */
 export function combineUserDataStandardized(
   authUsers: any[], 
   profiles: any[], 
-  userRoles: any[]
+  userRoles: any[],
+  facilityAccess: any[] = []
 ): StandardizedUser[] {
   console.log('🔄 [USER-DATA-UTILS] Combining user data with auth.users as primary source...');
   
@@ -149,22 +195,44 @@ export function combineUserDataStandardized(
       }
     }));
     
-    // Extract name data with proper fallback chain
+    // Find facility access for this user
+    const userFacilityAccess = facilityAccess?.filter(fa => fa.user_id === authUser.id) || [];
+    
+    // Determine primary facility - either from profile or from first facility access
+    let primaryFacility = profile?.facilities;
+    if (!primaryFacility && userFacilityAccess.length > 0) {
+      primaryFacility = userFacilityAccess[0].facilities;
+    }
+    
+    // Extract name data with comprehensive fallback chain
+    const extractNameFromMetadata = (metadata: any, field: string) => {
+      if (!metadata) return null;
+      return metadata[field] || 
+             metadata[field.replace('_', '')] || // firstName instead of first_name
+             metadata[field.charAt(0).toUpperCase() + field.slice(1)] || // FirstName
+             metadata[field.charAt(0).toUpperCase() + field.slice(1).replace('_', '')] || // FirstName
+             null;
+    };
+    
     const firstName = profile?.first_name || 
-                     authUser.user_metadata?.first_name || 
-                     authUser.user_metadata?.firstName || 
-                     authUser.raw_user_meta_data?.first_name || 
-                     authUser.raw_user_meta_data?.firstName || 
+                     extractNameFromMetadata(authUser.user_metadata, 'first_name') ||
+                     extractNameFromMetadata(authUser.raw_user_meta_data, 'first_name') ||
+                     extractNameFromMetadata(authUser.app_metadata, 'first_name') ||
                      null;
                      
     const lastName = profile?.last_name || 
-                    authUser.user_metadata?.last_name || 
-                    authUser.user_metadata?.lastName || 
-                    authUser.raw_user_meta_data?.last_name || 
-                    authUser.raw_user_meta_data?.lastName || 
+                    extractNameFromMetadata(authUser.user_metadata, 'last_name') ||
+                    extractNameFromMetadata(authUser.raw_user_meta_data, 'last_name') ||
+                    extractNameFromMetadata(authUser.app_metadata, 'last_name') ||
                     null;
 
-    console.log(`👤 [USER-DATA-UTILS] Processing user ${authUser.email}: firstName="${firstName}", lastName="${lastName}"`);
+    console.log(`👤 [USER-DATA-UTILS] Processing user ${authUser.email}:`);
+    console.log(`   - Profile: ${profile ? 'Found' : 'Not found'}`);
+    console.log(`   - First name: "${firstName}" (from ${profile?.first_name ? 'profile' : 'metadata'})`);
+    console.log(`   - Last name: "${lastName}" (from ${profile?.last_name ? 'profile' : 'metadata'})`);
+    console.log(`   - Roles: ${formattedRoles.length}`);
+    console.log(`   - Facility access: ${userFacilityAccess.length}`);
+    console.log(`   - Primary facility: ${primaryFacility?.name || 'None'}`);
     
     // PRIMARY SOURCE: auth.users data
     // SECONDARY SOURCE: profiles table for supplementary data only
@@ -177,7 +245,7 @@ export function combineUserDataStandardized(
       // SUPPLEMENTARY DATA (profiles table or auth metadata)
       first_name: firstName,
       last_name: lastName,
-      phone: profile?.phone || authUser.user_metadata?.phone || authUser.raw_user_meta_data?.phone || null,
+      phone: profile?.phone || extractNameFromMetadata(authUser.user_metadata, 'phone') || extractNameFromMetadata(authUser.raw_user_meta_data, 'phone') || null,
       department: profile?.department || null,
       facility_id: profile?.facility_id || null,
       avatar_url: profile?.avatar_url || null,
@@ -187,7 +255,7 @@ export function combineUserDataStandardized(
       is_email_verified: profile?.is_email_verified || !!authUser.email_confirmed_at,
       
       // RELATED DATA
-      facilities: profile?.facilities || null,
+      facilities: primaryFacility || null,
       user_roles: formattedRoles
     };
 
