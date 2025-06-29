@@ -64,14 +64,14 @@ const Dashboard = () => {
               value={stats.totalUsers}
               icon={Users}
               description="All registered users"
-              trend={{ value: 12, isPositive: true }}
+              trend={{ value: "12", isPositive: true }}
             />
             <StatCard
               title="Active Users"
               value={stats.activeUsers}
               icon={Activity}
               description="Active in last 7 days"
-              trend={{ value: 8, isPositive: true }}
+              trend={{ value: "8", isPositive: true }}
             />
             <StatCard
               title="Total Facilities"
