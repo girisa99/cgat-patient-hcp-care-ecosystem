@@ -18,6 +18,9 @@ const Dashboard = () => {
   const { dashboardData, profile } = useDashboard();
   const navigate = useNavigate();
 
+  console.log('📊 Dashboard rendering with userRoles:', userRoles);
+  console.log('🎛️ User preferences:', userPreferences);
+
   // Super admins get the unified dashboard
   if (canAccessUnifiedDashboard && userPreferences?.preferred_dashboard !== 'module-specific') {
     return (
@@ -30,7 +33,10 @@ const Dashboard = () => {
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={() => navigate('/settings')}
+                onClick={() => {
+                  console.log('🎛️ Navigating to settings...');
+                  navigate('/settings');
+                }}
               >
                 <Settings className="h-4 w-4 mr-2" />
                 Settings
@@ -74,6 +80,18 @@ const Dashboard = () => {
                   User Management
                 </Button>
               </div>
+              <div className="mt-4">
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    console.log('🎛️ Navigating to settings from onboarding dashboard...');
+                    navigate('/settings');
+                  }}
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  Settings
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -108,6 +126,18 @@ const Dashboard = () => {
                   Facilities
                 </Button>
               </div>
+              <div className="mt-4">
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    console.log('🎛️ Navigating to settings from healthcare dashboard...');
+                    navigate('/settings');
+                  }}
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  Settings
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -132,9 +162,23 @@ const Dashboard = () => {
               <div className="text-gray-600 mb-4">
                 Access modules based on your permissions through the navigation menu.
               </div>
-              <Button onClick={() => navigate('/modules')}>
-                View Available Modules
-              </Button>
+              <div className="space-y-3">
+                <Button onClick={() => navigate('/modules')}>
+                  View Available Modules
+                </Button>
+                <div>
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      console.log('🎛️ Navigating to settings from default dashboard...');
+                      navigate('/settings');
+                    }}
+                  >
+                    <Settings className="h-4 w-4 mr-2" />
+                    Settings
+                  </Button>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>

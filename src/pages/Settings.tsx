@@ -12,6 +12,8 @@ import SecuritySettings from '@/components/settings/SecuritySettings';
 import { Settings as SettingsIcon, Route, Package, Shield, User, Bell } from 'lucide-react';
 
 const Settings = () => {
+  console.log('🎛️ Settings page rendering...');
+  
   return (
     <ProtectedRoute>
       <MainLayout>
@@ -19,45 +21,49 @@ const Settings = () => {
           title="Settings"
           subtitle="Customize your portal experience and preferences"
         >
-          <EnhancedTabs defaultValue="routing">
-            <EnhancedTabsList>
-              <EnhancedTabsTrigger value="routing" icon={<Route className="h-4 w-4" />}>
-                Routing
-              </EnhancedTabsTrigger>
-              <EnhancedTabsTrigger value="modules" icon={<Package className="h-4 w-4" />}>
-                Modules
-              </EnhancedTabsTrigger>
-              <EnhancedTabsTrigger value="profile" icon={<User className="h-4 w-4" />}>
-                Profile
-              </EnhancedTabsTrigger>
-              <EnhancedTabsTrigger value="notifications" icon={<Bell className="h-4 w-4" />}>
-                Notifications
-              </EnhancedTabsTrigger>
-              <EnhancedTabsTrigger value="security" icon={<Shield className="h-4 w-4" />}>
-                Security
-              </EnhancedTabsTrigger>
-            </EnhancedTabsList>
+          <div className="max-w-6xl mx-auto">
+            <EnhancedTabs defaultValue="routing" className="w-full">
+              <EnhancedTabsList className="grid w-full grid-cols-5">
+                <EnhancedTabsTrigger value="routing" icon={<Route className="h-4 w-4" />}>
+                  Routing
+                </EnhancedTabsTrigger>
+                <EnhancedTabsTrigger value="modules" icon={<Package className="h-4 w-4" />}>
+                  Modules
+                </EnhancedTabsTrigger>
+                <EnhancedTabsTrigger value="profile" icon={<User className="h-4 w-4" />}>
+                  Profile
+                </EnhancedTabsTrigger>
+                <EnhancedTabsTrigger value="notifications" icon={<Bell className="h-4 w-4" />}>
+                  Notifications
+                </EnhancedTabsTrigger>
+                <EnhancedTabsTrigger value="security" icon={<Shield className="h-4 w-4" />}>
+                  Security
+                </EnhancedTabsTrigger>
+              </EnhancedTabsList>
 
-            <EnhancedTabsContent value="routing">
-              <RoutingPreferences />
-            </EnhancedTabsContent>
+              <div className="mt-6">
+                <EnhancedTabsContent value="routing" className="mt-0">
+                  <RoutingPreferences />
+                </EnhancedTabsContent>
 
-            <EnhancedTabsContent value="modules">
-              <ModuleSettings />
-            </EnhancedTabsContent>
+                <EnhancedTabsContent value="modules" className="mt-0">
+                  <ModuleSettings />
+                </EnhancedTabsContent>
 
-            <EnhancedTabsContent value="profile">
-              <ProfileSettings />
-            </EnhancedTabsContent>
+                <EnhancedTabsContent value="profile" className="mt-0">
+                  <ProfileSettings />
+                </EnhancedTabsContent>
 
-            <EnhancedTabsContent value="notifications">
-              <NotificationSettings />
-            </EnhancedTabsContent>
+                <EnhancedTabsContent value="notifications" className="mt-0">
+                  <NotificationSettings />
+                </EnhancedTabsContent>
 
-            <EnhancedTabsContent value="security">
-              <SecuritySettings />
-            </EnhancedTabsContent>
-          </EnhancedTabs>
+                <EnhancedTabsContent value="security" className="mt-0">
+                  <SecuritySettings />
+                </EnhancedTabsContent>
+              </div>
+            </EnhancedTabs>
+          </div>
         </PageContainer>
       </MainLayout>
     </ProtectedRoute>
