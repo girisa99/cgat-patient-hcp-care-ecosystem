@@ -21,6 +21,11 @@ const Dashboard = () => {
   console.log('📊 Dashboard rendering with userRoles:', userRoles);
   console.log('🎛️ User preferences:', userPreferences);
 
+  const handleSettingsClick = () => {
+    console.log('🎛️ Navigating to settings page...');
+    navigate('/settings');
+  };
+
   // Super admins get the unified dashboard
   if (canAccessUnifiedDashboard && userPreferences?.preferred_dashboard !== 'module-specific') {
     return (
@@ -33,10 +38,7 @@ const Dashboard = () => {
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={() => {
-                  console.log('🎛️ Navigating to settings...');
-                  navigate('/settings');
-                }}
+                onClick={handleSettingsClick}
               >
                 <Settings className="h-4 w-4 mr-2" />
                 Settings
@@ -83,10 +85,7 @@ const Dashboard = () => {
               <div className="mt-4">
                 <Button 
                   variant="outline"
-                  onClick={() => {
-                    console.log('🎛️ Navigating to settings from onboarding dashboard...');
-                    navigate('/settings');
-                  }}
+                  onClick={handleSettingsClick}
                 >
                   <Settings className="h-4 w-4 mr-2" />
                   Settings
@@ -129,10 +128,7 @@ const Dashboard = () => {
               <div className="mt-4">
                 <Button 
                   variant="outline"
-                  onClick={() => {
-                    console.log('🎛️ Navigating to settings from healthcare dashboard...');
-                    navigate('/settings');
-                  }}
+                  onClick={handleSettingsClick}
                 >
                   <Settings className="h-4 w-4 mr-2" />
                   Settings
@@ -169,10 +165,7 @@ const Dashboard = () => {
                 <div>
                   <Button 
                     variant="outline"
-                    onClick={() => {
-                      console.log('🎛️ Navigating to settings from default dashboard...');
-                      navigate('/settings');
-                    }}
+                    onClick={handleSettingsClick}
                   >
                     <Settings className="h-4 w-4 mr-2" />
                     Settings
@@ -192,6 +185,16 @@ const Dashboard = () => {
         <PageContainer
           title="Dashboard"
           subtitle="Your personalized healthcare portal"
+          headerActions={
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleSettingsClick}
+            >
+              <Settings className="h-4 w-4 mr-2" />
+              Settings
+            </Button>
+          }
         >
           {getRoleSpecificContent()}
         </PageContainer>
