@@ -45,19 +45,24 @@ export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = ({
   onClose
 }) => {
   return (
-    <EnhancedTabs defaultValue={activeTab} className="w-full">
+    <EnhancedTabs defaultValue={activeTab} className="w-full" onValueChange={onTabChange}>
       <EnhancedTabsList>
         <EnhancedTabsTrigger value="overview">Overview</EnhancedTabsTrigger>
-        <EnhancedTabsTrigger value="internal">Internal APIs</EnhancedTabsTrigger>
-        <EnhancedTabsTrigger value="external">External APIs</EnhancedTabsTrigger>
-        <EnhancedTabsTrigger value="published">Published APIs</EnhancedTabsTrigger>
+        <EnhancedTabsTrigger value="internal">Internal APIs ({internalApis?.length || 0})</EnhancedTabsTrigger>
+        <EnhancedTabsTrigger value="external">External APIs ({externalApis?.length || 0})</EnhancedTabsTrigger>
+        <EnhancedTabsTrigger value="published">Published APIs ({publishedApis?.length || 0})</EnhancedTabsTrigger>
         <EnhancedTabsTrigger value="developer">Developer</EnhancedTabsTrigger>
         <EnhancedTabsTrigger value="keys">API Keys</EnhancedTabsTrigger>
         <EnhancedTabsTrigger value="testing">Testing</EnhancedTabsTrigger>
       </EnhancedTabsList>
 
       <EnhancedTabsContent value="overview">
-        <OverviewTabContent />
+        <OverviewTabContent 
+          integrations={integrations}
+          internalApis={internalApis}
+          externalApis={externalApis}
+          publishedApis={publishedApis}
+        />
       </EnhancedTabsContent>
 
       <EnhancedTabsContent value="internal">
@@ -87,7 +92,10 @@ export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = ({
       </EnhancedTabsContent>
 
       <EnhancedTabsContent value="published">
-        <PublishedApisTabContent />
+        <PublishedApisTabContent 
+          publishedApis={publishedApis}
+          searchTerm={searchTerm}
+        />
       </EnhancedTabsContent>
 
       <EnhancedTabsContent value="developer">
@@ -102,6 +110,7 @@ export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = ({
         <TestingTabContent
           integrations={integrations}
           onClose={onClose}
+          onTestEndpoint={onTestEndpoint}
         />
       </EnhancedTabsContent>
     </EnhancedTabs>

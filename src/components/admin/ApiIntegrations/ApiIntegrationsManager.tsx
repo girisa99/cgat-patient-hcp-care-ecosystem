@@ -7,6 +7,8 @@ import { LoadingState } from '../shared/LoadingState';
 import { ErrorState } from '../shared/ErrorState';
 import { ApiIntegrationsStats } from './ApiIntegrationsStats';
 import { ApiIntegrationsTabs } from './ApiIntegrationsTabs';
+import { Input } from '@/components/ui/input';
+import { Search } from 'lucide-react';
 import { ApiIntegration } from '@/utils/api/ApiIntegrationTypes';
 
 const ApiIntegrationsManager = () => {
@@ -77,6 +79,22 @@ const ApiIntegrationsManager = () => {
 
   return (
     <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">API Integrations</h1>
+          <p className="text-muted-foreground">Manage internal APIs, external integrations, and developer tools</p>
+        </div>
+        <div className="relative w-72">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <Input
+            placeholder="Search integrations..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+      </div>
+
       <ApiIntegrationsStats
         totalIntegrations={integrations?.length || 0}
         internalApis={internalApis?.length || 0}

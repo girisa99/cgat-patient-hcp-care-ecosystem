@@ -9,6 +9,7 @@ interface EnhancedTabsProps {
   children: React.ReactNode;
   variant?: 'default' | 'pills' | 'underline';
   size?: 'sm' | 'default' | 'lg';
+  onValueChange?: (value: string) => void;
 }
 
 interface EnhancedTabsTriggerProps {
@@ -30,7 +31,8 @@ const EnhancedTabsRoot: React.FC<EnhancedTabsProps> = ({
   className, 
   children, 
   variant = 'default',
-  size = 'default'
+  size = 'default',
+  onValueChange
 }) => {
   return (
     <Tabs 
@@ -38,6 +40,7 @@ const EnhancedTabsRoot: React.FC<EnhancedTabsProps> = ({
       className={cn('w-full', className)}
       data-variant={variant}
       data-size={size}
+      onValueChange={onValueChange}
     >
       {children}
     </Tabs>
