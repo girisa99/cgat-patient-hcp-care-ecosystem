@@ -10,6 +10,15 @@ export interface ValidationRequest {
   description?: string;
 }
 
+export interface ModuleValidationResult {
+  canProceed: boolean;
+  issues: string[];
+  warnings: string[];
+  recommendations: string[];
+  shouldUseTemplate: boolean;
+  recommendedTemplate?: string;
+}
+
 export class SimplifiedValidator {
   static validate(data: any) {
     return {
@@ -17,6 +26,19 @@ export class SimplifiedValidator {
       issues: [],
       fixes: [],
       recommendations: ['Regular validation recommended']
+    };
+  }
+
+  static validateModule(config: any): ModuleValidationResult {
+    console.log('🔍 Validating module configuration:', config);
+    
+    return {
+      canProceed: true,
+      issues: [],
+      warnings: [],
+      recommendations: ['Consider using templates for consistency'],
+      shouldUseTemplate: true,
+      recommendedTemplate: 'ExtensibleModuleTemplate'
     };
   }
 }

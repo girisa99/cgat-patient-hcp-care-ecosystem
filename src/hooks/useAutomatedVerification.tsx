@@ -86,7 +86,7 @@ export const useAutomatedVerification = () => {
     runManualScan,
     
     // Helper functions
-    hasIssues: lastSummary ? lastSummary.issuesFound > 0 : false,
+    hasIssues: lastSummary ? (lastSummary.issuesFound || 0) > 0 : false,
     hasCriticalIssues: lastSummary ? lastSummary.criticalIssues > 0 : false,
     getStatus: () => automatedVerification.getStatus(),
     isAutomatic: true

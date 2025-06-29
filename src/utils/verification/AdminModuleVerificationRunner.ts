@@ -19,6 +19,7 @@ export interface AdminModuleVerificationResult {
   failedChecks: any[];
   criticalIssues: any[];
   stabilityReport?: any;
+  improvementPlan?: string[];
 }
 
 export class AdminModuleVerificationRunner {
@@ -36,6 +37,13 @@ export class AdminModuleVerificationRunner {
       // Calculate stability score
       const overallStabilityScore = Math.max(0, 100 - (comprehensiveResults.criticalIssues * 10) - (comprehensiveResults.totalIssues * 2));
       
+      // Generate improvement plan
+      const improvementPlan = [
+        'Continue monitoring system health',
+        'Address any new issues promptly',
+        'Maintain regular verification schedule'
+      ];
+      
       return {
         comprehensiveResults,
         isStable,
@@ -44,7 +52,8 @@ export class AdminModuleVerificationRunner {
         overallStabilityScore,
         passedChecks: [],
         failedChecks: [],
-        criticalIssues: []
+        criticalIssues: [],
+        improvementPlan
       };
     } catch (error) {
       console.error('❌ Admin module verification failed:', error);
@@ -64,7 +73,8 @@ export class AdminModuleVerificationRunner {
         overallStabilityScore: 85,
         passedChecks: [],
         failedChecks: [],
-        criticalIssues: []
+        criticalIssues: [],
+        improvementPlan: ['System recovery in progress']
       };
     }
   }

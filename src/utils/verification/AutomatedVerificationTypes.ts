@@ -35,6 +35,29 @@ export interface VerificationSummary {
   timestamp: string;
   validationResult?: ValidationResult;
   auditResults?: AuditResult[];
+  issuesFound?: number;
+  autoFixesApplied?: number;
+  databaseValidation?: {
+    violations: any[];
+    autoFixesApplied?: number;
+    autoFixesAvailable?: number;
+  };
+  codeQuality?: {
+    issues: any[];
+  };
+  securityScan?: {
+    vulnerabilities: any[];
+  };
+  schemaValidation?: {
+    violations: any[];
+  };
+  securityScore?: number;
+  qualityScore?: number;
+  sqlAutoFixes?: number;
+  highIssues?: number;
+  mediumIssues?: number;
+  lowIssues?: number;
+  realFixesApplied?: number;
 }
 
 export interface VerificationConfig {
@@ -56,4 +79,5 @@ export interface AutomatedVerificationConfig {
   interval: number;
   enableAutoFix: boolean;
   criticalThreshold: number;
+  enableAutoSQLGeneration?: boolean;
 }

@@ -120,7 +120,8 @@ export const useUnifiedMetrics = (verificationSummary?: VerificationSummary | nu
     updateMetrics,
     processedData: {
       activeIssues: [],
-      fixedIssues: []
+      fixedIssues: [],
+      backendFixedIssues: []
     }
   };
 };

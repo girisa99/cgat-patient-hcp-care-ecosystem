@@ -48,7 +48,8 @@ class AutomatedVerificationOrchestratorClass {
   private config: AutomatedVerificationConfig = {
     interval: 60000,
     enableAutoFix: false,
-    criticalThreshold: 5
+    criticalThreshold: 5,
+    enableAutoSQLGeneration: false
   };
 
   async verifyBeforeCreation(request: VerificationRequest): Promise<boolean> {
