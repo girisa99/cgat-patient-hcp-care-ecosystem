@@ -6,7 +6,7 @@ import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { EnhancedTabs, EnhancedTabsList, EnhancedTabsTrigger, EnhancedTabsContent } from '@/components/ui/enhanced-tabs';
 import RoutingPreferences from '@/components/routing/RoutingPreferences';
 import { ModuleSettings } from '@/components/modules/ModuleSettings';
-import { Settings, Route, Modules, Shield, User, Bell } from 'lucide-react';
+import { Settings as SettingsIcon, Route, Package, Shield, User, Bell } from 'lucide-react';
 
 const Settings = () => {
   return (
@@ -21,7 +21,7 @@ const Settings = () => {
               <EnhancedTabsTrigger value="routing" icon={<Route className="h-4 w-4" />}>
                 Routing
               </EnhancedTabsTrigger>
-              <EnhancedTabsTrigger value="modules" icon={<Modules className="h-4 w-4" />}>
+              <EnhancedTabsTrigger value="modules" icon={<Package className="h-4 w-4" />}>
                 Modules
               </EnhancedTabsTrigger>
               <EnhancedTabsTrigger value="profile" icon={<User className="h-4 w-4" />}>
