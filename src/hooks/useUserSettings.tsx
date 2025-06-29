@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -173,7 +172,7 @@ export const useUserSettings = () => {
     },
   });
 
-  // Update notification preferences mutation
+  // Update notification preferences mutation with Twilio integration
   const updateNotificationsMutation = useMutation({
     mutationFn: async (updates: Partial<NotificationPreferences>) => {
       if (!user?.id) throw new Error('User not authenticated');
@@ -186,6 +185,23 @@ export const useUserSettings = () => {
         .single();
 
       if (error) throw error;
+
+      // Send notification about preference changes via Twilio if enabled
+      if (data.sms_notifications && updates.sms_notifications !== undefined) {
+        try {
+          await supabase.functions.invoke('twilio-notifications', {
+            body: {
+              type: 'sms',
+              to: user.phone || '',
+              message: 'Your notification preferences have been updated successfully.',
+              userId: user.id,
+            },
+          });
+        } catch (error) {
+          console.log('Failed to send SMS confirmation:', error);
+        }
+      }
+
       return data;
     },
     onSuccess: () => {

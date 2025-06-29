@@ -1,15 +1,23 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { useUserSettings } from '@/hooks/useUserSettings';
-import { Bell, Mail, Smartphone, MessageSquare, Shield, Settings, Package, Clock } from 'lucide-react';
+import { useTwilioNotifications } from '@/hooks/useTwilioNotifications';
+import { useAuthContext } from '@/components/auth/AuthProvider';
+import { Bell, Mail, Smartphone, MessageSquare, Shield, Settings, Package, Clock, Send } from 'lucide-react';
 
 const NotificationSettings = () => {
   const { notificationPreferences, updateNotifications, isUpdating } = useUserSettings();
+  const { sendSMS, sendWhatsApp, sendVoiceCall, sendEmail, isLoading } = useTwilioNotifications();
+  const { profile } = useAuthContext();
+  
+  const [testPhone, setTestPhone] = useState('');
+  const [testEmail, setTestEmail] = useState(profile?.email || '');
 
   const handleToggle = (key: string, value: boolean) => {
     if (notificationPreferences) {
@@ -29,6 +37,25 @@ const NotificationSettings = () => {
     }
   };
 
+  const handleTestNotification = (type: 'sms' | 'whatsapp' | 'voice' | 'email') => {
+    const message = `This is a test ${type.toUpperCase()} notification from your Healthcare Portal. If you received this, your ${type} notifications are working correctly!`;
+    
+    switch (type) {
+      case 'sms':
+        if (testPhone) sendSMS(testPhone, message);
+        break;
+      case 'whatsapp':
+        if (testPhone) sendWhatsApp(testPhone, message);
+        break;
+      case 'voice':
+        if (testPhone) sendVoiceCall(testPhone, message);
+        break;
+      case 'email':
+        if (testEmail) sendEmail(testEmail, message, 'Test Email Notification');
+        break;
+    }
+  };
+
   if (!notificationPreferences) {
     return <div>Loading notification settings...</div>;
   }
@@ -43,7 +70,7 @@ const NotificationSettings = () => {
             Notification Channels
           </CardTitle>
           <CardDescription>
-            Choose how you want to receive notifications
+            Choose how you want to receive notifications via Twilio
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -53,7 +80,7 @@ const NotificationSettings = () => {
               <div>
                 <Label>Email Notifications</Label>
                 <p className="text-sm text-muted-foreground">
-                  Receive notifications via email
+                  Receive notifications via email through SendGrid
                 </p>
               </div>
             </div>
@@ -68,9 +95,26 @@ const NotificationSettings = () => {
             <div className="flex items-center gap-3">
               <Smartphone className="h-5 w-5 text-muted-foreground" />
               <div>
-                <Label>Push Notifications</Label>
+                <Label>SMS Notifications</Label>
                 <p className="text-sm text-muted-foreground">
-                  Receive push notifications on your device
+                  Receive text messages via Twilio SMS
+                </p>
+              </div>
+            </div>
+            <Switch
+              checked={notificationPreferences.sms_notifications}
+              onCheckedChange={(checked) => handleToggle('sms_notifications', checked)}
+              disabled={isUpdating}
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <MessageSquare className="h-5 w-5 text-muted-foreground" />
+              <div>
+                <Label>WhatsApp Notifications</Label>
+                <p className="text-sm text-muted-foreground">
+                  Receive messages via WhatsApp Business API
                 </p>
               </div>
             </div>
@@ -80,22 +124,76 @@ const NotificationSettings = () => {
               disabled={isUpdating}
             />
           </div>
+        </CardContent>
+      </Card>
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <MessageSquare className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <Label>SMS Notifications</Label>
-                <p className="text-sm text-muted-foreground">
-                  Receive notifications via text message
-                </p>
-              </div>
+      {/* Test Notifications */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Send className="h-5 w-5" />
+            Test Notifications
+          </CardTitle>
+          <CardDescription>
+            Test your notification channels to ensure they're working correctly
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="testPhone">Phone Number (with country code)</Label>
+              <Input
+                id="testPhone"
+                placeholder="+1234567890"
+                value={testPhone}
+                onChange={(e) => setTestPhone(e.target.value)}
+              />
             </div>
-            <Switch
-              checked={notificationPreferences.sms_notifications}
-              onCheckedChange={(checked) => handleToggle('sms_notifications', checked)}
-              disabled={isUpdating}
-            />
+            <div className="space-y-2">
+              <Label htmlFor="testEmail">Email Address</Label>
+              <Input
+                id="testEmail"
+                type="email"
+                placeholder="test@example.com"
+                value={testEmail}
+                onChange={(e) => setTestEmail(e.target.value)}
+              />
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleTestNotification('email')}
+              disabled={isLoading || !testEmail}
+            >
+              Test Email
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleTestNotification('sms')}
+              disabled={isLoading || !testPhone}
+            >
+              Test SMS
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleTestNotification('whatsapp')}
+              disabled={isLoading || !testPhone}
+            >
+              Test WhatsApp
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleTestNotification('voice')}
+              disabled={isLoading || !testPhone}
+            >
+              Test Voice Call
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -164,7 +262,7 @@ const NotificationSettings = () => {
             <div className="flex items-center gap-3">
               <Mail className="h-5 w-5 text-muted-foreground" />
               <div>
-                <Label>Marketing Emails</Label>
+                <Label>Marketing Communications</Label>
                 <p className="text-sm text-muted-foreground">
                   Product updates and promotional content
                 </p>
@@ -179,7 +277,7 @@ const NotificationSettings = () => {
         </CardContent>
       </Card>
 
-      {/* Notification Frequency */}
+      {/* Notification Timing */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
