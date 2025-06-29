@@ -29,12 +29,12 @@ const LoginForm = () => {
     { value: 'patientCaregiver' as UserRole, label: 'Patient/Caregiver' }
   ];
 
-  // Updated test credentials with corrected email addresses
+  // Updated test credentials with stronger passwords
   const testCredentials = [
-    { email: 'superadmin@geniecellgene.com', password: 'password123', role: 'Super Admin' },
-    { email: 'onboarding@geniecellgene.com', password: 'password123', role: 'Onboarding Team' },
-    { email: 'provider@geniecellgene.com', password: 'password123', role: 'Healthcare Provider' },
-    { email: 'patient@geniecellgene.com', password: 'password123', role: 'Patient/Caregiver' }
+    { email: 'superadmin@geniecellgene.com', password: 'SuperAdmin123!', role: 'Super Admin' },
+    { email: 'onboarding@geniecellgene.com', password: 'Onboarding123!', role: 'Onboarding Team' },
+    { email: 'provider@geniecellgene.com', password: 'Provider123!', role: 'Healthcare Provider' },
+    { email: 'patient@geniecellgene.com', password: 'Patient123!', role: 'Patient/Caregiver' }
   ];
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -87,7 +87,7 @@ const LoginForm = () => {
   const createTestAccount = async () => {
     console.log('🔧 Creating test onboarding account...');
     setEmail('onboarding@geniecellgene.com');
-    setPassword('password123');
+    setPassword('Onboarding123!'); // Strong password that meets requirements
     setSelectedRole('onboardingTeam' as UserRole);
     setIsSignUp(true);
     setAuthError('');
@@ -248,7 +248,7 @@ const LoginForm = () => {
               className="w-full text-center p-2 rounded bg-green-100 border border-green-200 hover:bg-green-200 transition-colors text-sm"
             >
               <div className="font-medium text-green-800">Create Test Onboarding Account</div>
-              <div className="text-green-600 text-xs">Create onboarding@geniecellgene.com</div>
+              <div className="text-green-600 text-xs">Use strong password: Onboarding123!</div>
             </button>
           </div>
         </HealthcareCardContent>
