@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { useUserSettings } from '@/hooks/useUserSettings';
-import { Bell, Mail, Smartphone, MessageSquare, Shield, System, Package, Clock } from 'lucide-react';
+import { Bell, Mail, Smartphone, MessageSquare, Shield, Settings, Package, Clock } from 'lucide-react';
 
 const NotificationSettings = () => {
   const { notificationPreferences, updateNotifications, isUpdating } = useUserSettings();
@@ -128,7 +128,7 @@ const NotificationSettings = () => {
 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <System className="h-5 w-5 text-muted-foreground" />
+              <Settings className="h-5 w-5 text-muted-foreground" />
               <div>
                 <Label>System Updates</Label>
                 <p className="text-sm text-muted-foreground">

@@ -71,18 +71,20 @@ const SecuritySettings = () => {
 
   const handleAddIpAddress = () => {
     if (newIpAddress && securitySettings) {
-      const currentList = securitySettings.ip_whitelist || [];
+      const currentList = Array.isArray(securitySettings.ip_whitelist) 
+        ? securitySettings.ip_whitelist as string[]
+        : [];
       updateSecurity({ 
-        ip_whitelist: [...currentList, newIpAddress] 
+        ip_whitelist: [...currentList, newIpAddress] as any
       });
       setNewIpAddress('');
     }
   };
 
   const handleRemoveIpAddress = (ipToRemove: string) => {
-    if (securitySettings) {
-      const updatedList = securitySettings.ip_whitelist.filter(ip => ip !== ipToRemove);
-      updateSecurity({ ip_whitelist: updatedList });
+    if (securitySettings && Array.isArray(securitySettings.ip_whitelist)) {
+      const updatedList = (securitySettings.ip_whitelist as string[]).filter(ip => ip !== ipToRemove);
+      updateSecurity({ ip_whitelist: updatedList as any });
     }
   };
 
@@ -104,6 +106,11 @@ const SecuritySettings = () => {
   if (!securitySettings) {
     return <div>Loading security settings...</div>;
   }
+
+  // Safely handle ip_whitelist as it could be various JSON types
+  const ipWhitelist = Array.isArray(securitySettings.ip_whitelist) 
+    ? securitySettings.ip_whitelist as string[]
+    : [];
 
   return (
     <div className="space-y-6">
@@ -272,11 +279,11 @@ const SecuritySettings = () => {
             </Button>
           </div>
           
-          {securitySettings.ip_whitelist && securitySettings.ip_whitelist.length > 0 && (
+          {ipWhitelist.length > 0 && (
             <div className="space-y-2">
               <Label>Whitelisted IP Addresses</Label>
               <div className="flex flex-wrap gap-2">
-                {securitySettings.ip_whitelist.map((ip, index) => (
+                {ipWhitelist.map((ip, index) => (
                   <Badge key={index} variant="secondary" className="flex items-center gap-2">
                     {ip}
                     <button
@@ -319,7 +326,7 @@ const SecuritySettings = () => {
                       </p>
                     </div>
                   </div>
-                  <Badge variant={getSeverityColor(event.severity)}>
+                  <Badge variant={getSeverityColor(event.severity) as any}>
                     {event.severity}
                   </Badge>
                 </div>
@@ -356,7 +363,7 @@ const SecuritySettings = () => {
                     <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
                       <span>{format(new Date(log.created_at), 'MMM dd, yyyy at HH:mm')}</span>
                       {log.module_name && <span>Module: {log.module_name}</span>}
-                      {log.ip_address && <span>IP: {log.ip_address}</span>}
+                      {log.ip_address && <span>IP: {log.ip_address.toString()}</span>}
                     </div>
                   </div>
                 </div>

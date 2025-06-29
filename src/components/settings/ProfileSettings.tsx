@@ -13,8 +13,12 @@ import { User, Mail, Phone, Building, Clock, Globe } from 'lucide-react';
 const ProfileSettings = () => {
   const { user, profile } = useAuthContext();
   const { userPreferences, updatePreferences, isUpdating } = useUserSettings();
-  const [localPreferences, setLocalPreferences] = useState({
-    theme_preference: userPreferences?.theme_preference || 'system',
+  const [localPreferences, setLocalPreferences] = useState<{
+    theme_preference: 'light' | 'dark' | 'system';
+    language: string;
+    timezone: string;
+  }>({
+    theme_preference: (userPreferences?.theme_preference as 'light' | 'dark' | 'system') || 'system',
     language: userPreferences?.language || 'en',
     timezone: userPreferences?.timezone || 'UTC',
   });
