@@ -7,7 +7,7 @@
 export interface PropValidationResult {
   issues: string[];
   recommendations: string[];
-  validationScore?: number;
+  validationScore: number;
 }
 
 export class ComponentPropValidator {

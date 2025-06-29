@@ -7,7 +7,7 @@
 export interface AccessibilityComplianceResult {
   criticalIssues: string[];
   recommendations: string[];
-  overallScore?: number;
+  overallScore: number;
 }
 
 export class AccessibilityComplianceChecker {

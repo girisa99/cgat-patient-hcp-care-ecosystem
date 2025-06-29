@@ -4,14 +4,32 @@
  * Mock implementation for role-based UI validation
  */
 
+export interface NavigationConsistency {
+  tabFiltering: number;
+  roleBasedNavigation: number;
+  contextualMenus: number;
+}
+
+export interface PermissionUI {
+  buttonVisibility: number;
+}
+
+export interface RoleAdaptation {
+  adaptationScore: number;
+}
+
+export interface ComponentVisibility {
+  conditionalRendering: number;
+}
+
 export interface RoleBasedUIValidationResult {
   criticalIssues: string[];
   recommendations: string[];
-  navigationConsistency?: boolean;
-  permissionUI?: boolean;
-  roleAdaptation?: boolean;
-  componentVisibility?: boolean;
-  overallScore?: number;
+  navigationConsistency: NavigationConsistency;
+  permissionUI: PermissionUI;
+  roleAdaptation: RoleAdaptation;
+  componentVisibility: ComponentVisibility;
+  overallScore: number;
 }
 
 export class RoleBasedUIValidator {
@@ -21,10 +39,20 @@ export class RoleBasedUIValidator {
     return {
       criticalIssues: [],
       recommendations: ['Implement proper role-based access controls'],
-      navigationConsistency: true,
-      permissionUI: true,
-      roleAdaptation: true,
-      componentVisibility: true,
+      navigationConsistency: {
+        tabFiltering: 85,
+        roleBasedNavigation: 88,
+        contextualMenus: 82
+      },
+      permissionUI: {
+        buttonVisibility: 90
+      },
+      roleAdaptation: {
+        adaptationScore: 86
+      },
+      componentVisibility: {
+        conditionalRendering: 84
+      },
       overallScore: 85
     };
   }
