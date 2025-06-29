@@ -13,13 +13,12 @@ export interface AdminModuleVerificationResult {
   isStable: boolean;
   isLockedForCurrentState: boolean;
   recommendations: string[];
-  // Add missing properties
   overallStabilityScore: number;
   passedChecks: any[];
   failedChecks: any[];
   criticalIssues: any[];
   stabilityReport?: any;
-  improvementPlan?: string[];
+  improvementPlan: string[];
 }
 
 export class AdminModuleVerificationRunner {

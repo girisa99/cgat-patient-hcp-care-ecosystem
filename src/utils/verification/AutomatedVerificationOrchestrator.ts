@@ -6,7 +6,6 @@
 
 import { 
   VerificationRequest, 
-  VerificationSummary, 
   AutomatedVerificationConfig 
 } from './AutomatedVerificationTypes';
 
@@ -23,7 +22,7 @@ export interface VerificationSummary {
   databaseValidation?: {
     violations: any[];
     autoFixesApplied?: number;
-    autoFixesAvailable?: number;
+    autoFixesAvailable?: any[];
   };
   codeQuality?: {
     issues: any[];
@@ -33,18 +32,18 @@ export interface VerificationSummary {
   };
   schemaValidation?: {
     violations: any[];
+    autoFixesAvailable?: any[];
   };
-  // Additional missing properties
   securityScore?: number;
   qualityScore?: number;
-  sqlAutoFixes?: number;
+  sqlAutoFixes?: any[];
   highIssues?: number;
   mediumIssues?: number;
   lowIssues?: number;
   realFixesApplied?: number;
 }
 
-class AutomatedVerificationOrchestratorClass {
+export class AutomatedVerificationOrchestratorClass {
   private config: AutomatedVerificationConfig = {
     interval: 60000,
     enableAutoFix: false,
@@ -81,4 +80,4 @@ class AutomatedVerificationOrchestratorClass {
 }
 
 export const automatedVerification = new AutomatedVerificationOrchestratorClass();
-export { AutomatedVerificationConfig };
+export type { AutomatedVerificationConfig };

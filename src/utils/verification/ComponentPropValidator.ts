@@ -1,19 +1,21 @@
 
 /**
  * Component Prop Validator
- * Mock implementation for validating component props
+ * Mock implementation for component prop validation
  */
 
+export interface PropValidationResult {
+  issues: string[];
+  recommendations: string[];
+}
+
 export class ComponentPropValidator {
-  static async validateComponentProps(): Promise<{
-    issues: string[];
-    recommendations: string[];
-  }> {
+  static async validateComponentProps(): Promise<PropValidationResult> {
     console.log('🔍 Validating component props...');
     
     return {
       issues: [],
-      recommendations: ['Use TypeScript interfaces for all props']
+      recommendations: ['Ensure all props have proper TypeScript types']
     };
   }
 }

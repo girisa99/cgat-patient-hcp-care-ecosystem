@@ -1,15 +1,19 @@
 
 /**
  * Duplicate Detector
- * Mock implementation for detecting duplicate code
+ * Mock implementation for duplicate detection
  */
 
+export interface DuplicateStats {
+  totalDuplicates: number;
+}
+
 export class DuplicateDetector {
-  getDuplicateStats() {
+  getDuplicateStats(): DuplicateStats {
+    console.log('🔍 Getting duplicate stats...');
+    
     return {
-      totalDuplicates: 0,
-      duplicateFiles: [],
-      duplicateFunctions: []
+      totalDuplicates: 0
     };
   }
 }

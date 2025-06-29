@@ -4,22 +4,22 @@
  * Mock implementation for component auditing
  */
 
-import { ComponentAuditResult } from './AutomatedVerificationTypes';
+export interface ComponentAuditResult {
+  component: string;
+  issues: string[];
+  recommendations: string[];
+}
 
 export class ComponentAuditor {
   auditAllComponents(): ComponentAuditResult[] {
     console.log('🔍 Auditing all components...');
     
+    // Mock audit results
     return [
       {
-        component: 'SecurityDashboard',
+        component: 'Example Component',
         issues: [],
-        recommendations: ['Consider adding loading states']
-      },
-      {
-        component: 'IssuesTab',
-        issues: [],
-        recommendations: ['Optimize re-renders']
+        recommendations: ['Consider adding error boundaries']
       }
     ];
   }

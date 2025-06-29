@@ -1,19 +1,21 @@
 
 /**
  * Accessibility Compliance Checker
- * Mock implementation for checking accessibility compliance
+ * Mock implementation for accessibility compliance checking
  */
 
+export interface AccessibilityComplianceResult {
+  criticalIssues: string[];
+  recommendations: string[];
+}
+
 export class AccessibilityComplianceChecker {
-  static async checkAccessibilityCompliance(): Promise<{
-    criticalIssues: string[];
-    recommendations: string[];
-  }> {
+  static async checkAccessibilityCompliance(): Promise<AccessibilityComplianceResult> {
     console.log('🔍 Checking accessibility compliance...');
     
     return {
       criticalIssues: [],
-      recommendations: ['Add ARIA labels to interactive elements']
+      recommendations: ['Add proper ARIA labels', 'Ensure keyboard navigation']
     };
   }
 }

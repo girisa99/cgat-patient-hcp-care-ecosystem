@@ -6,10 +6,17 @@
 
 import { useState, useCallback } from 'react';
 import { VerificationSummary } from '@/utils/verification/AutomatedVerificationOrchestrator';
+import { VerificationRequest } from '@/utils/verification/AutomatedVerificationTypes';
 
 export const useAutomatedVerification = () => {
   const [lastSummary, setLastSummary] = useState<VerificationSummary | null>(null);
   const [isRunning, setIsRunning] = useState(false);
+
+  const verifyBeforeCreation = useCallback(async (request: VerificationRequest): Promise<boolean> => {
+    console.log('🔍 Verifying before creation:', request);
+    // Mock implementation - always allow creation
+    return true;
+  }, []);
 
   const runManualScan = useCallback(async () => {
     setIsRunning(true);
@@ -39,6 +46,8 @@ export const useAutomatedVerification = () => {
   return {
     lastSummary,
     isRunning,
-    runManualScan
+    runManualScan,
+    verifyBeforeCreation,
+    isAutomatic: true
   };
 };

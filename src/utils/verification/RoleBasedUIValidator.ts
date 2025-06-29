@@ -1,19 +1,21 @@
 
 /**
- * Role Based UI Validator
- * Mock implementation for validating role-based UI elements
+ * Role-Based UI Validator
+ * Mock implementation for role-based UI validation
  */
 
+export interface RoleBasedUIValidationResult {
+  criticalIssues: string[];
+  recommendations: string[];
+}
+
 export class RoleBasedUIValidator {
-  static validateRoleBasedUI(): {
-    criticalIssues: string[];
-    recommendations: string[];
-  } {
+  static validateRoleBasedUI(): RoleBasedUIValidationResult {
     console.log('🔍 Validating role-based UI...');
     
     return {
       criticalIssues: [],
-      recommendations: ['Ensure all role checks are properly implemented']
+      recommendations: ['Implement proper role-based access controls']
     };
   }
 }

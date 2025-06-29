@@ -40,7 +40,7 @@ export interface VerificationSummary {
   databaseValidation?: {
     violations: any[];
     autoFixesApplied?: number;
-    autoFixesAvailable?: number;
+    autoFixesAvailable?: any[];
   };
   codeQuality?: {
     issues: any[];
@@ -50,10 +50,11 @@ export interface VerificationSummary {
   };
   schemaValidation?: {
     violations: any[];
+    autoFixesAvailable?: any[];
   };
   securityScore?: number;
   qualityScore?: number;
-  sqlAutoFixes?: number;
+  sqlAutoFixes?: any[];
   highIssues?: number;
   mediumIssues?: number;
   lowIssues?: number;
