@@ -14,6 +14,8 @@ import DatabaseSyncResults from '@/components/verification/DatabaseSyncResults';
 import DatabaseIssuesDisplay from '@/components/verification/DatabaseIssuesDisplay';
 import SystemRecommendations from '@/components/verification/SystemRecommendations';
 import SystemStatusSummary from '@/components/verification/SystemStatusSummary';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 
 const AdminVerificationTest = () => {
   const {
@@ -49,6 +51,7 @@ const AdminVerificationTest = () => {
         subtitle="Complete system health check with database validation and sync verification"
       >
         <div className="space-y-6">
+          {/* Header - Always visible */}
           <ComprehensiveVerificationHeader
             verificationResult={verificationResult}
             isVerifying={isVerifying}
@@ -58,6 +61,17 @@ const AdminVerificationTest = () => {
             getSyncStatusColor={getSyncStatusColor}
           />
 
+          {/* Error Alert */}
+          {error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                {error}
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Verification Results - Show when available */}
           {verificationResult && (
             <>
               <VerificationMetricsGrid
@@ -76,7 +90,18 @@ const AdminVerificationTest = () => {
             </>
           )}
 
+          {/* Status Summary - Always visible */}
           <SystemStatusSummary verificationResult={verificationResult} error={error} />
+
+          {/* Initial state message when no verification has been run */}
+          {!verificationResult && !isVerifying && !error && (
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Welcome to the Comprehensive System Verification Dashboard. Click "Run Complete Verification" above to start your first system health check.
+              </AlertDescription>
+            </Alert>
+          )}
         </div>
       </PageContainer>
     </MainLayout>
