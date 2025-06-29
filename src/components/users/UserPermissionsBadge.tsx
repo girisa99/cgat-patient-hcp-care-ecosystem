@@ -1,60 +1,85 @@
 
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
+import { Key, Loader2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Shield, Loader2 } from 'lucide-react';
 
 interface UserPermissionsBadgeProps {
   userId: string;
+  compact?: boolean;
 }
 
-const UserPermissionsBadge: React.FC<UserPermissionsBadgeProps> = ({ userId }) => {
-  const { data: effectivePermissions, isLoading } = useQuery({
-    queryKey: ['effective-permissions', userId],
-    queryFn: async () => {
+interface UserEffectivePermission {
+  permission_name: string;
+  source: string;
+  expires_at: string | null;
+}
+
+const UserPermissionsBadge: React.FC<UserPermissionsBadgeProps> = ({ 
+  userId, 
+  compact = false 
+}) => {
+  const { data: permissions, isLoading } = useQuery({
+    queryKey: ['user-effective-permissions', userId],
+    queryFn: async (): Promise<UserEffectivePermission[]> => {
+      console.log('🔍 Fetching effective permissions for user:', userId);
+      
       const { data, error } = await supabase
         .rpc('get_user_effective_permissions', { check_user_id: userId });
-      
+
       if (error) {
-        console.error('Error fetching permissions:', error);
-        return [];
+        console.error('❌ Error fetching user permissions:', error);
+        throw error;
       }
-      return data as Array<{ permission_name: string; source: string; expires_at: string | null }>;
+
+      console.log('✅ User permissions fetched:', data?.length || 0, 'permissions for user:', userId);
+      
+      return data || [];
     },
-    enabled: !!userId
+    enabled: !!userId,
+    staleTime: 30000,
+    refetchOnWindowFocus: false
   });
 
   if (isLoading) {
     return (
       <div className="flex items-center gap-1">
-        <Loader2 className="h-3 w-3 animate-spin" />
-        <span className="text-xs text-gray-500">Loading...</span>
+        <Loader2 className="h-3 w-3 animate-spin text-gray-400" />
+        <span className="text-xs text-gray-500">Loading permissions...</span>
       </div>
     );
   }
 
-  const directPermissions = effectivePermissions?.filter(p => p.source === 'direct') || [];
-  const rolePermissions = effectivePermissions?.filter(p => p.source !== 'direct') || [];
+  const userPermissions = permissions || [];
+
+  if (compact) {
+    return (
+      <div className="flex items-center gap-1">
+        <Key className="h-3 w-3 text-green-600" />
+        <Badge variant="outline" className="text-xs">
+          {userPermissions.length} permissions
+        </Badge>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex items-center gap-1 flex-wrap">
-      <div className="flex items-center gap-1">
-        <Shield className="h-3 w-3 text-blue-600" />
-        <span className="text-xs text-gray-600">
-          {effectivePermissions?.length || 0} permissions
-        </span>
+    <div className="flex items-center gap-1">
+      <Key className="h-3 w-3 text-green-600" />
+      <div className="flex flex-wrap gap-1">
+        {userPermissions.length > 0 ? (
+          <>
+            <Badge variant="secondary" className="text-xs">
+              {userPermissions.length} permissions
+            </Badge>
+          </>
+        ) : (
+          <Badge variant="outline" className="text-xs text-gray-400">
+            No Permissions
+          </Badge>
+        )}
       </div>
-      {directPermissions.length > 0 && (
-        <Badge variant="default" className="text-xs">
-          {directPermissions.length} direct
-        </Badge>
-      )}
-      {rolePermissions.length > 0 && (
-        <Badge variant="secondary" className="text-xs">
-          {rolePermissions.length} from roles
-        </Badge>
-      )}
     </div>
   );
 };
