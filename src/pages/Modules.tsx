@@ -6,28 +6,78 @@ import { ModuleList } from '@/components/modules/ModuleList';
 import { ModuleStats } from '@/components/modules/ModuleStats';
 import AutoModuleManager from '@/components/admin/AutoModuleManager';
 import CreateModuleDialog from '@/components/modules/CreateModuleDialog';
+import ModuleUserAssignmentDialog from '@/components/modules/ModuleUserAssignmentDialog';
+import ModuleRoleAssignmentDialog from '@/components/modules/ModuleRoleAssignmentDialog';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { useModules } from '@/hooks/useModules';
+import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const Modules = () => {
   const { modules, isLoading } = useModules();
+  const { toast } = useToast();
   const [selectedModule, setSelectedModule] = useState(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showUserAssignmentDialog, setShowUserAssignmentDialog] = useState(false);
+  const [showRoleAssignmentDialog, setShowRoleAssignmentDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [moduleToDelete, setModuleToDelete] = useState(null);
 
   const handleAssignUsers = (module: any) => {
-    console.log('Assigning users to module:', module);
-    // TODO: Implement user assignment logic
+    console.log('Opening user assignment dialog for module:', module);
+    setSelectedModule(module);
+    setShowUserAssignmentDialog(true);
   };
 
   const handleAssignRoles = (module: any) => {
-    console.log('Assigning roles to module:', module);
-    // TODO: Implement role assignment logic
+    console.log('Opening role assignment dialog for module:', module);
+    setSelectedModule(module);
+    setShowRoleAssignmentDialog(true);
   };
 
   const handleDeleteModule = (moduleId: string) => {
-    console.log('Deleting module:', moduleId);
-    // TODO: Implement module deletion logic
+    const module = modules?.find(m => m.id === moduleId);
+    if (module) {
+      console.log('Preparing to delete module:', module);
+      setModuleToDelete(module);
+      setShowDeleteDialog(true);
+    }
+  };
+
+  const confirmDeleteModule = async () => {
+    if (!moduleToDelete) return;
+    
+    try {
+      console.log('Deleting module:', moduleToDelete.id);
+      
+      // Here you would typically call a delete mutation
+      // For now, we'll show a toast indicating the action would happen
+      toast({
+        title: "Module Deletion",
+        description: `Module "${moduleToDelete.name}" deletion initiated. This would remove the module and all associated assignments.`,
+        variant: "destructive",
+      });
+      
+      setShowDeleteDialog(false);
+      setModuleToDelete(null);
+    } catch (error) {
+      console.error('Error deleting module:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete module. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const moduleList = modules || [];
@@ -67,6 +117,36 @@ const Modules = () => {
             open={showCreateDialog}
             onOpenChange={setShowCreateDialog}
           />
+
+          <ModuleUserAssignmentDialog
+            open={showUserAssignmentDialog}
+            onOpenChange={setShowUserAssignmentDialog}
+            selectedModule={selectedModule}
+          />
+
+          <ModuleRoleAssignmentDialog
+            open={showRoleAssignmentDialog}
+            onOpenChange={setShowRoleAssignmentDialog}
+            selectedModule={selectedModule}
+          />
+
+          <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Module</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to delete the module "{moduleToDelete?.name}"? 
+                  This action cannot be undone and will remove all user and role assignments for this module.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={confirmDeleteModule} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                  Delete Module
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </PageContainer>
     </MainLayout>
