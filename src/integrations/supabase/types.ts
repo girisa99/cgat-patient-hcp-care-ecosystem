@@ -1108,6 +1108,57 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_preferences: {
+        Row: {
+          created_at: string | null
+          email_notifications: boolean | null
+          id: string
+          marketing_emails: boolean | null
+          module_updates: boolean | null
+          notification_frequency: string | null
+          push_notifications: boolean | null
+          quiet_hours_end: string | null
+          quiet_hours_start: string | null
+          security_alerts: boolean | null
+          sms_notifications: boolean | null
+          system_updates: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          email_notifications?: boolean | null
+          id?: string
+          marketing_emails?: boolean | null
+          module_updates?: boolean | null
+          notification_frequency?: string | null
+          push_notifications?: boolean | null
+          quiet_hours_end?: string | null
+          quiet_hours_start?: string | null
+          security_alerts?: boolean | null
+          sms_notifications?: boolean | null
+          system_updates?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          email_notifications?: boolean | null
+          id?: string
+          marketing_emails?: boolean | null
+          module_updates?: boolean | null
+          notification_frequency?: string | null
+          push_notifications?: boolean | null
+          quiet_hours_end?: string | null
+          quiet_hours_start?: string | null
+          security_alerts?: boolean | null
+          sms_notifications?: boolean | null
+          system_updates?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       permissions: {
         Row: {
           created_at: string | null
@@ -1336,6 +1387,150 @@ export type Database = {
         }
         Relationships: []
       }
+      security_events: {
+        Row: {
+          created_at: string | null
+          description: string
+          event_type: string
+          id: string
+          ip_address: unknown | null
+          location: Json | null
+          metadata: Json | null
+          resolved: boolean | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description: string
+          event_type: string
+          id?: string
+          ip_address?: unknown | null
+          location?: Json | null
+          metadata?: Json | null
+          resolved?: boolean | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string
+          event_type?: string
+          id?: string
+          ip_address?: unknown | null
+          location?: Json | null
+          metadata?: Json | null
+          resolved?: boolean | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      security_settings: {
+        Row: {
+          api_access_logging: boolean | null
+          backup_codes: Json | null
+          created_at: string | null
+          device_tracking: boolean | null
+          id: string
+          ip_whitelist: Json | null
+          login_notifications: boolean | null
+          password_last_changed: string | null
+          security_questions: Json | null
+          session_timeout_minutes: number | null
+          suspicious_activity_alerts: boolean | null
+          trusted_devices: Json | null
+          two_factor_enabled: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          api_access_logging?: boolean | null
+          backup_codes?: Json | null
+          created_at?: string | null
+          device_tracking?: boolean | null
+          id?: string
+          ip_whitelist?: Json | null
+          login_notifications?: boolean | null
+          password_last_changed?: string | null
+          security_questions?: Json | null
+          session_timeout_minutes?: number | null
+          suspicious_activity_alerts?: boolean | null
+          trusted_devices?: Json | null
+          two_factor_enabled?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          api_access_logging?: boolean | null
+          backup_codes?: Json | null
+          created_at?: string | null
+          device_tracking?: boolean | null
+          id?: string
+          ip_whitelist?: Json | null
+          login_notifications?: boolean | null
+          password_last_changed?: string | null
+          security_questions?: Json | null
+          session_timeout_minutes?: number | null
+          suspicious_activity_alerts?: boolean | null
+          trusted_devices?: Json | null
+          two_factor_enabled?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_activity_logs: {
+        Row: {
+          activity_description: string
+          activity_type: string
+          created_at: string | null
+          id: string
+          ip_address: unknown | null
+          location: Json | null
+          metadata: Json | null
+          module_name: string | null
+          session_id: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          activity_description: string
+          activity_type: string
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          location?: Json | null
+          metadata?: Json | null
+          module_name?: string | null
+          session_id?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          activity_description?: string
+          activity_type?: string
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          location?: Json | null
+          metadata?: Json | null
+          module_name?: string | null
+          session_id?: string | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_facility_access: {
         Row: {
           access_level: string
@@ -1453,6 +1648,45 @@ export type Database = {
           },
         ]
       }
+      user_preferences: {
+        Row: {
+          auto_route: boolean | null
+          created_at: string | null
+          default_module: string | null
+          id: string
+          language: string | null
+          preferred_dashboard: string | null
+          theme_preference: string | null
+          timezone: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          auto_route?: boolean | null
+          created_at?: string | null
+          default_module?: string | null
+          id?: string
+          language?: string | null
+          preferred_dashboard?: string | null
+          theme_preference?: string | null
+          timezone?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          auto_route?: boolean | null
+          created_at?: string | null
+          default_module?: string | null
+          id?: string
+          language?: string | null
+          preferred_dashboard?: string | null
+          theme_preference?: string | null
+          timezone?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           assigned_by: string | null
@@ -1546,6 +1780,30 @@ export type Database = {
           role_name: Database["public"]["Enums"]["user_role"]
         }
         Returns: boolean
+      }
+      initialize_user_settings: {
+        Args: { user_id: string }
+        Returns: undefined
+      }
+      log_security_event: {
+        Args: {
+          p_user_id: string
+          p_event_type: string
+          p_severity: string
+          p_description: string
+          p_metadata?: Json
+        }
+        Returns: undefined
+      }
+      log_user_activity: {
+        Args: {
+          p_user_id: string
+          p_activity_type: string
+          p_activity_description: string
+          p_module_name?: string
+          p_metadata?: Json
+        }
+        Returns: undefined
       }
       log_verification_activity: {
         Args: {

@@ -6,6 +6,9 @@ import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { EnhancedTabs, EnhancedTabsList, EnhancedTabsTrigger, EnhancedTabsContent } from '@/components/ui/enhanced-tabs';
 import RoutingPreferences from '@/components/routing/RoutingPreferences';
 import { ModuleSettings } from '@/components/modules/ModuleSettings';
+import ProfileSettings from '@/components/settings/ProfileSettings';
+import NotificationSettings from '@/components/settings/NotificationSettings';
+import SecuritySettings from '@/components/settings/SecuritySettings';
 import { Settings as SettingsIcon, Route, Package, Shield, User, Bell } from 'lucide-react';
 
 const Settings = () => {
@@ -58,48 +61,6 @@ const Settings = () => {
         </PageContainer>
       </MainLayout>
     </ProtectedRoute>
-  );
-};
-
-// Profile Settings Component
-const ProfileSettings = () => {
-  return (
-    <div className="space-y-6">
-      <div className="text-center py-8">
-        <User className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-        <h3 className="text-lg font-medium mb-2">Profile Settings</h3>
-        <p className="text-gray-600">Manage your personal information and preferences</p>
-        <p className="text-sm text-gray-500 mt-2">Coming soon...</p>
-      </div>
-    </div>
-  );
-};
-
-// Notification Settings Component
-const NotificationSettings = () => {
-  return (
-    <div className="space-y-6">
-      <div className="text-center py-8">
-        <Bell className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-        <h3 className="text-lg font-medium mb-2">Notification Settings</h3>
-        <p className="text-gray-600">Configure how and when you receive notifications</p>
-        <p className="text-sm text-gray-500 mt-2">Coming soon...</p>
-      </div>
-    </div>
-  );
-};
-
-// Security Settings Component
-const SecuritySettings = () => {
-  return (
-    <div className="space-y-6">
-      <div className="text-center py-8">
-        <Shield className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-        <h3 className="text-lg font-medium mb-2">Security Settings</h3>
-        <p className="text-gray-600">Manage your account security and authentication</p>
-        <p className="text-sm text-gray-500 mt-2">Coming soon...</p>
-      </div>
-    </div>
   );
 };
 
