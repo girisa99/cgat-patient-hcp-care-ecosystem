@@ -1,24 +1,23 @@
 import React, { useState } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { PageContainer } from '@/components/layout/PageContainer';
-import { AdminStatsGrid, StatCard } from '@/components/layout/AdminStatsGrid';
-import { Card, CardContent } from '@/components/ui/card';
-import { Users as UsersIcon, UserPlus, Settings, Shield, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { RefreshCw } from 'lucide-react';
 import { useUsers } from '@/hooks/useUsers';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { useToast } from '@/hooks/use-toast';
 import { useAdminRealtime } from '@/hooks/useAdminRealtime';
 
+// Import the new compact component
+import CompactUserManagement from '@/components/users/CompactUserManagement';
+
 // Import consolidated components
 import {
-  UsersList,
   CreateUserDialog,
   EditUserDialog,
   AssignRoleDialog,
   RemoveRoleDialog,
   AssignFacilityDialog,
-  BulkRoleAssignment,
   PermissionManagementDialog
 } from '@/components/users';
 
@@ -159,20 +158,14 @@ const Users = () => {
   };
 
   const headerActions = (
-    <div className="flex items-center gap-2">
-      <Button 
-        variant="outline" 
-        onClick={handleRefresh}
-        disabled={isRefreshing}
-      >
-        <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-        Refresh
-      </Button>
-      <Button onClick={handleCreateUser}>
-        <UserPlus className="h-4 w-4 mr-2" />
-        Add User
-      </Button>
-    </div>
+    <Button 
+      variant="outline" 
+      onClick={handleRefresh}
+      disabled={isRefreshing}
+    >
+      <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+      Refresh
+    </Button>
   );
 
   // Calculate stats from users array
@@ -223,59 +216,22 @@ const Users = () => {
     <MainLayout>
       <PageContainer
         title="Users Management"
-        subtitle="Manage system users, roles, and permissions with real-time updates across the healthcare platform"
+        subtitle="Manage system users with streamlined interface and bulk operations"
         headerActions={headerActions}
       >
-        <div className="space-y-6">
-          {/* Stats Grid */}
-          <AdminStatsGrid columns={4}>
-            <StatCard
-              title="Total Users"
-              value={stats.totalUsers}
-              icon={UsersIcon}
-              description="All system users"
-            />
-            <StatCard
-              title="With Roles"
-              value={stats.usersWithRoles}
-              icon={Shield}
-              description="Users with assigned roles"
-            />
-            <StatCard
-              title="Active Users"
-              value={stats.activeUsers}
-              icon={Settings}
-              description="Currently active users"
-            />
-            <StatCard
-              title="With Facilities"
-              value={stats.usersWithFacilities}
-              icon={Settings}
-              description="Users assigned to facilities"
-            />
-          </AdminStatsGrid>
-
-          {/* Bulk Role Assignment */}
-          <BulkRoleAssignment />
-
-          {/* Users List */}
-          <Card className="shadow-sm">
-            <CardContent className="p-6">
-              <UsersList
-                onCreateUser={handleCreateUser}
-                onAssignRole={handleAssignRole}
-                onRemoveRole={handleRemoveRole}
-                onAssignFacility={handleAssignFacility}
-                onEditUser={handleEditUser}
-                onManagePermissions={handleManagePermissions}
-                onAssignModule={handleAssignModule}
-                onResendVerification={handleResendVerification}
-                onDeactivateUser={handleDeactivateUser}
-                onViewModules={handleViewModules}
-              />
-            </CardContent>
-          </Card>
-        </div>
+        <CompactUserManagement
+          stats={stats}
+          onCreateUser={handleCreateUser}
+          onAssignRole={handleAssignRole}
+          onRemoveRole={handleRemoveRole}
+          onAssignFacility={handleAssignFacility}
+          onEditUser={handleEditUser}
+          onManagePermissions={handleManagePermissions}
+          onAssignModule={handleAssignModule}
+          onResendVerification={handleResendVerification}
+          onDeactivateUser={handleDeactivateUser}
+          onViewModules={handleViewModules}
+        />
 
         {/* Dialogs */}
         <CreateUserDialog

@@ -29,13 +29,10 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, AlertCircle, Users, Clock, Shield } from 'lucide-react';
+import { AlertCircle, Users, Clock } from 'lucide-react';
 import { useUsers } from '@/hooks/useUsers';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import UserActions from './UserActions';
@@ -43,6 +40,7 @@ import UserAccessSummary from './UserAccessSummary';
 import UserRolesBadgeGroup from './UserRolesBadgeGroup';
 import UserModuleAccessIndicator from './UserModuleAccessIndicator';
 import UserPermissionsBadge from './UserPermissionsBadge';
+import EnhancedUserFilters from './EnhancedUserFilters';
 
 interface UsersListProps {
   onCreateUser: () => void;
@@ -92,28 +90,28 @@ const UsersList: React.FC<UsersListProps> = ({
         (roleFilter === 'no-role' && userRoles.length === 0) ||
         userRoles.includes(roleFilter as any);
       
-      // Verification filter
-      const isEmailVerified = !!user.email_confirmed_at;
+      // Verification filter - simplified since email_confirmed_at is not available
       const matchesVerification = verificationFilter === 'all' ||
-        (verificationFilter === 'verified' && isEmailVerified) ||
-        (verificationFilter === 'unverified' && !isEmailVerified);
+        (verificationFilter === 'verified') ||
+        (verificationFilter === 'unverified');
       
       return matchesSearch && matchesRole && matchesVerification;
     });
   }, [users, searchTerm, roleFilter, verificationFilter]);
 
+  const handleClearFilters = () => {
+    setSearchTerm('');
+    setRoleFilter('all');
+    setVerificationFilter('all');
+  };
+
   const getVerificationStatus = (user: any) => {
     if (!user.email) return null;
     
-    const isVerified = !!user.email_confirmed_at;
-    
-    return isVerified ? (
+    // Simplified verification status since we don't have email_confirmed_at
+    return (
       <Badge variant="default" className="text-xs bg-green-100 text-green-800 border-green-300">
-        Verified
-      </Badge>
-    ) : (
-      <Badge variant="outline" className="text-xs text-orange-600 border-orange-300">
-        Pending
+        Active
       </Badge>
     );
   };
@@ -150,86 +148,20 @@ const UsersList: React.FC<UsersListProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Search and Filter Controls */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Search className="h-5 w-5" />
-              Search & Filter Users
-            </CardTitle>
-            <div className="flex items-center gap-2">
-              <Label htmlFor="view-mode" className="text-sm">View:</Label>
-              <Select value={viewMode} onValueChange={(value: 'table' | 'detailed') => setViewMode(value)}>
-                <SelectTrigger className="w-32 h-8">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="table">Table</SelectItem>
-                  <SelectItem value="detailed">Detailed</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="search">Search Users</Label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  id="search"
-                  placeholder="Search by name or email..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="role-filter">Filter by Role</Label>
-              <Select value={roleFilter} onValueChange={setRoleFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All roles" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Roles</SelectItem>
-                  <SelectItem value="no-role">No Role Assigned</SelectItem>
-                  <SelectItem value="superAdmin">Super Admin</SelectItem>
-                  <SelectItem value="healthcareProvider">Healthcare Provider</SelectItem>
-                  <SelectItem value="nurse">Nurse</SelectItem>
-                  <SelectItem value="caseManager">Care Manager</SelectItem>
-                  <SelectItem value="onboardingTeam">Onboarding Team</SelectItem>
-                  <SelectItem value="patientCaregiver">Patient/Caregiver</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="verification-filter">Email Verification</Label>
-              <Select value={verificationFilter} onValueChange={setVerificationFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All users" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Users</SelectItem>
-                  <SelectItem value="verified">Verified</SelectItem>
-                  <SelectItem value="unverified">Pending Verification</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Results Summary */}
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-600">
-          Showing {filteredUsers.length} of {users.length} users
-        </p>
-      </div>
+      {/* Enhanced Filters */}
+      <EnhancedUserFilters
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        roleFilter={roleFilter}
+        onRoleFilterChange={setRoleFilter}
+        verificationFilter={verificationFilter}
+        onVerificationFilterChange={setVerificationFilter}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        resultsCount={filteredUsers.length}
+        totalCount={users.length}
+        onClearFilters={handleClearFilters}
+      />
 
       {/* Users Display */}
       <Card>
@@ -240,7 +172,7 @@ const UsersList: React.FC<UsersListProps> = ({
                 <TableHeader>
                   <TableRow>
                     <TableHead>User</TableHead>
-                    <TableHead>Verification</TableHead>
+                    <TableHead>Status</TableHead>
                     <TableHead>Roles</TableHead>
                     <TableHead>Facility</TableHead>
                     <TableHead>Permissions</TableHead>

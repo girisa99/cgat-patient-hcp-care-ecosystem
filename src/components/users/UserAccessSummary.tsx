@@ -60,9 +60,9 @@ const UserAccessSummary: React.FC<UserAccessSummaryProps> = ({ user }) => {
         <Clock className="h-3 w-3 text-gray-500" />
         <span className="text-xs font-medium text-gray-700">Status:</span>
         <div className="flex items-center gap-1">
-          {user.email_confirmed_at ? (
-            <Badge variant="default" className="text-xs bg-green-100 text-green-800 border-green-300">
-              Verified
+          {user.created_at ? (
+            <Badge variant="default" className="text-xs bg-blue-100 text-blue-800 border-blue-300">
+              Active
             </Badge>
           ) : (
             <Badge variant="outline" className="text-xs text-orange-600 border-orange-300">
