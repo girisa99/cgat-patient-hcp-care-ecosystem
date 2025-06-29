@@ -33,11 +33,12 @@ const LoginForm = () => {
     { value: 'patientCaregiver' as UserRole, label: 'Patient/Caregiver' }
   ];
 
+  // Updated test credentials with stronger passwords
   const testCredentials = [
-    { email: 'superadmin@geniecellgene.com', password: 'SuperAdmin123!', role: 'superAdmin' as UserRole },
-    { email: 'onboarding@geniecellgene.com', password: 'Onboarding123!', role: 'onboardingTeam' as UserRole },
-    { email: 'provider@geniecellgene.com', password: 'Provider123!', role: 'healthcareProvider' as UserRole },
-    { email: 'patient@geniecellgene.com', password: 'Patient123!', role: 'patientCaregiver' as UserRole }
+    { email: 'superadmin@geniecellgene.com', password: 'SuperAdmin2024!Secure', role: 'superAdmin' as UserRole },
+    { email: 'onboarding@geniecellgene.com', password: 'OnboardingTeam2024!Safe', role: 'onboardingTeam' as UserRole },
+    { email: 'provider@geniecellgene.com', password: 'HealthcareProvider2024!Strong', role: 'healthcareProvider' as UserRole },
+    { email: 'patient@geniecellgene.com', password: 'PatientCaregiver2024!Robust', role: 'patientCaregiver' as UserRole }
   ];
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -102,7 +103,7 @@ const LoginForm = () => {
     setIsCreatingTestAccounts(true);
     setAuthError('');
     
-    console.log('🔧 Creating all test accounts...');
+    console.log('🔧 Creating all test accounts with secure passwords...');
     let successCount = 0;
     let failCount = 0;
     
@@ -320,7 +321,7 @@ const LoginForm = () => {
         <HealthcareCardHeader>
           <HealthcareCardTitle className="text-lg text-blue-800">Test Credentials</HealthcareCardTitle>
           <HealthcareCardDescription className="text-blue-600">
-            Click to auto-fill credentials or create test accounts
+            Click to auto-fill credentials or create test accounts with secure passwords
           </HealthcareCardDescription>
         </HealthcareCardHeader>
         <HealthcareCardContent className="space-y-3">
@@ -335,7 +336,7 @@ const LoginForm = () => {
               {isCreatingTestAccounts ? (
                 <div className="flex items-center space-x-2">
                   <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
-                  <span>Creating Test Accounts...</span>
+                  <span>Creating Secure Test Accounts...</span>
                 </div>
               ) : (
                 <>
@@ -354,6 +355,7 @@ const LoginForm = () => {
             >
               <div className="font-medium text-blue-800">{roleOptions.find(r => r.value === creds.role)?.label}</div>
               <div className="text-blue-600">{creds.email}</div>
+              <div className="text-xs text-blue-500">Secure password included</div>
             </button>
           ))}
         </HealthcareCardContent>
