@@ -20,7 +20,7 @@ interface EffectiveModule {
   module_id: string;
   module_name: string;
   module_description: string;
-  source: string;
+  access_source: string; // Changed from 'source' to 'access_source' to match database function
   expires_at: string | null;
 }
 
