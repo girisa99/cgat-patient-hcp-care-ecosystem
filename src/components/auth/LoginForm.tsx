@@ -29,12 +29,12 @@ const LoginForm = () => {
     { value: 'patientCaregiver' as UserRole, label: 'Patient/Caregiver' }
   ];
 
-  // Test credentials for demo
+  // Updated test credentials with corrected email addresses
   const testCredentials = [
-    { email: 'superadmin@geniecellgene.com', password: 'password123', role: 'superAdmin' },
-    { email: 'onboarding@geniecellgene.com', password: 'password123', role: 'onboardingTeam' },
-    { email: 'provider@geniecellgene.com', password: 'password123', role: 'healthcareProvider' },
-    { email: 'patient@geniecellgene.com', password: 'password123', role: 'patientCaregiver' }
+    { email: 'superadmin@geniecellgene.com', password: 'password123', role: 'Super Admin' },
+    { email: 'onboarding@geniecellgene.com', password: 'password123', role: 'Onboarding Team' },
+    { email: 'provider@geniecellgene.com', password: 'password123', role: 'Healthcare Provider' },
+    { email: 'patient@geniecellgene.com', password: 'password123', role: 'Patient/Caregiver' }
   ];
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -58,7 +58,16 @@ const LoginForm = () => {
         console.log('🔑 Starting signin process...');
         const result = await signIn(email, password);
         if (!result.success) {
-          setAuthError(result.error || 'Invalid email or password');
+          const errorMsg = result.error || 'Invalid email or password';
+          console.error('🚨 Sign in failed:', errorMsg);
+          setAuthError(errorMsg);
+          
+          // Add helpful guidance for test accounts
+          if (errorMsg.includes('Invalid login credentials')) {
+            setAuthError(
+              'Invalid email or password. Please check your credentials, or try creating a new account if this is your first time.'
+            );
+          }
         }
       }
     } catch (error) {
@@ -70,8 +79,17 @@ const LoginForm = () => {
   const fillTestCredentials = (creds: typeof testCredentials[0]) => {
     setEmail(creds.email);
     setPassword(creds.password);
-    setSelectedRole(creds.role as UserRole);
+    setSelectedRole('onboardingTeam' as UserRole); // Default to onboarding team for test
     setIsSignUp(false);
+    setAuthError('');
+  };
+
+  const createTestAccount = async () => {
+    console.log('🔧 Creating test onboarding account...');
+    setEmail('onboarding@geniecellgene.com');
+    setPassword('password123');
+    setSelectedRole('onboardingTeam' as UserRole);
+    setIsSignUp(true);
     setAuthError('');
   };
 
@@ -222,6 +240,17 @@ const LoginForm = () => {
               <div className="text-blue-600">{creds.email}</div>
             </button>
           ))}
+          
+          {/* Special button to create test account */}
+          <div className="pt-2 border-t border-blue-200">
+            <button
+              onClick={createTestAccount}
+              className="w-full text-center p-2 rounded bg-green-100 border border-green-200 hover:bg-green-200 transition-colors text-sm"
+            >
+              <div className="font-medium text-green-800">Create Test Onboarding Account</div>
+              <div className="text-green-600 text-xs">Create onboarding@geniecellgene.com</div>
+            </button>
+          </div>
         </HealthcareCardContent>
       </HealthcareCard>
     </div>
