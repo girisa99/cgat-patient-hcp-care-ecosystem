@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Edit, UserPlus, Building, Minus, Key, Shield, Mail } from 'lucide-react';
+import { Edit, UserPlus, Building, Minus, Key, Shield, Mail, UserX } from 'lucide-react';
 
 interface UserActionsProps {
   user: any;
@@ -12,6 +12,7 @@ interface UserActionsProps {
   onManagePermissions: (userId: string, userName: string) => void;
   onAssignModule?: (userId: string, userName: string) => void;
   onResendVerification?: (userEmail: string, userName: string) => void;
+  onDeactivateUser?: (userId: string, userName: string, userEmail: string) => void;
 }
 
 const UserActions: React.FC<UserActionsProps> = ({
@@ -22,7 +23,8 @@ const UserActions: React.FC<UserActionsProps> = ({
   onAssignFacility,
   onManagePermissions,
   onAssignModule,
-  onResendVerification
+  onResendVerification,
+  onDeactivateUser
 }) => {
   const userName = user.first_name || user.last_name 
     ? `${user.first_name || ''} ${user.last_name || ''}`.trim()
@@ -66,6 +68,13 @@ const UserActions: React.FC<UserActionsProps> = ({
     if (onResendVerification) {
       console.log('📧 Resending verification email for user:', user.email, userName);
       onResendVerification(user.email, userName);
+    }
+  };
+
+  const handleDeactivateUser = () => {
+    if (onDeactivateUser) {
+      console.log('🚫 Opening deactivation dialog for user:', user.id, userName);
+      onDeactivateUser(user.id, userName, user.email);
     }
   };
 
@@ -147,6 +156,18 @@ const UserActions: React.FC<UserActionsProps> = ({
           className="h-8 w-8 p-0 text-orange-600 border-orange-300 hover:bg-orange-50"
         >
           <Mail className="h-3 w-3" />
+        </Button>
+      )}
+
+      {onDeactivateUser && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleDeactivateUser}
+          title="Deactivate User"
+          className="h-8 w-8 p-0 text-red-600 border-red-300 hover:bg-red-50"
+        >
+          <UserX className="h-3 w-3" />
         </Button>
       )}
     </div>

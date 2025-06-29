@@ -23,6 +23,7 @@ import {
 
 // Import the enhanced dialog instead
 import EnhancedResendVerificationDialog from '@/components/users/EnhancedResendVerificationDialog';
+import DeactivateUserDialog from '@/components/users/DeactivateUserDialog';
 
 const Users = () => {
   const { toast } = useToast();
@@ -43,6 +44,7 @@ const Users = () => {
   const [assignFacilityOpen, setAssignFacilityOpen] = useState(false);
   const [permissionManagementOpen, setPermissionManagementOpen] = useState(false);
   const [resendVerificationOpen, setResendVerificationOpen] = useState(false);
+  const [deactivateUserOpen, setDeactivateUserOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [selectedUserName, setSelectedUserName] = useState<string>('');
@@ -102,6 +104,14 @@ const Users = () => {
     setSelectedUserEmail(userEmail);
     setSelectedUserName(userName);
     setResendVerificationOpen(true);
+  };
+
+  const handleDeactivateUser = (userId: string, userName: string, userEmail: string) => {
+    console.log('🚫 Opening deactivate user dialog for:', userId, userName, userEmail);
+    setSelectedUserId(userId);
+    setSelectedUserName(userName);
+    setSelectedUserEmail(userEmail);
+    setDeactivateUserOpen(true);
   };
 
   const handleRefresh = async () => {
@@ -235,6 +245,7 @@ const Users = () => {
                 onManagePermissions={handleManagePermissions}
                 onAssignModule={handleAssignModule}
                 onResendVerification={handleResendVerification}
+                onDeactivateUser={handleDeactivateUser}
               />
             </CardContent>
           </Card>
@@ -285,6 +296,14 @@ const Users = () => {
           onOpenChange={setResendVerificationOpen}
           userEmail={selectedUserEmail}
           userName={selectedUserName}
+        />
+
+        <DeactivateUserDialog
+          open={deactivateUserOpen}
+          onOpenChange={setDeactivateUserOpen}
+          userId={selectedUserId || ''}
+          userName={selectedUserName}
+          userEmail={selectedUserEmail}
         />
       </PageContainer>
     </MainLayout>

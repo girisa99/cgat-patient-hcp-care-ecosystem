@@ -48,6 +48,7 @@ interface UsersListProps {
   onManagePermissions?: (userId: string, userName: string) => void;
   onAssignModule?: (userId: string, userName: string) => void;
   onResendVerification?: (userEmail: string, userName: string) => void;
+  onDeactivateUser?: (userId: string, userName: string, userEmail: string) => void;
 }
 
 const UsersList: React.FC<UsersListProps> = ({
@@ -58,7 +59,8 @@ const UsersList: React.FC<UsersListProps> = ({
   onEditUser,
   onManagePermissions,
   onAssignModule,
-  onResendVerification
+  onResendVerification,
+  onDeactivateUser
 }) => {
   const { users, isLoading, error } = useUsers();
   const [searchTerm, setSearchTerm] = useState('');
@@ -283,6 +285,7 @@ const UsersList: React.FC<UsersListProps> = ({
                         onManagePermissions={onManagePermissions || ((userId, userName) => console.log('Manage permissions:', userId, userName))}
                         onAssignModule={onAssignModule}
                         onResendVerification={onResendVerification}
+                        onDeactivateUser={onDeactivateUser}
                       />
                     </TableCell>
                   </TableRow>
