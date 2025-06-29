@@ -4,4 +4,5 @@ export { UIUXScoreCalculator } from './UIUXScoreCalculator';
 export { UIUXRecommendationsGenerator } from './UIUXRecommendationsGenerator';
 export { UIUXValidationSummaryGenerator } from './UIUXValidationSummaryGenerator';
 
-export type { ValidationResults, ComponentScores, RichnessMetrics } from './ComprehensiveUIUXValidator';
+export type { ValidationResults } from './ComprehensiveUIUXValidator';
+export type { ComponentScores, RichnessMetrics } from './UIUXScoreCalculator';
