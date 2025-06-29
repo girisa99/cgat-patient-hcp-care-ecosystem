@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface HealthData {
@@ -21,7 +21,7 @@ export const useStableHealthScore = () => {
     lastCalculated: new Date()
   });
 
-  const calculateHealthScore = async () => {
+  const calculateHealthScore = useCallback(async () => {
     try {
       console.log('🎯 Calculating health score from database data');
       
@@ -133,12 +133,12 @@ export const useStableHealthScore = () => {
         lastCalculated: new Date()
       });
     }
-  };
+  }, []); // Empty dependency array since the function doesn't depend on external state
 
   useEffect(() => {
     console.log('🎯 Health score hook initialized - calculating initial score');
     calculateHealthScore();
-  }, []);
+  }, [calculateHealthScore]);
 
   return {
     ...healthData,

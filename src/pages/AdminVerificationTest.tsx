@@ -4,7 +4,7 @@
  * Manual-only verification system with no automatic syncing
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { useToast } from '@/hooks/use-toast';
@@ -37,14 +37,6 @@ const AdminVerificationTest = () => {
     lastCalculated,
     recalculate: recalculateHealth
   } = useStableHealthScore();
-
-  // Recalculate health score when issues data changes
-  useEffect(() => {
-    if (activeIssues.length > 0 || totalFixedCount > 0) {
-      console.log('🔄 Issues data changed, recalculating health score');
-      recalculateHealth();
-    }
-  }, [activeIssues.length, totalFixedCount, recalculateHealth]);
 
   const handleManualRefresh = async () => {
     setIsManualRefreshRunning(true);
@@ -140,6 +132,10 @@ const AdminVerificationTest = () => {
                 System is {isStable ? 'stable and performing well' : 'experiencing issues that need attention'}
                 <br />
                 <span className="text-xs font-medium">📊 Manual refresh only - no automatic syncing</span>
+                <br />
+                <span className="text-xs text-gray-600">
+                  Score calculation: 100 base - ({criticalIssuesCount}×25 + {categorizedIssues.high.length}×15 + {categorizedIssues.medium.length}×8 + {categorizedIssues.low.length}×3) + {totalFixedIssues}×2 = {healthScore}
+                </span>
               </CardDescription>
             </CardHeader>
           </Card>
