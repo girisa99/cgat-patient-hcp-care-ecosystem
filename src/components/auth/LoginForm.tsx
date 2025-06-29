@@ -6,8 +6,9 @@ import { HealthcareLabel } from '@/components/ui/healthcare-label';
 import { HealthcareCard, HealthcareCardContent, HealthcareCardDescription, HealthcareCardHeader, HealthcareCardTitle } from '@/components/ui/healthcare-card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuthActions } from '@/hooks/useAuthActions';
-import { Eye, EyeOff, Mail, Lock, UserPlus } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, UserPlus, AlertCircle } from 'lucide-react';
 import { Database } from '@/integrations/supabase/types';
+import { useToast } from '@/hooks/use-toast';
 
 type UserRole = Database['public']['Enums']['user_role'];
 
@@ -17,7 +18,9 @@ const LoginForm = () => {
   const [selectedRole, setSelectedRole] = useState<UserRole | ''>('');
   const [showPassword, setShowPassword] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
+  const [authError, setAuthError] = useState<string>('');
   const { signIn, signUp, loading } = useAuthActions();
+  const { toast } = useToast();
 
   const roleOptions = [
     { value: 'superAdmin' as UserRole, label: 'Super Administrator' },
@@ -28,138 +31,208 @@ const LoginForm = () => {
     { value: 'patientCaregiver' as UserRole, label: 'Patient/Caregiver' }
   ];
 
+  // Test credentials for demo
+  const testCredentials = [
+    { email: 'superadmin@geniecellgene.com', password: 'password123', role: 'superAdmin' },
+    { email: 'onboarding@geniecellgene.com', password: 'password123', role: 'onboardingTeam' },
+    { email: 'provider@geniecellgene.com', password: 'password123', role: 'healthcareProvider' },
+    { email: 'patient@geniecellgene.com', password: 'password123', role: 'patientCaregiver' }
+  ];
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setAuthError('');
     
-    if (isSignUp) {
-      if (!selectedRole) {
-        // Show error that role is required
-        return;
+    console.log('🔐 Attempting authentication:', { email, isSignUp });
+    
+    try {
+      if (isSignUp) {
+        if (!selectedRole) {
+          setAuthError('Please select a role to continue');
+          return;
+        }
+        console.log('📝 Starting signup process for:', email, 'with role:', selectedRole);
+        const result = await signUp(email, password, selectedRole);
+        if (!result.success) {
+          setAuthError(result.error || 'Failed to create account');
+        }
+      } else {
+        console.log('🔑 Starting signin process for:', email);
+        const result = await signIn(email, password);
+        if (!result.success) {
+          setAuthError(result.error || 'Invalid email or password');
+          
+          // Show helpful message for test accounts
+          toast({
+            title: "Login Failed",
+            description: "Try using one of the test accounts shown below the form",
+            variant: "destructive",
+          });
+        }
       }
-      await signUp(email, password, selectedRole);
-    } else {
-      await signIn(email, password);
+    } catch (error) {
+      console.error('💥 Authentication error:', error);
+      setAuthError('An unexpected error occurred. Please try again.');
     }
   };
 
-  return (
-    <HealthcareCard className="w-full max-w-md mx-auto shadow-lg">
-      <HealthcareCardHeader className="text-center">
-        <HealthcareCardTitle className="text-2xl">
-          {isSignUp ? 'Create Account' : 'Welcome Back'}
-        </HealthcareCardTitle>
-        <HealthcareCardDescription>
-          {isSignUp 
-            ? 'Register for secure access to GENIE platform' 
-            : 'Sign in to access your GENIE portal'
-          }
-        </HealthcareCardDescription>
-      </HealthcareCardHeader>
-      
-      <HealthcareCardContent>
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div className="space-y-2">
-            <HealthcareLabel htmlFor="email">Email Address</HealthcareLabel>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-500" />
-              <HealthcareInput
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter your email"
-                className="pl-10"
-                required
-              />
-            </div>
-          </div>
-          
-          <div className="space-y-2">
-            <HealthcareLabel htmlFor="password">Password</HealthcareLabel>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-500" />
-              <HealthcareInput
-                id="password"
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
-                className="pl-10 pr-10"
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-500 hover:text-slate-700 transition-colors"
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            </div>
-          </div>
+  const fillTestCredentials = (creds: typeof testCredentials[0]) => {
+    setEmail(creds.email);
+    setPassword(creds.password);
+    setSelectedRole(creds.role as UserRole);
+    setIsSignUp(false);
+  };
 
-          {isSignUp && (
-            <div className="space-y-2">
-              <HealthcareLabel htmlFor="role">Select Your Role</HealthcareLabel>
-              <div className="relative">
-                <UserPlus className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-500 z-10" />
-                <Select value={selectedRole} onValueChange={(value: UserRole) => setSelectedRole(value)} required>
-                  <SelectTrigger className="pl-10 h-11 border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-1">
-                    <SelectValue placeholder="Choose your role in cell & gene therapy" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white border border-slate-200 shadow-lg">
-                    {roleOptions.map((role) => (
-                      <SelectItem 
-                        key={role.value} 
-                        value={role.value}
-                        className="hover:bg-slate-50 focus:bg-slate-50"
-                      >
-                        {role.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+  return (
+    <div className="space-y-6">
+      <HealthcareCard className="w-full max-w-md mx-auto shadow-lg">
+        <HealthcareCardHeader className="text-center">
+          <HealthcareCardTitle className="text-2xl">
+            {isSignUp ? 'Create Account' : 'Welcome Back'}
+          </HealthcareCardTitle>
+          <HealthcareCardDescription>
+            {isSignUp 
+              ? 'Register for secure access to GENIE platform' 
+              : 'Sign in to access your GENIE portal'
+            }
+          </HealthcareCardDescription>
+        </HealthcareCardHeader>
+        
+        <HealthcareCardContent>
+          {authError && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 text-red-600 flex-shrink-0" />
+              <span className="text-sm text-red-800">{authError}</span>
             </div>
           )}
-          
-          <HealthcareButton 
-            type="submit" 
-            className="w-full" 
-            disabled={loading || (isSignUp && !selectedRole)}
-            size="lg"
-          >
-            {loading ? (
-              <div className="flex items-center space-x-2">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                <span>{isSignUp ? 'Creating Account...' : 'Signing In...'}</span>
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-2">
+              <HealthcareLabel htmlFor="email">Email Address</HealthcareLabel>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-500" />
+                <HealthcareInput
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter your email"
+                  className="pl-10"
+                  required
+                />
               </div>
-            ) : (
-              isSignUp ? 'Create Account' : 'Sign In'
+            </div>
+            
+            <div className="space-y-2">
+              <HealthcareLabel htmlFor="password">Password</HealthcareLabel>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-500" />
+                <HealthcareInput
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  className="pl-10 pr-10"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-500 hover:text-slate-700 transition-colors"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+
+            {isSignUp && (
+              <div className="space-y-2">
+                <HealthcareLabel htmlFor="role">Select Your Role</HealthcareLabel>
+                <div className="relative">
+                  <UserPlus className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-500 z-10" />
+                  <Select value={selectedRole} onValueChange={(value: UserRole) => setSelectedRole(value)} required>
+                    <SelectTrigger className="pl-10 h-11 border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-1">
+                      <SelectValue placeholder="Choose your role in cell & gene therapy" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white border border-slate-200 shadow-lg">
+                      {roleOptions.map((role) => (
+                        <SelectItem 
+                          key={role.value} 
+                          value={role.value}
+                          className="hover:bg-slate-50 focus:bg-slate-50"
+                        >
+                          {role.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             )}
-          </HealthcareButton>
-        </form>
-        
-        <div className="mt-6 text-center">
-          <button
-            type="button"
-            onClick={() => {
-              setIsSignUp(!isSignUp);
-              setSelectedRole('');
-            }}
-            className="text-sm text-blue-600 hover:text-blue-700 transition-colors"
-          >
-            {isSignUp 
-              ? 'Already have an account? Sign in' 
-              : "Don't have an account? Create one"
-            }
-          </button>
-        </div>
-        
-        <div className="mt-4 text-center text-xs text-slate-500">
-          By continuing, you agree to our terms of service and privacy policy
-        </div>
-      </HealthcareCardContent>
-    </HealthcareCard>
+            
+            <HealthcareButton 
+              type="submit" 
+              className="w-full" 
+              disabled={loading || (isSignUp && !selectedRole)}
+              size="lg"
+            >
+              {loading ? (
+                <div className="flex items-center space-x-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <span>{isSignUp ? 'Creating Account...' : 'Signing In...'}</span>
+                </div>
+              ) : (
+                isSignUp ? 'Create Account' : 'Sign In'
+              )}
+            </HealthcareButton>
+          </form>
+          
+          <div className="mt-6 text-center">
+            <button
+              type="button"
+              onClick={() => {
+                setIsSignUp(!isSignUp);
+                setSelectedRole('');
+                setAuthError('');
+              }}
+              className="text-sm text-blue-600 hover:text-blue-700 transition-colors"
+            >
+              {isSignUp 
+                ? 'Already have an account? Sign in' 
+                : "Don't have an account? Create one"
+              }
+            </button>
+          </div>
+          
+          <div className="mt-4 text-center text-xs text-slate-500">
+            By continuing, you agree to our terms of service and privacy policy
+          </div>
+        </HealthcareCardContent>
+      </HealthcareCard>
+
+      {/* Test Credentials Helper */}
+      <HealthcareCard className="w-full max-w-md mx-auto shadow-sm bg-blue-50">
+        <HealthcareCardHeader>
+          <HealthcareCardTitle className="text-lg text-blue-800">Test Credentials</HealthcareCardTitle>
+          <HealthcareCardDescription className="text-blue-600">
+            Click to auto-fill credentials for testing
+          </HealthcareCardDescription>
+        </HealthcareCardHeader>
+        <HealthcareCardContent className="space-y-2">
+          {testCredentials.map((creds, index) => (
+            <button
+              key={index}
+              onClick={() => fillTestCredentials(creds)}
+              className="w-full text-left p-2 rounded border border-blue-200 hover:bg-blue-100 transition-colors text-sm"
+            >
+              <div className="font-medium text-blue-800">{creds.role}</div>
+              <div className="text-blue-600">{creds.email}</div>
+            </button>
+          ))}
+        </HealthcareCardContent>
+      </HealthcareCard>
+    </div>
   );
 };
 

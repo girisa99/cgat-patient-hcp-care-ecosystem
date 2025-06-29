@@ -19,26 +19,60 @@ export const useAuthActions = () => {
     setLoading(true);
     
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
+      console.log('🔐 Starting authentication for:', email);
+      
+      // Clear any existing session first
+      try {
+        await supabase.auth.signOut();
+      } catch (err) {
+        console.log('ℹ️ No existing session to clear');
+      }
+
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
         password,
       });
 
       if (error) {
+        console.error('❌ Sign in error:', error);
+        
+        let errorMessage = error.message;
+        
+        // Provide more user-friendly error messages
+        if (error.message.includes('Invalid login credentials')) {
+          errorMessage = 'Invalid email or password. Please check your credentials and try again.';
+        } else if (error.message.includes('Email not confirmed')) {
+          errorMessage = 'Please check your email and click the confirmation link before signing in.';
+        } else if (error.message.includes('Too many requests')) {
+          errorMessage = 'Too many login attempts. Please wait a moment before trying again.';
+        }
+        
         toast({
           title: "Authentication Failed",
-          description: error.message,
+          description: errorMessage,
           variant: "destructive",
         });
-        return { success: false, error: error.message };
+        return { success: false, error: errorMessage };
       }
 
-      toast({
-        title: "Welcome Back",
-        description: "Successfully signed in to Healthcare Portal",
-      });
-      return { success: true };
-    } catch (error) {
+      if (data.user) {
+        console.log('✅ Sign in successful for user:', data.user.id);
+        toast({
+          title: "Welcome Back",
+          description: "Successfully signed in to Healthcare Portal",
+        });
+        
+        // Force a page refresh to ensure clean state
+        setTimeout(() => {
+          window.location.href = '/dashboard';
+        }, 500);
+        
+        return { success: true };
+      }
+
+      return { success: false, error: 'Authentication failed' };
+    } catch (error: any) {
+      console.error('💥 Exception during sign in:', error);
       const errorMessage = "An unexpected error occurred during sign in";
       toast({
         title: "Error",
@@ -60,7 +94,7 @@ export const useAuthActions = () => {
       console.log('🚀 Starting signup process for role:', role);
       
       const { data, error } = await supabase.auth.signUp({
-        email,
+        email: email.trim().toLowerCase(),
         password,
         options: {
           emailRedirectTo: redirectUrl,
@@ -72,12 +106,23 @@ export const useAuthActions = () => {
 
       if (error) {
         console.error('❌ Signup error:', error);
+        
+        let errorMessage = error.message;
+        
+        if (error.message.includes('User already registered')) {
+          errorMessage = 'An account with this email already exists. Please sign in instead.';
+        } else if (error.message.includes('Password should be')) {
+          errorMessage = 'Password must be at least 6 characters long.';
+        } else if (error.message.includes('Invalid email')) {
+          errorMessage = 'Please enter a valid email address.';
+        }
+        
         toast({
           title: "Registration Failed",
-          description: error.message,
+          description: errorMessage,
           variant: "destructive",
         });
-        return { success: false, error: error.message };
+        return { success: false, error: errorMessage };
       }
 
       if (data.user) {
@@ -113,7 +158,7 @@ export const useAuthActions = () => {
       }
 
       return { success: true };
-    } catch (error) {
+    } catch (error: any) {
       console.error('💥 Signup exception:', error);
       const errorMessage = "An unexpected error occurred during registration";
       toast({
@@ -130,7 +175,6 @@ export const useAuthActions = () => {
   const assignUserRole = async (userId: string, roleName: UserRole): Promise<{ success: boolean; error?: string }> => {
     try {
       console.log('🔐 Assigning role:', roleName, 'to user:', userId);
-      console.log('🔍 Current auth user:', (await supabase.auth.getUser()).data.user?.id);
       
       // First, get the role ID from the roles table
       const { data: role, error: roleError } = await supabase
@@ -165,7 +209,7 @@ export const useAuthActions = () => {
       }
 
       // Assign the role to the user
-      console.log('🔄 Attempting to insert role assignment with new RLS policies...');
+      console.log('🔄 Attempting to insert role assignment...');
       const { data: insertData, error: assignError } = await supabase
         .from('user_roles')
         .insert({
@@ -176,24 +220,12 @@ export const useAuthActions = () => {
 
       if (assignError) {
         console.error('❌ Error assigning role:', assignError);
-        console.error('❌ Full error details:', JSON.stringify(assignError, null, 2));
-        
-        // Check if it's a policy violation
-        if (assignError.code === '42501' || assignError.message?.includes('policy')) {
-          console.error('🔒 RLS Policy violation - checking auth context...');
-          const { data: currentUser } = await supabase.auth.getUser();
-          console.log('🔍 Current user context:', currentUser.user?.id);
-          console.log('🔍 Target user:', userId);
-          console.log('🔍 Are they the same?', currentUser.user?.id === userId);
-        }
-        
         return { success: false, error: assignError.message };
       }
 
       console.log('✅ Role assignment successful! Insert result:', insertData);
-      console.log('✅ Role assigned successfully:', roleName, 'to user:', userId);
       return { success: true };
-    } catch (error) {
+    } catch (error: any) {
       console.error('💥 Exception in role assignment:', error);
       return { success: false, error: 'Unexpected error during role assignment' };
     }
