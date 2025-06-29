@@ -11,7 +11,7 @@ import { Plus } from 'lucide-react';
 import { useModules } from '@/hooks/useModules';
 
 const Modules = () => {
-  const { modules, isLoadingModules } = useModules();
+  const { modules, isLoading } = useModules();
   const [selectedModule, setSelectedModule] = useState(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
 

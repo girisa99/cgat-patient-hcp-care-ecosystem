@@ -57,7 +57,8 @@ const CreateFacilityDialog: React.FC<CreateFacilityDialogProps> = ({
     }
 
     createFacility({
-      ...formData,
+      name: formData.name,
+      facility_type: formData.facility_type,
       address: formData.address || undefined,
       phone: formData.phone || undefined,
       email: formData.email || undefined,

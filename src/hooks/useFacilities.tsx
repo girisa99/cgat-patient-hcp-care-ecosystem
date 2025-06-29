@@ -2,6 +2,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { Database } from '@/integrations/supabase/types';
+
+type FacilityType = Database['public']['Enums']['facility_type'];
 
 export const useFacilities = () => {
   const { toast } = useToast();
@@ -38,10 +41,12 @@ export const useFacilities = () => {
   const createFacilityMutation = useMutation({
     mutationFn: async (facilityData: {
       name: string;
-      facility_type: string;
+      facility_type: FacilityType;
       address?: string;
       phone?: string;
       email?: string;
+      license_number?: string;
+      npi_number?: string;
     }) => {
       console.log('🔄 Creating facility:', facilityData);
       
@@ -71,12 +76,59 @@ export const useFacilities = () => {
     }
   });
 
+  const updateFacilityMutation = useMutation({
+    mutationFn: async ({
+      facilityId,
+      facilityData
+    }: {
+      facilityId: string;
+      facilityData: {
+        name: string;
+        facility_type: FacilityType;
+        address?: string | null;
+        phone?: string | null;
+        email?: string | null;
+        license_number?: string | null;
+        npi_number?: string | null;
+      };
+    }) => {
+      console.log('🔄 Updating facility:', facilityId, facilityData);
+      
+      const { data, error } = await supabase
+        .from('facilities')
+        .update(facilityData)
+        .eq('id', facilityId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['facilities'] });
+      toast({
+        title: "Facility Updated",
+        description: "Facility has been updated successfully.",
+      });
+    },
+    onError: (error: any) => {
+      console.error('❌ Update facility error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update facility",
+        variant: "destructive",
+      });
+    }
+  });
+
   return {
     facilities,
     isLoading,
     error,
     refetch,
     createFacility: createFacilityMutation.mutate,
-    isCreatingFacility: createFacilityMutation.isPending
+    updateFacility: updateFacilityMutation.mutate,
+    isCreatingFacility: createFacilityMutation.isPending,
+    isUpdatingFacility: updateFacilityMutation.isPending
   };
 };
