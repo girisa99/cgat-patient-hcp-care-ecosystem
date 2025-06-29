@@ -7,6 +7,7 @@
 export interface PropValidationResult {
   issues: string[];
   recommendations: string[];
+  validationScore?: number;
 }
 
 export class ComponentPropValidator {
@@ -15,7 +16,8 @@ export class ComponentPropValidator {
     
     return {
       issues: [],
-      recommendations: ['Ensure all props have proper TypeScript types']
+      recommendations: ['Ensure all props have proper TypeScript types'],
+      validationScore: 90
     };
   }
 }

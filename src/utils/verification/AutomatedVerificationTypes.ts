@@ -82,3 +82,16 @@ export interface AutomatedVerificationConfig {
   criticalThreshold: number;
   enableAutoSQLGeneration?: boolean;
 }
+
+// Template Generator Types
+export interface TemplateGenerationRequest {
+  templateType: 'component' | 'hook' | 'page' | 'utility';
+  name: string;
+  specifications?: Record<string, any>;
+}
+
+export interface TemplateGenerationResult {
+  success: boolean;
+  generatedFiles: string[];
+  errors: string[];
+}

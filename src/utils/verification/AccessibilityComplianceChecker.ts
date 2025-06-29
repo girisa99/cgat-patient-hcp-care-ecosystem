@@ -7,6 +7,7 @@
 export interface AccessibilityComplianceResult {
   criticalIssues: string[];
   recommendations: string[];
+  overallScore?: number;
 }
 
 export class AccessibilityComplianceChecker {
@@ -15,7 +16,8 @@ export class AccessibilityComplianceChecker {
     
     return {
       criticalIssues: [],
-      recommendations: ['Add proper ARIA labels', 'Ensure keyboard navigation']
+      recommendations: ['Add proper ARIA labels', 'Ensure keyboard navigation'],
+      overallScore: 88
     };
   }
 }

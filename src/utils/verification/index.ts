@@ -16,7 +16,7 @@ export * from './AdminModuleVerificationRunner';
 
 // Export the main orchestrator and its types
 export { 
-  AutomatedVerificationOrchestrator,
+  AutomatedVerificationOrchestratorClass as AutomatedVerificationOrchestrator,
   automatedVerification,
   type VerificationSummary,
   type AutomatedVerificationConfig
