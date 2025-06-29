@@ -17,14 +17,6 @@ const mockApiContractIntegration = {
   })
 };
 
-const mockUnusedCodeDetector = {
-  scanForUnusedCode: async () => ({
-    unusedFiles: [],
-    unusedFunctions: [],
-    recommendations: []
-  })
-};
-
 const mockDependencyManager = {
   analyzeDependencies: async () => ({
     outdatedPackages: [],
@@ -82,7 +74,6 @@ const mockAccessibilityComplianceChecker = {
 export interface CompleteVerificationResult {
   validationSummary: EnhancedIntegrationResult;
   contractValidation: any;
-  unusedCodeAnalysis: any;
   dependencyManagement: any;
   documentationConsistency: any;
   migrationSafety: any;
@@ -118,7 +109,6 @@ export class CoreVerificationOrchestrator {
     const [
       baseResult,
       contractResults,
-      unusedCodeResults,
       dependencyResults,
       documentationResults,
       migrationSafetyResults,
@@ -129,7 +119,6 @@ export class CoreVerificationOrchestrator {
     ] = await Promise.all([
       enhancedIntegrationOrchestrator.performIntegratedVerification(request),
       mockApiContractIntegration.performContractValidation(),
-      mockUnusedCodeDetector.scanForUnusedCode(),
       mockDependencyManager.analyzeDependencies(),
       mockDocumentationConsistencyChecker.checkDocumentationConsistency(),
       mockDatabaseMigrationSafetyChecker.analyzeMigrationSafety(),
@@ -148,7 +137,6 @@ export class CoreVerificationOrchestrator {
     return {
       validationSummary: baseResult,
       contractValidation: contractResults,
-      unusedCodeAnalysis: unusedCodeResults,
       dependencyManagement: dependencyResults,
       documentationConsistency: documentationResults,
       migrationSafety: migrationSafetyResults,
