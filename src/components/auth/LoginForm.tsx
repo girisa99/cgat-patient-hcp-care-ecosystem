@@ -8,7 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useAuthActions } from '@/hooks/useAuthActions';
 import { Eye, EyeOff, Mail, Lock, UserPlus, AlertCircle } from 'lucide-react';
 import { Database } from '@/integrations/supabase/types';
-import { useToast } from '@/hooks/use-toast';
 
 type UserRole = Database['public']['Enums']['user_role'];
 
@@ -20,7 +19,6 @@ const LoginForm = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [authError, setAuthError] = useState<string>('');
   const { signIn, signUp, loading } = useAuthActions();
-  const { toast } = useToast();
 
   const roleOptions = [
     { value: 'superAdmin' as UserRole, label: 'Super Administrator' },
@@ -43,7 +41,7 @@ const LoginForm = () => {
     e.preventDefault();
     setAuthError('');
     
-    console.log('🔐 Attempting authentication:', { email, isSignUp });
+    console.log('🔐 Form submission:', { email, isSignUp, selectedRole });
     
     try {
       if (isSignUp) {
@@ -51,23 +49,16 @@ const LoginForm = () => {
           setAuthError('Please select a role to continue');
           return;
         }
-        console.log('📝 Starting signup process for:', email, 'with role:', selectedRole);
+        console.log('📝 Starting signup process...');
         const result = await signUp(email, password, selectedRole);
         if (!result.success) {
           setAuthError(result.error || 'Failed to create account');
         }
       } else {
-        console.log('🔑 Starting signin process for:', email);
+        console.log('🔑 Starting signin process...');
         const result = await signIn(email, password);
         if (!result.success) {
           setAuthError(result.error || 'Invalid email or password');
-          
-          // Show helpful message for test accounts
-          toast({
-            title: "Login Failed",
-            description: "Try using one of the test accounts shown below the form",
-            variant: "destructive",
-          });
         }
       }
     } catch (error) {
@@ -81,6 +72,7 @@ const LoginForm = () => {
     setPassword(creds.password);
     setSelectedRole(creds.role as UserRole);
     setIsSignUp(false);
+    setAuthError('');
   };
 
   return (
