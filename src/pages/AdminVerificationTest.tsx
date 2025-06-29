@@ -9,7 +9,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Shield, AlertTriangle, CheckCircle, Database, RefreshCw, Activity, Zap, Sync, Download } from 'lucide-react';
+import { Shield, AlertTriangle, CheckCircle, Database, RefreshCw, Activity, Zap, RefreshCcw, Download } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useComprehensiveVerification } from '@/hooks/useComprehensiveVerification';
 
@@ -161,7 +161,7 @@ const AdminVerificationTest = () => {
               <Card className={getSyncStatusColor(verificationResult.syncStatus)}>
                 <CardHeader className="pb-2">
                   <CardTitle className="flex items-center text-sm">
-                    <Sync className="h-4 w-4 mr-2" />
+                    <RefreshCcw className="h-4 w-4 mr-2" />
                     Sync Status
                   </CardTitle>
                 </CardHeader>
@@ -178,7 +178,7 @@ const AdminVerificationTest = () => {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
-                  <Sync className="h-5 w-5 mr-2 text-purple-600" />
+                  <RefreshCcw className="h-5 w-5 mr-2 text-purple-600" />
                   Database Sync Verification Results
                 </CardTitle>
                 <CardDescription>
