@@ -1,4 +1,3 @@
-
 /**
  * Verification Runner
  * Handles execution of individual verification systems
@@ -12,10 +11,10 @@ import { DatabaseSchemaValidator, SchemaValidationResult } from './DatabaseSchem
 import { PerformanceMonitor, PerformanceMetrics, performanceMonitor } from './PerformanceMonitor';
 import { SecurityScanner, SecurityScanResult } from './SecurityScanner';
 import { CodeQualityAnalyzer, CodeQualityResult } from './CodeQualityAnalyzer';
-import { AutomatedVerificationConfig } from './AutomatedVerificationTypes';
+import { VerificationConfig } from './AutomatedVerificationTypes';
 
 export class VerificationRunner {
-  constructor(private config: AutomatedVerificationConfig) {}
+  constructor(private config: VerificationConfig) {}
 
   /**
    * Run validation automatically

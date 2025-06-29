@@ -3,22 +3,9 @@ export interface Issue {
   type: string;
   message: string;
   source: string;
-  severity: 'critical' | 'high' | 'medium' | 'low';
-  issueId?: string;
-  lastSeen?: string;
-  firstDetected?: string;
-  status?: 'new' | 'existing' | 'resolved';
-  details?: string;
+  severity: string;
   backendFixed?: boolean;
   autoDetectedFix?: boolean;
-}
-
-export interface IssueSnapshot {
-  timestamp: string;
-  issues: Issue[];
-  verificationId: string;
-  realFixesCount: number;
-  backendFixesDetected: string[];
 }
 
 export interface ProcessedIssuesData {
