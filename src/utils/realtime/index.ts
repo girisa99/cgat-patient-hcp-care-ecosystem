@@ -13,5 +13,5 @@ export type { RealtimeConfig, RealtimeEvent, RealtimeEventCallback } from './Rea
 export type { AdminModuleConfig } from './RealtimeModuleRegistry';
 
 // Enhanced hooks
-export { useRealtime, useAutoRealtime, useModuleRealtime } from '../useRealtime';
-export { useAdminRealtime } from '../useAdminRealtime';
+export { useRealtime, useAutoRealtime, useModuleRealtime } from '../../hooks/useRealtime';
+export { useAdminRealtime } from '../../hooks/useAdminRealtime';

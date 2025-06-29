@@ -21,7 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { useAdminRealtime } from '@/hooks/use-admin-realtime';
+import { useAdminRealtime } from '@/hooks/useAdminRealtime';
 
 const Modules = () => {
   // Enable real-time updates for modules area

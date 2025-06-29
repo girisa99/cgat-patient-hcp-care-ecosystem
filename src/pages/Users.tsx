@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { useUsers } from '@/hooks/useUsers';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { useToast } from '@/hooks/use-toast';
+import { useAdminRealtime } from '@/hooks/useAdminRealtime';
 
 // Import consolidated components
 import {
