@@ -6,7 +6,7 @@ import { HealthcareCard, HealthcareCardContent, HealthcareCardDescription, Healt
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuthActions } from '@/hooks/useAuthActions';
 import { useAuthContext } from '@/components/auth/AuthProvider';
-import { Eye, EyeOff, Mail, Lock, UserPlus, AlertCircle, LogOut, Users } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, UserPlus, AlertCircle, LogOut, Users, CheckCircle } from 'lucide-react';
 import { Database } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
 
@@ -20,6 +20,7 @@ const LoginForm = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [authError, setAuthError] = useState<string>('');
   const [isCreatingTestAccounts, setIsCreatingTestAccounts] = useState(false);
+  const [accountCreationResults, setAccountCreationResults] = useState<Array<{email: string, success: boolean, message: string}>>([]);
   const { signIn, signUp, signOut, loading } = useAuthActions();
   const { user } = useAuthContext();
   const { toast } = useToast();
@@ -102,50 +103,71 @@ const LoginForm = () => {
   const createAllTestAccounts = async () => {
     setIsCreatingTestAccounts(true);
     setAuthError('');
+    setAccountCreationResults([]);
     
     console.log('🔧 Creating all test accounts with secure passwords...');
-    let successCount = 0;
-    let failCount = 0;
+    const results: Array<{email: string, success: boolean, message: string}> = [];
     
     for (const creds of testCredentials) {
       try {
-        console.log(`Creating account: ${creds.email}`);
+        console.log(`📝 Attempting to create account: ${creds.email}`);
         const result = await signUp(creds.email, creds.password, creds.role);
         
         if (result.success) {
-          successCount++;
-          console.log(`✅ Created: ${creds.email}`);
+          results.push({
+            email: creds.email,
+            success: true,
+            message: 'Account created successfully'
+          });
+          console.log(`✅ Successfully created: ${creds.email}`);
         } else {
-          failCount++;
-          console.log(`❌ Failed to create: ${creds.email} - ${result.error}`);
+          const errorMsg = result.error || 'Unknown error';
           
-          // If account already exists, that's not really a failure
-          if (result.error?.includes('already registered')) {
-            successCount++;
-            failCount--;
+          // Handle "already exists" as success since account is available
+          if (errorMsg.includes('already registered') || errorMsg.includes('already exists')) {
+            results.push({
+              email: creds.email,
+              success: true,
+              message: 'Account already exists (ready to use)'
+            });
             console.log(`ℹ️ Account already exists: ${creds.email}`);
+          } else {
+            results.push({
+              email: creds.email,
+              success: false,
+              message: errorMsg
+            });
+            console.log(`❌ Failed to create: ${creds.email} - ${errorMsg}`);
           }
         }
         
-        // Small delay between account creations
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      } catch (error) {
-        failCount++;
-        console.error(`💥 Error creating ${creds.email}:`, error);
+        // Delay between account creations to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 1500));
+      } catch (error: any) {
+        results.push({
+          email: creds.email,
+          success: false,
+          message: error.message || 'Unexpected error'
+        });
+        console.error(`💥 Exception creating ${creds.email}:`, error);
       }
     }
     
+    setAccountCreationResults(results);
     setIsCreatingTestAccounts(false);
+    
+    const successCount = results.filter(r => r.success).length;
+    const failureCount = results.filter(r => !r.success).length;
     
     if (successCount > 0) {
       toast({
         title: "Test Accounts Ready",
-        description: `${successCount} test accounts are now available for login.`,
+        description: `${successCount} test accounts are available for login. You can now use the credentials below.`,
       });
     }
     
-    if (failCount > 0) {
-      setAuthError(`Created ${successCount} accounts, but ${failCount} failed. Check console for details.`);
+    if (failureCount > 0) {
+      setAuthError(`${successCount} accounts ready, but ${failureCount} failed. Check the results below.`);
     }
   };
 
@@ -321,7 +343,7 @@ const LoginForm = () => {
         <HealthcareCardHeader>
           <HealthcareCardTitle className="text-lg text-blue-800">Test Credentials</HealthcareCardTitle>
           <HealthcareCardDescription className="text-blue-600">
-            Click to auto-fill credentials or create test accounts with secure passwords
+            First create test accounts, then click to auto-fill login credentials
           </HealthcareCardDescription>
         </HealthcareCardHeader>
         <HealthcareCardContent className="space-y-3">
@@ -336,17 +358,32 @@ const LoginForm = () => {
               {isCreatingTestAccounts ? (
                 <div className="flex items-center space-x-2">
                   <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
-                  <span>Creating Secure Test Accounts...</span>
+                  <span>Creating Test Accounts...</span>
                 </div>
               ) : (
                 <>
                   <Users className="h-4 w-4 mr-2" />
-                  Create All Test Accounts
+                  Create Test Accounts
                 </>
               )}
             </HealthcareButton>
           </div>
 
+          {/* Account Creation Results */}
+          {accountCreationResults.length > 0 && (
+            <div className="mb-4 p-3 bg-white rounded border">
+              <h4 className="text-sm font-medium text-gray-800 mb-2">Account Creation Results:</h4>
+              {accountCreationResults.map((result, index) => (
+                <div key={index} className={`flex items-center gap-2 text-xs p-1 ${result.success ? 'text-green-700' : 'text-red-700'}`}>
+                  {result.success ? <CheckCircle className="h-3 w-3" /> : <AlertCircle className="h-3 w-3" />}
+                  <span className="font-medium">{result.email}</span>
+                  <span>- {result.message}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Test Credential Buttons */}
           {testCredentials.map((creds, index) => (
             <button
               key={index}
@@ -355,7 +392,7 @@ const LoginForm = () => {
             >
               <div className="font-medium text-blue-800">{roleOptions.find(r => r.value === creds.role)?.label}</div>
               <div className="text-blue-600">{creds.email}</div>
-              <div className="text-xs text-blue-500">Secure password included</div>
+              <div className="text-xs text-blue-500">Click to auto-fill login form</div>
             </button>
           ))}
         </HealthcareCardContent>
