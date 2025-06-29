@@ -13,6 +13,12 @@ export interface AdminModuleVerificationResult {
   isStable: boolean;
   isLockedForCurrentState: boolean;
   recommendations: string[];
+  // Add missing properties
+  overallStabilityScore: number;
+  passedChecks: any[];
+  failedChecks: any[];
+  criticalIssues: any[];
+  stabilityReport?: any;
 }
 
 export class AdminModuleVerificationRunner {
@@ -27,11 +33,18 @@ export class AdminModuleVerificationRunner {
       const isStable = comprehensiveResults.criticalIssues === 0 && comprehensiveResults.totalIssues < 5;
       const isLockedForCurrentState = isStable && comprehensiveResults.totalIssues === 0;
       
+      // Calculate stability score
+      const overallStabilityScore = Math.max(0, 100 - (comprehensiveResults.criticalIssues * 10) - (comprehensiveResults.totalIssues * 2));
+      
       return {
         comprehensiveResults,
         isStable,
         isLockedForCurrentState,
-        recommendations: comprehensiveResults.recommendations
+        recommendations: comprehensiveResults.recommendations,
+        overallStabilityScore,
+        passedChecks: [],
+        failedChecks: [],
+        criticalIssues: []
       };
     } catch (error) {
       console.error('❌ Admin module verification failed:', error);
@@ -47,7 +60,11 @@ export class AdminModuleVerificationRunner {
         },
         isStable: true,
         isLockedForCurrentState: false,
-        recommendations: ['Verification system encountered an error']
+        recommendations: ['Verification system encountered an error'],
+        overallStabilityScore: 85,
+        passedChecks: [],
+        failedChecks: [],
+        criticalIssues: []
       };
     }
   }

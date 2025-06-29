@@ -1,32 +1,15 @@
 
 /**
  * Duplicate Detector
- * Mock implementation for duplicate code detection
+ * Mock implementation for detecting duplicate code
  */
 
-export interface DuplicateResult {
-  file1: string;
-  file2: string;
-  similarity: number;
-  suggestions: string[];
-}
-
-export interface DuplicateStats {
-  totalDuplicates: number;
-  averageSimilarity: number;
-  mostDuplicatedFiles: string[];
-}
-
 export class DuplicateDetector {
-  async scanForDuplicates(): Promise<DuplicateResult[]> {
-    return [];
-  }
-
-  getDuplicateStats(): DuplicateStats {
+  getDuplicateStats() {
     return {
       totalDuplicates: 0,
-      averageSimilarity: 0,
-      mostDuplicatedFiles: []
+      duplicateFiles: [],
+      duplicateFunctions: []
     };
   }
 }

@@ -78,7 +78,7 @@ export const useAutomatedVerification = () => {
     lastSummary,
     verificationHistory,
     
-    // Actions
+    // Actions - include all expected properties
     verifyBeforeCreation,
     startVerification,
     stopVerification,

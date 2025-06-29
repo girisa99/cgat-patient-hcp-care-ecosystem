@@ -119,13 +119,16 @@ export class VerificationSummaryGenerator {
     };
   }
 
+  // Add the missing method that components are expecting
   static async getCompleteVerificationSummary(): Promise<VerificationSummary> {
+    console.log('📊 Getting complete verification summary...');
+    
     const generator = new VerificationSummaryGenerator({
       interval: 60000,
       enableAutoFix: false,
       criticalThreshold: 5
     });
     
-    return generator.generateComprehensiveSummary();
+    return await generator.generateComprehensiveSummary();
   }
 }

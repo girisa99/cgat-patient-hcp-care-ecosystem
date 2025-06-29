@@ -22,6 +22,8 @@ export interface VerificationSummary {
   auditResults?: any[];
   databaseValidation?: {
     violations: any[];
+    autoFixesApplied?: number;
+    autoFixesAvailable?: number;
   };
   codeQuality?: {
     issues: any[];
@@ -32,6 +34,14 @@ export interface VerificationSummary {
   schemaValidation?: {
     violations: any[];
   };
+  // Additional missing properties
+  securityScore?: number;
+  qualityScore?: number;
+  sqlAutoFixes?: number;
+  highIssues?: number;
+  mediumIssues?: number;
+  lowIssues?: number;
+  realFixesApplied?: number;
 }
 
 class AutomatedVerificationOrchestratorClass {
@@ -58,6 +68,14 @@ class AutomatedVerificationOrchestratorClass {
   updateConfig(newConfig: Partial<AutomatedVerificationConfig>): void {
     this.config = { ...this.config, ...newConfig };
     console.log('⚙️ Updated verification config:', this.config);
+  }
+
+  getStatus() {
+    return {
+      isRunning: false,
+      config: this.config,
+      lastScanTimestamp: new Date().toISOString()
+    };
   }
 }
 
