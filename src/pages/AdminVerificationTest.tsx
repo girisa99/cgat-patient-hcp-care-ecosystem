@@ -1,7 +1,7 @@
 
 /**
  * System Verification Dashboard
- * Manual-only verification system with no automatic syncing
+ * Manual-only verification system with health score based on original database state
  */
 
 import React, { useState } from 'react';
@@ -53,14 +53,14 @@ const AdminVerificationTest = () => {
       await refreshIssues();
       console.log('✅ Database data refreshed');
       
-      // Give a moment for state to update, then recalculate health
+      // Give a moment for state to update, then recalculate health from original database
       setTimeout(async () => {
         await recalculateHealth();
-        console.log('✅ Health score recalculated');
+        console.log('✅ Health score recalculated from original database state');
         
         toast({
           title: "✅ Manual Refresh Complete",
-          description: `Data refreshed from database. Health Score: ${healthScore}/100`,
+          description: `Data refreshed. Health Score: ${healthScore}/100 (from original DB state)`,
           variant: "default",
         });
       }, 500);
@@ -94,7 +94,7 @@ const AdminVerificationTest = () => {
     <MainLayout>
       <PageContainer
         title="System Verification Dashboard"
-        subtitle="Manual database verification monitoring - no automatic syncing"
+        subtitle="Health score based on original database state - verification data shown separately"
       >
         <div className="space-y-6">
           {/* System Health Status */}
@@ -127,14 +127,16 @@ const AdminVerificationTest = () => {
               <CardDescription className={isStable ? 'text-green-700' : 'text-red-700'}>
                 Last calculated: {lastCalculated.toLocaleTimeString()}
                 <br />
+                Health Score based on ORIGINAL database state assessment
+                <br />
                 Critical Issues: {criticalIssuesCount} | Total Active: {totalActiveIssues} | Fixed: {totalFixedIssues}
                 <br />
                 System is {isStable ? 'stable and performing well' : 'experiencing issues that need attention'}
                 <br />
-                <span className="text-xs font-medium">📊 Manual refresh only - no automatic syncing</span>
+                <span className="text-xs font-medium">📊 Health from original DB • Verification data separate</span>
                 <br />
                 <span className="text-xs text-gray-600">
-                  Score calculation: 100 base - ({criticalIssuesCount}×25 + {categorizedIssues.high.length}×15 + {categorizedIssues.medium.length}×8 + {categorizedIssues.low.length}×3) + {totalFixedIssues}×2 = {healthScore}
+                  Real database health assessment (users, roles, permissions, data integrity)
                 </span>
               </CardDescription>
             </CardHeader>
@@ -145,29 +147,29 @@ const AdminVerificationTest = () => {
             <Card className="bg-green-50 border-green-200">
               <CardContent className="p-4 text-center">
                 <div className="text-2xl font-bold text-green-800">{totalFixedCount}</div>
-                <div className="text-sm text-green-600">Total Fixed Issues</div>
-                <div className="text-xs text-green-500 mt-1">From Database</div>
+                <div className="text-sm text-green-600">Issues Fixed</div>
+                <div className="text-xs text-green-500 mt-1">From Fix Tracking</div>
               </CardContent>
             </Card>
             <Card className="bg-red-50 border-red-200">
               <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-red-800">{categorizedIssues.critical.length}</div>
-                <div className="text-sm text-red-600">Critical Active</div>
-                <div className="text-xs text-red-500 mt-1">From Database</div>
+                <div className="text-2xl font-bold text-red-800">{criticalIssuesCount}</div>
+                <div className="text-sm text-red-600">Critical Issues</div>
+                <div className="text-xs text-red-500 mt-1">From Original DB</div>
               </CardContent>
             </Card>
             <Card className="bg-orange-50 border-orange-200">
               <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-orange-800">{categorizedIssues.high.length}</div>
-                <div className="text-sm text-orange-600">High Priority</div>
-                <div className="text-xs text-orange-500 mt-1">From Database</div>
+                <div className="text-2xl font-bold text-orange-800">{totalActiveIssues}</div>
+                <div className="text-sm text-orange-600">Total Active</div>
+                <div className="text-xs text-orange-500 mt-1">From Original DB</div>
               </CardContent>
             </Card>
             <Card className="bg-blue-50 border-blue-200">
               <CardContent className="p-4 text-center">
                 <div className="text-2xl font-bold text-blue-800">{categorizedIssues.total}</div>
-                <div className="text-sm text-blue-600">Total Active</div>
-                <div className="text-xs text-blue-500 mt-1">From Database</div>
+                <div className="text-sm text-blue-600">Verification Issues</div>
+                <div className="text-xs text-blue-500 mt-1">From Sync Table</div>
               </CardContent>
             </Card>
           </div>
@@ -187,11 +189,21 @@ const AdminVerificationTest = () => {
             </Card>
           )}
 
-          {/* Issues Management */}
-          <CleanIssuesTab 
-            onReRunVerification={handleManualRefresh}
-            isReRunning={isManualRefreshRunning}
-          />
+          {/* Verification Issues Management (separate from health score) */}
+          <Card className="bg-blue-50 border-blue-200">
+            <CardHeader>
+              <CardTitle className="text-blue-800">Verification Issues Management</CardTitle>
+              <CardDescription className="text-blue-700">
+                These are issues identified during verification runs (separate from health score calculation)
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <CleanIssuesTab 
+                onReRunVerification={handleManualRefresh}
+                isReRunning={isManualRefreshRunning}
+              />
+            </CardContent>
+          </Card>
         </div>
       </PageContainer>
     </MainLayout>
