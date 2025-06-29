@@ -31,25 +31,43 @@ const ApiIntegrationsManager = () => {
   };
 
   const handleViewDetails = (integrationId: string) => {
-    setSelectedIntegration(integrationId);
+    const integration = integrations.find(i => i.id === integrationId);
+    if (integration) {
+      setSelectedIntegration(integration);
+    }
   };
 
   const handleViewDocumentation = (integrationId: string) => {
-    console.log('View documentation for:', integrationId);
+    console.log('Opening documentation for integration:', integrationId);
+    // Implementation would open documentation in new tab
   };
 
   const handleCopyUrl = (url: string) => {
     navigator.clipboard.writeText(url);
   };
 
-  if (isLoading) return <LoadingState title="API Management" description="Loading API integrations..." />;
-  if (error) return <ErrorState title="API Management" error={error} />;
+  const handleTestEndpoint = async (endpointId: string) => {
+    try {
+      await testEndpoint(endpointId);
+    } catch (error) {
+      console.error('Error testing endpoint:', error);
+    }
+  };
+
+  if (isLoading || isLoadingPublished) {
+    return <LoadingState message="Loading API integrations..." />;
+  }
+
+  if (error) {
+    return <ErrorState message={error} />;
+  }
 
   if (selectedIntegration) {
     return (
-      <IntegrationDetailView 
-        integrationId={selectedIntegration}
+      <IntegrationDetailView
+        integration={selectedIntegration}
         onBack={() => setSelectedIntegration(null)}
+        onTestEndpoint={handleTestEndpoint}
       />
     );
   }
@@ -57,26 +75,28 @@ const ApiIntegrationsManager = () => {
   return (
     <div className="space-y-6">
       <ApiIntegrationsStats
-        integrations={integrations || []}
-        internalApis={internalApis || []}
-        externalApis={externalApis || []}
-        publishedApis={publishedApis || []}
+        totalIntegrations={integrations.length}
+        internalApis={internalApis.length}
+        externalApis={externalApis.length}
+        publishedApis={publishedApis.length}
       />
 
       <ApiIntegrationsTabs
         activeTab={activeTab}
-        onTabChange={setActiveTab}
-        internalApis={internalApis || []}
-        externalApis={externalApis || []}
+        setActiveTab={setActiveTab}
         searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        integrations={integrations}
+        internalApis={internalApis}
+        externalApis={externalApis}
+        publishedApis={publishedApis}
         createDialogOpen={createDialogOpen}
         setCreateDialogOpen={setCreateDialogOpen}
         onDownloadCollection={handleDownloadCollection}
         onViewDetails={handleViewDetails}
         onViewDocumentation={handleViewDocumentation}
         onCopyUrl={handleCopyUrl}
-        integrations={integrations || []}
-        onClose={() => setActiveTab('overview')}
+        onTestEndpoint={handleTestEndpoint}
       />
     </div>
   );

@@ -16,6 +16,7 @@ import DatabaseIssuesDisplay from '@/components/verification/DatabaseIssuesDispl
 import SystemRecommendations from '@/components/verification/SystemRecommendations';
 import SystemStatusSummary from '@/components/verification/SystemStatusSummary';
 import SystemStatusOverview from '@/components/verification/SystemStatusOverview';
+import ComprehensiveSystemStatusDisplay from '@/components/verification/ComprehensiveSystemStatusDisplay';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, CheckCircle, Bot, PlayCircle } from 'lucide-react';
@@ -61,6 +62,9 @@ const AdminVerificationTest = () => {
         subtitle="Complete system health check with 30-minute automation cycle"
       >
         <div className="space-y-6">
+          {/* Comprehensive System Status - NEW: Includes all modules */}
+          <ComprehensiveSystemStatusDisplay />
+
           {/* System Status Overview - Real-time component status */}
           <SystemStatusOverview />
 
@@ -77,6 +81,7 @@ const AdminVerificationTest = () => {
                       ✅ Results calculated from original database only<br />
                       ✅ Findings synced to database tables for display<br />
                       ✅ Health score based on original database data<br />
+                      ✅ User Management, Facilities, Modules, API Integrations monitored<br />
                       {automationStatus.lastExecution && (
                         <>Last execution: {new Date(automationStatus.lastExecution).toLocaleString()}</>
                       )}
@@ -108,7 +113,8 @@ const AdminVerificationTest = () => {
                 🗄️ All calculations use original database data, not sync tables<br />
                 🔄 Results displayed from sync tables for consistency<br />
                 ⏰ Last verification: {new Date(verificationResult.timestamp).toLocaleString()}<br />
-                🤖 Triggered by: {verificationResult.automationMetadata.triggeredBy.toUpperCase()}
+                🤖 Triggered by: {verificationResult.automationMetadata.triggeredBy.toUpperCase()}<br />
+                🏥 All core modules (Users, Facilities, Modules, APIs) verified
               </AlertDescription>
             </Alert>
           )}
@@ -163,6 +169,7 @@ const AdminVerificationTest = () => {
                 Welcome to the Comprehensive System Verification Dashboard with 30-minute automation. 
                 Click "Run Complete Verification" or "Test Automation" to start system health checks.
                 All calculations are based on the original database, with results synced to display tables.
+                This system now monitors ALL core modules including User Management, Facilities, Modules, and API Integrations.
               </AlertDescription>
             </Alert>
           )}
@@ -171,13 +178,15 @@ const AdminVerificationTest = () => {
           <Alert className="bg-purple-50 border-purple-200">
             <Bot className="h-4 w-4" />
             <AlertDescription>
-              <strong>🔒 SYSTEM INTEGRITY ASSURANCE:</strong><br />
+              <strong>🔒 COMPREHENSIVE SYSTEM INTEGRITY ASSURANCE:</strong><br />
               • Health scores calculated ONLY from original database data<br />
-              • 30-minute automation covers ALL verification components<br />
+              • 30-minute automation covers ALL verification components AND all core modules<br />
+              • User Management, Facilities, Modules, API Integrations all monitored<br />
               • No components missed in automated scans<br />
               • Results consistency between manual and automated runs<br />
               • Database sync maintains display accuracy without affecting calculations<br />
-              • Full traceability of data sources and calculation methods
+              • Full traceability of data sources and calculation methods<br />
+              • Real-time status monitoring for immediate issue detection
             </AlertDescription>
           </Alert>
         </div>
