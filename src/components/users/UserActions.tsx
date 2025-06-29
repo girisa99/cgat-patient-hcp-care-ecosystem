@@ -24,7 +24,7 @@
  * - Do not create alternative user action components
  * - Keep button styles consistent across all actions
  * 
- * LAST UPDATED: 2025-06-27
+ * LAST UPDATED: 2025-06-29
  * MAINTAINER: System Architecture Team
  */
 
@@ -55,25 +55,48 @@ const UserActions: React.FC<UserActionsProps> = ({
     ? `${user.first_name || ''} ${user.last_name || ''}`.trim()
     : user.email;
 
+  const handleEditUser = () => {
+    console.log('✏️ Opening edit dialog for user:', user.id, userName);
+    onEditUser(user);
+  };
+
+  const handleAssignRole = () => {
+    console.log('👤 Opening role assignment for user:', user.id, userName);
+    onAssignRole(user.id);
+  };
+
+  const handleRemoveRole = () => {
+    if (onRemoveRole) {
+      console.log('➖ Opening role removal for user:', user.id, userName);
+      onRemoveRole(user.id);
+    }
+  };
+
+  const handleAssignFacility = () => {
+    console.log('🏢 Opening facility assignment for user:', user.id, userName);
+    onAssignFacility(user.id);
+  };
+
   const handleManagePermissions = () => {
-    console.log('Opening permission management for user:', user.id, userName);
+    console.log('🔒 Opening permission management for user:', user.id, userName);
     onManagePermissions(user.id, userName);
   };
 
   const handleAssignModule = () => {
     if (onAssignModule) {
-      console.log('Opening module assignment for user:', user.id, userName);
+      console.log('📦 Opening module assignment for user:', user.id, userName);
       onAssignModule(user.id, userName);
     }
   };
 
   return (
-    <div className="flex gap-1">
+    <div className="flex gap-1 flex-wrap">
       <Button
         variant="outline"
         size="sm"
-        onClick={() => onEditUser(user)}
+        onClick={handleEditUser}
         title="Edit User"
+        className="h-8 px-2"
       >
         <Edit className="h-3 w-3" />
       </Button>
@@ -81,18 +104,20 @@ const UserActions: React.FC<UserActionsProps> = ({
       <Button
         variant="outline"
         size="sm"
-        onClick={() => onAssignRole(user.id)}
+        onClick={handleAssignRole}
         title="Assign Role"
+        className="h-8 px-2"
       >
         <UserPlus className="h-3 w-3" />
       </Button>
-      
-      {onRemoveRole && user.user_roles && user.user_roles.length > 0 && (
+
+      {onRemoveRole && (
         <Button
           variant="outline"
           size="sm"
-          onClick={() => onRemoveRole(user.id)}
+          onClick={handleRemoveRole}
           title="Remove Role"
+          className="h-8 px-2"
         >
           <Minus className="h-3 w-3" />
         </Button>
@@ -101,8 +126,9 @@ const UserActions: React.FC<UserActionsProps> = ({
       <Button
         variant="outline"
         size="sm"
-        onClick={() => onAssignFacility(user.id)}
+        onClick={handleAssignFacility}
         title="Assign Facility"
+        className="h-8 px-2"
       >
         <Building className="h-3 w-3" />
       </Button>
@@ -112,7 +138,7 @@ const UserActions: React.FC<UserActionsProps> = ({
         size="sm"
         onClick={handleManagePermissions}
         title="Manage Permissions"
-        className="bg-blue-50 hover:bg-blue-100 border-blue-200"
+        className="h-8 px-2"
       >
         <Key className="h-3 w-3" />
       </Button>
@@ -122,8 +148,8 @@ const UserActions: React.FC<UserActionsProps> = ({
           variant="outline"
           size="sm"
           onClick={handleAssignModule}
-          title="Assign Modules"
-          className="bg-purple-50 hover:bg-purple-100 border-purple-200"
+          title="Assign Module"
+          className="h-8 px-2"
         >
           <Shield className="h-3 w-3" />
         </Button>

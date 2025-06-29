@@ -21,7 +21,7 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
   onOpenChange,
   user
 }) => {
-  const { facilities } = useFacilities();
+  const { facilities, isLoading: facilitiesLoading } = useFacilities();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isUpdating, setIsUpdating] = useState(false);
@@ -35,6 +35,7 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
 
   useEffect(() => {
     if (user) {
+      console.log('📝 Setting form data for user:', user);
       setFormData({
         first_name: user.first_name || '',
         last_name: user.last_name || '',
@@ -48,12 +49,21 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!user?.id) return;
+    if (!user?.id) {
+      console.error('❌ No user ID provided');
+      toast({
+        title: "Error",
+        description: "User ID is missing",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setIsUpdating(true);
+    console.log('🔄 Updating user profile:', user.id, formData);
     
     try {
-      const { error } = await supabase.functions.invoke('manage-user-profiles', {
+      const { data, error } = await supabase.functions.invoke('manage-user-profiles', {
         body: {
           action: 'update',
           user_id: user.id,
@@ -62,21 +72,27 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
       });
 
       if (error) {
+        console.error('❌ Error from edge function:', error);
         throw error;
       }
+
+      console.log('✅ User profile updated successfully:', data);
 
       toast({
         title: "User Updated",
         description: "User profile has been updated successfully.",
       });
 
+      // Invalidate both users and specific user queries
       queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['user', user.id] });
+      
       onOpenChange(false);
     } catch (error: any) {
-      console.error('Failed to update user:', error);
+      console.error('❌ Failed to update user:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to update user",
+        description: error.message || "Failed to update user profile",
         variant: "destructive",
       });
     } finally {
@@ -84,7 +100,15 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
     }
   };
 
-  if (!user) return null;
+  const handleInputChange = (field: string, value: string) => {
+    console.log(`📝 Updating ${field} to:`, value);
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  if (!user) {
+    console.log('⚠️ No user provided to EditUserDialog');
+    return null;
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -100,7 +124,8 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
               <Input
                 id="first_name"
                 value={formData.first_name}
-                onChange={(e) => setFormData(prev => ({ ...prev, first_name: e.target.value }))}
+                onChange={(e) => handleInputChange('first_name', e.target.value)}
+                placeholder="Enter first name"
               />
             </div>
             
@@ -109,7 +134,8 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
               <Input
                 id="last_name"
                 value={formData.last_name}
-                onChange={(e) => setFormData(prev => ({ ...prev, last_name: e.target.value }))}
+                onChange={(e) => handleInputChange('last_name', e.target.value)}
+                placeholder="Enter last name"
               />
             </div>
           </div>
@@ -119,7 +145,8 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
             <Input
               id="phone"
               value={formData.phone}
-              onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+              onChange={(e) => handleInputChange('phone', e.target.value)}
+              placeholder="Enter phone number"
             />
           </div>
           
@@ -128,7 +155,8 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
             <Input
               id="department"
               value={formData.department}
-              onChange={(e) => setFormData(prev => ({ ...prev, department: e.target.value }))}
+              onChange={(e) => handleInputChange('department', e.target.value)}
+              placeholder="Enter department"
             />
           </div>
           
@@ -136,10 +164,11 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
             <Label htmlFor="facility">Facility</Label>
             <Select
               value={formData.facility_id}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, facility_id: value }))}
+              onValueChange={(value) => handleInputChange('facility_id', value)}
+              disabled={facilitiesLoading}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select a facility" />
+                <SelectValue placeholder={facilitiesLoading ? "Loading facilities..." : "Select a facility"} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="">No facility</SelectItem>

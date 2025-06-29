@@ -1,3 +1,4 @@
+
 /**
  * PRIMARY HOOK: useUsers
  * 
@@ -28,7 +29,7 @@
  * - Do not create alternative user hooks
  * - Coordinate with database team before schema changes
  * 
- * LAST UPDATED: 2025-06-27
+ * LAST UPDATED: 2025-06-29
  * MAINTAINER: System Architecture Team
  */
 
@@ -98,6 +99,13 @@ export const useUsers = () => {
         if (usersWithoutRoles.length > 0) {
           console.log('📝 Users missing roles:', usersWithoutRoles.map(u => u.email));
         }
+
+        // Log detailed role information
+        allUsersData.forEach(user => {
+          if (user.user_roles && user.user_roles.length > 0) {
+            console.log(`👤 ${user.email} has roles:`, user.user_roles.map(ur => ur.roles.name));
+          }
+        });
         
         return allUsersData;
         
@@ -106,10 +114,11 @@ export const useUsers = () => {
         throw err;
       }
     },
-    retry: 1,
+    retry: 2,
     retryDelay: 1000,
-    staleTime: 60000, // Increased cache time to reduce requests
+    staleTime: 30000, // Reduced cache time for more frequent updates
     gcTime: 300000,
+    refetchOnWindowFocus: true, // Refetch when window regains focus
   });
 
   const createUserMutation = useMutation({
@@ -224,6 +233,10 @@ export const useUsers = () => {
     onSuccess: () => {
       console.log('🔄 Invalidating users cache after role assignment...');
       queryClient.invalidateQueries({ queryKey: ['users'] });
+      // Force a refetch to ensure fresh data
+      setTimeout(() => {
+        refetch();
+      }, 500);
       toast({
         title: "Role Assigned",
         description: "User role has been updated successfully.",
