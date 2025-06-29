@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface HealthData {
@@ -203,11 +203,6 @@ export const useStableHealthScore = () => {
       });
     }
   }, [assessDatabaseHealth]);
-
-  useEffect(() => {
-    console.log('🎯 Health score hook initialized - calculating from ORIGINAL database state');
-    calculateHealthScore();
-  }, [calculateHealthScore]);
 
   return {
     ...healthData,

@@ -21,7 +21,9 @@ export const useIssuesDataProcessor = (
   verificationSummary?: VerificationSummary | null,
   fixedIssues: Issue[] = []
 ): ProcessedIssuesData => {
-  // For database-first approach, return properly structured data
+  // Simplified processor - returns empty data for database-first approach
+  console.log('📊 IssuesDataProcessor: Simplified for database-first approach');
+  
   const emptyData: ProcessedIssuesData = {
     allIssues: [],
     criticalIssues: [],
@@ -41,5 +43,5 @@ export const useIssuesDataProcessor = (
 };
 
 export const markIssueAsReallyFixed = (issue: Issue) => {
-  console.log('🔧 Issue marked as really fixed:', issue.type);
+  console.log('🔧 Issue marked as really fixed (simplified):', issue.type);
 };
