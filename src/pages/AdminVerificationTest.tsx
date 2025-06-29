@@ -4,13 +4,13 @@
  * Manual-only verification system with no automatic syncing
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Shield, AlertTriangle, CheckCircle, Database } from 'lucide-react';
+import { Shield, AlertTriangle, CheckCircle, Database, RefreshCw } from 'lucide-react';
 import { useDatabaseIssues } from '@/hooks/useDatabaseIssues';
 import { useStableHealthScore } from '@/hooks/useStableHealthScore';
 import CleanIssuesTab from '@/components/security/CleanIssuesTab';
@@ -38,6 +38,14 @@ const AdminVerificationTest = () => {
     recalculate: recalculateHealth
   } = useStableHealthScore();
 
+  // Recalculate health score when issues data changes
+  useEffect(() => {
+    if (activeIssues.length > 0 || totalFixedCount > 0) {
+      console.log('🔄 Issues data changed, recalculating health score');
+      recalculateHealth();
+    }
+  }, [activeIssues.length, totalFixedCount, recalculateHealth]);
+
   const handleManualRefresh = async () => {
     setIsManualRefreshRunning(true);
     console.log('🔄 Manual refresh requested - loading data from database only');
@@ -49,19 +57,21 @@ const AdminVerificationTest = () => {
         variant: "default",
       });
 
-      // Only refresh data from database - no syncing
+      // Refresh database data first
       await refreshIssues();
       console.log('✅ Database data refreshed');
       
-      // Recalculate health score based on current database state
-      await recalculateHealth();
-      console.log('✅ Health score recalculated from database');
-      
-      toast({
-        title: "✅ Manual Refresh Complete",
-        description: `Data refreshed from database. Health Score: ${healthScore}/100`,
-        variant: "default",
-      });
+      // Give a moment for state to update, then recalculate health
+      setTimeout(async () => {
+        await recalculateHealth();
+        console.log('✅ Health score recalculated');
+        
+        toast({
+          title: "✅ Manual Refresh Complete",
+          description: `Data refreshed from database. Health Score: ${healthScore}/100`,
+          variant: "default",
+        });
+      }, 500);
       
       console.log('✅ Manual refresh completed successfully');
     } catch (error) {
@@ -76,6 +86,18 @@ const AdminVerificationTest = () => {
     }
   };
 
+  const getHealthScoreColor = () => {
+    if (healthScore >= 80) return "text-green-800";
+    if (healthScore >= 60) return "text-yellow-800";
+    return "text-red-800";
+  };
+
+  const getHealthScoreBgColor = () => {
+    if (healthScore >= 80) return "bg-green-50 border-green-200";
+    if (healthScore >= 60) return "bg-yellow-50 border-yellow-200";
+    return "bg-red-50 border-red-200";
+  };
+
   return (
     <MainLayout>
       <PageContainer
@@ -84,15 +106,15 @@ const AdminVerificationTest = () => {
       >
         <div className="space-y-6">
           {/* System Health Status */}
-          <Card className={isStable ? "bg-green-50 border-green-200" : "bg-yellow-50 border-yellow-200"}>
+          <Card className={getHealthScoreBgColor()}>
             <CardHeader>
-              <CardTitle className={`flex items-center justify-between ${isStable ? 'text-green-800' : 'text-yellow-800'}`}>
+              <CardTitle className={`flex items-center justify-between ${getHealthScoreColor()}`}>
                 <div className="flex items-center">
                   {isStable ? 
                     <CheckCircle className="h-5 w-5 mr-2" /> : 
                     <AlertTriangle className="h-5 w-5 mr-2" />
                   }
-                  System Health: {healthScore}/100 (Database Only)
+                  System Health: {healthScore}/100
                 </div>
                 <div className="flex items-center gap-2">
                   <Button 
@@ -101,19 +123,23 @@ const AdminVerificationTest = () => {
                     variant="outline"
                     size="sm"
                   >
-                    <Database className={`h-4 w-4 mr-2 ${isManualRefreshRunning ? 'animate-spin' : ''}`} />
+                    {isManualRefreshRunning ? (
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Database className="h-4 w-4 mr-2" />
+                    )}
                     {isManualRefreshRunning ? 'Refreshing...' : 'Refresh Data'}
                   </Button>
                 </div>
               </CardTitle>
-              <CardDescription className={isStable ? 'text-green-700' : 'text-yellow-700'}>
+              <CardDescription className={isStable ? 'text-green-700' : 'text-red-700'}>
                 Last calculated: {lastCalculated.toLocaleTimeString()}
                 <br />
                 Critical Issues: {criticalIssuesCount} | Total Active: {totalActiveIssues} | Fixed: {totalFixedIssues}
                 <br />
-                System is {isStable ? 'stable and reliable' : 'improving but needs attention'}
+                System is {isStable ? 'stable and performing well' : 'experiencing issues that need attention'}
                 <br />
-                <span className="text-xs font-medium">Manual refresh only - no automatic syncing</span>
+                <span className="text-xs font-medium">📊 Manual refresh only - no automatic syncing</span>
               </CardDescription>
             </CardHeader>
           </Card>
@@ -123,7 +149,7 @@ const AdminVerificationTest = () => {
             <Card className="bg-green-50 border-green-200">
               <CardContent className="p-4 text-center">
                 <div className="text-2xl font-bold text-green-800">{totalFixedCount}</div>
-                <div className="text-sm text-green-600">Total Fixed</div>
+                <div className="text-sm text-green-600">Total Fixed Issues</div>
                 <div className="text-xs text-green-500 mt-1">From Database</div>
               </CardContent>
             </Card>
@@ -165,7 +191,7 @@ const AdminVerificationTest = () => {
             </Card>
           )}
 
-          {/* Issues Management - No sync functionality */}
+          {/* Issues Management */}
           <CleanIssuesTab 
             onReRunVerification={handleManualRefresh}
             isReRunning={isManualRefreshRunning}
