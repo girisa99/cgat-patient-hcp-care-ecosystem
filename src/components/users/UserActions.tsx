@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Edit, UserPlus, Building, Minus, Key, Shield, Mail, UserX } from 'lucide-react';
+import { Edit, UserPlus, Building, Minus, Key, Shield, Mail, UserX, Eye } from 'lucide-react';
 
 interface UserActionsProps {
   user: any;
@@ -13,6 +12,7 @@ interface UserActionsProps {
   onAssignModule?: (userId: string, userName: string) => void;
   onResendVerification?: (userEmail: string, userName: string) => void;
   onDeactivateUser?: (userId: string, userName: string, userEmail: string) => void;
+  onViewModules?: (userId: string, userName: string) => void;
 }
 
 const UserActions: React.FC<UserActionsProps> = ({
@@ -24,7 +24,8 @@ const UserActions: React.FC<UserActionsProps> = ({
   onManagePermissions,
   onAssignModule,
   onResendVerification,
-  onDeactivateUser
+  onDeactivateUser,
+  onViewModules
 }) => {
   const userName = user.first_name || user.last_name 
     ? `${user.first_name || ''} ${user.last_name || ''}`.trim()
@@ -76,6 +77,13 @@ const UserActions: React.FC<UserActionsProps> = ({
     if (onDeactivateUser) {
       console.log('🚫 Opening deactivation dialog for user:', user.id, userName);
       onDeactivateUser(user.id, userName, user.email);
+    }
+  };
+
+  const handleViewModules = () => {
+    if (onViewModules) {
+      console.log('👁️ Opening module access view for user:', user.id, userName);
+      onViewModules(user.id, userName);
     }
   };
 
@@ -145,6 +153,18 @@ const UserActions: React.FC<UserActionsProps> = ({
           className="h-8 w-8 p-0"
         >
           <Shield className="h-3 w-3" />
+        </Button>
+      )}
+
+      {onViewModules && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleViewModules}
+          title="View Module Access"
+          className="h-8 w-8 p-0 text-blue-600 border-blue-300 hover:bg-blue-50"
+        >
+          <Eye className="h-3 w-3" />
         </Button>
       )}
 

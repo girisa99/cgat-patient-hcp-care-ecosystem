@@ -1,3 +1,4 @@
+
 /**
  * PRIMARY COMPONENT: UsersList
  * 
@@ -49,6 +50,7 @@ interface UsersListProps {
   onAssignModule?: (userId: string, userName: string) => void;
   onResendVerification?: (userEmail: string, userName: string) => void;
   onDeactivateUser?: (userId: string, userName: string, userEmail: string) => void;
+  onViewModules?: (userId: string, userName: string) => void;
 }
 
 const UsersList: React.FC<UsersListProps> = ({
@@ -60,7 +62,8 @@ const UsersList: React.FC<UsersListProps> = ({
   onManagePermissions,
   onAssignModule,
   onResendVerification,
-  onDeactivateUser
+  onDeactivateUser,
+  onViewModules
 }) => {
   const { users, isLoading, error } = useUsers();
   const [searchTerm, setSearchTerm] = useState('');
@@ -286,6 +289,7 @@ const UsersList: React.FC<UsersListProps> = ({
                         onAssignModule={onAssignModule}
                         onResendVerification={onResendVerification}
                         onDeactivateUser={onDeactivateUser}
+                        onViewModules={onViewModules}
                       />
                     </TableCell>
                   </TableRow>

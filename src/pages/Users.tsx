@@ -26,6 +26,7 @@ import {
 import EnhancedResendVerificationDialog from '@/components/users/EnhancedResendVerificationDialog';
 import DeactivateUserDialog from '@/components/users/DeactivateUserDialog';
 import AssignModuleDialog from '@/components/users/AssignModuleDialog';
+import UserModuleAccessDialog from '@/components/users/UserModuleAccessDialog';
 
 const Users = () => {
   const { toast } = useToast();
@@ -55,6 +56,7 @@ const Users = () => {
   const [resendVerificationOpen, setResendVerificationOpen] = useState(false);
   const [deactivateUserOpen, setDeactivateUserOpen] = useState(false);
   const [assignModuleOpen, setAssignModuleOpen] = useState(false);
+  const [viewModulesOpen, setViewModulesOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [selectedUserName, setSelectedUserName] = useState<string>('');
@@ -113,6 +115,13 @@ const Users = () => {
     setSelectedUserId(userId);
     setSelectedUserName(userName);
     setAssignModuleOpen(true);
+  };
+
+  const handleViewModules = (userId: string, userName: string) => {
+    console.log('👁️ Opening module access view for user:', userId, userName);
+    setSelectedUserId(userId);
+    setSelectedUserName(userName);
+    setViewModulesOpen(true);
   };
 
   const handleResendVerification = (userEmail: string, userName: string) => {
@@ -262,6 +271,7 @@ const Users = () => {
                 onAssignModule={handleAssignModule}
                 onResendVerification={handleResendVerification}
                 onDeactivateUser={handleDeactivateUser}
+                onViewModules={handleViewModules}
               />
             </CardContent>
           </Card>
@@ -327,6 +337,13 @@ const Users = () => {
           userId={selectedUserId || ''}
           userName={selectedUserName}
           userEmail={selectedUserEmail}
+        />
+
+        <UserModuleAccessDialog
+          open={viewModulesOpen}
+          onOpenChange={setViewModulesOpen}
+          userId={selectedUserId || ''}
+          userName={selectedUserName}
         />
       </PageContainer>
     </MainLayout>
