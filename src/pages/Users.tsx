@@ -21,6 +21,9 @@ import {
   BulkRoleAssignment
 } from '@/components/users';
 
+// Import the new ResendVerificationDialog
+import ResendVerificationDialog from '@/components/users/ResendVerificationDialog';
+
 const Users = () => {
   const { toast } = useToast();
   const { 
@@ -38,9 +41,11 @@ const Users = () => {
   const [assignRoleOpen, setAssignRoleOpen] = useState(false);
   const [removeRoleOpen, setRemoveRoleOpen] = useState(false);
   const [assignFacilityOpen, setAssignFacilityOpen] = useState(false);
+  const [resendVerificationOpen, setResendVerificationOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [selectedUserName, setSelectedUserName] = useState<string>('');
+  const [selectedUserEmail, setSelectedUserEmail] = useState<string>('');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleCreateUser = () => {
@@ -74,6 +79,13 @@ const Users = () => {
     setSelectedUserId(userId);
     setSelectedUserName(userName);
     setAssignFacilityOpen(true);
+  };
+
+  const handleResendVerification = (userEmail: string, userName: string) => {
+    console.log('📧 Opening resend verification dialog for:', userName, userEmail);
+    setSelectedUserEmail(userEmail);
+    setSelectedUserName(userName);
+    setResendVerificationOpen(true);
   };
 
   const handleRefresh = async () => {
@@ -204,6 +216,7 @@ const Users = () => {
                 onRemoveRole={handleRemoveRole}
                 onAssignFacility={handleAssignFacility}
                 onEditUser={handleEditUser}
+                onResendVerification={handleResendVerification}
               />
             </CardContent>
           </Card>
@@ -239,6 +252,13 @@ const Users = () => {
           open={assignFacilityOpen}
           onOpenChange={setAssignFacilityOpen}
           userId={selectedUserId}
+          userName={selectedUserName}
+        />
+
+        <ResendVerificationDialog
+          open={resendVerificationOpen}
+          onOpenChange={setResendVerificationOpen}
+          userEmail={selectedUserEmail}
           userName={selectedUserName}
         />
       </PageContainer>

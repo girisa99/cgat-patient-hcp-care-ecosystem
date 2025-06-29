@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { AuthStateManager } from '@/utils/auth/authStateManager';
@@ -114,6 +113,59 @@ export const useAuthActions = () => {
     } catch (error: any) {
       console.error('💥 Signup exception:', error);
       const errorMessage = "An unexpected error occurred during registration";
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      return { success: false, error: errorMessage };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resendVerificationEmail = async (email: string): Promise<AuthResult> => {
+    setLoading(true);
+    console.log('📧 Resending verification email for:', email);
+    
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`
+        }
+      });
+      
+      if (error) {
+        console.error('❌ Resend verification error:', error);
+        let errorMessage = error.message;
+        
+        if (error.message.includes('Email rate limit exceeded')) {
+          errorMessage = 'Email rate limit exceeded. Please wait a few minutes before trying again.';
+        } else if (error.message.includes('User not found')) {
+          errorMessage = 'No account found with this email address.';
+        }
+        
+        toast({
+          title: "Verification Email Failed",
+          description: errorMessage,
+          variant: "destructive",
+        });
+        return { success: false, error: errorMessage };
+      }
+      
+      console.log('✅ Verification email resent successfully');
+      toast({
+        title: "Verification Email Sent",
+        description: `Verification email has been resent to ${email}. Please check your inbox.`,
+      });
+      
+      return { success: true };
+    } catch (error: any) {
+      console.error('💥 Exception during resend verification:', error);
+      const errorMessage = "An unexpected error occurred while resending verification email";
       toast({
         title: "Error",
         description: errorMessage,
@@ -259,6 +311,7 @@ export const useAuthActions = () => {
     signUp,
     signOut,
     assignUserRole,
+    resendVerificationEmail,
     loading
   };
 };

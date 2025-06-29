@@ -1,36 +1,7 @@
 
-/**
- * PRIMARY COMPONENT: UserActions
- * 
- * ⚠️  CANONICAL SOURCE OF TRUTH - DO NOT DUPLICATE ⚠️
- * 
- * This is the primary user actions component used for all user-related operations.
- * Provides consistent action buttons and handlers across the application.
- * 
- * USAGE LOCATIONS:
- * - src/components/users/UsersList.tsx (primary usage)
- * - Any component that needs user action buttons
- * 
- * FEATURES:
- * - Edit user functionality
- * - Role assignment/removal
- * - Facility assignment
- * - Permission management
- * - Module assignment
- * - Consistent styling and icons
- * 
- * MODIFICATIONS:
- * - Always update this file for user action changes
- * - Do not create alternative user action components
- * - Keep button styles consistent across all actions
- * 
- * LAST UPDATED: 2025-06-29
- * MAINTAINER: System Architecture Team
- */
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Edit, UserPlus, Building, Minus, Key, Shield } from 'lucide-react';
+import { Edit, UserPlus, Building, Minus, Key, Shield, Mail } from 'lucide-react';
 
 interface UserActionsProps {
   user: any;
@@ -40,6 +11,7 @@ interface UserActionsProps {
   onAssignFacility: (userId: string) => void;
   onManagePermissions: (userId: string, userName: string) => void;
   onAssignModule?: (userId: string, userName: string) => void;
+  onResendVerification?: (userEmail: string, userName: string) => void;
 }
 
 const UserActions: React.FC<UserActionsProps> = ({
@@ -49,7 +21,8 @@ const UserActions: React.FC<UserActionsProps> = ({
   onRemoveRole,
   onAssignFacility,
   onManagePermissions,
-  onAssignModule
+  onAssignModule,
+  onResendVerification
 }) => {
   const userName = user.first_name || user.last_name 
     ? `${user.first_name || ''} ${user.last_name || ''}`.trim()
@@ -88,6 +61,16 @@ const UserActions: React.FC<UserActionsProps> = ({
       onAssignModule(user.id, userName);
     }
   };
+
+  const handleResendVerification = () => {
+    if (onResendVerification) {
+      console.log('📧 Resending verification email for user:', user.email, userName);
+      onResendVerification(user.email, userName);
+    }
+  };
+
+  // Check if user needs email verification (not confirmed)
+  const needsEmailVerification = !user.email_confirmed_at && user.email;
 
   return (
     <div className="flex gap-1 flex-wrap">
@@ -152,6 +135,18 @@ const UserActions: React.FC<UserActionsProps> = ({
           className="h-8 px-2"
         >
           <Shield className="h-3 w-3" />
+        </Button>
+      )}
+
+      {needsEmailVerification && onResendVerification && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleResendVerification}
+          title="Resend Verification Email"
+          className="h-8 px-2 text-orange-600 border-orange-300 hover:bg-orange-50"
+        >
+          <Mail className="h-3 w-3" />
         </Button>
       )}
     </div>
