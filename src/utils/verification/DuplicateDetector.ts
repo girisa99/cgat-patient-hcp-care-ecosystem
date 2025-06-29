@@ -11,8 +11,22 @@ export interface DuplicateResult {
   suggestions: string[];
 }
 
+export interface DuplicateStats {
+  totalDuplicates: number;
+  averageSimilarity: number;
+  mostDuplicatedFiles: string[];
+}
+
 export class DuplicateDetector {
   async scanForDuplicates(): Promise<DuplicateResult[]> {
     return [];
+  }
+
+  getDuplicateStats(): DuplicateStats {
+    return {
+      totalDuplicates: 0,
+      averageSimilarity: 0,
+      mostDuplicatedFiles: []
+    };
   }
 }

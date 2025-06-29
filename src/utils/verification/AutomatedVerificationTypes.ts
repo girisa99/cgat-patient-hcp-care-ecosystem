@@ -8,6 +8,11 @@ export interface VerificationConfig {
   enabled: boolean;
   interval: number;
   autoFix: boolean;
+  enableDatabaseValidation?: boolean;
+  enableSchemaValidation?: boolean;
+  enablePerformanceMonitoring?: boolean;
+  enableSecurityScanning?: boolean;
+  enableCodeQualityAnalysis?: boolean;
 }
 
 export interface AutomatedVerificationConfig {
@@ -16,6 +21,7 @@ export interface AutomatedVerificationConfig {
   enablePerformanceMonitoring: boolean;
   enableSecurityScanning: boolean;
   enableCodeQualityAnalysis: boolean;
+  enableAutoSQLGeneration?: boolean;
   autoFix: boolean;
   interval: number;
 }
@@ -27,12 +33,34 @@ export interface VerificationResult {
   timestamp: string;
 }
 
+export interface ValidationResult {
+  success: boolean;
+  issues: string[];
+  fixes: string[];
+  recommendations: string[];
+}
+
+export interface AuditResult {
+  componentName: string;
+  issues: string[];
+  suggestions: string[];
+  score: number;
+  recommendations: string[];
+}
+
 export interface VerificationSummary {
   totalIssues: number;
   criticalIssues: number;
   fixedIssues: number;
   recommendations: string[];
   timestamp: string;
+  validationResult?: ValidationResult;
+  auditResults?: AuditResult[];
+  databaseValidation?: any;
+  schemaValidation?: any;
+  securityScan?: any;
+  codeQuality?: any;
+  sqlAutoFixes?: string[];
 }
 
 export interface ComponentAuditResult {
@@ -59,4 +87,12 @@ export interface TemplateGenerationResult {
   testsGenerated: string;
   documentationGenerated: string;
   errors: string[];
+}
+
+export interface VerificationRequest {
+  componentType: string;
+  description: string;
+  tableName?: string;
+  moduleType?: string;
+  moduleName?: string;
 }
