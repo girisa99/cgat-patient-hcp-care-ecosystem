@@ -1,4 +1,3 @@
-
 /**
  * PRIMARY COMPONENT: UsersList
  * 
@@ -46,6 +45,8 @@ interface UsersListProps {
   onRemoveRole?: (userId: string) => void;
   onAssignFacility: (userId: string) => void;
   onEditUser: (user: any) => void;
+  onManagePermissions?: (userId: string, userName: string) => void;
+  onAssignModule?: (userId: string, userName: string) => void;
   onResendVerification?: (userEmail: string, userName: string) => void;
 }
 
@@ -55,6 +56,8 @@ const UsersList: React.FC<UsersListProps> = ({
   onRemoveRole,
   onAssignFacility,
   onEditUser,
+  onManagePermissions,
+  onAssignModule,
   onResendVerification
 }) => {
   const { users, isLoading, error } = useUsers();
@@ -277,7 +280,8 @@ const UsersList: React.FC<UsersListProps> = ({
                         onAssignRole={onAssignRole}
                         onRemoveRole={onRemoveRole}
                         onAssignFacility={onAssignFacility}
-                        onManagePermissions={(userId, userName) => console.log('Manage permissions:', userId, userName)}
+                        onManagePermissions={onManagePermissions || ((userId, userName) => console.log('Manage permissions:', userId, userName))}
+                        onAssignModule={onAssignModule}
                         onResendVerification={onResendVerification}
                       />
                     </TableCell>

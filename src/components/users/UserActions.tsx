@@ -73,13 +73,13 @@ const UserActions: React.FC<UserActionsProps> = ({
   const needsEmailVerification = !user.email_confirmed_at && user.email;
 
   return (
-    <div className="flex gap-1 flex-wrap">
+    <div className="flex items-center gap-1">
       <Button
         variant="outline"
         size="sm"
         onClick={handleEditUser}
         title="Edit User"
-        className="h-8 px-2"
+        className="h-8 w-8 p-0"
       >
         <Edit className="h-3 w-3" />
       </Button>
@@ -89,7 +89,7 @@ const UserActions: React.FC<UserActionsProps> = ({
         size="sm"
         onClick={handleAssignRole}
         title="Assign Role"
-        className="h-8 px-2"
+        className="h-8 w-8 p-0"
       >
         <UserPlus className="h-3 w-3" />
       </Button>
@@ -100,7 +100,7 @@ const UserActions: React.FC<UserActionsProps> = ({
           size="sm"
           onClick={handleRemoveRole}
           title="Remove Role"
-          className="h-8 px-2"
+          className="h-8 w-8 p-0"
         >
           <Minus className="h-3 w-3" />
         </Button>
@@ -111,7 +111,7 @@ const UserActions: React.FC<UserActionsProps> = ({
         size="sm"
         onClick={handleAssignFacility}
         title="Assign Facility"
-        className="h-8 px-2"
+        className="h-8 w-8 p-0"
       >
         <Building className="h-3 w-3" />
       </Button>
@@ -121,7 +121,7 @@ const UserActions: React.FC<UserActionsProps> = ({
         size="sm"
         onClick={handleManagePermissions}
         title="Manage Permissions"
-        className="h-8 px-2"
+        className="h-8 w-8 p-0"
       >
         <Key className="h-3 w-3" />
       </Button>
@@ -132,7 +132,7 @@ const UserActions: React.FC<UserActionsProps> = ({
           size="sm"
           onClick={handleAssignModule}
           title="Assign Module"
-          className="h-8 px-2"
+          className="h-8 w-8 p-0"
         >
           <Shield className="h-3 w-3" />
         </Button>
@@ -144,7 +144,7 @@ const UserActions: React.FC<UserActionsProps> = ({
           size="sm"
           onClick={handleResendVerification}
           title="Resend Verification Email"
-          className="h-8 px-2 text-orange-600 border-orange-300 hover:bg-orange-50"
+          className="h-8 w-8 p-0 text-orange-600 border-orange-300 hover:bg-orange-50"
         >
           <Mail className="h-3 w-3" />
         </Button>

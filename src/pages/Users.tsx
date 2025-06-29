@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { PageContainer } from '@/components/layout/PageContainer';
@@ -18,10 +17,11 @@ import {
   AssignRoleDialog,
   RemoveRoleDialog,
   AssignFacilityDialog,
-  BulkRoleAssignment
+  BulkRoleAssignment,
+  PermissionManagementDialog
 } from '@/components/users';
 
-// Import the new ResendVerificationDialog
+// Import the ResendVerificationDialog
 import ResendVerificationDialog from '@/components/users/ResendVerificationDialog';
 
 const Users = () => {
@@ -41,6 +41,7 @@ const Users = () => {
   const [assignRoleOpen, setAssignRoleOpen] = useState(false);
   const [removeRoleOpen, setRemoveRoleOpen] = useState(false);
   const [assignFacilityOpen, setAssignFacilityOpen] = useState(false);
+  const [permissionManagementOpen, setPermissionManagementOpen] = useState(false);
   const [resendVerificationOpen, setResendVerificationOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<any>(null);
@@ -79,6 +80,21 @@ const Users = () => {
     setSelectedUserId(userId);
     setSelectedUserName(userName);
     setAssignFacilityOpen(true);
+  };
+
+  const handleManagePermissions = (userId: string, userName: string) => {
+    console.log('🔒 Opening permission management for user:', userId, userName);
+    setSelectedUserId(userId);
+    setSelectedUserName(userName);
+    setPermissionManagementOpen(true);
+  };
+
+  const handleAssignModule = (userId: string, userName: string) => {
+    console.log('📦 Module assignment functionality to be implemented:', userId, userName);
+    toast({
+      title: "Feature Coming Soon",
+      description: "Module assignment functionality will be available in the next update.",
+    });
   };
 
   const handleResendVerification = (userEmail: string, userName: string) => {
@@ -216,6 +232,8 @@ const Users = () => {
                 onRemoveRole={handleRemoveRole}
                 onAssignFacility={handleAssignFacility}
                 onEditUser={handleEditUser}
+                onManagePermissions={handleManagePermissions}
+                onAssignModule={handleAssignModule}
                 onResendVerification={handleResendVerification}
               />
             </CardContent>
@@ -251,6 +269,13 @@ const Users = () => {
         <AssignFacilityDialog
           open={assignFacilityOpen}
           onOpenChange={setAssignFacilityOpen}
+          userId={selectedUserId}
+          userName={selectedUserName}
+        />
+
+        <PermissionManagementDialog
+          open={permissionManagementOpen}
+          onOpenChange={setPermissionManagementOpen}
           userId={selectedUserId}
           userName={selectedUserName}
         />
