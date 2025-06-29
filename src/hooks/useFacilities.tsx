@@ -2,24 +2,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Database } from '@/integrations/supabase/types';
-
-type FacilityType = Database['public']['Enums']['facility_type'];
-
-interface CreateFacilityData {
-  name: string;
-  facility_type: FacilityType;
-  address?: string;
-  phone?: string;
-  email?: string;
-  license_number?: string;
-  npi_number?: string;
-}
-
-interface UpdateFacilityData {
-  facilityId: string;
-  facilityData: Partial<CreateFacilityData>;
-}
 
 export const useFacilities = () => {
   const { toast } = useToast();
@@ -33,7 +15,7 @@ export const useFacilities = () => {
   } = useQuery({
     queryKey: ['facilities'],
     queryFn: async () => {
-      console.log('🔍 Fetching facilities...');
+      console.log('🏥 Fetching facilities...');
       
       const { data, error } = await supabase
         .from('facilities')
@@ -46,29 +28,30 @@ export const useFacilities = () => {
         throw error;
       }
 
-      console.log('✅ Facilities fetched successfully:', data.length);
-      return data;
+      console.log('✅ Facilities fetched:', data?.length || 0);
+      return data || [];
     },
     retry: 1,
-    staleTime: 300000, // 5 minutes
+    staleTime: 60000
   });
 
   const createFacilityMutation = useMutation({
-    mutationFn: async (facilityData: CreateFacilityData) => {
+    mutationFn: async (facilityData: {
+      name: string;
+      facility_type: string;
+      address?: string;
+      phone?: string;
+      email?: string;
+    }) => {
       console.log('🔄 Creating facility:', facilityData);
       
       const { data, error } = await supabase
         .from('facilities')
-        .insert([facilityData])
+        .insert(facilityData)
         .select()
         .single();
 
-      if (error) {
-        console.error('❌ Error creating facility:', error);
-        throw error;
-      }
-
-      console.log('✅ Facility created successfully:', data);
+      if (error) throw error;
       return data;
     },
     onSuccess: () => {
@@ -88,50 +71,12 @@ export const useFacilities = () => {
     }
   });
 
-  const updateFacilityMutation = useMutation({
-    mutationFn: async ({ facilityId, facilityData }: UpdateFacilityData) => {
-      console.log('🔄 Updating facility:', facilityId, facilityData);
-      
-      const { data, error } = await supabase
-        .from('facilities')
-        .update(facilityData)
-        .eq('id', facilityId)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('❌ Error updating facility:', error);
-        throw error;
-      }
-
-      console.log('✅ Facility updated successfully:', data);
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['facilities'] });
-      toast({
-        title: "Facility Updated",
-        description: "Facility has been updated successfully.",
-      });
-    },
-    onError: (error: any) => {
-      console.error('❌ Update facility error:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update facility",
-        variant: "destructive",
-      });
-    }
-  });
-
   return {
     facilities,
     isLoading,
     error,
     refetch,
     createFacility: createFacilityMutation.mutate,
-    updateFacility: updateFacilityMutation.mutate,
-    isCreatingFacility: createFacilityMutation.isPending,
-    isUpdatingFacility: updateFacilityMutation.isPending
+    isCreatingFacility: createFacilityMutation.isPending
   };
 };
