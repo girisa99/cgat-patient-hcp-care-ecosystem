@@ -19,6 +19,11 @@ export { default as PermissionManagementDialog } from './PermissionManagementDia
 // Bulk operations
 export { default as BulkRoleAssignment } from './BulkRoleAssignment';
 
+// Display components
+export { default as UserAccessSummary } from './UserAccessSummary';
+export { default as UserRolesBadgeGroup } from './UserRolesBadgeGroup';
+export { default as UserModuleAccessIndicator } from './UserModuleAccessIndicator';
+
 // Specialized components
 export { default as UserPermissionsBadge } from './UserPermissionsBadge';
 export { default as UserPermissionsSummary } from './UserPermissionsSummary';

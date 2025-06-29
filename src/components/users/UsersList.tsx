@@ -35,10 +35,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, AlertCircle, CheckCircle, Users, Clock } from 'lucide-react';
+import { Search, AlertCircle, Users, Clock, Shield } from 'lucide-react';
 import { useUsers } from '@/hooks/useUsers';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import UserActions from './UserActions';
+import UserAccessSummary from './UserAccessSummary';
+import UserRolesBadgeGroup from './UserRolesBadgeGroup';
+import UserModuleAccessIndicator from './UserModuleAccessIndicator';
+import UserPermissionsBadge from './UserPermissionsBadge';
 
 interface UsersListProps {
   onCreateUser: () => void;
@@ -69,6 +73,7 @@ const UsersList: React.FC<UsersListProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [verificationFilter, setVerificationFilter] = useState<string>('all');
+  const [viewMode, setViewMode] = useState<'table' | 'detailed'>('table');
 
   // Filter and search users
   const filteredUsers = useMemo(() => {
@@ -97,33 +102,19 @@ const UsersList: React.FC<UsersListProps> = ({
     });
   }, [users, searchTerm, roleFilter, verificationFilter]);
 
-  const getUserRolesBadges = (user: any) => {
-    if (!user.user_roles || user.user_roles.length === 0) {
-      return <Badge variant="outline" className="text-gray-500">No Role</Badge>;
-    }
-    
-    return user.user_roles.map((userRole: any, index: number) => (
-      <Badge key={index} variant="secondary" className="mr-1">
-        {userRole.roles.name}
-      </Badge>
-    ));
-  };
-
   const getVerificationStatus = (user: any) => {
     if (!user.email) return null;
     
     const isVerified = !!user.email_confirmed_at;
     
     return isVerified ? (
-      <div className="flex items-center gap-1 text-green-600">
-        <CheckCircle className="h-4 w-4" />
-        <span className="text-sm">Verified</span>
-      </div>
+      <Badge variant="default" className="text-xs bg-green-100 text-green-800 border-green-300">
+        Verified
+      </Badge>
     ) : (
-      <div className="flex items-center gap-1 text-orange-600">
-        <AlertCircle className="h-4 w-4" />
-        <span className="text-sm">Pending</span>
-      </div>
+      <Badge variant="outline" className="text-xs text-orange-600 border-orange-300">
+        Pending
+      </Badge>
     );
   };
 
@@ -162,10 +153,24 @@ const UsersList: React.FC<UsersListProps> = ({
       {/* Search and Filter Controls */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Search className="h-5 w-5" />
-            Search & Filter Users
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Search className="h-5 w-5" />
+              Search & Filter Users
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="view-mode" className="text-sm">View:</Label>
+              <Select value={viewMode} onValueChange={(value: 'table' | 'detailed') => setViewMode(value)}>
+                <SelectTrigger className="w-32 h-8">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="table">Table</SelectItem>
+                  <SelectItem value="detailed">Detailed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -226,59 +231,111 @@ const UsersList: React.FC<UsersListProps> = ({
         </p>
       </div>
 
-      {/* Users Table */}
+      {/* Users Display */}
       <Card>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>User</TableHead>
-                  <TableHead>Email Status</TableHead>
-                  <TableHead>Roles</TableHead>
-                  <TableHead>Facility</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredUsers.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">
-                          {user.first_name || user.last_name 
-                            ? `${user.first_name || ''} ${user.last_name || ''}`.trim()
-                            : 'No Name'
-                          }
+          {viewMode === 'table' ? (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>User</TableHead>
+                    <TableHead>Verification</TableHead>
+                    <TableHead>Roles</TableHead>
+                    <TableHead>Facility</TableHead>
+                    <TableHead>Permissions</TableHead>
+                    <TableHead>Created</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredUsers.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">
+                            {user.first_name || user.last_name 
+                              ? `${user.first_name || ''} ${user.last_name || ''}`.trim()
+                              : 'No Name'
+                            }
+                          </div>
+                          <div className="text-sm text-gray-600">{user.email}</div>
                         </div>
-                        <div className="text-sm text-gray-600">{user.email}</div>
+                      </TableCell>
+                      <TableCell>
+                        {getVerificationStatus(user)}
+                      </TableCell>
+                      <TableCell>
+                        <UserRolesBadgeGroup user={user} variant="compact" />
+                      </TableCell>
+                      <TableCell>
+                        {user.facilities ? (
+                          <Badge variant="outline">
+                            {user.facilities.name}
+                          </Badge>
+                        ) : (
+                          <span className="text-gray-400 text-sm">No Facility</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <UserPermissionsBadge userId={user.id} />
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1 text-sm text-gray-600">
+                          <Clock className="h-3 w-3" />
+                          {new Date(user.created_at).toLocaleDateString()}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <UserActions
+                          user={user}
+                          onEditUser={onEditUser}
+                          onAssignRole={onAssignRole}
+                          onRemoveRole={onRemoveRole}
+                          onAssignFacility={onAssignFacility}
+                          onManagePermissions={onManagePermissions || ((userId, userName) => console.log('Manage permissions:', userId, userName))}
+                          onAssignModule={onAssignModule}
+                          onResendVerification={onResendVerification}
+                          onDeactivateUser={onDeactivateUser}
+                          onViewModules={onViewModules}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
+            <div className="p-4 space-y-4">
+              {filteredUsers.map((user) => (
+                <Card key={user.id} className="p-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1 space-y-3">
+                      <div className="flex items-center gap-4">
+                        <div>
+                          <div className="font-medium text-lg">
+                            {user.first_name || user.last_name 
+                              ? `${user.first_name || ''} ${user.last_name || ''}`.trim()
+                              : 'No Name'
+                            }
+                          </div>
+                          <div className="text-sm text-gray-600">{user.email}</div>
+                        </div>
+                        {getVerificationStatus(user)}
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      {getVerificationStatus(user)}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {getUserRolesBadges(user)}
+                      
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <UserAccessSummary user={user} />
+                        <div className="space-y-2">
+                          <UserModuleAccessIndicator userId={user.id} />
+                          <div className="pt-2">
+                            <UserPermissionsBadge userId={user.id} />
+                          </div>
+                        </div>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      {user.facilities ? (
-                        <Badge variant="outline">
-                          {user.facilities.name}
-                        </Badge>
-                      ) : (
-                        <span className="text-gray-400 text-sm">No Facility</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1 text-sm text-gray-600">
-                        <Clock className="h-3 w-3" />
-                        {new Date(user.created_at).toLocaleDateString()}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
+                    </div>
+                    
+                    <div className="ml-4">
                       <UserActions
                         user={user}
                         onEditUser={onEditUser}
@@ -291,12 +348,12 @@ const UsersList: React.FC<UsersListProps> = ({
                         onDeactivateUser={onDeactivateUser}
                         onViewModules={onViewModules}
                       />
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
