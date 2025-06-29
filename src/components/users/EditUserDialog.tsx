@@ -70,14 +70,24 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
     }
 
     setIsUpdating(true);
-    console.log('🔄 Updating user profile:', user.id, formData);
+    
+    // Prepare the profile data, converting empty strings to null for UUID fields
+    const profileData = {
+      first_name: formData.first_name,
+      last_name: formData.last_name,
+      phone: formData.phone || null,
+      department: formData.department || null,
+      facility_id: formData.facility_id === '' || formData.facility_id === 'no-facility' ? null : formData.facility_id
+    };
+    
+    console.log('🔄 Updating user profile:', user.id, profileData);
     
     try {
       const { data, error } = await supabase.functions.invoke('manage-user-profiles', {
         body: {
           action: 'update',
           user_id: user.id,
-          profile_data: formData
+          profile_data: profileData
         }
       });
 
