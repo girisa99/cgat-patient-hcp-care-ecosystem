@@ -117,9 +117,103 @@ export const useAuthActions = () => {
     }
   };
 
+  const assignUserRole = async (userId: string, roleName: UserRole): Promise<AuthResult> => {
+    setLoading(true);
+    
+    try {
+      console.log('🔄 Assigning role:', roleName, 'to user:', userId);
+      
+      const { supabase } = await import('@/integrations/supabase/client');
+      
+      // Get role ID
+      const { data: role, error: roleError } = await supabase
+        .from('roles')
+        .select('id')
+        .eq('name', roleName)
+        .single();
+
+      if (roleError || !role) {
+        console.error('❌ Role not found:', roleName, roleError);
+        const errorMessage = `Role '${roleName}' not found`;
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
+        return { success: false, error: errorMessage };
+      }
+
+      // Check if user already has this role
+      const { data: existingRole, error: checkError } = await supabase
+        .from('user_roles')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('role_id', role.id)
+        .maybeSingle();
+
+      if (checkError) {
+        console.error('❌ Error checking existing role:', checkError);
+        const errorMessage = 'Error checking existing role assignment';
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
+        return { success: false, error: errorMessage };
+      }
+
+      if (existingRole) {
+        console.log('ℹ️ User already has this role assigned');
+        toast({
+          title: "Role Already Assigned",
+          description: "User already has this role assigned",
+        });
+        return { success: true };
+      }
+
+      // Assign the role
+      const { data: insertData, error: assignError } = await supabase
+        .from('user_roles')
+        .insert({
+          user_id: userId,
+          role_id: role.id
+        })
+        .select();
+
+      if (assignError) {
+        console.error('❌ Error assigning role:', assignError);
+        toast({
+          title: "Error",
+          description: assignError.message,
+          variant: "destructive",
+        });
+        return { success: false, error: assignError.message };
+      }
+
+      console.log('✅ Role assignment successful! Insert result:', insertData);
+      toast({
+        title: "Role Assigned",
+        description: `Successfully assigned ${roleName} role to user`,
+      });
+      return { success: true };
+    } catch (error: any) {
+      console.error('💥 Exception in role assignment:', error);
+      const errorMessage = "An unexpected error occurred during role assignment";
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      return { success: false, error: errorMessage };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     signIn,
     signUp,
+    assignUserRole,
     loading
   };
 };
