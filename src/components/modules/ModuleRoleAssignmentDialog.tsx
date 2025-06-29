@@ -18,6 +18,9 @@ import {
 } from '@/components/ui/select';
 import { useModules } from '@/hooks/useModules';
 import { Shield } from 'lucide-react';
+import { Database } from '@/integrations/supabase/types';
+
+type UserRole = Database['public']['Enums']['user_role'];
 
 interface ModuleRoleAssignmentDialogProps {
   open: boolean;
@@ -25,12 +28,13 @@ interface ModuleRoleAssignmentDialogProps {
   selectedModule?: any;
 }
 
-const roles = [
+const roles: Array<{ value: UserRole; label: string }> = [
   { value: 'superAdmin', label: 'Super Admin' },
-  { value: 'admin', label: 'Admin' },
+  { value: 'healthcareProvider', label: 'Healthcare Provider' },
+  { value: 'nurse', label: 'Nurse' },
+  { value: 'caseManager', label: 'Case Manager' },
   { value: 'onboardingTeam', label: 'Onboarding Team' },
-  { value: 'clinician', label: 'Clinician' },
-  { value: 'user', label: 'User' }
+  { value: 'patientCaregiver', label: 'Patient Caregiver' }
 ];
 
 const ModuleRoleAssignmentDialog: React.FC<ModuleRoleAssignmentDialogProps> = ({
@@ -38,7 +42,7 @@ const ModuleRoleAssignmentDialog: React.FC<ModuleRoleAssignmentDialogProps> = ({
   onOpenChange,
   selectedModule
 }) => {
-  const [selectedRole, setSelectedRole] = useState<string>('');
+  const [selectedRole, setSelectedRole] = useState<UserRole | ''>('');
   
   const { assignModuleToRole, isAssigningToRole } = useModules();
 
@@ -55,11 +59,15 @@ const ModuleRoleAssignmentDialog: React.FC<ModuleRoleAssignmentDialogProps> = ({
     if (!selectedModule || !selectedRole) return;
     
     await assignModuleToRole({
-      roleId: selectedRole,
+      roleId: selectedRole as UserRole,
       moduleId: selectedModule.id
     });
     
     onOpenChange(false);
+  };
+
+  const handleRoleChange = (value: string) => {
+    setSelectedRole(value as UserRole);
   };
 
   return (
@@ -80,7 +88,7 @@ const ModuleRoleAssignmentDialog: React.FC<ModuleRoleAssignmentDialogProps> = ({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="role">Role</Label>
-            <Select value={selectedRole} onValueChange={setSelectedRole}>
+            <Select value={selectedRole} onValueChange={handleRoleChange}>
               <SelectTrigger>
                 <SelectValue placeholder="Select a role" />
               </SelectTrigger>
