@@ -25,6 +25,7 @@ export { default as BulkRoleAssignment } from './BulkRoleAssignment';
 export { default as UserAccessSummary } from './UserAccessSummary';
 export { default as UserRolesBadgeGroup } from './UserRolesBadgeGroup';
 export { default as UserModuleAccessIndicator } from './UserModuleAccessIndicator';
+export { default as UserModuleAccess } from './UserModuleAccess';
 
 // Specialized components
 export { default as UserPermissionsBadge } from './UserPermissionsBadge';

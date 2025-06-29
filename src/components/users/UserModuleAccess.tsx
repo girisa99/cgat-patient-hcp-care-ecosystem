@@ -2,7 +2,7 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Shield, User, Users, Loader2 } from 'lucide-react';
+import { Shield, User, Users, Loader2, AlertCircle } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -20,27 +20,57 @@ interface UserEffectiveModule {
 }
 
 const UserModuleAccess: React.FC<UserModuleAccessProps> = ({ userId, userName }) => {
-  const { data: userModules, isLoading } = useQuery({
+  const { data: userModules, isLoading, error } = useQuery({
     queryKey: ['user-detailed-modules', userId],
     queryFn: async (): Promise<UserEffectiveModule[]> => {
       console.log('🔍 Fetching detailed modules for user:', userId, userName);
       
-      const { data, error } = await supabase
+      // First try the RPC function
+      const { data: rpcData, error: rpcError } = await supabase
         .rpc('get_user_effective_modules', { check_user_id: userId });
 
-      if (error) {
-        console.error('❌ Error fetching user modules:', error);
-        throw error;
+      if (rpcError) {
+        console.warn('⚠️ RPC function failed, trying direct query:', rpcError);
+        
+        // Fallback to direct query
+        const { data: directData, error: directError } = await supabase
+          .from('user_module_assignments')
+          .select(`
+            module_id,
+            modules!inner(
+              id,
+              name,
+              description
+            )
+          `)
+          .eq('user_id', userId)
+          .eq('is_active', true);
+
+        if (directError) {
+          console.error('❌ Direct query also failed:', directError);
+          throw directError;
+        }
+
+        // Transform direct query results to match expected format
+        const transformedData = directData?.map(assignment => ({
+          module_id: assignment.module_id,
+          module_name: assignment.modules?.name || 'Unknown Module',
+          module_description: assignment.modules?.description || '',
+          access_source: 'direct',
+          expires_at: null
+        })) || [];
+
+        console.log('✅ Direct query succeeded:', transformedData.length, 'modules for', userName);
+        return transformedData;
       }
 
-      console.log('✅ Detailed user modules fetched:', data?.length || 0, 'modules for', userName);
-      console.log('📋 Detailed modules:', data?.map(m => `${m.module_name} (${m.access_source})`));
-      
-      return data || [];
+      console.log('✅ RPC function succeeded:', rpcData?.length || 0, 'modules for', userName);
+      return rpcData || [];
     },
     enabled: !!userId,
     staleTime: 30000,
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: false,
+    retry: 1
   });
 
   if (isLoading) {
@@ -62,6 +92,25 @@ const UserModuleAccess: React.FC<UserModuleAccessProps> = ({ userId, userName })
     );
   }
 
+  if (error) {
+    return (
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-sm">
+            <Shield className="h-4 w-4" />
+            Module Access for {userName}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center p-4 text-red-600">
+            <AlertCircle className="h-5 w-5 mr-2" />
+            <span className="text-sm">Failed to load module information</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   const modules = userModules || [];
 
   return (
@@ -74,10 +123,10 @@ const UserModuleAccess: React.FC<UserModuleAccessProps> = ({ userId, userName })
       </CardHeader>
       <CardContent>
         {modules.length > 0 ? (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {modules.map((module) => (
               <div key={module.module_id} className="flex items-center justify-between p-3 border rounded-lg bg-gray-50">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   <Shield className="h-4 w-4 text-blue-600" />
                   <div>
                     <span className="font-medium text-sm">{module.module_name}</span>
