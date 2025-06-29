@@ -1,4 +1,3 @@
-
 /**
  * PRIMARY HOOK: useUsers
  * 
@@ -116,9 +115,9 @@ export const useUsers = () => {
     },
     retry: 2,
     retryDelay: 1000,
-    staleTime: 30000, // Reduced cache time for more frequent updates
+    staleTime: 30000,
     gcTime: 300000,
-    refetchOnWindowFocus: true, // Refetch when window regains focus
+    refetchOnWindowFocus: true,
   });
 
   const createUserMutation = useMutation({
@@ -233,10 +232,13 @@ export const useUsers = () => {
     onSuccess: () => {
       console.log('🔄 Invalidating users cache after role assignment...');
       queryClient.invalidateQueries({ queryKey: ['users'] });
-      // Force a refetch to ensure fresh data
+      
+      // Force a hard refresh of the data
       setTimeout(() => {
+        console.log('🔄 Force refreshing user data...');
         refetch();
-      }, 500);
+      }, 1000);
+      
       toast({
         title: "Role Assigned",
         description: "User role has been updated successfully.",

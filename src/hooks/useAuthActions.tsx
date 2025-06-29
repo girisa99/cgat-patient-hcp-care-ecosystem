@@ -17,17 +17,20 @@ export const useAuthActions = () => {
 
   const signIn = async (email: string, password: string): Promise<AuthResult> => {
     setLoading(true);
+    console.log('🔑 Starting sign in process for:', email);
     
     try {
       const result = await AuthStateManager.secureSignIn(email, password);
       
       if (!result.success) {
+        console.error('❌ Sign in failed:', result.error);
         toast({
           title: "Authentication Failed",
           description: result.error || "Invalid email or password",
           variant: "destructive",
         });
       } else {
+        console.log('✅ Sign in successful');
         toast({
           title: "Welcome Back",
           description: "Successfully signed in to Healthcare Portal",
@@ -51,14 +54,13 @@ export const useAuthActions = () => {
 
   const signUp = async (email: string, password: string, role: UserRole): Promise<AuthResult> => {
     setLoading(true);
+    console.log('🚀 Starting signup process for role:', role);
     
     try {
       // Clean up first
       await AuthStateManager.cleanupAuthState();
       
       const redirectUrl = `${window.location.origin}/`;
-      
-      console.log('🚀 Starting signup process for role:', role);
       
       const { supabase } = await import('@/integrations/supabase/client');
       const { data, error } = await supabase.auth.signUp({
@@ -94,6 +96,12 @@ export const useAuthActions = () => {
       if (data.user) {
         console.log('✅ User created:', data.user.id);
         
+        // Automatically assign the selected role after successful signup
+        if (data.user.email_confirmed_at) {
+          console.log('📝 Email confirmed, assigning role:', role);
+          await assignUserRole(data.user.id, role);
+        }
+        
         toast({
           title: "Registration Successful",
           description: !data.user.email_confirmed_at 
@@ -118,11 +126,9 @@ export const useAuthActions = () => {
   };
 
   const assignUserRole = async (userId: string, roleName: UserRole): Promise<AuthResult> => {
-    setLoading(true);
+    console.log('🔄 Assigning role:', roleName, 'to user:', userId);
     
     try {
-      console.log('🔄 Assigning role:', roleName, 'to user:', userId);
-      
       const { supabase } = await import('@/integrations/supabase/client');
       
       // Get role ID
@@ -142,6 +148,8 @@ export const useAuthActions = () => {
         });
         return { success: false, error: errorMessage };
       }
+
+      console.log('✅ Found role ID:', role.id, 'for role:', roleName);
 
       // Check if user already has this role
       const { data: existingRole, error: checkError } = await supabase
@@ -164,10 +172,6 @@ export const useAuthActions = () => {
 
       if (existingRole) {
         console.log('ℹ️ User already has this role assigned');
-        toast({
-          title: "Role Already Assigned",
-          description: "User already has this role assigned",
-        });
         return { success: true };
       }
 
@@ -205,6 +209,46 @@ export const useAuthActions = () => {
         variant: "destructive",
       });
       return { success: false, error: errorMessage };
+    }
+  };
+
+  const signOut = async (): Promise<AuthResult> => {
+    setLoading(true);
+    console.log('🚪 Starting sign out process');
+    
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error('❌ Sign out error:', error);
+        toast({
+          title: "Error",
+          description: "Failed to sign out properly",
+          variant: "destructive",
+        });
+        return { success: false, error: error.message };
+      }
+      
+      // Clean up auth state
+      await AuthStateManager.cleanupAuthState();
+      
+      console.log('✅ Sign out successful');
+      toast({
+        title: "Signed Out",
+        description: "You have been successfully signed out",
+      });
+      
+      return { success: true };
+    } catch (error: any) {
+      console.error('💥 Exception during sign out:', error);
+      const errorMessage = "An unexpected error occurred during sign out";
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      return { success: false, error: errorMessage };
     } finally {
       setLoading(false);
     }
@@ -213,6 +257,7 @@ export const useAuthActions = () => {
   return {
     signIn,
     signUp,
+    signOut,
     assignUserRole,
     loading
   };

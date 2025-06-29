@@ -6,7 +6,8 @@ import { HealthcareLabel } from '@/components/ui/healthcare-label';
 import { HealthcareCard, HealthcareCardContent, HealthcareCardDescription, HealthcareCardHeader, HealthcareCardTitle } from '@/components/ui/healthcare-card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuthActions } from '@/hooks/useAuthActions';
-import { Eye, EyeOff, Mail, Lock, UserPlus, AlertCircle } from 'lucide-react';
+import { useAuthContext } from '@/components/auth/AuthProvider';
+import { Eye, EyeOff, Mail, Lock, UserPlus, AlertCircle, LogOut } from 'lucide-react';
 import { Database } from '@/integrations/supabase/types';
 
 type UserRole = Database['public']['Enums']['user_role'];
@@ -18,7 +19,8 @@ const LoginForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const [authError, setAuthError] = useState<string>('');
-  const { signIn, signUp, loading } = useAuthActions();
+  const { signIn, signUp, signOut, loading } = useAuthActions();
+  const { user } = useAuthContext();
 
   const roleOptions = [
     { value: 'superAdmin' as UserRole, label: 'Super Administrator' },
@@ -29,7 +31,6 @@ const LoginForm = () => {
     { value: 'patientCaregiver' as UserRole, label: 'Patient/Caregiver' }
   ];
 
-  // Updated test credentials with stronger passwords
   const testCredentials = [
     { email: 'superadmin@geniecellgene.com', password: 'SuperAdmin123!', role: 'Super Admin' },
     { email: 'onboarding@geniecellgene.com', password: 'Onboarding123!', role: 'Onboarding Team' },
@@ -62,7 +63,6 @@ const LoginForm = () => {
           console.error('🚨 Sign in failed:', errorMsg);
           setAuthError(errorMsg);
           
-          // Add helpful guidance for test accounts
           if (errorMsg.includes('Invalid login credentials')) {
             setAuthError(
               'Invalid email or password. Please check your credentials, or try creating a new account if this is your first time.'
@@ -76,10 +76,22 @@ const LoginForm = () => {
     }
   };
 
+  const handleSignOut = async () => {
+    console.log('🚪 Sign out requested');
+    const result = await signOut();
+    if (result.success) {
+      // Clear form
+      setEmail('');
+      setPassword('');
+      setSelectedRole('');
+      setAuthError('');
+    }
+  };
+
   const fillTestCredentials = (creds: typeof testCredentials[0]) => {
     setEmail(creds.email);
     setPassword(creds.password);
-    setSelectedRole('onboardingTeam' as UserRole); // Default to onboarding team for test
+    setSelectedRole('onboardingTeam' as UserRole);
     setIsSignUp(false);
     setAuthError('');
   };
@@ -87,11 +99,50 @@ const LoginForm = () => {
   const createTestAccount = async () => {
     console.log('🔧 Creating test onboarding account...');
     setEmail('onboarding@geniecellgene.com');
-    setPassword('Onboarding123!'); // Strong password that meets requirements
+    setPassword('Onboarding123!');
     setSelectedRole('onboardingTeam' as UserRole);
     setIsSignUp(true);
     setAuthError('');
   };
+
+  // If user is already logged in, show sign out option
+  if (user) {
+    return (
+      <div className="space-y-6">
+        <HealthcareCard className="w-full max-w-md mx-auto shadow-lg">
+          <HealthcareCardHeader className="text-center">
+            <HealthcareCardTitle className="text-2xl">
+              Welcome Back
+            </HealthcareCardTitle>
+            <HealthcareCardDescription>
+              You are currently signed in as {user.email}
+            </HealthcareCardDescription>
+          </HealthcareCardHeader>
+          
+          <HealthcareCardContent>
+            <HealthcareButton 
+              onClick={handleSignOut}
+              className="w-full" 
+              disabled={loading}
+              size="lg"
+            >
+              {loading ? (
+                <div className="flex items-center space-x-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <span>Signing Out...</span>
+                </div>
+              ) : (
+                <>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sign Out
+                </>
+              )}
+            </HealthcareButton>
+          </HealthcareCardContent>
+        </HealthcareCard>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -241,7 +292,6 @@ const LoginForm = () => {
             </button>
           ))}
           
-          {/* Special button to create test account */}
           <div className="pt-2 border-t border-blue-200">
             <button
               onClick={createTestAccount}
