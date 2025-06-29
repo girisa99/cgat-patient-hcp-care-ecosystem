@@ -21,8 +21,8 @@ import {
   PermissionManagementDialog
 } from '@/components/users';
 
-// Import the ResendVerificationDialog
-import ResendVerificationDialog from '@/components/users/ResendVerificationDialog';
+// Import the enhanced dialog instead
+import EnhancedResendVerificationDialog from '@/components/users/EnhancedResendVerificationDialog';
 
 const Users = () => {
   const { toast } = useToast();
@@ -280,7 +280,7 @@ const Users = () => {
           userName={selectedUserName}
         />
 
-        <ResendVerificationDialog
+        <EnhancedResendVerificationDialog
           open={resendVerificationOpen}
           onOpenChange={setResendVerificationOpen}
           userEmail={selectedUserEmail}

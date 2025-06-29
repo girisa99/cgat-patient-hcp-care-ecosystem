@@ -130,9 +130,14 @@ export const useAuthActions = () => {
     
     try {
       const { supabase } = await import('@/integrations/supabase/client');
+      
+      // Clean email input
+      const cleanEmail = email.trim().toLowerCase();
+      console.log('🧹 Cleaned email:', cleanEmail);
+      
       const { error } = await supabase.auth.resend({
         type: 'signup',
-        email: email,
+        email: cleanEmail,
         options: {
           emailRedirectTo: `${window.location.origin}/`
         }
@@ -142,14 +147,26 @@ export const useAuthActions = () => {
         console.error('❌ Resend verification error:', error);
         let errorMessage = error.message;
         
-        if (error.message.includes('Email rate limit exceeded')) {
+        // Enhanced error handling for email validation issues
+        if (error.message.includes('Email address') && error.message.includes('invalid')) {
+          errorMessage = `The email address "${cleanEmail}" was rejected by the email service. This could be due to:
+          
+• Corporate email domain restrictions
+• Email address format issues  
+• Blacklisted domain or address
+• Email service configuration problems
+
+Try using a personal email address (Gmail, Yahoo, Outlook) or contact your administrator.`;
+        } else if (error.message.includes('Email rate limit exceeded')) {
           errorMessage = 'Email rate limit exceeded. Please wait a few minutes before trying again.';
         } else if (error.message.includes('User not found')) {
           errorMessage = 'No account found with this email address.';
+        } else if (error.message.includes('Email not confirmed')) {
+          errorMessage = 'This email address is not yet confirmed. We\'ll send a new verification email.';
         }
         
         toast({
-          title: "Verification Email Failed",
+          title: "Email Verification Failed",
           description: errorMessage,
           variant: "destructive",
         });
@@ -159,13 +176,19 @@ export const useAuthActions = () => {
       console.log('✅ Verification email resent successfully');
       toast({
         title: "Verification Email Sent",
-        description: `Verification email has been resent to ${email}. Please check your inbox.`,
+        description: `Verification email has been sent to ${cleanEmail}. Please check your inbox and spam folder.`,
       });
       
       return { success: true };
     } catch (error: any) {
       console.error('💥 Exception during resend verification:', error);
-      const errorMessage = "An unexpected error occurred while resending verification email";
+      let errorMessage = "An unexpected error occurred while resending verification email";
+      
+      // Handle network or other errors
+      if (error.message) {
+        errorMessage = `Email sending failed: ${error.message}`;
+      }
+      
       toast({
         title: "Error",
         description: errorMessage,
