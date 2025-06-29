@@ -29,8 +29,7 @@ const CleanIssuesTab: React.FC<CleanIssuesTabProps> = ({
     categorizedIssues,
     isLoading,
     error,
-    refreshIssues,
-    syncActiveIssues
+    refreshIssues
   } = useDatabaseIssues();
 
   const topicIcons = {
@@ -92,23 +91,6 @@ const CleanIssuesTab: React.FC<CleanIssuesTabProps> = ({
     }
   };
 
-  const handleManualSync = async () => {
-    try {
-      await syncActiveIssues();
-      toast({
-        title: "🔄 System Synced",
-        description: "Active issues have been synced with the database",
-        variant: "default",
-      });
-    } catch (error) {
-      toast({
-        title: "❌ Sync Failed",
-        description: "Failed to sync with database",
-        variant: "destructive",
-      });
-    }
-  };
-
   if (error) {
     return (
       <div className="space-y-6">
@@ -142,11 +124,8 @@ const CleanIssuesTab: React.FC<CleanIssuesTabProps> = ({
             </p>
           </div>
           <div className="flex gap-2">
-            <Button onClick={handleManualSync} variant="outline" size="sm" disabled={isLoading}>
-              {isLoading ? 'Syncing...' : 'Sync Issues'}
-            </Button>
             <Button onClick={refreshIssues} variant="outline" size="sm" disabled={isLoading}>
-              {isLoading ? 'Loading...' : 'Refresh'}
+              {isLoading ? 'Loading...' : 'Refresh Data'}
             </Button>
           </div>
         </div>
