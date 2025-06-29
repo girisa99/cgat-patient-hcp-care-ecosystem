@@ -1,4 +1,3 @@
-
 /**
  * Comprehensive System Verifier
  * Integrates with automation coordinator for complete system verification
@@ -11,9 +10,11 @@ import { performDatabaseSync } from '../dailyProgressTracker';
 export interface ComprehensiveVerificationResult {
   verificationId: string;
   timestamp: string;
+  verificationTimestamp: string; // Added for UI compatibility
   systemHealth: RealSystemHealthResult;
   syncVerification: SyncVerificationResult;
   overallHealthScore: number;
+  overallStatus: 'healthy' | 'warning' | 'critical'; // Added for UI compatibility
   syncStatus: 'in_sync' | 'partial_sync' | 'out_of_sync';
   criticalIssuesFound: number;
   totalActiveIssues: number;
@@ -56,16 +57,19 @@ export class ComprehensiveSystemVerifier {
       // Step 4: Determine sync status
       const syncStatus = this.determineSyncStatus(syncVerification);
 
-      // Step 5: Generate comprehensive recommendations
+      // Step 5: Determine overall status
+      const overallStatus = this.determineOverallStatus(systemHealth, overallHealthScore);
+
+      // Step 6: Generate comprehensive recommendations
       const recommendations = this.generateComprehensiveRecommendations(
         systemHealth,
         syncVerification
       );
 
-      // Step 6: Generate quick fixes
+      // Step 7: Generate quick fixes
       const quickFixes = this.generateQuickFixes(systemHealth, syncVerification);
 
-      // Step 7: Sync to database tables if this is automated
+      // Step 8: Sync to database tables if this is automated
       let syncCompleted = false;
       if (triggeredBy === 'scheduled') {
         console.log('💾 Syncing results to database tables (automated cycle)...');
@@ -79,13 +83,16 @@ export class ComprehensiveSystemVerifier {
       }
 
       const executionTime = Date.now() - startTime;
+      const timestamp = new Date().toISOString();
 
       const result: ComprehensiveVerificationResult = {
         verificationId,
-        timestamp: new Date().toISOString(),
+        timestamp,
+        verificationTimestamp: timestamp,
         systemHealth,
         syncVerification,
         overallHealthScore,
+        overallStatus,
         syncStatus,
         criticalIssuesFound: systemHealth.criticalIssuesCount,
         totalActiveIssues: systemHealth.totalActiveIssues,
@@ -130,6 +137,22 @@ export class ComprehensiveSystemVerifier {
     }
 
     return Math.max(0, Math.min(100, Math.round(score)));
+  }
+
+  /**
+   * Determine overall status from health score and system health
+   */
+  private static determineOverallStatus(
+    systemHealth: RealSystemHealthResult, 
+    healthScore: number
+  ): 'healthy' | 'warning' | 'critical' {
+    if (systemHealth.criticalIssuesCount > 0) {
+      return 'critical';
+    }
+    if (healthScore >= 80 && systemHealth.isSystemStable) {
+      return 'healthy';
+    }
+    return 'warning';
   }
 
   /**

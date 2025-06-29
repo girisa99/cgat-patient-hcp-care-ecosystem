@@ -1,4 +1,3 @@
-
 /**
  * Comprehensive Verification Hook
  * Integrates with automation coordinator for consistent results
@@ -6,7 +5,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { ComprehensiveSystemVerifier, ComprehensiveVerificationResult } from '@/utils/verification/ComprehensiveSystemVerifier';
-import { comprehensiveAutomationCoordinator, AutomationExecutionResult } from '@/utils/verification/ComprehensiveAutomationCoordinator';
+import { ComprehensiveAutomationCoordinator, AutomationExecutionResult } from '@/utils/verification/ComprehensiveAutomationCoordinator';
 import { useToast } from './use-toast';
 
 export const useComprehensiveVerification = () => {
@@ -34,7 +33,7 @@ export const useComprehensiveVerification = () => {
     };
 
     loadLatestResults();
-    setAutomationStatus(comprehensiveAutomationCoordinator.getAutomationStatus());
+    setAutomationStatus(ComprehensiveAutomationCoordinator.getAutomationStatus());
 
     // Listen for automation cycle completions
     const handleAutomationComplete = (event: CustomEvent) => {
@@ -43,7 +42,7 @@ export const useComprehensiveVerification = () => {
       if (results.comprehensiveResults) {
         setVerificationResult(results.comprehensiveResults);
       }
-      setAutomationStatus(comprehensiveAutomationCoordinator.getAutomationStatus());
+      setAutomationStatus(ComprehensiveAutomationCoordinator.getAutomationStatus());
       
       toast({
         title: "🤖 Automated Verification Complete",
@@ -128,9 +127,9 @@ export const useComprehensiveVerification = () => {
         variant: "default",
       });
 
-      const result = await comprehensiveAutomationCoordinator.triggerManualExecution();
+      const result = await ComprehensiveAutomationCoordinator.triggerManualExecution();
       setVerificationResult(result.comprehensiveResults);
-      setAutomationStatus(comprehensiveAutomationCoordinator.getAutomationStatus());
+      setAutomationStatus(ComprehensiveAutomationCoordinator.getAutomationStatus());
 
       toast({
         title: "🤖 Automation Cycle Complete",
