@@ -175,15 +175,15 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
           <div className="space-y-2">
             <Label htmlFor="facility">Facility</Label>
             <Select
-              value={formData.facility_id}
-              onValueChange={(value) => handleInputChange('facility_id', value)}
+              value={formData.facility_id || undefined}
+              onValueChange={(value) => handleInputChange('facility_id', value || '')}
               disabled={facilitiesLoading}
             >
               <SelectTrigger>
                 <SelectValue placeholder={facilitiesLoading ? "Loading facilities..." : "Select a facility"} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No facility</SelectItem>
+                <SelectItem value="no-facility">No facility</SelectItem>
                 {facilities?.map((facility) => (
                   <SelectItem key={facility.id} value={facility.id}>
                     {facility.name}
