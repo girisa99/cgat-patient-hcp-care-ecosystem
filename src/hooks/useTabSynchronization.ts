@@ -1,29 +1,51 @@
 
 /**
  * Tab Synchronization Hook
- * Types and utilities for tab synchronization
+ * Provides synchronized data across verification tabs
  */
 
+import { useState, useCallback } from 'react';
 import { Issue } from '@/types/issuesTypes';
 
 export interface TabSyncData {
-  activeIssues: Issue[];
-  fixedIssues: any[];
   totalActiveCount: number;
   totalFixedCount: number;
   criticalCount: number;
   highCount: number;
   mediumCount: number;
   securityIssuesCount: number;
-  backendFixedCount: number;
   realFixesApplied: number;
+  backendFixedCount: number;
   lastUpdateTime: Date;
+  activeIssues: Issue[];
+  fixedIssues: any[];
 }
 
 export const useTabSynchronization = () => {
-  // Mock implementation
+  const [syncData, setSyncData] = useState<TabSyncData>({
+    totalActiveCount: 0,
+    totalFixedCount: 0,
+    criticalCount: 0,
+    highCount: 0,
+    mediumCount: 0,
+    securityIssuesCount: 0,
+    realFixesApplied: 0,
+    backendFixedCount: 0,
+    lastUpdateTime: new Date(),
+    activeIssues: [],
+    fixedIssues: []
+  });
+
+  const updateSyncData = useCallback((newData: Partial<TabSyncData>) => {
+    setSyncData(prev => ({
+      ...prev,
+      ...newData,
+      lastUpdateTime: new Date()
+    }));
+  }, []);
+
   return {
-    syncData: null,
-    updateSync: () => {}
+    syncData,
+    updateSyncData
   };
 };

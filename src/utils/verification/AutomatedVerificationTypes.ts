@@ -85,13 +85,22 @@ export interface AutomatedVerificationConfig {
 
 // Template Generator Types
 export interface TemplateGenerationRequest {
-  templateType: 'component' | 'hook' | 'page' | 'utility';
+  templateType: 'component' | 'hook' | 'page' | 'utility' | 'module' | 'api_integration';
   name: string;
   specifications?: Record<string, any>;
+  moduleName?: string;
+  tableName?: string;
+  generateTests?: boolean;
+  generateDocumentation?: boolean;
 }
 
 export interface TemplateGenerationResult {
   success: boolean;
   generatedFiles: string[];
   errors: string[];
+  filesGenerated?: string[];
+  templateUsed?: string;
+  codeGenerated?: string;
+  testsGenerated?: boolean;
+  documentationGenerated?: boolean;
 }
