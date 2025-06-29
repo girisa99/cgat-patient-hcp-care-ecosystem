@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Shield, Search, Calendar, User, Database, Loader2, AlertCircle } from 'lucide-react';
+import { Shield, Search, Calendar, User, Database, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { AuditLogEntry } from './AuditLogEntry';
 
 interface AuditLogListProps {
@@ -20,13 +20,15 @@ interface AuditLogListProps {
   isLoading?: boolean;
   error?: any;
   filters?: any;
+  onRefresh?: () => void;
 }
 
 export const AuditLogList: React.FC<AuditLogListProps> = ({ 
   auditLogs = [], 
   isLoading = false, 
   error = null,
-  filters = {} 
+  filters = {},
+  onRefresh
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedAction, setSelectedAction] = useState('all');
@@ -84,10 +86,17 @@ export const AuditLogList: React.FC<AuditLogListProps> = ({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Shield className="h-5 w-5" />
-          Audit Log ({filteredLogs.length} entries)
-          {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+        <CardTitle className="flex items-center gap-2 justify-between">
+          <div className="flex items-center gap-2">
+            <Shield className="h-5 w-5" />
+            Audit Log ({filteredLogs.length} entries)
+            {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+          </div>
+          {onRefresh && (
+            <Button variant="outline" size="sm" onClick={onRefresh} disabled={isLoading}>
+              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            </Button>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent>

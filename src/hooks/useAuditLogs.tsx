@@ -1,6 +1,8 @@
 
 import { useQuery } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface AuditLogFilters {
   user_id?: string;
@@ -39,6 +41,39 @@ interface AuditLogResponse {
 }
 
 export const useAuditLogs = (filters?: AuditLogFilters) => {
+  const queryClient = useQueryClient();
+
+  // Set up real-time subscription for audit logs
+  useEffect(() => {
+    console.log('🔄 Setting up real-time subscription for audit logs...');
+    
+    const channel = supabase
+      .channel('audit_logs_realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'audit_logs'
+        },
+        (payload) => {
+          console.log('📡 Real-time audit log event received:', payload);
+          
+          // Invalidate and refetch audit logs when changes occur
+          queryClient.invalidateQueries({ queryKey: ['audit-logs'] });
+          queryClient.invalidateQueries({ queryKey: ['audit-log-stats'] });
+        }
+      )
+      .subscribe((status) => {
+        console.log('📡 Audit logs real-time subscription status:', status);
+      });
+
+    return () => {
+      console.log('🔄 Cleaning up audit logs real-time subscription');
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
   return useQuery({
     queryKey: ['audit-logs', filters],
     queryFn: async (): Promise<AuditLogResponse> => {
@@ -70,6 +105,33 @@ export const useAuditLogs = (filters?: AuditLogFilters) => {
 };
 
 export const useAuditLogStats = () => {
+  const queryClient = useQueryClient();
+
+  // Set up real-time subscription for stats updates
+  useEffect(() => {
+    console.log('📊 Setting up real-time subscription for audit log stats...');
+    
+    const channel = supabase
+      .channel('audit_stats_realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'audit_logs'
+        },
+        () => {
+          console.log('📊 Audit log changed, updating stats...');
+          queryClient.invalidateQueries({ queryKey: ['audit-log-stats'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
   return useQuery({
     queryKey: ['audit-log-stats'],
     queryFn: async () => {

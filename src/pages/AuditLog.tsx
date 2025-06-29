@@ -13,7 +13,7 @@ import { useAuditLogs, useAuditLogStats } from '@/hooks/useAuditLogs';
 const AuditLog = () => {
   const [filters, setFilters] = useState({});
   
-  // Use REAL audit logs data, not mock data
+  // Use REAL audit logs data with real-time updates
   const { data: auditLogsResponse, isLoading, error, refetch } = useAuditLogs(filters);
   const { data: stats } = useAuditLogStats();
 
@@ -39,6 +39,7 @@ const AuditLog = () => {
   };
 
   const handleRefresh = () => {
+    console.log('🔄 Manual refresh triggered');
     refetch();
   };
 
@@ -97,7 +98,7 @@ const AuditLog = () => {
             onClearFilters={handleClearFilters}
           />
 
-          {/* Audit Logs List - NO MOCK DATA, REAL DATA ONLY */}
+          {/* Audit Logs List with Real-time Updates */}
           <Card className="shadow-sm">
             <CardContent className="p-0">
               <AuditLogList 
@@ -105,6 +106,7 @@ const AuditLog = () => {
                 isLoading={isLoading}
                 error={error}
                 filters={filters}
+                onRefresh={handleRefresh}
               />
             </CardContent>
           </Card>
