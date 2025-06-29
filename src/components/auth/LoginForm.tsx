@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { HealthcareButton } from '@/components/ui/healthcare-button';
 import { HealthcareInput } from '@/components/ui/healthcare-input';
@@ -7,8 +6,9 @@ import { HealthcareCard, HealthcareCardContent, HealthcareCardDescription, Healt
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuthActions } from '@/hooks/useAuthActions';
 import { useAuthContext } from '@/components/auth/AuthProvider';
-import { Eye, EyeOff, Mail, Lock, UserPlus, AlertCircle, LogOut } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, UserPlus, AlertCircle, LogOut, Users } from 'lucide-react';
 import { Database } from '@/integrations/supabase/types';
+import { useToast } from '@/hooks/use-toast';
 
 type UserRole = Database['public']['Enums']['user_role'];
 
@@ -19,8 +19,10 @@ const LoginForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const [authError, setAuthError] = useState<string>('');
+  const [isCreatingTestAccounts, setIsCreatingTestAccounts] = useState(false);
   const { signIn, signUp, signOut, loading } = useAuthActions();
   const { user } = useAuthContext();
+  const { toast } = useToast();
 
   const roleOptions = [
     { value: 'superAdmin' as UserRole, label: 'Super Administrator' },
@@ -32,10 +34,10 @@ const LoginForm = () => {
   ];
 
   const testCredentials = [
-    { email: 'superadmin@geniecellgene.com', password: 'SuperAdmin123!', role: 'Super Admin' },
-    { email: 'onboarding@geniecellgene.com', password: 'Onboarding123!', role: 'Onboarding Team' },
-    { email: 'provider@geniecellgene.com', password: 'Provider123!', role: 'Healthcare Provider' },
-    { email: 'patient@geniecellgene.com', password: 'Patient123!', role: 'Patient/Caregiver' }
+    { email: 'superadmin@geniecellgene.com', password: 'SuperAdmin123!', role: 'superAdmin' as UserRole },
+    { email: 'onboarding@geniecellgene.com', password: 'Onboarding123!', role: 'onboardingTeam' as UserRole },
+    { email: 'provider@geniecellgene.com', password: 'Provider123!', role: 'healthcareProvider' as UserRole },
+    { email: 'patient@geniecellgene.com', password: 'Patient123!', role: 'patientCaregiver' as UserRole }
   ];
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -65,7 +67,7 @@ const LoginForm = () => {
           
           if (errorMsg.includes('Invalid login credentials')) {
             setAuthError(
-              'Invalid email or password. Please check your credentials, or try creating a new account if this is your first time.'
+              'Invalid email or password. The account may not exist. Try creating the test accounts first, or create a new account.'
             );
           }
         }
@@ -91,18 +93,59 @@ const LoginForm = () => {
   const fillTestCredentials = (creds: typeof testCredentials[0]) => {
     setEmail(creds.email);
     setPassword(creds.password);
-    setSelectedRole('onboardingTeam' as UserRole);
+    setSelectedRole(creds.role);
     setIsSignUp(false);
     setAuthError('');
   };
 
-  const createTestAccount = async () => {
-    console.log('🔧 Creating test onboarding account...');
-    setEmail('onboarding@geniecellgene.com');
-    setPassword('Onboarding123!');
-    setSelectedRole('onboardingTeam' as UserRole);
-    setIsSignUp(true);
+  const createAllTestAccounts = async () => {
+    setIsCreatingTestAccounts(true);
     setAuthError('');
+    
+    console.log('🔧 Creating all test accounts...');
+    let successCount = 0;
+    let failCount = 0;
+    
+    for (const creds of testCredentials) {
+      try {
+        console.log(`Creating account: ${creds.email}`);
+        const result = await signUp(creds.email, creds.password, creds.role);
+        
+        if (result.success) {
+          successCount++;
+          console.log(`✅ Created: ${creds.email}`);
+        } else {
+          failCount++;
+          console.log(`❌ Failed to create: ${creds.email} - ${result.error}`);
+          
+          // If account already exists, that's not really a failure
+          if (result.error?.includes('already registered')) {
+            successCount++;
+            failCount--;
+            console.log(`ℹ️ Account already exists: ${creds.email}`);
+          }
+        }
+        
+        // Small delay between account creations
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      } catch (error) {
+        failCount++;
+        console.error(`💥 Error creating ${creds.email}:`, error);
+      }
+    }
+    
+    setIsCreatingTestAccounts(false);
+    
+    if (successCount > 0) {
+      toast({
+        title: "Test Accounts Ready",
+        description: `${successCount} test accounts are now available for login.`,
+      });
+    }
+    
+    if (failCount > 0) {
+      setAuthError(`Created ${successCount} accounts, but ${failCount} failed. Check console for details.`);
+    }
   };
 
   // If user is already logged in, show sign out option
@@ -277,30 +320,42 @@ const LoginForm = () => {
         <HealthcareCardHeader>
           <HealthcareCardTitle className="text-lg text-blue-800">Test Credentials</HealthcareCardTitle>
           <HealthcareCardDescription className="text-blue-600">
-            Click to auto-fill credentials for testing
+            Click to auto-fill credentials or create test accounts
           </HealthcareCardDescription>
         </HealthcareCardHeader>
-        <HealthcareCardContent className="space-y-2">
+        <HealthcareCardContent className="space-y-3">
+          {/* Create All Test Accounts Button */}
+          <div className="mb-4">
+            <HealthcareButton
+              onClick={createAllTestAccounts}
+              disabled={isCreatingTestAccounts}
+              className="w-full bg-green-600 hover:bg-green-700"
+              size="sm"
+            >
+              {isCreatingTestAccounts ? (
+                <div className="flex items-center space-x-2">
+                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                  <span>Creating Test Accounts...</span>
+                </div>
+              ) : (
+                <>
+                  <Users className="h-4 w-4 mr-2" />
+                  Create All Test Accounts
+                </>
+              )}
+            </HealthcareButton>
+          </div>
+
           {testCredentials.map((creds, index) => (
             <button
               key={index}
               onClick={() => fillTestCredentials(creds)}
               className="w-full text-left p-2 rounded border border-blue-200 hover:bg-blue-100 transition-colors text-sm"
             >
-              <div className="font-medium text-blue-800">{creds.role}</div>
+              <div className="font-medium text-blue-800">{roleOptions.find(r => r.value === creds.role)?.label}</div>
               <div className="text-blue-600">{creds.email}</div>
             </button>
           ))}
-          
-          <div className="pt-2 border-t border-blue-200">
-            <button
-              onClick={createTestAccount}
-              className="w-full text-center p-2 rounded bg-green-100 border border-green-200 hover:bg-green-200 transition-colors text-sm"
-            >
-              <div className="font-medium text-green-800">Create Test Onboarding Account</div>
-              <div className="text-green-600 text-xs">Use strong password: Onboarding123!</div>
-            </button>
-          </div>
         </HealthcareCardContent>
       </HealthcareCard>
     </div>
