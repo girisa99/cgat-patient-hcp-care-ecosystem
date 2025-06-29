@@ -147,6 +147,7 @@ export const useModules = () => {
     }
   });
 
+  // FIXED: Role assignment now properly looks up role UUID by name
   const assignModuleToRoleMutation = useMutation({
     mutationFn: async ({ 
       roleId, 
@@ -155,17 +156,51 @@ export const useModules = () => {
       roleId: string; 
       moduleId: string; 
     }) => {
-      console.log('🔄 Assigning module to role:', { roleId, moduleId });
+      console.log('🔄 Assigning module to role - looking up role ID for:', roleId);
       
+      // First, get the actual UUID for the role by name
+      const { data: role, error: roleError } = await supabase
+        .from('roles')
+        .select('id')
+        .eq('name', roleId)
+        .single();
+
+      if (roleError || !role) {
+        console.error('❌ Role not found:', roleId, roleError);
+        throw new Error(`Role '${roleId}' not found`);
+      }
+
+      console.log('✅ Found role UUID:', role.id, 'for role name:', roleId);
+
+      // Check if assignment already exists
+      const { data: existingAssignment } = await supabase
+        .from('role_module_assignments')
+        .select('id')
+        .eq('role_id', role.id)
+        .eq('module_id', moduleId)
+        .eq('is_active', true)
+        .single();
+
+      if (existingAssignment) {
+        console.log('ℹ️ Role already has access to this module');
+        return { success: true };
+      }
+
+      // Create the assignment with the actual role UUID
       const { error } = await supabase
         .from('role_module_assignments')
         .insert({
-          role_id: roleId,
+          role_id: role.id, // Use the UUID, not the name
           module_id: moduleId,
           is_active: true
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error creating role module assignment:', error);
+        throw error;
+      }
+
+      console.log('✅ Successfully assigned module to role');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-effective-modules'] });
