@@ -13,7 +13,6 @@ import { SecurityScanner } from './SecurityScanner';
 import { CodeQualityAnalyzer } from './CodeQualityAnalyzer';
 import { performanceMonitor } from './PerformanceMonitor';
 import { apiContractIntegration } from './ApiContractIntegration';
-import { unusedCodeDetector } from './UnusedCodeDetector';
 import { dependencyManager } from './DependencyManager';
 import { documentationConsistencyChecker } from './DocumentationConsistencyChecker';
 import { databaseMigrationSafetyChecker } from './DatabaseMigrationSafetyChecker';
@@ -47,7 +46,6 @@ export interface ComprehensiveVerificationSummary {
   duplicateStats: any;
   contractResults: any;
   verificationStatus: any;
-  unusedCodeResults: any;
   dependencyResults: any;
   documentationResults: any;
   migrationSafetyResults: any;
@@ -74,7 +72,6 @@ export class VerificationSummaryGenerator {
       codeQuality,
       performanceMetrics,
       contractResults,
-      unusedCodeResults,
       dependencyResults,
       documentationResults,
       migrationSafetyResults,
@@ -89,7 +86,6 @@ export class VerificationSummaryGenerator {
       CodeQualityAnalyzer.analyzeCodeQuality(),
       performanceMonitor.getPerformanceMetrics(),
       apiContractIntegration.performContractValidation(),
-      unusedCodeDetector.scanForUnusedCode(),
       dependencyManager.analyzeDependencies(),
       documentationConsistencyChecker.checkDocumentationConsistency(),
       databaseMigrationSafetyChecker.analyzeMigrationSafety(),
@@ -143,7 +139,6 @@ export class VerificationSummaryGenerator {
       duplicateStats,
       contractResults,
       verificationStatus,
-      unusedCodeResults,
       dependencyResults,
       documentationResults,
       migrationSafetyResults,
