@@ -32,7 +32,7 @@ export const useApiIntegrationStatus = () => {
 
       // Check API Integration Registry
       try {
-        const { data: registryData, error: registryError } = await supabase
+        const { error: registryError } = await supabase
           .from('api_integration_registry')
           .select('count', { count: 'exact', head: true });
 
@@ -49,7 +49,7 @@ export const useApiIntegrationStatus = () => {
 
       // Check External API Registry
       try {
-        const { data: externalData, error: externalError } = await supabase
+        const { error: externalError } = await supabase
           .from('external_api_registry')
           .select('count', { count: 'exact', head: true });
 
@@ -66,7 +66,7 @@ export const useApiIntegrationStatus = () => {
 
       // Check API Usage Analytics
       try {
-        const { data: usageData, error: usageError } = await supabase
+        const { error: usageError } = await supabase
           .from('api_usage_analytics')
           .select('count', { count: 'exact', head: true });
 
@@ -83,7 +83,7 @@ export const useApiIntegrationStatus = () => {
 
       // Check API Lifecycle Events
       try {
-        const { data: lifecycleData, error: lifecycleError } = await supabase
+        const { error: lifecycleError } = await supabase
           .from('api_lifecycle_events')
           .select('count', { count: 'exact', head: true });
 

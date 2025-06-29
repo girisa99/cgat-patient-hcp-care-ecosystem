@@ -27,7 +27,7 @@ export const useComprehensiveSystemStatus = () => {
   const [systemStatus, setSystemStatus] = useState<ComprehensiveSystemStatus | null>(null);
   const [isChecking, setIsChecking] = useState(false);
 
-  const checkModuleStatus = async (tableName: string, moduleName: string): Promise<SystemModuleStatus> => {
+  const checkModuleStatus = async (tableName: 'profiles' | 'facilities' | 'modules' | 'api_integration_registry' | 'active_issues', moduleName: string): Promise<SystemModuleStatus> => {
     const issues: string[] = [];
     let isWorking = true;
     let tableConnected = false;
@@ -44,15 +44,37 @@ export const useComprehensiveSystemStatus = () => {
         tableConnected = true;
         dataCount = count || 0;
         
-        // Check for recent activity
-        const { data: recentData } = await supabase
-          .from(tableName)
-          .select('created_at, updated_at')
-          .order('created_at', { ascending: false })
-          .limit(1);
+        // Check for recent activity based on table structure
+        if (tableName === 'profiles' || tableName === 'facilities' || tableName === 'modules') {
+          const { data: recentData } = await supabase
+            .from(tableName)
+            .select('created_at, updated_at')
+            .order('created_at', { ascending: false })
+            .limit(1);
 
-        if (recentData && recentData.length > 0) {
-          lastActivity = recentData[0].created_at || recentData[0].updated_at;
+          if (recentData && recentData.length > 0) {
+            lastActivity = recentData[0].created_at || recentData[0].updated_at;
+          }
+        } else if (tableName === 'api_integration_registry') {
+          const { data: recentData } = await supabase
+            .from(tableName)
+            .select('created_at, updated_at')
+            .order('created_at', { ascending: false })
+            .limit(1);
+
+          if (recentData && recentData.length > 0) {
+            lastActivity = recentData[0].created_at || recentData[0].updated_at;
+          }
+        } else if (tableName === 'active_issues') {
+          const { data: recentData } = await supabase
+            .from(tableName)
+            .select('first_detected, last_seen')
+            .order('first_detected', { ascending: false })
+            .limit(1);
+
+          if (recentData && recentData.length > 0) {
+            lastActivity = recentData[0].first_detected || recentData[0].last_seen;
+          }
         }
       } else {
         isWorking = false;

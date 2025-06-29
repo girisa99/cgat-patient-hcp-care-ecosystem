@@ -55,17 +55,17 @@ const ApiIntegrationsManager = () => {
   };
 
   if (isLoading || isLoadingPublished) {
-    return <LoadingState message="Loading API integrations..." />;
+    return <LoadingState title="API Integrations" description="Loading API integrations..." />;
   }
 
   if (error) {
-    return <ErrorState message={error} />;
+    return <ErrorState title="API Integrations" error={{ message: error }} />;
   }
 
   if (selectedIntegration) {
     return (
       <IntegrationDetailView
-        integration={selectedIntegration}
+        integrationId={selectedIntegration.id}
         onBack={() => setSelectedIntegration(null)}
         onTestEndpoint={handleTestEndpoint}
       />
@@ -76,22 +76,22 @@ const ApiIntegrationsManager = () => {
     <div className="space-y-6">
       <ApiIntegrationsStats
         totalIntegrations={integrations.length}
-        internalApis={internalApis.length}
-        externalApis={externalApis.length}
-        publishedApis={publishedApis.length}
+        internalApis={internalApis?.length || 0}
+        externalApis={externalApis?.length || 0}
+        publishedApis={publishedApis?.length || 0}
       />
 
       <ApiIntegrationsTabs
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        onTabChange={setActiveTab}
         searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
+        onSearchChange={setSearchTerm}
         integrations={integrations}
-        internalApis={internalApis}
-        externalApis={externalApis}
-        publishedApis={publishedApis}
+        internalApis={internalApis || []}
+        externalApis={externalApis || []}
+        publishedApis={publishedApis || []}
         createDialogOpen={createDialogOpen}
-        setCreateDialogOpen={setCreateDialogOpen}
+        onCreateDialogChange={setCreateDialogOpen}
         onDownloadCollection={handleDownloadCollection}
         onViewDetails={handleViewDetails}
         onViewDocumentation={handleViewDocumentation}
