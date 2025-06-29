@@ -9,39 +9,29 @@ export const useUserDeactivation = () => {
 
   const deactivateUserMutation = useMutation({
     mutationFn: async ({ userId, reason }: { userId: string; reason: string }) => {
-      console.log('🔄 Deactivating user:', userId, 'Reason:', reason);
+      console.log('🔄 Deactivating user via edge function:', userId, 'Reason:', reason);
       
       try {
-        // First, delete the user from auth.users (this cascades to related tables)
-        const { error: deleteError } = await supabase.auth.admin.deleteUser(userId);
-        
-        if (deleteError) {
-          console.error('❌ Error deleting user from auth:', deleteError);
-          throw new Error(`Failed to deactivate user: ${deleteError.message}`);
-        }
-
-        // Log the deactivation action to audit_logs
-        const { error: auditError } = await supabase
-          .from('audit_logs')
-          .insert({
+        // Use the manage-user-profiles edge function to handle deactivation
+        const { data, error } = await supabase.functions.invoke('manage-user-profiles', {
+          body: {
+            action: 'deactivate',
             user_id: userId,
-            action: 'PATIENT_DEACTIVATED',
-            table_name: 'auth.users',
-            record_id: userId,
-            old_values: null,
-            new_values: {
-              deactivation_reason: reason,
-              deactivated_at: new Date().toISOString(),
-              deactivated_by: (await supabase.auth.getUser()).data.user?.id
-            }
-          });
+            deactivation_reason: reason
+          }
+        });
 
-        if (auditError) {
-          console.warn('⚠️ Audit log insertion failed, but user was deactivated:', auditError);
-          // Don't throw error here as the main action succeeded
+        if (error) {
+          console.error('❌ Error from deactivation edge function:', error);
+          throw new Error(`Deactivation failed: ${error.message}`);
         }
 
-        console.log('✅ User deactivated successfully');
+        if (!data.success) {
+          console.error('❌ Deactivation failed:', data.error);
+          throw new Error(data.error || 'Deactivation failed');
+        }
+
+        console.log('✅ User deactivated successfully via edge function');
         return { success: true };
         
       } catch (error: any) {

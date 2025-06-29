@@ -1,7 +1,7 @@
 
 import type { ProfileRequest } from './types.ts';
 import { updateProfile, getProfile } from './profile-operations.ts';
-import { listAllUsers } from './user-list-operations.ts';
+import { listAllUsers, deactivateUser } from './user-list-operations.ts';
 import { checkPermissions, checkListPermissions } from './auth.ts';
 
 export async function handleProfileRequest(
@@ -9,7 +9,7 @@ export async function handleProfileRequest(
   user: any,
   request: ProfileRequest
 ) {
-  const { action, user_id, profile_data } = request;
+  const { action, user_id, profile_data, deactivation_reason } = request;
 
   let result;
   switch (action) {
@@ -47,6 +47,24 @@ export async function handleProfileRequest(
       }
 
       result = await listAllUsers(supabase);
+      break;
+
+    case 'deactivate':
+      if (!user_id) {
+        throw new Error('User ID is required for deactivation');
+      }
+
+      // Check if user has permission to deactivate users
+      const { hasPermission: canDeactivate, error: deactivateError } = await checkListPermissions(
+        supabase, 
+        user.id
+      );
+      
+      if (!canDeactivate) {
+        throw new Error(deactivateError || 'Insufficient permissions to deactivate users');
+      }
+
+      result = await deactivateUser(supabase, user_id, deactivation_reason || '', user.id);
       break;
 
     default:
