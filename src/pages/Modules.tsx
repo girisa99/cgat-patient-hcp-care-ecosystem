@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { PageContainer } from '@/components/layout/PageContainer';
@@ -22,8 +21,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { useAdminRealtime } from '@/hooks/use-admin-realtime';
 
 const Modules = () => {
+  // Enable real-time updates for modules area
+  useAdminRealtime({
+    enableNotifications: true,
+    areas: ['dashboard', 'rbac', 'userManagement', 'apiIntegration']
+  });
+
   const { modules, isLoading } = useModules();
   const { toast } = useToast();
   const [selectedModule, setSelectedModule] = useState(null);

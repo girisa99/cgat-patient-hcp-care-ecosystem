@@ -29,6 +29,13 @@ import AssignModuleDialog from '@/components/users/AssignModuleDialog';
 
 const Users = () => {
   const { toast } = useToast();
+  
+  // Enable real-time updates for user management area
+  useAdminRealtime({
+    enableNotifications: true,
+    areas: ['userManagement', 'rbac', 'facility']
+  });
+
   const { 
     users, 
     isLoading, 
@@ -200,7 +207,7 @@ const Users = () => {
     <MainLayout>
       <PageContainer
         title="Users Management"
-        subtitle="Manage system users, roles, and permissions across the healthcare platform"
+        subtitle="Manage system users, roles, and permissions with real-time updates across the healthcare platform"
         headerActions={headerActions}
       >
         <div className="space-y-6">
