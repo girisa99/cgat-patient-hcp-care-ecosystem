@@ -2,6 +2,7 @@
 /**
  * Real Verification Orchestrator
  * Coordinates real database validation and system health checks
+ * STORES ALL RESULTS IN DATABASE - NO LOCAL STORAGE
  */
 
 import { RealDatabaseValidator, RealDatabaseValidationResult } from './RealDatabaseValidator';
@@ -21,10 +22,11 @@ export interface RealSystemHealthResult {
 export class RealVerificationOrchestrator {
   /**
    * Perform comprehensive real system validation
+   * ALL RESULTS ARE SYNCED TO DATABASE TABLES
    */
   static async performRealSystemValidation(): Promise<RealSystemHealthResult> {
     console.log('🚀 REAL SYSTEM VALIDATION STARTING...');
-    console.log('🔍 Validating live database and system health');
+    console.log('🔍 Validating live database and syncing to database tables');
 
     const validationStart = new Date().toISOString();
 
@@ -49,8 +51,9 @@ export class RealVerificationOrchestrator {
       // Generate quick fixes
       const quickFixes = this.generateQuickFixes(databaseHealth);
 
-      // Store validation results in database
-      await this.storeValidationResults(databaseHealth);
+      // CRITICAL: Store ALL validation results in database tables
+      console.log('💾 Step 2: Syncing ALL results to database tables...');
+      await this.syncAllResultsToDatabase(databaseHealth);
 
       const result: RealSystemHealthResult = {
         overallHealthScore,
@@ -67,6 +70,7 @@ export class RealVerificationOrchestrator {
       console.log(`📊 Overall Health Score: ${overallHealthScore}/100`);
       console.log(`🗄️ Database Issues: ${totalActiveIssues} (${criticalIssuesCount} critical)`);
       console.log(`🎯 System Status: ${isSystemStable ? 'STABLE' : 'NEEDS ATTENTION'}`);
+      console.log(`💾 ALL RESULTS SYNCED TO DATABASE TABLES`);
 
       return result;
 
@@ -149,47 +153,92 @@ export class RealVerificationOrchestrator {
   }
 
   /**
-   * Store validation results in the database
+   * Sync ALL validation results to database tables
+   * This replaces local storage completely
    */
-  private static async storeValidationResults(databaseHealth: RealDatabaseValidationResult): Promise<void> {
+  private static async syncAllResultsToDatabase(databaseHealth: RealDatabaseValidationResult): Promise<void> {
     try {
+      console.log('🔄 Clearing existing active issues from database...');
+      
       // Clear existing active issues
-      await supabase
+      const { error: deleteError } = await supabase
         .from('active_issues')
         .delete()
         .eq('status', 'active');
 
-      // Insert new issues from real validation
+      if (deleteError) {
+        console.error('Error clearing active issues:', deleteError);
+        throw deleteError;
+      }
+
+      console.log('✅ Cleared existing active issues');
+
+      // Insert ALL new issues from real validation with proper categorization
       if (databaseHealth.issues.length > 0) {
+        console.log(`📝 Inserting ${databaseHealth.issues.length} real issues into database...`);
+        
         const issuesData = databaseHealth.issues.map(issue => ({
           issue_type: issue.type,
           issue_message: issue.description,
-          issue_source: `Database - ${issue.table}`,
+          issue_source: `Database - ${issue.table}${issue.column ? ` (${issue.column})` : ''}`,
           issue_severity: issue.severity,
-          category: 'Database',
+          category: this.categorizeIssue(issue),
           status: 'active'
         }));
 
-        const { error } = await supabase
+        const { error: insertError } = await supabase
           .from('active_issues')
           .insert(issuesData);
 
-        if (error) {
-          console.error('Error storing validation results:', error);
-        } else {
-          console.log(`✅ Stored ${issuesData.length} real issues in database`);
+        if (insertError) {
+          console.error('Error inserting validation results:', insertError);
+          throw insertError;
         }
+
+        console.log(`✅ Successfully synced ${issuesData.length} real issues to database`);
+        console.log('📊 Issue categories:', this.getIssueCategorySummary(issuesData));
+      } else {
+        console.log('✅ No issues found - database is healthy');
       }
+
     } catch (error) {
-      console.error('Error storing validation results:', error);
+      console.error('❌ Error syncing validation results to database:', error);
+      throw error;
     }
+  }
+
+  /**
+   * Categorize issues based on type and source
+   */
+  private static categorizeIssue(issue: any): string {
+    if (issue.type === 'missing_rls' || issue.type === 'security_gap') {
+      return 'Security';
+    }
+    if (issue.type === 'schema_inconsistency' || issue.type === 'constraint_violation') {
+      return 'Database';
+    }
+    if (issue.type === 'missing_index') {
+      return 'Performance';
+    }
+    return 'System';
+  }
+
+  /**
+   * Get summary of issue categories for logging
+   */
+  private static getIssueCategorySummary(issues: any[]): Record<string, number> {
+    const summary: Record<string, number> = {};
+    issues.forEach(issue => {
+      summary[issue.category] = (summary[issue.category] || 0) + 1;
+    });
+    return summary;
   }
 
   /**
    * Generate comprehensive validation report
    */
   static generateSystemReport(result: RealSystemHealthResult): string {
-    let report = '🏥 REAL SYSTEM HEALTH REPORT\n';
+    let report = '🏥 REAL SYSTEM HEALTH REPORT (DATABASE SYNCED)\n';
     report += '='.repeat(60) + '\n\n';
 
     report += `📊 SYSTEM OVERVIEW:\n`;
@@ -197,7 +246,8 @@ export class RealVerificationOrchestrator {
     report += `   System Status: ${result.isSystemStable ? '✅ STABLE' : '⚠️ NEEDS ATTENTION'}\n`;
     report += `   Total Active Issues: ${result.totalActiveIssues}\n`;
     report += `   Critical Issues: ${result.criticalIssuesCount}\n`;
-    report += `   Last Validation: ${result.lastValidationTime}\n\n`;
+    report += `   Last Validation: ${result.lastValidationTime}\n`;
+    report += `   Data Source: 🗄️ REAL DATABASE TABLES (NO MOCK DATA)\n\n`;
 
     // Include database validation report
     report += RealDatabaseValidator.generateValidationReport(result.databaseHealth);
