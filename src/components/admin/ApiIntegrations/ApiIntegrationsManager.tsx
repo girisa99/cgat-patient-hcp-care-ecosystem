@@ -7,14 +7,13 @@ import { LoadingState } from '../shared/LoadingState';
 import { ErrorState } from '../shared/ErrorState';
 import { ApiIntegrationsStats } from './ApiIntegrationsStats';
 import { ApiIntegrationsTabs } from './ApiIntegrationsTabs';
+import { ApiIntegration } from '@/utils/api/ApiIntegrationTypes';
 
 const ApiIntegrationsManager = () => {
   const { 
     integrations, 
     isLoading, 
     error, 
-    selectedIntegration, 
-    setSelectedIntegration,
     internalApis,
     externalApis,
     downloadPostmanCollection,
@@ -25,13 +24,16 @@ const ApiIntegrationsManager = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedIntegration, setSelectedIntegration] = useState<ApiIntegration | null>(null);
 
   const handleDownloadCollection = (integrationId: string) => {
-    downloadPostmanCollection(integrationId);
+    if (downloadPostmanCollection) {
+      downloadPostmanCollection(integrationId);
+    }
   };
 
   const handleViewDetails = (integrationId: string) => {
-    const integration = integrations.find(i => i.id === integrationId);
+    const integration = integrations?.find(i => i.id === integrationId);
     if (integration) {
       setSelectedIntegration(integration);
     }
@@ -46,9 +48,11 @@ const ApiIntegrationsManager = () => {
     navigator.clipboard.writeText(url);
   };
 
-  const handleTestEndpoint = async (endpointId: string) => {
+  const handleTestEndpoint = async (integrationId: string, endpointId: string) => {
     try {
-      await testEndpoint(endpointId);
+      if (testEndpoint) {
+        await testEndpoint(integrationId, endpointId);
+      }
     } catch (error) {
       console.error('Error testing endpoint:', error);
     }
@@ -59,7 +63,7 @@ const ApiIntegrationsManager = () => {
   }
 
   if (error) {
-    return <ErrorState title="API Integrations" error={{ message: error }} />;
+    return <ErrorState title="API Integrations" error={{ message: typeof error === 'string' ? error : error.message }} />;
   }
 
   if (selectedIntegration) {
@@ -67,7 +71,6 @@ const ApiIntegrationsManager = () => {
       <IntegrationDetailView
         integrationId={selectedIntegration.id}
         onBack={() => setSelectedIntegration(null)}
-        onTestEndpoint={handleTestEndpoint}
       />
     );
   }
@@ -75,7 +78,7 @@ const ApiIntegrationsManager = () => {
   return (
     <div className="space-y-6">
       <ApiIntegrationsStats
-        totalIntegrations={integrations.length}
+        totalIntegrations={integrations?.length || 0}
         internalApis={internalApis?.length || 0}
         externalApis={externalApis?.length || 0}
         publishedApis={publishedApis?.length || 0}
@@ -85,8 +88,7 @@ const ApiIntegrationsManager = () => {
         activeTab={activeTab}
         onTabChange={setActiveTab}
         searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-        integrations={integrations}
+        integrations={integrations || []}
         internalApis={internalApis || []}
         externalApis={externalApis || []}
         publishedApis={publishedApis || []}
@@ -97,6 +99,7 @@ const ApiIntegrationsManager = () => {
         onViewDocumentation={handleViewDocumentation}
         onCopyUrl={handleCopyUrl}
         onTestEndpoint={handleTestEndpoint}
+        onClose={() => setSelectedIntegration(null)}
       />
     </div>
   );

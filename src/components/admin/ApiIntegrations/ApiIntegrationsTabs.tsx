@@ -12,32 +12,36 @@ import { TestingTabContent } from './tabs/TestingTabContent';
 interface ApiIntegrationsTabsProps {
   activeTab: string;
   onTabChange: (value: string) => void;
+  searchTerm: string;
+  integrations: any[];
   internalApis: any[];
   externalApis: any[];
-  searchTerm: string;
+  publishedApis: any[];
   createDialogOpen: boolean;
-  setCreateDialogOpen: (open: boolean) => void;
+  onCreateDialogChange: (open: boolean) => void;
   onDownloadCollection: (id: string) => void;
   onViewDetails: (id: string) => void;
   onViewDocumentation: (id: string) => void;
   onCopyUrl: (url: string) => void;
-  integrations: any[];
+  onTestEndpoint: (integrationId: string, endpointId: string) => void;
   onClose: () => void;
 }
 
 export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = ({
   activeTab,
   onTabChange,
+  searchTerm,
+  integrations,
   internalApis,
   externalApis,
-  searchTerm,
+  publishedApis,
   createDialogOpen,
-  setCreateDialogOpen,
+  onCreateDialogChange,
   onDownloadCollection,
   onViewDetails,
   onViewDocumentation,
   onCopyUrl,
-  integrations,
+  onTestEndpoint,
   onClose
 }) => {
   return (
@@ -61,7 +65,7 @@ export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = ({
           internalApis={internalApis}
           searchTerm={searchTerm}
           createDialogOpen={createDialogOpen}
-          setCreateDialogOpen={setCreateDialogOpen}
+          setCreateDialogOpen={onCreateDialogChange}
           onDownloadCollection={onDownloadCollection}
           onViewDetails={onViewDetails}
           onViewDocumentation={onViewDocumentation}
@@ -74,7 +78,7 @@ export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = ({
           externalApis={externalApis}
           searchTerm={searchTerm}
           createDialogOpen={createDialogOpen}
-          setCreateDialogOpen={setCreateDialogOpen}
+          setCreateDialogOpen={onCreateDialogChange}
           onDownloadCollection={onDownloadCollection}
           onViewDetails={onViewDetails}
           onViewDocumentation={onViewDocumentation}
