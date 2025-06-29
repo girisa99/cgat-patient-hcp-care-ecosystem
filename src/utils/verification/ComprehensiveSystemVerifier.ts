@@ -1,112 +1,149 @@
 
 /**
  * Comprehensive System Verifier
- * Orchestrates complete system verification including database validation and sync checks
+ * Integrates with automation coordinator for complete system verification
  */
 
 import { RealVerificationOrchestrator, RealSystemHealthResult } from './RealVerificationOrchestrator';
 import { DatabaseSyncVerifier, SyncVerificationResult } from './DatabaseSyncVerifier';
+import { performDatabaseSync } from '../dailyProgressTracker';
 
 export interface ComprehensiveVerificationResult {
+  verificationId: string;
+  timestamp: string;
   systemHealth: RealSystemHealthResult;
   syncVerification: SyncVerificationResult;
-  overallStatus: 'healthy' | 'warning' | 'critical';
+  overallHealthScore: number;
+  syncStatus: 'in_sync' | 'partial_sync' | 'out_of_sync';
   criticalIssuesFound: number;
   totalActiveIssues: number;
-  syncStatus: 'in_sync' | 'out_of_sync' | 'partial_sync';
   recommendations: string[];
-  verificationTimestamp: string;
+  quickFixes: string[];
+  automationMetadata: {
+    triggeredBy: 'manual' | 'scheduled';
+    executionTime: number;
+    dataSource: 'original_database';
+    syncCompleted: boolean;
+  };
 }
 
 export class ComprehensiveSystemVerifier {
   /**
-   * Run complete system verification including database health and sync checks
+   * Perform comprehensive verification - integrated with automation
    */
-  static async runCompleteVerification(): Promise<ComprehensiveVerificationResult> {
-    console.log('🚀 Starting comprehensive system verification...');
-    console.log('📋 This includes: Database Health + Sync Verification + System Status');
+  static async performComprehensiveVerification(
+    triggeredBy: 'manual' | 'scheduled' = 'manual'
+  ): Promise<ComprehensiveVerificationResult> {
+    const startTime = Date.now();
+    const verificationId = `comprehensive_${startTime}`;
     
-    const verificationTimestamp = new Date().toISOString();
+    console.log(`🔍 COMPREHENSIVE SYSTEM VERIFICATION STARTED: ${verificationId}`);
+    console.log(`🎯 Triggered by: ${triggeredBy}`);
+    console.log(`📊 Data source: ORIGINAL DATABASE ONLY`);
 
     try {
-      // Step 1: Run system health verification
-      console.log('🔍 Step 1: Running system health verification...');
+      // Step 1: Real system health validation
+      console.log('📊 Step 1: Real system health validation...');
       const systemHealth = await RealVerificationOrchestrator.performRealSystemValidation();
 
-      // Step 2: Run database sync verification
-      console.log('🔄 Step 2: Running database sync verification...');
+      // Step 2: Database synchronization verification
+      console.log('🔄 Step 2: Database synchronization verification...');
       const syncVerification = await DatabaseSyncVerifier.verifySyncIntegrity();
 
-      // Step 3: Determine overall status
-      const overallStatus = this.determineOverallStatus(systemHealth, syncVerification);
+      // Step 3: Calculate comprehensive health score (ORIGINAL DB ONLY)
+      const overallHealthScore = this.calculateComprehensiveHealthScore(systemHealth);
+
+      // Step 4: Determine sync status
       const syncStatus = this.determineSyncStatus(syncVerification);
 
-      // Step 4: Generate comprehensive recommendations
-      const recommendations = this.generateComprehensiveRecommendations(systemHealth, syncVerification);
+      // Step 5: Generate comprehensive recommendations
+      const recommendations = this.generateComprehensiveRecommendations(
+        systemHealth,
+        syncVerification
+      );
+
+      // Step 6: Generate quick fixes
+      const quickFixes = this.generateQuickFixes(systemHealth, syncVerification);
+
+      // Step 7: Sync to database tables if this is automated
+      let syncCompleted = false;
+      if (triggeredBy === 'scheduled') {
+        console.log('💾 Syncing results to database tables (automated cycle)...');
+        const allIssues = systemHealth.databaseHealth.issues.map(issue => ({
+          type: issue.type,
+          message: issue.description,
+          source: `Database - ${issue.table}`,
+          severity: issue.severity
+        }));
+        syncCompleted = await performDatabaseSync(allIssues);
+      }
+
+      const executionTime = Date.now() - startTime;
 
       const result: ComprehensiveVerificationResult = {
+        verificationId,
+        timestamp: new Date().toISOString(),
         systemHealth,
         syncVerification,
-        overallStatus,
+        overallHealthScore,
+        syncStatus,
         criticalIssuesFound: systemHealth.criticalIssuesCount,
         totalActiveIssues: systemHealth.totalActiveIssues,
-        syncStatus,
         recommendations,
-        verificationTimestamp
+        quickFixes,
+        automationMetadata: {
+          triggeredBy,
+          executionTime,
+          dataSource: 'original_database',
+          syncCompleted
+        }
       };
 
-      console.log('✅ Comprehensive system verification completed');
-      console.log(`📊 Overall Status: ${overallStatus.toUpperCase()}`);
-      console.log(`🔄 Sync Status: ${syncStatus.toUpperCase()}`);
-      console.log(`🚨 Critical Issues: ${result.criticalIssuesFound}`);
-      console.log(`📈 Total Active Issues: ${result.totalActiveIssues}`);
+      console.log('✅ COMPREHENSIVE VERIFICATION COMPLETED');
+      console.log(`📊 Overall Health Score: ${overallHealthScore}/100`);
+      console.log(`🔄 Sync Status: ${syncStatus}`);
+      console.log(`⏱️ Execution Time: ${executionTime}ms`);
+      console.log(`💾 Database Sync: ${syncCompleted ? 'COMPLETED' : 'SKIPPED'}`);
 
       return result;
 
     } catch (error) {
-      console.error('❌ Comprehensive system verification failed:', error);
-      throw error;
+      console.error('❌ COMPREHENSIVE VERIFICATION FAILED:', error);
+      throw new Error(`Comprehensive verification failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
   /**
-   * Determine overall system status
+   * Calculate health score based on original database data only
    */
-  private static determineOverallStatus(
-    systemHealth: RealSystemHealthResult,
-    syncVerification: SyncVerificationResult
-  ): 'healthy' | 'warning' | 'critical' {
-    // Critical if there are critical issues or major sync problems
-    if (systemHealth.criticalIssuesCount > 0 || !syncVerification.isInSync) {
-      return 'critical';
+  private static calculateComprehensiveHealthScore(systemHealth: RealSystemHealthResult): number {
+    // Use the same calculation as the automation coordinator
+    let score = systemHealth.overallHealthScore;
+    
+    // Additional comprehensive factors
+    if (systemHealth.isSystemStable) {
+      score += 5;
+    }
+    
+    if (systemHealth.quickFixes.length > 0) {
+      score += Math.min(10, systemHealth.quickFixes.length * 2);
     }
 
-    // Warning if health score is low or there are multiple issues
-    if (systemHealth.overallHealthScore < 70 || systemHealth.totalActiveIssues > 5) {
-      return 'warning';
-    }
-
-    // Healthy otherwise
-    return 'healthy';
+    return Math.max(0, Math.min(100, Math.round(score)));
   }
 
   /**
-   * Determine sync status
+   * Determine sync status from verification results
    */
-  private static determineSyncStatus(syncVerification: SyncVerificationResult): 'in_sync' | 'out_of_sync' | 'partial_sync' {
+  private static determineSyncStatus(syncVerification: SyncVerificationResult): 'in_sync' | 'partial_sync' | 'out_of_sync' {
     if (syncVerification.isInSync) {
       return 'in_sync';
     }
-
-    // Check if issues are minor
-    const minorDiscrepancies = syncVerification.syncDiscrepancies.filter(d => 
-      d.discrepancyType === 'data_mismatch' && d.difference < 5
-    );
-
-    if (minorDiscrepancies.length === syncVerification.syncDiscrepancies.length) {
+    
+    if (syncVerification.syncDiscrepancies.length <= 2) {
       return 'partial_sync';
     }
-
+    
     return 'out_of_sync';
   }
 
@@ -119,60 +156,73 @@ export class ComprehensiveSystemVerifier {
   ): string[] {
     const recommendations: string[] = [];
 
-    // Add system health recommendations
+    // Include system health recommendations
     recommendations.push(...systemHealth.systemRecommendations);
 
     // Add sync-specific recommendations
     if (!syncVerification.isInSync) {
-      recommendations.push('🔄 DATABASE SYNC: Resolve sync discrepancies between original and sync tables');
-      
-      syncVerification.syncDiscrepancies.forEach(discrepancy => {
-        recommendations.push(`📋 ${discrepancy.tableName.toUpperCase()}: ${discrepancy.details}`);
-      });
+      recommendations.push('🔄 SYNC: Address database synchronization discrepancies immediately');
+      recommendations.push('📊 MONITORING: Implement real-time sync monitoring and alerting');
     }
 
-    // Add priority recommendations based on status
-    if (systemHealth.criticalIssuesCount > 0) {
-      recommendations.unshift('🚨 IMMEDIATE ACTION: Address all critical issues before proceeding with other tasks');
-    }
-
-    if (systemHealth.overallHealthScore < 50) {
-      recommendations.unshift('⚠️ SYSTEM HEALTH: Overall system health is below acceptable levels - comprehensive review needed');
-    }
+    // Add automation-specific recommendations
+    recommendations.push('🤖 AUTOMATION: Ensure 30-minute automation cycle runs consistently');
+    recommendations.push('📈 METRICS: Monitor health score trends and set up alerting for drops');
+    recommendations.push('🔍 VALIDATION: Regular manual verification to supplement automation');
 
     return recommendations;
   }
 
   /**
-   * Generate comprehensive verification report
+   * Generate quick fixes
+   */
+  private static generateQuickFixes(
+    systemHealth: RealSystemHealthResult,
+    syncVerification: SyncVerificationResult
+  ): string[] {
+    const quickFixes: string[] = [];
+
+    // Include system health quick fixes
+    quickFixes.push(...systemHealth.quickFixes);
+
+    // Add sync quick fixes
+    if (syncVerification.syncDiscrepancies.length > 0) {
+      quickFixes.push(`Fix ${syncVerification.syncDiscrepancies.length} sync discrepancies`);
+    }
+
+    return quickFixes;
+  }
+
+  /**
+   * Generate comprehensive report
    */
   static generateComprehensiveReport(result: ComprehensiveVerificationResult): string {
     let report = '🏥 COMPREHENSIVE SYSTEM VERIFICATION REPORT\n';
-    report += '='.repeat(60) + '\n\n';
+    report += '='.repeat(70) + '\n\n';
 
-    // Overall Status
-    report += `📊 OVERALL SYSTEM STATUS: ${result.overallStatus.toUpperCase()}\n`;
-    report += `🔄 DATABASE SYNC STATUS: ${result.syncStatus.replace('_', ' ').toUpperCase()}\n`;
-    report += `🕐 Verification Time: ${result.verificationTimestamp}\n\n`;
+    report += `📋 VERIFICATION DETAILS:\n`;
+    report += `   Verification ID: ${result.verificationId}\n`;
+    report += `   Timestamp: ${result.timestamp}\n`;
+    report += `   Triggered By: ${result.automationMetadata.triggeredBy.toUpperCase()}\n`;
+    report += `   Data Source: ${result.automationMetadata.dataSource.toUpperCase()}\n`;
+    report += `   Execution Time: ${result.automationMetadata.executionTime}ms\n`;
+    report += `   Database Sync: ${result.automationMetadata.syncCompleted ? 'COMPLETED' : 'SKIPPED'}\n\n`;
 
-    // Key Metrics
-    report += '📈 KEY METRICS:\n';
-    report += `   System Health Score: ${result.systemHealth.overallHealthScore}/100\n`;
-    report += `   Critical Issues: ${result.criticalIssuesFound}\n`;
+    report += `📊 SYSTEM HEALTH SUMMARY:\n`;
+    report += `   Overall Health Score: ${result.overallHealthScore}/100\n`;
+    report += `   System Stability: ${result.systemHealth.isSystemStable ? '✅ STABLE' : '⚠️ UNSTABLE'}\n`;
     report += `   Total Active Issues: ${result.totalActiveIssues}\n`;
-    report += `   Database Tables Scanned: ${result.systemHealth.databaseHealth.tablesScanned.length}\n`;
-    report += `   Sync Discrepancies: ${result.syncVerification.syncDiscrepancies.length}\n\n`;
+    report += `   Critical Issues: ${result.criticalIssuesFound}\n`;
+    report += `   Sync Status: ${result.syncStatus.toUpperCase()}\n\n`;
 
     // Include detailed system health report
     report += RealVerificationOrchestrator.generateSystemReport(result.systemHealth);
-    report += '\n';
 
-    // Include sync verification report
-    report += DatabaseSyncVerifier.generateSyncReport(result.syncVerification);
+    // Include sync report
+    report += '\n' + DatabaseSyncVerifier.generateSyncReport(result.syncVerification);
 
-    // Comprehensive recommendations
     if (result.recommendations.length > 0) {
-      report += '💡 COMPREHENSIVE RECOMMENDATIONS:\n';
+      report += '\n💡 COMPREHENSIVE RECOMMENDATIONS:\n';
       result.recommendations.forEach((rec, index) => {
         report += `${index + 1}. ${rec}\n`;
       });

@@ -1,118 +1,222 @@
 
-import { useState, useCallback } from 'react';
+/**
+ * Comprehensive Verification Hook
+ * Integrates with automation coordinator for consistent results
+ */
+
+import { useState, useEffect, useCallback } from 'react';
 import { ComprehensiveSystemVerifier, ComprehensiveVerificationResult } from '@/utils/verification/ComprehensiveSystemVerifier';
-import { useToast } from '@/hooks/use-toast';
+import { comprehensiveAutomationCoordinator, AutomationExecutionResult } from '@/utils/verification/ComprehensiveAutomationCoordinator';
+import { useToast } from './use-toast';
 
-interface UseComprehensiveVerificationResult {
-  verificationResult: ComprehensiveVerificationResult | null;
-  isVerifying: boolean;
-  error: string | null;
-  runComprehensiveVerification: () => Promise<void>;
-  downloadComprehensiveReport: () => void;
-}
-
-export const useComprehensiveVerification = (): UseComprehensiveVerificationResult => {
+export const useComprehensiveVerification = () => {
   const [verificationResult, setVerificationResult] = useState<ComprehensiveVerificationResult | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [automationStatus, setAutomationStatus] = useState<any>(null);
   const { toast } = useToast();
 
+  // Load latest automation results on mount
+  useEffect(() => {
+    const loadLatestResults = () => {
+      try {
+        const stored = localStorage.getItem('latest_automation_results');
+        if (stored) {
+          const results = JSON.parse(stored);
+          // Convert automation results to verification result format
+          if (results.comprehensiveResults) {
+            setVerificationResult(results.comprehensiveResults);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading latest automation results:', error);
+      }
+    };
+
+    loadLatestResults();
+    setAutomationStatus(comprehensiveAutomationCoordinator.getAutomationStatus());
+
+    // Listen for automation cycle completions
+    const handleAutomationComplete = (event: CustomEvent) => {
+      console.log('🔄 Automation cycle completed, updating results...');
+      const { results } = event.detail;
+      if (results.comprehensiveResults) {
+        setVerificationResult(results.comprehensiveResults);
+      }
+      setAutomationStatus(comprehensiveAutomationCoordinator.getAutomationStatus());
+      
+      toast({
+        title: "🤖 Automated Verification Complete",
+        description: `Health Score: ${results.healthScoreCalculation.score}/100 - Based on Original Database`,
+        variant: "default",
+      });
+    };
+
+    window.addEventListener('automation-cycle-complete', handleAutomationComplete as EventListener);
+
+    return () => {
+      window.removeEventListener('automation-cycle-complete', handleAutomationComplete as EventListener);
+    };
+  }, [toast]);
+
+  /**
+   * Run comprehensive verification manually
+   */
   const runComprehensiveVerification = useCallback(async () => {
+    if (isVerifying) {
+      console.log('⏳ Verification already in progress');
+      return;
+    }
+
     setIsVerifying(true);
     setError(null);
-    
+
     try {
-      console.log('🚀 Starting comprehensive system verification...');
+      console.log('🚀 Running manual comprehensive verification...');
       
       toast({
         title: "🔍 Comprehensive Verification Started",
-        description: "Running complete system health check and sync verification...",
+        description: "Running complete system validation based on original database...",
         variant: "default",
       });
 
-      const result = await ComprehensiveSystemVerifier.runCompleteVerification();
-      
+      const result = await ComprehensiveSystemVerifier.performComprehensiveVerification('manual');
       setVerificationResult(result);
-      
-      // Show appropriate toast based on results
-      if (result.overallStatus === 'critical') {
-        toast({
-          title: "🚨 Critical Issues Found",
-          description: `${result.criticalIssuesFound} critical issues detected. Immediate action required.`,
-          variant: "destructive",
-        });
-      } else if (result.overallStatus === 'warning') {
-        toast({
-          title: "⚠️ System Needs Attention",
-          description: `${result.totalActiveIssues} issues found. Review recommendations.`,
-          variant: "default",
-        });
-      } else {
-        toast({
-          title: "✅ System Verification Complete",
-          description: `System is healthy. Health Score: ${result.systemHealth.overallHealthScore}/100`,
-          variant: "default",
-        });
-      }
 
-      // Additional sync status notification
-      if (result.syncStatus !== 'in_sync') {
-        toast({
-          title: "🔄 Sync Issues Detected",
-          description: `Database sync status: ${result.syncStatus.replace('_', ' ')}`,
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "✅ Verification Complete",
+        description: `Health Score: ${result.overallHealthScore}/100 - ${result.criticalIssuesFound} critical issues found`,
+        variant: result.criticalIssuesFound > 0 ? "destructive" : "default",
+      });
 
-      console.log('✅ Comprehensive verification completed successfully');
-      
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Comprehensive verification failed';
+      console.log('✅ Manual verification completed successfully');
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       setError(errorMessage);
       
       toast({
-        title: "❌ Comprehensive Verification Failed",
+        title: "❌ Verification Failed",
         description: errorMessage,
         variant: "destructive",
       });
-      
-      console.error('❌ Comprehensive verification failed:', err);
+
+      console.error('❌ Manual verification failed:', error);
     } finally {
       setIsVerifying(false);
     }
-  }, [toast]);
+  }, [isVerifying, toast]);
 
+  /**
+   * Trigger full automation cycle manually
+   */
+  const triggerAutomationCycle = useCallback(async () => {
+    if (isVerifying) {
+      console.log('⏳ Automation already in progress');
+      return;
+    }
+
+    setIsVerifying(true);
+    setError(null);
+
+    try {
+      console.log('🤖 Triggering manual automation cycle...');
+      
+      toast({
+        title: "🤖 30-Minute Automation Cycle Started",
+        description: "Running complete automation cycle with database sync...",
+        variant: "default",
+      });
+
+      const result = await comprehensiveAutomationCoordinator.triggerManualExecution();
+      setVerificationResult(result.comprehensiveResults);
+      setAutomationStatus(comprehensiveAutomationCoordinator.getAutomationStatus());
+
+      toast({
+        title: "🤖 Automation Cycle Complete",
+        description: `Health Score: ${result.healthScoreCalculation.score}/100 - Results synced to database`,
+        variant: result.automationStatus.allComponentsExecuted ? "default" : "destructive",
+      });
+
+      console.log('✅ Automation cycle completed successfully');
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      setError(errorMessage);
+      
+      toast({
+        title: "❌ Automation Cycle Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+
+      console.error('❌ Automation cycle failed:', error);
+    } finally {
+      setIsVerifying(false);
+    }
+  }, [isVerifying, toast]);
+
+  /**
+   * Download comprehensive report
+   */
   const downloadComprehensiveReport = useCallback(() => {
     if (!verificationResult) {
       toast({
-        title: "⚠️ No Report Available",
-        description: "Please run verification first to generate a report.",
-        variant: "default",
+        title: "⚠️ No Results Available",
+        description: "Please run a verification first",
+        variant: "destructive",
       });
       return;
     }
 
-    const report = ComprehensiveSystemVerifier.generateComprehensiveReport(verificationResult);
-    const blob = new Blob([report], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `comprehensive-system-report-${new Date().toISOString().split('T')[0]}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
+    try {
+      const report = ComprehensiveSystemVerifier.generateComprehensiveReport(verificationResult);
+      const blob = new Blob([report], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `comprehensive-verification-report-${new Date().toISOString().split('T')[0]}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
 
-    toast({
-      title: "📄 Report Downloaded",
-      description: "Comprehensive system report has been downloaded.",
-      variant: "default",
-    });
+      toast({
+        title: "📄 Report Downloaded",
+        description: "Comprehensive verification report saved successfully",
+        variant: "default",
+      });
+
+    } catch (error) {
+      console.error('Error downloading report:', error);
+      toast({
+        title: "❌ Download Failed",
+        description: "Failed to generate report",
+        variant: "destructive",
+      });
+    }
   }, [verificationResult, toast]);
 
   return {
+    // Results
     verificationResult,
+    automationStatus,
     isVerifying,
     error,
+
+    // Actions
     runComprehensiveVerification,
-    downloadComprehensiveReport
+    triggerAutomationCycle,
+    downloadComprehensiveReport,
+
+    // Status helpers
+    hasResults: !!verificationResult,
+    healthScore: verificationResult?.overallHealthScore || 0,
+    criticalIssues: verificationResult?.criticalIssuesFound || 0,
+    totalIssues: verificationResult?.totalActiveIssues || 0,
+    isSystemStable: verificationResult?.systemHealth.isSystemStable || false,
+    syncStatus: verificationResult?.syncStatus || 'unknown',
+    lastVerification: verificationResult?.timestamp || null,
+    basedOnOriginalDB: verificationResult?.automationMetadata.dataSource === 'original_database'
   };
 };
