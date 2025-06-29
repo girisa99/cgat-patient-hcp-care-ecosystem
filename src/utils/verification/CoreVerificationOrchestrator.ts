@@ -19,3 +19,6 @@ export class CoreVerificationOrchestrator {
     };
   }
 }
+
+// Export instance for compatibility
+export const coreVerificationOrchestrator = CoreVerificationOrchestrator;

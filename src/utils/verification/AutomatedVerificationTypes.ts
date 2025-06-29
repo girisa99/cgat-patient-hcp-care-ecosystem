@@ -1,36 +1,13 @@
 
 /**
  * Automated Verification Types
- * Common types for verification system
+ * Type definitions for the verification system
  */
 
-export interface VerificationConfig {
-  enabled: boolean;
-  interval: number;
-  autoFix: boolean;
-  enableDatabaseValidation?: boolean;
-  enableSchemaValidation?: boolean;
-  enablePerformanceMonitoring?: boolean;
-  enableSecurityScanning?: boolean;
-  enableCodeQualityAnalysis?: boolean;
-}
-
-export interface AutomatedVerificationConfig {
-  enableDatabaseValidation: boolean;
-  enableSchemaValidation: boolean;
-  enablePerformanceMonitoring: boolean;
-  enableSecurityScanning: boolean;
-  enableCodeQualityAnalysis: boolean;
-  enableAutoSQLGeneration?: boolean;
-  autoFix: boolean;
-  interval: number;
-}
-
-export interface VerificationResult {
-  success: boolean;
-  issues: string[];
-  fixes: string[];
-  timestamp: string;
+export interface VerificationRequest {
+  componentType: 'hook' | 'component' | 'module' | 'template';
+  moduleName?: string;
+  description?: string;
 }
 
 export interface ValidationResult {
@@ -41,11 +18,13 @@ export interface ValidationResult {
 }
 
 export interface AuditResult {
-  componentName: string;
+  component: string;
   issues: string[];
-  suggestions: string[];
-  score: number;
   recommendations: string[];
+}
+
+export interface ComponentAuditResult extends AuditResult {
+  // Additional properties for component audits
 }
 
 export interface VerificationSummary {
@@ -56,43 +35,25 @@ export interface VerificationSummary {
   timestamp: string;
   validationResult?: ValidationResult;
   auditResults?: AuditResult[];
-  databaseValidation?: any;
-  schemaValidation?: any;
-  securityScan?: any;
-  codeQuality?: any;
-  sqlAutoFixes?: string[];
 }
 
-export interface ComponentAuditResult {
-  componentName: string;
-  issues: string[];
-  suggestions: string[];
-  score: number;
+export interface VerificationConfig {
+  enableDatabaseValidation: boolean;
+  enableSchemaValidation: boolean;
+  enablePerformanceMonitoring: boolean;
+  enableSecurityScanning: boolean;
+  enableCodeQualityAnalysis: boolean;
 }
 
-export interface TemplateGenerationRequest {
-  templateType: 'hook' | 'component' | 'module' | 'api_integration';
-  moduleName?: string;
-  tableName?: string;
-  apiId?: string;
-  generateTests?: boolean;
-  generateDocumentation?: boolean;
-}
-
-export interface TemplateGenerationResult {
+export interface VerificationResult {
   success: boolean;
-  filesGenerated: string[];
-  templateUsed: string;
-  codeGenerated: string;
-  testsGenerated: string;
-  documentationGenerated: string;
-  errors: string[];
+  issues: string[];
+  fixes: string[];
+  timestamp: string;
 }
 
-export interface VerificationRequest {
-  componentType: string;
-  description: string;
-  tableName?: string;
-  moduleType?: string;
-  moduleName?: string;
+export interface AutomatedVerificationConfig {
+  interval: number;
+  enableAutoFix: boolean;
+  criticalThreshold: number;
 }

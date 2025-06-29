@@ -1,33 +1,19 @@
 
 /**
  * Accessibility Compliance Checker
- * Mock implementation for accessibility validation
+ * Mock implementation for checking accessibility compliance
  */
 
-export interface AccessibilityComplianceResult {
-  overallScore: number;
-  recommendations: string[];
-  criticalIssues: string[];
-  wcagCompliance: {
-    level: 'A' | 'AA' | 'AAA';
-    score: number;
-  };
-}
-
 export class AccessibilityComplianceChecker {
-  static async checkAccessibilityCompliance(): Promise<AccessibilityComplianceResult> {
+  static async checkAccessibilityCompliance(): Promise<{
+    criticalIssues: string[];
+    recommendations: string[];
+  }> {
+    console.log('🔍 Checking accessibility compliance...');
+    
     return {
-      overallScore: 85,
-      recommendations: [
-        'Add alt text to images',
-        'Improve keyboard navigation',
-        'Increase color contrast'
-      ],
       criticalIssues: [],
-      wcagCompliance: {
-        level: 'AA',
-        score: 85
-      }
+      recommendations: ['Add ARIA labels to interactive elements']
     };
   }
 }

@@ -4,6 +4,13 @@
  * Mock implementation for comprehensive security and performance monitoring
  */
 
+export interface AutomatedFix {
+  id: string;
+  canAutoFix: boolean;
+  riskLevel: 'low' | 'medium' | 'high';
+  description: string;
+}
+
 export interface ComprehensiveSecurityPerformanceSummary {
   overallHealthScore: number;
   securityScore: number;
@@ -36,6 +43,7 @@ export interface ComprehensiveSecurityPerformanceSummary {
     description: string;
     timeline: string;
   }>;
+  automatedFixes: AutomatedFix[];
 }
 
 export class EnhancedSecurityPerformanceOrchestrator {
@@ -64,7 +72,36 @@ export class EnhancedSecurityPerformanceOrchestrator {
       runtimeSecurity: {
         activeThreats: []
       },
-      priorityActions: []
+      priorityActions: [],
+      automatedFixes: [
+        {
+          id: 'fix_1',
+          canAutoFix: true,
+          riskLevel: 'low',
+          description: 'Update dependencies with security patches'
+        },
+        {
+          id: 'fix_2',
+          canAutoFix: true,
+          riskLevel: 'low',
+          description: 'Optimize database queries'
+        }
+      ]
+    };
+  }
+
+  static async startComprehensiveMonitoring(): Promise<void> {
+    console.log('🚀 Starting comprehensive monitoring...');
+  }
+
+  static async executeAutomatedFixes(fixIds: string[]): Promise<{success: string[], failed: string[]}> {
+    console.log('🔧 Executing automated fixes:', fixIds);
+    return {
+      success: fixIds,
+      failed: []
     };
   }
 }
+
+// Export instance for compatibility
+export const enhancedSecurityPerformanceOrchestrator = EnhancedSecurityPerformanceOrchestrator;
