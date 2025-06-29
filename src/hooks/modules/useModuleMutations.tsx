@@ -7,6 +7,9 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { Database } from '@/integrations/supabase/types';
+
+type UserRole = Database['public']['Enums']['user_role'];
 
 export const useModuleMutations = () => {
   const { toast } = useToast();
@@ -86,13 +89,13 @@ export const useModuleMutations = () => {
     }
   });
 
-  // Assign module to role - FIXED to properly lookup role ID
+  // Assign module to role - FIXED to properly lookup role ID and use correct typing
   const assignModuleToRoleMutation = useMutation({
     mutationFn: async ({ 
       roleId, 
       moduleId 
     }: { 
-      roleId: string; 
+      roleId: UserRole; 
       moduleId: string; 
     }) => {
       console.log('🔄 Assigning module to role - looking up role ID for:', roleId);

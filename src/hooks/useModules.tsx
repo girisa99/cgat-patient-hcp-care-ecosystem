@@ -3,6 +3,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthContext } from '@/components/auth/AuthProvider';
+import { Database } from '@/integrations/supabase/types';
+
+type UserRole = Database['public']['Enums']['user_role'];
 
 export const useModules = () => {
   const { toast } = useToast();
@@ -147,13 +150,13 @@ export const useModules = () => {
     }
   });
 
-  // FIXED: Role assignment now properly looks up role UUID by name
+  // FIXED: Role assignment now properly looks up role UUID by name with correct typing
   const assignModuleToRoleMutation = useMutation({
     mutationFn: async ({ 
       roleId, 
       moduleId 
     }: { 
-      roleId: string; 
+      roleId: UserRole; 
       moduleId: string; 
     }) => {
       console.log('🔄 Assigning module to role - looking up role ID for:', roleId);
