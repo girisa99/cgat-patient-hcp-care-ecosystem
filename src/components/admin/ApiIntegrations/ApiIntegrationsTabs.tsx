@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { EnhancedTabs, EnhancedTabsList, EnhancedTabsTrigger, EnhancedTabsContent } from '@/components/ui/enhanced-tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { OverviewTabContent } from './tabs/OverviewTabContent';
 import { InternalApisTabContent } from './tabs/InternalApisTabContent';
 import { ExternalApisTabContent } from './tabs/ExternalApisTabContent';
@@ -27,7 +27,7 @@ interface ApiIntegrationsTabsProps {
   onClose: () => void;
 }
 
-export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = ({
+export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = React.memo(({
   activeTab,
   onTabChange,
   searchTerm,
@@ -44,28 +44,32 @@ export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = ({
   onTestEndpoint,
   onClose
 }) => {
-  return (
-    <EnhancedTabs defaultValue={activeTab} className="w-full" onValueChange={onTabChange}>
-      <EnhancedTabsList>
-        <EnhancedTabsTrigger value="overview">Overview</EnhancedTabsTrigger>
-        <EnhancedTabsTrigger value="internal">Internal APIs ({internalApis?.length || 0})</EnhancedTabsTrigger>
-        <EnhancedTabsTrigger value="external">External APIs ({externalApis?.length || 0})</EnhancedTabsTrigger>
-        <EnhancedTabsTrigger value="published">Published APIs ({publishedApis?.length || 0})</EnhancedTabsTrigger>
-        <EnhancedTabsTrigger value="developer">Developer</EnhancedTabsTrigger>
-        <EnhancedTabsTrigger value="keys">API Keys</EnhancedTabsTrigger>
-        <EnhancedTabsTrigger value="testing">Testing</EnhancedTabsTrigger>
-      </EnhancedTabsList>
+  const handleValueChange = React.useCallback((value: string) => {
+    onTabChange(value);
+  }, [onTabChange]);
 
-      <EnhancedTabsContent value="overview">
+  return (
+    <Tabs value={activeTab} onValueChange={handleValueChange} className="w-full">
+      <TabsList className="grid w-full grid-cols-7">
+        <TabsTrigger value="overview">Overview</TabsTrigger>
+        <TabsTrigger value="internal">Internal ({internalApis?.length || 0})</TabsTrigger>
+        <TabsTrigger value="external">External ({externalApis?.length || 0})</TabsTrigger>
+        <TabsTrigger value="published">Published ({publishedApis?.length || 0})</TabsTrigger>
+        <TabsTrigger value="developer">Developer</TabsTrigger>
+        <TabsTrigger value="keys">API Keys</TabsTrigger>
+        <TabsTrigger value="testing">Testing</TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="overview" className="mt-4">
         <OverviewTabContent 
           integrations={integrations}
           internalApis={internalApis}
           externalApis={externalApis}
           publishedApis={publishedApis}
         />
-      </EnhancedTabsContent>
+      </TabsContent>
 
-      <EnhancedTabsContent value="internal">
+      <TabsContent value="internal" className="mt-4">
         <InternalApisTabContent
           internalApis={internalApis}
           searchTerm={searchTerm}
@@ -76,9 +80,9 @@ export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = ({
           onViewDocumentation={onViewDocumentation}
           onCopyUrl={onCopyUrl}
         />
-      </EnhancedTabsContent>
+      </TabsContent>
 
-      <EnhancedTabsContent value="external">
+      <TabsContent value="external" className="mt-4">
         <ExternalApisTabContent
           externalApis={externalApis}
           searchTerm={searchTerm}
@@ -89,30 +93,32 @@ export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = ({
           onViewDocumentation={onViewDocumentation}
           onCopyUrl={onCopyUrl}
         />
-      </EnhancedTabsContent>
+      </TabsContent>
 
-      <EnhancedTabsContent value="published">
+      <TabsContent value="published" className="mt-4">
         <PublishedApisTabContent 
           publishedApis={publishedApis}
           searchTerm={searchTerm}
         />
-      </EnhancedTabsContent>
+      </TabsContent>
 
-      <EnhancedTabsContent value="developer">
+      <TabsContent value="developer" className="mt-4">
         <DeveloperTabContent />
-      </EnhancedTabsContent>
+      </TabsContent>
 
-      <EnhancedTabsContent value="keys">
+      <TabsContent value="keys" className="mt-4">
         <ApiKeysTabContent />
-      </EnhancedTabsContent>
+      </TabsContent>
 
-      <EnhancedTabsContent value="testing">
+      <TabsContent value="testing" className="mt-4">
         <TestingTabContent
           integrations={integrations}
           onClose={onClose}
           onTestEndpoint={onTestEndpoint}
         />
-      </EnhancedTabsContent>
-    </EnhancedTabs>
+      </TabsContent>
+    </Tabs>
   );
-};
+});
+
+ApiIntegrationsTabs.displayName = 'ApiIntegrationsTabs';

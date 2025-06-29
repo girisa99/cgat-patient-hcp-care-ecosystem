@@ -15,56 +15,58 @@ interface SecurityDashboardTabsProps {
   comprehensiveSummary: ComprehensiveSecurityPerformanceSummary | null;
 }
 
-const SecurityDashboardTabs: React.FC<SecurityDashboardTabsProps> = ({
+const SecurityDashboardTabs: React.FC<SecurityDashboardTabsProps> = React.memo(({
   lastSummary,
   comprehensiveSummary
 }) => {
   return (
     <Tabs defaultValue="security" className="space-y-6">
       <TabsList className="grid w-full grid-cols-5">
-        <TabsTrigger value="security" className="flex items-center">
-          <Shield className="h-4 w-4 mr-2" />
+        <TabsTrigger value="security" className="flex items-center gap-2">
+          <Shield className="h-4 w-4" />
           Security
         </TabsTrigger>
-        <TabsTrigger value="performance" className="flex items-center">
-          <Activity className="h-4 w-4 mr-2" />
+        <TabsTrigger value="performance" className="flex items-center gap-2">
+          <Activity className="h-4 w-4" />
           Performance
         </TabsTrigger>
-        <TabsTrigger value="issues" className="flex items-center">
-          <Bug className="h-4 w-4 mr-2" />
+        <TabsTrigger value="issues" className="flex items-center gap-2">
+          <Bug className="h-4 w-4" />
           Issues
         </TabsTrigger>
-        <TabsTrigger value="monitoring" className="flex items-center">
-          <Eye className="h-4 w-4 mr-2" />
+        <TabsTrigger value="monitoring" className="flex items-center gap-2">
+          <Eye className="h-4 w-4" />
           Live Monitoring
         </TabsTrigger>
-        <TabsTrigger value="compliance" className="flex items-center">
-          <Lock className="h-4 w-4 mr-2" />
+        <TabsTrigger value="compliance" className="flex items-center gap-2">
+          <Lock className="h-4 w-4" />
           Compliance
         </TabsTrigger>
       </TabsList>
 
-      <TabsContent value="security" className="space-y-6">
+      <TabsContent value="security" className="space-y-6 mt-6">
         <SecurityMetrics verificationSummary={lastSummary} />
       </TabsContent>
 
-      <TabsContent value="performance" className="space-y-6">
+      <TabsContent value="performance" className="space-y-6 mt-6">
         <PerformanceMonitor />
       </TabsContent>
 
-      <TabsContent value="issues" className="space-y-6">
+      <TabsContent value="issues" className="space-y-6 mt-6">
         <IssuesTab verificationSummary={lastSummary} />
       </TabsContent>
 
-      <TabsContent value="monitoring" className="space-y-6">
+      <TabsContent value="monitoring" className="space-y-6 mt-6">
         <SecurityLiveMonitoring comprehensiveSummary={comprehensiveSummary} />
       </TabsContent>
 
-      <TabsContent value="compliance" className="space-y-6">
+      <TabsContent value="compliance" className="space-y-6 mt-6">
         <ComplianceStatus />
       </TabsContent>
     </Tabs>
   );
-};
+});
+
+SecurityDashboardTabs.displayName = 'SecurityDashboardTabs';
 
 export default SecurityDashboardTabs;

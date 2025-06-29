@@ -16,7 +16,7 @@ interface SystemAssessmentTabsProps {
   assessmentReport: AssessmentReport;
 }
 
-export const SystemAssessmentTabs: React.FC<SystemAssessmentTabsProps> = ({
+export const SystemAssessmentTabs: React.FC<SystemAssessmentTabsProps> = React.memo(({
   assessmentReport
 }) => {
   return (
@@ -28,21 +28,23 @@ export const SystemAssessmentTabs: React.FC<SystemAssessmentTabsProps> = ({
         <TabsTrigger value="recommendations">Actions</TabsTrigger>
       </TabsList>
 
-      <TabsContent value="critical" className="space-y-4">
+      <TabsContent value="critical" className="space-y-4 mt-4">
         <CriticalFindingsTab criticalFindings={assessmentReport.criticalFindings} />
       </TabsContent>
 
-      <TabsContent value="database" className="space-y-4">
+      <TabsContent value="database" className="space-y-4 mt-4">
         <DatabaseAnalysisTab tableUtilization={assessmentReport.detailedFindings.tableUtilization} />
       </TabsContent>
 
-      <TabsContent value="sync" className="space-y-4">
+      <TabsContent value="sync" className="space-y-4 mt-4">
         <RealTimeSyncTab realTimeSyncStatus={assessmentReport.detailedFindings.realTimeSyncStatus} />
       </TabsContent>
 
-      <TabsContent value="recommendations" className="space-y-4">
+      <TabsContent value="recommendations" className="space-y-4 mt-4">
         <RecommendationsTab actionableRecommendations={assessmentReport.actionableRecommendations} />
       </TabsContent>
     </Tabs>
   );
-};
+});
+
+SystemAssessmentTabs.displayName = 'SystemAssessmentTabs';

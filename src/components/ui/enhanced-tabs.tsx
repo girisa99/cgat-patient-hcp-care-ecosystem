@@ -38,8 +38,6 @@ const EnhancedTabsRoot: React.FC<EnhancedTabsProps> = ({
     <Tabs 
       defaultValue={defaultValue} 
       className={cn('w-full', className)}
-      data-variant={variant}
-      data-size={size}
       onValueChange={onValueChange}
     >
       {children}
@@ -87,12 +85,10 @@ const EnhancedTabsTrigger: React.FC<EnhancedTabsTriggerProps> = ({
         'data-[state=active]:bg-background data-[state=active]:text-foreground',
         'data-[state=active]:shadow-sm data-[state=active]:border',
         'disabled:opacity-50 disabled:cursor-not-allowed',
-        'group',
         className
       )}
-      aria-disabled={disabled}
     >
-      {icon && <span className="transition-transform group-hover:scale-110">{icon}</span>}
+      {icon && <span>{icon}</span>}
       <span>{children}</span>
     </TabsTrigger>
   );
@@ -111,7 +107,6 @@ const EnhancedTabsContent: React.FC<EnhancedTabsContentProps> = ({
         'bg-background/50 backdrop-blur-sm',
         'border border-border/50',
         'shadow-sm',
-        'animate-in fade-in-50 slide-in-from-bottom-2 duration-300',
         className
       )}
     >
