@@ -41,6 +41,10 @@ export const useApiIntegrations = () => {
     gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
+  // Derive internal and external APIs from integrations
+  const internalApis = integrations?.filter(integration => integration.type === 'internal') || [];
+  const externalApis = integrations?.filter(integration => integration.type === 'external') || [];
+
   // Mock function for registerIntegration
   const registerIntegration = async (integration: Omit<ApiIntegration, 'id' | 'createdAt' | 'updatedAt'>) => {
     console.log('Mock: Registering integration', integration);
@@ -48,11 +52,28 @@ export const useApiIntegrations = () => {
     return { ...integration, id: 'mock-id', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
   };
 
+  // Mock function for downloading Postman collection
+  const downloadPostmanCollection = (integrationId: string) => {
+    console.log('Mock: Downloading Postman collection for integration:', integrationId);
+    // This would normally generate and download a Postman collection
+  };
+
+  // Mock function for testing endpoint
+  const testEndpoint = async (integrationId: string, endpointId: string) => {
+    console.log('Mock: Testing endpoint:', { integrationId, endpointId });
+    // This would normally test the endpoint and return results
+    return { success: true, message: 'Endpoint test completed' };
+  };
+
   return {
     integrations,
+    internalApis,
+    externalApis,
     isLoading,
     error,
     registerIntegration,
-    isRegistering: false
+    isRegistering: false,
+    downloadPostmanCollection,
+    testEndpoint
   };
 };
