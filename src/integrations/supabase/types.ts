@@ -1547,6 +1547,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      log_verification_activity: {
+        Args: {
+          activity_type: string
+          activity_description: string
+          metadata_info?: Json
+        }
+        Returns: undefined
+      }
       sync_active_issues: {
         Args: { issues_data: Json }
         Returns: undefined

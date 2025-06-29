@@ -1,11 +1,13 @@
 /**
  * Comprehensive System Verifier
  * Integrates with automation coordinator for complete system verification
+ * NOW WITH INTEGRATED AUDIT LOGGING
  */
 
 import { RealVerificationOrchestrator, RealSystemHealthResult } from './RealVerificationOrchestrator';
 import { DatabaseSyncVerifier, SyncVerificationResult } from './DatabaseSyncVerifier';
 import { performDatabaseSync } from '../dailyProgressTracker';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface ComprehensiveVerificationResult {
   verificationId: string;
@@ -30,7 +32,32 @@ export interface ComprehensiveVerificationResult {
 
 export class ComprehensiveSystemVerifier {
   /**
-   * Perform comprehensive verification - integrated with automation
+   * Log comprehensive verification activity to audit logs
+   */
+  private static async logComprehensiveActivity(
+    activityType: string,
+    description: string,
+    metadata: any = {}
+  ): Promise<void> {
+    try {
+      const { error } = await supabase.rpc('log_verification_activity', {
+        activity_type: activityType,
+        activity_description: description,
+        metadata_info: metadata
+      });
+
+      if (error) {
+        console.error('❌ Failed to log comprehensive verification activity:', error);
+      } else {
+        console.log('✅ Comprehensive verification activity logged:', activityType);
+      }
+    } catch (error) {
+      console.error('❌ Error logging comprehensive verification activity:', error);
+    }
+  }
+
+  /**
+   * Perform comprehensive verification - integrated with automation AND audit logging
    */
   static async performComprehensiveVerification(
     triggeredBy: 'manual' | 'scheduled' = 'manual'
@@ -41,6 +68,14 @@ export class ComprehensiveSystemVerifier {
     console.log(`🔍 COMPREHENSIVE SYSTEM VERIFICATION STARTED: ${verificationId}`);
     console.log(`🎯 Triggered by: ${triggeredBy}`);
     console.log(`📊 Data source: ORIGINAL DATABASE ONLY`);
+    console.log(`🔍 Audit logging: ENABLED`);
+
+    // Log comprehensive verification start
+    await this.logComprehensiveActivity(
+      'COMPREHENSIVE_VERIFICATION_STARTED',
+      `Comprehensive system verification initiated (${triggeredBy})`,
+      { verificationId, triggeredBy, startTime }
+    );
 
     try {
       // Step 1: Real system health validation
@@ -106,16 +141,44 @@ export class ComprehensiveSystemVerifier {
         }
       };
 
+      // Log comprehensive verification completion
+      await this.logComprehensiveActivity(
+        'COMPREHENSIVE_VERIFICATION_COMPLETED',
+        `Comprehensive verification completed successfully`,
+        {
+          verificationId,
+          executionTime,
+          healthScore: overallHealthScore,
+          overallStatus,
+          syncStatus,
+          criticalIssues: systemHealth.criticalIssuesCount,
+          totalIssues: systemHealth.totalActiveIssues
+        }
+      );
+
       console.log('✅ COMPREHENSIVE VERIFICATION COMPLETED');
       console.log(`📊 Overall Health Score: ${overallHealthScore}/100`);
       console.log(`🔄 Sync Status: ${syncStatus}`);
       console.log(`⏱️ Execution Time: ${executionTime}ms`);
       console.log(`💾 Database Sync: ${syncCompleted ? 'COMPLETED' : 'SKIPPED'}`);
+      console.log(`🔍 Audit Logging: ACTIVE AND RECORDED`);
 
       return result;
 
     } catch (error) {
       console.error('❌ COMPREHENSIVE VERIFICATION FAILED:', error);
+      
+      // Log comprehensive verification failure
+      await this.logComprehensiveActivity(
+        'COMPREHENSIVE_VERIFICATION_FAILED',
+        `Comprehensive verification failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        { 
+          verificationId,
+          error: error instanceof Error ? error.message : 'Unknown error',
+          executionTime: Date.now() - startTime
+        }
+      );
+
       throw new Error(`Comprehensive verification failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -192,6 +255,7 @@ export class ComprehensiveSystemVerifier {
     recommendations.push('🤖 AUTOMATION: Ensure 30-minute automation cycle runs consistently');
     recommendations.push('📈 METRICS: Monitor health score trends and set up alerting for drops');
     recommendations.push('🔍 VALIDATION: Regular manual verification to supplement automation');
+    recommendations.push('🔍 AUDIT: Review audit logs regularly for security and compliance');
 
     return recommendations;
   }
@@ -220,8 +284,8 @@ export class ComprehensiveSystemVerifier {
    * Generate comprehensive report
    */
   static generateComprehensiveReport(result: ComprehensiveVerificationResult): string {
-    let report = '🏥 COMPREHENSIVE SYSTEM VERIFICATION REPORT\n';
-    report += '='.repeat(70) + '\n\n';
+    let report = '🏥 COMPREHENSIVE SYSTEM VERIFICATION REPORT (WITH AUDIT LOGGING)\n';
+    report += '='.repeat(80) + '\n\n';
 
     report += `📋 VERIFICATION DETAILS:\n`;
     report += `   Verification ID: ${result.verificationId}\n`;
@@ -229,7 +293,8 @@ export class ComprehensiveSystemVerifier {
     report += `   Triggered By: ${result.automationMetadata.triggeredBy.toUpperCase()}\n`;
     report += `   Data Source: ${result.automationMetadata.dataSource.toUpperCase()}\n`;
     report += `   Execution Time: ${result.automationMetadata.executionTime}ms\n`;
-    report += `   Database Sync: ${result.automationMetadata.syncCompleted ? 'COMPLETED' : 'SKIPPED'}\n\n`;
+    report += `   Database Sync: ${result.automationMetadata.syncCompleted ? 'COMPLETED' : 'SKIPPED'}\n`;
+    report += `   Audit Logging: ✅ ENABLED AND ACTIVE\n\n`;
 
     report += `📊 SYSTEM HEALTH SUMMARY:\n`;
     report += `   Overall Health Score: ${result.overallHealthScore}/100\n`;

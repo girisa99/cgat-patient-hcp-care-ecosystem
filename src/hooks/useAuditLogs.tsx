@@ -43,11 +43,12 @@ interface AuditLogResponse {
 export const useAuditLogs = (filters?: AuditLogFilters) => {
   const queryClient = useQueryClient();
 
-  // Set up real-time subscription for audit logs
+  // Enhanced real-time subscription for audit logs, active_issues, and issue_fixes
   useEffect(() => {
-    console.log('🔄 Setting up real-time subscription for audit logs...');
+    console.log('🔄 Setting up enhanced real-time subscription for audit logs...');
     
-    const channel = supabase
+    // Subscribe to audit_logs table changes
+    const auditChannel = supabase
       .channel('audit_logs_realtime')
       .on(
         'postgres_changes',
@@ -68,9 +69,55 @@ export const useAuditLogs = (filters?: AuditLogFilters) => {
         console.log('📡 Audit logs real-time subscription status:', status);
       });
 
+    // Subscribe to active_issues table changes (verification system activities)
+    const issuesChannel = supabase
+      .channel('active_issues_realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'active_issues'
+        },
+        (payload) => {
+          console.log('📡 Real-time active issues event received:', payload);
+          
+          // Invalidate audit logs as active_issues changes are now logged
+          queryClient.invalidateQueries({ queryKey: ['audit-logs'] });
+          queryClient.invalidateQueries({ queryKey: ['audit-log-stats'] });
+        }
+      )
+      .subscribe((status) => {
+        console.log('📡 Active issues real-time subscription status:', status);
+      });
+
+    // Subscribe to issue_fixes table changes (verification system activities)
+    const fixesChannel = supabase
+      .channel('issue_fixes_realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'issue_fixes'
+        },
+        (payload) => {
+          console.log('📡 Real-time issue fixes event received:', payload);
+          
+          // Invalidate audit logs as issue_fixes changes are now logged
+          queryClient.invalidateQueries({ queryKey: ['audit-logs'] });
+          queryClient.invalidateQueries({ queryKey: ['audit-log-stats'] });
+        }
+      )
+      .subscribe((status) => {
+        console.log('📡 Issue fixes real-time subscription status:', status);
+      });
+
     return () => {
-      console.log('🔄 Cleaning up audit logs real-time subscription');
-      supabase.removeChannel(channel);
+      console.log('🔄 Cleaning up enhanced audit logs real-time subscriptions');
+      supabase.removeChannel(auditChannel);
+      supabase.removeChannel(issuesChannel);
+      supabase.removeChannel(fixesChannel);
     };
   }, [queryClient]);
 
@@ -96,7 +143,7 @@ export const useAuditLogs = (filters?: AuditLogFilters) => {
     },
     staleTime: 0, // Always consider data stale to allow fresh fetches
     gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
-    refetchInterval: 30000, // Refetch every 30 seconds for real-time feel
+    refetchInterval: 15000, // Refetch every 15 seconds for real-time feel (more frequent)
     refetchOnWindowFocus: true, // Refetch when user returns to tab
     refetchOnMount: true, // Always refetch on mount
     retry: 3, // Retry failed requests 3 times
@@ -107,28 +154,65 @@ export const useAuditLogs = (filters?: AuditLogFilters) => {
 export const useAuditLogStats = () => {
   const queryClient = useQueryClient();
 
-  // Set up real-time subscription for stats updates
+  // Enhanced real-time subscription for stats updates
   useEffect(() => {
-    console.log('📊 Setting up real-time subscription for audit log stats...');
+    console.log('📊 Setting up enhanced real-time subscription for audit log stats...');
     
-    const channel = supabase
-      .channel('audit_stats_realtime')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'audit_logs'
-        },
-        () => {
-          console.log('📊 Audit log changed, updating stats...');
-          queryClient.invalidateQueries({ queryKey: ['audit-log-stats'] });
-        }
-      )
-      .subscribe();
+    const channels = [
+      // Audit logs
+      supabase
+        .channel('audit_stats_realtime')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'audit_logs'
+          },
+          () => {
+            console.log('📊 Audit log changed, updating stats...');
+            queryClient.invalidateQueries({ queryKey: ['audit-log-stats'] });
+          }
+        )
+        .subscribe(),
+      
+      // Active issues
+      supabase
+        .channel('active_issues_stats_realtime')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'active_issues'
+          },
+          () => {
+            console.log('📊 Active issues changed, updating stats...');
+            queryClient.invalidateQueries({ queryKey: ['audit-log-stats'] });
+          }
+        )
+        .subscribe(),
+      
+      // Issue fixes
+      supabase
+        .channel('issue_fixes_stats_realtime')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'issue_fixes'
+          },
+          () => {
+            console.log('📊 Issue fixes changed, updating stats...');
+            queryClient.invalidateQueries({ queryKey: ['audit-log-stats'] });
+          }
+        )
+        .subscribe()
+    ];
 
     return () => {
-      supabase.removeChannel(channel);
+      channels.forEach(channel => supabase.removeChannel(channel));
     };
   }, [queryClient]);
 
@@ -151,7 +235,7 @@ export const useAuditLogStats = () => {
 
       return data.metadata;
     },
-    staleTime: 30000, // 30 seconds
-    refetchInterval: 60000, // Refetch every minute
+    staleTime: 15000, // 15 seconds (reduced for more real-time updates)
+    refetchInterval: 30000, // Refetch every 30 seconds
   });
 };

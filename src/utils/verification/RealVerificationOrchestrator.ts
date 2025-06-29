@@ -1,8 +1,8 @@
-
 /**
  * Real Verification Orchestrator
  * Coordinates real database validation and system health checks
  * STORES ALL RESULTS IN DATABASE - NO LOCAL STORAGE
+ * NOW WITH INTEGRATED AUDIT LOGGING
  */
 
 import { RealDatabaseValidator, RealDatabaseValidationResult } from './RealDatabaseValidator';
@@ -21,14 +21,46 @@ export interface RealSystemHealthResult {
 
 export class RealVerificationOrchestrator {
   /**
+   * Log verification activity to audit logs
+   */
+  private static async logVerificationActivity(
+    activityType: string,
+    description: string,
+    metadata: any = {}
+  ): Promise<void> {
+    try {
+      const { error } = await supabase.rpc('log_verification_activity', {
+        activity_type: activityType,
+        activity_description: description,
+        metadata_info: metadata
+      });
+
+      if (error) {
+        console.error('❌ Failed to log verification activity:', error);
+      } else {
+        console.log('✅ Verification activity logged:', activityType);
+      }
+    } catch (error) {
+      console.error('❌ Error logging verification activity:', error);
+    }
+  }
+
+  /**
    * Perform comprehensive real system validation
-   * ALL RESULTS ARE SYNCED TO DATABASE TABLES
+   * ALL RESULTS ARE SYNCED TO DATABASE TABLES WITH AUDIT LOGGING
    */
   static async performRealSystemValidation(): Promise<RealSystemHealthResult> {
     console.log('🚀 REAL SYSTEM VALIDATION STARTING...');
     console.log('🔍 Validating live database and syncing to database tables');
 
     const validationStart = new Date().toISOString();
+
+    // Log validation start
+    await this.logVerificationActivity(
+      'VALIDATION_STARTED',
+      'Real system validation initiated',
+      { timestamp: validationStart }
+    );
 
     try {
       // Perform real database validation
@@ -55,6 +87,18 @@ export class RealVerificationOrchestrator {
       console.log('💾 Step 2: Syncing ALL results to database tables...');
       await this.syncAllResultsToDatabase(databaseHealth);
 
+      // Log validation completion
+      await this.logVerificationActivity(
+        'VALIDATION_COMPLETED',
+        `System validation completed with ${totalActiveIssues} issues found`,
+        {
+          healthScore: overallHealthScore,
+          criticalIssues: criticalIssuesCount,
+          totalIssues: totalActiveIssues,
+          isStable: isSystemStable
+        }
+      );
+
       const result: RealSystemHealthResult = {
         overallHealthScore,
         databaseHealth,
@@ -70,12 +114,20 @@ export class RealVerificationOrchestrator {
       console.log(`📊 Overall Health Score: ${overallHealthScore}/100`);
       console.log(`🗄️ Database Issues: ${totalActiveIssues} (${criticalIssuesCount} critical)`);
       console.log(`🎯 System Status: ${isSystemStable ? 'STABLE' : 'NEEDS ATTENTION'}`);
-      console.log(`💾 ALL RESULTS SYNCED TO DATABASE TABLES`);
+      console.log(`💾 ALL RESULTS SYNCED TO DATABASE TABLES WITH AUDIT LOGGING`);
 
       return result;
 
     } catch (error) {
       console.error('❌ Real system validation failed:', error);
+      
+      // Log validation failure
+      await this.logVerificationActivity(
+        'VALIDATION_FAILED',
+        `System validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        { error: error instanceof Error ? error.message : 'Unknown error' }
+      );
+
       throw new Error(`Real system validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -153,13 +205,20 @@ export class RealVerificationOrchestrator {
   }
 
   /**
-   * Sync ALL validation results to database tables
+   * Sync ALL validation results to database tables with enhanced audit logging
    * This replaces local storage completely
    */
   private static async syncAllResultsToDatabase(databaseHealth: RealDatabaseValidationResult): Promise<void> {
     try {
       console.log('🔄 Clearing existing active issues from database...');
       
+      // Log clearing action
+      await this.logVerificationActivity(
+        'ISSUES_CLEARING',
+        'Clearing existing active issues from database',
+        { issuesBeingCleared: 'all_active' }
+      );
+
       // Clear existing active issues
       const { error: deleteError } = await supabase
         .from('active_issues')
@@ -195,14 +254,39 @@ export class RealVerificationOrchestrator {
           throw insertError;
         }
 
+        // Log issues insertion
+        await this.logVerificationActivity(
+          'ISSUES_INSERTED',
+          `Successfully inserted ${issuesData.length} issues into active_issues table`,
+          {
+            issuesCount: issuesData.length,
+            categorySummary: this.getIssueCategorySummary(issuesData)
+          }
+        );
+
         console.log(`✅ Successfully synced ${issuesData.length} real issues to database`);
         console.log('📊 Issue categories:', this.getIssueCategorySummary(issuesData));
       } else {
         console.log('✅ No issues found - database is healthy');
+        
+        // Log healthy state
+        await this.logVerificationActivity(
+          'HEALTHY_STATE',
+          'No issues found - database is in healthy state',
+          { issuesFound: 0 }
+        );
       }
 
     } catch (error) {
       console.error('❌ Error syncing validation results to database:', error);
+      
+      // Log sync failure
+      await this.logVerificationActivity(
+        'SYNC_FAILED',
+        `Failed to sync validation results to database: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        { error: error instanceof Error ? error.message : 'Unknown error' }
+      );
+
       throw error;
     }
   }
@@ -238,8 +322,8 @@ export class RealVerificationOrchestrator {
    * Generate comprehensive validation report
    */
   static generateSystemReport(result: RealSystemHealthResult): string {
-    let report = '🏥 REAL SYSTEM HEALTH REPORT (DATABASE SYNCED)\n';
-    report += '='.repeat(60) + '\n\n';
+    let report = '🏥 REAL SYSTEM HEALTH REPORT (DATABASE SYNCED WITH AUDIT LOGGING)\n';
+    report += '='.repeat(70) + '\n\n';
 
     report += `📊 SYSTEM OVERVIEW:\n`;
     report += `   Overall Health Score: ${result.overallHealthScore}/100\n`;
@@ -247,7 +331,8 @@ export class RealVerificationOrchestrator {
     report += `   Total Active Issues: ${result.totalActiveIssues}\n`;
     report += `   Critical Issues: ${result.criticalIssuesCount}\n`;
     report += `   Last Validation: ${result.lastValidationTime}\n`;
-    report += `   Data Source: 🗄️ REAL DATABASE TABLES (NO MOCK DATA)\n\n`;
+    report += `   Data Source: 🗄️ REAL DATABASE TABLES (NO MOCK DATA)\n`;
+    report += `   Audit Logging: ✅ ENABLED AND ACTIVE\n\n`;
 
     // Include database validation report
     report += RealDatabaseValidator.generateValidationReport(result.databaseHealth);
