@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { useApiIntegrations } from '@/hooks/useApiIntegrations.tsx';
+import { useApiIntegrations } from '@/hooks/useApiIntegrations';
 import { useEnhancedExternalApis } from '@/hooks/useEnhancedExternalApis';
 import IntegrationDetailView from './IntegrationDetailView';
 import { LoadingState } from '../shared/LoadingState';
