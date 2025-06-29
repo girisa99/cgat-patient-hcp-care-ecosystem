@@ -6,7 +6,7 @@ import { HealthcareCard, HealthcareCardContent, HealthcareCardDescription, Healt
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuthActions } from '@/hooks/useAuthActions';
 import { useAuthContext } from '@/components/auth/AuthProvider';
-import { Eye, EyeOff, Mail, Lock, UserPlus, AlertCircle, LogOut, Users, CheckCircle } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, UserPlus, AlertCircle, LogOut, Users, CheckCircle, RefreshCw } from 'lucide-react';
 import { Database } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
 
@@ -21,7 +21,8 @@ const LoginForm = () => {
   const [authError, setAuthError] = useState<string>('');
   const [isCreatingTestAccounts, setIsCreatingTestAccounts] = useState(false);
   const [accountCreationResults, setAccountCreationResults] = useState<Array<{email: string, success: boolean, message: string}>>([]);
-  const { signIn, signUp, signOut, loading } = useAuthActions();
+  const [isResendingVerification, setIsResendingVerification] = useState(false);
+  const { signIn, signUp, signOut, loading, resendVerificationEmail } = useAuthActions();
   const { user } = useAuthContext();
   const { toast } = useToast();
 
@@ -65,12 +66,22 @@ const LoginForm = () => {
         if (!result.success) {
           const errorMsg = result.error || 'Invalid email or password';
           console.error('🚨 Sign in failed:', errorMsg);
-          setAuthError(errorMsg);
           
+          // Enhanced error handling for unverified accounts
           if (errorMsg.includes('Invalid login credentials')) {
             setAuthError(
-              'Invalid email or password. The account may not exist. Try creating the test accounts first, or create a new account.'
+              'Login failed. This could be because: \n\n' +
+              '• The account may not exist - try creating test accounts first\n' +
+              '• The email address needs verification - check your email inbox\n' +
+              '• Incorrect password\n\n' +
+              'If you just created the account, please check your email for a verification link before signing in.'
             );
+          } else if (errorMsg.includes('Email not confirmed')) {
+            setAuthError(
+              'Please verify your email address before signing in. Check your inbox for a verification email.'
+            );
+          } else {
+            setAuthError(errorMsg);
           }
         }
       }
@@ -117,7 +128,7 @@ const LoginForm = () => {
           results.push({
             email: creds.email,
             success: true,
-            message: 'Account created successfully'
+            message: 'Account created - check email for verification'
           });
           console.log(`✅ Successfully created: ${creds.email}`);
         } else {
@@ -128,7 +139,7 @@ const LoginForm = () => {
             results.push({
               email: creds.email,
               success: true,
-              message: 'Account already exists (ready to use)'
+              message: 'Account already exists - may need email verification'
             });
             console.log(`ℹ️ Account already exists: ${creds.email}`);
           } else {
@@ -161,13 +172,42 @@ const LoginForm = () => {
     
     if (successCount > 0) {
       toast({
-        title: "Test Accounts Ready",
-        description: `${successCount} test accounts are available for login. You can now use the credentials below.`,
+        title: "Test Accounts Processing",
+        description: `${successCount} test accounts created/verified. Check your email for verification links before signing in.`,
       });
     }
     
     if (failureCount > 0) {
       setAuthError(`${successCount} accounts ready, but ${failureCount} failed. Check the results below.`);
+    }
+  };
+
+  const handleResendVerification = async (email: string) => {
+    setIsResendingVerification(true);
+    console.log('📧 Resending verification email for:', email);
+    
+    try {
+      const result = await resendVerificationEmail(email);
+      if (result.success) {
+        toast({
+          title: "Verification Email Sent",
+          description: `A new verification email has been sent to ${email}. Please check your inbox.`,
+        });
+      } else {
+        toast({
+          title: "Failed to Send Email",
+          description: result.error || "Could not send verification email. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred while sending verification email.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsResendingVerification(false);
     }
   };
 
@@ -227,9 +267,9 @@ const LoginForm = () => {
         
         <HealthcareCardContent>
           {authError && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md flex items-center gap-2">
-              <AlertCircle className="h-4 w-4 text-red-600 flex-shrink-0" />
-              <span className="text-sm text-red-800">{authError}</span>
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md flex items-start gap-2">
+              <AlertCircle className="h-4 w-4 text-red-600 flex-shrink-0 mt-0.5" />
+              <div className="text-sm text-red-800 whitespace-pre-line">{authError}</div>
             </div>
           )}
 
@@ -338,12 +378,12 @@ const LoginForm = () => {
         </HealthcareCardContent>
       </HealthcareCard>
 
-      {/* Test Credentials Helper */}
+      {/* Enhanced Test Credentials Helper */}
       <HealthcareCard className="w-full max-w-md mx-auto shadow-sm bg-blue-50">
         <HealthcareCardHeader>
-          <HealthcareCardTitle className="text-lg text-blue-800">Test Credentials</HealthcareCardTitle>
+          <HealthcareCardTitle className="text-lg text-blue-800">Test Credentials & Email Verification</HealthcareCardTitle>
           <HealthcareCardDescription className="text-blue-600">
-            First create test accounts, then click to auto-fill login credentials
+            Step 1: Create accounts → Step 2: Verify emails → Step 3: Sign in
           </HealthcareCardDescription>
         </HealthcareCardHeader>
         <HealthcareCardContent className="space-y-3">
@@ -363,7 +403,7 @@ const LoginForm = () => {
               ) : (
                 <>
                   <Users className="h-4 w-4 mr-2" />
-                  Create Test Accounts
+                  Step 1: Create Test Accounts
                 </>
               )}
             </HealthcareButton>
@@ -380,10 +420,38 @@ const LoginForm = () => {
                   <span>- {result.message}</span>
                 </div>
               ))}
+              
+              {/* Email verification reminder */}
+              <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded">
+                <div className="text-xs text-yellow-800">
+                  <strong>⚠️ Important:</strong> Check your email inbox for verification links before attempting to sign in. 
+                  Without email verification, login will fail with "Invalid credentials".
+                </div>
+                <div className="mt-2 space-y-1">
+                  {accountCreationResults.filter(r => r.success).map((result, index) => (
+                    <button
+                      key={index}
+                      onClick={() => handleResendVerification(result.email)}
+                      disabled={isResendingVerification}
+                      className="text-xs text-blue-600 hover:text-blue-800 underline mr-4"
+                    >
+                      {isResendingVerification ? (
+                        <div className="flex items-center gap-1">
+                          <RefreshCw className="h-3 w-3 animate-spin" />
+                          Sending...
+                        </div>
+                      ) : (
+                        `Resend verification for ${result.email}`
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
 
           {/* Test Credential Buttons */}
+          <div className="text-xs text-blue-700 mb-2 font-medium">Step 3: Auto-fill login credentials:</div>
           {testCredentials.map((creds, index) => (
             <button
               key={index}
@@ -392,7 +460,7 @@ const LoginForm = () => {
             >
               <div className="font-medium text-blue-800">{roleOptions.find(r => r.value === creds.role)?.label}</div>
               <div className="text-blue-600">{creds.email}</div>
-              <div className="text-xs text-blue-500">Click to auto-fill login form</div>
+              <div className="text-xs text-blue-500">Click to auto-fill (after email verification)</div>
             </button>
           ))}
         </HealthcareCardContent>
