@@ -9,6 +9,7 @@ import { lazy, Suspense } from "react";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 // Lazy load components
+const Index = lazy(() => import("./pages/Index"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Users = lazy(() => import("./pages/Users"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
@@ -18,6 +19,7 @@ const Modules = lazy(() => import("./pages/Modules"));
 const ApiIntegrations = lazy(() => import("./pages/ApiIntegrations"));
 const AuditLog = lazy(() => import("./pages/AuditLog"));
 const AdminVerificationTest = lazy(() => import("./pages/AdminVerificationTest"));
+const Settings = lazy(() => import("./pages/Settings"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -38,7 +40,7 @@ function App() {
           <AuthProvider>
             <Suspense fallback={<LoadingSpinner />}>
               <Routes>
-                <Route path="/" element={<Dashboard />} />
+                <Route path="/" element={<Index />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/users" element={<Users />} />
                 <Route path="/onboarding" element={<Onboarding />} />
@@ -48,6 +50,7 @@ function App() {
                 <Route path="/api-integrations" element={<ApiIntegrations />} />
                 <Route path="/audit-log" element={<AuditLog />} />
                 <Route path="/admin-verification" element={<AdminVerificationTest />} />
+                <Route path="/settings" element={<Settings />} />
               </Routes>
             </Suspense>
           </AuthProvider>
