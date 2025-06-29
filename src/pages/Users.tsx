@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { PageContainer } from '@/components/layout/PageContainer';
@@ -24,6 +25,7 @@ import {
 // Import the enhanced dialog instead
 import EnhancedResendVerificationDialog from '@/components/users/EnhancedResendVerificationDialog';
 import DeactivateUserDialog from '@/components/users/DeactivateUserDialog';
+import AssignModuleDialog from '@/components/users/AssignModuleDialog';
 
 const Users = () => {
   const { toast } = useToast();
@@ -45,6 +47,7 @@ const Users = () => {
   const [permissionManagementOpen, setPermissionManagementOpen] = useState(false);
   const [resendVerificationOpen, setResendVerificationOpen] = useState(false);
   const [deactivateUserOpen, setDeactivateUserOpen] = useState(false);
+  const [assignModuleOpen, setAssignModuleOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [selectedUserName, setSelectedUserName] = useState<string>('');
@@ -92,11 +95,10 @@ const Users = () => {
   };
 
   const handleAssignModule = (userId: string, userName: string) => {
-    console.log('📦 Module assignment functionality to be implemented:', userId, userName);
-    toast({
-      title: "Feature Coming Soon",
-      description: "Module assignment functionality will be available in the next update.",
-    });
+    console.log('📦 Opening module assignment for user:', userId, userName);
+    setSelectedUserId(userId);
+    setSelectedUserName(userName);
+    setAssignModuleOpen(true);
   };
 
   const handleResendVerification = (userEmail: string, userName: string) => {
@@ -288,6 +290,13 @@ const Users = () => {
           open={permissionManagementOpen}
           onOpenChange={setPermissionManagementOpen}
           userId={selectedUserId}
+          userName={selectedUserName}
+        />
+
+        <AssignModuleDialog
+          open={assignModuleOpen}
+          onOpenChange={setAssignModuleOpen}
+          userId={selectedUserId || ''}
           userName={selectedUserName}
         />
 

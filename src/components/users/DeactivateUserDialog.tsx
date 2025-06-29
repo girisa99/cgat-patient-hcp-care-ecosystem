@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle, UserX, Loader2 } from 'lucide-react';
-import { usePatientMutations } from '@/hooks/mutations/usePatientMutations';
+import { useUserDeactivation } from '@/hooks/mutations/useUserDeactivation';
 
 interface DeactivateUserDialogProps {
   open: boolean;
@@ -25,7 +25,7 @@ const DeactivateUserDialog: React.FC<DeactivateUserDialogProps> = ({
 }) => {
   const [reason, setReason] = useState('');
   const [confirmText, setConfirmText] = useState('');
-  const { deactivatePatient, isDeactivating } = usePatientMutations();
+  const { deactivateUser, isDeactivating } = useUserDeactivation();
 
   const handleDeactivateUser = () => {
     if (confirmText.toLowerCase() !== 'deactivate') {
@@ -33,7 +33,7 @@ const DeactivateUserDialog: React.FC<DeactivateUserDialogProps> = ({
     }
 
     console.log('🔄 Deactivating user:', userId, userName, 'Reason:', reason);
-    deactivatePatient(userId);
+    deactivateUser({ userId, reason });
     
     // Close dialog and reset form
     onOpenChange(false);
@@ -58,7 +58,7 @@ const DeactivateUserDialog: React.FC<DeactivateUserDialogProps> = ({
             Deactivate User Account
           </DialogTitle>
           <DialogDescription>
-            This action will deactivate the user account and revoke all access permissions.
+            This action will permanently deactivate the user account and revoke all access permissions.
           </DialogDescription>
         </DialogHeader>
         
@@ -112,10 +112,10 @@ const DeactivateUserDialog: React.FC<DeactivateUserDialogProps> = ({
             <AlertDescription className="text-amber-800">
               <strong>Important:</strong> Deactivating this user will:
               <ul className="mt-2 space-y-1 text-sm">
-                <li>• Immediately revoke all system access</li>
-                <li>• Remove all role assignments</li>
+                <li>• Permanently delete the user account</li>
+                <li>• Remove all role assignments and permissions</li>
                 <li>• Log the deactivation for audit purposes</li>
-                <li>• Preserve user data for compliance</li>
+                <li>• This action cannot be undone</li>
               </ul>
             </AlertDescription>
           </Alert>

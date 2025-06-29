@@ -1758,7 +1758,7 @@ export type Database = {
           module_id: string
           module_name: string
           module_description: string
-          source: string
+          access_source: string
           expires_at: string
         }[]
       }
