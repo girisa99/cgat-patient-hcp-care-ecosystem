@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -10,6 +10,7 @@ import { useUserSettings } from '@/hooks/useUserSettings';
 import { useTwilioNotifications } from '@/hooks/useTwilioNotifications';
 import { useAuthContext } from '@/components/auth/AuthProvider';
 import { Bell, Mail, Smartphone, MessageSquare, Shield, Settings, Package, Clock, Send } from 'lucide-react';
+import { toast } from 'sonner';
 
 const NotificationSettings = () => {
   const { notificationPreferences, updateNotifications, isUpdating } = useUserSettings();
@@ -18,6 +19,13 @@ const NotificationSettings = () => {
   
   const [testPhone, setTestPhone] = useState('');
   const [testEmail, setTestEmail] = useState(profile?.email || '');
+
+  // Update test email when profile changes
+  useEffect(() => {
+    if (profile?.email) {
+      setTestEmail(profile.email);
+    }
+  }, [profile?.email]);
 
   const handleToggle = (key: string, value: boolean) => {
     if (notificationPreferences) {
@@ -37,27 +45,55 @@ const NotificationSettings = () => {
     }
   };
 
-  const handleTestNotification = (type: 'sms' | 'whatsapp' | 'voice' | 'email') => {
+  const handleTestNotification = async (type: 'sms' | 'whatsapp' | 'voice' | 'email') => {
     const message = `This is a test ${type.toUpperCase()} notification from your Healthcare Portal. If you received this, your ${type} notifications are working correctly!`;
     
-    switch (type) {
-      case 'sms':
-        if (testPhone) sendSMS(testPhone, message);
-        break;
-      case 'whatsapp':
-        if (testPhone) sendWhatsApp(testPhone, message);
-        break;
-      case 'voice':
-        if (testPhone) sendVoiceCall(testPhone, message);
-        break;
-      case 'email':
-        if (testEmail) sendEmail(testEmail, message, 'Test Email Notification');
-        break;
+    try {
+      switch (type) {
+        case 'sms':
+          if (!testPhone) {
+            toast.error('Please enter a phone number');
+            return;
+          }
+          await sendSMS(testPhone, message);
+          break;
+        case 'whatsapp':
+          if (!testPhone) {
+            toast.error('Please enter a phone number');
+            return;
+          }
+          await sendWhatsApp(testPhone, message);
+          break;
+        case 'voice':
+          if (!testPhone) {
+            toast.error('Please enter a phone number');
+            return;
+          }
+          await sendVoiceCall(testPhone, message);
+          break;
+        case 'email':
+          if (!testEmail) {
+            toast.error('Please enter an email address');
+            return;
+          }
+          await sendEmail(testEmail, message, 'Test Email Notification');
+          break;
+      }
+    } catch (error) {
+      console.error(`Error sending ${type} notification:`, error);
+      toast.error(`Failed to send ${type} notification`);
     }
   };
 
   if (!notificationPreferences) {
-    return <div>Loading notification settings...</div>;
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading notification settings...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -168,7 +204,7 @@ const NotificationSettings = () => {
               onClick={() => handleTestNotification('email')}
               disabled={isLoading || !testEmail}
             >
-              Test Email
+              {isLoading ? 'Sending...' : 'Test Email'}
             </Button>
             <Button
               variant="outline"
@@ -176,7 +212,7 @@ const NotificationSettings = () => {
               onClick={() => handleTestNotification('sms')}
               disabled={isLoading || !testPhone}
             >
-              Test SMS
+              {isLoading ? 'Sending...' : 'Test SMS'}
             </Button>
             <Button
               variant="outline"
@@ -184,7 +220,7 @@ const NotificationSettings = () => {
               onClick={() => handleTestNotification('whatsapp')}
               disabled={isLoading || !testPhone}
             >
-              Test WhatsApp
+              {isLoading ? 'Sending...' : 'Test WhatsApp'}
             </Button>
             <Button
               variant="outline"
@@ -192,7 +228,7 @@ const NotificationSettings = () => {
               onClick={() => handleTestNotification('voice')}
               disabled={isLoading || !testPhone}
             >
-              Test Voice Call
+              {isLoading ? 'Sending...' : 'Test Voice Call'}
             </Button>
           </div>
         </CardContent>

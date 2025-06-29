@@ -1,5 +1,5 @@
 
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/components/auth/AuthProvider';
 import { toast } from 'sonner';
@@ -13,6 +13,7 @@ interface NotificationRequest {
 
 export const useTwilioNotifications = () => {
   const { user } = useAuthContext();
+  const queryClient = useQueryClient();
 
   const sendNotificationMutation = useMutation({
     mutationFn: async (notification: NotificationRequest) => {
@@ -28,6 +29,9 @@ export const useTwilioNotifications = () => {
     },
     onSuccess: (data, variables) => {
       toast.success(`${variables.type.toUpperCase()} notification sent successfully`);
+      // Invalidate related queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['userActivityLogs'] });
+      queryClient.invalidateQueries({ queryKey: ['notificationPreferences'] });
     },
     onError: (error: any) => {
       console.error('Error sending notification:', error);
