@@ -107,6 +107,46 @@ export const useModules = () => {
     }
   });
 
+  const assignModuleMutation = useMutation({
+    mutationFn: async ({ 
+      userId, 
+      moduleId, 
+      expiresAt 
+    }: { 
+      userId: string; 
+      moduleId: string; 
+      expiresAt?: string | null;
+    }) => {
+      console.log('🔄 Assigning module to user:', { userId, moduleId, expiresAt });
+      
+      const { error } = await supabase
+        .from('user_module_assignments')
+        .insert({
+          user_id: userId,
+          module_id: moduleId,
+          expires_at: expiresAt,
+          is_active: true
+        });
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-effective-modules'] });
+      toast({
+        title: "Module Access Granted",
+        description: "Module has been assigned to user successfully.",
+      });
+    },
+    onError: (error: any) => {
+      console.error('❌ Assign module to user error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to assign module to user",
+        variant: "destructive",
+      });
+    }
+  });
+
   const assignModuleToRoleMutation = useMutation({
     mutationFn: async ({ 
       roleId, 
@@ -154,9 +194,11 @@ export const useModules = () => {
     refetch,
     hasModuleAccess,
     createModule: createModuleMutation.mutate,
+    assignModule: assignModuleMutation.mutate,
     assignModuleToRole: assignModuleToRoleMutation.mutate,
     isCreatingModule: createModuleMutation.isPending,
     isCreating: createModuleMutation.isPending, // Alias for backward compatibility
+    isAssigning: assignModuleMutation.isPending,
     isAssigningToRole: assignModuleToRoleMutation.isPending
   };
 };
