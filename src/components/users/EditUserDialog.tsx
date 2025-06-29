@@ -34,8 +34,10 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
   });
 
   useEffect(() => {
-    if (user) {
-      console.log('📝 Setting form data for user:', user);
+    if (user && open) {
+      console.log('📝 EditUserDialog received user data:', user);
+      console.log('🔍 User properties:', Object.keys(user));
+      
       setFormData({
         first_name: user.first_name || '',
         last_name: user.last_name || '',
@@ -43,8 +45,16 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
         department: user.department || '',
         facility_id: user.facility_id || ''
       });
+      
+      console.log('✅ Form data initialized:', {
+        first_name: user.first_name || '',
+        last_name: user.last_name || '',
+        phone: user.phone || '',
+        department: user.department || '',
+        facility_id: user.facility_id || ''
+      });
     }
-  }, [user]);
+  }, [user, open]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -109,6 +119,8 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
     console.log('⚠️ No user provided to EditUserDialog');
     return null;
   }
+
+  console.log('🎨 Rendering EditUserDialog for user:', user.email, 'Open:', open);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

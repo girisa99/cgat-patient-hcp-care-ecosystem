@@ -31,7 +31,8 @@ const UserActions: React.FC<UserActionsProps> = ({
     : user.email;
 
   const handleEditUser = () => {
-    console.log('✏️ Opening edit dialog for user:', user.id, userName);
+    console.log('✏️ Edit button clicked for user:', user.id, userName);
+    console.log('👤 User data being passed to edit dialog:', user);
     onEditUser(user);
   };
 

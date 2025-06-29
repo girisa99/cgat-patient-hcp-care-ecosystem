@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { PageContainer } from '@/components/layout/PageContainer';
@@ -67,8 +66,15 @@ const Users = () => {
   };
 
   const handleEditUser = (user: any) => {
+    console.log('📝 Users.tsx - handleEditUser called with:', user);
+    console.log('🔍 User object keys:', Object.keys(user));
+    console.log('📧 User email:', user.email);
+    console.log('👤 User name:', user.first_name, user.last_name);
+    
     setSelectedUser(user);
     setEditUserOpen(true);
+    
+    console.log('✅ EditUserDialog state updated - selectedUser set, dialog should open');
   };
 
   const handleAssignRole = (userId: string) => {
