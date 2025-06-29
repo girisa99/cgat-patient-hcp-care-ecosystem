@@ -19,7 +19,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
 
   // Super admins get the unified dashboard
-  if (canAccessUnifiedDashboard && userPreferences.preferredDashboard !== 'module-specific') {
+  if (canAccessUnifiedDashboard && userPreferences?.preferred_dashboard !== 'module-specific') {
     return (
       <ProtectedRoute>
         <MainLayout>

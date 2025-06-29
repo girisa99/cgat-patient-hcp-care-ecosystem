@@ -59,8 +59,8 @@ const RoutingPreferences: React.FC = () => {
               </div>
             </div>
             <Switch
-              checked={userPreferences.autoRoute || false}
-              onCheckedChange={(checked) => handlePreferenceChange('autoRoute', checked)}
+              checked={userPreferences?.auto_route || false}
+              onCheckedChange={(checked) => handlePreferenceChange('auto_route', checked)}
             />
           </div>
 
@@ -69,8 +69,8 @@ const RoutingPreferences: React.FC = () => {
             <div className="space-y-2">
               <div className="font-medium">Dashboard Type</div>
               <Select
-                value={userPreferences.preferredDashboard || 'unified'}
-                onValueChange={(value) => handlePreferenceChange('preferredDashboard', value)}
+                value={userPreferences?.preferred_dashboard || 'unified'}
+                onValueChange={(value) => handlePreferenceChange('preferred_dashboard', value)}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -91,8 +91,8 @@ const RoutingPreferences: React.FC = () => {
             <div className="space-y-2">
               <div className="font-medium">Default Module</div>
               <Select
-                value={userPreferences.defaultModule || ''}
-                onValueChange={(value) => handlePreferenceChange('defaultModule', value)}
+                value={userPreferences?.default_module || ''}
+                onValueChange={(value) => handlePreferenceChange('default_module', value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select default module" />
@@ -100,8 +100,8 @@ const RoutingPreferences: React.FC = () => {
                 <SelectContent>
                   <SelectItem value="dashboard">Dashboard</SelectItem>
                   {accessibleModules.map((module) => (
-                    <SelectItem key={module} value={module.toLowerCase()}>
-                      {module}
+                    <SelectItem key={module.id} value={module.id}>
+                      {module.id.charAt(0).toUpperCase() + module.id.slice(1)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -141,11 +141,9 @@ const RoutingPreferences: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                  {progress.formData && (
-                    <Badge variant="secondary" className="text-xs">
-                      Form Data Saved
-                    </Badge>
-                  )}
+                  <Badge variant="secondary" className="text-xs">
+                    {progress.visitCount} visits
+                  </Badge>
                 </div>
               ))}
               <div className="flex justify-end">

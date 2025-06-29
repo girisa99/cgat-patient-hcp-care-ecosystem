@@ -14,7 +14,7 @@ interface ModuleProgress {
 export const useIntelligentRouting = () => {
   const navigate = useNavigate();
   const { userRoles, profile } = useAuthContext();
-  const { userPreferences } = useUserSettings();
+  const { userPreferences, updatePreferences } = useUserSettings();
   const [isRouting, setIsRouting] = useState(false);
   const [moduleProgress, setModuleProgress] = useState<ModuleProgress[]>([]);
 
@@ -30,9 +30,16 @@ export const useIntelligentRouting = () => {
 
     return modules.filter(module => 
       module.requiredRoles.length === 0 || 
-      module.requiredRoles.some(role => userRoles.includes(role))
+      module.requiredRoles.some(role => userRoles.includes(role as any))
     );
   }, [userRoles]);
+
+  const canAccessUnifiedDashboard = userRoles.includes('superAdmin');
+  const hasMultipleModules = getAccessibleModules().length > 1;
+
+  const updateUserPreferences = (updates: any) => {
+    updatePreferences(updates);
+  };
 
   const performIntelligentRouting = useCallback(async () => {
     setIsRouting(true);
@@ -92,5 +99,9 @@ export const useIntelligentRouting = () => {
     isRouting,
     moduleProgress,
     getAccessibleModules,
+    userPreferences,
+    updateUserPreferences,
+    canAccessUnifiedDashboard,
+    hasMultipleModules,
   };
 };
