@@ -1,67 +1,30 @@
 
-import { validateDataArchitectureCompliance, getAuthUserById } from '../_shared/user-data-utils.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.2';
+import { validateDataArchitectureCompliance, fetchAllAuthUsers, fetchSupplementaryProfiles, fetchUserRoles, combineUserDataStandardized } from '../_shared/user-data-utils.ts';
 
 export async function listAllUsers(supabase: any) {
   validateDataArchitectureCompliance('manage-user-profiles/listAllUsers');
   
-  console.log('🔍 [MANAGE-USER-PROFILES] Fetching all users with standardized pattern');
+  console.log('🔄 [MANAGE-USER-PROFILES] Starting user list operation with standardized utilities');
 
-  // Get users from auth.users (PRIMARY SOURCE)
-  const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
-  
-  if (authError) {
-    console.error('❌ [MANAGE-USER-PROFILES] Error fetching from auth.users:', authError);
-    throw new Error(`Failed to fetch users from auth.users: ${authError.message}`);
+  try {
+    // Fetch users from auth.users (PRIMARY SOURCE)
+    const authUsers = await fetchAllAuthUsers(supabase);
+    const userIds = authUsers.map(user => user.id);
+
+    // Fetch supplementary data
+    const profiles = await fetchSupplementaryProfiles(supabase, userIds);
+    const userRoles = await fetchUserRoles(supabase, userIds);
+
+    // Combine all data using standardized utility
+    const combinedUsers = combineUserDataStandardized(authUsers, profiles, userRoles);
+
+    console.log('✅ [MANAGE-USER-PROFILES] User list operation completed using standardized pattern');
+    return { data: combinedUsers, error: null };
+
+  } catch (error: any) {
+    console.error('❌ [MANAGE-USER-PROFILES] User list operation failed:', error);
+    throw error;
   }
-
-  console.log(`✅ [MANAGE-USER-PROFILES] Found ${authUsers.users.length} users in auth.users (primary source)`);
-
-  // Get supplementary data from profiles table
-  const { data: profilesData, error: profilesError } = await supabase
-    .from('profiles')
-    .select(`
-      *,
-      user_roles (
-        roles (
-          name,
-          description
-        )
-      ),
-      facilities (
-        id,
-        name,
-        facility_type
-      )
-    `);
-
-  if (profilesError) {
-    console.warn('⚠️ [MANAGE-USER-PROFILES] Could not fetch supplementary profiles data:', profilesError);
-  }
-
-  // Merge auth.users data (primary) with profiles data (supplementary)
-  const mergedUsers = authUsers.users.map((authUser: any) => {
-    const profile = profilesData?.find(p => p.id === authUser.id) || {};
-    
-    return {
-      id: authUser.id,
-      email: authUser.email, // Always use email from auth.users (primary source)
-      email_confirmed_at: authUser.email_confirmed_at,
-      created_at: authUser.created_at,
-      updated_at: authUser.updated_at,
-      // Merge supplementary data from profiles
-      first_name: profile.first_name || null,
-      last_name: profile.last_name || null,
-      phone: profile.phone || null,
-      facility_id: profile.facility_id || null,
-      user_roles: profile.user_roles || [],
-      facilities: profile.facilities || null
-    };
-  });
-
-  console.log(`✅ [MANAGE-USER-PROFILES] Successfully merged ${mergedUsers.length} users with supplementary data`);
-  
-  return { data: mergedUsers, error: null };
 }
 
 export async function deactivateUser(supabase: any, userId: string, reason: string, deactivatedBy: string) {
@@ -71,8 +34,14 @@ export async function deactivateUser(supabase: any, userId: string, reason: stri
 
   try {
     // Validate user exists in auth.users first
-    const authUser = await getAuthUserById(supabase, userId);
-    console.log('✅ [MANAGE-USER-PROFILES] User validated for deactivation:', authUser.email);
+    const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(userId);
+    
+    if (authError || !authUser.user) {
+      console.error('❌ [MANAGE-USER-PROFILES] User not found in auth.users:', authError);
+      throw new Error(`User not found: ${authError?.message || 'User does not exist'}`);
+    }
+
+    console.log('✅ [MANAGE-USER-PROFILES] User validated for deactivation:', authUser.user.email);
 
     // Delete the user from auth.users (this will cascade to related tables)
     const { error: deleteError } = await supabase.auth.admin.deleteUser(userId);
@@ -92,7 +61,7 @@ export async function deactivateUser(supabase: any, userId: string, reason: stri
           table_name: 'auth.users',
           record_id: userId,
           old_values: {
-            email: authUser.email,
+            email: authUser.user.email,
             deactivated_at: new Date().toISOString()
           },
           new_values: {

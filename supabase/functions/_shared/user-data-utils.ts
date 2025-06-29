@@ -149,6 +149,23 @@ export function combineUserDataStandardized(
       }
     }));
     
+    // Extract name data with proper fallback chain
+    const firstName = profile?.first_name || 
+                     authUser.user_metadata?.first_name || 
+                     authUser.user_metadata?.firstName || 
+                     authUser.raw_user_meta_data?.first_name || 
+                     authUser.raw_user_meta_data?.firstName || 
+                     null;
+                     
+    const lastName = profile?.last_name || 
+                    authUser.user_metadata?.last_name || 
+                    authUser.user_metadata?.lastName || 
+                    authUser.raw_user_meta_data?.last_name || 
+                    authUser.raw_user_meta_data?.lastName || 
+                    null;
+
+    console.log(`👤 [USER-DATA-UTILS] Processing user ${authUser.email}: firstName="${firstName}", lastName="${lastName}"`);
+    
     // PRIMARY SOURCE: auth.users data
     // SECONDARY SOURCE: profiles table for supplementary data only
     const combinedUser: StandardizedUser = {
@@ -158,9 +175,9 @@ export function combineUserDataStandardized(
       created_at: authUser.created_at,
       
       // SUPPLEMENTARY DATA (profiles table or auth metadata)
-      first_name: profile?.first_name || authUser.user_metadata?.firstName || authUser.user_metadata?.first_name || null,
-      last_name: profile?.last_name || authUser.user_metadata?.lastName || authUser.user_metadata?.last_name || null,
-      phone: profile?.phone || authUser.user_metadata?.phone || null,
+      first_name: firstName,
+      last_name: lastName,
+      phone: profile?.phone || authUser.user_metadata?.phone || authUser.raw_user_meta_data?.phone || null,
       department: profile?.department || null,
       facility_id: profile?.facility_id || null,
       avatar_url: profile?.avatar_url || null,
