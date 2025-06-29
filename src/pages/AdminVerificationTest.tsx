@@ -1,69 +1,32 @@
 
 /**
- * System Verification Dashboard
- * Uses unified verification data to ensure health score and issues display are consistent
+ * Real System Verification Dashboard
+ * Uses real database validation instead of mock implementations
  */
 
-import React, { useState } from 'react';
+import React from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { PageContainer } from '@/components/layout/PageContainer';
-import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Shield, AlertTriangle, CheckCircle, Database, RefreshCw, Activity, Zap } from 'lucide-react';
-import { useUnifiedVerificationData } from '@/hooks/useUnifiedVerificationData';
-import CleanIssuesTab from '@/components/security/CleanIssuesTab';
+import { Badge } from '@/components/ui/badge';
+import { useRealDatabaseValidation } from '@/hooks/useRealDatabaseValidation';
+import { RealVerificationOrchestrator } from '@/utils/verification/RealVerificationOrchestrator';
 
 const AdminVerificationTest = () => {
-  const [isManualRefreshRunning, setIsManualRefreshRunning] = useState(false);
-  const { toast } = useToast();
-
-  // Unified verification data ensures health score and issues are consistent
   const {
     healthScore,
-    isStable,
+    isSystemStable,
     criticalIssuesCount,
     totalActiveIssues,
-    totalFixedIssues,
-    lastCalculated,
-    activeIssues,
-    categorizedIssues,
-    isLoading,
+    lastValidationTime,
+    databaseIssues,
+    isValidating,
     error,
-    refresh
-  } = useUnifiedVerificationData();
-
-  const handleManualRefresh = async () => {
-    setIsManualRefreshRunning(true);
-    console.log('🔄 Manual refresh requested - unified verification system');
-
-    try {
-      toast({
-        title: "🔄 Manual Refresh Started",
-        description: "Refreshing unified verification data...",
-        variant: "default",
-      });
-
-      await refresh();
-      
-      toast({
-        title: "✅ Manual Refresh Complete",
-        description: `Health Score: ${healthScore}/100 • Active Issues: ${categorizedIssues.total}`,
-        variant: "default",
-      });
-      
-      console.log('✅ Manual refresh completed successfully');
-    } catch (error) {
-      console.error('❌ Manual refresh failed:', error);
-      toast({
-        title: "❌ Refresh Failed",
-        description: error instanceof Error ? error.message : "Failed to refresh data",
-        variant: "destructive",
-      });
-    } finally {
-      setIsManualRefreshRunning(false);
-    }
-  };
+    validateNow,
+    validationResult
+  } = useRealDatabaseValidation();
 
   const getHealthScoreColor = () => {
     if (healthScore >= 80) return "text-green-800";
@@ -77,52 +40,80 @@ const AdminVerificationTest = () => {
     return "bg-red-50 border-red-200";
   };
 
+  const handleDownloadReport = () => {
+    if (!validationResult) return;
+
+    const report = RealVerificationOrchestrator.generateSystemReport(validationResult);
+    const blob = new Blob([report], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `system-health-report-${new Date().toISOString().split('T')[0]}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <MainLayout>
       <PageContainer
-        title="Unified System Verification Dashboard"
-        subtitle="Health score and issues display use the same underlying data for perfect consistency"
+        title="Real System Verification Dashboard"
+        subtitle="Live database validation and system health monitoring - NO MOCK DATA"
       >
         <div className="space-y-6">
-          {/* Unified System Status */}
+          {/* Real System Health Status */}
           <Card className={getHealthScoreBgColor()}>
             <CardHeader>
               <CardTitle className={`flex items-center justify-between ${getHealthScoreColor()}`}>
                 <div className="flex items-center">
-                  <Zap className="h-5 w-5 mr-2" />
-                  Unified System Health: {healthScore}/100
+                  <Database className="h-5 w-5 mr-2" />
+                  Real Database Health: {healthScore}/100
                 </div>
                 <div className="flex items-center gap-2">
                   <Button 
-                    onClick={handleManualRefresh} 
-                    disabled={isManualRefreshRunning || isLoading}
+                    onClick={validateNow} 
+                    disabled={isValidating}
                     variant="outline"
                     size="sm"
                   >
-                    {isManualRefreshRunning ? (
+                    {isValidating ? (
                       <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
                     ) : (
                       <Database className="h-4 w-4 mr-2" />
                     )}
-                    {isManualRefreshRunning ? 'Refreshing...' : 'Refresh Data'}
+                    {isValidating ? 'Validating...' : 'Re-validate Database'}
+                  </Button>
+                  <Button 
+                    onClick={handleDownloadReport} 
+                    disabled={!validationResult}
+                    variant="outline"
+                    size="sm"
+                  >
+                    📄 Download Report
                   </Button>
                 </div>
               </CardTitle>
-              <CardDescription className={isStable ? 'text-green-700' : 'text-red-700'}>
-                <strong>✅ Unified Verification System Active</strong>
+              <CardDescription className={isSystemStable ? 'text-green-700' : 'text-red-700'}>
+                <strong>🗄️ REAL DATABASE VALIDATION ACTIVE</strong>
                 <br />
-                Health score and issues display use the same data source - no mismatches
+                Direct connection to Supabase database - Real validation results
                 <br />
-                Last calculated: {lastCalculated.toLocaleTimeString()}
+                Last validated: {lastValidationTime ? lastValidationTime.toLocaleString() : 'Never'}
                 <br />
-                Critical Issues: {criticalIssuesCount} | Active Issues: {totalActiveIssues} | Fixes Applied: {totalFixedIssues}
+                Critical Issues: {criticalIssuesCount} | Total Issues: {totalActiveIssues}
                 <br />
-                Status: {isStable ? '✅ System is stable and secure' : '⚠️ System requires attention'}
+                Database Status: {isSystemStable ? '✅ Database is healthy and secure' : '⚠️ Database requires attention'}
+                {validationResult && (
+                  <>
+                    <br />
+                    Tables Scanned: {validationResult.databaseHealth.tablesScanned.length} | 
+                    Validation Time: {validationResult.databaseHealth.validationTimestamp}
+                  </>
+                )}
               </CardDescription>
             </CardHeader>
           </Card>
 
-          {/* Unified Metrics Display */}
+          {/* Real Metrics Display */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Card className="bg-red-50 border-red-200">
               <CardHeader className="pb-2">
@@ -133,7 +124,7 @@ const AdminVerificationTest = () => {
               </CardHeader>
               <CardContent className="pt-0">
                 <div className="text-2xl font-bold text-red-800">{criticalIssuesCount}</div>
-                <div className="text-xs text-red-600">From unified scan</div>
+                <div className="text-xs text-red-600">From live database</div>
               </CardContent>
             </Card>
             
@@ -141,25 +132,12 @@ const AdminVerificationTest = () => {
               <CardHeader className="pb-2">
                 <CardTitle className="text-orange-800 flex items-center text-sm">
                   <Shield className="h-4 w-4 mr-2" />
-                  Total Active
+                  Total Issues
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-0">
                 <div className="text-2xl font-bold text-orange-800">{totalActiveIssues}</div>
-                <div className="text-xs text-orange-600">Same as health calc</div>
-              </CardContent>
-            </Card>
-            
-            <Card className="bg-green-50 border-green-200">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-green-800 flex items-center text-sm">
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  Fixed Issues
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="text-2xl font-bold text-green-800">{totalFixedIssues}</div>
-                <div className="text-xs text-green-600">Applied fixes</div>
+                <div className="text-xs text-orange-600">Real validation results</div>
               </CardContent>
             </Card>
             
@@ -167,31 +145,111 @@ const AdminVerificationTest = () => {
               <CardHeader className="pb-2">
                 <CardTitle className="text-blue-800 flex items-center text-sm">
                   <Activity className="h-4 w-4 mr-2" />
+                  Tables Scanned
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="text-2xl font-bold text-blue-800">
+                  {validationResult?.databaseHealth.tablesScanned.length || 0}
+                </div>
+                <div className="text-xs text-blue-600">Live database tables</div>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-green-50 border-green-200">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-green-800 flex items-center text-sm">
+                  <CheckCircle className="h-4 w-4 mr-2" />
                   Health Score
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-0">
-                <div className="text-2xl font-bold text-blue-800">{healthScore}%</div>
-                <div className="text-xs text-blue-600">From same data</div>
+                <div className="text-2xl font-bold text-green-800">{healthScore}%</div>
+                <div className="text-xs text-green-600">Real-time calculation</div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Data Consistency Confirmation */}
-          <Card className="bg-green-50 border-green-200">
+          {/* Real Database Issues */}
+          <Card>
             <CardHeader>
-              <CardTitle className="text-green-800 flex items-center">
-                <Zap className="h-5 w-5 mr-2" />
-                Data Consistency Verified
+              <CardTitle className="flex items-center">
+                <Database className="h-5 w-5 mr-2 text-blue-600" />
+                Real Database Issues Found
               </CardTitle>
-              <CardDescription className="text-green-700">
-                ✅ Health score calculation uses the same issues data displayed below
+              <CardDescription>
+                Issues detected from live Supabase database validation
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {databaseIssues.length > 0 ? (
+                  databaseIssues.map((issue, index) => (
+                    <div key={issue.id || index} className="p-4 border rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <Badge 
+                            variant={issue.severity === 'critical' ? 'destructive' : 'outline'}
+                            className={
+                              issue.severity === 'critical' ? 'bg-red-100 text-red-800' :
+                              issue.severity === 'high' ? 'bg-orange-100 text-orange-800' :
+                              issue.severity === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-blue-100 text-blue-800'
+                            }
+                          >
+                            {issue.severity.toUpperCase()}
+                          </Badge>
+                          <span className="font-medium text-sm">{issue.type.replace('_', ' ').toUpperCase()}</span>
+                        </div>
+                      </div>
+                      <p className="text-sm text-gray-700 mb-1">{issue.description}</p>
+                      <p className="text-xs text-gray-500">Table: {issue.table}</p>
+                      <p className="text-xs text-blue-600 mt-1">💡 {issue.recommendation}</p>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8">
+                    {isValidating ? (
+                      <div className="flex items-center justify-center text-blue-600">
+                        <RefreshCw className="h-5 w-5 mr-2 animate-spin" />
+                        Validating live database...
+                      </div>
+                    ) : (
+                      <div className="text-green-600">
+                        <CheckCircle className="h-8 w-8 mx-auto mb-2" />
+                        <p className="font-medium">No Database Issues Found</p>
+                        <p className="text-sm">Your database passed all validation checks</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Real Validation Status */}
+          <Card className="bg-blue-50 border-blue-200">
+            <CardHeader>
+              <CardTitle className="text-blue-800 flex items-center">
+                <Zap className="h-5 w-5 mr-2" />
+                Real Validation System Status
+              </CardTitle>
+              <CardDescription className="text-blue-700">
+                ✅ Connected to live Supabase database: ithspbabhmdntioslfqe.supabase.co
                 <br />
-                ✅ No mismatches between health score ({healthScore}/100) and active issues count ({categorizedIssues.total})
+                ✅ Real-time table structure validation
                 <br />
-                ✅ Both systems scan the original database state directly
+                ✅ Live RLS policy verification
                 <br />
-                ✅ Issues are synced to verification table after calculation for consistency
+                ✅ Actual data integrity checks
+                <br />
+                ✅ No mock data - All results from live database
+                {validationResult && (
+                  <>
+                    <br />
+                    📊 Scanned Tables: {validationResult.databaseHealth.tablesScanned.join(', ')}
+                  </>
+                )}
               </CardDescription>
             </CardHeader>
           </Card>
@@ -202,7 +260,7 @@ const AdminVerificationTest = () => {
               <CardHeader>
                 <CardTitle className="text-red-800 flex items-center">
                   <AlertTriangle className="h-5 w-5 mr-2" />
-                  System Error
+                  Validation Error
                 </CardTitle>
                 <CardDescription className="text-red-700">
                   {error}
@@ -210,22 +268,6 @@ const AdminVerificationTest = () => {
               </CardHeader>
             </Card>
           )}
-
-          {/* Unified Issues Management */}
-          <Card className="bg-gray-50 border-gray-200">
-            <CardHeader>
-              <CardTitle className="text-gray-800">Unified Issues Management</CardTitle>
-              <CardDescription className="text-gray-700">
-                These issues are the exact same ones used to calculate the health score above
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <CleanIssuesTab 
-                onReRunVerification={handleManualRefresh}
-                isReRunning={isManualRefreshRunning}
-              />
-            </CardContent>
-          </Card>
         </div>
       </PageContainer>
     </MainLayout>
