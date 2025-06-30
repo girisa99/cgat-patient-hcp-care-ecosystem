@@ -1,6 +1,8 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { InternalApiDetector } from '@/utils/api/InternalApiDetector';
+import { OnboardingApiDetector } from '@/utils/api/OnboardingApiDetector';
 
 interface ApiIntegration {
   id: string;
@@ -36,7 +38,7 @@ export const useApiIntegrations = () => {
   } = useQuery({
     queryKey: ['api-integrations'],
     queryFn: async (): Promise<ApiIntegration[]> => {
-      console.log('📊 Fetching API integrations with comprehensive processes...');
+      console.log('📊 Fetching API integrations including onboarding processes...');
       
       try {
         // Fetch real API integrations from registry
@@ -74,6 +76,14 @@ export const useApiIntegrations = () => {
             }
           }));
         }
+
+        // Generate core healthcare internal API
+        const coreHealthcareIntegration = InternalApiDetector.generateMockInternalIntegration();
+        allIntegrations.push(coreHealthcareIntegration);
+
+        // Generate onboarding internal API
+        const onboardingIntegration = OnboardingApiDetector.generateOnboardingIntegration();
+        allIntegrations.push(onboardingIntegration);
 
         // Add Twilio as a consumed external API with comprehensive processes
         const twilioIntegration: ApiIntegration = {
@@ -290,32 +300,22 @@ export const useApiIntegrations = () => {
 
         allIntegrations.push(...externalApis);
 
-        console.log('✅ API integrations loaded with comprehensive processes:', allIntegrations.length);
+        console.log('✅ API integrations loaded with onboarding processes:', {
+          total: allIntegrations.length,
+          internal: allIntegrations.filter(i => i.type === 'internal').length,
+          external: allIntegrations.filter(i => i.type === 'external').length,
+          onboarding: allIntegrations.filter(i => i.category === 'onboarding').length
+        });
+        
         return allIntegrations;
 
       } catch (error) {
         console.error('Error fetching API integrations:', error);
-        // Return at least Twilio as fallback
-        return [{
-          id: 'twilio-external-api',
-          name: 'Twilio Communications API',
-          type: 'external',
-          status: 'active',
-          description: 'External Twilio API for SMS and voice communications',
-          baseUrl: 'https://api.twilio.com',
-          version: '2010-04-01',
-          category: 'Communications',
-          direction: 'outbound',
-          endpoints: [],
-          schemas: {},
-          rlsPolicies: [],
-          mappings: [],
-          documentation: {
-            specificationUrl: 'https://www.twilio.com/docs/api'
-          },
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        }];
+        // Return core integrations as fallback
+        return [
+          InternalApiDetector.generateMockInternalIntegration(),
+          OnboardingApiDetector.generateOnboardingIntegration()
+        ];
       }
     },
     staleTime: 30000,
