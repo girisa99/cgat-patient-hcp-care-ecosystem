@@ -43,17 +43,26 @@ export const useIntelligentRouting = () => {
   };
 
   const performIntelligentRouting = useCallback(async () => {
+    console.log('🚀 Starting intelligent routing...');
+    console.log('🔍 Current state:', {
+      userRoles,
+      userEmail: user?.email,
+      hasPreferences: !!userPreferences,
+      isRouting
+    });
+
+    // Prevent multiple routing attempts
+    if (isRouting) {
+      console.log('⚠️ Routing already in progress, skipping...');
+      return;
+    }
+
     setIsRouting(true);
     
     try {
-      console.log('🚀 Performing intelligent routing...');
-      console.log('User roles:', userRoles);
-      console.log('User email:', user?.email);
-      console.log('User preferences:', userPreferences);
-
       // Get accessible modules
       const accessibleModules = getAccessibleModules();
-      console.log('Accessible modules:', accessibleModules.map(m => m.id));
+      console.log('📋 Accessible modules:', accessibleModules.map(m => m.id));
 
       // Check user preferences first
       if (userPreferences?.auto_route && userPreferences?.default_module) {
@@ -62,27 +71,27 @@ export const useIntelligentRouting = () => {
         );
         
         if (preferredModule) {
-          console.log('✅ Routing to preferred module:', preferredModule.path);
+          console.log('⭐ Routing to preferred module:', preferredModule.path);
           navigate(preferredModule.path, { replace: true });
           return;
         }
       }
 
-      // Role-based routing logic with proper onboarding team handling
+      // Role-based routing logic
       if (userRoles.includes('superAdmin')) {
-        console.log('✅ Super admin detected, routing to dashboard');
+        console.log('👑 Super admin detected, routing to dashboard');
         navigate('/dashboard', { replace: true });
       } else if (userRoles.includes('onboardingTeam')) {
-        console.log('✅ Onboarding team detected, routing to onboarding');
+        console.log('🎯 Onboarding team detected, routing to onboarding');
         navigate('/onboarding', { replace: true });
       } else if (userRoles.includes('healthcareProvider') || userRoles.includes('nurse')) {
-        console.log('✅ Healthcare provider/nurse detected, routing to patients');
+        console.log('🏥 Healthcare provider/nurse detected, routing to patients');
         navigate('/patients', { replace: true });
       } else if (userRoles.includes('caseManager')) {
-        console.log('✅ Case manager detected, routing to patients');
+        console.log('📋 Case manager detected, routing to patients');
         navigate('/patients', { replace: true });
       } else {
-        console.log('✅ Default routing to dashboard');
+        console.log('🏠 Default routing to dashboard');
         navigate('/dashboard', { replace: true });
       }
 
@@ -90,10 +99,14 @@ export const useIntelligentRouting = () => {
       console.error('❌ Error in intelligent routing:', error);
       // Always fallback to dashboard on error
       navigate('/dashboard', { replace: true });
+      throw error; // Re-throw so the calling component can handle it
     } finally {
-      setIsRouting(false);
+      // Add a small delay before clearing the routing state to prevent UI flicker
+      setTimeout(() => {
+        setIsRouting(false);
+      }, 500);
     }
-  }, [navigate, userRoles, userPreferences, getAccessibleModules, user]);
+  }, [navigate, userRoles, userPreferences, getAccessibleModules, user, isRouting]);
 
   return {
     performIntelligentRouting,

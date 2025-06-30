@@ -1,5 +1,5 @@
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useIntelligentRouting } from '@/hooks/useIntelligentRouting';
 import { useAuthContext } from '@/components/auth/AuthProvider';
@@ -12,43 +12,91 @@ const Index = () => {
   const navigate = useNavigate();
   const { performIntelligentRouting, isRouting } = useIntelligentRouting();
   const { user, loading } = useAuthContext();
+  const [routingAttempted, setRoutingAttempted] = useState(false);
+  const [routingError, setRoutingError] = useState<string | null>(null);
 
   useEffect(() => {
     const handleRouting = async () => {
       // Wait for auth to load
-      if (loading) return;
+      if (loading) {
+        console.log('⏳ Auth still loading...');
+        return;
+      }
 
       // If no user, stay on index to show login form
       if (!user) {
-        console.log('No user found, showing login form');
+        console.log('👤 No user found, showing login form');
+        setRoutingAttempted(true);
+        return;
+      }
+
+      // If we already attempted routing, don't try again
+      if (routingAttempted) {
+        console.log('🔄 Routing already attempted, skipping...');
         return;
       }
 
       try {
-        console.log('User authenticated, performing intelligent routing...');
+        console.log('🚀 User authenticated, performing intelligent routing...');
+        setRoutingAttempted(true);
         await performIntelligentRouting();
         
-        // Add a timeout fallback in case routing gets stuck
+        // Add a timeout fallback to prevent infinite loading
         const timeout = setTimeout(() => {
-          console.log('Intelligent routing timed out, falling back to dashboard');
+          console.log('⚠️ Intelligent routing timed out, falling back to dashboard');
+          setRoutingError('Routing took too long, redirecting to dashboard...');
           navigate('/dashboard', { replace: true });
-        }, 3000);
+        }, 5000); // 5 second timeout
 
         // Clear timeout if component unmounts
         return () => clearTimeout(timeout);
       } catch (error) {
-        console.error('Error during intelligent routing:', error);
-        // Fallback to dashboard on error
-        navigate('/dashboard', { replace: true });
+        console.error('❌ Error during intelligent routing:', error);
+        setRoutingError('Routing failed, redirecting to dashboard...');
+        // Fallback to dashboard on error with a small delay to show the error
+        setTimeout(() => {
+          navigate('/dashboard', { replace: true });
+        }, 2000);
       }
     };
 
     handleRouting();
-  }, [performIntelligentRouting, navigate, user, loading]);
+  }, [performIntelligentRouting, navigate, user, loading, routingAttempted]);
 
-  // Show loading while auth is loading or routing is in progress
-  if (loading || isRouting) {
-    return <LoadingSpinner />;
+  // Show loading while auth is loading
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <LoadingSpinner size="lg" />
+          <p className="mt-4 text-gray-600">Loading authentication...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading while routing is in progress
+  if (isRouting && user && !routingError) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <LoadingSpinner size="lg" />
+          <p className="mt-4 text-gray-600">Redirecting to your dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error if routing failed
+  if (routingError) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <LoadingSpinner size="lg" />
+          <p className="mt-4 text-orange-600">{routingError}</p>
+        </div>
+      </div>
+    );
   }
 
   // If no user, show the login form and test component
@@ -66,8 +114,15 @@ const Index = () => {
     );
   }
 
-  // This should rarely be seen as intelligent routing should redirect
-  return <LoadingSpinner />;
+  // Fallback - this should rarely be seen
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="text-center">
+        <LoadingSpinner size="lg" />
+        <p className="mt-4 text-gray-600">Preparing your dashboard...</p>
+      </div>
+    </div>
+  );
 };
 
 export default Index;
