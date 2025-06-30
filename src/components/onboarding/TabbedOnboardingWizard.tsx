@@ -1,13 +1,11 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TreatmentCenterOnboarding } from '@/types/onboarding';
 import { useTreatmentCenterOnboarding } from '@/hooks/useTreatmentCenterOnboarding';
 import { useAutoSave } from '@/hooks/useAutoSave';
+import { AnimatedJourney } from './AnimatedJourney';
 import { CompanyInfoStep } from './steps/CompanyInfoStep';
 import { BusinessClassificationStep } from './steps/BusinessClassificationStep';
 import { ContactsStep } from './steps/ContactsStep';
@@ -18,7 +16,7 @@ import { LicensesStep } from './steps/LicensesStep';
 import { DocumentsStep } from './steps/DocumentsStep';
 import { AuthorizationsStep } from './steps/AuthorizationsStep';
 import { ReviewStep } from './steps/ReviewStep';
-import { Save, Clock, CheckCircle2, AlertCircle, Users, Share, Eye } from 'lucide-react';
+import { Save, Clock, Users, Share } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface TabbedOnboardingWizardProps {
@@ -162,7 +160,7 @@ export const TabbedOnboardingWizard: React.FC<TabbedOnboardingWizardProps> = ({
     enabled: true,
   });
 
-  // Calculate completion status for each tab and step
+  // Calculate completion status for each step
   const getStepCompletion = (stepKey: string): 'complete' | 'incomplete' | 'needs_review' => {
     switch (stepKey) {
       case 'company_info':
@@ -192,21 +190,14 @@ export const TabbedOnboardingWizard: React.FC<TabbedOnboardingWizardProps> = ({
     }
   };
 
-  const getTabCompletion = (tabId: string): number => {
-    const tab = tabGroups.find(t => t.id === tabId);
-    if (!tab) return 0;
-    
-    const completedSteps = tab.steps.filter(step => getStepCompletion(step.key) === 'complete').length;
-    return Math.round((completedSteps / tab.steps.length) * 100);
-  };
-
   const getOverallProgress = (): number => {
     let totalWeight = 0;
     let completedWeight = 0;
     
     tabGroups.forEach(tab => {
       totalWeight += tab.completionWeight;
-      const tabProgress = getTabCompletion(tab.id);
+      const completedSteps = tab.steps.filter(step => getStepCompletion(step.key) === 'complete').length;
+      const tabProgress = Math.round((completedSteps / tab.steps.length) * 100);
       completedWeight += (tabProgress / 100) * tab.completionWeight;
     });
     
@@ -237,13 +228,31 @@ export const TabbedOnboardingWizard: React.FC<TabbedOnboardingWizardProps> = ({
     }
   };
 
+  const handleSectionChange = (sectionId: string) => {
+    setActiveTab(sectionId);
+    // Set the first step of the section as active
+    const section = tabGroups.find(tab => tab.id === sectionId);
+    if (section) {
+      setActiveStep(section.steps[0].key);
+    }
+  };
+
+  const handleStepChange = (stepKey: string) => {
+    setActiveStep(stepKey);
+    // Find which section this step belongs to and make it active
+    const section = tabGroups.find(tab => tab.steps.some(step => step.key === stepKey));
+    if (section) {
+      setActiveTab(section.id);
+    }
+  };
+
   const currentTabGroup = tabGroups.find(tab => tab.id === activeTab);
   const currentStepInfo = currentTabGroup?.steps.find(step => step.key === activeStep);
   const StepComponent = currentStepInfo?.component;
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
-      {/* Progress Header */}
+      {/* Action Header */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -256,9 +265,6 @@ export const TabbedOnboardingWizard: React.FC<TabbedOnboardingWizardProps> = ({
                   </Badge>
                 )}
               </CardTitle>
-              <CardDescription className="mt-2">
-                Complete your partnership application with healthcare distributors
-              </CardDescription>
             </div>
             <div className="flex items-center space-x-4">
               {isSaving && (
@@ -288,147 +294,46 @@ export const TabbedOnboardingWizard: React.FC<TabbedOnboardingWizardProps> = ({
               </Button>
             </div>
           </div>
-          
-          {/* Overall Progress */}
-          <div className="mt-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium">Overall Progress</span>
-              <span className="text-sm text-muted-foreground">{getOverallProgress()}% Complete</span>
-            </div>
-            <Progress value={getOverallProgress()} className="w-full h-2" />
-          </div>
         </CardHeader>
       </Card>
 
-      {/* Tab Groups Progress */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {tabGroups.map((tab) => {
-          const completion = getTabCompletion(tab.id);
-          const isActive = activeTab === tab.id;
-          
-          return (
-            <Card 
-              key={tab.id} 
-              className={`cursor-pointer transition-all ${isActive ? 'ring-2 ring-primary' : 'hover:shadow-md'}`}
-              onClick={() => setActiveTab(tab.id)}
-            >
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-medium text-sm">{tab.label}</h3>
-                  <Badge variant={completion === 100 ? "default" : completion > 50 ? "secondary" : "outline"}>
-                    {completion}%
-                  </Badge>
-                </div>
-                <Progress value={completion} className="w-full h-1 mb-2" />
-                <p className="text-xs text-muted-foreground">{tab.description}</p>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+      {/* Animated Journey */}
+      <AnimatedJourney
+        sections={tabGroups}
+        activeSection={activeTab}
+        activeStep={activeStep}
+        getStepCompletion={getStepCompletion}
+        onSectionChange={handleSectionChange}
+        onStepChange={handleStepChange}
+        overallProgress={getOverallProgress()}
+      />
 
-      {/* Main Tabbed Interface */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          {tabGroups.map((tab) => (
-            <TabsTrigger key={tab.id} value={tab.id} className="text-xs">
-              {tab.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-
-        {tabGroups.map((tabGroup) => (
-          <TabsContent key={tabGroup.id} value={tabGroup.id} className="space-y-6">
-            {/* Step Navigation within Tab */}
-            <Card>
-              <CardHeader>
+      {/* Current Step Content */}
+      {StepComponent && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
                 <CardTitle className="flex items-center space-x-2">
-                  <span>{tabGroup.label}</span>
-                  <Badge variant="outline">
-                    {getTabCompletion(tabGroup.id)}% Complete
-                  </Badge>
+                  <span>{currentStepInfo?.label}</span>
+                  {currentStepInfo?.required && (
+                    <Badge variant="destructive" className="text-xs">Required</Badge>
+                  )}
                 </CardTitle>
-                <CardDescription>{tabGroup.description}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  {tabGroup.steps.map((step) => {
-                    const completion = getStepCompletion(step.key);
-                    const isActive = activeStep === step.key;
-                    
-                    return (
-                      <Button
-                        key={step.key}
-                        variant={isActive ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setActiveStep(step.key)}
-                        className={`text-xs ${
-                          completion === 'complete' ? 'border-green-500' : 
-                          completion === 'needs_review' ? 'border-yellow-500' : 
-                          'border-gray-300'
-                        }`}
-                      >
-                        <div className="flex items-center space-x-2">
-                          {completion === 'complete' ? (
-                            <CheckCircle2 className="h-3 w-3 text-green-600" />
-                          ) : completion === 'needs_review' ? (
-                            <AlertCircle className="h-3 w-3 text-yellow-600" />
-                          ) : (
-                            <div className="h-3 w-3 rounded-full border-2 border-gray-400" />
-                          )}
-                          <span>{step.label}</span>
-                          {step.required && <span className="text-red-500">*</span>}
-                        </div>
-                      </Button>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Current Step Content */}
-            {StepComponent && (
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="flex items-center space-x-2">
-                        <span>{currentStepInfo?.label}</span>
-                        {currentStepInfo?.required && (
-                          <Badge variant="destructive" className="text-xs">Required</Badge>
-                        )}
-                      </CardTitle>
-                      <CardDescription>
-                        Step {tabGroup.steps.findIndex(s => s.key === activeStep) + 1} of {tabGroup.steps.length} in {tabGroup.label}
-                      </CardDescription>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      {getStepCompletion(activeStep) === 'complete' && (
-                        <Badge variant="default" className="flex items-center space-x-1">
-                          <CheckCircle2 className="h-3 w-3" />
-                          <span>Complete</span>
-                        </Badge>
-                      )}
-                      {getStepCompletion(activeStep) === 'needs_review' && (
-                        <Badge variant="secondary" className="flex items-center space-x-1">
-                          <AlertCircle className="h-3 w-3" />
-                          <span>Needs Review</span>
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <StepComponent
-                    data={formData}
-                    onDataChange={handleStepData}
-                  />
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-        ))}
-      </Tabs>
+                <CardDescription>
+                  Step {currentTabGroup?.steps.findIndex(s => s.key === activeStep)! + 1} of {currentTabGroup?.steps.length} in {currentTabGroup?.label}
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <StepComponent
+              data={formData}
+              onDataChange={handleStepData}
+            />
+          </CardContent>
+        </Card>
+      )}
 
       {/* Collaboration Info */}
       <Card className="bg-blue-50 border-blue-200">
