@@ -3069,6 +3069,7 @@ export type Database = {
           is_active: boolean | null
           name: string
           provider_type: Database["public"]["Enums"]["service_provider_type"]
+          specializations: string[] | null
           updated_at: string | null
         }
         Insert: {
@@ -3082,6 +3083,7 @@ export type Database = {
           is_active?: boolean | null
           name: string
           provider_type: Database["public"]["Enums"]["service_provider_type"]
+          specializations?: string[] | null
           updated_at?: string | null
         }
         Update: {
@@ -3095,14 +3097,17 @@ export type Database = {
           is_active?: boolean | null
           name?: string
           provider_type?: Database["public"]["Enums"]["service_provider_type"]
+          specializations?: string[] | null
           updated_at?: string | null
         }
         Relationships: []
       }
       services: {
         Row: {
+          capabilities: string[] | null
           created_at: string | null
           description: string | null
+          geographic_coverage: string[] | null
           id: string
           is_active: boolean | null
           name: string
@@ -3114,8 +3119,10 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          capabilities?: string[] | null
           created_at?: string | null
           description?: string | null
+          geographic_coverage?: string[] | null
           id?: string
           is_active?: boolean | null
           name: string
@@ -3127,8 +3134,10 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          capabilities?: string[] | null
           created_at?: string | null
           description?: string | null
+          geographic_coverage?: string[] | null
           id?: string
           is_active?: boolean | null
           name?: string

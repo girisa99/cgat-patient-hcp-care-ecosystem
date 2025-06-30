@@ -134,6 +134,8 @@ export const useJsonDataImport = () => {
             manufacturerType = 'pharma';
           } else if (mfg.manufacturer_type === 'gene_therapy_specialist' || mfg.manufacturer_type === 'cell_therapy_specialist') {
             manufacturerType = 'biotech';
+          } else if (mfg.manufacturer_type === 'contract_manufacturing') {
+            manufacturerType = 'cmo';
           }
 
           return {
@@ -157,9 +159,9 @@ export const useJsonDataImport = () => {
         const modalitiesData = jsonData.modalities.map((modality: any) => {
           // Map modality types to valid enum values
           let modalityType = 'autologous'; // default
-          if (modality.modality_type === 'gene_therapy') {
+          if (modality.modality_type === 'gene_therapy' || modality.modality_type === 'gene_therapy_crispr') {
             modalityType = 'viral_vector';
-          } else if (modality.modality_type === 'cell_therapy') {
+          } else if (modality.modality_type === 'cell_therapy' || modality.modality_type === 'cell_therapy_car_t') {
             modalityType = 'autologous';
           }
 
@@ -215,6 +217,7 @@ export const useJsonDataImport = () => {
           service_type: service.service_type,
           description: service.description,
           geographic_coverage: Array.isArray(service.geographic_coverage) ? service.geographic_coverage : [],
+          capabilities: Array.isArray(service.capabilities) ? service.capabilities : [],
           is_active: true
         }));
 
