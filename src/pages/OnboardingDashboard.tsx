@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { PageContainer } from '@/components/layout/PageContainer';
@@ -110,10 +109,11 @@ const OnboardingDashboard: React.FC = () => {
       operational_hours: typeof existingApplication.operational_hours === 'string' 
         ? JSON.parse(existingApplication.operational_hours) 
         : existingApplication.operational_hours,
-      // Handle other potential Json type fields that might need conversion
+      // Handle gpo_memberships - ensure it's an array of GPOMembership objects
       gpo_memberships: Array.isArray(existingApplication.gpo_memberships) 
         ? existingApplication.gpo_memberships 
-        : existingApplication.gpo_memberships ? [existingApplication.gpo_memberships] : [],
+        : [],
+      // Handle other array fields
       preferred_payment_methods: Array.isArray(existingApplication.preferred_payment_methods)
         ? existingApplication.preferred_payment_methods
         : existingApplication.preferred_payment_methods ? [existingApplication.preferred_payment_methods] : [],
