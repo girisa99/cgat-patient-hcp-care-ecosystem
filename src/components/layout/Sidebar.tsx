@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -10,6 +11,7 @@ import {
   Database,
   Shield,
   Activity,
+  UserPlus,
   X
 } from 'lucide-react';
 
@@ -21,12 +23,13 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, onClose }) => {
   const location = useLocation();
   
-  // Updated navigation without Security & Performance
+  // Updated navigation with Onboarding link
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
     { name: 'Users', href: '/users', icon: Users },
     { name: 'Patients', href: '/patients', icon: Users },
     { name: 'Facilities', href: '/facilities', icon: Hospital },
+    { name: 'Onboarding', href: '/onboarding', icon: UserPlus },
     { name: 'Modules', href: '/modules', icon: Layers },
     { name: 'API Integrations', href: '/api-integrations', icon: Database },
     { name: 'Audit Log', href: '/audit-log', icon: Shield },

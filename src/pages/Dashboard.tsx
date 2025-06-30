@@ -71,6 +71,13 @@ const Dashboard = () => {
                   
                   {hasAdminAccess && (
                     <>
+                      <Link to="/onboarding">
+                        <Button variant="outline" className="w-full h-20 flex-col">
+                          <UserPlus className="h-6 w-6 mb-2" />
+                          Onboarding
+                        </Button>
+                      </Link>
+                      
                       <Link to="/modules">
                         <Button variant="outline" className="w-full h-20 flex-col">
                           <Database className="h-6 w-6 mb-2" />
