@@ -24,195 +24,151 @@ export const useJsonDataImport = () => {
         serviceProvidersCount: jsonData.service_providers?.length || 0
       });
 
-      // 1. Load therapies - using only fields that exist in the database
-      if (jsonData.therapies && Array.isArray(jsonData.therapies)) {
-        console.log('📊 Loading therapies...');
-        console.log('📊 Sample therapy data:', jsonData.therapies[0]);
+      // Helper function to safely insert data with duplicate checking
+      const safeInsert = async (tableName: string, data: any[], uniqueField: string) => {
+        console.log(`📊 Loading ${tableName}...`);
         
-        const therapiesData = jsonData.therapies.map((therapy: any, index: number) => {
-          console.log(`📊 Processing therapy ${index + 1}:`, {
-            name: therapy.name,
-            therapy_type: therapy.therapy_type,
-            description: therapy.description
-          });
-          
-          return {
-            name: therapy.name,
-            therapy_type: therapy.therapy_type || 'cell_gene_therapy',
-            description: therapy.description,
-            is_active: true
-          };
-        });
-
-        console.log('📊 Processed therapies data:', therapiesData);
-
-        const { error: therapiesError } = await supabase
-          .from('therapies')
-          .upsert(therapiesData, { onConflict: 'name' });
-        
-        if (therapiesError) {
-          console.error('❌ Therapies insert error:', therapiesError);
-          throw therapiesError;
+        if (!data || !Array.isArray(data) || data.length === 0) {
+          console.log(`⚠️ No data provided for ${tableName}`);
+          return 0;
         }
-        console.log('✅ Therapies loaded successfully');
+
+        console.log(`📊 Sample ${tableName} data:`, data[0]);
+        
+        let successCount = 0;
+        
+        for (let i = 0; i < data.length; i++) {
+          const item = data[i];
+          console.log(`📊 Processing ${tableName} ${i + 1}:`, {
+            [uniqueField]: item[uniqueField]
+          });
+
+          try {
+            // Check if item already exists
+            const { data: existingData, error: checkError } = await supabase
+              .from(tableName)
+              .select('id')
+              .eq(uniqueField, item[uniqueField])
+              .maybeSingle();
+
+            if (checkError && checkError.code !== 'PGRST116') {
+              console.error(`❌ Error checking existing ${tableName}:`, checkError);
+              continue;
+            }
+
+            if (existingData) {
+              console.log(`⚠️ ${tableName} with ${uniqueField} "${item[uniqueField]}" already exists, skipping...`);
+              continue;
+            }
+
+            // Insert new item
+            const { error: insertError } = await supabase
+              .from(tableName)
+              .insert(item);
+
+            if (insertError) {
+              console.error(`❌ Error inserting ${tableName}:`, insertError);
+              continue;
+            }
+
+            successCount++;
+            console.log(`✅ Successfully inserted ${tableName}: ${item[uniqueField]}`);
+          } catch (error) {
+            console.error(`❌ Unexpected error processing ${tableName}:`, error);
+            continue;
+          }
+        }
+
+        console.log(`✅ ${tableName} completed: ${successCount}/${data.length} items processed`);
+        return successCount;
+      };
+
+      let results = {
+        therapies: 0,
+        manufacturers: 0,
+        modalities: 0,
+        services: 0,
+        service_providers: 0
+      };
+
+      // 1. Load therapies
+      if (jsonData.therapies && Array.isArray(jsonData.therapies)) {
+        const therapiesData = jsonData.therapies.map((therapy: any) => ({
+          name: therapy.name,
+          therapy_type: therapy.therapy_type || 'cell_gene_therapy',
+          description: therapy.description,
+          is_active: true
+        }));
+
+        results.therapies = await safeInsert('therapies', therapiesData, 'name');
       }
 
       // 2. Load manufacturers
       if (jsonData.manufacturers && Array.isArray(jsonData.manufacturers)) {
-        console.log('🏭 Loading manufacturers...');
-        console.log('🏭 Sample manufacturer data:', jsonData.manufacturers[0]);
-        
-        const manufacturersData = jsonData.manufacturers.map((mfg: any, index: number) => {
-          console.log(`🏭 Processing manufacturer ${index + 1}:`, {
-            name: mfg.name,
-            manufacturer_type: mfg.manufacturer_type,
-            headquarters_location: mfg.headquarters_location
-          });
-          
-          return {
-            name: mfg.name,
-            manufacturer_type: mfg.manufacturer_type,
-            headquarters_location: mfg.headquarters_location,
-            quality_certifications: mfg.quality_certifications,
-            manufacturing_capabilities: mfg.manufacturing_capabilities,
-            partnership_tier: mfg.partnership_tier,
-            is_active: true
-          };
-        });
+        const manufacturersData = jsonData.manufacturers.map((mfg: any) => ({
+          name: mfg.name,
+          manufacturer_type: mfg.manufacturer_type,
+          headquarters_location: mfg.headquarters_location,
+          quality_certifications: mfg.quality_certifications,
+          manufacturing_capabilities: mfg.manufacturing_capabilities,
+          partnership_tier: mfg.partnership_tier,
+          is_active: true
+        }));
 
-        console.log('🏭 Processed manufacturers data:', manufacturersData);
-
-        const { error: manufacturersError } = await supabase
-          .from('manufacturers')
-          .upsert(manufacturersData, { onConflict: 'name' });
-        
-        if (manufacturersError) {
-          console.error('❌ Manufacturers insert error:', manufacturersError);
-          throw manufacturersError;
-        }
-        console.log('✅ Manufacturers loaded successfully');
+        results.manufacturers = await safeInsert('manufacturers', manufacturersData, 'name');
       }
 
       // 3. Load modalities
       if (jsonData.modalities && Array.isArray(jsonData.modalities)) {
-        console.log('🧬 Loading modalities...');
-        console.log('🧬 Sample modality data:', jsonData.modalities[0]);
-        
-        const modalitiesData = jsonData.modalities.map((modality: any, index: number) => {
-          console.log(`🧬 Processing modality ${index + 1}:`, {
-            name: modality.name,
-            modality_type: modality.modality_type,
-            description: modality.description
-          });
-          
-          return {
-            name: modality.name,
-            modality_type: modality.modality_type || 'cell_therapy',
-            description: modality.description,
-            administration_requirements: modality.administration_requirements,
-            cold_chain_requirements: modality.cold_chain_requirements,
-            manufacturing_complexity: modality.manufacturing_complexity || 'medium',
-            is_active: true
-          };
-        });
+        const modalitiesData = jsonData.modalities.map((modality: any) => ({
+          name: modality.name,
+          modality_type: modality.modality_type || 'cell_therapy',
+          description: modality.description,
+          administration_requirements: modality.administration_requirements,
+          cold_chain_requirements: modality.cold_chain_requirements,
+          manufacturing_complexity: modality.manufacturing_complexity || 'medium',
+          is_active: true
+        }));
 
-        console.log('🧬 Processed modalities data:', modalitiesData);
-
-        const { error: modalitiesError } = await supabase
-          .from('modalities')
-          .upsert(modalitiesData, { onConflict: 'name' });
-        
-        if (modalitiesError) {
-          console.error('❌ Modalities insert error:', modalitiesError);
-          throw modalitiesError;
-        }
-        console.log('✅ Modalities loaded successfully');
+        results.modalities = await safeInsert('modalities', modalitiesData, 'name');
       }
 
       // 4. Load services
       if (jsonData.services && Array.isArray(jsonData.services)) {
-        console.log('🔧 Loading services...');
-        console.log('🔧 Sample service data:', jsonData.services[0]);
-        
-        const servicesData = jsonData.services.map((service: any, index: number) => {
-          console.log(`🔧 Processing service ${index + 1}:`, {
-            name: service.name,
-            service_type: service.service_type,
-            description: service.description
-          });
-          
-          return {
-            name: service.name,
-            service_type: service.service_type,
-            description: service.description,
-            capabilities: service.capabilities,
-            geographic_coverage: service.geographic_coverage,
-            is_active: true
-          };
-        });
+        const servicesData = jsonData.services.map((service: any) => ({
+          name: service.name,
+          service_type: service.service_type,
+          description: service.description,
+          capabilities: service.capabilities,
+          geographic_coverage: service.geographic_coverage,
+          is_active: true
+        }));
 
-        console.log('🔧 Processed services data:', servicesData);
-
-        const { error: servicesError } = await supabase
-          .from('services')
-          .upsert(servicesData, { onConflict: 'name' });
-        
-        if (servicesError) {
-          console.error('❌ Services insert error:', servicesError);
-          throw servicesError;
-        }
-        console.log('✅ Services loaded successfully');
+        results.services = await safeInsert('services', servicesData, 'name');
       }
 
       // 5. Load service providers
       if (jsonData.service_providers && Array.isArray(jsonData.service_providers)) {
-        console.log('🏢 Loading service providers...');
-        console.log('🏢 Sample service provider data:', jsonData.service_providers[0]);
-        
-        const providersData = jsonData.service_providers.map((provider: any, index: number) => {
-          console.log(`🏢 Processing service provider ${index + 1}:`, {
-            name: provider.name,
-            provider_type: provider.provider_type,
-            specializations: provider.specializations
-          });
-          
-          return {
-            name: provider.name,
-            provider_type: provider.provider_type || 'third_party',
-            specializations: provider.specializations,
-            geographic_coverage: provider.geographic_coverage,
-            certifications: provider.certifications,
-            contact_info: provider.contact_info,
-            is_active: true
-          };
-        });
+        const providersData = jsonData.service_providers.map((provider: any) => ({
+          name: provider.name,
+          provider_type: provider.provider_type || 'third_party',
+          specializations: provider.specializations,
+          geographic_coverage: provider.geographic_coverage,
+          certifications: provider.certifications,
+          contact_info: provider.contact_info,
+          is_active: true
+        }));
 
-        console.log('🏢 Processed service providers data:', providersData);
-
-        const { error: providersError } = await supabase
-          .from('service_providers')
-          .upsert(providersData, { onConflict: 'name' });
-        
-        if (providersError) {
-          console.error('❌ Service providers insert error:', providersError);
-          throw providersError;
-        }
-        console.log('✅ Service providers loaded successfully');
+        results.service_providers = await safeInsert('service_providers', providersData, 'name');
       }
 
       console.log('✅ All JSON data loaded successfully!');
       toast({
         title: "Success!",
-        description: "All JSON data has been loaded into the database successfully.",
+        description: `JSON data imported: ${results.therapies} therapies, ${results.manufacturers} manufacturers, ${results.modalities} modalities, ${results.services} services, ${results.service_providers} providers`,
       });
 
-      return {
-        therapies: jsonData.therapies?.length || 0,
-        manufacturers: jsonData.manufacturers?.length || 0,
-        modalities: jsonData.modalities?.length || 0,
-        services: jsonData.services?.length || 0,
-        service_providers: jsonData.service_providers?.length || 0
-      };
+      return results;
 
     } catch (error: any) {
       console.error('❌ Error loading JSON data:', error);
