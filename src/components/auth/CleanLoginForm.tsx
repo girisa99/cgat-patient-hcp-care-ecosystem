@@ -8,7 +8,7 @@ import { useAuthContext } from '@/components/auth/CleanAuthProvider';
 import { Eye, EyeOff, Mail, Lock, AlertCircle, LogOut, RefreshCw } from 'lucide-react';
 
 const CleanLoginForm = () => {
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState('superadmintest@geniecellgene.com'); // Changed to the correct email
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [authError, setAuthError] = useState<string>('');
@@ -168,8 +168,10 @@ const CleanLoginForm = () => {
           </form>
           
           <div className="mt-6 p-3 bg-blue-50 border border-blue-200 rounded-md">
-            <h4 className="text-sm font-medium text-blue-800 mb-2">Having trouble logging in?</h4>
+            <h4 className="text-sm font-medium text-blue-800 mb-2">Test Credentials</h4>
             <div className="text-xs text-blue-600 space-y-1">
+              <div><strong>Email:</strong> superadmintest@geniecellgene.com</div>
+              <div><strong>Note:</strong> Use the email above, not "superadmin@geniecellgene.com"</div>
               <div>• Make sure you're using the correct email and password</div>
               <div>• Try refreshing the page if you get stuck</div>
               <div>• Contact support if the issue persists</div>
