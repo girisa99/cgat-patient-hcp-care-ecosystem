@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -204,8 +205,15 @@ export const TabbedOnboardingWizard: React.FC<TabbedOnboardingWizardProps> = ({
         annual_revenue_range: '',
         credit_score_range: '',
         years_in_operation: 0,
-        insurance_coverage: {},
-        financial_guarantees: {},
+        insurance_coverage: {
+          general_liability: '',
+          professional_liability: '',
+          workers_compensation: ''
+        },
+        financial_guarantees: {
+          lines_of_credit: '',
+          assets_pledged: ''
+        },
       },
       licenses: {
         additional_licenses: [],
@@ -261,7 +269,9 @@ export const TabbedOnboardingWizard: React.FC<TabbedOnboardingWizardProps> = ({
         }
       },
       selected_online_services: [],
-      selected_user_roles: []
+      selected_user_roles: [],
+      platform_users: [],
+      program_340b: []
     }
   );
 

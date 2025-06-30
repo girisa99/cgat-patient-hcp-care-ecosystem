@@ -38,6 +38,14 @@ export type InventoryModel =
   | 'drop_ship_only' 
   | 'hybrid';
 
+// Add OnboardingStep export
+export interface OnboardingStep {
+  id: string;
+  title: string;
+  completed: boolean;
+  data?: any;
+}
+
 export interface CompanyInfo {
   legal_name: string;
   dba_name?: string;
@@ -86,6 +94,14 @@ export interface ReferencesInfo {
   primary_bank: BankReference;
   primary_supplier: SupplierReference;
   additional_references: AdditionalReference[];
+  technology_provider?: TechnologyReference;
+}
+
+export interface TechnologyReference {
+  name: string;
+  contact_name: string;
+  phone: string;
+  email?: string;
 }
 
 export interface PaymentInfo {
@@ -183,6 +199,17 @@ export interface OnlinePlatformUser {
   name: string;
   email: string;
   role: string;
+  // Additional properties for enhanced user management
+  user_type?: string;
+  first_name?: string;
+  last_name?: string;
+  phone?: string;
+  department?: string;
+  access_level?: string;
+  can_place_orders?: boolean;
+  can_manage_users?: boolean;
+  can_view_reports?: boolean;
+  notification_preferences?: Record<string, any>;
 }
 
 export interface GPOMembership {
@@ -204,6 +231,16 @@ export interface Program340B {
   enrollment_date: string;
   compliance_officer: string;
   policies_procedures_document: string;
+  // Additional properties for enhanced 340B management
+  program_type?: string;
+  registration_number?: string;
+  parent_entity_name?: string;
+  contract_pharmacy_locations?: string[];
+  eligible_drug_categories?: string[];
+  compliance_contact_name?: string;
+  compliance_contact_email?: string;
+  compliance_contact_phone?: string;
+  audit_requirements?: Record<string, any>;
 }
 
 export interface Address {
@@ -245,6 +282,7 @@ export interface AdditionalReference {
   name: string;
   contact_name: string;
   phone: string;
+  account_number?: string;
 }
 
 export interface Reference {
@@ -298,12 +336,21 @@ export interface AdditionalLicense {
   license_number: string;
   issuing_state: string;
   expiration_date: string;
+  // Legacy property names for backward compatibility
+  type?: string;
+  number?: string;
+  state?: string;
 }
 
 export interface AdditionalDocument {
   document_type: string;
   file_name: string;
   upload_date: string;
+  // Legacy property names for backward compatibility
+  name?: string;
+  type?: string;
+  uploaded?: boolean;
+  file_path?: string;
 }
 
 export interface AuthorizedSignature {
@@ -408,10 +455,17 @@ export interface TreatmentCenterOnboarding {
   
   // Special Programs
   gpo_memberships: GPOMembership[];
+  gpo_memberships_detailed?: GPOMembership[];
   program_340b: Program340B[];
+  is_340b_entity?: boolean;
   
   // API Integration
   api_integration?: ApiIntegrationData;
+  
+  // Additional properties for database compatibility
+  operational_hours?: Record<string, any>;
+  payment_terms_preference?: string;
+  preferred_payment_methods?: string[];
   
   // Workflow
   workflow: WorkflowInfo;

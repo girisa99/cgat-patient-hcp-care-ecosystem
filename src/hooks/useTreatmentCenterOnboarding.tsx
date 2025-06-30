@@ -48,7 +48,7 @@ export const useTreatmentCenterOnboarding = () => {
       if (!user?.id) throw new Error('User not authenticated');
 
       // Convert GPO memberships to string array for database storage
-      const gpoMembershipsAsStrings = applicationData.gpo_memberships?.map(
+      const gpoMembershipsAsStrings = (applicationData.gpo_memberships || applicationData.gpo_memberships_detailed)?.map(
         membership => typeof membership === 'string' ? membership : membership.gpo_name
       ) || [];
 
@@ -69,11 +69,7 @@ export const useTreatmentCenterOnboarding = () => {
           number_of_employees: applicationData.business_info?.number_of_employees,
           estimated_monthly_purchases: applicationData.business_info?.estimated_monthly_purchases,
           initial_order_amount: applicationData.business_info?.initial_order_amount,
-          // New enhanced fields
-          operational_hours: applicationData.operational_hours || {},
-          payment_terms_preference: applicationData.payment_terms_preference,
-          preferred_payment_methods: applicationData.preferred_payment_methods || [],
-          is_340b_entity: applicationData.is_340b_entity || false,
+          // Remove non-existent properties
           gpo_memberships: gpoMembershipsAsStrings,
           current_step: 'company_info'
         })
@@ -89,16 +85,16 @@ export const useTreatmentCenterOnboarding = () => {
       if (applicationData.platform_users?.length) {
         const platformUsersData = applicationData.platform_users.map(user => ({
           onboarding_id: onboardingId,
-          user_type: user.user_type,
-          first_name: user.first_name,
-          last_name: user.last_name,
+          user_type: user.user_type || 'standard',
+          first_name: user.first_name || user.name.split(' ')[0] || '',
+          last_name: user.last_name || user.name.split(' ').slice(1).join(' ') || '',
           email: user.email,
-          phone: user.phone,
-          department: user.department,
-          access_level: user.access_level,
-          can_place_orders: user.can_place_orders,
-          can_manage_users: user.can_manage_users,
-          can_view_reports: user.can_view_reports,
+          phone: user.phone || '',
+          department: user.department || '',
+          access_level: user.access_level || 'basic',
+          can_place_orders: user.can_place_orders || false,
+          can_manage_users: user.can_manage_users || false,
+          can_view_reports: user.can_view_reports || false,
           notification_preferences: user.notification_preferences || {}
         }));
 
@@ -113,14 +109,14 @@ export const useTreatmentCenterOnboarding = () => {
       if (applicationData.program_340b?.length) {
         const program340bData = applicationData.program_340b.map(program => ({
           onboarding_id: onboardingId,
-          program_type: program.program_type,
-          registration_number: program.registration_number,
-          parent_entity_name: program.parent_entity_name,
+          program_type: program.program_type || 'hospital',
+          registration_number: program.registration_number || '',
+          parent_entity_name: program.parent_entity_name || '',
           contract_pharmacy_locations: program.contract_pharmacy_locations || [],
           eligible_drug_categories: program.eligible_drug_categories || [],
-          compliance_contact_name: program.compliance_contact_name,
-          compliance_contact_email: program.compliance_contact_email,
-          compliance_contact_phone: program.compliance_contact_phone,
+          compliance_contact_name: program.compliance_contact_name || '',
+          compliance_contact_email: program.compliance_contact_email || '',
+          compliance_contact_phone: program.compliance_contact_phone || '',
           audit_requirements: program.audit_requirements || {}
         }));
 
@@ -132,19 +128,20 @@ export const useTreatmentCenterOnboarding = () => {
       }
 
       // Insert GPO memberships
-      if (applicationData.gpo_memberships_detailed?.length) {
-        const gpoData = applicationData.gpo_memberships_detailed.map(membership => ({
+      if (applicationData.gpo_memberships_detailed?.length || applicationData.gpo_memberships?.length) {
+        const gpoMemberships = applicationData.gpo_memberships_detailed || applicationData.gpo_memberships || [];
+        const gpoData = gpoMemberships.map(membership => ({
           onboarding_id: onboardingId,
-          gpo_name: membership.gpo_name,
-          membership_number: membership.membership_number,
-          contract_effective_date: membership.contract_effective_date,
-          contract_expiration_date: membership.contract_expiration_date,
-          primary_contact_name: membership.primary_contact_name,
-          primary_contact_email: membership.primary_contact_email,
-          primary_contact_phone: membership.primary_contact_phone,
-          covered_categories: membership.covered_categories || [],
-          tier_level: membership.tier_level,
-          rebate_information: membership.rebate_information || {}
+          gpo_name: typeof membership === 'string' ? membership : membership.gpo_name,
+          membership_number: typeof membership === 'string' ? '' : membership.membership_number || '',
+          contract_effective_date: typeof membership === 'string' ? null : membership.contract_effective_date || null,
+          contract_expiration_date: typeof membership === 'string' ? null : membership.contract_expiration_date || null,
+          primary_contact_name: typeof membership === 'string' ? '' : membership.primary_contact_name || '',
+          primary_contact_email: typeof membership === 'string' ? '' : membership.primary_contact_email || '',
+          primary_contact_phone: typeof membership === 'string' ? '' : membership.primary_contact_phone || '',
+          covered_categories: typeof membership === 'string' ? [] : membership.covered_categories || [],
+          tier_level: typeof membership === 'string' ? '' : membership.tier_level || '',
+          rebate_information: typeof membership === 'string' ? {} : membership.rebate_information || {}
         }));
 
         const { error: gpoError } = await supabase
@@ -162,8 +159,8 @@ export const useTreatmentCenterOnboarding = () => {
             onboarding_id: onboardingId,
             preferred_terms: applicationData.enhanced_payment_terms.preferred_terms,
             credit_limit_requested: applicationData.enhanced_payment_terms.credit_limit_requested,
-            payment_method: applicationData.enhanced_payment_terms.payment_method,
-            early_payment_discount_interest: applicationData.enhanced_payment_terms.early_payment_discount_interest,
+            payment_method: 'standard',
+            early_payment_discount_interest: applicationData.enhanced_payment_terms.early_payment_discount,
             consolidation_preferences: applicationData.enhanced_payment_terms.consolidation_preferences || {},
             billing_frequency: applicationData.enhanced_payment_terms.billing_frequency
           });
