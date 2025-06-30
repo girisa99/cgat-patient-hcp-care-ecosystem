@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,8 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
 import { Upload, Database, FileText, Download, CheckCircle, AlertCircle } from 'lucide-react';
 import { useDataImport } from '@/hooks/useDataImport';
+import { useJsonDataImport } from '@/hooks/useJsonDataImport';
 import { useToast } from '@/hooks/use-toast';
 
 const AVAILABLE_TABLES = [
@@ -25,10 +26,14 @@ const AVAILABLE_TABLES = [
 ];
 
 export const DataImportModule: React.FC = () => {
-  const { loadSeedData, importCSVData, isLoading } = useDataImport();
+  const { loadSeedData, importCSVData, isLoading: csvLoading } = useDataImport();
+  const { loadJsonData, isLoading: jsonLoading } = useJsonDataImport();
   const { toast } = useToast();
   const [selectedTable, setSelectedTable] = useState<string>('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [jsonInput, setJsonInput] = useState<string>('');
+
+  const isLoading = csvLoading || jsonLoading;
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -63,6 +68,35 @@ export const DataImportModule: React.FC = () => {
     await importCSVData(selectedFile, selectedTable);
     setSelectedFile(null);
     setSelectedTable('');
+  };
+
+  const handleJsonImport = async () => {
+    if (!jsonInput.trim()) {
+      toast({
+        title: "Missing JSON Data",
+        description: "Please enter JSON data to import.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const jsonData = JSON.parse(jsonInput);
+      const results = await loadJsonData(jsonData);
+      
+      toast({
+        title: "JSON Import Successful!",
+        description: `Imported: ${results.therapies} therapies, ${results.manufacturers} manufacturers, ${results.modalities} modalities, ${results.services} services, ${results.service_providers} providers`,
+      });
+      
+      setJsonInput('');
+    } catch (error) {
+      toast({
+        title: "Invalid JSON",
+        description: "Please check your JSON format and try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const downloadTemplate = (tableName: string) => {
@@ -107,12 +141,65 @@ export const DataImportModule: React.FC = () => {
         </Badge>
       </div>
 
-      <Tabs defaultValue="seed-data" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
+      <Tabs defaultValue="json-import" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="json-import">JSON Import</TabsTrigger>
           <TabsTrigger value="seed-data">Seed Data</TabsTrigger>
           <TabsTrigger value="csv-import">CSV Import</TabsTrigger>
           <TabsTrigger value="api-endpoints">API Access</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="json-import" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Database className="h-5 w-5" />
+                <span>JSON Data Import</span>
+              </CardTitle>
+              <CardDescription>
+                Import comprehensive market data from JSON format. Perfect for bulk data loading with real market information.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="json-input">JSON Data</Label>
+                <Textarea
+                  id="json-input"
+                  placeholder="Paste your JSON data here..."
+                  value={jsonInput}
+                  onChange={(e) => setJsonInput(e.target.value)}
+                  rows={15}
+                  className="font-mono text-sm"
+                />
+              </div>
+
+              <div className="flex space-x-2">
+                <Button 
+                  onClick={handleJsonImport}
+                  disabled={!jsonInput.trim() || isLoading}
+                  className="flex-1"
+                >
+                  {isLoading ? 'Importing...' : 'Import JSON Data'}
+                </Button>
+              </div>
+
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+                <div className="flex items-start space-x-2">
+                  <CheckCircle className="h-4 w-4 text-blue-500 mt-0.5" />
+                  <div className="text-sm">
+                    <p className="font-medium">JSON Import Features:</p>
+                    <ul className="mt-1 text-xs space-y-1">
+                      <li>• Supports therapies, manufacturers, modalities, services, and service providers</li>
+                      <li>• Automatically handles relationships and foreign keys</li>
+                      <li>• Real market data with pricing, contact info, and regulatory details</li>
+                      <li>• Validates data structure before import</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="seed-data" className="space-y-4">
           <Card>

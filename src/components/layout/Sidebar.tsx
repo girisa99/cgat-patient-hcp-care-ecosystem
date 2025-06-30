@@ -73,3 +73,6 @@ export const Sidebar: React.FC = () => {
     </div>
   );
 };
+
+// Add default export
+export default Sidebar;
