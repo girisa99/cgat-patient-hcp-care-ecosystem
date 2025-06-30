@@ -354,7 +354,7 @@ export const EnhancedOnboardingWizard: React.FC<EnhancedOnboardingWizardProps> =
       </Card>
 
       {/* Main Tabbed Interface */}
-      <EnhancedTabs value={activeGroup} onValueChange={setActiveGroup}>
+      <EnhancedTabs defaultValue={activeGroup} onValueChange={setActiveGroup}>
         <EnhancedTabsList className="grid w-full grid-cols-6">
           {stepGroups.map((group) => {
             const IconComponent = group.icon;

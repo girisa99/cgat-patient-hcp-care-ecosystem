@@ -37,9 +37,29 @@ const OnboardingDashboard: React.FC = () => {
   }
 
   if (view === 'wizard') {
-    const existingApplication = editingApplicationId 
-      ? onboardingApplications?.find(app => app.id === editingApplicationId)
-      : null;
+    let existingApplication = null;
+    
+    if (editingApplicationId && onboardingApplications) {
+      const rawApplication = onboardingApplications.find(app => app.id === editingApplicationId);
+      
+      if (rawApplication) {
+        // Handle type conversion for operational_hours and other JSON fields
+        existingApplication = {
+          ...rawApplication,
+          operational_hours: typeof rawApplication.operational_hours === 'string' 
+            ? JSON.parse(rawApplication.operational_hours) 
+            : rawApplication.operational_hours,
+          // Handle other potential JSON fields that might need conversion
+          gpo_memberships: Array.isArray(rawApplication.gpo_memberships) 
+            ? rawApplication.gpo_memberships.map((gpo: any) => 
+                typeof gpo === 'string' 
+                  ? { gpo_name: gpo, membership_number: '', contract_effective_date: '', contract_expiration_date: '', primary_contact_name: '', primary_contact_email: '', primary_contact_phone: '', covered_categories: [], tier_level: '', rebate_information: {} }
+                  : gpo
+              )
+            : [],
+        };
+      }
+    }
 
     return (
       <MainLayout>

@@ -4,7 +4,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 
 interface EnhancedTabsProps {
-  defaultValue: string;
+  defaultValue?: string;
+  value?: string;
   className?: string;
   children: React.ReactNode;
   variant?: 'default' | 'pills' | 'underline';
@@ -28,6 +29,7 @@ interface EnhancedTabsContentProps {
 
 const EnhancedTabsRoot: React.FC<EnhancedTabsProps> = ({ 
   defaultValue, 
+  value,
   className, 
   children, 
   variant = 'default',
@@ -36,7 +38,8 @@ const EnhancedTabsRoot: React.FC<EnhancedTabsProps> = ({
 }) => {
   return (
     <Tabs 
-      defaultValue={defaultValue} 
+      defaultValue={defaultValue}
+      value={value}
       className={cn('w-full', className)}
       onValueChange={onValueChange}
     >
