@@ -5,11 +5,13 @@ import { useSimpleRouting } from '@/hooks/useSimpleRouting';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import CleanLoginForm from '@/components/auth/CleanLoginForm';
 import HealthcareAuthLayout from '@/components/auth/HealthcareAuthLayout';
+import AuthDiagnostic from '@/components/auth/AuthDiagnostic';
 
 const Index = () => {
   const { user, loading, isAuthenticated, userRoles, initialized } = useAuthContext();
   const { performRouting } = useSimpleRouting({ userRoles, isAuthenticated });
   const [hasAttemptedRouting, setHasAttemptedRouting] = useState(false);
+  const [showDiagnostic, setShowDiagnostic] = useState(false);
 
   useEffect(() => {
     // Only attempt routing once we have complete auth data
@@ -84,10 +86,37 @@ const Index = () => {
     );
   }
 
+  // Show diagnostic tool if enabled
+  if (showDiagnostic) {
+    return (
+      <HealthcareAuthLayout>
+        <div className="space-y-4">
+          <button
+            onClick={() => setShowDiagnostic(false)}
+            className="mb-4 text-blue-600 hover:text-blue-800 underline"
+          >
+            ← Back to Login
+          </button>
+          <AuthDiagnostic />
+        </div>
+      </HealthcareAuthLayout>
+    );
+  }
+
   // Show clean login form for unauthenticated users
   return (
     <HealthcareAuthLayout>
-      <CleanLoginForm />
+      <div className="space-y-4">
+        <CleanLoginForm />
+        <div className="text-center">
+          <button
+            onClick={() => setShowDiagnostic(true)}
+            className="text-sm text-blue-600 hover:text-blue-800 underline"
+          >
+            Having login issues? Run diagnostics
+          </button>
+        </div>
+      </div>
     </HealthcareAuthLayout>
   );
 };
