@@ -109,9 +109,20 @@ const OnboardingDashboard: React.FC = () => {
       operational_hours: typeof existingApplication.operational_hours === 'string' 
         ? JSON.parse(existingApplication.operational_hours) 
         : existingApplication.operational_hours,
-      // Handle gpo_memberships - ensure it's an array of GPOMembership objects
+      // Handle gpo_memberships - convert string[] to GPOMembership[]
       gpo_memberships: Array.isArray(existingApplication.gpo_memberships) 
-        ? existingApplication.gpo_memberships 
+        ? existingApplication.gpo_memberships.map((gpoName: string) => ({
+            gpo_name: gpoName,
+            membership_number: '',
+            contract_effective_date: '',
+            contract_expiration_date: '',
+            primary_contact_name: '',
+            primary_contact_email: '',
+            primary_contact_phone: '',
+            covered_categories: [],
+            tier_level: '',
+            rebate_information: {}
+          }))
         : [],
       // Handle other array fields
       preferred_payment_methods: Array.isArray(existingApplication.preferred_payment_methods)
