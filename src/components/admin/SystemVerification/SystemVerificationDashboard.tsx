@@ -15,7 +15,7 @@ import {
   Shield,
   Database,
   Server,
-  Refresh
+  RefreshCw
 } from 'lucide-react';
 import { useAuthContext } from '@/components/auth/CleanAuthProvider';
 import { useUsers } from '@/hooks/useUsers';
@@ -353,7 +353,7 @@ export const SystemVerificationDashboard: React.FC = () => {
           disabled={isRunningTests}
           className="flex items-center gap-2"
         >
-          <Refresh className={`h-4 w-4 ${isRunningTests ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`h-4 w-4 ${isRunningTests ? 'animate-spin' : ''}`} />
           {isRunningTests ? 'Running Tests...' : 'Re-run Tests'}
         </Button>
       </div>

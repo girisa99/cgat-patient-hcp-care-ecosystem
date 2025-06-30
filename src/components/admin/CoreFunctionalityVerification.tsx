@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -65,13 +66,13 @@ const CoreFunctionalityVerification = () => {
         }
       });
 
-      // Test Modules functionality
+      // Test Modules functionality - using correct property names
       results.push({
         name: 'Modules Hook',
-        status: modulesHook.errorAllModules ? 'error' : modulesHook.isLoadingAllModules ? 'loading' : 'success',
+        status: modulesHook.error ? 'error' : modulesHook.isLoading ? 'loading' : 'success',
         data: {
           modules: modulesHook.modules?.length || 0,
-          error: modulesHook.errorAllModules?.message
+          error: modulesHook.error?.message
         }
       });
 
@@ -310,9 +311,9 @@ const CoreFunctionalityVerification = () => {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span>Modules Hook Status:</span>
-                  {modulesHook.errorAllModules ? (
-                    <Badge variant="destructive">Error: {modulesHook.errorAllModules.message}</Badge>
-                  ) : modulesHook.isLoadingAllModules ? (
+                  {modulesHook.error ? (
+                    <Badge variant="destructive">Error: {modulesHook.error.message}</Badge>
+                  ) : modulesHook.isLoading ? (
                     <Badge className="bg-blue-100 text-blue-800">Loading</Badge>
                   ) : (
                     <Badge className="bg-green-100 text-green-800">Working</Badge>
