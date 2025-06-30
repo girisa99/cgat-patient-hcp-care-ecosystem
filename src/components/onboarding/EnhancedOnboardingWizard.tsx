@@ -456,33 +456,35 @@ export const EnhancedOnboardingWizard: React.FC<EnhancedOnboardingWizardProps> =
         </CardHeader>
       </Card>
 
-      {/* Main Tabbed Interface - No Sidebar */}
+      {/* Main Tabbed Interface - Vertical Scrollable Tabs */}
       <EnhancedTabs value={activeTab} onValueChange={setActiveTab}>
-        <EnhancedTabsList className="grid w-full grid-cols-4 lg:grid-cols-7 xl:grid-cols-11 gap-1 h-auto p-2">
-          {ONBOARDING_TABS.map((tab) => {
-            const IconComponent = tab.icon;
-            const completion = getTabCompletion(tab.id);
-            
-            return (
-              <EnhancedTabsTrigger
-                key={tab.id}
-                value={tab.id}
-                className="flex flex-col items-center p-2 h-auto min-h-[80px] text-xs"
-              >
-                <IconComponent className="h-4 w-4 mb-1" />
-                <div className="text-center">
-                  <div className="font-medium">{tab.title}</div>
-                  {completion === 'complete' && (
-                    <CheckCircle className="h-3 w-3 text-green-600 mx-auto mt-1" />
-                  )}
-                  {tab.required && completion !== 'complete' && (
-                    <div className="text-xs text-red-600 mt-1">*</div>
-                  )}
-                </div>
-              </EnhancedTabsTrigger>
-            );
-          })}
-        </EnhancedTabsList>
+        <div className="overflow-x-auto">
+          <EnhancedTabsList className="flex flex-nowrap w-max min-w-full gap-1 h-auto p-2">
+            {ONBOARDING_TABS.map((tab) => {
+              const IconComponent = tab.icon;
+              const completion = getTabCompletion(tab.id);
+              
+              return (
+                <EnhancedTabsTrigger
+                  key={tab.id}
+                  value={tab.id}
+                  className="flex flex-col items-center p-3 h-auto min-h-[100px] min-w-[120px] text-xs whitespace-nowrap"
+                >
+                  <IconComponent className="h-5 w-5 mb-2" />
+                  <div className="text-center">
+                    <div className="font-medium">{tab.title}</div>
+                    {completion === 'complete' && (
+                      <CheckCircle className="h-3 w-3 text-green-600 mx-auto mt-1" />
+                    )}
+                    {tab.required && completion !== 'complete' && (
+                      <div className="text-xs text-red-600 mt-1">*</div>
+                    )}
+                  </div>
+                </EnhancedTabsTrigger>
+              );
+            })}
+          </EnhancedTabsList>
+        </div>
 
         {ONBOARDING_TABS.map((tab) => (
           <EnhancedTabsContent key={tab.id} value={tab.id} className="space-y-6">
@@ -501,14 +503,6 @@ export const EnhancedOnboardingWizard: React.FC<EnhancedOnboardingWizardProps> =
                   <StepComponent
                     data={formData}
                     onDataChange={handleDataChange}
-                    applicationId={applicationId}
-                    onEditStep={(stepIndex: number) => {
-                      // Handle edit step navigation for review
-                      const targetTab = ONBOARDING_TABS[stepIndex];
-                      if (targetTab) {
-                        setActiveTab(targetTab.id);
-                      }
-                    }}
                   />
                 )}
               </CardContent>
