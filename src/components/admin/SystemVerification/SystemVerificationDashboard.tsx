@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,7 +17,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { useAuthContext } from '@/components/auth/CleanAuthProvider';
-import { useUsers } from '@/hooks/useUsers';
+import { useUnifiedUserData } from '@/hooks/useUnifiedUserData';
 import { useFacilities } from '@/hooks/useFacilities';
 import { useModules } from '@/hooks/useModules';
 
@@ -35,9 +34,9 @@ export const SystemVerificationDashboard: React.FC = () => {
   const [isRunningTests, setIsRunningTests] = useState(false);
   const [lastFullCheck, setLastFullCheck] = useState<Date | null>(null);
 
-  // Hook instances for testing
+  // Hook instances for testing - using the working unified approach
   const { user, isAuthenticated, userRoles, loading: authLoading } = useAuthContext();
-  const { users, isLoading: usersLoading, error: usersError } = useUsers();
+  const { allUsers, isLoading: usersLoading, error: usersError, meta } = useUnifiedUserData();
   const { facilities, isLoading: facilitiesLoading, error: facilitiesError } = useFacilities();
   const { modules, isLoading: modulesLoading, error: modulesError } = useModules();
 
@@ -89,7 +88,7 @@ export const SystemVerificationDashboard: React.FC = () => {
       });
     }
 
-    // Test User Management
+    // Test User Management - Using unified user data
     console.log('🔍 Testing User Management System...');
     try {
       if (usersLoading) {
@@ -107,12 +106,13 @@ export const SystemVerificationDashboard: React.FC = () => {
           details: [`❌ Error: ${usersError.message}`],
           lastChecked: new Date()
         });
-      } else if (users && users.length > 0) {
+      } else if (allUsers && allUsers.length > 0) {
         const userDetails = [
-          `✅ Total users loaded: ${users.length}`,
-          `✅ Users with roles: ${users.filter(u => u.user_roles?.length > 0).length}`,
-          `✅ Users without roles: ${users.filter(u => !u.user_roles || u.user_roles.length === 0).length}`,
-          `✅ Users with facilities: ${users.filter(u => u.facilities).length}`
+          `✅ Total users loaded: ${meta.totalUsers}`,
+          `✅ Patients: ${meta.patientCount}`,
+          `✅ Healthcare staff: ${meta.staffCount}`,
+          `✅ Admin users: ${meta.adminCount}`,
+          `✅ Data source: ${meta.dataSource}`
         ];
         
         results.push({
