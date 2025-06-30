@@ -18,7 +18,7 @@ import {
   RefreshCw,
   Activity
 } from 'lucide-react';
-import { integratedSystemVerifier } from '@/utils/verification/IntegratedSystemVerifier';
+import { IntegratedSystemVerifier } from '@/utils/verification/IntegratedSystemVerifier';
 
 interface VerificationResult {
   component: string;
@@ -71,7 +71,7 @@ export const SystemVerificationDashboard: React.FC = () => {
     
     try {
       console.log('🔍 Running manual system verification...');
-      const { results, overallStatus, healthScore } = await integratedSystemVerifier.runAutomatedSystemVerification();
+      const { results, overallStatus, healthScore } = await IntegratedSystemVerifier.runAutomatedSystemVerification();
       
       setVerificationResults(results);
       setLastFullCheck(new Date());

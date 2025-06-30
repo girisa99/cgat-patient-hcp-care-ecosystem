@@ -5,10 +5,6 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
-import { useAuthContext } from '@/components/auth/CleanAuthProvider';
-import { useUnifiedUserData } from '@/hooks/useUnifiedUserData';
-import { useFacilities } from '@/hooks/useFacilities';
-import { useModules } from '@/hooks/useModules';
 
 interface SystemVerificationResult {
   component: string;
@@ -89,28 +85,34 @@ export class IntegratedSystemVerifier {
       }
 
       if (user) {
-        // Check user roles
-        const { data: roles, error: rolesError } = await supabase
+        // Check user roles - corrected query to join with roles table
+        const { data: userRoles, error: rolesError } = await supabase
           .from('user_roles')
-          .select('role')
+          .select(`
+            roles (
+              name
+            )
+          `)
           .eq('user_id', user.id);
+
+        const roleNames = userRoles ? userRoles.map(ur => ur.roles?.name).filter(Boolean) : [];
 
         const authDetails = [
           `✅ Authentication service active`,
           `✅ User session valid: ${user.email}`,
           `✅ User ID: ${user.id}`,
-          `✅ Roles: ${roles && roles.length > 0 ? roles.map(r => r.role).join(', ') : 'No roles assigned'}`,
+          `✅ Roles: ${roleNames.length > 0 ? roleNames.join(', ') : 'No roles assigned'}`,
         ];
 
         return {
           component: 'Authentication',
-          status: roles && roles.length > 0 ? 'success' : 'warning',
-          message: roles && roles.length > 0 ? 'Authentication system working correctly' : 'User authenticated but no roles assigned',
+          status: roleNames.length > 0 ? 'success' : 'warning',
+          message: roleNames.length > 0 ? 'Authentication system working correctly' : 'User authenticated but no roles assigned',
           details: authDetails,
           lastChecked: new Date().toISOString(),
           metrics: {
             userAuthenticated: true,
-            rolesCount: roles?.length || 0
+            rolesCount: roleNames.length
           }
         };
       }

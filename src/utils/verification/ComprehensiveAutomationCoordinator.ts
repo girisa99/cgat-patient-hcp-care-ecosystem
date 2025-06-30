@@ -7,7 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { RealVerificationOrchestrator, RealSystemHealthResult } from './RealVerificationOrchestrator';
 import { DatabaseSyncVerifier, SyncVerificationResult } from './DatabaseSyncVerifier';
 import { ComprehensiveSystemVerifier, ComprehensiveVerificationResult } from './ComprehensiveSystemVerifier';
-import { integratedSystemVerifier } from './IntegratedSystemVerifier';
+import { IntegratedSystemVerifier } from './IntegratedSystemVerifier';
 import { performDatabaseSync } from '../dailyProgressTracker';
 
 export interface AutomationExecutionResult {
@@ -71,7 +71,7 @@ export class ComprehensiveAutomationCoordinator {
 
       // Step 4: Execute Integrated System Verification (NEW!)
       console.log('⚡ Step 4: Integrated System Verification (Dashboard Components)...');
-      const systemVerification = await integratedSystemVerifier.runAutomatedSystemVerification();
+      const systemVerification = await IntegratedSystemVerifier.runAutomatedSystemVerification();
 
       // Step 5: Calculate Health Score (BASED ON ORIGINAL DATABASE ONLY)
       console.log('🎯 Step 5: Health Score Calculation (Original DB Only)...');
