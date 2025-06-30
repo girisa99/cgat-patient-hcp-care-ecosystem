@@ -1,12 +1,40 @@
 
 import React from 'react';
+import MainLayout from '@/components/layout/MainLayout';
+import { PageContainer } from '@/components/layout/PageContainer';
+import { CollaborativeOnboardingView } from '@/components/onboarding/CollaborativeOnboardingView';
+import { useOnboardingWorkflow } from '@/hooks/useOnboardingWorkflow';
 
 const OnboardingDashboard: React.FC = () => {
+  const { onboardingData, isLoading } = useOnboardingWorkflow();
+
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <PageContainer
+          title="Onboarding Dashboard"
+          subtitle="Manage treatment center onboarding workflow"
+        >
+          <div className="flex items-center justify-center p-8">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+              <p className="mt-4 text-muted-foreground">Loading onboarding data...</p>
+            </div>
+          </div>
+        </PageContainer>
+      </MainLayout>
+    );
+  }
+
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Onboarding Dashboard</h1>
-      <p>Onboarding dashboard content will be implemented here.</p>
-    </div>
+    <MainLayout>
+      <PageContainer
+        title="Onboarding Dashboard"
+        subtitle="Manage treatment center onboarding workflow and applications"
+      >
+        <CollaborativeOnboardingView />
+      </PageContainer>
+    </MainLayout>
   );
 };
 
