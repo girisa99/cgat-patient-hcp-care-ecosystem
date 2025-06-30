@@ -12,6 +12,8 @@ interface AuthContextType {
   userRoles: UserRole[];
   loading: boolean;
   signOut: () => Promise<void>;
+  profile: any | null;
+  refreshUserData: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -20,6 +22,8 @@ const AuthContext = createContext<AuthContextType>({
   userRoles: [],
   loading: true,
   signOut: async () => {},
+  profile: null,
+  refreshUserData: async () => {},
 });
 
 export const useAuthContext = () => {
@@ -34,6 +38,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [userRoles, setUserRoles] = useState<UserRole[]>([]);
+  const [profile, setProfile] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchUserRoles = async (userId: string) => {
@@ -64,6 +69,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      console.log('🔍 Fetching user profile for:', userId);
+      
+      const { data: profileData, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('❌ Error fetching user profile:', error);
+        return null;
+      }
+
+      console.log('✅ User profile fetched:', profileData);
+      return profileData;
+    } catch (error) {
+      console.error('❌ Exception fetching user profile:', error);
+      return null;
+    }
+  };
+
+  const refreshUserData = async () => {
+    if (session?.user) {
+      const [roles, profileData] = await Promise.all([
+        fetchUserRoles(session.user.id),
+        fetchUserProfile(session.user.id)
+      ]);
+      setUserRoles(roles);
+      setProfile(profileData);
+    }
+  };
+
   const signOut = async () => {
     try {
       console.log('🚪 Signing out user...');
@@ -85,17 +124,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('🔄 Auth state change:', event, session?.user?.email);
+        console.log('🔄 Auth state change:', event, session?.user?.email, 'Access token present:', !!session?.access_token);
         
         setSession(session);
         setUser(session?.user ?? null);
         
-        if (session?.user) {
-          // Fetch user roles when user is authenticated
-          const roles = await fetchUserRoles(session.user.id);
+        if (session?.user && session?.access_token) {
+          console.log('✅ Valid session with access token, fetching user data...');
+          // Fetch user roles and profile when user is authenticated
+          const [roles, profileData] = await Promise.all([
+            fetchUserRoles(session.user.id),
+            fetchUserProfile(session.user.id)
+          ]);
           setUserRoles(roles);
+          setProfile(profileData);
         } else {
+          console.log('⚠️ No session or access token, clearing user data');
           setUserRoles([]);
+          setProfile(null);
         }
         
         setLoading(false);
@@ -104,16 +150,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('🔄 AuthProvider: Initial session check:', session?.user?.email);
+      console.log('🔄 AuthProvider: Initial session check:', session?.user?.email, 'Access token present:', !!session?.access_token);
       setSession(session);
       setUser(session?.user ?? null);
       
-      if (session?.user) {
-        fetchUserRoles(session.user.id).then(roles => {
+      if (session?.user && session?.access_token) {
+        console.log('✅ Initial session valid, fetching user data...');
+        Promise.all([
+          fetchUserRoles(session.user.id),
+          fetchUserProfile(session.user.id)
+        ]).then(([roles, profileData]) => {
           setUserRoles(roles);
+          setProfile(profileData);
           setLoading(false);
         });
       } else {
+        console.log('⚠️ No initial session or access token');
         setLoading(false);
       }
     });
@@ -130,6 +182,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     userRoles,
     loading,
     signOut,
+    profile,
+    refreshUserData,
   };
 
   return (

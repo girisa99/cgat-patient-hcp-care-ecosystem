@@ -69,16 +69,26 @@ export const useUsers = () => {
     queryKey: ['users'],
     queryFn: async () => {
       console.log('🔍 Fetching users - using optimized edge function...');
+      console.log('🔍 Session details:', {
+        hasSession: !!session,
+        hasAccessToken: !!session?.access_token,
+        userEmail: session?.user?.email,
+        userId: session?.user?.id
+      });
       
       if (!session?.access_token) {
-        console.error('❌ No access token available');
-        throw new Error('Authentication required');
+        console.error('❌ No access token available for edge function call');
+        throw new Error('Authentication required - no access token');
       }
 
       try {
+        console.log('📡 Calling manage-user-profiles edge function...');
         const { data: response, error: functionError } = await supabase.functions.invoke('manage-user-profiles', {
           body: {
             action: 'list'
+          },
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
           }
         });
 
@@ -91,6 +101,8 @@ export const useUsers = () => {
           console.error('❌ No response from edge function');
           throw new Error('No response from edge function');
         }
+
+        console.log('📊 Edge function response:', response);
 
         if (!response.success) {
           console.error('❌ Edge function returned error:', response.error);
@@ -135,7 +147,7 @@ export const useUsers = () => {
     staleTime: 30000,
     gcTime: 300000,
     refetchOnWindowFocus: true,
-    enabled: !!session?.access_token, // Only run query when we have a valid session
+    enabled: !!(session?.access_token && user), // Only run query when we have both session and user
   });
 
   const createUserMutation = useMutation({
