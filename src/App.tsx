@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -16,33 +15,36 @@ import TreatmentCenterOnboarding from "./pages/TreatmentCenterOnboarding";
 import Settings from "./pages/Settings";
 import ApiIntegrations from "./pages/ApiIntegrations";
 import AuditLog from "./pages/AuditLog";
+import CollaborativeOnboardingPage from './pages/CollaborativeOnboarding';
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <CleanAuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/users" element={<Users />} />
-            <Route path="/patients" element={<Patients />} />
-            <Route path="/facilities" element={<Facilities />} />
-            <Route path="/modules" element={<Modules />} />
-            <Route path="/onboarding" element={<Onboarding />} />
-            <Route path="/onboarding/treatment-center" element={<TreatmentCenterOnboarding />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/api-integrations" element={<ApiIntegrations />} />
-            <Route path="/audit-log" element={<AuditLog />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </CleanAuthProvider>
-  </QueryClientProvider>
-);
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <CleanAuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/users" element={<Users />} />
+              <Route path="/patients" element={<Patients />} />
+              <Route path="/facilities" element={<Facilities />} />
+              <Route path="/modules" element={<Modules />} />
+              <Route path="/onboarding" element={<TreatmentCenterOnboardingPage />} />
+              <Route path="/onboarding/collaborate/:applicationId" element={<CollaborativeOnboardingPage />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/api-integrations" element={<ApiIntegrations />} />
+              <Route path="/audit-log" element={<AuditLog />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </CleanAuthProvider>
+    </QueryClientProvider>
+  );
+}
 
 export default App;

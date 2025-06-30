@@ -1,15 +1,16 @@
+
 import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { PageContainer } from '@/components/layout/PageContainer';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
-import { TreatmentCenterOnboardingWizard } from '@/components/onboarding/TreatmentCenterOnboardingWizard';
+import { TabbedOnboardingWizard } from '@/components/onboarding/TabbedOnboardingWizard';
 import { SavedApplicationsDialog } from '@/components/onboarding/SavedApplicationsDialog';
 import { TreatmentCenterOnboarding } from '@/types/onboarding';
 import { useSavedApplications } from '@/hooks/useSavedApplications';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, Building, Users, Shield, AlertCircle } from 'lucide-react';
+import { FileText, Building, Users, Shield, AlertCircle, Zap, CheckCircle } from 'lucide-react';
 
 const TreatmentCenterOnboardingPage = () => {
   const [showWizard, setShowWizard] = useState(false);
@@ -106,7 +107,7 @@ const TreatmentCenterOnboardingPage = () => {
     return (
       <ProtectedRoute>
         <MainLayout>
-          <TreatmentCenterOnboardingWizard 
+          <TabbedOnboardingWizard 
             onSubmit={handleSubmit}
             initialData={resumeData?.data}
             applicationId={resumeData?.applicationId}
@@ -123,7 +124,7 @@ const TreatmentCenterOnboardingPage = () => {
       <MainLayout>
         <PageContainer
           title="Treatment Center Onboarding"
-          subtitle="Streamlined onboarding process for healthcare distributors"
+          subtitle="Streamlined, collaborative onboarding process for healthcare distributors"
         >
           <div className="max-w-4xl mx-auto space-y-8">
             {/* Saved Applications Alert */}
@@ -135,7 +136,7 @@ const TreatmentCenterOnboardingPage = () => {
                     <CardTitle className="text-blue-900">Draft Applications Found</CardTitle>
                   </div>
                   <CardDescription className="text-blue-700">
-                    You have incomplete applications that you can resume.
+                    You have incomplete applications that you can resume or share with collaborators.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -150,38 +151,45 @@ const TreatmentCenterOnboardingPage = () => {
               </Card>
             )}
 
-            {/* Introduction */}
+            {/* Key Features */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
-                  <Building className="h-6 w-6" />
-                  <span>Healthcare Distribution Partnership</span>
+                  <Zap className="h-6 w-6 text-yellow-500" />
+                  <span>New Enhanced Experience</span>
                 </CardTitle>
                 <CardDescription>
-                  Complete your onboarding process to establish partnerships with leading healthcare distributors including AmerisourceBergen, Cardinal Health, and McKesson.
+                  Our improved onboarding process is designed for efficiency and collaboration
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   <div className="text-center p-4">
                     <FileText className="h-12 w-12 mx-auto mb-3 text-blue-600" />
-                    <h3 className="font-semibold mb-2">Auto-Save Progress</h3>
+                    <h3 className="font-semibold mb-2">Organized Tabs</h3>
                     <p className="text-sm text-muted-foreground">
-                      Your progress is automatically saved as you complete each section
+                      Logical grouping of related information for better workflow
                     </p>
                   </div>
                   <div className="text-center p-4">
-                    <Users className="h-12 w-12 mx-auto mb-3 text-green-600" />
-                    <h3 className="font-semibold mb-2">Resume Anytime</h3>
+                    <CheckCircle className="h-12 w-12 mx-auto mb-3 text-green-600" />
+                    <h3 className="font-semibold mb-2">Progress Tracking</h3>
                     <p className="text-sm text-muted-foreground">
-                      Exit and return to continue where you left off
+                      Visual progress indicators show completion status at every level
                     </p>
                   </div>
                   <div className="text-center p-4">
-                    <Shield className="h-12 w-12 mx-auto mb-3 text-purple-600" />
-                    <h3 className="font-semibold mb-2">Secure Process</h3>
+                    <Users className="h-12 w-12 mx-auto mb-3 text-purple-600" />
+                    <h3 className="font-semibold mb-2">Team Collaboration</h3>
                     <p className="text-sm text-muted-foreground">
-                      HIPAA-compliant and secure data handling
+                      Share applications with colleagues for joint completion
+                    </p>
+                  </div>
+                  <div className="text-center p-4">
+                    <Shield className="h-12 w-12 mx-auto mb-3 text-orange-600" />
+                    <h3 className="font-semibold mb-2">Smart Validation</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Intelligent section status showing what needs attention
                     </p>
                   </div>
                 </div>
@@ -191,66 +199,88 @@ const TreatmentCenterOnboardingPage = () => {
             {/* Process Overview */}
             <Card>
               <CardHeader>
-                <CardTitle>Onboarding Process Overview</CardTitle>
+                <CardTitle>Organized Application Process</CardTitle>
                 <CardDescription>
-                  Your application will guide you through the following steps:
+                  Your application is now organized into logical sections for easier completion
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {[
-                    { step: 1, title: 'Company Information', description: 'Legal name, addresses, and basic company details' },
-                    { step: 2, title: 'Business Classification', description: 'Business type, ownership structure, and operational details' },
-                    { step: 3, title: 'Key Contacts', description: 'Primary contacts for different business functions' },
-                    { step: 4, title: 'Ownership Structure', description: 'Ownership details and controlling entities' },
-                    { step: 5, title: 'Business References', description: 'Banking and supplier references' },
-                    { step: 6, title: 'Payment & Banking', description: 'Banking details and payment preferences' },
-                    { step: 7, title: 'Licenses & Certifications', description: 'Professional licenses and certifications' },
-                    { step: 8, title: 'Required Documents', description: 'Upload supporting documentation' },
-                    { step: 9, title: 'Authorizations', description: 'Legal signatures and authorizations' },
-                    { step: 10, title: 'Review & Submit', description: 'Final review before submission' }
-                  ].map((item) => (
-                    <div key={item.step} className="flex space-x-3 p-3 border rounded-lg">
-                      <div className="flex-shrink-0 w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-medium">
-                        {item.step}
-                      </div>
-                      <div>
-                        <h4 className="font-medium">{item.title}</h4>
-                        <p className="text-sm text-muted-foreground">{item.description}</p>
-                      </div>
-                    </div>
+                    {
+                      title: 'Basic Information',
+                      description: 'Company details, business classification, and key contacts',
+                      completion: '25%',
+                      steps: ['Company Information', 'Business Classification', 'Key Contacts']
+                    },
+                    {
+                      title: 'Business Details',
+                      description: 'Ownership structure and business references',
+                      completion: '25%',
+                      steps: ['Ownership & Control', 'Business References']
+                    },
+                    {
+                      title: 'Financial & Legal',
+                      description: 'Banking information, licenses, and documentation',
+                      completion: '30%',
+                      steps: ['Payment & Banking', 'Licenses & Certifications', 'Required Documents']
+                    },
+                    {
+                      title: 'Finalization',
+                      description: 'Review, signatures, and final submission',
+                      completion: '20%',
+                      steps: ['Authorizations & Signatures', 'Review & Submit']
+                    }
+                  ].map((section, index) => (
+                    <Card key={index} className="border-l-4 border-l-primary">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center justify-between">
+                          <CardTitle className="text-base">{section.title}</CardTitle>
+                          <Badge variant="outline">{section.completion} weight</Badge>
+                        </div>
+                        <CardDescription className="text-sm">{section.description}</CardDescription>
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        <ul className="text-sm space-y-1">
+                          {section.steps.map((step, stepIndex) => (
+                            <li key={stepIndex} className="flex items-center space-x-2">
+                              <div className="w-2 h-2 bg-primary rounded-full"></div>
+                              <span>{step}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </CardContent>
+                    </Card>
                   ))}
                 </div>
               </CardContent>
             </Card>
 
-            {/* Requirements Checklist */}
-            <Card>
+            {/* Collaboration Features */}
+            <Card className="border-green-200 bg-green-50">
               <CardHeader>
-                <CardTitle>Before You Begin</CardTitle>
-                <CardDescription>
-                  Please ensure you have the following information and documents ready:
+                <CardTitle className="text-green-900">Collaborative Features</CardTitle>
+                <CardDescription className="text-green-700">
+                  Work together with your team to complete the application efficiently
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {[
-                    'Legal company name and DBA (if applicable)',
-                    'Federal Tax ID number',
-                    'Complete business addresses',
-                    'Key contact information',
-                    'Banking information and voided check',
-                    'Business licenses (DEA, State Pharmacy, etc.)',
-                    'Financial statements (recent)',
-                    'Supplier reference information',
-                    'Ownership and control entity details',
-                    'Resale tax exemption certificates'
-                  ].map((requirement, index) => (
-                    <div key={index} className="flex items-center space-x-2">
-                      <div className="w-2 h-2 bg-primary rounded-full"></div>
-                      <span className="text-sm">{requirement}</span>
-                    </div>
-                  ))}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="text-center">
+                    <Users className="h-8 w-8 mx-auto mb-2 text-green-600" />
+                    <h4 className="font-medium text-green-900">Share Applications</h4>
+                    <p className="text-sm text-green-700">Invite colleagues to contribute to specific sections</p>
+                  </div>
+                  <div className="text-center">
+                    <FileText className="h-8 w-8 mx-auto mb-2 text-green-600" />
+                    <h4 className="font-medium text-green-900">Real-time Sync</h4>
+                    <p className="text-sm text-green-700">All changes are automatically saved and synchronized</p>
+                  </div>
+                  <div className="text-center">
+                    <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-600" />
+                    <h4 className="font-medium text-green-900">Smart Status</h4>
+                    <p className="text-sm text-green-700">Clear indicators show what's complete, incomplete, or needs review</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -273,7 +303,7 @@ const TreatmentCenterOnboardingPage = () => {
                 )}
               </div>
               <p className="text-sm text-muted-foreground">
-                The application process typically takes 15-30 minutes to complete
+                The enhanced application process is designed for team collaboration and efficiency
               </p>
             </div>
           </div>
