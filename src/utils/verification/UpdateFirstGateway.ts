@@ -1,16 +1,19 @@
-
 /**
  * Update First Gateway
  * Single source of truth for all development decisions
  * Enforces "Update First" rule before any new code creation
+ * NOW INCLUDES: Services, Classes, Methods, and Mock Data Prevention
  */
 
 import { ComponentRegistryScanner } from './ComponentRegistryScanner';
+import { ServiceClassScanner } from './ServiceClassScanner';
+import { MockDataDetector } from './MockDataDetector';
+import { TypeScriptPatternScanner } from './TypeScriptPatternScanner';
 import { moduleRegistry } from '@/utils/moduleRegistry';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface DevelopmentRequest {
-  type: 'hook' | 'component' | 'module' | 'template' | 'utility';
+  type: 'hook' | 'component' | 'module' | 'template' | 'utility' | 'service' | 'class' | 'method';
   name: string;
   tableName?: string;
   functionality: string[];
@@ -28,16 +31,19 @@ export interface UpdateFirstAnalysis {
   preventDuplicateScore: number; // 0-100, higher = more likely to be duplicate
   mandatoryUpdates: string[];
   approvedForCreation: boolean;
+  mockDataViolations: number;
+  typeSafetyScore: number;
 }
 
 export class UpdateFirstGateway {
   /**
    * MANDATORY PRE-CREATION CHECK
    * Every new development request MUST go through this gateway
+   * NOW COVERS: Components, Hooks, Services, Classes, Methods, Mock Data Prevention
    */
   static async enforceUpdateFirst(request: DevelopmentRequest): Promise<UpdateFirstAnalysis> {
-    console.log('🚨 UPDATE FIRST GATEWAY ACTIVATED for:', request);
-    console.log('🔍 Performing comprehensive duplicate detection...');
+    console.log('🚨 COMPREHENSIVE UPDATE FIRST GATEWAY ACTIVATED for:', request);
+    console.log('🔍 Performing comprehensive duplicate detection with services, classes, and mock data prevention...');
 
     const analysis: UpdateFirstAnalysis = {
       shouldProceed: false,
@@ -48,7 +54,9 @@ export class UpdateFirstGateway {
       reuseOpportunities: [],
       preventDuplicateScore: 0,
       mandatoryUpdates: [],
-      approvedForCreation: false
+      approvedForCreation: false,
+      mockDataViolations: 0,
+      typeSafetyScore: 0
     };
 
     try {
@@ -66,14 +74,36 @@ export class UpdateFirstGateway {
         analysis.preventDuplicateScore += 30;
       }
 
-      // Step 3: Check module registry for existing modules
+      // Step 3: Check services and classes (NEW!)
+      const serviceClassDuplicates = await this.checkServiceClassDuplicates(request);
+      if (serviceClassDuplicates.length > 0) {
+        analysis.blockingReasons.push(`❌ SERVICE/CLASS DUPLICATE FOUND: ${serviceClassDuplicates.join(', ')}`);
+        analysis.preventDuplicateScore += 40;
+      }
+
+      // Step 4: Check for mock data prevention (NEW!)
+      const mockDataCheck = await this.checkMockDataPrevention(request);
+      analysis.mockDataViolations = mockDataCheck.violations;
+      if (mockDataCheck.violations > 0) {
+        analysis.blockingReasons.push(`❌ MOCK DATA USAGE DETECTED: ${mockDataCheck.violations} violations found`);
+        analysis.preventDuplicateScore += 20;
+      }
+
+      // Step 5: TypeScript pattern analysis (NEW!)
+      const typeScriptAnalysis = await this.analyzeTypeScriptPatterns(request);
+      analysis.typeSafetyScore = typeScriptAnalysis.typeSafetyScore;
+      if (typeScriptAnalysis.typeSafetyScore < 70) {
+        analysis.updateRecommendations.push(`⚠️ LOW TYPE SAFETY SCORE: ${typeScriptAnalysis.typeSafetyScore}/100`);
+      }
+
+      // Step 6: Check module registry for existing modules
       const existingModules = await this.checkModuleRegistry(request);
       if (existingModules.length > 0) {
         analysis.existingAlternatives.push(...existingModules);
         analysis.preventDuplicateScore += 20;
       }
 
-      // Step 4: Scan component registry for reuse opportunities
+      // Step 7: Scan component registry for reuse opportunities
       const reuseOpportunities = await ComponentRegistryScanner.findReuseOpportunities({
         tableName: request.tableName,
         functionality: request.functionality,
@@ -81,27 +111,32 @@ export class UpdateFirstGateway {
       });
       analysis.reuseOpportunities.push(...reuseOpportunities);
 
-      // Step 5: Check database for existing implementations
+      // Step 8: Check database for existing implementations
       const databaseAlternatives = await this.checkDatabaseForAlternatives(request);
       analysis.existingAlternatives.push(...databaseAlternatives);
 
-      // Step 6: Generate update recommendations
+      // Step 9: Generate update recommendations
       analysis.updateRecommendations = await this.generateUpdateRecommendations(request, analysis);
 
-      // Step 7: Determine if creation should proceed
+      // Step 10: Determine if creation should proceed
       analysis.canProceed = analysis.blockingReasons.length === 0;
       analysis.shouldProceed = analysis.canProceed && analysis.preventDuplicateScore < 70;
-      analysis.approvedForCreation = analysis.shouldProceed && analysis.updateRecommendations.length === 0;
+      analysis.approvedForCreation = analysis.shouldProceed && 
+                                   analysis.updateRecommendations.length === 0 &&
+                                   analysis.mockDataViolations === 0 &&
+                                   analysis.typeSafetyScore >= 70;
 
-      // Step 8: Log the decision
+      // Step 11: Log the decision
       await this.logUpdateFirstDecision(request, analysis);
 
-      console.log('📊 UPDATE FIRST ANALYSIS COMPLETE:', {
+      console.log('📊 COMPREHENSIVE UPDATE FIRST ANALYSIS COMPLETE:', {
         canProceed: analysis.canProceed,
         shouldProceed: analysis.shouldProceed,
         preventDuplicateScore: analysis.preventDuplicateScore,
         blockingReasons: analysis.blockingReasons.length,
-        alternatives: analysis.existingAlternatives.length
+        alternatives: analysis.existingAlternatives.length,
+        mockDataViolations: analysis.mockDataViolations,
+        typeSafetyScore: analysis.typeSafetyScore
       });
 
       return analysis;
@@ -114,7 +149,7 @@ export class UpdateFirstGateway {
   }
 
   /**
-   * Find exact name duplicates
+   * Find exact name duplicates (ENHANCED)
    */
   private static async findExactDuplicates(request: DevelopmentRequest): Promise<string[]> {
     const duplicates: string[] = [];
@@ -140,15 +175,39 @@ export class UpdateFirstGateway {
     );
     duplicates.push(...duplicateTemplates.map(t => `Template: ${t.name}`));
 
+    // NEW: Check services and classes
+    const serviceClassInventory = await ServiceClassScanner.scanAllServicesAndClasses();
+    
+    // Check services
+    const duplicateServices = serviceClassInventory.services.filter(service =>
+      service.name.toLowerCase() === request.name.toLowerCase()
+    );
+    duplicates.push(...duplicateServices.map(s => `Service: ${s.name}`));
+
+    // Check classes
+    const duplicateClasses = serviceClassInventory.classes.filter(cls =>
+      cls.name.toLowerCase() === request.name.toLowerCase()
+    );
+    duplicates.push(...duplicateClasses.map(c => `Class: ${c.name}`));
+
+    // Check methods
+    if (request.type === 'method') {
+      const duplicateMethods = serviceClassInventory.methods.filter(method =>
+        method.name.toLowerCase() === request.name.toLowerCase()
+      );
+      duplicates.push(...duplicateMethods.map(m => `Method: ${m.name} in ${m.filePath}`));
+    }
+
     return duplicates;
   }
 
   /**
-   * Find functional duplicates (same purpose, different name)
+   * Find functional duplicates (ENHANCED)
    */
   private static async findFunctionalDuplicates(request: DevelopmentRequest): Promise<string[]> {
     const duplicates: string[] = [];
     const inventory = await ComponentRegistryScanner.scanAllComponents();
+    const serviceClassInventory = await ServiceClassScanner.scanAllServicesAndClasses();
 
     // Check for same table + same type combinations
     if (request.tableName) {
@@ -159,7 +218,7 @@ export class UpdateFirstGateway {
       duplicates.push(...sameTableHooks.map(h => `Table Hook: ${h.name} (${h.tableName})`));
     }
 
-    // Check for overlapping functionality
+    // Check for overlapping functionality in hooks
     const functionalOverlap = inventory.hooks.filter(hook => 
       hook.functionality.some(func => 
         request.functionality.some(reqFunc => 
@@ -170,7 +229,141 @@ export class UpdateFirstGateway {
     );
     duplicates.push(...functionalOverlap.map(h => `Functional Overlap: ${h.name}`));
 
+    // NEW: Check for overlapping functionality in services
+    const serviceFunctionalOverlap = serviceClassInventory.services.filter(service =>
+      request.functionality.some(reqFunc =>
+        service.methods.some(method =>
+          method.toLowerCase().includes(reqFunc.toLowerCase()) ||
+          reqFunc.toLowerCase().includes(method.toLowerCase())
+        )
+      )
+    );
+    duplicates.push(...serviceFunctionalOverlap.map(s => `Service Functional Overlap: ${s.name}`));
+
     return duplicates;
+  }
+
+  /**
+   * Check for service and class duplicates (NEW!)
+   */
+  private static async checkServiceClassDuplicates(request: DevelopmentRequest): Promise<string[]> {
+    const duplicates: string[] = [];
+    
+    try {
+      const { services, classes, methods, utilities } = await ServiceClassScanner.scanAllServicesAndClasses();
+
+      // Check for service duplicates
+      if (request.type === 'service' || request.type === 'class') {
+        const existingServices = services.filter(service =>
+          service.name.toLowerCase().includes(request.name.toLowerCase()) ||
+          request.name.toLowerCase().includes(service.name.toLowerCase())
+        );
+        duplicates.push(...existingServices.map(s => `Similar Service: ${s.name} (${s.filePath})`));
+
+        const existingClasses = classes.filter(cls =>
+          cls.name.toLowerCase().includes(request.name.toLowerCase()) ||
+          request.name.toLowerCase().includes(cls.name.toLowerCase())
+        );
+        duplicates.push(...existingClasses.map(c => `Similar Class: ${c.name} (${c.filePath})`));
+      }
+
+      // Check for method duplicates
+      if (request.type === 'method') {
+        const existingMethods = methods.filter(method =>
+          method.name.toLowerCase() === request.name.toLowerCase()
+        );
+        duplicates.push(...existingMethods.map(m => `Method Exists: ${m.name} in ${m.filePath}`));
+      }
+
+      // Check for utility duplicates
+      const existingUtilities = utilities.filter(utility =>
+        utility.name.toLowerCase().includes(request.name.toLowerCase()) ||
+        request.name.toLowerCase().includes(utility.name.toLowerCase())
+      );
+      duplicates.push(...existingUtilities.map(u => `Similar Utility: ${u.name} (${u.filePath})`));
+
+    } catch (error) {
+      console.warn('Service/Class duplicate check failed:', error);
+    }
+
+    return duplicates;
+  }
+
+  /**
+   * Check for mock data prevention (NEW!)
+   */
+  private static async checkMockDataPrevention(request: DevelopmentRequest): Promise<{
+    violations: number;
+    issues: string[];
+  }> {
+    try {
+      const mockDataAnalysis = await MockDataDetector.analyzeMockDataUsage();
+      
+      // Check if the request involves creating mock data
+      const mockDataKeywords = ['mock', 'dummy', 'fake', 'test', 'sample', 'placeholder'];
+      const requestContainsMockData = mockDataKeywords.some(keyword =>
+        request.name.toLowerCase().includes(keyword) ||
+        request.description?.toLowerCase().includes(keyword) ||
+        request.functionality.some(func => func.toLowerCase().includes(keyword))
+      );
+
+      if (requestContainsMockData) {
+        return {
+          violations: mockDataAnalysis.violations.length + 1, // +1 for the new request
+          issues: ['Request appears to involve mock data creation']
+        };
+      }
+
+      return {
+        violations: mockDataAnalysis.violations.filter(v => v.severity === 'high').length,
+        issues: mockDataAnalysis.violations.map(v => v.suggestion)
+      };
+
+    } catch (error) {
+      console.warn('Mock data prevention check failed:', error);
+      return { violations: 0, issues: [] };
+    }
+  }
+
+  /**
+   * Analyze TypeScript patterns (NEW!)
+   */
+  private static async analyzeTypeScriptPatterns(request: DevelopmentRequest): Promise<{
+    typeSafetyScore: number;
+    patternConsistencyScore: number;
+    recommendations: string[];
+  }> {
+    try {
+      const tsAnalysis = await TypeScriptPatternScanner.analyzeTypeScriptPatterns();
+      
+      const recommendations: string[] = [];
+      
+      if (tsAnalysis.typeSafetyScore < 70) {
+        recommendations.push('Improve type safety before adding new code');
+      }
+      
+      if (tsAnalysis.patternConsistencyScore < 70) {
+        recommendations.push('Improve pattern consistency before adding new patterns');
+      }
+      
+      if (tsAnalysis.codeQualityMetrics.anyUsage > 10) {
+        recommendations.push('Reduce "any" type usage before adding new types');
+      }
+
+      return {
+        typeSafetyScore: tsAnalysis.typeSafetyScore,
+        patternConsistencyScore: tsAnalysis.patternConsistencyScore,
+        recommendations
+      };
+
+    } catch (error) {
+      console.warn('TypeScript pattern analysis failed:', error);
+      return {
+        typeSafetyScore: 0,
+        patternConsistencyScore: 0,
+        recommendations: ['TypeScript analysis failed - proceed with caution']
+      };
+    }
   }
 
   /**
@@ -221,7 +414,7 @@ export class UpdateFirstGateway {
   }
 
   /**
-   * Generate specific update recommendations
+   * Generate specific update recommendations (ENHANCED)
    */
   private static async generateUpdateRecommendations(
     request: DevelopmentRequest, 
@@ -247,11 +440,34 @@ export class UpdateFirstGateway {
       recommendations.push('🏗️ TEMPLATE: Use ExtensibleModuleTemplate for consistent UI patterns');
     }
 
+    // NEW: Service and class recommendations
+    if (request.type === 'service') {
+      recommendations.push('🔧 SERVICE PATTERN: Follow existing service patterns and naming conventions');
+      recommendations.push('🏭 DEPENDENCY INJECTION: Consider using existing service orchestrators');
+    }
+
+    if (request.type === 'class') {
+      recommendations.push('📋 CLASS PATTERN: Follow established class hierarchies and interfaces');
+      recommendations.push('🎭 ABSTRACT: Consider using abstract base classes for common functionality');
+    }
+
+    // NEW: Mock data prevention recommendations
+    if (analysis.mockDataViolations > 0) {
+      recommendations.push('🚫 NO MOCK DATA: Use real database queries instead of mock/dummy data');
+      recommendations.push('📊 REAL DATA: Implement proper Supabase queries for data fetching');
+    }
+
+    // NEW: TypeScript quality recommendations
+    if (analysis.typeSafetyScore < 70) {
+      recommendations.push('🔷 TYPE SAFETY: Improve TypeScript type definitions before proceeding');
+      recommendations.push('📝 INTERFACES: Define proper interfaces and types for new functionality');
+    }
+
     return recommendations;
   }
 
   /**
-   * Log the update first decision for audit trail
+   * Log the update first decision for audit trail (ENHANCED)
    */
   private static async logUpdateFirstDecision(
     request: DevelopmentRequest, 
@@ -279,19 +495,22 @@ export class UpdateFirstGateway {
             reuseOpportunities: analysis.reuseOpportunities,
             preventDuplicateScore: analysis.preventDuplicateScore,
             mandatoryUpdates: analysis.mandatoryUpdates,
-            approvedForCreation: analysis.approvedForCreation
+            approvedForCreation: analysis.approvedForCreation,
+            mockDataViolations: analysis.mockDataViolations,
+            typeSafetyScore: analysis.typeSafetyScore
           },
           decision: analysis.approvedForCreation ? 'APPROVED' : 'BLOCKED',
-          preventDuplicateScore: analysis.preventDuplicateScore
+          preventDuplicateScore: analysis.preventDuplicateScore,
+          comprehensiveAnalysis: true // Flag indicating this used the enhanced system
         };
 
         await supabase
           .from('issue_fixes')
           .insert({
             user_id: user.id,
-            issue_type: 'UPDATE_FIRST_GATEWAY',
-            issue_message: `Development request: ${request.type} "${request.name}" - ${analysis.approvedForCreation ? 'APPROVED' : 'BLOCKED'}`,
-            issue_source: 'Update First Gateway',
+            issue_type: 'COMPREHENSIVE_UPDATE_FIRST_GATEWAY',
+            issue_message: `Development request: ${request.type} "${request.name}" - ${analysis.approvedForCreation ? 'APPROVED' : 'BLOCKED'} (Mock Data: ${analysis.mockDataViolations}, Type Safety: ${analysis.typeSafetyScore}/100)`,
+            issue_source: 'Comprehensive Update First Gateway',
             issue_severity: analysis.blockingReasons.length > 0 ? 'high' : 'low',
             category: 'Development',
             fix_method: 'automated_prevention',
@@ -299,12 +518,12 @@ export class UpdateFirstGateway {
           });
       }
     } catch (error) {
-      console.error('Failed to log update first decision:', error);
+      console.error('Failed to log comprehensive update first decision:', error);
     }
   }
 
   /**
-   * Quick validation for development workflows
+   * Quick validation for development workflows (ENHANCED)
    */
   static async quickValidation(componentName: string, componentType: string): Promise<boolean> {
     const request: DevelopmentRequest = {
@@ -316,5 +535,75 @@ export class UpdateFirstGateway {
 
     const analysis = await this.enforceUpdateFirst(request);
     return analysis.approvedForCreation;
+  }
+
+  /**
+   * Comprehensive system health check (NEW!)
+   */
+  static async performSystemHealthCheck(): Promise<{
+    overallScore: number;
+    mockDataScore: number;
+    typeSafetyScore: number;
+    duplicatePreventionScore: number;
+    recommendations: string[];
+  }> {
+    try {
+      console.log('🏥 Performing comprehensive system health check...');
+
+      // Mock data analysis
+      const mockDataAnalysis = await MockDataDetector.analyzeMockDataUsage();
+      
+      // TypeScript pattern analysis
+      const tsAnalysis = await TypeScriptPatternScanner.analyzeTypeScriptPatterns();
+      
+      // Service and class analysis
+      const duplicateAnalysis = await ServiceClassScanner.findDuplicateServices();
+      
+      const mockDataScore = mockDataAnalysis.databaseUsageScore;
+      const typeSafetyScore = tsAnalysis.typeSafetyScore;
+      
+      // Calculate duplicate prevention score
+      const totalDuplicates = duplicateAnalysis.duplicateServices.length + 
+                            duplicateAnalysis.duplicateClasses.length + 
+                            duplicateAnalysis.duplicateMethods.length;
+      const duplicatePreventionScore = Math.max(0, 100 - (totalDuplicates * 10));
+      
+      // Overall score
+      const overallScore = Math.round((mockDataScore + typeSafetyScore + duplicatePreventionScore) / 3);
+      
+      const recommendations: string[] = [];
+      
+      if (mockDataScore < 80) {
+        recommendations.push('🚫 Remove mock data and implement real database queries');
+      }
+      
+      if (typeSafetyScore < 70) {
+        recommendations.push('🔷 Improve TypeScript type safety and definitions');
+      }
+      
+      if (duplicatePreventionScore < 80) {
+        recommendations.push('🔄 Consolidate duplicate services, classes, and methods');
+      }
+      
+      console.log(`✅ System health check completed: Overall ${overallScore}/100`);
+      
+      return {
+        overallScore,
+        mockDataScore,
+        typeSafetyScore,
+        duplicatePreventionScore,
+        recommendations
+      };
+
+    } catch (error) {
+      console.error('❌ System health check failed:', error);
+      return {
+        overallScore: 0,
+        mockDataScore: 0,
+        typeSafetyScore: 0,
+        duplicatePreventionScore: 0,
+        recommendations: ['System health check failed - manual review required']
+      };
+    }
   }
 }
