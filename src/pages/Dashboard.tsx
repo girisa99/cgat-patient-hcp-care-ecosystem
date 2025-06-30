@@ -8,9 +8,33 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, Building2, Settings, UserPlus, Code, Shield, Activity, Layers, FileText } from 'lucide-react';
 import ProfileCard from '@/components/dashboard/ProfileCard';
+import { useUsers } from '@/hooks/useUsers';
+import { useFacilities } from '@/hooks/useFacilities';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 const Dashboard = () => {
   const { user, userRoles, profile } = useAuthContext();
+  const { users, isLoading: usersLoading } = useUsers();
+  const { facilities, isLoading: facilitiesLoading } = useFacilities();
+
+  // Fetch API integrations count
+  const { data: apiIntegrationsCount, isLoading: apiLoading } = useQuery({
+    queryKey: ['api-integrations-count'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('api_integration_registry')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'active');
+      
+      if (error) {
+        console.error('Error fetching API integrations count:', error);
+        return 0;
+      }
+      
+      return count || 0;
+    }
+  });
 
   const isAdmin = userRoles.includes('superAdmin');
   const isOnboarding = userRoles.includes('onboardingTeam');
@@ -111,7 +135,9 @@ const Dashboard = () => {
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">-</div>
+                <div className="text-2xl font-bold">
+                  {usersLoading ? '...' : users?.length || 0}
+                </div>
                 <p className="text-xs text-muted-foreground">Active users in system</p>
               </CardContent>
             </Card>
@@ -122,7 +148,9 @@ const Dashboard = () => {
                 <Building2 className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">-</div>
+                <div className="text-2xl font-bold">
+                  {facilitiesLoading ? '...' : facilities?.length || 0}
+                </div>
                 <p className="text-xs text-muted-foreground">Registered facilities</p>
               </CardContent>
             </Card>
@@ -133,7 +161,9 @@ const Dashboard = () => {
                 <Code className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">-</div>
+                <div className="text-2xl font-bold">
+                  {apiLoading ? '...' : apiIntegrationsCount || 0}
+                </div>
                 <p className="text-xs text-muted-foreground">Active integrations</p>
               </CardContent>
             </Card>
