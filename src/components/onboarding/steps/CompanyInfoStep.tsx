@@ -1,50 +1,47 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { TreatmentCenterOnboarding } from '@/types/onboarding';
 
 interface CompanyInfoStepProps {
   data: Partial<TreatmentCenterOnboarding>;
-  onUpdate: (data: Partial<TreatmentCenterOnboarding>) => void;
+  onDataChange: (data: Partial<TreatmentCenterOnboarding>) => void;
 }
 
-export const CompanyInfoStep: React.FC<CompanyInfoStepProps> = ({ data, onUpdate }) => {
-  const updateCompanyInfo = (field: string, value: any) => {
-    onUpdate({
+export const CompanyInfoStep: React.FC<CompanyInfoStepProps> = ({ data, onDataChange }) => {
+  const handleInputChange = (field: string, value: any) => {
+    onDataChange({
       company_info: {
         ...data.company_info,
-        [field]: value
-      }
+        [field]: value,
+      },
     });
   };
 
-  const updateAddress = (addressType: 'legal_address' | 'billing_address' | 'shipping_address', field: string, value: string) => {
-    onUpdate({
+  const handleAddressChange = (field: string, value: string) => {
+    onDataChange({
       company_info: {
         ...data.company_info,
-        [addressType]: {
-          ...data.company_info?.[addressType],
-          [field]: value
-        }
-      }
+        legal_address: {
+          ...data.company_info?.legal_address,
+          [field]: value,
+        },
+      },
     });
   };
 
-  const handleSameAsLegalAddress = (checked: boolean) => {
-    updateCompanyInfo('same_as_legal_address', checked);
-    if (checked && data.company_info?.legal_address) {
-      onUpdate({
-        company_info: {
-          ...data.company_info,
-          same_as_legal_address: true,
-          billing_address: { ...data.company_info.legal_address },
-          shipping_address: { ...data.company_info.legal_address }
-        }
-      });
-    }
+  const handleDistributorChange = (distributor: string, checked: boolean) => {
+    const currentDistributors = data.selected_distributors || [];
+    const updatedDistributors = checked
+      ? [...currentDistributors, distributor as any]
+      : currentDistributors.filter(d => d !== distributor);
+    
+    onDataChange({
+      selected_distributors: updatedDistributors,
+    });
   };
 
   return (
@@ -52,33 +49,35 @@ export const CompanyInfoStep: React.FC<CompanyInfoStepProps> = ({ data, onUpdate
       {/* Distributor Selection */}
       <Card>
         <CardHeader>
-          <CardTitle>Distributor Selection</CardTitle>
+          <CardTitle>Preferred Healthcare Distributors</CardTitle>
+          <CardDescription>
+            Select the healthcare distributors you would like to work with
+          </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <Label>Select distributors you want to work with:</Label>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {[
-                { key: 'amerisource_bergen', label: 'AmerisourceBergen' },
-                { key: 'cardinal_health', label: 'Cardinal Health' },
-                { key: 'mckesson', label: 'McKesson' }
-              ].map(distributor => (
-                <div key={distributor.key} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={distributor.key}
-                    checked={data.selected_distributors?.includes(distributor.key as any) || false}
-                    onCheckedChange={(checked) => {
-                      const current = data.selected_distributors || [];
-                      const updated = checked 
-                        ? [...current, distributor.key as any]
-                        : current.filter(d => d !== distributor.key);
-                      onUpdate({ selected_distributors: updated });
-                    }}
-                  />
-                  <Label htmlFor={distributor.key}>{distributor.label}</Label>
-                </div>
-              ))}
-            </div>
+        <CardContent className="space-y-4">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="amerisource_bergen"
+              checked={data.selected_distributors?.includes('amerisource_bergen') || false}
+              onCheckedChange={(checked) => handleDistributorChange('amerisource_bergen', checked as boolean)}
+            />
+            <Label htmlFor="amerisource_bergen">AmerisourceBergen</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="cardinal_health"
+              checked={data.selected_distributors?.includes('cardinal_health') || false}
+              onCheckedChange={(checked) => handleDistributorChange('cardinal_health', checked as boolean)}
+            />
+            <Label htmlFor="cardinal_health">Cardinal Health</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="mckesson"
+              checked={data.selected_distributors?.includes('mckesson') || false}
+              onCheckedChange={(checked) => handleDistributorChange('mckesson', checked as boolean)}
+            />
+            <Label htmlFor="mckesson">McKesson</Label>
           </div>
         </CardContent>
       </Card>
@@ -87,6 +86,9 @@ export const CompanyInfoStep: React.FC<CompanyInfoStepProps> = ({ data, onUpdate
       <Card>
         <CardHeader>
           <CardTitle>Company Information</CardTitle>
+          <CardDescription>
+            Provide your company's basic information and legal details
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -95,26 +97,25 @@ export const CompanyInfoStep: React.FC<CompanyInfoStepProps> = ({ data, onUpdate
               <Input
                 id="legal_name"
                 value={data.company_info?.legal_name || ''}
-                onChange={(e) => updateCompanyInfo('legal_name', e.target.value)}
-                placeholder="Enter legal company name"
+                onChange={(e) => handleInputChange('legal_name', e.target.value)}
+                required
               />
             </div>
             <div>
-              <Label htmlFor="dba_name">DBA/Business Trade Name</Label>
+              <Label htmlFor="dba_name">DBA Name (if different)</Label>
               <Input
                 id="dba_name"
                 value={data.company_info?.dba_name || ''}
-                onChange={(e) => updateCompanyInfo('dba_name', e.target.value)}
-                placeholder="Enter DBA name if different"
+                onChange={(e) => handleInputChange('dba_name', e.target.value)}
               />
             </div>
             <div>
-              <Label htmlFor="website">Website Address</Label>
+              <Label htmlFor="website">Website</Label>
               <Input
                 id="website"
+                type="url"
                 value={data.company_info?.website || ''}
-                onChange={(e) => updateCompanyInfo('website', e.target.value)}
-                placeholder="https://www.example.com"
+                onChange={(e) => handleInputChange('website', e.target.value)}
               />
             </div>
             <div>
@@ -122,8 +123,8 @@ export const CompanyInfoStep: React.FC<CompanyInfoStepProps> = ({ data, onUpdate
               <Input
                 id="federal_tax_id"
                 value={data.company_info?.federal_tax_id || ''}
-                onChange={(e) => updateCompanyInfo('federal_tax_id', e.target.value)}
-                placeholder="XX-XXXXXXX"
+                onChange={(e) => handleInputChange('federal_tax_id', e.target.value)}
+                required
               />
             </div>
           </div>
@@ -133,158 +134,63 @@ export const CompanyInfoStep: React.FC<CompanyInfoStepProps> = ({ data, onUpdate
       {/* Legal Address */}
       <Card>
         <CardHeader>
-          <CardTitle>Legal Address (Main Office)</CardTitle>
+          <CardTitle>Legal Address</CardTitle>
+          <CardDescription>
+            Provide your company's legal business address
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label htmlFor="legal_street">Street Address *</Label>
+            <Label htmlFor="street">Street Address *</Label>
             <Input
-              id="legal_street"
+              id="street"
               value={data.company_info?.legal_address?.street || ''}
-              onChange={(e) => updateAddress('legal_address', 'street', e.target.value)}
-              placeholder="Enter street address"
+              onChange={(e) => handleAddressChange('street', e.target.value)}
+              required
             />
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="col-span-2">
-              <Label htmlFor="legal_city">City *</Label>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="city">City *</Label>
               <Input
-                id="legal_city"
+                id="city"
                 value={data.company_info?.legal_address?.city || ''}
-                onChange={(e) => updateAddress('legal_address', 'city', e.target.value)}
-                placeholder="City"
+                onChange={(e) => handleAddressChange('city', e.target.value)}
+                required
               />
             </div>
             <div>
-              <Label htmlFor="legal_state">State *</Label>
+              <Label htmlFor="state">State *</Label>
               <Input
-                id="legal_state"
+                id="state"
                 value={data.company_info?.legal_address?.state || ''}
-                onChange={(e) => updateAddress('legal_address', 'state', e.target.value)}
-                placeholder="State"
+                onChange={(e) => handleAddressChange('state', e.target.value)}
+                required
               />
             </div>
             <div>
-              <Label htmlFor="legal_zip">ZIP Code *</Label>
+              <Label htmlFor="zip">ZIP Code *</Label>
               <Input
-                id="legal_zip"
+                id="zip"
                 value={data.company_info?.legal_address?.zip || ''}
-                onChange={(e) => updateAddress('legal_address', 'zip', e.target.value)}
-                placeholder="ZIP"
+                onChange={(e) => handleAddressChange('zip', e.target.value)}
+                required
               />
             </div>
           </div>
           
-          <div className="flex items-center space-x-2 pt-4">
+          <div className="flex items-center space-x-2">
             <Checkbox
-              id="same_address"
+              id="same_as_legal"
               checked={data.company_info?.same_as_legal_address || false}
-              onCheckedChange={handleSameAsLegalAddress}
+              onCheckedChange={(checked) => handleInputChange('same_as_legal_address', checked)}
             />
-            <Label htmlFor="same_address">
-              Use legal address for billing and shipping
+            <Label htmlFor="same_as_legal">
+              Billing and shipping addresses are the same as legal address
             </Label>
           </div>
         </CardContent>
       </Card>
-
-      {/* Billing Address */}
-      {!data.company_info?.same_as_legal_address && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Billing/Statement Address</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="billing_street">Street Address</Label>
-              <Input
-                id="billing_street"
-                value={data.company_info?.billing_address?.street || ''}
-                onChange={(e) => updateAddress('billing_address', 'street', e.target.value)}
-                placeholder="Enter street address"
-              />
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="col-span-2">
-                <Label htmlFor="billing_city">City</Label>
-                <Input
-                  id="billing_city"
-                  value={data.company_info?.billing_address?.city || ''}
-                  onChange={(e) => updateAddress('billing_address', 'city', e.target.value)}
-                  placeholder="City"
-                />
-              </div>
-              <div>
-                <Label htmlFor="billing_state">State</Label>
-                <Input
-                  id="billing_state"
-                  value={data.company_info?.billing_address?.state || ''}
-                  onChange={(e) => updateAddress('billing_address', 'state', e.target.value)}
-                  placeholder="State"
-                />
-              </div>
-              <div>
-                <Label htmlFor="billing_zip">ZIP Code</Label>
-                <Input
-                  id="billing_zip"
-                  value={data.company_info?.billing_address?.zip || ''}
-                  onChange={(e) => updateAddress('billing_address', 'zip', e.target.value)}
-                  placeholder="ZIP"
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Shipping Address */}
-      {!data.company_info?.same_as_legal_address && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Ship to Address</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="shipping_street">Street Address</Label>
-              <Input
-                id="shipping_street"
-                value={data.company_info?.shipping_address?.street || ''}
-                onChange={(e) => updateAddress('shipping_address', 'street', e.target.value)}
-                placeholder="Enter street address"
-              />
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="col-span-2">
-                <Label htmlFor="shipping_city">City</Label>
-                <Input
-                  id="shipping_city"
-                  value={data.company_info?.shipping_address?.city || ''}
-                  onChange={(e) => updateAddress('shipping_address', 'city', e.target.value)}
-                  placeholder="City"
-                />
-              </div>
-              <div>
-                <Label htmlFor="shipping_state">State</Label>
-                <Input
-                  id="shipping_state"
-                  value={data.company_info?.shipping_address?.state || ''}
-                  onChange={(e) => updateAddress('shipping_address', 'state', e.target.value)}
-                  placeholder="State"
-                />
-              </div>
-              <div>
-                <Label htmlFor="shipping_zip">ZIP Code</Label>
-                <Input
-                  id="shipping_zip"
-                  value={data.company_info?.shipping_address?.zip || ''}
-                  onChange={(e) => updateAddress('shipping_address', 'zip', e.target.value)}
-                  placeholder="ZIP"
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 };

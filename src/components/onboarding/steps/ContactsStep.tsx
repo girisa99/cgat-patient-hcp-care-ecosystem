@@ -1,25 +1,25 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { TreatmentCenterOnboarding } from '@/types/onboarding';
 
 interface ContactsStepProps {
   data: Partial<TreatmentCenterOnboarding>;
-  onUpdate: (data: Partial<TreatmentCenterOnboarding>) => void;
+  onDataChange: (data: Partial<TreatmentCenterOnboarding>) => void;
 }
 
-export const ContactsStep: React.FC<ContactsStepProps> = ({ data, onUpdate }) => {
-  const updateContact = (contactType: 'primary_contact' | 'accounts_payable_contact' | 'shipping_contact' | 'alternate_contact', field: string, value: string) => {
-    onUpdate({
+export const ContactsStep: React.FC<ContactsStepProps> = ({ data, onDataChange }) => {
+  const handleContactChange = (contactType: string, field: string, value: string) => {
+    onDataChange({
       contacts: {
         ...data.contacts,
         [contactType]: {
-          ...data.contacts?.[contactType],
-          [field]: value
-        }
-      }
+          ...data.contacts?.[contactType as keyof typeof data.contacts],
+          [field]: value,
+        },
+      },
     });
   };
 
@@ -28,7 +28,10 @@ export const ContactsStep: React.FC<ContactsStepProps> = ({ data, onUpdate }) =>
       {/* Primary Contact */}
       <Card>
         <CardHeader>
-          <CardTitle>Primary Contact *</CardTitle>
+          <CardTitle>Primary Contact</CardTitle>
+          <CardDescription>
+            Main contact person for this application
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -37,8 +40,8 @@ export const ContactsStep: React.FC<ContactsStepProps> = ({ data, onUpdate }) =>
               <Input
                 id="primary_name"
                 value={data.contacts?.primary_contact?.name || ''}
-                onChange={(e) => updateContact('primary_contact', 'name', e.target.value)}
-                placeholder="Enter full name"
+                onChange={(e) => handleContactChange('primary_contact', 'name', e.target.value)}
+                required
               />
             </div>
             <div>
@@ -46,36 +49,36 @@ export const ContactsStep: React.FC<ContactsStepProps> = ({ data, onUpdate }) =>
               <Input
                 id="primary_title"
                 value={data.contacts?.primary_contact?.title || ''}
-                onChange={(e) => updateContact('primary_contact', 'title', e.target.value)}
-                placeholder="Enter job title"
+                onChange={(e) => handleContactChange('primary_contact', 'title', e.target.value)}
               />
             </div>
             <div>
-              <Label htmlFor="primary_phone">Phone *</Label>
+              <Label htmlFor="primary_phone">Phone Number *</Label>
               <Input
                 id="primary_phone"
+                type="tel"
                 value={data.contacts?.primary_contact?.phone || ''}
-                onChange={(e) => updateContact('primary_contact', 'phone', e.target.value)}
-                placeholder="(555) 123-4567"
+                onChange={(e) => handleContactChange('primary_contact', 'phone', e.target.value)}
+                required
               />
             </div>
             <div>
-              <Label htmlFor="primary_email">Email *</Label>
+              <Label htmlFor="primary_fax">Fax Number</Label>
+              <Input
+                id="primary_fax"
+                type="tel"
+                value={data.contacts?.primary_contact?.fax || ''}
+                onChange={(e) => handleContactChange('primary_contact', 'fax', e.target.value)}
+              />
+            </div>
+            <div className="md:col-span-2">
+              <Label htmlFor="primary_email">Email Address *</Label>
               <Input
                 id="primary_email"
                 type="email"
                 value={data.contacts?.primary_contact?.email || ''}
-                onChange={(e) => updateContact('primary_contact', 'email', e.target.value)}
-                placeholder="email@example.com"
-              />
-            </div>
-            <div>
-              <Label htmlFor="primary_fax">Fax</Label>
-              <Input
-                id="primary_fax"
-                value={data.contacts?.primary_contact?.fax || ''}
-                onChange={(e) => updateContact('primary_contact', 'fax', e.target.value)}
-                placeholder="(555) 123-4567"
+                onChange={(e) => handleContactChange('primary_contact', 'email', e.target.value)}
+                required
               />
             </div>
           </div>
@@ -86,6 +89,9 @@ export const ContactsStep: React.FC<ContactsStepProps> = ({ data, onUpdate }) =>
       <Card>
         <CardHeader>
           <CardTitle>Accounts Payable Contact</CardTitle>
+          <CardDescription>
+            Contact person for billing and payment matters (if different from primary)
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -94,8 +100,7 @@ export const ContactsStep: React.FC<ContactsStepProps> = ({ data, onUpdate }) =>
               <Input
                 id="ap_name"
                 value={data.contacts?.accounts_payable_contact?.name || ''}
-                onChange={(e) => updateContact('accounts_payable_contact', 'name', e.target.value)}
-                placeholder="Enter full name"
+                onChange={(e) => handleContactChange('accounts_payable_contact', 'name', e.target.value)}
               />
             </div>
             <div>
@@ -103,27 +108,34 @@ export const ContactsStep: React.FC<ContactsStepProps> = ({ data, onUpdate }) =>
               <Input
                 id="ap_title"
                 value={data.contacts?.accounts_payable_contact?.title || ''}
-                onChange={(e) => updateContact('accounts_payable_contact', 'title', e.target.value)}
-                placeholder="Enter job title"
+                onChange={(e) => handleContactChange('accounts_payable_contact', 'title', e.target.value)}
               />
             </div>
             <div>
-              <Label htmlFor="ap_phone">Phone</Label>
+              <Label htmlFor="ap_phone">Phone Number</Label>
               <Input
                 id="ap_phone"
+                type="tel"
                 value={data.contacts?.accounts_payable_contact?.phone || ''}
-                onChange={(e) => updateContact('accounts_payable_contact', 'phone', e.target.value)}
-                placeholder="(555) 123-4567"
+                onChange={(e) => handleContactChange('accounts_payable_contact', 'phone', e.target.value)}
               />
             </div>
             <div>
-              <Label htmlFor="ap_email">Email</Label>
+              <Label htmlFor="ap_fax">Fax Number</Label>
+              <Input
+                id="ap_fax"
+                type="tel"
+                value={data.contacts?.accounts_payable_contact?.fax || ''}
+                onChange={(e) => handleContactChange('accounts_payable_contact', 'fax', e.target.value)}
+              />
+            </div>
+            <div className="md:col-span-2">
+              <Label htmlFor="ap_email">Email Address</Label>
               <Input
                 id="ap_email"
                 type="email"
                 value={data.contacts?.accounts_payable_contact?.email || ''}
-                onChange={(e) => updateContact('accounts_payable_contact', 'email', e.target.value)}
-                placeholder="email@example.com"
+                onChange={(e) => handleContactChange('accounts_payable_contact', 'email', e.target.value)}
               />
             </div>
           </div>
@@ -133,7 +145,10 @@ export const ContactsStep: React.FC<ContactsStepProps> = ({ data, onUpdate }) =>
       {/* Shipping Contact */}
       <Card>
         <CardHeader>
-          <CardTitle>Shipping/Receiving Contact</CardTitle>
+          <CardTitle>Shipping Contact</CardTitle>
+          <CardDescription>
+            Contact person for shipping and receiving (if different from primary)
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -142,8 +157,7 @@ export const ContactsStep: React.FC<ContactsStepProps> = ({ data, onUpdate }) =>
               <Input
                 id="shipping_name"
                 value={data.contacts?.shipping_contact?.name || ''}
-                onChange={(e) => updateContact('shipping_contact', 'name', e.target.value)}
-                placeholder="Enter full name"
+                onChange={(e) => handleContactChange('shipping_contact', 'name', e.target.value)}
               />
             </div>
             <div>
@@ -151,75 +165,34 @@ export const ContactsStep: React.FC<ContactsStepProps> = ({ data, onUpdate }) =>
               <Input
                 id="shipping_title"
                 value={data.contacts?.shipping_contact?.title || ''}
-                onChange={(e) => updateContact('shipping_contact', 'title', e.target.value)}
-                placeholder="Enter job title"
+                onChange={(e) => handleContactChange('shipping_contact', 'title', e.target.value)}
               />
             </div>
             <div>
-              <Label htmlFor="shipping_phone">Phone</Label>
+              <Label htmlFor="shipping_phone">Phone Number</Label>
               <Input
                 id="shipping_phone"
+                type="tel"
                 value={data.contacts?.shipping_contact?.phone || ''}
-                onChange={(e) => updateContact('shipping_contact', 'phone', e.target.value)}
-                placeholder="(555) 123-4567"
+                onChange={(e) => handleContactChange('shipping_contact', 'phone', e.target.value)}
               />
             </div>
             <div>
-              <Label htmlFor="shipping_email">Email</Label>
+              <Label htmlFor="shipping_fax">Fax Number</Label>
+              <Input
+                id="shipping_fax"
+                type="tel"
+                value={data.contacts?.shipping_contact?.fax || ''}
+                onChange={(e) => handleContactChange('shipping_contact', 'fax', e.target.value)}
+              />
+            </div>
+            <div className="md:col-span-2">
+              <Label htmlFor="shipping_email">Email Address</Label>
               <Input
                 id="shipping_email"
                 type="email"
                 value={data.contacts?.shipping_contact?.email || ''}
-                onChange={(e) => updateContact('shipping_contact', 'email', e.target.value)}
-                placeholder="email@example.com"
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Alternate Contact */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Alternate Contact</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="alt_name">Full Name</Label>
-              <Input
-                id="alt_name"
-                value={data.contacts?.alternate_contact?.name || ''}
-                onChange={(e) => updateContact('alternate_contact', 'name', e.target.value)}
-                placeholder="Enter full name"
-              />
-            </div>
-            <div>
-              <Label htmlFor="alt_title">Title</Label>
-              <Input
-                id="alt_title"
-                value={data.contacts?.alternate_contact?.title || ''}
-                onChange={(e) => updateContact('alternate_contact', 'title', e.target.value)}
-                placeholder="Enter job title"
-              />
-            </div>
-            <div>
-              <Label htmlFor="alt_phone">Phone</Label>
-              <Input
-                id="alt_phone"
-                value={data.contacts?.alternate_contact?.phone || ''}
-                onChange={(e) => updateContact('alternate_contact', 'phone', e.target.value)}
-                placeholder="(555) 123-4567"
-              />
-            </div>
-            <div>
-              <Label htmlFor="alt_email">Email</Label>
-              <Input
-                id="alt_email"
-                type="email"
-                value={data.contacts?.alternate_contact?.email || ''}
-                onChange={(e) => updateContact('alternate_contact', 'email', e.target.value)}
-                placeholder="email@example.com"
+                onChange={(e) => handleContactChange('shipping_contact', 'email', e.target.value)}
               />
             </div>
           </div>

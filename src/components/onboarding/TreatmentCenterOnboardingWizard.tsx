@@ -2,10 +2,10 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { CheckCircle, Circle, ArrowLeft, ArrowRight } from 'lucide-react';
-import { TreatmentCenterOnboarding, OnboardingStep } from '@/types/onboarding';
+import { Badge } from '@/components/ui/badge';
+import { TreatmentCenterOnboarding } from '@/types/onboarding';
+import { useTreatmentCenterOnboarding } from '@/hooks/useTreatmentCenterOnboarding';
 import { CompanyInfoStep } from './steps/CompanyInfoStep';
 import { BusinessClassificationStep } from './steps/BusinessClassificationStep';
 import { ContactsStep } from './steps/ContactsStep';
@@ -19,200 +19,207 @@ import { ReviewStep } from './steps/ReviewStep';
 
 interface TreatmentCenterOnboardingWizardProps {
   onSubmit: (data: TreatmentCenterOnboarding) => void;
-  initialData?: Partial<TreatmentCenterOnboarding>;
 }
 
-const STEPS: { key: OnboardingStep; title: string; description: string }[] = [
-  { key: 'company_info', title: 'Company Information', description: 'Legal name, addresses, and basic details' },
-  { key: 'business_classification', title: 'Business Classification', description: 'Business type and operational details' },
-  { key: 'contacts', title: 'Key Contacts', description: 'Primary contacts and communication preferences' },
-  { key: 'ownership', title: 'Ownership Structure', description: 'Ownership details and controlling entities' },
-  { key: 'references', title: 'Business References', description: 'Banking and supplier references' },
-  { key: 'payment_banking', title: 'Payment & Banking', description: 'Banking details and payment preferences' },
-  { key: 'licenses', title: 'Licenses & Certifications', description: 'Professional licenses and certifications' },
-  { key: 'documents', title: 'Required Documents', description: 'Upload supporting documentation' },
-  { key: 'authorizations', title: 'Authorizations', description: 'Signatures and legal authorizations' },
-  { key: 'review', title: 'Review & Submit', description: 'Final review before submission' }
+const steps = [
+  { key: 'company_info', label: 'Company Information', component: CompanyInfoStep },
+  { key: 'business_classification', label: 'Business Classification', component: BusinessClassificationStep },
+  { key: 'contacts', label: 'Contacts', component: ContactsStep },
+  { key: 'ownership', label: 'Ownership & Control', component: OwnershipStep },
+  { key: 'references', label: 'References', component: ReferencesStep },
+  { key: 'payment_banking', label: 'Payment & Banking', component: PaymentBankingStep },
+  { key: 'licenses', label: 'Licenses & Certifications', component: LicensesStep },
+  { key: 'documents', label: 'Required Documents', component: DocumentsStep },
+  { key: 'authorizations', label: 'Authorizations & Signatures', component: AuthorizationsStep },
+  { key: 'review', label: 'Review & Submit', component: ReviewStep },
 ];
 
 export const TreatmentCenterOnboardingWizard: React.FC<TreatmentCenterOnboardingWizardProps> = ({
   onSubmit,
-  initialData
 }) => {
-  const [currentStep, setCurrentStep] = useState<OnboardingStep>('company_info');
-  const [formData, setFormData] = useState<Partial<TreatmentCenterOnboarding>>(
-    initialData || {
-      selected_distributors: [],
-      workflow: {
-        current_step: 'company_info',
-        completed_steps: [],
-        notes: []
-      }
-    }
-  );
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const [formData, setFormData] = useState<Partial<TreatmentCenterOnboarding>>({
+    selected_distributors: [],
+    company_info: {
+      legal_name: '',
+      federal_tax_id: '',
+      legal_address: { street: '', city: '', state: '', zip: '' },
+      same_as_legal_address: false,
+    },
+    business_info: {
+      business_type: [],
+      years_in_business: 0,
+      ownership_type: 'llc',
+    },
+    contacts: {
+      primary_contact: { name: '', phone: '', email: '' },
+    },
+    ownership: {
+      principal_owners: [],
+      bankruptcy_history: false,
+    },
+    references: {
+      primary_bank: { name: '', contact_name: '', phone: '' },
+      primary_supplier: { name: '', contact_name: '', phone: '' },
+      additional_references: [],
+    },
+    payment_info: {
+      ach_preference: 'direct_debit',
+      bank_name: '',
+      bank_account_number: '',
+      bank_routing_number: '',
+      bank_address: { street: '', city: '', state: '', zip: '' },
+      statement_delivery_preference: 'email',
+    },
+    licenses: {
+      additional_licenses: [],
+    },
+    documents: {
+      voided_check: false,
+      resale_tax_exemption_cert: false,
+      dea_registration_copy: false,
+      state_pharmacy_license_copy: false,
+      medical_license_copy: false,
+      financial_statements: false,
+      supplier_statements: false,
+      additional_documents: [],
+    },
+    authorizations: {
+      authorized_signature: { name: '', title: '', date: '' },
+      terms_accepted: false,
+    },
+    workflow: {
+      current_step: 'company_info',
+      completed_steps: [],
+      notes: [],
+    },
+  });
 
-  const currentStepIndex = STEPS.findIndex(step => step.key === currentStep);
-  const progress = ((currentStepIndex + 1) / STEPS.length) * 100;
+  const { createApplication, isCreating } = useTreatmentCenterOnboarding();
 
-  const updateFormData = (stepData: Partial<TreatmentCenterOnboarding>) => {
-    setFormData(prev => ({ ...prev, ...stepData }));
-  };
+  const currentStep = steps[currentStepIndex];
+  const progress = ((currentStepIndex + 1) / steps.length) * 100;
 
   const handleNext = () => {
-    const nextIndex = currentStepIndex + 1;
-    if (nextIndex < STEPS.length) {
-      const nextStep = STEPS[nextIndex].key;
-      setCurrentStep(nextStep);
-      
-      // Mark current step as completed
-      setFormData(prev => ({
-        ...prev,
-        workflow: {
-          ...prev.workflow!,
-          current_step: nextStep,
-          completed_steps: [...(prev.workflow?.completed_steps || []), currentStep]
-        }
-      }));
+    if (currentStepIndex < steps.length - 1) {
+      setCurrentStepIndex(currentStepIndex + 1);
     }
   };
 
   const handlePrevious = () => {
-    const prevIndex = currentStepIndex - 1;
-    if (prevIndex >= 0) {
-      setCurrentStep(STEPS[prevIndex].key);
+    if (currentStepIndex > 0) {
+      setCurrentStepIndex(currentStepIndex - 1);
     }
   };
 
-  const handleStepClick = (step: OnboardingStep) => {
-    setCurrentStep(step);
+  const handleStepData = (stepData: any) => {
+    setFormData(prevData => ({
+      ...prevData,
+      ...stepData,
+    }));
   };
 
-  const isStepCompleted = (step: OnboardingStep) => {
-    return formData.workflow?.completed_steps?.includes(step) || false;
-  };
+  const handleSubmit = async () => {
+    try {
+      const finalData: TreatmentCenterOnboarding = {
+        id: '',
+        status: 'draft',
+        created_at: '',
+        updated_at: '',
+        ...formData,
+      } as TreatmentCenterOnboarding;
 
-  const renderStepContent = () => {
-    const commonProps = {
-      data: formData,
-      onUpdate: updateFormData
-    };
-
-    switch (currentStep) {
-      case 'company_info':
-        return <CompanyInfoStep {...commonProps} />;
-      case 'business_classification':
-        return <BusinessClassificationStep {...commonProps} />;
-      case 'contacts':
-        return <ContactsStep {...commonProps} />;
-      case 'ownership':
-        return <OwnershipStep {...commonProps} />;
-      case 'references':
-        return <ReferencesStep {...commonProps} />;
-      case 'payment_banking':
-        return <PaymentBankingStep {...commonProps} />;
-      case 'licenses':
-        return <LicensesStep {...commonProps} />;
-      case 'documents':
-        return <DocumentsStep {...commonProps} />;
-      case 'authorizations':
-        return <AuthorizationsStep {...commonProps} />;
-      case 'review':
-        return <ReviewStep {...commonProps} onSubmit={onSubmit} />;
-      default:
-        return null;
+      await createApplication(finalData);
+      onSubmit(finalData);
+    } catch (error) {
+      console.error('Error submitting onboarding application:', error);
     }
   };
+
+  const StepComponent = currentStep.component;
 
   return (
-    <div className="max-w-7xl mx-auto p-6 space-y-6">
-      {/* Header */}
-      <div className="text-center space-y-2">
-        <h1 className="text-3xl font-bold">Treatment Center Onboarding</h1>
-        <p className="text-muted-foreground">
-          Complete your onboarding process for healthcare distributors
-        </p>
-        <div className="flex justify-center space-x-2">
-          {formData.selected_distributors?.map(distributor => (
-            <Badge key={distributor} variant="secondary">
-              {distributor.replace('_', ' ').toUpperCase()}
+    <div className="max-w-4xl mx-auto space-y-6">
+      {/* Progress Header */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Treatment Center Onboarding</CardTitle>
+              <CardDescription>
+                Step {currentStepIndex + 1} of {steps.length}: {currentStep.label}
+              </CardDescription>
+            </div>
+            <Badge variant="outline">
+              {Math.round(progress)}% Complete
             </Badge>
-          ))}
-        </div>
-      </div>
-
-      {/* Progress Bar */}
-      <div className="w-full max-w-2xl mx-auto">
-        <div className="flex justify-between mb-2">
-          <span className="text-sm font-medium">Progress</span>
-          <span className="text-sm text-muted-foreground">{Math.round(progress)}% Complete</span>
-        </div>
-        <Progress value={progress} className="w-full" />
-      </div>
+          </div>
+          <Progress value={progress} className="w-full" />
+        </CardHeader>
+      </Card>
 
       {/* Step Navigation */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-2 max-w-6xl mx-auto">
-        {STEPS.map((step, index) => (
-          <button
-            key={step.key}
-            onClick={() => handleStepClick(step.key)}
-            className={`
-              p-3 rounded-lg border text-left transition-all
-              ${currentStep === step.key 
-                ? 'border-primary bg-primary/5 text-primary' 
-                : 'border-border hover:border-primary/50'
-              }
-              ${isStepCompleted(step.key) ? 'bg-green-50 border-green-200' : ''}
-            `}
-          >
-            <div className="flex items-center space-x-2">
-              {isStepCompleted(step.key) ? (
-                <CheckCircle className="h-4 w-4 text-green-600" />
-              ) : (
-                <Circle className={`h-4 w-4 ${currentStep === step.key ? 'text-primary' : 'text-muted-foreground'}`} />
-              )}
-              <span className="text-xs font-medium">{index + 1}</span>
-            </div>
-            <div className="mt-1">
-              <div className="text-sm font-medium">{step.title}</div>
-              <div className="text-xs text-muted-foreground hidden md:block">{step.description}</div>
-            </div>
-          </button>
-        ))}
-      </div>
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-wrap gap-2">
+            {steps.map((step, index) => (
+              <Button
+                key={step.key}
+                variant={index === currentStepIndex ? "default" : index < currentStepIndex ? "secondary" : "outline"}
+                size="sm"
+                onClick={() => setCurrentStepIndex(index)}
+                className="text-xs"
+              >
+                {index + 1}. {step.label}
+              </Button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
-      {/* Step Content */}
-      <Card className="max-w-4xl mx-auto">
+      {/* Current Step Content */}
+      <Card>
         <CardHeader>
-          <CardTitle>{STEPS[currentStepIndex].title}</CardTitle>
-          <CardDescription>{STEPS[currentStepIndex].description}</CardDescription>
+          <CardTitle>{currentStep.label}</CardTitle>
         </CardHeader>
         <CardContent>
-          {renderStepContent()}
+          <StepComponent
+            data={formData}
+            onDataChange={handleStepData}
+          />
         </CardContent>
       </Card>
 
       {/* Navigation Buttons */}
-      <div className="flex justify-between max-w-4xl mx-auto">
-        <Button 
-          variant="outline" 
-          onClick={handlePrevious}
-          disabled={currentStepIndex === 0}
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Previous
-        </Button>
-        
-        {currentStep !== 'review' ? (
-          <Button onClick={handleNext}>
-            Next
-            <ArrowRight className="h-4 w-4 ml-2" />
-          </Button>
-        ) : (
-          <Button onClick={() => onSubmit(formData as TreatmentCenterOnboarding)}>
-            Submit Application
-          </Button>
-        )}
-      </div>
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex justify-between">
+            <Button
+              variant="outline"
+              onClick={handlePrevious}
+              disabled={currentStepIndex === 0}
+            >
+              Previous
+            </Button>
+            
+            <div className="flex gap-4">
+              {currentStepIndex === steps.length - 1 ? (
+                <Button
+                  onClick={handleSubmit}
+                  disabled={isCreating}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  {isCreating ? 'Submitting...' : 'Submit Application'}
+                </Button>
+              ) : (
+                <Button onClick={handleNext}>
+                  Next
+                </Button>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

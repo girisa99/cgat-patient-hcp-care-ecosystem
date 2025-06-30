@@ -1159,6 +1159,331 @@ export type Database = {
         }
         Relationships: []
       }
+      onboarding_additional_licenses: {
+        Row: {
+          created_at: string | null
+          expiration_date: string | null
+          id: string
+          license_number: string
+          license_type: string
+          onboarding_id: string
+          state: string
+        }
+        Insert: {
+          created_at?: string | null
+          expiration_date?: string | null
+          id?: string
+          license_number: string
+          license_type: string
+          onboarding_id: string
+          state: string
+        }
+        Update: {
+          created_at?: string | null
+          expiration_date?: string | null
+          id?: string
+          license_number?: string
+          license_type?: string
+          onboarding_id?: string
+          state?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_additional_licenses_onboarding_id_fkey"
+            columns: ["onboarding_id"]
+            isOneToOne: false
+            referencedRelation: "treatment_center_onboarding"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_addresses: {
+        Row: {
+          address_type: string
+          city: string
+          country: string | null
+          created_at: string | null
+          id: string
+          onboarding_id: string
+          state: string
+          street: string
+          zip: string
+        }
+        Insert: {
+          address_type: string
+          city: string
+          country?: string | null
+          created_at?: string | null
+          id?: string
+          onboarding_id: string
+          state: string
+          street: string
+          zip: string
+        }
+        Update: {
+          address_type?: string
+          city?: string
+          country?: string | null
+          created_at?: string | null
+          id?: string
+          onboarding_id?: string
+          state?: string
+          street?: string
+          zip?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_addresses_onboarding_id_fkey"
+            columns: ["onboarding_id"]
+            isOneToOne: false
+            referencedRelation: "treatment_center_onboarding"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_contacts: {
+        Row: {
+          contact_type: string
+          created_at: string | null
+          email: string
+          fax: string | null
+          id: string
+          name: string
+          onboarding_id: string
+          phone: string
+          title: string | null
+        }
+        Insert: {
+          contact_type: string
+          created_at?: string | null
+          email: string
+          fax?: string | null
+          id?: string
+          name: string
+          onboarding_id: string
+          phone: string
+          title?: string | null
+        }
+        Update: {
+          contact_type?: string
+          created_at?: string | null
+          email?: string
+          fax?: string | null
+          id?: string
+          name?: string
+          onboarding_id?: string
+          phone?: string
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_contacts_onboarding_id_fkey"
+            columns: ["onboarding_id"]
+            isOneToOne: false
+            referencedRelation: "treatment_center_onboarding"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_controlling_entities: {
+        Row: {
+          city: string
+          created_at: string | null
+          id: string
+          name: string
+          onboarding_id: string
+          phone: string
+          relationship: string
+          state: string
+          street: string
+          zip: string
+        }
+        Insert: {
+          city: string
+          created_at?: string | null
+          id?: string
+          name: string
+          onboarding_id: string
+          phone: string
+          relationship: string
+          state: string
+          street: string
+          zip: string
+        }
+        Update: {
+          city?: string
+          created_at?: string | null
+          id?: string
+          name?: string
+          onboarding_id?: string
+          phone?: string
+          relationship?: string
+          state?: string
+          street?: string
+          zip?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_controlling_entities_onboarding_id_fkey"
+            columns: ["onboarding_id"]
+            isOneToOne: false
+            referencedRelation: "treatment_center_onboarding"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_document_uploads: {
+        Row: {
+          document_name: string
+          document_type: string
+          file_path: string | null
+          file_size: number | null
+          id: string
+          mime_type: string | null
+          onboarding_id: string
+          uploaded_at: string | null
+        }
+        Insert: {
+          document_name: string
+          document_type: string
+          file_path?: string | null
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          onboarding_id: string
+          uploaded_at?: string | null
+        }
+        Update: {
+          document_name?: string
+          document_type?: string
+          file_path?: string | null
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          onboarding_id?: string
+          uploaded_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_document_uploads_onboarding_id_fkey"
+            columns: ["onboarding_id"]
+            isOneToOne: false
+            referencedRelation: "treatment_center_onboarding"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_principal_owners: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          onboarding_id: string
+          ownership_percentage: number
+          ssn: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          onboarding_id: string
+          ownership_percentage: number
+          ssn?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          onboarding_id?: string
+          ownership_percentage?: number
+          ssn?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_principal_owners_onboarding_id_fkey"
+            columns: ["onboarding_id"]
+            isOneToOne: false
+            referencedRelation: "treatment_center_onboarding"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_references: {
+        Row: {
+          account_number: string | null
+          contact_name: string
+          created_at: string | null
+          id: string
+          name: string
+          onboarding_id: string
+          phone: string
+          reference_type: string
+        }
+        Insert: {
+          account_number?: string | null
+          contact_name: string
+          created_at?: string | null
+          id?: string
+          name: string
+          onboarding_id: string
+          phone: string
+          reference_type: string
+        }
+        Update: {
+          account_number?: string | null
+          contact_name?: string
+          created_at?: string | null
+          id?: string
+          name?: string
+          onboarding_id?: string
+          phone?: string
+          reference_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_references_onboarding_id_fkey"
+            columns: ["onboarding_id"]
+            isOneToOne: false
+            referencedRelation: "treatment_center_onboarding"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_workflow_notes: {
+        Row: {
+          author_id: string
+          content: string
+          created_at: string | null
+          id: string
+          note_type: string | null
+          onboarding_id: string
+        }
+        Insert: {
+          author_id: string
+          content: string
+          created_at?: string | null
+          id?: string
+          note_type?: string | null
+          onboarding_id: string
+        }
+        Update: {
+          author_id?: string
+          content?: string
+          created_at?: string | null
+          id?: string
+          note_type?: string | null
+          onboarding_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_workflow_notes_onboarding_id_fkey"
+            columns: ["onboarding_id"]
+            isOneToOne: false
+            referencedRelation: "treatment_center_onboarding"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       permissions: {
         Row: {
           created_at: string | null
@@ -1486,6 +1811,180 @@ export type Database = {
           two_factor_enabled?: boolean | null
           updated_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      treatment_center_onboarding: {
+        Row: {
+          ach_preference: string | null
+          assigned_to: string | null
+          authorized_signatory_name: string | null
+          authorized_signatory_ssn: string | null
+          authorized_signatory_title: string | null
+          bank_account_number: string | null
+          bank_name: string | null
+          bank_phone: string | null
+          bank_routing_number: string | null
+          bankruptcy_explanation: string | null
+          bankruptcy_history: boolean | null
+          business_types: Database["public"]["Enums"]["business_type"][] | null
+          completed_steps:
+            | Database["public"]["Enums"]["onboarding_step"][]
+            | null
+          created_at: string
+          current_step: Database["public"]["Enums"]["onboarding_step"] | null
+          date_signed: string | null
+          dba_name: string | null
+          dea_number: string | null
+          dea_registration_copy_uploaded: boolean | null
+          estimated_monthly_purchases: number | null
+          federal_tax_id: string | null
+          financial_statements_uploaded: boolean | null
+          guarantor_date: string | null
+          guarantor_name: string | null
+          guarantor_ssn: string | null
+          hin_number: string | null
+          id: string
+          initial_order_amount: number | null
+          legal_name: string | null
+          medical_license: string | null
+          medical_license_copy_uploaded: boolean | null
+          number_of_employees: number | null
+          ownership_type: Database["public"]["Enums"]["ownership_type"] | null
+          payment_terms_requested: string | null
+          resale_tax_exemption: string | null
+          resale_tax_exemption_cert_uploaded: boolean | null
+          same_as_legal_address: boolean | null
+          selected_distributors:
+            | Database["public"]["Enums"]["distributor_type"][]
+            | null
+          state_org_charter_id: string | null
+          state_pharmacy_license: string | null
+          state_pharmacy_license_copy_uploaded: boolean | null
+          statement_delivery_preference: string | null
+          status: Database["public"]["Enums"]["onboarding_status"]
+          submitted_at: string | null
+          supplier_statements_uploaded: boolean | null
+          terms_accepted: boolean | null
+          updated_at: string
+          user_id: string
+          voided_check_uploaded: boolean | null
+          website: string | null
+          years_in_business: number | null
+        }
+        Insert: {
+          ach_preference?: string | null
+          assigned_to?: string | null
+          authorized_signatory_name?: string | null
+          authorized_signatory_ssn?: string | null
+          authorized_signatory_title?: string | null
+          bank_account_number?: string | null
+          bank_name?: string | null
+          bank_phone?: string | null
+          bank_routing_number?: string | null
+          bankruptcy_explanation?: string | null
+          bankruptcy_history?: boolean | null
+          business_types?: Database["public"]["Enums"]["business_type"][] | null
+          completed_steps?:
+            | Database["public"]["Enums"]["onboarding_step"][]
+            | null
+          created_at?: string
+          current_step?: Database["public"]["Enums"]["onboarding_step"] | null
+          date_signed?: string | null
+          dba_name?: string | null
+          dea_number?: string | null
+          dea_registration_copy_uploaded?: boolean | null
+          estimated_monthly_purchases?: number | null
+          federal_tax_id?: string | null
+          financial_statements_uploaded?: boolean | null
+          guarantor_date?: string | null
+          guarantor_name?: string | null
+          guarantor_ssn?: string | null
+          hin_number?: string | null
+          id?: string
+          initial_order_amount?: number | null
+          legal_name?: string | null
+          medical_license?: string | null
+          medical_license_copy_uploaded?: boolean | null
+          number_of_employees?: number | null
+          ownership_type?: Database["public"]["Enums"]["ownership_type"] | null
+          payment_terms_requested?: string | null
+          resale_tax_exemption?: string | null
+          resale_tax_exemption_cert_uploaded?: boolean | null
+          same_as_legal_address?: boolean | null
+          selected_distributors?:
+            | Database["public"]["Enums"]["distributor_type"][]
+            | null
+          state_org_charter_id?: string | null
+          state_pharmacy_license?: string | null
+          state_pharmacy_license_copy_uploaded?: boolean | null
+          statement_delivery_preference?: string | null
+          status?: Database["public"]["Enums"]["onboarding_status"]
+          submitted_at?: string | null
+          supplier_statements_uploaded?: boolean | null
+          terms_accepted?: boolean | null
+          updated_at?: string
+          user_id: string
+          voided_check_uploaded?: boolean | null
+          website?: string | null
+          years_in_business?: number | null
+        }
+        Update: {
+          ach_preference?: string | null
+          assigned_to?: string | null
+          authorized_signatory_name?: string | null
+          authorized_signatory_ssn?: string | null
+          authorized_signatory_title?: string | null
+          bank_account_number?: string | null
+          bank_name?: string | null
+          bank_phone?: string | null
+          bank_routing_number?: string | null
+          bankruptcy_explanation?: string | null
+          bankruptcy_history?: boolean | null
+          business_types?: Database["public"]["Enums"]["business_type"][] | null
+          completed_steps?:
+            | Database["public"]["Enums"]["onboarding_step"][]
+            | null
+          created_at?: string
+          current_step?: Database["public"]["Enums"]["onboarding_step"] | null
+          date_signed?: string | null
+          dba_name?: string | null
+          dea_number?: string | null
+          dea_registration_copy_uploaded?: boolean | null
+          estimated_monthly_purchases?: number | null
+          federal_tax_id?: string | null
+          financial_statements_uploaded?: boolean | null
+          guarantor_date?: string | null
+          guarantor_name?: string | null
+          guarantor_ssn?: string | null
+          hin_number?: string | null
+          id?: string
+          initial_order_amount?: number | null
+          legal_name?: string | null
+          medical_license?: string | null
+          medical_license_copy_uploaded?: boolean | null
+          number_of_employees?: number | null
+          ownership_type?: Database["public"]["Enums"]["ownership_type"] | null
+          payment_terms_requested?: string | null
+          resale_tax_exemption?: string | null
+          resale_tax_exemption_cert_uploaded?: boolean | null
+          same_as_legal_address?: boolean | null
+          selected_distributors?:
+            | Database["public"]["Enums"]["distributor_type"][]
+            | null
+          state_org_charter_id?: string | null
+          state_pharmacy_license?: string | null
+          state_pharmacy_license_copy_uploaded?: boolean | null
+          statement_delivery_preference?: string | null
+          status?: Database["public"]["Enums"]["onboarding_status"]
+          submitted_at?: string | null
+          supplier_statements_uploaded?: boolean | null
+          terms_accepted?: boolean | null
+          updated_at?: string
+          user_id?: string
+          voided_check_uploaded?: boolean | null
+          website?: string | null
+          years_in_business?: number | null
         }
         Relationships: []
       }
@@ -1838,10 +2337,51 @@ export type Database = {
       }
     }
     Enums: {
+      business_type:
+        | "acute_care"
+        | "primary_care"
+        | "specialty"
+        | "home_health"
+        | "extended_long_term"
+        | "pharmacy"
+        | "closed_door"
+        | "internet"
+        | "mail_order"
+        | "supplier"
+        | "government"
+        | "other"
+      distributor_type: "amerisource_bergen" | "cardinal_health" | "mckesson"
       facility_type:
         | "treatmentFacility"
         | "referralFacility"
         | "prescriberFacility"
+      onboarding_status:
+        | "draft"
+        | "submitted"
+        | "under_review"
+        | "approved"
+        | "rejected"
+      onboarding_step:
+        | "company_info"
+        | "business_classification"
+        | "contacts"
+        | "ownership"
+        | "references"
+        | "payment_banking"
+        | "licenses"
+        | "documents"
+        | "authorizations"
+        | "review"
+        | "complete"
+      ownership_type:
+        | "proprietorship"
+        | "partnership"
+        | "limited_partnership"
+        | "llc"
+        | "s_corp"
+        | "c_corp"
+        | "professional_corp"
+        | "non_profit_corp"
       user_role:
         | "superAdmin"
         | "healthcareProvider"
@@ -1964,10 +2504,55 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      business_type: [
+        "acute_care",
+        "primary_care",
+        "specialty",
+        "home_health",
+        "extended_long_term",
+        "pharmacy",
+        "closed_door",
+        "internet",
+        "mail_order",
+        "supplier",
+        "government",
+        "other",
+      ],
+      distributor_type: ["amerisource_bergen", "cardinal_health", "mckesson"],
       facility_type: [
         "treatmentFacility",
         "referralFacility",
         "prescriberFacility",
+      ],
+      onboarding_status: [
+        "draft",
+        "submitted",
+        "under_review",
+        "approved",
+        "rejected",
+      ],
+      onboarding_step: [
+        "company_info",
+        "business_classification",
+        "contacts",
+        "ownership",
+        "references",
+        "payment_banking",
+        "licenses",
+        "documents",
+        "authorizations",
+        "review",
+        "complete",
+      ],
+      ownership_type: [
+        "proprietorship",
+        "partnership",
+        "limited_partnership",
+        "llc",
+        "s_corp",
+        "c_corp",
+        "professional_corp",
+        "non_profit_corp",
       ],
       user_role: [
         "superAdmin",
