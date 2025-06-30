@@ -1,5 +1,33 @@
+
+// Business Types
+export type BusinessType = 
+  | 'acute_care' 
+  | 'primary_care' 
+  | 'specialty' 
+  | 'home_health' 
+  | 'extended_long_term' 
+  | 'pharmacy' 
+  | 'closed_door' 
+  | 'internet' 
+  | 'mail_order' 
+  | 'supplier' 
+  | 'government' 
+  | 'other';
+
+export type OwnershipType = 
+  | 'proprietorship' 
+  | 'partnership' 
+  | 'limited_partnership' 
+  | 'llc' 
+  | 's_corp' 
+  | 'c_corp' 
+  | 'professional_corp' 
+  | 'non_profit_corp';
+
 export interface CompanyInfo {
   legal_name: string;
+  dba_name?: string;
+  website?: string;
   federal_tax_id: string;
   legal_address: Address;
   mailing_address?: Address;
@@ -7,9 +35,13 @@ export interface CompanyInfo {
 }
 
 export interface BusinessInfo {
-  business_type: string[];
+  business_type: BusinessType[];
   years_in_business: number;
-  ownership_type: 'llc' | 'corporation' | 'sole_proprietorship' | 'partnership' | 'nonprofit';
+  ownership_type: OwnershipType;
+  state_org_charter_id?: string;
+  number_of_employees?: number;
+  estimated_monthly_purchases?: number;
+  initial_order_amount?: number;
 }
 
 export interface ContactsInfo {
@@ -17,6 +49,9 @@ export interface ContactsInfo {
   billing_contact?: Contact;
   technical_contact?: Contact;
   emergency_contact?: Contact;
+  accounts_payable_contact?: Contact;
+  shipping_contact?: Contact;
+  alternate_contact?: Contact;
 }
 
 export interface OwnershipInfo {
@@ -83,6 +118,8 @@ export interface PurchasingPreferencesInfo {
 
 export interface LicensesInfo {
   additional_licenses: AdditionalLicense[];
+  dea_number?: string;
+  medical_license?: string;
 }
 
 export interface DocumentsInfo {
@@ -98,7 +135,9 @@ export interface DocumentsInfo {
 
 export interface AuthorizationsInfo {
   authorized_signature: AuthorizedSignature;
+  guarantor_signature?: GuarantorSignature;
   terms_accepted: boolean;
+  date_signed?: string;
 }
 
 export interface WorkflowInfo {
@@ -143,8 +182,10 @@ export interface Address {
 
 export interface Contact {
   name: string;
+  title?: string;
   phone: string;
   email: string;
+  fax?: string;
 }
 
 export interface PrincipalOwner {
@@ -224,6 +265,17 @@ export interface AuthorizedSignature {
   name: string;
   title: string;
   date: string;
+  ssn?: string;
+}
+
+export interface GuarantorSignature {
+  name: string;
+  home_address: Address;
+  city: string;
+  state: string;
+  zip: string;
+  date: string;
+  ssn?: string;
 }
 
 export interface WorkflowNote {

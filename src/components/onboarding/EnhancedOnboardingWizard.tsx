@@ -322,8 +322,15 @@ export const EnhancedOnboardingWizard: React.FC<EnhancedOnboardingWizardProps> =
         annual_revenue_range: '',
         credit_score_range: '',
         years_in_operation: 0,
-        insurance_coverage: {},
-        financial_guarantees: {},
+        insurance_coverage: {
+          general_liability: '',
+          professional_liability: '',
+          workers_compensation: ''
+        },
+        financial_guarantees: {
+          lines_of_credit: '',
+          assets_pledged: ''
+        },
       },
       licenses: {
         additional_licenses: [],
@@ -356,8 +363,19 @@ export const EnhancedOnboardingWizard: React.FC<EnhancedOnboardingWizardProps> =
         endpoints: [],
         authentication_methods: [],
         data_formats: [],
-        security_requirements: {},
-        documentation_preferences: {},
+        security_requirements: {
+          encryption_required: true,
+          api_key_authentication: false,
+          oauth2_authentication: false,
+          ip_whitelisting: false,
+          ssl_certificate_required: true,
+        },
+        documentation_preferences: {
+          swagger_documentation: false,
+          postman_collection: false,
+          sdk_required: false,
+          sandbox_environment: false,
+        },
       },
     }
   );
