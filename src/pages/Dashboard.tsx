@@ -6,7 +6,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, Building2, Settings, UserPlus, Database, Code } from 'lucide-react';
+import { Users, Building2, Settings, UserPlus, Database, Code, Shield } from 'lucide-react';
 import ProfileCard from '@/components/dashboard/ProfileCard';
 import { useAdminRealtime } from '@/hooks/useAdminRealtime';
 
@@ -82,6 +82,13 @@ const Dashboard = () => {
                         <Button variant="outline" className="w-full h-20 flex-col">
                           <Code className="h-6 w-6 mb-2" />
                           API Integrations
+                        </Button>
+                      </Link>
+                      
+                      <Link to="/audit-log">
+                        <Button variant="outline" className="w-full h-20 flex-col">
+                          <Shield className="h-6 w-6 mb-2" />
+                          Audit Log
                         </Button>
                       </Link>
                     </>

@@ -14,6 +14,7 @@ import Modules from "./pages/Modules";
 import Onboarding from "./pages/Onboarding";
 import Settings from "./pages/Settings";
 import ApiIntegrations from "./pages/ApiIntegrations";
+import AuditLog from "./pages/AuditLog";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +35,7 @@ const App = () => (
             <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/api-integrations" element={<ApiIntegrations />} />
+            <Route path="/audit-log" element={<AuditLog />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
