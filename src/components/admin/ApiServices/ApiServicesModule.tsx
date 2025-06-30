@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -108,7 +109,7 @@ export const ApiServicesModule: React.FC = () => {
   };
 
   const OverviewStats = () => (
-    <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
       <Card className="border-l-4 border-l-blue-500">
         <CardContent className="p-4">
           <div className="flex items-center gap-2">
@@ -152,18 +153,6 @@ export const ApiServicesModule: React.FC = () => {
             <div>
               <p className="text-2xl font-bold">{marketplaceStats?.approvedApplications || 0}</p>
               <p className="text-sm text-muted-foreground">Developer Apps</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="border-l-4 border-l-teal-500">
-        <CardContent className="p-4">
-          <div className="flex items-center gap-2">
-            <Workflow className="h-8 w-8 text-teal-500" />
-            <div>
-              <p className="text-2xl font-bold">47</p>
-              <p className="text-sm text-muted-foreground">Onboarding APIs</p>
             </div>
           </div>
         </CardContent>
@@ -302,7 +291,7 @@ export const ApiServicesModule: React.FC = () => {
       <AutoIntegrationBanner />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-8">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="internal">Internal APIs</TabsTrigger>
           <TabsTrigger value="consuming">Consuming</TabsTrigger>
