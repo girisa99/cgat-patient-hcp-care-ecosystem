@@ -1,12 +1,18 @@
 
 import React from 'react';
+import MainLayout from '@/components/layout/MainLayout';
+import { PageContainer } from '@/components/layout/PageContainer';
 
 const TherapiesPage: React.FC = () => {
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Therapies & Services</h1>
-      <p>Therapies and services management content will be implemented here.</p>
-    </div>
+    <MainLayout>
+      <PageContainer
+        title="Therapies & Services"
+        subtitle="Manage available therapies and treatment options"
+      >
+        <p>Therapies and services content will be implemented here.</p>
+      </PageContainer>
+    </MainLayout>
   );
 };
 

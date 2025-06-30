@@ -1,12 +1,18 @@
 
 import React from 'react';
+import MainLayout from '@/components/layout/MainLayout';
+import { PageContainer } from '@/components/layout/PageContainer';
 
 const DocumentsPage: React.FC = () => {
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Documents</h1>
-      <p>Documents management content will be implemented here.</p>
-    </div>
+    <MainLayout>
+      <PageContainer
+        title="Documents"
+        subtitle="Manage documents and file storage"
+      >
+        <p>Documents management content will be implemented here.</p>
+      </PageContainer>
+    </MainLayout>
   );
 };
 

@@ -20,7 +20,6 @@ import TherapiesPage from "./pages/TherapiesPage";
 import ServicesPage from "./pages/ServicesPage";
 import DataImport from "./pages/DataImport";
 import ApiIntegrations from "./pages/ApiIntegrations";
-import { Layout } from "@/components/layout/Layout";
 
 const queryClient = new QueryClient();
 
@@ -31,25 +30,23 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Layout>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/onboarding" element={<OnboardingDashboard />} />
-              <Route path="/patients" element={<PatientsPage />} />
-              <Route path="/therapies" element={<TherapiesPage />} />
-              <Route path="/services" element={<ServicesPage />} />
-              <Route path="/data-import" element={<DataImport />} />
-              <Route path="/api-integrations" element={<ApiIntegrations />} />
-              <Route path="/users" element={<UsersPage />} />
-              <Route path="/facilities" element={<FacilitiesPage />} />
-              <Route path="/modules" element={<ModulesPage />} />
-              <Route path="/security" element={<SecurityPage />} />
-              <Route path="/reports" element={<ReportsPage />} />
-              <Route path="/documents" element={<DocumentsPage />} />
-              <Route path="/settings" element={<SettingsPage />} />
-            </Routes>
-          </Layout>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/onboarding" element={<OnboardingDashboard />} />
+            <Route path="/patients" element={<PatientsPage />} />
+            <Route path="/therapies" element={<TherapiesPage />} />
+            <Route path="/services" element={<ServicesPage />} />
+            <Route path="/data-import" element={<DataImport />} />
+            <Route path="/api-integrations" element={<ApiIntegrations />} />
+            <Route path="/users" element={<UsersPage />} />
+            <Route path="/facilities" element={<FacilitiesPage />} />
+            <Route path="/modules" element={<ModulesPage />} />
+            <Route path="/security" element={<SecurityPage />} />
+            <Route path="/reports" element={<ReportsPage />} />
+            <Route path="/documents" element={<DocumentsPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+          </Routes>
         </BrowserRouter>
       </TooltipProvider>
     </CleanAuthProvider>
