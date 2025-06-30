@@ -1,9 +1,35 @@
+
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/components/auth/CleanAuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { TreatmentCenterOnboarding } from '@/types/onboarding';
+
+// Define the valid distributor values as a const to ensure type safety
+const VALID_DISTRIBUTORS = ['amerisource_bergen', 'cardinal_health', 'mckesson'] as const;
+type ValidDistributor = typeof VALID_DISTRIBUTORS[number];
+
+// Helper function to validate and cast distributor strings
+const validateDistributors = (distributors: string[]): ValidDistributor[] => {
+  return distributors
+    .map(dist => {
+      // Normalize common variations
+      const normalized = dist.toLowerCase().replace(/\s+/g, '_');
+      
+      // Map common variations to valid enum values
+      const mapping: Record<string, ValidDistributor> = {
+        'amerisource_bergen': 'amerisource_bergen',
+        'amerisourcebergen': 'amerisource_bergen',
+        'cardinal_health': 'cardinal_health',
+        'cardinalhealth': 'cardinal_health',
+        'mckesson': 'mckesson'
+      };
+      
+      return mapping[normalized] || 'amerisource_bergen'; // Default fallback
+    })
+    .filter((dist, index, arr) => arr.indexOf(dist) === index); // Remove duplicates
+};
 
 export const useTreatmentCenterOnboarding = () => {
   const { user } = useAuthContext();
@@ -52,19 +78,14 @@ export const useTreatmentCenterOnboarding = () => {
         membership => typeof membership === 'string' ? membership : membership.gpo_name
       ) || [];
 
-      // Ensure selected_distributors is properly typed for database
-      const selectedDistributors = (applicationData.selected_distributors || []).map(dist => {
-        // Map string values to enum values if needed
-        if (typeof dist === 'string') {
-          const validDistributors = ['amerisource_bergen', 'cardinal_health', 'mckesson'];
-          return validDistributors.includes(dist) ? dist : 'amerisource_bergen';
-        }
-        return dist;
-      });
+      // Validate and ensure selected_distributors are properly typed for database
+      const selectedDistributors = validateDistributors(applicationData.selected_distributors || []);
 
+      // Map the nested form structure to the flat database structure
       const { data, error } = await supabase
         .from('treatment_center_onboarding')
         .insert({
+          user_id: user.id,
           legal_name: applicationData.company_info?.legal_name || '',
           dba_name: applicationData.company_info?.dba_name,
           website: applicationData.company_info?.website,
@@ -79,7 +100,8 @@ export const useTreatmentCenterOnboarding = () => {
           estimated_monthly_purchases: applicationData.business_info?.estimated_monthly_purchases,
           initial_order_amount: applicationData.business_info?.initial_order_amount,
           gpo_memberships: gpoMembershipsAsStrings,
-          current_step: 'company_info'
+          current_step: 'company_info',
+          status: 'draft'
         })
         .select()
         .single();
