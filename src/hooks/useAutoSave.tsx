@@ -1,7 +1,7 @@
 
 import { useEffect, useRef } from 'react';
 import { useTreatmentCenterOnboarding } from './useTreatmentCenterOnboarding';
-import { TreatmentCenterOnboarding } from '@/types/onboarding';
+import { TreatmentCenterOnboarding, OnboardingStep } from '@/types/onboarding';
 import { useToast } from './use-toast';
 
 interface UseAutoSaveProps {
@@ -35,8 +35,8 @@ export const useAutoSave = ({
         ...data,
         workflow: {
           ...data.workflow,
-          current_step: getCurrentStepName(currentStep),
-          completed_steps: getCompletedSteps(currentStep),
+          current_step: getCurrentStepName(currentStep) as OnboardingStep,
+          completed_steps: getCompletedSteps(currentStep) as OnboardingStep[],
         }
       };
 
@@ -94,8 +94,8 @@ export const useAutoSave = ({
   };
 };
 
-const getCurrentStepName = (stepIndex: number) => {
-  const steps = [
+const getCurrentStepName = (stepIndex: number): OnboardingStep => {
+  const steps: OnboardingStep[] = [
     'company_info',
     'business_classification', 
     'contacts',
@@ -110,8 +110,8 @@ const getCurrentStepName = (stepIndex: number) => {
   return steps[stepIndex] || 'company_info';
 };
 
-const getCompletedSteps = (currentStepIndex: number) => {
-  const steps = [
+const getCompletedSteps = (currentStepIndex: number): OnboardingStep[] => {
+  const steps: OnboardingStep[] = [
     'company_info',
     'business_classification',
     'contacts',
