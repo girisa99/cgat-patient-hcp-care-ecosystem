@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -174,6 +173,10 @@ export const TreatmentCenterOnboardingWizard: React.FC<TreatmentCenterOnboarding
     }
   };
 
+  const handleEditStep = (stepIndex: number) => {
+    setCurrentStepIndex(stepIndex);
+  };
+
   const StepComponent = currentStep.component;
 
   return (
@@ -257,10 +260,18 @@ export const TreatmentCenterOnboardingWizard: React.FC<TreatmentCenterOnboarding
           <CardTitle>{currentStep.label}</CardTitle>
         </CardHeader>
         <CardContent>
-          <StepComponent
-            data={formData}
-            onDataChange={handleStepData}
-          />
+          {currentStep.key === 'review' ? (
+            <ReviewStep
+              data={formData}
+              onDataChange={handleStepData}
+              onEditStep={handleEditStep}
+            />
+          ) : (
+            <StepComponent
+              data={formData}
+              onDataChange={handleStepData}
+            />
+          )}
         </CardContent>
       </Card>
 
