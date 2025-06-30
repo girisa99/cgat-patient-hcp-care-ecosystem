@@ -28,6 +28,7 @@ import { GPOMembershipStep } from './steps/GPOMembershipStep';
 import { SpecialProgramsStep } from './steps/SpecialProgramsStep';
 import { OnlinePlatformUsersStep } from './steps/OnlinePlatformUsersStep';
 import { EnhancedPaymentTermsStep } from './steps/EnhancedPaymentTermsStep';
+import { ApiIntegrationStep } from './steps/ApiIntegrationStep';
 import { ReviewStep } from './steps/ReviewStep';
 import { 
   Building2, 
@@ -47,7 +48,8 @@ import {
   Globe,
   UserPlus,
   Database,
-  Package
+  Package,
+  Zap
 } from 'lucide-react';
 
 interface EnhancedOnboardingWizardProps {
@@ -175,6 +177,14 @@ const ONBOARDING_TABS = [
     description: 'Online platform user management',
     icon: UserPlus,
     component: OnlinePlatformUsersStep,
+    required: true,
+  },
+  {
+    id: 'api_integration',
+    title: 'API Integration',
+    description: 'API endpoints and integration configuration',
+    icon: Zap,
+    component: ApiIntegrationStep,
     required: true,
   },
   {
@@ -342,6 +352,13 @@ export const EnhancedOnboardingWizard: React.FC<EnhancedOnboardingWizardProps> =
       gpo_memberships: [],
       platform_users: [],
       program_340b: [],
+      api_integration: {
+        endpoints: [],
+        authentication_methods: [],
+        data_formats: [],
+        security_requirements: {},
+        documentation_preferences: {},
+      },
     }
   );
 
@@ -388,6 +405,8 @@ export const EnhancedOnboardingWizard: React.FC<EnhancedOnboardingWizardProps> =
         return formData.selected_online_services?.length ? 'complete' : 'incomplete';
       case 'platform_users':
         return formData.platform_users?.length ? 'complete' : 'incomplete';
+      case 'api_integration':
+        return formData.api_integration?.endpoints?.length ? 'complete' : 'incomplete';
       case 'gpo_memberships':
         return 'partial';
       case 'special_programs':
