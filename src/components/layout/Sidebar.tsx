@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -13,7 +12,6 @@ import {
   Upload,
   UserPlus,
   Shield,
-  Pill,
   X,
   Code
 } from 'lucide-react';
@@ -22,7 +20,6 @@ const navigation = [
   { name: 'Dashboard', href: '/', icon: Home },
   { name: 'Patients', href: '/patients', icon: Users },
   { name: 'Onboarding', href: '/onboarding', icon: UserPlus },
-  { name: 'Therapies & Services', href: '/therapies', icon: Pill },
   { name: 'API Services', href: '/api-services', icon: Code },
   { name: 'Data Import', href: '/data-import', icon: Upload },
   { name: 'Facilities', href: '/facilities', icon: Building2 },
