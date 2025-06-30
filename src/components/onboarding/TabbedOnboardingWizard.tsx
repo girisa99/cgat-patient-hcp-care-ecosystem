@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { EnhancedTabs, EnhancedTabsList, EnhancedTabsTrigger, EnhancedTabsContent } from '@/components/ui/enhanced-tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TreatmentCenterOnboarding } from '@/types/onboarding';
 import { useTreatmentCenterOnboarding } from '@/hooks/useTreatmentCenterOnboarding';
 import { useAutoSave } from '@/hooks/useAutoSave';
@@ -462,7 +463,7 @@ export const TabbedOnboardingWizard: React.FC<TabbedOnboardingWizardProps> = ({
         </CardHeader>
       </Card>
 
-      {/* Enhanced Tabs - Fix the props to use defaultValue instead of value */}
+      {/* Main Tabs */}
       <EnhancedTabs defaultValue={activeTab} onValueChange={setActiveTab}>
         <EnhancedTabsList className="grid grid-cols-7 h-auto p-1 bg-gray-50">
           {tabSections.map((tab) => {
@@ -492,149 +493,112 @@ export const TabbedOnboardingWizard: React.FC<TabbedOnboardingWizardProps> = ({
 
         {tabSections.map((tab) => (
           <EnhancedTabsContent key={tab.id} value={tab.id}>
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-              {/* Step Navigation */}
-              <div className="lg:col-span-1">
-                <Card className="sticky top-6">
-                  <CardHeader className={`bg-gradient-to-r from-${tab.color}-50 to-${tab.color}-100 rounded-t-lg`}>
-                    <CardTitle className="flex items-center space-x-2">
-                      <tab.icon className={`h-5 w-5 text-${tab.color}-700`} />
-                      <span className={`text-${tab.color}-900`}>{tab.title}</span>
-                    </CardTitle>
-                    <CardDescription className={`text-${tab.color}-700`}>
-                      {tab.description}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-4">
-                    <div className="space-y-2">
-                      {tab.steps.map((step, index) => {
-                        const completion = getStepCompletion(step.key);
-                        const isActive = activeStep === step.key;
-                        
-                        return (
-                          <button
-                            key={step.key}
-                            onClick={() => setActiveStep(step.key)}
-                            className={`w-full text-left p-3 rounded-lg transition-all duration-200 ${
-                              isActive
-                                ? `bg-${tab.color}-100 border-2 border-${tab.color}-300`
-                                : 'bg-gray-50 hover:bg-gray-100 border-2 border-transparent'
-                            }`}
-                          >
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center space-x-3">
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                                  completion === 'complete'
-                                    ? 'bg-green-100 text-green-700'
-                                    : completion === 'partial'
-                                    ? 'bg-yellow-100 text-yellow-700'
-                                    : isActive
-                                    ? `bg-${tab.color}-100 text-${tab.color}-700`
-                                    : 'bg-gray-200 text-gray-600'
-                                }`}>
-                                  {completion === 'complete' ? (
-                                    <CheckCircle className="h-4 w-4" />
-                                  ) : (
-                                    index + 1
-                                  )}
-                                </div>
-                                <div>
-                                  <div className="font-medium text-sm">{step.label}</div>
-                                  {step.required && (
-                                    <Badge variant="secondary" className="text-xs mt-1">
-                                      Required
-                                    </Badge>
-                                  )}
-                                </div>
-                              </div>
-                              {completion === 'complete' && (
-                                <CheckCircle className="h-4 w-4 text-green-600" />
-                              )}
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+            <Card>
+              <CardHeader className={`bg-gradient-to-r from-${tab.color}-50 to-${tab.color}-100 rounded-t-lg`}>
+                <CardTitle className="flex items-center space-x-2">
+                  <tab.icon className={`h-5 w-5 text-${tab.color}-700`} />
+                  <span className={`text-${tab.color}-900`}>{tab.title}</span>
+                </CardTitle>
+                <CardDescription className={`text-${tab.color}-700`}>
+                  {tab.description}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-6">
+                {/* Sub-tabs for each section */}
+                <Tabs value={activeStep} onValueChange={setActiveStep}>
+                  <TabsList className="grid w-full auto-cols-fr grid-flow-col mb-6">
+                    {tab.steps.map((step, index) => {
+                      const completion = getStepCompletion(step.key);
+                      
+                      return (
+                        <TabsTrigger
+                          key={step.key}
+                          value={step.key}
+                          className="flex items-center space-x-2 px-4 py-2"
+                        >
+                          <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
+                            completion === 'complete'
+                              ? 'bg-green-100 text-green-700'
+                              : completion === 'partial'
+                              ? 'bg-yellow-100 text-yellow-700'
+                              : `bg-${tab.color}-100 text-${tab.color}-700`
+                          }`}>
+                            {completion === 'complete' ? (
+                              <CheckCircle className="h-3 w-3" />
+                            ) : (
+                              index + 1
+                            )}
+                          </div>
+                          <div className="text-left">
+                            <div className="font-medium text-sm">{step.label}</div>
+                            {step.required && (
+                              <Badge variant="secondary" className="text-xs mt-1">
+                                Required
+                              </Badge>
+                            )}
+                          </div>
+                        </TabsTrigger>
+                      );
+                    })}
+                  </TabsList>
 
-              {/* Main Content Area */}
-              <div className="lg:col-span-3">
-                <Card className="min-h-[600px]">
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle className="flex items-center space-x-2">
-                          <span>{currentStepInfo?.label}</span>
-                          {currentStepInfo?.required && (
-                            <Badge variant="destructive" className="text-xs">Required</Badge>
-                          )}
-                        </CardTitle>
-                        <CardDescription>
-                          Step {getCurrentStepIndex() + 1} of {getCurrentTabSteps().length} in {currentTabInfo?.title}
-                        </CardDescription>
+                  {tab.steps.map((step) => (
+                    <TabsContent key={step.key} value={step.key} className="mt-6">
+                      <div className="min-h-[500px]">
+                        <step.component
+                          data={formData}
+                          onDataChange={handleStepData}
+                          applicationId={applicationId}
+                        />
                       </div>
-                      <Badge variant="outline" className="text-sm">
-                        {getStepCompletion(activeStep) === 'complete' ? 'Complete' : 'In Progress'}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pb-8">
-                    {StepComponent && (
-                      <StepComponent
-                        data={formData}
-                        onDataChange={handleStepData}
-                        applicationId={applicationId}
-                      />
-                    )}
-                  </CardContent>
-                </Card>
+                    </TabsContent>
+                  ))}
+                </Tabs>
+              </CardContent>
+            </Card>
 
-                {/* Navigation Buttons */}
-                <div className="flex justify-between mt-6">
+            {/* Navigation Buttons */}
+            <div className="flex justify-between mt-6">
+              <Button
+                variant="outline"
+                onClick={goToPreviousStep}
+                disabled={activeTab === 'company_foundation' && activeStep === 'company_info'}
+                className="flex items-center space-x-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                <span>Previous</span>
+              </Button>
+
+              <div className="flex space-x-4">
+                {activeStep === 'review' ? (
                   <Button
-                    variant="outline"
-                    onClick={goToPreviousStep}
-                    disabled={activeTab === 'company_foundation' && activeStep === 'company_info'}
-                    className="flex items-center space-x-2"
+                    onClick={handleSubmit}
+                    disabled={isCreating}
+                    className="bg-green-600 hover:bg-green-700 flex items-center space-x-2"
+                    size="lg"
                   >
-                    <ArrowLeft className="h-4 w-4" />
-                    <span>Previous</span>
-                  </Button>
-
-                  <div className="flex space-x-4">
-                    {activeStep === 'review' ? (
-                      <Button
-                        onClick={handleSubmit}
-                        disabled={isCreating}
-                        className="bg-green-600 hover:bg-green-700 flex items-center space-x-2"
-                        size="lg"
-                      >
-                        {isCreating ? (
-                          <>
-                            <Clock className="h-4 w-4 animate-spin" />
-                            <span>Submitting...</span>
-                          </>
-                        ) : (
-                          <>
-                            <CheckCircle className="h-4 w-4" />
-                            <span>Submit Application</span>
-                          </>
-                        )}
-                      </Button>
+                    {isCreating ? (
+                      <>
+                        <Clock className="h-4 w-4 animate-spin" />
+                        <span>Submitting...</span>
+                      </>
                     ) : (
-                      <Button
-                        onClick={goToNextStep}
-                        className="flex items-center space-x-2"
-                        size="lg"
-                      >
-                        <span>Continue</span>
-                        <ArrowRight className="h-4 w-4" />
-                      </Button>
+                      <>
+                        <CheckCircle className="h-4 w-4" />
+                        <span>Submit Application</span>
+                      </>
                     )}
-                  </div>
-                </div>
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={goToNextStep}
+                    className="flex items-center space-x-2"
+                    size="lg"
+                  >
+                    <span>Continue</span>
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
             </div>
           </EnhancedTabsContent>
