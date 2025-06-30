@@ -12,11 +12,13 @@ const SimpleLoginForm = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [authError, setAuthError] = useState<string>('');
+  const [debugInfo, setDebugInfo] = useState<string>('');
   const { signIn, signOut, loading, user } = useAuthContext();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError('');
+    setDebugInfo('');
     
     if (!email.trim() || !password.trim()) {
       setAuthError('Please enter both email and password');
@@ -28,6 +30,23 @@ const SimpleLoginForm = () => {
     const result = await signIn(email, password);
     if (!result.success && result.error) {
       setAuthError(result.error);
+      
+      // Add debug information for common issues
+      if (result.error.includes('Invalid login credentials')) {
+        setDebugInfo(`
+Debug Info:
+- Email entered: ${email.trim()}
+- This could mean:
+  1. User doesn't exist in database
+  2. Password is incorrect
+  3. User exists but email isn't confirmed
+  4. Email format issues
+
+Try these test credentials if available:
+- superadmintest@geniecellgene.com
+- Or check Supabase Auth > Users to see existing users
+        `);
+      }
     }
   };
 
@@ -38,6 +57,7 @@ const SimpleLoginForm = () => {
       setEmail('');
       setPassword('');
       setAuthError('');
+      setDebugInfo('');
     }
   };
 
@@ -100,6 +120,12 @@ const SimpleLoginForm = () => {
             </div>
           )}
 
+          {debugInfo && (
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+              <pre className="text-xs text-blue-800 whitespace-pre-wrap">{debugInfo}</pre>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
               <HealthcareLabel htmlFor="email">Email Address</HealthcareLabel>
@@ -156,6 +182,14 @@ const SimpleLoginForm = () => {
               )}
             </HealthcareButton>
           </form>
+          
+          <div className="mt-6 p-3 bg-gray-50 border border-gray-200 rounded-md">
+            <h4 className="text-sm font-medium text-gray-800 mb-2">Test Credentials:</h4>
+            <div className="text-xs text-gray-600 space-y-1">
+              <div>Email: superadmintest@geniecellgene.com</div>
+              <div>Or check your Supabase dashboard for existing users</div>
+            </div>
+          </div>
           
           <div className="mt-4 text-center text-xs text-slate-500">
             By continuing, you agree to our terms of service and privacy policy

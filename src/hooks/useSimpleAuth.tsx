@@ -104,18 +104,33 @@ export const useSimpleAuth = () => {
       if (error) {
         console.error('❌ Sign in error:', error);
         
+        let errorMessage = error.message;
+        
+        // Provide more specific error messages
+        if (error.message.includes('Invalid login credentials')) {
+          errorMessage = `Authentication failed. Please check:
+• Email address is correct: ${email.trim()}
+• Password is correct
+• User exists in the system
+• Email is confirmed (check Supabase Auth > Users)`;
+        } else if (error.message.includes('Email not confirmed')) {
+          errorMessage = 'Please check your email and click the confirmation link before signing in.';
+        } else if (error.message.includes('Too many requests')) {
+          errorMessage = 'Too many login attempts. Please wait a few minutes before trying again.';
+        }
+        
         toast({
-          title: "Sign In Failed",
-          description: error.message.includes('Invalid login credentials') 
-            ? 'Invalid email or password. Please check your credentials.'
-            : error.message,
+          title: "Authentication Failed",
+          description: errorMessage,
           variant: "destructive",
         });
-        return { success: false, error: error.message };
+        
+        return { success: false, error: errorMessage };
       }
 
       if (data.user && data.session) {
         console.log('✅ Sign in successful for user:', data.user.id);
+        console.log('📧 User email confirmed:', data.user.email_confirmed_at ? 'Yes' : 'No');
         
         toast({
           title: "Welcome Back",
@@ -130,12 +145,12 @@ export const useSimpleAuth = () => {
         return { success: true };
       }
 
-      return { success: false, error: 'Authentication failed' };
+      return { success: false, error: 'Authentication failed - no user or session returned' };
     } catch (error: any) {
       console.error('💥 Sign in exception:', error);
       toast({
         title: "Error",
-        description: "An unexpected error occurred",
+        description: "An unexpected error occurred during sign in",
         variant: "destructive",
       });
       return { success: false, error: error.message };
@@ -193,6 +208,7 @@ export const useSimpleAuth = () => {
           console.error('❌ Error getting initial session:', error);
         } else {
           console.log('🔄 Initial session:', !!initialSession);
+          console.log('👤 Initial user:', initialSession?.user?.email || 'None');
           
           if (mounted) {
             setSession(initialSession);
@@ -217,6 +233,7 @@ export const useSimpleAuth = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
         console.log('🔄 Auth state change:', event, !!newSession);
+        console.log('👤 Session user:', newSession?.user?.email || 'None');
         
         if (!mounted) return;
         
