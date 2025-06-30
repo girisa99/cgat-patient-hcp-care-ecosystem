@@ -85,43 +85,11 @@ export const useCleanAuth = () => {
           status: error.status
         });
         
-        // Check if it's a user existence issue
-        if (error.message.includes('Invalid login credentials')) {
-          // Try to verify if user exists by attempting password reset
-          console.log('🔍 Checking if user exists via password reset...');
-          try {
-            const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-              redirectTo: window.location.origin
-            });
-            
-            if (!resetError) {
-              toast({
-                title: "Authentication Issue",
-                description: "User exists but login failed. Try the password reset email we just sent, or contact support.",
-                variant: "destructive",
-              });
-            } else {
-              toast({
-                title: "Authentication Failed",
-                description: "User may not exist in the system. Please check your email address or contact support.",
-                variant: "destructive",
-              });
-            }
-          } catch (resetCheckError) {
-            console.error('Reset check error:', resetCheckError);
-            toast({
-              title: "Authentication Failed",
-              description: "Please check your credentials or contact support.",
-              variant: "destructive",
-            });
-          }
-        } else {
-          toast({
-            title: "Authentication Failed",
-            description: error.message,
-            variant: "destructive",
-          });
-        }
+        toast({
+          title: "Authentication Failed",
+          description: error.message,
+          variant: "destructive",
+        });
         
         return { success: false, error: error.message };
       }
@@ -185,21 +153,52 @@ export const useCleanAuth = () => {
     try {
       console.log('🔍 Fetching user data for:', userId);
       
-      // Get user roles
+      // CRITICAL FIX: Use direct database query instead of edge function for role fetching
+      console.log('🔍 Fetching user roles directly from database...');
       const { data: roleData, error: roleError } = await supabase
         .from('user_roles')
-        .select('roles(name)')
+        .select(`
+          roles!inner (
+            name,
+            description
+          )
+        `)
         .eq('user_id', userId);
 
       if (roleError) {
         console.error('❌ Role fetch error:', roleError);
+        console.error('❌ Role error details:', {
+          message: roleError.message,
+          code: roleError.code,
+          details: roleError.details
+        });
+        setUserRoles([]);
       } else {
+        console.log('📊 Raw role data:', roleData);
         const roles = roleData?.map(ur => ur.roles?.name).filter(Boolean) as UserRole[] || [];
-        console.log('✅ User roles:', roles);
+        console.log('✅ User roles extracted:', roles);
+        
+        if (roles.length === 0) {
+          console.warn('⚠️ No roles found for user. This might indicate:');
+          console.warn('  1. User has no role assignments in user_roles table');
+          console.warn('  2. Role data is malformed');
+          console.warn('  3. RLS policy is blocking role access');
+          
+          // Let's also try a simpler query to debug
+          const { data: debugRoles, error: debugError } = await supabase
+            .from('user_roles')
+            .select('*')
+            .eq('user_id', userId);
+          
+          console.log('🔍 Debug: Raw user_roles data:', debugRoles);
+          console.log('🔍 Debug: Error (if any):', debugError);
+        }
+        
         setUserRoles(roles);
       }
 
       // Get user profile
+      console.log('🔍 Fetching user profile...');
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
@@ -208,12 +207,15 @@ export const useCleanAuth = () => {
 
       if (profileError) {
         console.error('❌ Profile fetch error:', profileError);
+        setProfile(null);
       } else {
         console.log('✅ User profile:', profileData);
         setProfile(profileData);
       }
     } catch (error) {
       console.error('❌ Exception fetching user data:', error);
+      setUserRoles([]);
+      setProfile(null);
     }
   };
 
@@ -231,17 +233,15 @@ export const useCleanAuth = () => {
           console.error('❌ Session check error:', error);
           forceCleanAuthState();
         } else if (currentSession) {
-          console.log('✅ Found existing session');
+          console.log('✅ Found existing session for user:', currentSession.user?.email);
           if (mounted) {
             setSession(currentSession);
             setUser(currentSession.user);
             
-            // Fetch additional data
-            setTimeout(() => {
-              if (mounted && currentSession.user) {
-                fetchUserData(currentSession.user.id);
-              }
-            }, 100);
+            // Fetch additional data immediately
+            if (currentSession.user) {
+              await fetchUserData(currentSession.user.id);
+            }
           }
         } else {
           console.log('ℹ️ No existing session found');
@@ -265,20 +265,20 @@ export const useCleanAuth = () => {
         if (!mounted) return;
         
         if (event === 'SIGNED_OUT' || !newSession) {
+          console.log('👋 User signed out, clearing state');
           setSession(null);
           setUser(null);
           setUserRoles([]);
           setProfile(null);
         } else if (event === 'SIGNED_IN' && newSession) {
+          console.log('👋 User signed in:', newSession.user?.email);
           setSession(newSession);
           setUser(newSession.user);
           
-          // Fetch user data after a delay
-          setTimeout(() => {
-            if (mounted) {
-              fetchUserData(newSession.user.id);
-            }
-          }, 200);
+          // Fetch user data immediately on sign in
+          if (newSession.user) {
+            await fetchUserData(newSession.user.id);
+          }
         }
         
         if (initialized) {
