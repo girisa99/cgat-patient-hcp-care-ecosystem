@@ -1,13 +1,13 @@
 /**
  * Comprehensive Automation Coordinator
- * NOW INCLUDES INTEGRATED SYSTEM VERIFICATION
+ * NOW INCLUDES "UPDATE FIRST" ENFORCEMENT AND INTEGRATED SYSTEM VERIFICATION
  */
 
 import { supabase } from '@/integrations/supabase/client';
 import { RealVerificationOrchestrator, RealSystemHealthResult } from './RealVerificationOrchestrator';
 import { DatabaseSyncVerifier, SyncVerificationResult } from './DatabaseSyncVerifier';
 import { ComprehensiveSystemVerifier, ComprehensiveVerificationResult } from './ComprehensiveSystemVerifier';
-import { IntegratedSystemVerifier } from './IntegratedSystemVerifier';
+import { EnhancedIntegratedSystemVerifier } from './EnhancedIntegratedSystemVerifier';
 import { performDatabaseSync } from '../dailyProgressTracker';
 
 export interface AutomationExecutionResult {
@@ -20,6 +20,7 @@ export interface AutomationExecutionResult {
     results: any[];
     overallStatus: 'healthy' | 'warning' | 'critical';
     healthScore: number;
+    updateFirstResults?: any; // New Update First results
   };
   healthScoreCalculation: {
     score: number;
@@ -32,6 +33,7 @@ export interface AutomationExecutionResult {
     missedComponents: string[];
     syncToTablesCompleted: boolean;
     resultsPublished: boolean;
+    updateFirstEnabled: boolean; // New flag
   };
 }
 
@@ -40,7 +42,7 @@ export class ComprehensiveAutomationCoordinator {
   private static lastExecution: string | null = null;
 
   /**
-   * Execute complete 30-minute automation cycle WITH INTEGRATED SYSTEM VERIFICATION
+   * Execute complete 30-minute automation cycle WITH "UPDATE FIRST" ENFORCEMENT
    */
   static async execute30MinuteAutomationCycle(): Promise<AutomationExecutionResult> {
     if (this.isRunning) {
@@ -54,7 +56,7 @@ export class ComprehensiveAutomationCoordinator {
 
     console.log(`🚀 STARTING 30-MINUTE COMPREHENSIVE AUTOMATION CYCLE: ${executionId}`);
     console.log(`📅 Execution Time: ${timestamp}`);
-    console.log(`🔄 NOW INCLUDING: Integrated System Verification`);
+    console.log(`🔄 NOW INCLUDING: Enhanced System Verification with Update First Enforcement`);
 
     try {
       // Step 1: Execute Real System Validation (ORIGINAL DATABASE ONLY)
@@ -69,9 +71,9 @@ export class ComprehensiveAutomationCoordinator {
       console.log('🔍 Step 3: Comprehensive System Verification...');
       const comprehensiveResults = await ComprehensiveSystemVerifier.performComprehensiveVerification();
 
-      // Step 4: Execute Integrated System Verification (NEW!)
-      console.log('⚡ Step 4: Integrated System Verification (Dashboard Components)...');
-      const systemVerification = await IntegratedSystemVerifier.runAutomatedSystemVerification();
+      // Step 4: Execute Enhanced System Verification with Update First (NEW!)
+      console.log('⚡ Step 4: Enhanced System Verification with Update First Enforcement...');
+      const enhancedSystemVerification = await EnhancedIntegratedSystemVerifier.runEnhancedSystemVerification();
 
       // Step 5: Calculate Health Score (BASED ON ORIGINAL DATABASE ONLY)
       console.log('🎯 Step 5: Health Score Calculation (Original DB Only)...');
@@ -89,13 +91,13 @@ export class ComprehensiveAutomationCoordinator {
         healthScoreCalculation
       );
 
-      // Step 7: Publish Results (INCLUDING SYSTEM VERIFICATION)
-      console.log('📢 Step 7: Publishing Results with System Verification...');
+      // Step 7: Publish Results (INCLUDING ENHANCED SYSTEM VERIFICATION)
+      console.log('📢 Step 7: Publishing Results with Enhanced System Verification...');
       const resultsPublished = await this.publishResults(executionId, {
         realSystemHealth,
         syncVerification,
         comprehensiveResults,
-        systemVerification,
+        systemVerification: enhancedSystemVerification,
         healthScoreCalculation
       });
 
@@ -105,21 +107,23 @@ export class ComprehensiveAutomationCoordinator {
         realSystemHealth,
         syncVerification,
         comprehensiveResults,
-        systemVerification,
+        systemVerification: enhancedSystemVerification,
         healthScoreCalculation,
         automationStatus: {
           allComponentsExecuted: true,
           missedComponents: [],
           syncToTablesCompleted,
-          resultsPublished
+          resultsPublished,
+          updateFirstEnabled: true // New flag indicating Update First is enabled
         }
       };
 
       this.lastExecution = timestamp;
-      console.log('✅ 30-MINUTE AUTOMATION CYCLE COMPLETED SUCCESSFULLY');
+      console.log('✅ 30-MINUTE AUTOMATION CYCLE COMPLETED SUCCESSFULLY WITH UPDATE FIRST ENFORCEMENT');
       console.log(`📊 Health Score: ${healthScoreCalculation.score}/100 (Based on Original DB)`);
       console.log(`🔄 Sync Status: ${syncVerification.isInSync ? 'IN SYNC' : 'OUT OF SYNC'}`);
-      console.log(`⚡ System Verification: ${systemVerification.overallStatus.toUpperCase()} (${systemVerification.healthScore}/100)`);
+      console.log(`⚡ Enhanced System Verification: ${enhancedSystemVerification.overallStatus.toUpperCase()} (${enhancedSystemVerification.healthScore}/100)`);
+      console.log(`🚨 Update First Compliance: ${enhancedSystemVerification.updateFirstResults.updateFirstCompliance.isCompliant ? 'COMPLIANT' : 'NON-COMPLIANT'}`);
       console.log(`💾 Results Synced: ${syncToTablesCompleted ? 'YES' : 'NO'}`);
 
       return automationResult;
@@ -222,8 +226,8 @@ export class ComprehensiveAutomationCoordinator {
           .insert({
             user_id: user.id,
             issue_type: 'AUTOMATION_CYCLE',
-            issue_message: `30-minute automation completed: ${allIssues.length} issues found, health score: ${healthScore.score}`,
-            issue_source: 'Automated System',
+            issue_message: `30-minute automation completed with Update First: ${allIssues.length} issues found, health score: ${healthScore.score}`,
+            issue_source: 'Automated System with Update First',
             issue_severity: 'low',
             category: 'System',
             fix_method: 'automatic',
@@ -233,12 +237,13 @@ export class ComprehensiveAutomationCoordinator {
               based_on_original_db: true,
               total_issues: allIssues.length,
               critical_issues: realSystemHealth.criticalIssuesCount,
-              sync_status: syncVerification.isInSync ? 'in_sync' : 'out_of_sync'
+              sync_status: syncVerification.isInSync ? 'in_sync' : 'out_of_sync',
+              update_first_enabled: true
             }
           });
       }
 
-      console.log('✅ Results successfully synced to database tables');
+      console.log('✅ Results successfully synced to database tables with Update First metadata');
       return true;
 
     } catch (error) {
@@ -248,7 +253,7 @@ export class ComprehensiveAutomationCoordinator {
   }
 
   /**
-   * Publish results for frontend consumption (NOW INCLUDES SYSTEM VERIFICATION)
+   * Publish results for frontend consumption (NOW INCLUDES ENHANCED SYSTEM VERIFICATION)
    */
   private static async publishResults(executionId: string, results: any): Promise<boolean> {
     try {
@@ -264,7 +269,7 @@ export class ComprehensiveAutomationCoordinator {
         detail: { executionId, results }
       }));
 
-      console.log('📢 Results published successfully (including system verification)');
+      console.log('📢 Results published successfully (including enhanced system verification with Update First)');
       return true;
 
     } catch (error) {
@@ -284,7 +289,8 @@ export class ComprehensiveAutomationCoordinator {
         realSystemValidation: true,
         databaseSyncVerification: true,
         comprehensiveVerification: true,
-        systemVerification: true, // NEW!
+        enhancedSystemVerification: true, // NEW!
+        updateFirstEnforcement: true, // NEW!
         healthScoreCalculation: true,
         resultsSyncing: true,
         resultsPublishing: true
@@ -296,7 +302,7 @@ export class ComprehensiveAutomationCoordinator {
    * Manual trigger for testing
    */
   static async triggerManualExecution(): Promise<AutomationExecutionResult> {
-    console.log('🔧 Manual trigger requested for automation cycle');
+    console.log('🔧 Manual trigger requested for automation cycle with Update First enforcement');
     return await this.execute30MinuteAutomationCycle();
   }
 }

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,16 +15,18 @@ import {
   Database,
   Server,
   RefreshCw,
-  Activity
+  Activity,
+  GitBranch,
+  Layers
 } from 'lucide-react';
-import { IntegratedSystemVerifier } from '@/utils/verification/IntegratedSystemVerifier';
+import { EnhancedIntegratedSystemVerifier } from '@/utils/verification/EnhancedIntegratedSystemVerifier';
 
 interface VerificationResult {
   component: string;
   status: 'success' | 'error' | 'warning' | 'loading';
   message: string;
   details?: string[];
-  lastChecked: string; // Changed from Date to string to match SystemVerificationResult
+  lastChecked: string;
   metrics?: Record<string, any>;
 }
 
@@ -34,6 +35,24 @@ interface BackgroundVerificationData {
   overallStatus: 'healthy' | 'warning' | 'critical';
   healthScore: number;
   lastUpdate: string;
+  updateFirstResults?: {
+    updateFirstCompliance: {
+      isCompliant: boolean;
+      duplicateRisk: number;
+      preventedDuplicates: number;
+      recommendedUpdates: number;
+    };
+    componentInventory: {
+      totalComponents: number;
+      reuseOpportunities: number;
+      consolidationNeeded: number;
+    };
+    developmentGateway: {
+      isActive: boolean;
+      recentBlocks: number;
+      recentApprovals: number;
+    };
+  };
 }
 
 export const SystemVerificationDashboard: React.FC = () => {
@@ -54,7 +73,8 @@ export const SystemVerificationDashboard: React.FC = () => {
             results: data.systemVerification.results,
             overallStatus: data.systemVerification.overallStatus,
             healthScore: data.systemVerification.healthScore,
-            lastUpdate: data.timestamp
+            lastUpdate: data.timestamp,
+            updateFirstResults: data.systemVerification.updateFirstResults
           });
           setVerificationResults(data.systemVerification.results);
           setLastFullCheck(new Date(data.timestamp));
@@ -65,27 +85,28 @@ export const SystemVerificationDashboard: React.FC = () => {
     }
   };
 
-  // Manual verification (for immediate testing)
+  // Enhanced manual verification with Update First enforcement
   const runManualVerification = async () => {
     setIsRunningTests(true);
     setIsLiveMode(false);
     
     try {
-      console.log('🔍 Running manual system verification...');
-      const { results, overallStatus, healthScore } = await IntegratedSystemVerifier.runAutomatedSystemVerification();
+      console.log('🔍 Running enhanced manual system verification with Update First...');
+      const enhancedResults = await EnhancedIntegratedSystemVerifier.runEnhancedSystemVerification();
       
-      setVerificationResults(results);
+      setVerificationResults(enhancedResults.results);
       setLastFullCheck(new Date());
       setBackgroundData({
-        results,
-        overallStatus,
-        healthScore,
-        lastUpdate: new Date().toISOString()
+        results: enhancedResults.results,
+        overallStatus: enhancedResults.overallStatus,
+        healthScore: enhancedResults.healthScore,
+        lastUpdate: new Date().toISOString(),
+        updateFirstResults: enhancedResults.updateFirstResults
       });
       
-      console.log('✅ Manual verification completed');
+      console.log('✅ Enhanced manual verification completed with Update First enforcement');
     } catch (error) {
-      console.error('❌ Manual verification failed:', error);
+      console.error('❌ Enhanced manual verification failed:', error);
     } finally {
       setIsRunningTests(false);
     }
@@ -154,10 +175,10 @@ export const SystemVerificationDashboard: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <Activity className="h-6 w-6" />
-            Integrated System Verification
+            Enhanced System Verification with Update First
           </h1>
           <p className="text-muted-foreground">
-            {isLiveMode ? '🔄 Live data from 30-minute background automation' : '📋 Manual verification results'}
+            {isLiveMode ? '🔄 Live data with Update First enforcement from 30-minute automation' : '📋 Manual verification with Update First results'}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -189,12 +210,12 @@ export const SystemVerificationDashboard: React.FC = () => {
             ) : (
               <Database className="h-4 w-4 mr-2" />
             )}
-            {isRunningTests ? 'Running...' : 'Manual Check'}
+            {isRunningTests ? 'Running Enhanced Check...' : 'Enhanced Manual Check'}
           </Button>
         </div>
       </div>
 
-      {/* Background Status Indicator */}
+      {/* Enhanced Background Status with Update First */}
       {backgroundData && (
         <Card className={
           backgroundData.overallStatus === 'healthy' ? 'border-green-200 bg-green-50' :
@@ -210,23 +231,76 @@ export const SystemVerificationDashboard: React.FC = () => {
                   'h-6 w-6 text-red-600'
                 } />
                 <div>
-                  <h3 className="font-medium">System Health Score: {backgroundData.healthScore}/100</h3>
+                  <h3 className="font-medium">Enhanced System Health Score: {backgroundData.healthScore}/100</h3>
                   <p className="text-sm text-muted-foreground">
                     Overall Status: {backgroundData.overallStatus.toUpperCase()} | 
+                    Update First: {backgroundData.updateFirstResults?.updateFirstCompliance.isCompliant ? '✅ COMPLIANT' : '❌ NON-COMPLIANT'}
+                    <br />
                     Last Updated: {new Date(backgroundData.lastUpdate).toLocaleString()}
                   </p>
                 </div>
               </div>
-              <Badge className={
-                backgroundData.overallStatus === 'healthy' ? 'bg-green-100 text-green-800' :
-                backgroundData.overallStatus === 'warning' ? 'bg-yellow-100 text-yellow-800' :
-                'bg-red-100 text-red-800'
-              }>
-                {backgroundData.overallStatus.toUpperCase()}
-              </Badge>
+              <div className="flex flex-col gap-1">
+                <Badge className={
+                  backgroundData.overallStatus === 'healthy' ? 'bg-green-100 text-green-800' :
+                  backgroundData.overallStatus === 'warning' ? 'bg-yellow-100 text-yellow-800' :
+                  'bg-red-100 text-red-800'
+                }>
+                  {backgroundData.overallStatus.toUpperCase()}
+                </Badge>
+                {backgroundData.updateFirstResults && (
+                  <Badge className={
+                    backgroundData.updateFirstResults.updateFirstCompliance.isCompliant ? 
+                    'bg-blue-100 text-blue-800' : 'bg-red-100 text-red-800'
+                  }>
+                    UPDATE FIRST: {backgroundData.updateFirstResults.updateFirstCompliance.isCompliant ? 'ON' : 'OFF'}
+                  </Badge>
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* Update First Status Cards */}
+      {backgroundData?.updateFirstResults && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="border-l-4 border-l-blue-500">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2">
+                <GitBranch className="h-6 w-6 text-blue-500" />
+                <div>
+                  <p className="text-2xl font-bold">{backgroundData.updateFirstResults.updateFirstCompliance.preventedDuplicates}</p>
+                  <p className="text-sm text-muted-foreground">Duplicates Prevented</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="border-l-4 border-l-purple-500">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2">
+                <Layers className="h-6 w-6 text-purple-500" />
+                <div>
+                  <p className="text-2xl font-bold">{backgroundData.updateFirstResults.componentInventory.totalComponents}</p>
+                  <p className="text-sm text-muted-foreground">Total Components</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="border-l-4 border-l-orange-500">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2">
+                <RefreshCw className="h-6 w-6 text-orange-500" />
+                <div>
+                  <p className="text-2xl font-bold">{backgroundData.updateFirstResults.componentInventory.reuseOpportunities}</p>
+                  <p className="text-sm text-muted-foreground">Reuse Opportunities</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       {/* Overall Status */}
@@ -285,7 +359,7 @@ export const SystemVerificationDashboard: React.FC = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Database className="h-5 w-5" />
-            System Component Status
+            Enhanced System Component Status with Update First
             {isLiveMode && <Badge variant="outline">Live</Badge>}
           </CardTitle>
           {lastFullCheck && (
@@ -334,25 +408,32 @@ export const SystemVerificationDashboard: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Quick Actions */}
+      {/* Enhanced Integration Status */}
       <Card>
         <CardHeader>
-          <CardTitle>Integration Status</CardTitle>
+          <CardTitle>Enhanced Integration Status with Update First</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg">
               <Activity className="h-5 w-5 text-blue-600" />
               <div>
                 <p className="font-medium text-blue-900">Background Automation</p>
-                <p className="text-sm text-blue-700">Runs every 30 minutes automatically</p>
+                <p className="text-sm text-blue-700">Runs every 30 minutes with Update First</p>
               </div>
             </div>
             <div className="flex items-center gap-2 p-3 bg-green-50 rounded-lg">
               <Shield className="h-5 w-5 text-green-600" />
               <div>
-                <p className="font-medium text-green-900">Integrated Verification</p>
-                <p className="text-sm text-green-700">Combined with existing audit system</p>
+                <p className="font-medium text-green-900">Enhanced Verification</p>
+                <p className="text-sm text-green-700">Combined with Update First enforcement</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 p-3 bg-purple-50 rounded-lg">
+              <GitBranch className="h-5 w-5 text-purple-600" />
+              <div>
+                <p className="font-medium text-purple-900">Update First Gateway</p>
+                <p className="text-sm text-purple-700">Prevents duplicate development</p>
               </div>
             </div>
           </div>
