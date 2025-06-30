@@ -6,18 +6,11 @@ import MainLayout from '@/components/layout/MainLayout';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, Building2, Settings, UserPlus, Database, Code, Shield, Activity, Layers, FileText } from 'lucide-react';
+import { Users, Building2, Settings, UserPlus, Code, Shield, Activity, Layers, FileText } from 'lucide-react';
 import ProfileCard from '@/components/dashboard/ProfileCard';
-import { useAdminRealtime } from '@/hooks/useAdminRealtime';
 
 const Dashboard = () => {
   const { user, userRoles, profile } = useAuthContext();
-
-  // Enable real-time updates for dashboard
-  useAdminRealtime({
-    enableNotifications: true,
-    areas: ['dashboard', 'rbac', 'userManagement', 'apiIntegration']
-  });
 
   const isAdmin = userRoles.includes('superAdmin');
   const isOnboarding = userRoles.includes('onboardingTeam');
