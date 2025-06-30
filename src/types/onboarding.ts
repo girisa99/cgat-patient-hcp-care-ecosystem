@@ -68,6 +68,40 @@ export interface TreatmentCenterOnboarding {
     payment_terms_requested?: string;
   };
 
+  // NEW: Credit Application
+  credit_application?: {
+    requested_credit_limit: string;
+    trade_references: TradeReference[];
+    bank_references: BankReference[];
+    credit_terms_requested: 'net_15' | 'net_30' | 'net_45' | 'net_60' | '2_10_net_30';
+    personal_guarantee_required: boolean;
+    collateral_offered: boolean;
+    financial_statements_provided: boolean;
+  };
+
+  // NEW: Office Hours
+  office_hours?: {
+    monday: { open: string; close: string; closed: boolean };
+    tuesday: { open: string; close: string; closed: boolean };
+    wednesday: { open: string; close: string; closed: boolean };
+    thursday: { open: string; close: string; closed: boolean };
+    friday: { open: string; close: string; closed: boolean };
+    saturday: { open: string; close: string; closed: boolean };
+    sunday: { open: string; close: string; closed: boolean };
+    timezone: string;
+    emergency_contact: {
+      available_24_7: boolean;
+      phone: string;
+      email: string;
+      instructions: string;
+    };
+    special_hours: {
+      holidays_closed: boolean;
+      holiday_schedule: string;
+      seasonal_adjustments: string;
+    };
+  };
+
   // NEW: Purchasing Preferences
   purchasing_preferences?: {
     preferred_purchasing_methods: PurchasingMethod[];
@@ -203,13 +237,35 @@ export interface TreatmentCenterOnboarding {
   payment_terms_preference?: string;
   preferred_payment_methods?: string[];
   is_340b_entity?: boolean;
-  gpo_memberships?: string[];
+  
+  // Updated GPO memberships to use detailed objects instead of strings
+  gpo_memberships?: GPOMembership[];
   
   // New complex data structures
   platform_users?: PlatformUser[];
   program_340b?: Program340B[];
   gpo_memberships_detailed?: GPOMembership[];
   enhanced_payment_terms?: EnhancedPaymentTerms;
+}
+
+// NEW: Trade Reference interface
+export interface TradeReference {
+  company_name: string;
+  contact_name: string;
+  phone: string;
+  email: string;
+  account_number: string;
+  credit_limit: string;
+  payment_terms: string;
+}
+
+// NEW: Bank Reference interface
+export interface BankReference {
+  bank_name: string;
+  contact_name: string;
+  phone: string;
+  account_type: string;
+  relationship_duration: string;
 }
 
 export interface Address {

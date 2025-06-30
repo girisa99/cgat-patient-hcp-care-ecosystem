@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -463,8 +462,8 @@ export const TabbedOnboardingWizard: React.FC<TabbedOnboardingWizardProps> = ({
         </CardHeader>
       </Card>
 
-      {/* Enhanced Tabs */}
-      <EnhancedTabs value={activeTab} onValueChange={setActiveTab}>
+      {/* Enhanced Tabs - Fix the props to use defaultValue instead of value */}
+      <EnhancedTabs defaultValue={activeTab} onValueChange={setActiveTab}>
         <EnhancedTabsList className="grid grid-cols-7 h-auto p-1 bg-gray-50">
           {tabSections.map((tab) => {
             const IconComponent = tab.icon;
