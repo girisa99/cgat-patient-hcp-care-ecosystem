@@ -7,7 +7,7 @@ import { HealthcareCard, HealthcareCardContent, HealthcareCardDescription, Healt
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuthActions } from '@/hooks/useAuthActions';
 import { useAuthContext } from '@/components/auth/AuthProvider';
-import { Eye, EyeOff, Mail, Lock, UserPlus, AlertCircle, LogOut, RefreshCw, ArrowLeft } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, UserPlus, AlertCircle, LogOut, ArrowLeft } from 'lucide-react';
 import { Database } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,7 +23,7 @@ const LoginForm = () => {
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [authError, setAuthError] = useState<string>('');
   const [isSendingResetEmail, setIsSendingResetEmail] = useState(false);
-  const { signIn, signUp, signOut, loading, resendVerificationEmail } = useAuthActions();
+  const { signIn, signUp, signOut, loading } = useAuthActions();
   const { user } = useAuthContext();
   const { toast } = useToast();
 
@@ -90,17 +90,7 @@ const LoginForm = () => {
 
       if (error) {
         console.error('❌ Password reset error:', error);
-        let errorMessage = error.message;
-        
-        if (error.message.includes('Email address') && error.message.includes('invalid')) {
-          errorMessage = `The email address "${email}" was rejected by the email service. Please check the email address format and try again.`;
-        } else if (error.message.includes('rate limit')) {
-          errorMessage = 'Too many password reset requests. Please wait a few minutes before trying again.';
-        } else if (error.message.includes('User not found')) {
-          errorMessage = 'No account found with this email address.';
-        }
-        
-        setAuthError(errorMessage);
+        setAuthError(error.message);
       } else {
         console.log('✅ Password reset email sent successfully');
         toast({

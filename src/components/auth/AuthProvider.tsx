@@ -125,15 +125,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     console.log('🔄 AuthProvider: Setting up auth state listener...');
     let mounted = true;
 
-    // Set up auth state listener FIRST
+    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
         console.log('🔄 Auth state change:', {
           event,
           hasSession: !!newSession,
           hasUser: !!newSession?.user,
-          userEmail: newSession?.user?.email,
-          emailConfirmed: newSession?.user?.email_confirmed_at ? 'Yes' : 'No'
+          userEmail: newSession?.user?.email
         });
         
         if (!mounted) return;
@@ -142,7 +141,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(newSession?.user ?? null);
         
         if (newSession?.user) {
-          console.log('✅ Valid session in auth change, fetching user data...');
+          console.log('✅ Valid session, fetching user data...');
           const [roles, profileData] = await Promise.all([
             fetchUserRoles(newSession.user.id),
             fetchUserProfile(newSession.user.id)
@@ -152,7 +151,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setProfile(profileData);
           }
         } else {
-          console.log('⚠️ No valid session in auth change, clearing user data');
+          console.log('⚠️ No valid session, clearing user data');
           if (mounted) {
             setUserRoles([]);
             setProfile(null);
@@ -165,7 +164,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     );
 
-    // THEN check for existing session
+    // Get initial session
     const getInitialSession = async () => {
       try {
         const { data: { session: initialSession }, error } = await supabase.auth.getSession();
@@ -181,8 +180,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log('🔄 Initial session check:', {
           hasSession: !!initialSession,
           hasUser: !!initialSession?.user,
-          userEmail: initialSession?.user?.email,
-          emailConfirmed: initialSession?.user?.email_confirmed_at ? 'Yes' : 'No'
+          userEmail: initialSession?.user?.email
         });
 
         if (mounted) {
@@ -217,7 +215,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
 
-    // Get initial session after setting up listener
     getInitialSession();
 
     return () => {
@@ -227,7 +224,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  const isAuthenticated = !!(session && user && user.email_confirmed_at);
+  const isAuthenticated = !!(session && user);
 
   const value = {
     user,
