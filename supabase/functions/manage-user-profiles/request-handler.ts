@@ -1,75 +1,152 @@
 
-import type { ProfileRequest } from './types.ts';
-import { updateProfile, getProfile } from './profile-operations.ts';
-import { listAllUsers, deactivateUser } from './user-list-operations.ts';
-import { checkPermissions, checkListPermissions } from './auth.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.2'
 
-export async function handleProfileRequest(
-  supabase: any,
-  user: any,
-  request: ProfileRequest
-) {
-  const { action, user_id, profile_data, deactivation_reason } = request;
-
-  let result;
-  switch (action) {
-    case 'update':
-      const targetUserId = user_id || user.id;
-      
-      // Check if user can update this profile
-      const { hasPermission, error: permError } = await checkPermissions(
-        supabase, 
-        user.id, 
-        targetUserId
-      );
-      
-      if (!hasPermission) {
-        throw new Error(permError || 'Insufficient permissions');
+interface Database {
+  public: {
+    Tables: {
+      profiles: {
+        Row: {
+          id: string
+          email: string | null
+          first_name: string | null
+          last_name: string | null
+          phone: string | null
+          department: string | null
+          facility_id: string | null
+          created_at: string | null
+          updated_at: string | null
+        }
       }
-
-      result = await updateProfile(supabase, targetUserId, profile_data);
-      break;
-
-    case 'get':
-      const getUserId = user_id || user.id;
-      result = await getProfile(supabase, getUserId);
-      break;
-
-    case 'list':
-      // Check if user has permission to list profiles
-      const { hasPermission: canList, error: listError } = await checkListPermissions(
-        supabase, 
-        user.id
-      );
-      
-      if (!canList) {
-        throw new Error(listError || 'Insufficient permissions');
+      user_roles: {
+        Row: {
+          id: string
+          user_id: string
+          role_id: string
+          created_at: string | null
+        }
       }
-
-      result = await listAllUsers(supabase);
-      break;
-
-    case 'deactivate':
-      if (!user_id) {
-        throw new Error('User ID is required for deactivation');
+      roles: {
+        Row: {
+          id: string
+          name: string
+          description: string | null
+        }
       }
+    }
+  }
+}
 
-      // Check if user has permission to deactivate users
-      const { hasPermission: canDeactivate, error: deactivateError } = await checkListPermissions(
-        supabase, 
-        user.id
-      );
-      
-      if (!canDeactivate) {
-        throw new Error(deactivateError || 'Insufficient permissions to deactivate users');
-      }
+export const handleProfileRequest = async (supabase: any, user: any, action: string) => {
+  console.log('🔍 [MANAGE-USER-PROFILES] Checking permissions for user:', user.id);
+  
+  // Check if user has appropriate role for listing users
+  const { data: userRoles, error: rolesError } = await supabase
+    .from('user_roles')
+    .select(`
+      roles (
+        name
+      )
+    `)
+    .eq('user_id', user.id);
 
-      result = await deactivateUser(supabase, user_id, deactivation_reason || '', user.id);
-      break;
-
-    default:
-      throw new Error('Invalid action');
+  if (rolesError) {
+    console.error('❌ [MANAGE-USER-PROFILES] Error fetching user roles:', rolesError);
+    throw new Error('Error checking user permissions');
   }
 
-  return result;
-}
+  const roleNames = userRoles?.map((ur: any) => ur.roles?.name).filter(Boolean) || [];
+  console.log('👤 [MANAGE-USER-PROFILES] User roles:', roleNames);
+
+  // Allow superAdmin and onboardingTeam to list users
+  const hasListPermission = roleNames.includes('superAdmin') || roleNames.includes('onboardingTeam');
+  
+  if (!hasListPermission) {
+    console.log('❌ [MANAGE-USER-PROFILES] No list permissions found');
+    throw new Error('Insufficient permissions to list users');
+  }
+
+  console.log('✅ [MANAGE-USER-PROFILES] User has appropriate permissions');
+
+  if (action === 'list') {
+    console.log('📋 [MANAGE-USER-PROFILES] Fetching user list...');
+
+    // Create service role client for admin operations
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const adminSupabase = createClient<Database>(supabaseUrl, supabaseServiceKey)
+
+    // Get all users from auth.users
+    const { data: authUsers, error: authError } = await adminSupabase.auth.admin.listUsers()
+
+    if (authError) {
+      console.error('❌ [MANAGE-USER-PROFILES] Error fetching auth users:', authError);
+      throw new Error(`Failed to fetch users: ${authError.message}`);
+    }
+
+    console.log('✅ [MANAGE-USER-PROFILES] Found auth users:', authUsers.users.length);
+
+    // Get all profiles
+    const { data: profiles, error: profilesError } = await supabase
+      .from('profiles')
+      .select('*');
+
+    if (profilesError) {
+      console.error('❌ [MANAGE-USER-PROFILES] Error fetching profiles:', profilesError);
+    }
+
+    // Get all user roles with role details
+    const { data: allUserRoles, error: allRolesError } = await supabase
+      .from('user_roles')
+      .select(`
+        user_id,
+        roles (
+          name,
+          description
+        )
+      `);
+
+    if (allRolesError) {
+      console.error('❌ [MANAGE-USER-PROFILES] Error fetching roles:', allRolesError);
+    }
+
+    // Get all facilities
+    const { data: facilities, error: facilitiesError } = await supabase
+      .from('facilities')
+      .select('id, name, facility_type');
+
+    if (facilitiesError) {
+      console.error('❌ [MANAGE-USER-PROFILES] Error fetching facilities:', facilitiesError);
+    }
+
+    // Combine auth users with profile and role data
+    const combinedUsers = authUsers.users.map((authUser) => {
+      const profile = profiles?.find(p => p.id === authUser.id);
+      const userRolesList = allUserRoles?.filter(ur => ur.user_id === authUser.id) || [];
+      const userFacility = profile?.facility_id ? facilities?.find(f => f.id === profile.facility_id) : null;
+
+      return {
+        id: authUser.id,
+        email: authUser.email || profile?.email || '',
+        first_name: profile?.first_name || '',
+        last_name: profile?.last_name || '',
+        phone: profile?.phone || '',
+        department: profile?.department || '',
+        facility_id: profile?.facility_id || null,
+        created_at: authUser.created_at,
+        updated_at: authUser.updated_at || profile?.updated_at,
+        user_roles: userRolesList,
+        facilities: userFacility
+      };
+    });
+
+    console.log('✅ [MANAGE-USER-PROFILES] Combined users prepared:', combinedUsers.length);
+
+    return {
+      success: true,
+      data: combinedUsers,
+      message: `Successfully fetched ${combinedUsers.length} users`
+    };
+  }
+
+  throw new Error(`Unknown action: ${action}`);
+};

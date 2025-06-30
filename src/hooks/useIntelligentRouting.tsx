@@ -25,7 +25,7 @@ export const useIntelligentRouting = () => {
       { id: 'patients', path: '/patients', requiredRoles: ['superAdmin', 'healthcareProvider', 'nurse'] },
       { id: 'facilities', path: '/facilities', requiredRoles: ['superAdmin', 'healthcareProvider'] },
       { id: 'modules', path: '/modules', requiredRoles: ['superAdmin'] },
-      { id: 'onboarding', path: '/onboarding', requiredRoles: ['onboardingTeam'] },
+      { id: 'onboarding', path: '/onboarding', requiredRoles: ['onboardingTeam', 'superAdmin'] },
       { id: 'settings', path: '/settings', requiredRoles: [] },
     ];
 
@@ -68,7 +68,7 @@ export const useIntelligentRouting = () => {
         }
       }
 
-      // Role-based routing logic
+      // Role-based routing logic with proper onboarding team handling
       if (userRoles.includes('superAdmin')) {
         console.log('✅ Super admin detected, routing to dashboard');
         navigate('/dashboard', { replace: true });
