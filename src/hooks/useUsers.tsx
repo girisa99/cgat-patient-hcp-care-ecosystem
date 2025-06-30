@@ -28,13 +28,14 @@
  * - Do not create alternative user hooks
  * - Coordinate with database team before schema changes
  * 
- * LAST UPDATED: 2025-06-29
+ * LAST UPDATED: 2025-06-30
  * MAINTAINER: System Architecture Team
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuthContext } from '@/components/auth/AuthProvider';
 import { Database } from '@/integrations/supabase/types';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
@@ -57,6 +58,7 @@ interface UserWithRoles extends Profile {
 export const useUsers = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { session, user } = useAuthContext();
 
   const {
     data: users,
@@ -68,6 +70,11 @@ export const useUsers = () => {
     queryFn: async () => {
       console.log('🔍 Fetching users - using optimized edge function...');
       
+      if (!session?.access_token) {
+        console.error('❌ No access token available');
+        throw new Error('Authentication required');
+      }
+
       try {
         const { data: response, error: functionError } = await supabase.functions.invoke('manage-user-profiles', {
           body: {
@@ -80,7 +87,17 @@ export const useUsers = () => {
           throw new Error(`Edge function error: ${functionError.message}`);
         }
 
-        if (!response.success || !response.data) {
+        if (!response) {
+          console.error('❌ No response from edge function');
+          throw new Error('No response from edge function');
+        }
+
+        if (!response.success) {
+          console.error('❌ Edge function returned error:', response.error);
+          throw new Error(response.error || 'Failed to fetch users');
+        }
+
+        if (!response.data) {
           console.log('⚠️ No users data returned from edge function');
           return [];
         }
@@ -118,6 +135,7 @@ export const useUsers = () => {
     staleTime: 30000,
     gcTime: 300000,
     refetchOnWindowFocus: true,
+    enabled: !!session?.access_token, // Only run query when we have a valid session
   });
 
   const createUserMutation = useMutation({
