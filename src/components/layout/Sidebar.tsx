@@ -12,7 +12,9 @@ import {
   Shield,
   Activity,
   UserPlus,
-  X
+  X,
+  Code,
+  FileText
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -23,17 +25,17 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, onClose }) => {
   const location = useLocation();
   
-  // Updated navigation with Onboarding link
+  // Updated navigation with all admin links
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
     { name: 'Users', href: '/users', icon: Users },
-    { name: 'Patients', href: '/patients', icon: Users },
+    { name: 'Patients', href: '/patients', icon: UserPlus },
     { name: 'Facilities', href: '/facilities', icon: Hospital },
-    { name: 'Onboarding', href: '/onboarding', icon: UserPlus },
+    { name: 'Onboarding', href: '/onboarding', icon: FileText },
     { name: 'Modules', href: '/modules', icon: Layers },
-    { name: 'API Integrations', href: '/api-integrations', icon: Database },
+    { name: 'API Integrations', href: '/api-integrations', icon: Code },
     { name: 'Audit Log', href: '/audit-log', icon: Shield },
-    { name: 'Admin Verification', href: '/admin-verification', icon: Activity },
+    { name: 'Settings', href: '/settings', icon: Settings },
   ];
 
   const NavigationItems = () => (
