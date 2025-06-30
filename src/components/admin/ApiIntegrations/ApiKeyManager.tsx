@@ -3,222 +3,59 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
+import { useApiKeys } from '@/hooks/useApiKeys';
 import { 
   Key, 
   Plus, 
-  Copy, 
   Eye, 
   EyeOff, 
-  Settings, 
+  Copy, 
   Trash2, 
-  RefreshCw,
   Shield,
-  AlertTriangle
+  Calendar
 } from 'lucide-react';
-import { useApiKeys } from '@/hooks/useApiKeys';
-import { useToast } from '@/hooks/use-toast';
 
-interface ApiKeyConfig {
-  name: string;
-  type: 'development' | 'production' | 'sandbox';
-  modules: string[];
-  permissions: string[];
-  rateLimit: {
-    requests: number;
-    period: 'minute' | 'hour' | 'day';
-  };
-  expiresAt?: string;
-  ipWhitelist?: string[];
-}
-
-const ApiKeyManager = () => {
-  const { toast } = useToast();
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
+const ApiKeyManager: React.FC = () => {
+  console.log('🚀 ApiKeyManager: Component rendering');
   
-  const {
-    apiKeys,
-    isLoading,
-    visibleKeys,
-    createApiKey,
-    isCreating,
-    updateApiKey,
-    deleteApiKey,
-    toggleKeyVisibility,
-    handleCopyKey
+  const [showKey, setShowKey] = useState<Record<string, boolean>>({});
+  const [newKeyName, setNewKeyName] = useState('');
+  
+  const { 
+    apiKeys, 
+    isLoading, 
+    createApiKey, 
+    deleteApiKey, 
+    isCreating, 
+    isDeleting 
   } = useApiKeys();
 
-  const availableModules = [
-    { id: 'patients', name: 'Patient Management' },
-    { id: 'facilities', name: 'Facility Management' },
-    { id: 'users', name: 'User Management' },
-    { id: 'appointments', name: 'Appointments' },
-    { id: 'billing', name: 'Billing' },
-  ];
-
-  const availablePermissions = [
-    { id: 'read', name: 'Read Access' },
-    { id: 'write', name: 'Write Access' },
-    { id: 'delete', name: 'Delete Access' },
-    { id: 'admin', name: 'Admin Access' },
-  ];
-
-  const handleCreateApiKey = (config: ApiKeyConfig) => {
-    createApiKey(config);
-    setShowCreateDialog(false);
+  const handleCreateKey = async () => {
+    if (newKeyName.trim()) {
+      await createApiKey(newKeyName.trim());
+      setNewKeyName('');
+    }
   };
 
-  const CreateApiKeyDialog = () => {
-    const [config, setConfig] = useState<ApiKeyConfig>({
-      name: '',
-      type: 'development',
-      modules: [],
-      permissions: ['read'],
-      rateLimit: { requests: 1000, period: 'hour' }
-    });
+  const toggleKeyVisibility = (keyId: string) => {
+    setShowKey(prev => ({ ...prev, [keyId]: !prev[keyId] }));
+  };
 
-    const handleSubmit = (e: React.FormEvent) => {
-      e.preventDefault();
-      if (!config.name || config.modules.length === 0) {
-        toast({
-          title: "Validation Error",
-          description: "Please provide a name and select at least one module.",
-          variant: "destructive"
-        });
-        return;
-      }
-      handleCreateApiKey(config);
-    };
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+  };
 
-    return (
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="keyName">API Key Name</Label>
-          <Input
-            id="keyName"
-            value={config.name}
-            onChange={(e) => setConfig({ ...config, name: e.target.value })}
-            placeholder="e.g., Mobile App Development"
-            required
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="keyType">Environment Type</Label>
-          <Select value={config.type} onValueChange={(value: 'development' | 'production' | 'sandbox') => setConfig({ ...config, type: value })}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="development">Development</SelectItem>
-              <SelectItem value="sandbox">Sandbox</SelectItem>
-              <SelectItem value="production">Production</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        
-        <div className="space-y-2">
-          <Label>API Modules</Label>
-          <div className="grid grid-cols-1 gap-2">
-            {availableModules.map((module) => (
-              <div key={module.id} className="flex items-center space-x-2">
-                <Checkbox
-                  id={module.id}
-                  checked={config.modules.includes(module.id)}
-                  onCheckedChange={(checked) => {
-                    if (checked) {
-                      setConfig({ ...config, modules: [...config.modules, module.id] });
-                    } else {
-                      setConfig({ ...config, modules: config.modules.filter(m => m !== module.id) });
-                    }
-                  }}
-                />
-                <Label htmlFor={module.id}>{module.name}</Label>
-              </div>
-            ))}
-          </div>
-        </div>
-        
-        <div className="space-y-2">
-          <Label>Permissions</Label>
-          <div className="grid grid-cols-2 gap-2">
-            {availablePermissions.map((permission) => (
-              <div key={permission.id} className="flex items-center space-x-2">
-                <Checkbox
-                  id={permission.id}
-                  checked={config.permissions.includes(permission.id)}
-                  onCheckedChange={(checked) => {
-                    if (checked) {
-                      setConfig({ ...config, permissions: [...config.permissions, permission.id] });
-                    } else {
-                      setConfig({ ...config, permissions: config.permissions.filter(p => p !== permission.id) });
-                    }
-                  }}
-                />
-                <Label htmlFor={permission.id}>{permission.name}</Label>
-              </div>
-            ))}
-          </div>
-        </div>
-        
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="rateLimit">Rate Limit (requests)</Label>
-            <Input
-              id="rateLimit"
-              type="number"
-              value={config.rateLimit.requests}
-              onChange={(e) => setConfig({
-                ...config,
-                rateLimit: { ...config.rateLimit, requests: parseInt(e.target.value) }
-              })}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="ratePeriod">Per</Label>
-            <Select
-              value={config.rateLimit.period}
-              onValueChange={(value: 'minute' | 'hour' | 'day') => setConfig({
-                ...config,
-                rateLimit: { ...config.rateLimit, period: value }
-              })}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="minute">Minute</SelectItem>
-                <SelectItem value="hour">Hour</SelectItem>
-                <SelectItem value="day">Day</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        
-        <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={() => setShowCreateDialog(false)}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={isCreating}>
-            {isCreating ? 'Creating...' : 'Create API Key'}
-          </Button>
-        </div>
-      </form>
-    );
+  const maskApiKey = (key: string) => {
+    return `${key.substring(0, 8)}${'*'.repeat(24)}${key.substring(key.length - 4)}`;
   };
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h3 className="text-lg font-medium">API Key Management</h3>
-            <p className="text-sm text-muted-foreground">Loading API keys...</p>
-          </div>
+      <div className="flex items-center justify-center py-8">
+        <div className="text-center">
+          <Key className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+          <p className="text-muted-foreground">Loading API keys...</p>
         </div>
       </div>
     );
@@ -226,188 +63,114 @@ const ApiKeyManager = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-medium">API Key Management</h3>
           <p className="text-sm text-muted-foreground">
-            Create and manage API keys for different environments and modules
+            Create and manage API keys for accessing your services
           </p>
         </div>
-        <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Create API Key
+        <Badge variant="outline">{apiKeys?.length || 0} keys</Badge>
+      </div>
+
+      {/* Create New API Key */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Plus className="h-5 w-5" />
+            Create New API Key
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-2">
+            <Input
+              placeholder="Enter key name (e.g., Production API)"
+              value={newKeyName}
+              onChange={(e) => setNewKeyName(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleCreateKey()}
+            />
+            <Button 
+              onClick={handleCreateKey}
+              disabled={!newKeyName.trim() || isCreating}
+            >
+              {isCreating ? 'Creating...' : 'Create Key'}
             </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Create New API Key</DialogTitle>
-            </DialogHeader>
-            <CreateApiKeyDialog />
-          </DialogContent>
-        </Dialog>
-      </div>
+          </div>
+        </CardContent>
+      </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total API Keys</CardTitle>
-            <Key className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{apiKeys.length}</div>
-            <p className="text-xs text-muted-foreground">
-              {apiKeys.filter(k => k.status === 'active').length} active
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">API Calls Today</CardTitle>
-            <RefreshCw className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {apiKeys.reduce((acc, key) => acc + key.usage_count, 0)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Across all keys
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Security Status</CardTitle>
-            <Shield className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">Secure</div>
-            <p className="text-xs text-muted-foreground">
-              All keys encrypted
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="space-y-4">
-        {apiKeys.map((apiKey) => (
-          <Card key={apiKey.id}>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
+      {/* API Keys List */}
+      <div className="space-y-3">
+        {apiKeys && apiKeys.length > 0 ? (
+          apiKeys.map((apiKey) => (
+            <Card key={apiKey.id}>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Shield className="h-4 w-4 text-blue-500" />
+                      <h4 className="font-medium">{apiKey.name}</h4>
+                      <Badge variant={apiKey.is_active ? 'default' : 'secondary'}>
+                        {apiKey.is_active ? 'Active' : 'Inactive'}
+                      </Badge>
+                    </div>
+                    
+                    <div className="flex items-center gap-2 mb-2">
+                      <code className="px-2 py-1 bg-muted rounded text-sm font-mono">
+                        {showKey[apiKey.id] ? apiKey.key_value : maskApiKey(apiKey.key_value)}
+                      </code>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => toggleKeyVisibility(apiKey.id)}
+                      >
+                        {showKey[apiKey.id] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => copyToClipboard(apiKey.key_value)}
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        Created: {new Date(apiKey.created_at).toLocaleDateString()}
+                      </span>
+                      {apiKey.last_used_at && (
+                        <span className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          Last used: {new Date(apiKey.last_used_at).toLocaleDateString()}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  
                   <div className="flex items-center gap-2">
-                    <h4 className="font-medium">{apiKey.name}</h4>
-                    <Badge variant={apiKey.type === 'production' ? 'default' : 'secondary'}>
-                      {apiKey.type}
-                    </Badge>
-                    <Badge variant={apiKey.status === 'active' ? 'secondary' : 'destructive'}>
-                      {apiKey.status}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center gap-2 font-mono text-sm">
-                    {visibleKeys.has(apiKey.id) && apiKey.key ? (
-                      <span className="bg-gray-100 px-2 py-1 rounded">{apiKey.key}</span>
-                    ) : (
-                      <span className="bg-gray-100 px-2 py-1 rounded">{apiKey.key_prefix}</span>
-                    )}
-                    {apiKey.key && (
-                      <>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => toggleKeyVisibility(apiKey.id)}
-                        >
-                          {visibleKeys.has(apiKey.id) ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleCopyKey(apiKey.key!)}
-                        >
-                          <Copy className="h-4 w-4" />
-                        </Button>
-                      </>
-                    )}
+                    <Button 
+                      variant="destructive" 
+                      size="sm"
+                      onClick={() => deleteApiKey(apiKey.id)}
+                      disabled={isDeleting}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => updateApiKey({ 
-                      id: apiKey.id, 
-                      updates: { status: apiKey.status === 'active' ? 'inactive' : 'active' }
-                    })}
-                  >
-                    <Settings className="h-4 w-4" />
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => deleteApiKey(apiKey.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-              
-              <div className="mt-4 grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
-                <div>
-                  <p className="text-muted-foreground">Rate Limit</p>
-                  <p className="font-medium">{apiKey.rate_limit_requests}/{apiKey.rate_limit_period}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Usage</p>
-                  <p className="font-medium">{apiKey.usage_count} calls</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Modules</p>
-                  <p className="font-medium">{apiKey.modules.length} modules</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Created</p>
-                  <p className="font-medium">{new Date(apiKey.created_at).toLocaleDateString()}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Last Used</p>
-                  <p className="font-medium">
-                    {apiKey.last_used ? new Date(apiKey.last_used).toLocaleDateString() : 'Never'}
-                  </p>
-                </div>
-              </div>
-              
-              <div className="mt-4 flex flex-wrap gap-4">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-2">Modules:</p>
-                  <div className="flex flex-wrap gap-1">
-                    {apiKey.modules.map((module) => (
-                      <Badge key={module} variant="outline" className="text-xs">{module}</Badge>
-                    ))}
-                  </div>
-                </div>
-                
-                <div>
-                  <p className="text-sm text-muted-foreground mb-2">Permissions:</p>
-                  <div className="flex flex-wrap gap-1">
-                    {apiKey.permissions.map((permission) => (
-                      <Badge key={permission} variant="outline" className="text-xs">{permission}</Badge>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-        
-        {apiKeys.length === 0 && (
+              </CardContent>
+            </Card>
+          ))
+        ) : (
           <Card>
-            <CardContent className="p-6 text-center">
-              <div className="text-muted-foreground">
-                No API keys created yet. Click "Create API Key" to get started.
-              </div>
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <Key className="h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No API Keys</h3>
+              <p className="text-muted-foreground text-center mb-4">
+                Create your first API key to start accessing your services programmatically.
+              </p>
             </CardContent>
           </Card>
         )}

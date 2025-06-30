@@ -3,6 +3,8 @@ import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { 
   Server, 
   Globe, 
@@ -12,109 +14,25 @@ import {
   Users, 
   Database,
   ExternalLink,
-  Upload
+  Upload,
+  Search
 } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Search } from 'lucide-react';
 
-console.log('🔧 ApiServicesModule: Starting imports');
+// Import hooks
+import { useApiIntegrations } from '@/hooks/useApiIntegrations';
+import { useExternalApis } from '@/hooks/useExternalApis';
+import { useEnhancedExternalApis } from '@/hooks/useEnhancedExternalApis';
 
-// Import hooks with error handling
-let useApiIntegrations, useExternalApis, useEnhancedExternalApis;
-try {
-  const apiIntegrationsHook = require('@/hooks/useApiIntegrations');
-  useApiIntegrations = apiIntegrationsHook.useApiIntegrations;
-  console.log('✅ useApiIntegrations imported successfully');
-} catch (error) {
-  console.error('❌ Error importing useApiIntegrations:', error);
-  useApiIntegrations = () => ({ integrations: [], isLoading: false, error: null, internalApis: [], externalApis: [] });
-}
+// Import tab components
+import { InternalApisTabContent } from '@/components/admin/ApiIntegrations/tabs/InternalApisTabContent';
+import { ExternalApisTabContent } from '@/components/admin/ApiIntegrations/tabs/ExternalApisTabContent';
+import { PublishedApisTabContent } from '@/components/admin/ApiIntegrations/tabs/PublishedApisTabContent';
+import { DeveloperTabContent } from '@/components/admin/ApiIntegrations/tabs/DeveloperTabContent';
+import { ApiKeysTabContent } from '@/components/admin/ApiIntegrations/tabs/ApiKeysTabContent';
+import { TestingTabContent } from '@/components/admin/ApiIntegrations/tabs/TestingTabContent';
+import { DataImportModule } from '@/components/admin/DataImportModule';
 
-try {
-  const externalApisHook = require('@/hooks/useExternalApis');
-  useExternalApis = externalApisHook.useExternalApis;
-  console.log('✅ useExternalApis imported successfully');
-} catch (error) {
-  console.error('❌ Error importing useExternalApis:', error);
-  useExternalApis = () => ({ externalApis: [], marketplaceStats: {}, isLoadingExternalApis: false });
-}
-
-try {
-  const enhancedExternalApisHook = require('@/hooks/useEnhancedExternalApis');
-  useEnhancedExternalApis = enhancedExternalApisHook.useEnhancedExternalApis;
-  console.log('✅ useEnhancedExternalApis imported successfully');
-} catch (error) {
-  console.error('❌ Error importing useEnhancedExternalApis:', error);
-  useEnhancedExternalApis = () => ({ externalApis: [] });
-}
-
-// Import tab components with error handling
-let InternalApisTabContent, ExternalApisTabContent, PublishedApisTabContent, DeveloperTabContent, ApiKeysTabContent, TestingTabContent, DataImportModule;
-
-try {
-  const internalTab = require('@/components/admin/ApiIntegrations/tabs/InternalApisTabContent');
-  InternalApisTabContent = internalTab.InternalApisTabContent;
-  console.log('✅ InternalApisTabContent imported successfully');
-} catch (error) {
-  console.error('❌ Error importing InternalApisTabContent:', error);
-  InternalApisTabContent = () => <div>InternalApisTabContent not available</div>;
-}
-
-try {
-  const externalTab = require('@/components/admin/ApiIntegrations/tabs/ExternalApisTabContent');
-  ExternalApisTabContent = externalTab.ExternalApisTabContent;
-  console.log('✅ ExternalApisTabContent imported successfully');
-} catch (error) {
-  console.error('❌ Error importing ExternalApisTabContent:', error);
-  ExternalApisTabContent = () => <div>ExternalApisTabContent not available</div>;
-}
-
-try {
-  const publishedTab = require('@/components/admin/ApiIntegrations/tabs/PublishedApisTabContent');
-  PublishedApisTabContent = publishedTab.PublishedApisTabContent;
-  console.log('✅ PublishedApisTabContent imported successfully');
-} catch (error) {
-  console.error('❌ Error importing PublishedApisTabContent:', error);
-  PublishedApisTabContent = () => <div>PublishedApisTabContent not available</div>;
-}
-
-try {
-  const developerTab = require('@/components/admin/ApiIntegrations/tabs/DeveloperTabContent');
-  DeveloperTabContent = developerTab.DeveloperTabContent;
-  console.log('✅ DeveloperTabContent imported successfully');
-} catch (error) {
-  console.error('❌ Error importing DeveloperTabContent:', error);
-  DeveloperTabContent = () => <div>DeveloperTabContent not available</div>;
-}
-
-try {
-  const apiKeysTab = require('@/components/admin/ApiIntegrations/tabs/ApiKeysTabContent');
-  ApiKeysTabContent = apiKeysTab.ApiKeysTabContent;
-  console.log('✅ ApiKeysTabContent imported successfully');
-} catch (error) {
-  console.error('❌ Error importing ApiKeysTabContent:', error);
-  ApiKeysTabContent = () => <div>ApiKeysTabContent not available</div>;
-}
-
-try {
-  const testingTab = require('@/components/admin/ApiIntegrations/tabs/TestingTabContent');
-  TestingTabContent = testingTab.TestingTabContent;
-  console.log('✅ TestingTabContent imported successfully');
-} catch (error) {
-  console.error('❌ Error importing TestingTabContent:', error);
-  TestingTabContent = () => <div>TestingTabContent not available</div>;
-}
-
-try {
-  const dataImport = require('@/components/admin/DataImportModule');
-  DataImportModule = dataImport.DataImportModule;
-  console.log('✅ DataImportModule imported successfully');
-} catch (error) {
-  console.error('❌ Error importing DataImportModule:', error);
-  DataImportModule = () => <div>DataImportModule not available</div>;
-}
-
-console.log('🎯 ApiServicesModule: All imports completed');
+console.log('🔧 ApiServicesModule: Starting component definition');
 
 export const ApiServicesModule: React.FC = () => {
   console.log('🚀 ApiServicesModule: Component rendering started');
