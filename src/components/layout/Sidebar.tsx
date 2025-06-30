@@ -15,7 +15,11 @@ import {
   Shield,
   Pill,
   Stethoscope,
-  X
+  X,
+  Globe,
+  Server,
+  Code,
+  ExternalLink
 } from 'lucide-react';
 
 const navigation = [
@@ -24,6 +28,7 @@ const navigation = [
   { name: 'Onboarding', href: '/onboarding', icon: UserPlus },
   { name: 'Therapies & Services', href: '/therapies', icon: Pill },
   { name: 'Service Selection', href: '/services', icon: Stethoscope },
+  { name: 'API Services', href: '/api-services', icon: Code },
   { name: 'Data Import', href: '/data-import', icon: Upload },
   { name: 'Facilities', href: '/facilities', icon: Building2 },
   { name: 'Users', href: '/users', icon: Users },

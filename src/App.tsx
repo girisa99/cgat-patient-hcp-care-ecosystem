@@ -20,6 +20,7 @@ import TherapiesPage from "./pages/TherapiesPage";
 import ServicesPage from "./pages/ServicesPage";
 import DataImport from "./pages/DataImport";
 import ApiIntegrations from "./pages/ApiIntegrations";
+import ApiServicesPage from "./pages/ApiServicesPage";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +38,7 @@ const App = () => (
             <Route path="/patients" element={<PatientsPage />} />
             <Route path="/therapies" element={<TherapiesPage />} />
             <Route path="/services" element={<ServicesPage />} />
+            <Route path="/api-services" element={<ApiServicesPage />} />
             <Route path="/data-import" element={<DataImport />} />
             <Route path="/api-integrations" element={<ApiIntegrations />} />
             <Route path="/users" element={<UsersPage />} />
