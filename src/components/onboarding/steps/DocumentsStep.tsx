@@ -104,6 +104,10 @@ export const DocumentsStep: React.FC<DocumentsStepProps> = ({ data, onDataChange
       // Add to additional documents if it's a custom upload
       if (!requiredDocuments.some(doc => doc.key === documentKey)) {
         const newDocument = {
+          document_type: documentKey,
+          file_name: file.name,
+          upload_date: new Date().toISOString(),
+          // Legacy properties for backward compatibility
           name: file.name,
           type: documentKey,
           uploaded: true,

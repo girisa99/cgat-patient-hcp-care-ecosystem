@@ -1,4 +1,3 @@
-
 // Business Types
 export type BusinessType = 
   | 'acute_care' 
@@ -38,13 +37,26 @@ export type InventoryModel =
   | 'drop_ship_only' 
   | 'hybrid';
 
-// Add OnboardingStep export
-export interface OnboardingStep {
-  id: string;
-  title: string;
-  completed: boolean;
-  data?: any;
-}
+// Fix OnboardingStep to be a string union type instead of interface
+export type OnboardingStep = 
+  | 'company_info'
+  | 'business_classification' 
+  | 'contacts'
+  | 'ownership'
+  | 'references'
+  | 'payment_banking'
+  | 'licenses'
+  | 'documents'
+  | 'authorizations'
+  | 'review'
+  | 'therapy_selection'
+  | 'service_selection'
+  | 'online_services'
+  | 'purchasing_preferences'
+  | 'financial_assessment'
+  | 'credit_application'
+  | 'gpo_membership'
+  | 'office_hours';
 
 export interface CompanyInfo {
   legal_name: string;

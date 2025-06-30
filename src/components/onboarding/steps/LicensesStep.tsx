@@ -69,7 +69,16 @@ export const LicensesStep: React.FC<LicensesStepProps> = ({ data, onDataChange }
       ...licenses,
       additional_licenses: [
         ...licenses.additional_licenses,
-        { type: '', number: '', state: '', expiration_date: '' }
+        { 
+          license_type: '', 
+          license_number: '', 
+          issuing_state: '', 
+          expiration_date: '',
+          // Legacy properties for backward compatibility
+          type: '', 
+          number: '', 
+          state: ''
+        }
       ]
     };
 
@@ -81,10 +90,33 @@ export const LicensesStep: React.FC<LicensesStepProps> = ({ data, onDataChange }
 
   const updateAdditionalLicense = (index: number, field: string, value: string) => {
     const updatedLicenses = [...licenses.additional_licenses];
-    updatedLicenses[index] = {
-      ...updatedLicenses[index],
-      [field]: value
-    };
+    const currentLicense = updatedLicenses[index];
+    
+    // Update both new and legacy property names for compatibility
+    if (field === 'license_type' || field === 'type') {
+      updatedLicenses[index] = {
+        ...currentLicense,
+        license_type: value,
+        type: value // Legacy compatibility
+      };
+    } else if (field === 'license_number' || field === 'number') {
+      updatedLicenses[index] = {
+        ...currentLicense,
+        license_number: value,
+        number: value // Legacy compatibility
+      };
+    } else if (field === 'issuing_state' || field === 'state') {
+      updatedLicenses[index] = {
+        ...currentLicense,
+        issuing_state: value,
+        state: value // Legacy compatibility
+      };
+    } else {
+      updatedLicenses[index] = {
+        ...currentLicense,
+        [field]: value
+      };
+    }
 
     onDataChange({
       ...data,
@@ -227,8 +259,8 @@ export const LicensesStep: React.FC<LicensesStepProps> = ({ data, onDataChange }
                   <div>
                     <Label>License Type *</Label>
                     <Select
-                      value={license.type}
-                      onValueChange={(value) => updateAdditionalLicense(index, 'type', value)}
+                      value={license.license_type || license.type || ''}
+                      onValueChange={(value) => updateAdditionalLicense(index, 'license_type', value)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select license type" />
@@ -246,8 +278,8 @@ export const LicensesStep: React.FC<LicensesStepProps> = ({ data, onDataChange }
                     <div>
                       <Label>License Number *</Label>
                       <Input
-                        value={license.number}
-                        onChange={(e) => updateAdditionalLicense(index, 'number', e.target.value)}
+                        value={license.license_number || license.number || ''}
+                        onChange={(e) => updateAdditionalLicense(index, 'license_number', e.target.value)}
                         placeholder="Enter license number"
                         required
                       />
@@ -255,8 +287,8 @@ export const LicensesStep: React.FC<LicensesStepProps> = ({ data, onDataChange }
                     <div>
                       <Label>Issuing State *</Label>
                       <Select
-                        value={license.state}
-                        onValueChange={(value) => updateAdditionalLicense(index, 'state', value)}
+                        value={license.issuing_state || license.state || ''}
+                        onValueChange={(value) => updateAdditionalLicense(index, 'issuing_state', value)}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Select state" />

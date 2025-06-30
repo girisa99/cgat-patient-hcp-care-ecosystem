@@ -52,16 +52,25 @@ export const useTreatmentCenterOnboarding = () => {
         membership => typeof membership === 'string' ? membership : membership.gpo_name
       ) || [];
 
+      // Ensure selected_distributors is properly typed for database
+      const selectedDistributors = (applicationData.selected_distributors || []).map(dist => {
+        // Map string values to enum values if needed
+        if (typeof dist === 'string') {
+          const validDistributors = ['amerisource_bergen', 'cardinal_health', 'mckesson'];
+          return validDistributors.includes(dist) ? dist : 'amerisource_bergen';
+        }
+        return dist;
+      });
+
       const { data, error } = await supabase
         .from('treatment_center_onboarding')
         .insert({
-          user_id: user.id,
           legal_name: applicationData.company_info?.legal_name || '',
           dba_name: applicationData.company_info?.dba_name,
           website: applicationData.company_info?.website,
           federal_tax_id: applicationData.company_info?.federal_tax_id || '',
           same_as_legal_address: applicationData.company_info?.same_as_legal_address || false,
-          selected_distributors: applicationData.selected_distributors || [],
+          selected_distributors: selectedDistributors,
           business_types: applicationData.business_info?.business_type || [],
           years_in_business: applicationData.business_info?.years_in_business,
           ownership_type: applicationData.business_info?.ownership_type,
@@ -69,7 +78,6 @@ export const useTreatmentCenterOnboarding = () => {
           number_of_employees: applicationData.business_info?.number_of_employees,
           estimated_monthly_purchases: applicationData.business_info?.estimated_monthly_purchases,
           initial_order_amount: applicationData.business_info?.initial_order_amount,
-          // Remove non-existent properties
           gpo_memberships: gpoMembershipsAsStrings,
           current_step: 'company_info'
         })
