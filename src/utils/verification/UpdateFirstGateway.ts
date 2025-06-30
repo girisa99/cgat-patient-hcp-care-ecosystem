@@ -2,23 +2,25 @@
  * Update First Gateway
  * Single source of truth for all development decisions
  * Enforces "Update First" rule before any new code creation
- * NOW INCLUDES: Services, Classes, Methods, and Mock Data Prevention
+ * NOW INCLUDES: Services, Classes, Methods, Mock Data Prevention, AND Database Schema Analysis
  */
 
 import { ComponentRegistryScanner } from './ComponentRegistryScanner';
 import { ServiceClassScanner } from './ServiceClassScanner';
 import { MockDataDetector } from './MockDataDetector';
 import { TypeScriptPatternScanner } from './TypeScriptPatternScanner';
+import { DatabaseSchemaAnalyzer, SchemaChangeRequest } from './DatabaseSchemaAnalyzer';
 import { moduleRegistry } from '@/utils/moduleRegistry';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface DevelopmentRequest {
-  type: 'hook' | 'component' | 'module' | 'template' | 'utility' | 'service' | 'class' | 'method';
+  type: 'hook' | 'component' | 'module' | 'template' | 'utility' | 'service' | 'class' | 'method' | 'table' | 'column' | 'constraint' | 'index';
   name: string;
   tableName?: string;
   functionality: string[];
   description?: string;
   requiredFields?: string[];
+  schemaDetails?: any; // For database-related requests
 }
 
 export interface UpdateFirstAnalysis {
@@ -33,17 +35,19 @@ export interface UpdateFirstAnalysis {
   approvedForCreation: boolean;
   mockDataViolations: number;
   typeSafetyScore: number;
+  schemaQualityScore: number; // NEW: Database schema quality
+  schemaDuplicateRisk: number; // NEW: Schema duplicate risk
 }
 
 export class UpdateFirstGateway {
   /**
-   * MANDATORY PRE-CREATION CHECK
+   * COMPREHENSIVE MANDATORY PRE-CREATION CHECK
    * Every new development request MUST go through this gateway
-   * NOW COVERS: Components, Hooks, Services, Classes, Methods, Mock Data Prevention
+   * NOW COVERS: Components, Hooks, Services, Classes, Methods, Mock Data Prevention, AND Database Schema
    */
   static async enforceUpdateFirst(request: DevelopmentRequest): Promise<UpdateFirstAnalysis> {
-    console.log('🚨 COMPREHENSIVE UPDATE FIRST GATEWAY ACTIVATED for:', request);
-    console.log('🔍 Performing comprehensive duplicate detection with services, classes, and mock data prevention...');
+    console.log('🚨 COMPREHENSIVE UPDATE FIRST GATEWAY ACTIVATED (Including Database Schema) for:', request);
+    console.log('🔍 Performing comprehensive duplicate detection with services, classes, mock data prevention, and database schema analysis...');
 
     const analysis: UpdateFirstAnalysis = {
       shouldProceed: false,
@@ -56,7 +60,9 @@ export class UpdateFirstGateway {
       mandatoryUpdates: [],
       approvedForCreation: false,
       mockDataViolations: 0,
-      typeSafetyScore: 0
+      typeSafetyScore: 0,
+      schemaQualityScore: 0,
+      schemaDuplicateRisk: 0
     };
 
     try {
@@ -74,14 +80,14 @@ export class UpdateFirstGateway {
         analysis.preventDuplicateScore += 30;
       }
 
-      // Step 3: Check services and classes (NEW!)
+      // Step 3: Check services and classes
       const serviceClassDuplicates = await this.checkServiceClassDuplicates(request);
       if (serviceClassDuplicates.length > 0) {
         analysis.blockingReasons.push(`❌ SERVICE/CLASS DUPLICATE FOUND: ${serviceClassDuplicates.join(', ')}`);
         analysis.preventDuplicateScore += 40;
       }
 
-      // Step 4: Check for mock data prevention (NEW!)
+      // Step 4: Check for mock data prevention
       const mockDataCheck = await this.checkMockDataPrevention(request);
       analysis.mockDataViolations = mockDataCheck.violations;
       if (mockDataCheck.violations > 0) {
@@ -89,21 +95,35 @@ export class UpdateFirstGateway {
         analysis.preventDuplicateScore += 20;
       }
 
-      // Step 5: TypeScript pattern analysis (NEW!)
+      // Step 5: TypeScript pattern analysis
       const typeScriptAnalysis = await this.analyzeTypeScriptPatterns(request);
       analysis.typeSafetyScore = typeScriptAnalysis.typeSafetyScore;
       if (typeScriptAnalysis.typeSafetyScore < 70) {
         analysis.updateRecommendations.push(`⚠️ LOW TYPE SAFETY SCORE: ${typeScriptAnalysis.typeSafetyScore}/100`);
       }
 
-      // Step 6: Check module registry for existing modules
+      // Step 6: NEW - Database Schema Analysis
+      const schemaAnalysis = await this.analyzeDatabaseSchema(request);
+      analysis.schemaQualityScore = schemaAnalysis.schemaQualityScore;
+      analysis.schemaDuplicateRisk = schemaAnalysis.schemaDuplicateRisk;
+      
+      if (schemaAnalysis.conflicts.length > 0) {
+        analysis.blockingReasons.push(`❌ SCHEMA CONFLICTS: ${schemaAnalysis.conflicts.join(', ')}`);
+        analysis.preventDuplicateScore += schemaAnalysis.schemaDuplicateRisk;
+      }
+
+      if (schemaAnalysis.schemaQualityScore < 70) {
+        analysis.updateRecommendations.push(`⚠️ LOW SCHEMA QUALITY SCORE: ${schemaAnalysis.schemaQualityScore}/100`);
+      }
+
+      // Step 7: Check module registry for existing modules
       const existingModules = await this.checkModuleRegistry(request);
       if (existingModules.length > 0) {
         analysis.existingAlternatives.push(...existingModules);
         analysis.preventDuplicateScore += 20;
       }
 
-      // Step 7: Scan component registry for reuse opportunities
+      // Step 8: Scan component registry for reuse opportunities
       const reuseOpportunities = await ComponentRegistryScanner.findReuseOpportunities({
         tableName: request.tableName,
         functionality: request.functionality,
@@ -111,38 +131,42 @@ export class UpdateFirstGateway {
       });
       analysis.reuseOpportunities.push(...reuseOpportunities);
 
-      // Step 8: Check database for existing implementations
+      // Step 9: Check database for existing implementations
       const databaseAlternatives = await this.checkDatabaseForAlternatives(request);
       analysis.existingAlternatives.push(...databaseAlternatives);
 
-      // Step 9: Generate update recommendations
-      analysis.updateRecommendations = await this.generateUpdateRecommendations(request, analysis);
+      // Step 10: Generate update recommendations
+      analysis.updateRecommendations.push(...await this.generateUpdateRecommendations(request, analysis));
 
-      // Step 10: Determine if creation should proceed
+      // Step 11: Determine if creation should proceed
       analysis.canProceed = analysis.blockingReasons.length === 0;
       analysis.shouldProceed = analysis.canProceed && analysis.preventDuplicateScore < 70;
       analysis.approvedForCreation = analysis.shouldProceed && 
                                    analysis.updateRecommendations.length === 0 &&
                                    analysis.mockDataViolations === 0 &&
-                                   analysis.typeSafetyScore >= 70;
+                                   analysis.typeSafetyScore >= 70 &&
+                                   analysis.schemaQualityScore >= 70 &&
+                                   analysis.schemaDuplicateRisk < 50;
 
-      // Step 11: Log the decision
+      // Step 12: Log the decision
       await this.logUpdateFirstDecision(request, analysis);
 
-      console.log('📊 COMPREHENSIVE UPDATE FIRST ANALYSIS COMPLETE:', {
+      console.log('📊 COMPREHENSIVE UPDATE FIRST ANALYSIS COMPLETE (Including Database Schema):', {
         canProceed: analysis.canProceed,
         shouldProceed: analysis.shouldProceed,
         preventDuplicateScore: analysis.preventDuplicateScore,
         blockingReasons: analysis.blockingReasons.length,
         alternatives: analysis.existingAlternatives.length,
         mockDataViolations: analysis.mockDataViolations,
-        typeSafetyScore: analysis.typeSafetyScore
+        typeSafetyScore: analysis.typeSafetyScore,
+        schemaQualityScore: analysis.schemaQualityScore,
+        schemaDuplicateRisk: analysis.schemaDuplicateRisk
       });
 
       return analysis;
 
     } catch (error) {
-      console.error('❌ UPDATE FIRST GATEWAY ERROR:', error);
+      console.error('❌ COMPREHENSIVE UPDATE FIRST GATEWAY ERROR:', error);
       analysis.blockingReasons.push(`System error during validation: ${error instanceof Error ? error.message : 'Unknown error'}`);
       return analysis;
     }
@@ -367,6 +391,66 @@ export class UpdateFirstGateway {
   }
 
   /**
+   * NEW: Analyze database schema for duplicate risks and quality issues
+   */
+  private static async analyzeDatabaseSchema(request: DevelopmentRequest): Promise<{
+    schemaQualityScore: number;
+    schemaDuplicateRisk: number;
+    conflicts: string[];
+    recommendations: string[];
+  }> {
+    const result = {
+      schemaQualityScore: 100,
+      schemaDuplicateRisk: 0,
+      conflicts: [],
+      recommendations: []
+    };
+
+    try {
+      // Only analyze schema for database-related requests
+      if (!['table', 'column', 'constraint', 'index'].includes(request.type)) {
+        return result;
+      }
+
+      // Get overall schema quality
+      const schemaAnalysis = await DatabaseSchemaAnalyzer.analyzeCompleteSchema();
+      result.schemaQualityScore = schemaAnalysis.schemaQualityScore;
+
+      // Validate specific schema change request
+      if (request.schemaDetails && request.tableName) {
+        const schemaChangeRequest: SchemaChangeRequest = {
+          type: this.mapRequestTypeToSchemaType(request.type),
+          tableName: request.tableName,
+          details: request.schemaDetails,
+          reason: request.description || 'Development request'
+        };
+
+        const validation = await DatabaseSchemaAnalyzer.validateSchemaChangeRequest(schemaChangeRequest);
+        
+        result.schemaDuplicateRisk = validation.duplicateRisk;
+        result.conflicts = validation.conflicts;
+        result.recommendations = validation.recommendations;
+      }
+
+    } catch (error) {
+      console.warn('Database schema analysis failed:', error);
+      result.recommendations.push('Failed to analyze database schema - proceed with caution');
+    }
+
+    return result;
+  }
+
+  private static mapRequestTypeToSchemaType(requestType: string): any {
+    const mapping: Record<string, string> = {
+      'column': 'add_column',
+      'table': 'add_table',
+      'constraint': 'add_constraint',
+      'index': 'add_index'
+    };
+    return mapping[requestType] || 'add_column';
+  }
+
+  /**
    * Check module registry for existing modules
    */
   private static async checkModuleRegistry(request: DevelopmentRequest): Promise<string[]> {
@@ -414,7 +498,7 @@ export class UpdateFirstGateway {
   }
 
   /**
-   * Generate specific update recommendations (ENHANCED)
+   * Generate specific update recommendations (ENHANCED with Schema)
    */
   private static async generateUpdateRecommendations(
     request: DevelopmentRequest, 
@@ -440,7 +524,7 @@ export class UpdateFirstGateway {
       recommendations.push('🏗️ TEMPLATE: Use ExtensibleModuleTemplate for consistent UI patterns');
     }
 
-    // NEW: Service and class recommendations
+    // Service and class recommendations
     if (request.type === 'service') {
       recommendations.push('🔧 SERVICE PATTERN: Follow existing service patterns and naming conventions');
       recommendations.push('🏭 DEPENDENCY INJECTION: Consider using existing service orchestrators');
@@ -451,23 +535,40 @@ export class UpdateFirstGateway {
       recommendations.push('🎭 ABSTRACT: Consider using abstract base classes for common functionality');
     }
 
-    // NEW: Mock data prevention recommendations
+    // Mock data prevention recommendations
     if (analysis.mockDataViolations > 0) {
       recommendations.push('🚫 NO MOCK DATA: Use real database queries instead of mock/dummy data');
       recommendations.push('📊 REAL DATA: Implement proper Supabase queries for data fetching');
     }
 
-    // NEW: TypeScript quality recommendations
+    // TypeScript quality recommendations
     if (analysis.typeSafetyScore < 70) {
       recommendations.push('🔷 TYPE SAFETY: Improve TypeScript type definitions before proceeding');
       recommendations.push('📝 INTERFACES: Define proper interfaces and types for new functionality');
+    }
+
+    // NEW: Database schema recommendations
+    if (['table', 'column', 'constraint', 'index'].includes(request.type)) {
+      recommendations.push('🗄️ SCHEMA REVIEW: Review existing database schema before adding new elements');
+      
+      if (analysis.schemaQualityScore < 70) {
+        recommendations.push('📊 SCHEMA QUALITY: Improve overall schema quality before adding new elements');
+      }
+      
+      if (analysis.schemaDuplicateRisk > 50) {
+        recommendations.push('⚠️ SCHEMA DUPLICATE RISK: High risk of creating duplicate schema elements');
+        recommendations.push('🔍 SCHEMA ANALYSIS: Review existing columns, constraints, and relationships');
+      }
+      
+      recommendations.push('🔒 RLS POLICIES: Ensure proper Row Level Security policies are in place');
+      recommendations.push('📑 INDEXING: Consider indexing strategy for new columns');
     }
 
     return recommendations;
   }
 
   /**
-   * Log the update first decision for audit trail (ENHANCED)
+   * Log the update first decision for audit trail (ENHANCED with Schema)
    */
   private static async logUpdateFirstDecision(
     request: DevelopmentRequest, 
@@ -476,7 +577,6 @@ export class UpdateFirstGateway {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        // Convert the objects to a JSON-compatible format
         const metadata = {
           request: {
             type: request.type,
@@ -484,7 +584,8 @@ export class UpdateFirstGateway {
             tableName: request.tableName || null,
             functionality: request.functionality,
             description: request.description || null,
-            requiredFields: request.requiredFields || []
+            requiredFields: request.requiredFields || [],
+            schemaDetails: request.schemaDetails || null
           },
           analysis: {
             shouldProceed: analysis.shouldProceed,
@@ -497,20 +598,23 @@ export class UpdateFirstGateway {
             mandatoryUpdates: analysis.mandatoryUpdates,
             approvedForCreation: analysis.approvedForCreation,
             mockDataViolations: analysis.mockDataViolations,
-            typeSafetyScore: analysis.typeSafetyScore
+            typeSafetyScore: analysis.typeSafetyScore,
+            schemaQualityScore: analysis.schemaQualityScore,
+            schemaDuplicateRisk: analysis.schemaDuplicateRisk
           },
           decision: analysis.approvedForCreation ? 'APPROVED' : 'BLOCKED',
           preventDuplicateScore: analysis.preventDuplicateScore,
-          comprehensiveAnalysis: true // Flag indicating this used the enhanced system
+          comprehensiveAnalysis: true,
+          includeDatabaseSchema: true // NEW: Flag indicating database schema analysis
         };
 
         await supabase
           .from('issue_fixes')
           .insert({
             user_id: user.id,
-            issue_type: 'COMPREHENSIVE_UPDATE_FIRST_GATEWAY',
-            issue_message: `Development request: ${request.type} "${request.name}" - ${analysis.approvedForCreation ? 'APPROVED' : 'BLOCKED'} (Mock Data: ${analysis.mockDataViolations}, Type Safety: ${analysis.typeSafetyScore}/100)`,
-            issue_source: 'Comprehensive Update First Gateway',
+            issue_type: 'COMPREHENSIVE_UPDATE_FIRST_GATEWAY_WITH_SCHEMA',
+            issue_message: `Development request: ${request.type} "${request.name}" - ${analysis.approvedForCreation ? 'APPROVED' : 'BLOCKED'} (Mock Data: ${analysis.mockDataViolations}, Type Safety: ${analysis.typeSafetyScore}/100, Schema Quality: ${analysis.schemaQualityScore}/100, Schema Risk: ${analysis.schemaDuplicateRisk}/100)`,
+            issue_source: 'Comprehensive Update First Gateway with Database Schema',
             issue_severity: analysis.blockingReasons.length > 0 ? 'high' : 'low',
             category: 'Development',
             fix_method: 'automated_prevention',
@@ -518,7 +622,7 @@ export class UpdateFirstGateway {
           });
       }
     } catch (error) {
-      console.error('Failed to log comprehensive update first decision:', error);
+      console.error('Failed to log comprehensive update first decision with schema:', error);
     }
   }
 
@@ -538,61 +642,71 @@ export class UpdateFirstGateway {
   }
 
   /**
-   * Comprehensive system health check (NEW!)
+   * Comprehensive system health check (ENHANCED with Database Schema)
    */
   static async performSystemHealthCheck(): Promise<{
     overallScore: number;
     mockDataScore: number;
     typeSafetyScore: number;
     duplicatePreventionScore: number;
+    schemaQualityScore: number; // NEW
     recommendations: string[];
+    systemStatus: 'excellent' | 'good' | 'needs_improvement' | 'critical';
   }> {
-    try {
-      console.log('🏥 Performing comprehensive system health check...');
+    console.log('🏥 Performing comprehensive system health check with database schema...');
 
-      // Mock data analysis
+    try {
+      // Get all analyses
       const mockDataAnalysis = await MockDataDetector.analyzeMockDataUsage();
-      
-      // TypeScript pattern analysis
-      const tsAnalysis = await TypeScriptPatternScanner.analyzeTypeScriptPatterns();
-      
-      // Service and class analysis
-      const duplicateAnalysis = await ServiceClassScanner.findDuplicateServices();
-      
+      const typeScriptAnalysis = await TypeScriptPatternScanner.analyzeTypeScriptPatterns();
+      const schemaAnalysis = await DatabaseSchemaAnalyzer.analyzeCompleteSchema();
+
       const mockDataScore = mockDataAnalysis.databaseUsageScore;
-      const typeSafetyScore = tsAnalysis.typeSafetyScore;
-      
-      // Calculate duplicate prevention score
-      const totalDuplicates = duplicateAnalysis.duplicateServices.length + 
-                            duplicateAnalysis.duplicateClasses.length + 
-                            duplicateAnalysis.duplicateMethods.length;
-      const duplicatePreventionScore = Math.max(0, 100 - (totalDuplicates * 10));
-      
-      // Overall score
-      const overallScore = Math.round((mockDataScore + typeSafetyScore + duplicatePreventionScore) / 3);
-      
+      const typeSafetyScore = typeScriptAnalysis.typeSafetyScore;
+      const schemaQualityScore = schemaAnalysis.schemaQualityScore;
+      const duplicatePreventionScore = 100 - Math.min(mockDataAnalysis.violations.length * 10, 100);
+
+      const overallScore = Math.round(
+        (mockDataScore + typeSafetyScore + schemaQualityScore + duplicatePreventionScore) / 4
+      );
+
       const recommendations: string[] = [];
-      
-      if (mockDataScore < 80) {
-        recommendations.push('🚫 Remove mock data and implement real database queries');
+
+      if (mockDataScore < 70) {
+        recommendations.push('🚫 Eliminate mock data usage in production code');
       }
-      
       if (typeSafetyScore < 70) {
-        recommendations.push('🔷 Improve TypeScript type safety and definitions');
+        recommendations.push('🔷 Improve TypeScript type safety');
       }
-      
-      if (duplicatePreventionScore < 80) {
-        recommendations.push('🔄 Consolidate duplicate services, classes, and methods');
+      if (schemaQualityScore < 70) {
+        recommendations.push('🗄️ Improve database schema quality and eliminate duplicate risks');
       }
-      
-      console.log(`✅ System health check completed: Overall ${overallScore}/100`);
-      
+      if (duplicatePreventionScore < 70) {
+        recommendations.push('♻️ Reduce code duplication and improve reuse patterns');
+      }
+
+      let systemStatus: 'excellent' | 'good' | 'needs_improvement' | 'critical';
+      if (overallScore >= 90) systemStatus = 'excellent';
+      else if (overallScore >= 75) systemStatus = 'good';
+      else if (overallScore >= 60) systemStatus = 'needs_improvement';
+      else systemStatus = 'critical';
+
+      console.log(`🏥 System Health Check Complete:
+        - Overall Score: ${overallScore}/100
+        - Mock Data Score: ${mockDataScore}/100
+        - Type Safety Score: ${typeSafetyScore}/100
+        - Schema Quality Score: ${schemaQualityScore}/100
+        - Duplicate Prevention Score: ${duplicatePreventionScore}/100
+        - System Status: ${systemStatus.toUpperCase()}`);
+
       return {
         overallScore,
         mockDataScore,
         typeSafetyScore,
         duplicatePreventionScore,
-        recommendations
+        schemaQualityScore,
+        recommendations,
+        systemStatus
       };
 
     } catch (error) {
@@ -602,7 +716,9 @@ export class UpdateFirstGateway {
         mockDataScore: 0,
         typeSafetyScore: 0,
         duplicatePreventionScore: 0,
-        recommendations: ['System health check failed - manual review required']
+        schemaQualityScore: 0,
+        recommendations: ['System health check failed - manual review required'],
+        systemStatus: 'critical'
       };
     }
   }

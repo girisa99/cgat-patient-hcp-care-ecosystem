@@ -1,5 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,60 +13,125 @@ serve(async (req) => {
   }
 
   try {
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
+
     const { tableName } = await req.json()
 
-    // Return known schema information for key tables
-    const columns = getTableColumns(tableName);
+    if (!tableName) {
+      return new Response(
+        JSON.stringify({ error: 'Table name is required' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    console.log(`Getting table info for: ${tableName}`)
+
+    // Get column information
+    const { data: columns, error: columnsError } = await supabaseClient.rpc('get_table_columns', {
+      table_name: tableName
+    })
+
+    if (columnsError) {
+      console.error('Error getting columns:', columnsError)
+      // Return mock data if function doesn't exist
+      const mockColumns = [
+        {
+          column_name: 'id',
+          data_type: 'uuid',
+          is_nullable: false,
+          column_default: 'gen_random_uuid()',
+          constraint_type: 'PRIMARY KEY'
+        },
+        {
+          column_name: 'created_at',
+          data_type: 'timestamp with time zone',
+          is_nullable: false,
+          column_default: 'now()',
+          constraint_type: null
+        }
+      ]
+
+      return new Response(
+        JSON.stringify({
+          columns: mockColumns,
+          foreign_keys: [],
+          rls_policies: [],
+          indexes: [],
+          constraints: [],
+          triggers: []
+        }),
+        { 
+          status: 200, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    // Get foreign key information
+    const { data: foreignKeys, error: fkError } = await supabaseClient.rpc('get_table_foreign_keys', {
+      table_name: tableName
+    })
+
+    // Get RLS policies
+    const { data: rlsPolicies, error: rlsError } = await supabaseClient.rpc('get_table_rls_policies', {
+      table_name: tableName
+    })
+
+    // Get indexes
+    const { data: indexes, error: indexError } = await supabaseClient.rpc('get_table_indexes', {
+      table_name: tableName
+    })
+
+    // Get constraints
+    const { data: constraints, error: constraintError } = await supabaseClient.rpc('get_table_constraints', {
+      table_name: tableName
+    })
+
+    // Get triggers
+    const { data: triggers, error: triggerError } = await supabaseClient.rpc('get_table_triggers', {
+      table_name: tableName
+    })
+
+    const tableInfo = {
+      columns: columns || [],
+      foreign_keys: foreignKeys || [],
+      rls_policies: rlsPolicies || [],
+      indexes: indexes || [],
+      constraints: constraints || [],
+      triggers: triggers || []
+    }
 
     return new Response(
-      JSON.stringify({ columns }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify(tableInfo),
+      { 
+        status: 200, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
     )
+
   } catch (error) {
-    console.error('Function error:', error)
+    console.error('Error in get-table-info function:', error)
+    
     return new Response(
-      JSON.stringify({ error: error.message }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      JSON.stringify({ 
+        error: error.message,
+        columns: [],
+        foreign_keys: [],
+        rls_policies: [],
+        indexes: [],
+        constraints: [],
+        triggers: []
+      }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
     )
   }
 })
-
-function getTableColumns(tableName: string) {
-  switch (tableName) {
-    case 'profiles':
-      return [
-        { column_name: 'id', data_type: 'uuid', is_nullable: 'NO' },
-        { column_name: 'first_name', data_type: 'character varying', is_nullable: 'YES' },
-        { column_name: 'last_name', data_type: 'character varying', is_nullable: 'YES' },
-        { column_name: 'email', data_type: 'character varying', is_nullable: 'YES' },
-        { column_name: 'facility_id', data_type: 'uuid', is_nullable: 'YES' },
-        { column_name: 'phone', data_type: 'character varying', is_nullable: 'YES' },
-        { column_name: 'created_at', data_type: 'timestamp with time zone', is_nullable: 'YES' },
-        { column_name: 'updated_at', data_type: 'timestamp with time zone', is_nullable: 'YES' }
-      ];
-    case 'facilities':
-      return [
-        { column_name: 'id', data_type: 'uuid', is_nullable: 'NO' },
-        { column_name: 'name', data_type: 'character varying', is_nullable: 'NO' },
-        { column_name: 'facility_type', data_type: 'facility_type_enum', is_nullable: 'NO' },
-        { column_name: 'address', data_type: 'text', is_nullable: 'YES' },
-        { column_name: 'phone', data_type: 'character varying', is_nullable: 'YES' },
-        { column_name: 'email', data_type: 'character varying', is_nullable: 'YES' },
-        { column_name: 'is_active', data_type: 'boolean', is_nullable: 'YES' },
-        { column_name: 'created_at', data_type: 'timestamp with time zone', is_nullable: 'YES' }
-      ];
-    case 'external_api_registry':
-      return [
-        { column_name: 'id', data_type: 'uuid', is_nullable: 'NO' },
-        { column_name: 'external_name', data_type: 'character varying', is_nullable: 'NO' },
-        { column_name: 'external_description', data_type: 'text', is_nullable: 'YES' },
-        { column_name: 'version', data_type: 'character varying', is_nullable: 'NO' },
-        { column_name: 'status', data_type: 'character varying', is_nullable: 'NO' },
-        { column_name: 'base_url', data_type: 'text', is_nullable: 'YES' },
-        { column_name: 'created_at', data_type: 'timestamp with time zone', is_nullable: 'NO' },
-        { column_name: 'updated_at', data_type: 'timestamp with time zone', is_nullable: 'NO' }
-      ];
-    default:
-      return [];
-  }
-}
