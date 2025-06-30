@@ -16,40 +16,67 @@ import {
   UserCheck,
   Building
 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface OnboardingApiRequirement {
   id: string;
-  facilityName: string;
-  apiType: string;
+  onboarding_id: string;
+  facility_name: string;
+  api_type: string;
   description: string;
   status: 'pending' | 'in_progress' | 'completed' | 'failed';
-  submittedAt: string;
+  submitted_at: string;
   requirements: string[];
+  created_at: string;
 }
 
 export const OnboardingIntegrationTabContent: React.FC = () => {
   console.log('🚀 OnboardingIntegrationTabContent: Component rendering');
   
-  const [requirements] = useState<OnboardingApiRequirement[]>([
-    {
-      id: '1',
-      facilityName: 'Central Medical Center',
-      apiType: 'EMR Integration',
-      description: 'Integration with Epic EMR system for patient data synchronization',
-      status: 'pending',
-      submittedAt: new Date().toISOString(),
-      requirements: ['Patient data access', 'Appointment scheduling', 'Medical records']
+  // Fetch real onboarding API requirements from the database
+  const { data: requirements = [], isLoading, error } = useQuery({
+    queryKey: ['onboarding-api-requirements'],
+    queryFn: async (): Promise<OnboardingApiRequirement[]> => {
+      console.log('📊 Fetching onboarding API requirements...');
+      
+      // Query the onboarding applications that have API requirements 
+      const { data: onboardingData, error: onboardingError } = await supabase
+        .from('onboarding_applications')
+        .select(`
+          id,
+          company_name,
+          status,
+          created_at,
+          api_requirements
+        `)
+        .not('api_requirements', 'is', null);
+
+      if (onboardingError) {
+        console.error('Error fetching onboarding data:', onboardingError);
+        return [];
+      }
+
+      // Transform the data to match our interface
+      const transformedData: OnboardingApiRequirement[] = (onboardingData || []).map(app => ({
+        id: app.id,
+        onboarding_id: app.id,
+        facility_name: app.company_name || 'Unknown Facility',
+        api_type: app.api_requirements?.type || 'Unknown API Type',
+        description: app.api_requirements?.description || 'No description provided',
+        status: app.status === 'completed' ? 'completed' : 
+                app.status === 'in_progress' ? 'in_progress' : 
+                app.status === 'rejected' ? 'failed' : 'pending',
+        submitted_at: app.created_at,
+        requirements: app.api_requirements?.requirements || [],
+        created_at: app.created_at
+      }));
+
+      console.log('✅ Transformed onboarding API requirements:', transformedData);
+      return transformedData;
     },
-    {
-      id: '2',
-      facilityName: 'Riverside Pharmacy',
-      apiType: 'Pharmacy API',
-      description: 'Connect to pharmacy system for prescription management',
-      status: 'in_progress',
-      submittedAt: new Date(Date.now() - 86400000).toISOString(),
-      requirements: ['Prescription lookup', 'Inventory check', 'Order processing']
-    }
-  ]);
+    staleTime: 30000 // Cache for 30 seconds
+  });
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -86,6 +113,51 @@ export const OnboardingIntegrationTabContent: React.FC = () => {
     console.log('👁️ Viewing details for requirement:', requirementId);
     // Implementation would show detailed view
   };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-medium">Onboarding API Integration</h3>
+            <p className="text-sm text-muted-foreground">
+              Loading API requirements from facility onboarding...
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4 animate-spin" />
+            <p className="text-muted-foreground">Loading onboarding API requirements...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-medium">Onboarding API Integration</h3>
+            <p className="text-sm text-muted-foreground">
+              Error loading API requirements from facility onboarding
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <p className="text-red-600">Error loading API requirements</p>
+            <p className="text-sm text-muted-foreground mt-2">
+              {error instanceof Error ? error.message : 'Unknown error occurred'}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -175,7 +247,7 @@ export const OnboardingIntegrationTabContent: React.FC = () => {
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
                         <Building className="h-4 w-4 text-blue-500" />
-                        <h4 className="font-medium">{requirement.facilityName}</h4>
+                        <h4 className="font-medium">{requirement.facility_name}</h4>
                         <Badge variant={getStatusColor(requirement.status) as any}>
                           {getStatusIcon(requirement.status)}
                           <span className="ml-1 capitalize">{requirement.status.replace('_', ' ')}</span>
@@ -184,26 +256,28 @@ export const OnboardingIntegrationTabContent: React.FC = () => {
                       
                       <div className="mb-2">
                         <p className="text-sm font-medium text-muted-foreground mb-1">
-                          API Type: {requirement.apiType}
+                          API Type: {requirement.api_type}
                         </p>
                         <p className="text-sm text-muted-foreground">
                           {requirement.description}
                         </p>
                       </div>
                       
-                      <div className="mb-2">
-                        <p className="text-xs text-muted-foreground mb-1">Requirements:</p>
-                        <div className="flex flex-wrap gap-1">
-                          {requirement.requirements.map((req, index) => (
-                            <Badge key={index} variant="outline" className="text-xs">
-                              {req}
-                            </Badge>
-                          ))}
+                      {requirement.requirements.length > 0 && (
+                        <div className="mb-2">
+                          <p className="text-xs text-muted-foreground mb-1">Requirements:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {requirement.requirements.map((req, index) => (
+                              <Badge key={index} variant="outline" className="text-xs">
+                                {req}
+                              </Badge>
+                            ))}
+                          </div>
                         </div>
-                      </div>
+                      )}
                       
                       <p className="text-xs text-muted-foreground">
-                        Submitted: {new Date(requirement.submittedAt).toLocaleDateString()}
+                        Submitted: {new Date(requirement.submitted_at).toLocaleDateString()}
                       </p>
                     </div>
                     
@@ -235,7 +309,7 @@ export const OnboardingIntegrationTabContent: React.FC = () => {
               <UserCheck className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">No API Requirements</h3>
               <p className="text-muted-foreground">
-                API requirements from facility onboarding will appear here for processing.
+                API requirements from facility onboarding will appear here when submitted.
               </p>
             </div>
           )}
