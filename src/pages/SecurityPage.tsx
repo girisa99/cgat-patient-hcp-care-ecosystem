@@ -2,7 +2,7 @@
 import React from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { PageContainer } from '@/components/layout/PageContainer';
-import { SecurityDashboard } from '@/components/security/SecurityDashboard';
+import SecurityDashboard from '@/components/security/SecurityDashboard';
 
 const SecurityPage: React.FC = () => {
   return (

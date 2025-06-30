@@ -3,9 +3,9 @@ import React from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ProfileSettings } from '@/components/settings/ProfileSettings';
-import { NotificationSettings } from '@/components/settings/NotificationSettings';
-import { SecuritySettings } from '@/components/settings/SecuritySettings';
+import ProfileSettings from '@/components/settings/ProfileSettings';
+import NotificationSettings from '@/components/settings/NotificationSettings';
+import SecuritySettings from '@/components/settings/SecuritySettings';
 
 const SettingsPage: React.FC = () => {
   return (
