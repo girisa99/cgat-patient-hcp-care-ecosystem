@@ -6,9 +6,10 @@ import { HealthcareCard, HealthcareCardContent, HealthcareCardDescription, Healt
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuthActions } from '@/hooks/useAuthActions';
 import { useAuthContext } from '@/components/auth/AuthProvider';
-import { Eye, EyeOff, Mail, Lock, UserPlus, AlertCircle, LogOut, Users, CheckCircle, RefreshCw } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, UserPlus, AlertCircle, LogOut, Users, CheckCircle, RefreshCw, ArrowLeft } from 'lucide-react';
 import { Database } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 type UserRole = Database['public']['Enums']['user_role'];
 
@@ -18,10 +19,12 @@ const LoginForm = () => {
   const [selectedRole, setSelectedRole] = useState<UserRole | ''>('');
   const [showPassword, setShowPassword] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [authError, setAuthError] = useState<string>('');
   const [isCreatingTestAccounts, setIsCreatingTestAccounts] = useState(false);
   const [accountCreationResults, setAccountCreationResults] = useState<Array<{email: string, success: boolean, message: string}>>([]);
   const [isResendingVerification, setIsResendingVerification] = useState(false);
+  const [isSendingResetEmail, setIsSendingResetEmail] = useState(false);
   const { signIn, signUp, signOut, loading, resendVerificationEmail } = useAuthActions();
   const { user } = useAuthContext();
   const { toast } = useToast();
@@ -91,6 +94,53 @@ const LoginForm = () => {
     }
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError('');
+    
+    if (!email) {
+      setAuthError('Please enter your email address');
+      return;
+    }
+
+    setIsSendingResetEmail(true);
+    console.log('📧 Sending password reset email for:', email);
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/`
+      });
+
+      if (error) {
+        console.error('❌ Password reset error:', error);
+        let errorMessage = error.message;
+        
+        if (error.message.includes('Email address') && error.message.includes('invalid')) {
+          errorMessage = `The email address "${email}" was rejected by the email service. Please check the email address format and try again.`;
+        } else if (error.message.includes('rate limit')) {
+          errorMessage = 'Too many password reset requests. Please wait a few minutes before trying again.';
+        } else if (error.message.includes('User not found')) {
+          errorMessage = 'No account found with this email address.';
+        }
+        
+        setAuthError(errorMessage);
+      } else {
+        console.log('✅ Password reset email sent successfully');
+        toast({
+          title: "Password Reset Email Sent",
+          description: `A password reset link has been sent to ${email}. Please check your inbox and spam folder.`,
+        });
+        setIsForgotPassword(false);
+        setEmail('');
+      }
+    } catch (error: any) {
+      console.error('💥 Exception during password reset:', error);
+      setAuthError('An unexpected error occurred while sending the password reset email. Please try again.');
+    } finally {
+      setIsSendingResetEmail(false);
+    }
+  };
+
   const handleSignOut = async () => {
     console.log('🚪 Sign out requested');
     const result = await signOut();
@@ -108,6 +158,7 @@ const LoginForm = () => {
     setPassword(creds.password);
     setSelectedRole(creds.role);
     setIsSignUp(false);
+    setIsForgotPassword(false);
     setAuthError('');
   };
 
@@ -255,12 +306,14 @@ const LoginForm = () => {
       <HealthcareCard className="w-full max-w-md mx-auto shadow-lg">
         <HealthcareCardHeader className="text-center">
           <HealthcareCardTitle className="text-2xl">
-            {isSignUp ? 'Create Account' : 'Welcome Back'}
+            {isForgotPassword ? 'Reset Password' : isSignUp ? 'Create Account' : 'Welcome Back'}
           </HealthcareCardTitle>
           <HealthcareCardDescription>
-            {isSignUp 
-              ? 'Register for secure access to GENIE platform' 
-              : 'Sign in to access your GENIE portal'
+            {isForgotPassword 
+              ? 'Enter your email address to receive a password reset link'
+              : isSignUp 
+                ? 'Register for secure access to GENIE platform' 
+                : 'Sign in to access your GENIE portal'
             }
           </HealthcareCardDescription>
         </HealthcareCardHeader>
@@ -273,7 +326,7 @@ const LoginForm = () => {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={isForgotPassword ? handleForgotPassword : handleSubmit} className="space-y-5">
             <div className="space-y-2">
               <HealthcareLabel htmlFor="email">Email Address</HealthcareLabel>
               <div className="relative">
@@ -290,30 +343,32 @@ const LoginForm = () => {
               </div>
             </div>
             
-            <div className="space-y-2">
-              <HealthcareLabel htmlFor="password">Password</HealthcareLabel>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-500" />
-                <HealthcareInput
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
-                  className="pl-10 pr-10"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-500 hover:text-slate-700 transition-colors"
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
+            {!isForgotPassword && (
+              <div className="space-y-2">
+                <HealthcareLabel htmlFor="password">Password</HealthcareLabel>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-500" />
+                  <HealthcareInput
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter your password"
+                    className="pl-10 pr-10"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-500 hover:text-slate-700 transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
 
-            {isSignUp && (
+            {!isForgotPassword && isSignUp && (
               <div className="space-y-2">
                 <HealthcareLabel htmlFor="role">Select Your Role</HealthcareLabel>
                 <div className="relative">
@@ -341,35 +396,77 @@ const LoginForm = () => {
             <HealthcareButton 
               type="submit" 
               className="w-full" 
-              disabled={loading || (isSignUp && !selectedRole)}
+              disabled={loading || isSendingResetEmail || (!isForgotPassword && isSignUp && !selectedRole)}
               size="lg"
             >
-              {loading ? (
+              {loading || isSendingResetEmail ? (
                 <div className="flex items-center space-x-2">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  <span>{isSignUp ? 'Creating Account...' : 'Signing In...'}</span>
+                  <span>
+                    {isForgotPassword 
+                      ? 'Sending Reset Email...' 
+                      : isSignUp 
+                        ? 'Creating Account...' 
+                        : 'Signing In...'
+                    }
+                  </span>
                 </div>
               ) : (
-                isSignUp ? 'Create Account' : 'Sign In'
+                isForgotPassword 
+                  ? 'Send Reset Email' 
+                  : isSignUp 
+                    ? 'Create Account' 
+                    : 'Sign In'
               )}
             </HealthcareButton>
           </form>
           
-          <div className="mt-6 text-center">
-            <button
-              type="button"
-              onClick={() => {
-                setIsSignUp(!isSignUp);
-                setSelectedRole('');
-                setAuthError('');
-              }}
-              className="text-sm text-blue-600 hover:text-blue-700 transition-colors"
-            >
-              {isSignUp 
-                ? 'Already have an account? Sign in' 
-                : "Don't have an account? Create one"
-              }
-            </button>
+          <div className="mt-6 space-y-3 text-center">
+            {isForgotPassword ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsForgotPassword(false);
+                  setAuthError('');
+                }}
+                className="flex items-center justify-center w-full text-sm text-blue-600 hover:text-blue-700 transition-colors"
+              >
+                <ArrowLeft className="h-4 w-4 mr-1" />
+                Back to Sign In
+              </button>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsSignUp(!isSignUp);
+                    setSelectedRole('');
+                    setAuthError('');
+                  }}
+                  className="text-sm text-blue-600 hover:text-blue-700 transition-colors"
+                >
+                  {isSignUp 
+                    ? 'Already have an account? Sign in' 
+                    : "Don't have an account? Create one"
+                  }
+                </button>
+                
+                {!isSignUp && (
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsForgotPassword(true);
+                        setAuthError('');
+                      }}
+                      className="text-sm text-blue-600 hover:text-blue-700 transition-colors"
+                    >
+                      Forgot your password?
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
           </div>
           
           <div className="mt-4 text-center text-xs text-slate-500">
@@ -379,92 +476,94 @@ const LoginForm = () => {
       </HealthcareCard>
 
       {/* Enhanced Test Credentials Helper */}
-      <HealthcareCard className="w-full max-w-md mx-auto shadow-sm bg-blue-50">
-        <HealthcareCardHeader>
-          <HealthcareCardTitle className="text-lg text-blue-800">Test Credentials & Email Verification</HealthcareCardTitle>
-          <HealthcareCardDescription className="text-blue-600">
-            Step 1: Create accounts → Step 2: Verify emails → Step 3: Sign in
-          </HealthcareCardDescription>
-        </HealthcareCardHeader>
-        <HealthcareCardContent className="space-y-3">
-          {/* Create All Test Accounts Button */}
-          <div className="mb-4">
-            <HealthcareButton
-              onClick={createAllTestAccounts}
-              disabled={isCreatingTestAccounts}
-              className="w-full bg-green-600 hover:bg-green-700"
-              size="sm"
-            >
-              {isCreatingTestAccounts ? (
-                <div className="flex items-center space-x-2">
-                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
-                  <span>Creating Test Accounts...</span>
-                </div>
-              ) : (
-                <>
-                  <Users className="h-4 w-4 mr-2" />
-                  Step 1: Create Test Accounts
-                </>
-              )}
-            </HealthcareButton>
-          </div>
+      {!isForgotPassword && (
+        <HealthcareCard className="w-full max-w-md mx-auto shadow-sm bg-blue-50">
+          <HealthcareCardHeader>
+            <HealthcareCardTitle className="text-lg text-blue-800">Test Credentials & Email Verification</HealthcareCardTitle>
+            <HealthcareCardDescription className="text-blue-600">
+              Step 1: Create accounts → Step 2: Verify emails → Step 3: Sign in
+            </HealthcareCardDescription>
+          </HealthcareCardHeader>
+          <HealthcareCardContent className="space-y-3">
+            {/* Create All Test Accounts Button */}
+            <div className="mb-4">
+              <HealthcareButton
+                onClick={createAllTestAccounts}
+                disabled={isCreatingTestAccounts}
+                className="w-full bg-green-600 hover:bg-green-700"
+                size="sm"
+              >
+                {isCreatingTestAccounts ? (
+                  <div className="flex items-center space-x-2">
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                    <span>Creating Test Accounts...</span>
+                  </div>
+                ) : (
+                  <>
+                    <Users className="h-4 w-4 mr-2" />
+                    Step 1: Create Test Accounts
+                  </>
+                )}
+              </HealthcareButton>
+            </div>
 
-          {/* Account Creation Results */}
-          {accountCreationResults.length > 0 && (
-            <div className="mb-4 p-3 bg-white rounded border">
-              <h4 className="text-sm font-medium text-gray-800 mb-2">Account Creation Results:</h4>
-              {accountCreationResults.map((result, index) => (
-                <div key={index} className={`flex items-center gap-2 text-xs p-1 ${result.success ? 'text-green-700' : 'text-red-700'}`}>
-                  {result.success ? <CheckCircle className="h-3 w-3" /> : <AlertCircle className="h-3 w-3" />}
-                  <span className="font-medium">{result.email}</span>
-                  <span>- {result.message}</span>
-                </div>
-              ))}
-              
-              {/* Email verification reminder */}
-              <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded">
-                <div className="text-xs text-yellow-800">
-                  <strong>⚠️ Important:</strong> Check your email inbox for verification links before attempting to sign in. 
-                  Without email verification, login will fail with "Invalid credentials".
-                </div>
-                <div className="mt-2 space-y-1">
-                  {accountCreationResults.filter(r => r.success).map((result, index) => (
-                    <button
-                      key={index}
-                      onClick={() => handleResendVerification(result.email)}
-                      disabled={isResendingVerification}
-                      className="text-xs text-blue-600 hover:text-blue-800 underline mr-4"
-                    >
-                      {isResendingVerification ? (
-                        <div className="flex items-center gap-1">
-                          <RefreshCw className="h-3 w-3 animate-spin" />
-                          Sending...
-                        </div>
-                      ) : (
-                        `Resend verification for ${result.email}`
-                      )}
-                    </button>
-                  ))}
+            {/* Account Creation Results */}
+            {accountCreationResults.length > 0 && (
+              <div className="mb-4 p-3 bg-white rounded border">
+                <h4 className="text-sm font-medium text-gray-800 mb-2">Account Creation Results:</h4>
+                {accountCreationResults.map((result, index) => (
+                  <div key={index} className={`flex items-center gap-2 text-xs p-1 ${result.success ? 'text-green-700' : 'text-red-700'}`}>
+                    {result.success ? <CheckCircle className="h-3 w-3" /> : <AlertCircle className="h-3 w-3" />}
+                    <span className="font-medium">{result.email}</span>
+                    <span>- {result.message}</span>
+                  </div>
+                ))}
+                
+                {/* Email verification reminder */}
+                <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded">
+                  <div className="text-xs text-yellow-800">
+                    <strong>⚠️ Important:</strong> Check your email inbox for verification links before attempting to sign in. 
+                    Without email verification, login will fail with "Invalid credentials".
+                  </div>
+                  <div className="mt-2 space-y-1">
+                    {accountCreationResults.filter(r => r.success).map((result, index) => (
+                      <button
+                        key={index}
+                        onClick={() => handleResendVerification(result.email)}
+                        disabled={isResendingVerification}
+                        className="text-xs text-blue-600 hover:text-blue-800 underline mr-4"
+                      >
+                        {isResendingVerification ? (
+                          <div className="flex items-center gap-1">
+                            <RefreshCw className="h-3 w-3 animate-spin" />
+                            Sending...
+                          </div>
+                        ) : (
+                          `Resend verification for ${result.email}`
+                        )}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Test Credential Buttons */}
-          <div className="text-xs text-blue-700 mb-2 font-medium">Step 3: Auto-fill login credentials:</div>
-          {testCredentials.map((creds, index) => (
-            <button
-              key={index}
-              onClick={() => fillTestCredentials(creds)}
-              className="w-full text-left p-2 rounded border border-blue-200 hover:bg-blue-100 transition-colors text-sm"
-            >
-              <div className="font-medium text-blue-800">{roleOptions.find(r => r.value === creds.role)?.label}</div>
-              <div className="text-blue-600">{creds.email}</div>
-              <div className="text-xs text-blue-500">Click to auto-fill (after email verification)</div>
-            </button>
-          ))}
-        </HealthcareCardContent>
-      </HealthcareCard>
+            {/* Test Credential Buttons */}
+            <div className="text-xs text-blue-700 mb-2 font-medium">Step 3: Auto-fill login credentials:</div>
+            {testCredentials.map((creds, index) => (
+              <button
+                key={index}
+                onClick={() => fillTestCredentials(creds)}
+                className="w-full text-left p-2 rounded border border-blue-200 hover:bg-blue-100 transition-colors text-sm"
+              >
+                <div className="font-medium text-blue-800">{roleOptions.find(r => r.value === creds.role)?.label}</div>
+                <div className="text-blue-600">{creds.email}</div>
+                <div className="text-xs text-blue-500">Click to auto-fill (after email verification)</div>
+              </button>
+            ))}
+          </HealthcareCardContent>
+        </HealthcareCard>
+      )}
     </div>
   );
 };
