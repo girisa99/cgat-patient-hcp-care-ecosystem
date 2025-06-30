@@ -77,7 +77,7 @@ export class UpdateFirstGateway {
       const reuseOpportunities = await ComponentRegistryScanner.findReuseOpportunities({
         tableName: request.tableName,
         functionality: request.functionality,
-        componentType: request.type
+        componentType: request.type === 'module' ? 'component' : request.type as 'hook' | 'component' | 'template'
       });
       analysis.reuseOpportunities.push(...reuseOpportunities);
 
@@ -197,11 +197,14 @@ export class UpdateFirstGateway {
     const alternatives: string[] = [];
 
     try {
-      // Check if table exists in database
+      // Check if table exists in database by querying information_schema
       if (request.tableName) {
-        const { data: tableInfo } = await supabase.rpc('check_table_exists', {
-          table_name: request.tableName
-        });
+        const { data: tableInfo } = await supabase
+          .from('information_schema.tables')
+          .select('table_name')
+          .eq('table_schema', 'public')
+          .eq('table_name', request.tableName)
+          .maybeSingle();
 
         if (tableInfo) {
           alternatives.push(`Database Table: ${request.tableName} already exists`);
@@ -254,6 +257,31 @@ export class UpdateFirstGateway {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
+        // Convert the objects to a JSON-compatible format
+        const metadata = {
+          request: {
+            type: request.type,
+            name: request.name,
+            tableName: request.tableName || null,
+            functionality: request.functionality,
+            description: request.description || null,
+            requiredFields: request.requiredFields || []
+          },
+          analysis: {
+            shouldProceed: analysis.shouldProceed,
+            canProceed: analysis.canProceed,
+            blockingReasons: analysis.blockingReasons,
+            existingAlternatives: analysis.existingAlternatives,
+            updateRecommendations: analysis.updateRecommendations,
+            reuseOpportunities: analysis.reuseOpportunities,
+            preventDuplicateScore: analysis.preventDuplicateScore,
+            mandatoryUpdates: analysis.mandatoryUpdates,
+            approvedForCreation: analysis.approvedForCreation
+          },
+          decision: analysis.approvedForCreation ? 'APPROVED' : 'BLOCKED',
+          preventDuplicateScore: analysis.preventDuplicateScore
+        };
+
         await supabase
           .from('issue_fixes')
           .insert({
@@ -264,12 +292,7 @@ export class UpdateFirstGateway {
             issue_severity: analysis.blockingReasons.length > 0 ? 'high' : 'low',
             category: 'Development',
             fix_method: 'automated_prevention',
-            metadata: {
-              request,
-              analysis,
-              decision: analysis.approvedForCreation ? 'APPROVED' : 'BLOCKED',
-              preventDuplicateScore: analysis.preventDuplicateScore
-            }
+            metadata: metadata
           });
       }
     } catch (error) {
