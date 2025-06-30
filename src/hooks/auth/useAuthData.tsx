@@ -1,102 +1,55 @@
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
-import { AuthStateManager } from '@/utils/auth/authStateManager';
 
 type UserRole = Database['public']['Enums']['user_role'];
-type Profile = Database['public']['Tables']['profiles']['Row'];
+
+interface UserProfile {
+  id: string;
+  email: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  phone: string | null;
+  department: string | null;
+  facility_id: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
 
 export const useAuthData = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
   const [userRoles, setUserRoles] = useState<UserRole[]>([]);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false);
 
-  useEffect(() => {
-    let mounted = true;
-    let retryTimeout: NodeJS.Timeout;
-
-    const initializeAuth = async () => {
-      console.log('🔄 Initializing authentication...');
-      setLoading(true);
-
-      try {
-        // Get current session using the auth state manager
-        const { user: currentUser, session: currentSession } = await AuthStateManager.getCurrentSession();
-        
-        if (!mounted) return;
-        
-        console.log('🔍 Current session:', currentSession?.user?.id || 'No user');
-        setSession(currentSession);
-        setUser(currentUser);
-        
-        if (currentUser) {
-          // Load user data with a small delay to prevent race conditions
-          setTimeout(() => {
-            if (mounted) {
-              loadUserData(currentUser.id);
-            }
-          }, 100);
-        } else {
-          setLoading(false);
-        }
-      } catch (error) {
-        console.error('❌ Error initializing auth:', error);
-        if (mounted) {
-          setUser(null);
-          setSession(null);
-          setProfile(null);
-          setUserRoles([]);
-          setLoading(false);
-        }
-      }
-    };
-
-    // Set up auth state change listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (!mounted) return;
-        
-        console.log('🔄 Auth state change:', event, session?.user?.id || 'No user');
-        
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (event === 'SIGNED_IN' && session?.user) {
-          // Defer data loading to prevent potential issues
-          setTimeout(() => {
-            if (mounted) {
-              loadUserData(session.user.id);
-            }
-          }, 200);
-        } else if (event === 'SIGNED_OUT') {
-          setProfile(null);
-          setUserRoles([]);
-          setLoading(false);
-        }
-      }
-    );
-
-    // Initialize auth state
-    initializeAuth();
-
-    return () => {
-      mounted = false;
-      if (retryTimeout) clearTimeout(retryTimeout);
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  const loadUserData = async (userId: string, retryCount = 0) => {
-    console.log('📊 Loading user data for:', userId, 'Attempt:', retryCount + 1);
-    setLoading(true);
-    
+  const fetchUserData = async (userId: string) => {
     try {
-      // Load profile with error handling
-      console.log('👤 Fetching profile...');
+      console.log('🔍 Fetching user data for:', userId);
+      
+      // Fetch user roles
+      const { data: roleData, error: roleError } = await supabase
+        .from('user_roles')
+        .select(`
+          roles (
+            name,
+            description
+          )
+        `)
+        .eq('user_id', userId);
+
+      if (roleError) {
+        console.error('❌ Error fetching roles:', roleError);
+      } else {
+        const roles = roleData?.map(ur => ur.roles?.name).filter(Boolean) as UserRole[] || [];
+        console.log('✅ User roles:', roles);
+        setUserRoles(roles);
+      }
+
+      // Fetch user profile
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
@@ -104,79 +57,94 @@ export const useAuthData = () => {
         .maybeSingle();
 
       if (profileError) {
-        console.error('❌ Profile error:', profileError);
+        console.error('❌ Error fetching profile:', profileError);
       } else {
-        console.log('✅ Profile loaded:', profileData ? 'Found' : 'Not found');
+        console.log('✅ User profile:', profileData);
         setProfile(profileData);
       }
 
-      // Load user roles with comprehensive error handling
-      console.log('🔐 Fetching user roles...');
-      const { data: rolesData, error: rolesError } = await supabase
-        .from('user_roles')
-        .select(`
-          id,
-          role_id,
-          roles!inner (
-            id,
-            name
-          )
-        `)
-        .eq('user_id', userId);
-
-      if (rolesError) {
-        console.error('❌ Roles fetch error:', rolesError);
-        
-        // If it's a permission error and we haven't retried, try once more
-        if (rolesError.message.includes('permission') && retryCount < 2) {
-          console.log('🔄 Retrying role fetch after permission error...');
-          setTimeout(() => loadUserData(userId, retryCount + 1), 1000);
-          return;
-        }
-        
-        setUserRoles([]);
-      } else {
-        console.log('🔐 Raw roles data:', rolesData);
-        if (rolesData && rolesData.length > 0) {
-          const roles = rolesData.map((ur: any) => ur.roles.name as UserRole);
-          console.log('✅ User roles loaded:', roles);
-          setUserRoles(roles);
-        } else {
-          console.log('⚠️ No roles found for user');
-          setUserRoles([]);
-        }
-      }
-
     } catch (error) {
-      console.error('💥 Error in loadUserData:', error);
-      
-      // Retry on unexpected errors (up to 2 times)
-      if (retryCount < 2) {
-        console.log('🔄 Retrying data load after error...');
-        setTimeout(() => loadUserData(userId, retryCount + 1), 1500);
-        return;
-      }
-      
-      setProfile(null);
-      setUserRoles([]);
-    } finally {
-      console.log('🏁 User data loading complete');
-      setLoading(false);
+      console.error('❌ Exception fetching user data:', error);
     }
   };
 
-  const refreshUserData = async () => {
-    if (user) {
-      await loadUserData(user.id);
-    }
-  };
+  useEffect(() => {
+    let mounted = true;
+
+    const initializeAuth = async () => {
+      try {
+        // Get initial session
+        const { data: { session: initialSession }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('❌ Error getting initial session:', error);
+        } else {
+          console.log('🔄 Initial session:', !!initialSession);
+          
+          if (mounted) {
+            setSession(initialSession);
+            setUser(initialSession?.user ?? null);
+            
+            if (initialSession?.user) {
+              await fetchUserData(initialSession.user.id);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('❌ Auth initialization error:', error);
+      } finally {
+        if (mounted) {
+          setLoading(false);
+          setInitialized(true);
+        }
+      }
+    };
+
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, newSession) => {
+        console.log('🔄 Auth state change:', event, !!newSession);
+        
+        if (!mounted) return;
+        
+        setSession(newSession);
+        setUser(newSession?.user ?? null);
+        
+        if (newSession?.user && event === 'SIGNED_IN') {
+          // Defer data fetching to prevent deadlocks
+          setTimeout(() => {
+            if (mounted) {
+              fetchUserData(newSession.user.id);
+            }
+          }, 100);
+        } else {
+          setUserRoles([]);
+          setProfile(null);
+        }
+        
+        if (initialized) {
+          setLoading(false);
+        }
+      }
+    );
+
+    initializeAuth();
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [initialized]);
+
+  const isAuthenticated = !!(session && user);
 
   return {
     user,
     session,
-    profile,
     userRoles,
+    profile,
     loading,
-    refreshUserData
+    isAuthenticated,
+    initialized
   };
 };

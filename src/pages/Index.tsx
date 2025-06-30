@@ -1,127 +1,101 @@
 
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useIntelligentRouting } from '@/hooks/useIntelligentRouting';
 import { useAuthContext } from '@/components/auth/AuthProvider';
+import { useSimpleRouting } from '@/hooks/useSimpleRouting';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import LoginForm from '@/components/auth/LoginForm';
 import HealthcareAuthLayout from '@/components/auth/HealthcareAuthLayout';
 import { AuthTestComponent } from '@/components/auth/AuthTestComponent';
 
 const Index = () => {
-  const navigate = useNavigate();
-  const { performIntelligentRouting, isRouting } = useIntelligentRouting();
-  const { user, loading } = useAuthContext();
-  const [routingAttempted, setRoutingAttempted] = useState(false);
-  const [routingError, setRoutingError] = useState<string | null>(null);
+  const { user, loading, isAuthenticated, userRoles, initialized } = useAuthContext();
+  const { performRouting } = useSimpleRouting({ userRoles, isAuthenticated });
+  const [hasAttemptedRouting, setHasAttemptedRouting] = useState(false);
 
   useEffect(() => {
-    const handleRouting = async () => {
-      // Wait for auth to load
-      if (loading) {
-        console.log('⏳ Auth still loading...');
-        return;
-      }
+    // Only attempt routing once we have complete auth data
+    if (!initialized || loading) {
+      console.log('⏳ Waiting for auth initialization...');
+      return;
+    }
 
-      // If no user, stay on index to show login form
-      if (!user) {
-        console.log('👤 No user found, showing login form');
-        setRoutingAttempted(true);
-        return;
-      }
+    if (!isAuthenticated) {
+      console.log('👤 No authentication, showing login form');
+      setHasAttemptedRouting(true);
+      return;
+    }
 
-      // If we already attempted routing, don't try again
-      if (routingAttempted) {
-        console.log('🔄 Routing already attempted, skipping...');
-        return;
-      }
+    if (userRoles.length === 0) {
+      console.log('⚠️ User authenticated but no roles found');
+      setHasAttemptedRouting(true);
+      return;
+    }
 
-      try {
-        console.log('🚀 User authenticated, performing intelligent routing...');
-        setRoutingAttempted(true);
-        await performIntelligentRouting();
-        
-        // Add a timeout fallback to prevent infinite loading
-        const timeout = setTimeout(() => {
-          console.log('⚠️ Intelligent routing timed out, falling back to dashboard');
-          setRoutingError('Routing took too long, redirecting to dashboard...');
-          navigate('/dashboard', { replace: true });
-        }, 5000); // 5 second timeout
+    if (!hasAttemptedRouting) {
+      console.log('🚀 Performing automatic routing...');
+      setHasAttemptedRouting(true);
+      
+      // Small delay to ensure UI is ready
+      setTimeout(() => {
+        performRouting();
+      }, 100);
+    }
+  }, [initialized, loading, isAuthenticated, userRoles, hasAttemptedRouting, performRouting]);
 
-        // Clear timeout if component unmounts
-        return () => clearTimeout(timeout);
-      } catch (error) {
-        console.error('❌ Error during intelligent routing:', error);
-        setRoutingError('Routing failed, redirecting to dashboard...');
-        // Fallback to dashboard on error with a small delay to show the error
-        setTimeout(() => {
-          navigate('/dashboard', { replace: true });
-        }, 2000);
-      }
-    };
-
-    handleRouting();
-  }, [performIntelligentRouting, navigate, user, loading, routingAttempted]);
-
-  // Show loading while auth is loading
-  if (loading) {
+  // Show loading while initializing
+  if (!initialized || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <LoadingSpinner size="lg" />
-          <p className="mt-4 text-gray-600">Loading authentication...</p>
+          <p className="mt-4 text-gray-600">Loading...</p>
         </div>
       </div>
     );
   }
 
-  // Show loading while routing is in progress
-  if (isRouting && user && !routingError) {
+  // Show routing message for authenticated users
+  if (isAuthenticated && userRoles.length > 0 && !hasAttemptedRouting) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <LoadingSpinner size="lg" />
-          <p className="mt-4 text-gray-600">Redirecting to your dashboard...</p>
+          <p className="mt-4 text-gray-600">Redirecting...</p>
         </div>
       </div>
     );
   }
 
-  // Show error if routing failed
-  if (routingError) {
+  // Show no roles message for authenticated users without roles
+  if (isAuthenticated && userRoles.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <LoadingSpinner size="lg" />
-          <p className="mt-4 text-orange-600">{routingError}</p>
-        </div>
-      </div>
-    );
-  }
-
-  // If no user, show the login form and test component
-  if (!user) {
-    return (
-      <HealthcareAuthLayout>
-        <div className="space-y-8">
-          <LoginForm />
-          <div className="border-t pt-8">
-            <h2 className="text-lg font-semibold text-center mb-4">Development Tools</h2>
-            <AuthTestComponent />
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 max-w-md">
+            <h3 className="text-lg font-semibold text-yellow-800 mb-2">Account Setup Required</h3>
+            <p className="text-yellow-700 mb-4">
+              Your account is authenticated but no roles have been assigned yet.
+            </p>
+            <p className="text-sm text-yellow-600">
+              Please contact your administrator to assign appropriate roles to your account.
+            </p>
           </div>
         </div>
-      </HealthcareAuthLayout>
+      </div>
     );
   }
 
-  // Fallback - this should rarely be seen
+  // Show login form for unauthenticated users
   return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="text-center">
-        <LoadingSpinner size="lg" />
-        <p className="mt-4 text-gray-600">Preparing your dashboard...</p>
+    <HealthcareAuthLayout>
+      <div className="space-y-8">
+        <LoginForm />
+        <div className="border-t pt-8">
+          <h2 className="text-lg font-semibold text-center mb-4">Development Tools</h2>
+          <AuthTestComponent />
+        </div>
       </div>
-    </div>
+    </HealthcareAuthLayout>
   );
 };
 

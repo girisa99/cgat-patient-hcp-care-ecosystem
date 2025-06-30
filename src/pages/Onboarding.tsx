@@ -7,55 +7,33 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, UserPlus, Settings, CheckCircle, AlertCircle } from 'lucide-react';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 
 const Onboarding = () => {
-  const { user, userRoles, loading } = useAuthContext();
-  const { toast } = useToast();
+  const { user, userRoles, loading, isAuthenticated } = useAuthContext();
   const [systemStatus, setSystemStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [statusMessage, setStatusMessage] = useState('');
 
   useEffect(() => {
     const checkSystemStatus = async () => {
-      if (!user || loading) return;
+      if (!isAuthenticated || loading) return;
 
       try {
         console.log('🔍 Checking onboarding system status...');
         
-        // Test basic database connectivity
-        const { data: testData, error: testError } = await supabase
+        // Simple database connectivity test
+        const { error: testError } = await supabase
           .from('roles')
           .select('name')
           .limit(1);
 
         if (testError) {
-          console.error('❌ Database connectivity test failed:', testError);
+          console.error('❌ Database test failed:', testError);
           setSystemStatus('error');
           setStatusMessage('Database connectivity issue');
           return;
         }
 
-        console.log('✅ Database connectivity test passed');
-
-        // Test user roles access
-        const { data: userRoleData, error: roleError } = await supabase
-          .from('user_roles')
-          .select(`
-            roles (
-              name,
-              description
-            )
-          `)
-          .eq('user_id', user.id);
-
-        if (roleError) {
-          console.error('❌ User roles access test failed:', roleError);
-          setSystemStatus('error');
-          setStatusMessage('Unable to verify user permissions');
-          return;
-        }
-
-        console.log('✅ User roles access test passed');
+        console.log('✅ System status check passed');
         setSystemStatus('ready');
         setStatusMessage('All systems operational');
 
@@ -67,7 +45,7 @@ const Onboarding = () => {
     };
 
     checkSystemStatus();
-  }, [user, loading]);
+  }, [isAuthenticated, loading]);
 
   if (loading) {
     return (
@@ -81,7 +59,22 @@ const Onboarding = () => {
     );
   }
 
-  // Check if user has onboarding role
+  if (!isAuthenticated) {
+    return (
+      <MainLayout>
+        <PageContainer title="Onboarding" subtitle="Authentication Required">
+          <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+            <AlertCircle className="h-12 w-12 text-orange-500" />
+            <div className="text-center">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Authentication Required</h3>
+              <p className="text-gray-600">Please sign in to access the onboarding module.</p>
+            </div>
+          </div>
+        </PageContainer>
+      </MainLayout>
+    );
+  }
+
   const hasOnboardingAccess = userRoles.includes('onboardingTeam') || userRoles.includes('superAdmin');
 
   if (!hasOnboardingAccess) {
@@ -89,8 +82,8 @@ const Onboarding = () => {
       <MainLayout>
         <PageContainer title="Onboarding" subtitle="Access Denied">
           <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+            <AlertCircle className="h-12 w-12 text-red-500" />
             <div className="text-center">
-              <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Access Restricted</h3>
               <p className="text-gray-600 mb-4">
                 You need onboarding team permissions to access this module.
@@ -127,7 +120,7 @@ const Onboarding = () => {
               <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                 <h4 className="font-semibold text-green-800 mb-2">Access Confirmed</h4>
                 <p className="text-green-700 text-sm">
-                  You are successfully authenticated with the following roles: {userRoles.join(', ')}
+                  Successfully authenticated with roles: {userRoles.join(', ')}
                 </p>
               </div>
             </CardContent>
@@ -218,21 +211,6 @@ const Onboarding = () => {
               </CardContent>
             </Card>
           </div>
-
-          {/* Debug Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Debug Information</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2 text-sm">
-                <p><strong>User ID:</strong> {user?.id}</p>
-                <p><strong>Email:</strong> {user?.email}</p>
-                <p><strong>Roles:</strong> {userRoles.join(', ') || 'None'}</p>
-                <p><strong>System Status:</strong> {systemStatus}</p>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </PageContainer>
     </MainLayout>
