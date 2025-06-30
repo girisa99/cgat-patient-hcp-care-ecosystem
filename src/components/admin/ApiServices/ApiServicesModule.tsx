@@ -17,8 +17,8 @@ import {
   Search
 } from 'lucide-react';
 
-// Import hooks
-import { useApiIntegrations } from '@/hooks/useApiIntegrations';
+// Import hooks - using the correct one for external APIs
+import { useApiIntegrations } from '@/hooks/useApiIntegrations.tsx'; // Use the .tsx version with Twilio data
 import { useExternalApis } from '@/hooks/useExternalApis';
 import { useEnhancedExternalApis } from '@/hooks/useEnhancedExternalApis';
 
@@ -72,6 +72,9 @@ export const ApiServicesModule: React.FC = () => {
     isLoadingExternalApis,
     error
   });
+
+  // Log external APIs data for debugging
+  console.log('🔍 External APIs data for consuming tab:', externalApis);
 
   const handleDownloadCollection = (integrationId: string) => {
     console.log('📥 Download collection for:', integrationId);
