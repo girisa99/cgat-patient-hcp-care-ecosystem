@@ -9,7 +9,7 @@ import { OnboardingStats } from '@/components/onboarding/dashboard/OnboardingSta
 import { OnboardingApplicationsList } from '@/components/onboarding/dashboard/OnboardingApplicationsList';
 import { OnboardingEmptyState } from '@/components/onboarding/dashboard/OnboardingEmptyState';
 import { OnboardingLoadingState } from '@/components/onboarding/dashboard/OnboardingLoadingState';
-import { OnboardingWizardView } from '@/components/onboarding/dashboard/OnboardingWizardView';
+import { EnhancedOnboardingWizard } from '@/components/onboarding/EnhancedOnboardingWizard';
 
 const OnboardingDashboard: React.FC = () => {
   const {
@@ -44,11 +44,24 @@ const OnboardingDashboard: React.FC = () => {
     return (
       <MainLayout>
         <PageContainer>
-          <OnboardingWizardView
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-2xl font-bold">
+                {editingApplicationId ? "Edit Onboarding Application" : "Create New Onboarding Application"}
+              </h1>
+              <p className="text-muted-foreground">
+                Complete your treatment center onboarding process
+              </p>
+            </div>
+            <Button variant="outline" onClick={handleBackToDashboard}>
+              Back to Dashboard
+            </Button>
+          </div>
+
+          <EnhancedOnboardingWizard
             onSubmit={handleWizardSubmit}
-            onBack={handleBackToDashboard}
-            existingApplication={existingApplication}
-            editingApplicationId={editingApplicationId}
+            initialData={existingApplication}
+            applicationId={editingApplicationId}
           />
         </PageContainer>
       </MainLayout>

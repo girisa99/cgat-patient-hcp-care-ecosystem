@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { EnhancedTabs, EnhancedTabsList, EnhancedTabsTrigger, EnhancedTabsContent } from '@/components/ui/enhanced-tabs';
 import { TreatmentCenterOnboarding } from '@/types/onboarding';
 import { useTreatmentCenterOnboarding } from '@/hooks/useTreatmentCenterOnboarding';
 import { useAutoSave } from '@/hooks/useAutoSave';
@@ -33,7 +34,10 @@ import {
   ArrowLeft,
   Sparkles,
   Dna,
-  Truck
+  Truck,
+  Shield,
+  Settings,
+  PenTool
 } from 'lucide-react';
 
 interface EnhancedOnboardingWizardProps {
@@ -235,10 +239,8 @@ export const EnhancedOnboardingWizard: React.FC<EnhancedOnboardingWizardProps> =
       case 'references':
         return formData.references?.primary_bank?.name ? 'complete' : 'incomplete';
       case 'therapy_selection':
-        // This will be determined by the therapy selection component
         return 'incomplete';
       case 'service_selection':
-        // This will be determined by the service selection component
         return 'incomplete';
       case 'purchasing_preferences':
         return formData.purchasing_preferences?.preferred_purchasing_methods?.length ? 'complete' : 'incomplete';
@@ -247,13 +249,11 @@ export const EnhancedOnboardingWizard: React.FC<EnhancedOnboardingWizardProps> =
       case 'payment_banking':
         return formData.payment_info?.bank_name && formData.payment_info?.bank_routing_number ? 'complete' : 'incomplete';
       case 'licenses':
-        return formData.licenses?.dea_number || formData.licenses?.medical_license ? 'complete' : 'incomplete';
+        return 'partial';
       case 'documents':
-        const requiredDocs = ['voided_check', 'resale_tax_exemption_cert', 'financial_statements'];
-        const uploadedCount = requiredDocs.filter(doc => formData.documents?.[doc as keyof typeof formData.documents]).length;
-        return uploadedCount >= 2 ? 'complete' : uploadedCount > 0 ? 'partial' : 'incomplete';
+        return formData.documents?.voided_check && formData.documents?.resale_tax_exemption_cert ? 'complete' : 'incomplete';
       case 'authorizations':
-        return formData.authorizations?.terms_accepted && formData.authorizations?.authorized_signature?.name ? 'complete' : 'incomplete';
+        return formData.authorizations?.terms_accepted ? 'complete' : 'incomplete';
       case 'review':
         return 'incomplete';
       default:
@@ -261,7 +261,7 @@ export const EnhancedOnboardingWizard: React.FC<EnhancedOnboardingWizardProps> =
     }
   };
 
-  const getGroupProgress = (groupId: string): number => {
+  const getGroupCompletion = (groupId: string): number => {
     const group = stepGroups.find(g => g.id === groupId);
     if (!group) return 0;
     
@@ -269,319 +269,237 @@ export const EnhancedOnboardingWizard: React.FC<EnhancedOnboardingWizardProps> =
     return Math.round((completedSteps / group.steps.length) * 100);
   };
 
-  const getOverallProgress = (): number => {
-    const totalSteps = stepGroups.reduce((acc, group) => acc + group.steps.length, 0);
-    const completedSteps = stepGroups.reduce((acc, group) => {
-      return acc + group.steps.filter(step => getStepCompletion(step.key) === 'complete').length;
-    }, 0);
-    return Math.round((completedSteps / totalSteps) * 100);
+  const handleDataChange = (stepData: Partial<TreatmentCenterOnboarding>) => {
+    const updatedData = { ...formData, ...stepData };
+    setFormData(updatedData);
   };
 
-  const handleStepData = (stepData: any) => {
-    setFormData(prevData => ({
-      ...prevData,
-      ...stepData,
-    }));
+  const handleStepClick = (groupId: string, stepKey: string) => {
+    setActiveGroup(groupId);
+    setActiveStep(stepKey);
   };
 
-  const handleSubmit = async () => {
-    try {
-      const finalData: TreatmentCenterOnboarding = {
-        id: applicationId || '',
-        status: 'submitted',
-        created_at: '',
-        updated_at: '',
-        ...formData,
-      } as TreatmentCenterOnboarding;
+  const handleSubmit = () => {
+    onSubmit(formData as TreatmentCenterOnboarding);
+  };
 
-      let resultApplication;
-      if (applicationId) {
-        resultApplication = await updateApplication({
-          id: applicationId,
-          updates: {
-            ...finalData,
-            status: 'submitted',
-          }
-        });
-      } else {
-        resultApplication = await createApplication(finalData);
-      }
-      
-      onSubmit(finalData);
-    } catch (error) {
-      console.error('Error submitting onboarding application:', error);
+  const getStepIcon = (stepKey: string) => {
+    switch (stepKey) {
+      case 'company_info': return Building2;
+      case 'business_classification': return Settings;
+      case 'contacts': return Users;
+      case 'ownership': return Shield;
+      case 'references': return FileText;
+      case 'therapy_selection': return Dna;
+      case 'service_selection': return Truck;
+      case 'purchasing_preferences': return Settings;
+      case 'financial_assessment': return CreditCard;
+      case 'payment_banking': return CreditCard;
+      case 'licenses': return Shield;
+      case 'documents': return FileText;
+      case 'authorizations': return PenTool;
+      case 'review': return CheckCircle;
+      default: return FileText;
     }
   };
 
-  const goToNextStep = () => {
-    const currentGroup = stepGroups.find(g => g.id === activeGroup);
-    if (!currentGroup) return;
-
-    const currentStepIndex = currentGroup.steps.findIndex(s => s.key === activeStep);
-    
-    if (currentStepIndex < currentGroup.steps.length - 1) {
-      // Move to next step in current group
-      setActiveStep(currentGroup.steps[currentStepIndex + 1].key);
-    } else {
-      // Move to first step of next group
-      const currentGroupIndex = stepGroups.findIndex(g => g.id === activeGroup);
-      if (currentGroupIndex < stepGroups.length - 1) {
-        const nextGroup = stepGroups[currentGroupIndex + 1];
-        setActiveGroup(nextGroup.id);
-        setActiveStep(nextGroup.steps[0].key);
-      }
-    }
+  const getColorClasses = (color: string) => {
+    const colorMap = {
+      blue: 'border-blue-500 bg-blue-50 text-blue-700',
+      green: 'border-green-500 bg-green-50 text-green-700',
+      purple: 'border-purple-500 bg-purple-50 text-purple-700',
+      orange: 'border-orange-500 bg-orange-50 text-orange-700',
+      cyan: 'border-cyan-500 bg-cyan-50 text-cyan-700',
+      emerald: 'border-emerald-500 bg-emerald-50 text-emerald-700',
+    };
+    return colorMap[color as keyof typeof colorMap] || colorMap.blue;
   };
 
-  const goToPreviousStep = () => {
-    const currentGroup = stepGroups.find(g => g.id === activeGroup);
-    if (!currentGroup) return;
-
-    const currentStepIndex = currentGroup.steps.findIndex(s => s.key === activeStep);
-    
-    if (currentStepIndex > 0) {
-      // Move to previous step in current group
-      setActiveStep(currentGroup.steps[currentStepIndex - 1].key);
-    } else {
-      // Move to last step of previous group
-      const currentGroupIndex = stepGroups.findIndex(g => g.id === activeGroup);
-      if (currentGroupIndex > 0) {
-        const prevGroup = stepGroups[currentGroupIndex - 1];
-        setActiveGroup(prevGroup.id);
-        setActiveStep(prevGroup.steps[prevGroup.steps.length - 1].key);
-      }
-    }
-  };
-
-  const currentGroup = stepGroups.find(g => g.id === activeGroup);
-  const currentStepInfo = currentGroup?.steps.find(s => s.key === activeStep);
-  const StepComponent = currentStepInfo?.component;
-
-  const overallProgress = getOverallProgress();
+  const currentGroup = stepGroups.find(group => group.id === activeGroup);
+  const currentStepData = currentGroup?.steps.find(step => step.key === activeStep);
+  const StepComponent = currentStepData?.component;
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
-      {/* Header */}
-      <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+      {/* Header with Progress */}
+      <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-2xl font-bold text-blue-900">
-                Treatment Center Onboarding
-              </CardTitle>
-              <CardDescription className="text-blue-700 text-lg">
-                Complete your registration to join our healthcare network
+              <CardTitle className="text-2xl">Treatment Center Onboarding</CardTitle>
+              <CardDescription>
+                Complete all sections to finalize your onboarding process
               </CardDescription>
             </div>
             <div className="flex items-center space-x-4">
-              {isSaving && (
-                <div className="flex items-center space-x-2 text-sm text-blue-600">
-                  <Clock className="h-4 w-4 animate-spin" />
-                  <span>Auto-saving...</span>
-                </div>
-              )}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={manualSave}
-                disabled={isSaving}
-                className="border-blue-300 text-blue-700 hover:bg-blue-50"
-              >
-                <Save className="h-4 w-4 mr-2" />
-                Save Progress
+              <Button variant="outline" onClick={manualSave} disabled={isSaving}>
+                {isSaving ? (
+                  <>
+                    <Clock className="h-4 w-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    Save Progress
+                  </>
+                )}
               </Button>
+              <Badge variant="outline" className="text-sm">
+                Auto-save enabled
+              </Badge>
             </div>
-          </div>
-          
-          {/* Overall Progress */}
-          <div className="mt-4">
-            <div className="flex justify-between text-sm text-blue-700 mb-2">
-              <span>Overall Progress</span>
-              <span className="font-semibold">{overallProgress}% Complete</span>
-            </div>
-            <Progress value={overallProgress} className="h-3" />
           </div>
         </CardHeader>
       </Card>
 
-      {/* Tab Navigation */}
-      <Tabs value={activeGroup} onValueChange={setActiveGroup} className="w-full">
-        <TabsList className="grid w-full grid-cols-6 h-auto p-1 bg-gray-50">
+      {/* Main Tabbed Interface */}
+      <EnhancedTabs value={activeGroup} onValueChange={setActiveGroup}>
+        <EnhancedTabsList className="grid w-full grid-cols-6">
           {stepGroups.map((group) => {
             const IconComponent = group.icon;
-            const progress = getGroupProgress(group.id);
+            const completion = getGroupCompletion(group.id);
             
             return (
-              <TabsTrigger
+              <EnhancedTabsTrigger
                 key={group.id}
                 value={group.id}
-                className={`flex flex-col items-center p-4 space-y-2 data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all duration-200 hover:bg-white/50 ${
-                  progress === 100 ? 'text-green-700' : progress > 0 ? 'text-blue-700' : 'text-gray-600'
-                }`}
+                className="flex flex-col items-center p-4 h-auto"
+                icon={<IconComponent className="h-4 w-4" />}
               >
-                <IconComponent className="h-6 w-6" />
                 <div className="text-center">
                   <div className="font-medium text-sm">{group.title}</div>
-                  <div className="text-xs text-muted-foreground">{progress}% done</div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {completion}% complete
+                  </div>
+                  <Progress value={completion} className="h-1 w-16 mt-1" />
                 </div>
-                {progress === 100 && (
-                  <CheckCircle className="h-4 w-4 text-green-600" />
-                )}
-              </TabsTrigger>
+              </EnhancedTabsTrigger>
             );
           })}
-        </TabsList>
+        </EnhancedTabsList>
 
         {stepGroups.map((group) => (
-          <TabsContent key={group.id} value={group.id} className="mt-6">
+          <EnhancedTabsContent key={group.id} value={group.id} className="space-y-6">
+            {/* Group Header */}
+            <Card className={`border-l-4 ${getColorClasses(group.color)}`}>
+              <CardHeader>
+                <div className="flex items-center space-x-3">
+                  <group.icon className="h-6 w-6" />
+                  <div>
+                    <CardTitle>{group.title}</CardTitle>
+                    <CardDescription>{group.description}</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+            </Card>
+
+            {/* Steps Navigation */}
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-              {/* Step Navigation Sidebar */}
+              {/* Step Sidebar */}
               <div className="lg:col-span-1">
-                <Card className="sticky top-6">
-                  <CardHeader className={`bg-gradient-to-r from-${group.color}-50 to-${group.color}-100 rounded-t-lg`}>
-                    <CardTitle className="flex items-center space-x-2">
-                      <group.icon className={`h-5 w-5 text-${group.color}-700`} />
-                      <span className={`text-${group.color}-900`}>{group.title}</span>
-                    </CardTitle>
-                    <CardDescription className={`text-${group.color}-700`}>
-                      {group.description}
-                    </CardDescription>
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base">Steps</CardTitle>
                   </CardHeader>
-                  <CardContent className="p-4">
-                    <div className="space-y-2">
-                      {group.steps.map((step, index) => {
-                        const completion = getStepCompletion(step.key);
-                        const isActive = activeStep === step.key;
-                        
-                        return (
-                          <button
-                            key={step.key}
-                            onClick={() => setActiveStep(step.key)}
-                            className={`w-full text-left p-3 rounded-lg transition-all duration-200 ${
-                              isActive
-                                ? `bg-${group.color}-100 border-2 border-${group.color}-300`
-                                : 'bg-gray-50 hover:bg-gray-100 border-2 border-transparent'
-                            }`}
-                          >
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center space-x-3">
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                                  completion === 'complete'
-                                    ? 'bg-green-100 text-green-700'
-                                    : completion === 'partial'
-                                    ? 'bg-yellow-100 text-yellow-700'
-                                    : isActive
-                                    ? `bg-${group.color}-100 text-${group.color}-700`
-                                    : 'bg-gray-200 text-gray-600'
-                                }`}>
-                                  {completion === 'complete' ? (
-                                    <CheckCircle className="h-4 w-4" />
-                                  ) : (
-                                    index + 1
-                                  )}
-                                </div>
-                                <div>
-                                  <div className="font-medium text-sm">{step.label}</div>
-                                  {step.required && (
-                                    <Badge variant="secondary" className="text-xs mt-1">
-                                      Required
-                                    </Badge>
-                                  )}
-                                </div>
+                  <CardContent className="space-y-2">
+                    {group.steps.map((step) => {
+                      const completion = getStepCompletion(step.key);
+                      const IconComponent = getStepIcon(step.key);
+                      
+                      return (
+                        <button
+                          key={step.key}
+                          onClick={() => handleStepClick(group.id, step.key)}
+                          className={`w-full text-left p-3 rounded-lg border transition-colors ${
+                            activeStep === step.key
+                              ? 'bg-primary text-primary-foreground border-primary'
+                              : completion === 'complete'
+                              ? 'bg-green-50 border-green-200 text-green-800'
+                              : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                          }`}
+                        >
+                          <div className="flex items-center space-x-2">
+                            <IconComponent className="h-4 w-4" />
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium text-sm truncate">{step.label}</div>
+                              <div className="text-xs opacity-70">
+                                {completion === 'complete' ? 'Complete' : step.required ? 'Required' : 'Optional'}
                               </div>
-                              {completion === 'complete' && (
-                                <CheckCircle className="h-4 w-4 text-green-600" />
-                              )}
                             </div>
-                          </button>
-                        );
-                      })}
-                    </div>
+                            {completion === 'complete' && (
+                              <CheckCircle className="h-4 w-4 text-green-600" />
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
                   </CardContent>
                 </Card>
               </div>
 
-              {/* Main Content Area */}
+              {/* Step Content */}
               <div className="lg:col-span-3">
-                <Card className="min-h-[600px]">
+                <Card>
                   <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle className="flex items-center space-x-2">
-                          <span>{currentStepInfo?.label}</span>
-                          {currentStepInfo?.required && (
-                            <Badge variant="destructive" className="text-xs">Required</Badge>
-                          )}
-                        </CardTitle>
-                        <CardDescription>
-                          Step {(currentGroup?.steps.findIndex(s => s.key === activeStep) || 0) + 1} of {currentGroup?.steps.length} in {currentGroup?.title}
-                        </CardDescription>
-                      </div>
-                      <Badge variant="outline" className="text-sm">
-                        {getStepCompletion(activeStep) === 'complete' ? 'Complete' : 'In Progress'}
-                      </Badge>
-                    </div>
+                    <CardTitle>{currentStepData?.label}</CardTitle>
+                    <CardDescription>
+                      Complete this section of your onboarding application
+                    </CardDescription>
                   </CardHeader>
-                  <CardContent className="pb-8">
+                  <CardContent>
                     {StepComponent && (
                       <StepComponent
                         data={formData}
-                        onDataChange={handleStepData}
+                        onDataChange={handleDataChange}
                         applicationId={applicationId}
+                        onEditStep={(stepIndex: number) => {
+                          // Handle edit step navigation for review
+                          const allSteps = stepGroups.flatMap(g => g.steps);
+                          const targetStep = allSteps[stepIndex];
+                          if (targetStep) {
+                            const targetGroup = stepGroups.find(g => 
+                              g.steps.some(s => s.key === targetStep.key)
+                            );
+                            if (targetGroup) {
+                              handleStepClick(targetGroup.id, targetStep.key);
+                            }
+                          }
+                        }}
                       />
                     )}
                   </CardContent>
                 </Card>
-
-                {/* Navigation Buttons */}
-                <div className="flex justify-between mt-6">
-                  <Button
-                    variant="outline"
-                    onClick={goToPreviousStep}
-                    disabled={activeGroup === 'basic_info' && activeStep === 'company_info'}
-                    className="flex items-center space-x-2"
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                    <span>Previous</span>
-                  </Button>
-
-                  <div className="flex space-x-4">
-                    {activeStep === 'review' ? (
-                      <Button
-                        onClick={handleSubmit}
-                        disabled={isCreating}
-                        className="bg-green-600 hover:bg-green-700 flex items-center space-x-2"
-                        size="lg"
-                      >
-                        {isCreating ? (
-                          <>
-                            <Clock className="h-4 w-4 animate-spin" />
-                            <span>Submitting...</span>
-                          </>
-                        ) : (
-                          <>
-                            <CheckCircle className="h-4 w-4" />
-                            <span>Submit Application</span>
-                          </>
-                        )}
-                      </Button>
-                    ) : (
-                      <Button
-                        onClick={goToNextStep}
-                        className="flex items-center space-x-2"
-                        size="lg"
-                      >
-                        <span>Continue</span>
-                        <ArrowRight className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                </div>
               </div>
             </div>
-          </TabsContent>
+          </EnhancedTabsContent>
         ))}
-      </Tabs>
+      </EnhancedTabs>
+
+      {/* Final Submit Section */}
+      {activeGroup === 'finalization' && activeStep === 'review' && (
+        <Card className="border-2 border-green-200 bg-green-50">
+          <CardHeader>
+            <CardTitle className="text-green-900 flex items-center space-x-2">
+              <Sparkles className="h-5 w-5" />
+              <span>Ready to Submit</span>
+            </CardTitle>
+            <CardDescription className="text-green-700">
+              Your application is complete and ready for submission
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button 
+              onClick={handleSubmit}
+              className="w-full bg-green-600 hover:bg-green-700"
+              size="lg"
+            >
+              <CheckCircle className="h-5 w-5 mr-2" />
+              Submit Onboarding Application
+            </Button>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
