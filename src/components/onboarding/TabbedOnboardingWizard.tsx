@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -412,10 +413,27 @@ export const TabbedOnboardingWizard: React.FC<TabbedOnboardingWizardProps> = ({
     }
   };
 
-  const currentTabInfo = tabSections.find(tab => tab.id === activeTab);
-  const currentStepInfo = currentTabInfo?.steps.find(step => step.key === activeStep);
-  const StepComponent = currentStepInfo?.component;
+  // Helper function to render step component with proper props
+  const renderStepComponent = (step: any) => {
+    const StepComponent = step.component;
+    
+    // Create base props that all components should receive
+    const baseProps = {
+      data: formData,
+      onDataChange: handleStepData,
+    };
 
+    // Add applicationId if the component needs it
+    const propsWithApplicationId = {
+      ...baseProps,
+      applicationId,
+    };
+
+    // Return the component with appropriate props
+    return <StepComponent {...propsWithApplicationId} />;
+  };
+
+  const currentTabInfo = tabSections.find(tab => tab.id === activeTab);
   const overallProgress = getOverallProgress();
 
   return (
@@ -545,11 +563,7 @@ export const TabbedOnboardingWizard: React.FC<TabbedOnboardingWizardProps> = ({
                   {tab.steps.map((step) => (
                     <TabsContent key={step.key} value={step.key} className="mt-6">
                       <div className="min-h-[500px]">
-                        <step.component
-                          data={formData}
-                          onDataChange={handleStepData}
-                          applicationId={applicationId}
-                        />
+                        {renderStepComponent(step)}
                       </div>
                     </TabsContent>
                   ))}
