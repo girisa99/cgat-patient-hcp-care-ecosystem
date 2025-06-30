@@ -18,7 +18,7 @@ import {
   Key
 } from 'lucide-react';
 import { useApiConsumptionTrigger } from '@/hooks/useApiConsumptionTrigger';
-import { useApiKeyMonitor } from '@/hooks/useApiKeyMonitor';
+import { useApiKeys } from '@/hooks/useApiKeys';
 
 const AutoIntegrationBanner = () => {
   const {
@@ -28,7 +28,7 @@ const AutoIntegrationBanner = () => {
     isManualTriggering
   } = useApiConsumptionTrigger();
   
-  const { apiKeys } = useApiKeyMonitor();
+  const { apiKeys } = useApiKeys();
 
   const getOverallStatus = () => {
     const recentKeys = apiKeys?.filter(key => 
