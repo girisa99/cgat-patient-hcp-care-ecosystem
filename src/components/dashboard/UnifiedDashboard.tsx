@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -21,7 +20,7 @@ import {
 
 const UnifiedDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { dashboardData, isLoading, profile, userRoles } = useDashboard();
+  const { dashboardData, loading, profile, userRoles } = useDashboard();
   const { userModules } = useModules();
   const { moduleProgress, getAccessibleModules } = useIntelligentRouting();
 
@@ -83,9 +82,9 @@ const UnifiedDashboard: React.FC = () => {
     }
   ];
 
-  const recentActivity = moduleProgress.slice(0, 3);
+  const recentActivity = moduleProgress?.slice(0, 3) || [];
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -234,18 +233,18 @@ const UnifiedDashboard: React.FC = () => {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {userModules?.map((module) => (
-              <Card key={module.module_id} className="cursor-pointer hover:shadow-md transition-shadow">
+              <Card key={module.id} className="cursor-pointer hover:shadow-md transition-shadow">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="font-medium">{module.module_name}</h3>
+                      <h3 className="font-medium">{module.moduleName}</h3>
                       <p className="text-sm text-gray-500 mt-1">
-                        {module.module_description || 'No description available'}
+                        {module.description || 'No description available'}
                       </p>
                     </div>
                     <Button 
                       size="sm" 
-                      onClick={() => navigate(`/${module.module_name.toLowerCase()}`)}
+                      onClick={() => navigate(`/${module.moduleName.toLowerCase()}`)}
                     >
                       Open
                     </Button>

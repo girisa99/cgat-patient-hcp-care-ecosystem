@@ -1,9 +1,17 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Database } from '@/integrations/supabase/types';
 import { useAuthContext } from '@/components/auth/CleanAuthProvider';
+import { supabase } from '@/integrations/supabase/client';
 
 type UserRole = Database['public']['Enums']['user_role'];
+
+interface ModuleProgress {
+  moduleId: string;
+  lastPath: string;
+  timestamp: string;
+}
 
 export const useIntelligentRouting = () => {
   const navigate = useNavigate();
@@ -11,6 +19,8 @@ export const useIntelligentRouting = () => {
   const [hasAutoRoute, setHasAutoRoute] = useState(false);
   const [preferredDashboard, setPreferredDashboard] = useState<'unified' | 'module-specific'>('unified');
   const [defaultModule, setDefaultModule] = useState<string | null>(null);
+  const [moduleProgress, setModuleProgress] = useState<ModuleProgress[]>([]);
+  const [userPreferences, setUserPreferences] = useState<any>(null);
 
   useEffect(() => {
     if (!loading && user) {
@@ -32,6 +42,7 @@ export const useIntelligentRouting = () => {
             setHasAutoRoute(data.auto_route || false);
             setPreferredDashboard(data.preferred_dashboard || 'unified');
             setDefaultModule(data.default_module || null);
+            setUserPreferences(data);
           }
         } catch (error) {
           console.error('Unexpected error fetching user preferences:', error);
@@ -68,5 +79,38 @@ export const useIntelligentRouting = () => {
     }
   }, [user, userRoles, loading, navigate, hasAutoRoute, preferredDashboard, defaultModule]);
 
-  return {};
+  const updateUserPreferences = async (updates: any) => {
+    if (!user) return;
+    
+    try {
+      const { error } = await supabase
+        .from('user_preferences')
+        .update(updates)
+        .eq('user_id', user.id);
+        
+      if (error) throw error;
+      
+      setUserPreferences(prev => ({ ...prev, ...updates }));
+    } catch (error) {
+      console.error('Error updating user preferences:', error);
+    }
+  };
+
+  const getAccessibleModules = () => {
+    // Mock data for now - replace with actual module access logic
+    return [
+      { id: '1', moduleName: 'Users', module_id: '1', module_name: 'Users' },
+      { id: '2', moduleName: 'Facilities', module_id: '2', module_name: 'Facilities' },
+      { id: '3', moduleName: 'Modules', module_id: '3', module_name: 'Modules' }
+    ];
+  };
+
+  return {
+    userPreferences,
+    updateUserPreferences,
+    canAccessUnifiedDashboard: true,
+    hasMultipleModules: true,
+    getAccessibleModules,
+    moduleProgress
+  };
 };

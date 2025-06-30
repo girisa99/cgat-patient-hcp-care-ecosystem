@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuthContext } from '@/components/auth/CleanAuthProvider';
 import { useAuthActions } from '@/hooks/useAuthActions';
@@ -6,7 +7,7 @@ export const useDashboard = () => {
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { user, isAuthenticated } = useAuthContext();
+  const { user, isAuthenticated, profile, userRoles } = useAuthContext();
   const { signOut } = useAuthActions();
 
   useEffect(() => {
@@ -25,6 +26,10 @@ export const useDashboard = () => {
             { id: 2, name: 'Item 2' },
             { id: 3, name: 'Item 3' },
           ],
+          totalUsers: 150,
+          totalFacilities: 25,
+          systemHealth: 'healthy',
+          apiIntegrations: 8
         };
         setDashboardData(data);
       } catch (err: any) {
@@ -48,7 +53,10 @@ export const useDashboard = () => {
   return {
     dashboardData,
     loading,
+    isLoading: loading,
     error,
     handleLogout,
+    profile,
+    userRoles: userRoles || []
   };
 };

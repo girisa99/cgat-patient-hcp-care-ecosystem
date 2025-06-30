@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -69,10 +68,10 @@ const CoreFunctionalityVerification = () => {
       // Test Modules functionality
       results.push({
         name: 'Modules Hook',
-        status: modulesHook.error ? 'error' : modulesHook.isLoading ? 'loading' : 'success',
+        status: modulesHook.errorAllModules ? 'error' : modulesHook.isLoadingAllModules ? 'loading' : 'success',
         data: {
           modules: modulesHook.modules?.length || 0,
-          error: modulesHook.error?.message
+          error: modulesHook.errorAllModules?.message
         }
       });
 
@@ -311,9 +310,9 @@ const CoreFunctionalityVerification = () => {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span>Modules Hook Status:</span>
-                  {modulesHook.error ? (
-                    <Badge variant="destructive">Error: {modulesHook.error.message}</Badge>
-                  ) : modulesHook.isLoading ? (
+                  {modulesHook.errorAllModules ? (
+                    <Badge variant="destructive">Error: {modulesHook.errorAllModules.message}</Badge>
+                  ) : modulesHook.isLoadingAllModules ? (
                     <Badge className="bg-blue-100 text-blue-800">Loading</Badge>
                   ) : (
                     <Badge className="bg-green-100 text-green-800">Working</Badge>
