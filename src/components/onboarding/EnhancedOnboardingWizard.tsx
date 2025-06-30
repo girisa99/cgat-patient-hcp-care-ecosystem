@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,6 +18,8 @@ import { DocumentsStep } from './steps/DocumentsStep';
 import { AuthorizationsStep } from './steps/AuthorizationsStep';
 import { PurchasingPreferencesStep } from './steps/PurchasingPreferencesStep';
 import { FinancialAssessmentStep } from './steps/FinancialAssessmentStep';
+import { ServiceSelectionStep } from './steps/ServiceSelectionStep';
+import { EnhancedTherapySelectionStep } from './steps/EnhancedTherapySelectionStep';
 import { ReviewStep } from './steps/ReviewStep';
 import { 
   Building2, 
@@ -30,7 +31,9 @@ import {
   Clock,
   ArrowRight,
   ArrowLeft,
-  Sparkles
+  Sparkles,
+  Dna,
+  Truck
 } from 'lucide-react';
 
 interface EnhancedOnboardingWizardProps {
@@ -78,11 +81,22 @@ const stepGroups: StepGroup[] = [
     ]
   },
   {
-    id: 'operations',
-    title: 'Operations & Preferences',
-    description: 'Purchasing preferences and financial assessment',
-    icon: Sparkles,
+    id: 'services_therapies',
+    title: 'Services & Therapies',
+    description: 'CGAT therapy selection and service provider configuration',
+    icon: Dna,
     color: 'purple',
+    steps: [
+      { key: 'therapy_selection', label: 'CGAT Therapy Selection', component: EnhancedTherapySelectionStep, required: true },
+      { key: 'service_selection', label: 'Service Provider Selection', component: ServiceSelectionStep, required: true },
+    ]
+  },
+  {
+    id: 'operations',
+    title: 'Operations & Assessment',
+    description: 'Purchasing preferences and financial evaluation',
+    icon: Truck,
+    color: 'orange',
     steps: [
       { key: 'purchasing_preferences', label: 'Purchasing Preferences', component: PurchasingPreferencesStep, required: true },
       { key: 'financial_assessment', label: 'Financial Assessment', component: FinancialAssessmentStep, required: true },
@@ -93,7 +107,7 @@ const stepGroups: StepGroup[] = [
     title: 'Financial & Legal',
     description: 'Banking, licenses, and compliance documentation',
     icon: CreditCard,
-    color: 'orange',
+    color: 'cyan',
     steps: [
       { key: 'payment_banking', label: 'Payment & Banking', component: PaymentBankingStep, required: true },
       { key: 'licenses', label: 'Licenses & Certifications', component: LicensesStep, required: true },
@@ -120,6 +134,7 @@ export const EnhancedOnboardingWizard: React.FC<EnhancedOnboardingWizardProps> =
 }) => {
   const [activeGroup, setActiveGroup] = useState('basic_info');
   const [activeStep, setActiveStep] = useState('company_info');
+  
   const [formData, setFormData] = useState<Partial<TreatmentCenterOnboarding>>(
     initialData || {
       selected_distributors: [],
@@ -219,6 +234,12 @@ export const EnhancedOnboardingWizard: React.FC<EnhancedOnboardingWizardProps> =
         return formData.ownership?.principal_owners?.length ? 'complete' : 'incomplete';
       case 'references':
         return formData.references?.primary_bank?.name ? 'complete' : 'incomplete';
+      case 'therapy_selection':
+        // This will be determined by the therapy selection component
+        return 'incomplete';
+      case 'service_selection':
+        // This will be determined by the service selection component
+        return 'incomplete';
       case 'purchasing_preferences':
         return formData.purchasing_preferences?.preferred_purchasing_methods?.length ? 'complete' : 'incomplete';
       case 'financial_assessment':
@@ -385,7 +406,7 @@ export const EnhancedOnboardingWizard: React.FC<EnhancedOnboardingWizardProps> =
 
       {/* Tab Navigation */}
       <Tabs value={activeGroup} onValueChange={setActiveGroup} className="w-full">
-        <TabsList className="grid w-full grid-cols-5 h-auto p-1 bg-gray-50">
+        <TabsList className="grid w-full grid-cols-6 h-auto p-1 bg-gray-50">
           {stepGroups.map((group) => {
             const IconComponent = group.icon;
             const progress = getGroupProgress(group.id);
@@ -506,6 +527,7 @@ export const EnhancedOnboardingWizard: React.FC<EnhancedOnboardingWizardProps> =
                       <StepComponent
                         data={formData}
                         onDataChange={handleStepData}
+                        applicationId={applicationId}
                       />
                     )}
                   </CardContent>
