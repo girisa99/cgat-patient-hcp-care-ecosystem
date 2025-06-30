@@ -2,38 +2,59 @@
 import React, { useState } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { PageContainer } from '@/components/layout/PageContainer';
-import { CollaborativeOnboardingView } from '@/components/onboarding/CollaborativeOnboardingView';
 import { TreatmentCenterOnboardingWizard } from '@/components/onboarding/TreatmentCenterOnboardingWizard';
 import { useTreatmentCenterOnboarding } from '@/hooks/useTreatmentCenterOnboarding';
-import { useSavedApplications } from '@/hooks/useSavedApplications';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, FileText, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { Plus, FileText, Clock, CheckCircle, AlertCircle, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const OnboardingDashboard: React.FC = () => {
-  const [view, setView] = useState<'dashboard' | 'wizard' | 'collaborative'>('dashboard');
-  const { onboardingApplications, isLoading, createApplication } = useTreatmentCenterOnboarding();
-  const { savedApplications } = useSavedApplications();
+  const [view, setView] = useState<'dashboard' | 'wizard'>('dashboard');
+  const [editingApplicationId, setEditingApplicationId] = useState<string | null>(null);
+  const { onboardingApplications, isLoading, createApplication, updateApplication } = useTreatmentCenterOnboarding();
   const { toast } = useToast();
 
   const handleCreateNew = () => {
+    setEditingApplicationId(null);
     setView('wizard');
   };
 
-  const handleViewApplication = (applicationId: string) => {
-    // For now, show collaborative view
-    setView('collaborative');
+  const handleEditApplication = (applicationId: string) => {
+    setEditingApplicationId(applicationId);
+    setView('wizard');
   };
 
-  const handleWizardSubmit = (data: any) => {
-    createApplication(data);
-    toast({
-      title: "Application Created",
-      description: "Your onboarding application has been created successfully.",
-    });
+  const handleWizardSubmit = async (data: any) => {
+    try {
+      if (editingApplicationId) {
+        await updateApplication(editingApplicationId, data);
+        toast({
+          title: "Application Updated",
+          description: "Your onboarding application has been updated successfully.",
+        });
+      } else {
+        await createApplication(data);
+        toast({
+          title: "Application Created",
+          description: "Your onboarding application has been created successfully.",
+        });
+      }
+      setView('dashboard');
+      setEditingApplicationId(null);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "There was an error saving your application. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleBackToDashboard = () => {
     setView('dashboard');
+    setEditingApplicationId(null);
   };
 
   const getStatusColor = (status: string) => {
@@ -77,36 +98,28 @@ const OnboardingDashboard: React.FC = () => {
   }
 
   if (view === 'wizard') {
+    const existingApplication = editingApplicationId 
+      ? onboardingApplications?.find(app => app.id === editingApplicationId)
+      : null;
+
     return (
       <MainLayout>
         <PageContainer
-          title="Create New Onboarding Application"
+          title={editingApplicationId ? "Edit Onboarding Application" : "Create New Onboarding Application"}
           subtitle="Complete your treatment center onboarding process"
           headerActions={
-            <Button variant="outline" onClick={() => setView('dashboard')}>
+            <Button variant="outline" onClick={handleBackToDashboard}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Dashboard
             </Button>
           }
         >
-          <TreatmentCenterOnboardingWizard onSubmit={handleWizardSubmit} />
+          <TreatmentCenterOnboardingWizard 
+            onSubmit={handleWizardSubmit}
+            initialData={existingApplication}
+            isEditing={!!editingApplicationId}
+          />
         </PageContainer>
-      </MainLayout>
-    );
-  }
-
-  if (view === 'collaborative') {
-    return (
-      <MainLayout>
-        <div className="p-6">
-          <Button 
-            variant="outline" 
-            onClick={() => setView('dashboard')}
-            className="mb-4"
-          >
-            Back to Dashboard
-          </Button>
-          <CollaborativeOnboardingView />
-        </div>
       </MainLayout>
     );
   }
@@ -172,8 +185,7 @@ const OnboardingDashboard: React.FC = () => {
                   {onboardingApplications.map((application) => (
                     <div
                       key={application.id}
-                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 cursor-pointer"
-                      onClick={() => handleViewApplication(application.id)}
+                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
                     >
                       <div className="flex items-center space-x-4">
                         <div className="flex items-center space-x-2">
@@ -195,6 +207,13 @@ const OnboardingDashboard: React.FC = () => {
                         <Badge variant="outline">
                           Step {application.current_step?.replace('_', ' ') || 'Unknown'}
                         </Badge>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditApplication(application.id)}
+                        >
+                          {application.status === 'draft' ? 'Continue' : 'View'}
+                        </Button>
                       </div>
                     </div>
                   ))}

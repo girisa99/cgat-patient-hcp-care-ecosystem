@@ -4,155 +4,161 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { CheckCircle, Circle, ArrowRight, ArrowLeft } from 'lucide-react';
 import { TreatmentCenterOnboarding } from '@/types/onboarding';
-import { useTreatmentCenterOnboarding } from '@/hooks/useTreatmentCenterOnboarding';
-import { useAutoSave } from '@/hooks/useAutoSave';
-import { useOnboardingWorkflow } from '@/hooks/useOnboardingWorkflow';
+
+// Import all the step components
 import { CompanyInfoStep } from './steps/CompanyInfoStep';
 import { BusinessClassificationStep } from './steps/BusinessClassificationStep';
-import { ContactsStep } from './steps/ContactsStep';
 import { OwnershipStep } from './steps/OwnershipStep';
-import { ReferencesStep } from './steps/ReferencesStep';
-import { PaymentBankingStep } from './steps/PaymentBankingStep';
-import { LicensesStep } from './steps/LicensesStep';
-import { DocumentsStep } from './steps/DocumentsStep';
-import { AuthorizationsStep } from './steps/AuthorizationsStep';
-import { PurchasingPreferencesStep } from './steps/PurchasingPreferencesStep';
 import { FinancialAssessmentStep } from './steps/FinancialAssessmentStep';
-import { ReviewStep } from './steps/ReviewStep';
-import { Save, Clock, CheckCircle2, Workflow } from 'lucide-react';
+import { CreditApplicationStep } from './steps/CreditApplicationStep';
+import { PurchasingPreferencesStep } from './steps/PurchasingPreferencesStep';
+import { GPOMembershipStep } from './steps/GPOMembershipStep';
+import { OnlineServicesStep } from './steps/OnlineServicesStep';
+import { OfficeHoursStep } from './steps/OfficeHoursStep';
 
 interface TreatmentCenterOnboardingWizardProps {
-  onSubmit: (data: TreatmentCenterOnboarding) => void;
+  onSubmit: (data: Partial<TreatmentCenterOnboarding>) => void;
   initialData?: Partial<TreatmentCenterOnboarding>;
-  applicationId?: string;
+  isEditing?: boolean;
 }
 
-const steps = [
-  { key: 'company_info', label: 'Company Information', component: CompanyInfoStep },
-  { key: 'business_classification', label: 'Business Classification', component: BusinessClassificationStep },
-  { key: 'contacts', label: 'Contacts', component: ContactsStep },
-  { key: 'ownership', label: 'Ownership & Control', component: OwnershipStep },
-  { key: 'references', label: 'References', component: ReferencesStep },
-  { key: 'payment_banking', label: 'Payment & Banking', component: PaymentBankingStep },
-  { key: 'purchasing_preferences', label: 'Purchasing Preferences', component: PurchasingPreferencesStep },
-  { key: 'financial_assessment', label: 'Financial Assessment', component: FinancialAssessmentStep },
-  { key: 'licenses', label: 'Licenses & Certifications', component: LicensesStep },
-  { key: 'documents', label: 'Required Documents', component: DocumentsStep },
-  { key: 'authorizations', label: 'Authorizations & Signatures', component: AuthorizationsStep },
-  { key: 'review', label: 'Review & Submit', component: ReviewStep },
+interface Step {
+  id: string;
+  title: string;
+  description: string;
+  component: React.ComponentType<any>;
+  required: boolean;
+}
+
+const ONBOARDING_STEPS: Step[] = [
+  {
+    id: 'company_info',
+    title: 'Company Information',
+    description: 'Basic company details and distributor preferences',
+    component: CompanyInfoStep,
+    required: true,
+  },
+  {
+    id: 'business_classification',
+    title: 'Business Classification',
+    description: 'Business type and operational details',
+    component: BusinessClassificationStep,
+    required: true,
+  },
+  {
+    id: 'ownership',
+    title: 'Ownership Structure',
+    description: 'Principal owners and controlling entities',
+    component: OwnershipStep,
+    required: true,
+  },
+  {
+    id: 'financial_assessment',
+    title: 'Financial Assessment',
+    description: 'Financial information and risk evaluation',
+    component: FinancialAssessmentStep,
+    required: true,
+  },
+  {
+    id: 'credit_application',
+    title: 'Credit Application',
+    description: 'Credit terms and trade references',
+    component: CreditApplicationStep,
+    required: true,
+  },
+  {
+    id: 'purchasing_preferences',
+    title: 'Purchasing Preferences',
+    description: 'Inventory management and purchasing methods',
+    component: PurchasingPreferencesStep,
+    required: true,
+  },
+  {
+    id: 'gpo_memberships',
+    title: 'GPO Memberships',
+    description: 'Group purchasing organization memberships',
+    component: GPOMembershipStep,
+    required: false,
+  },
+  {
+    id: 'online_services',
+    title: 'Online Services',
+    description: 'Platform services and user roles',
+    component: OnlineServicesStep,
+    required: true,
+  },
+  {
+    id: 'office_hours',
+    title: 'Office Hours',
+    description: 'Operating hours and contact information',
+    component: OfficeHoursStep,
+    required: true,
+  },
 ];
 
 export const TreatmentCenterOnboardingWizard: React.FC<TreatmentCenterOnboardingWizardProps> = ({
   onSubmit,
   initialData,
-  applicationId,
+  isEditing = false,
 }) => {
-  // Initialize step based on initial data
-  const getInitialStep = () => {
-    if (initialData?.workflow?.current_step) {
-      const stepIndex = steps.findIndex(step => step.key === initialData.workflow.current_step);
-      return stepIndex >= 0 ? stepIndex : 0;
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const [formData, setFormData] = useState<Partial<TreatmentCenterOnboarding>>(initialData || {});
+  const [completedSteps, setCompletedSteps] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (initialData) {
+      setFormData(initialData);
+      // Mark steps as completed based on existing data
+      const completed = new Set<string>();
+      ONBOARDING_STEPS.forEach(step => {
+        if (hasStepData(step.id, initialData)) {
+          completed.add(step.id);
+        }
+      });
+      setCompletedSteps(completed);
     }
-    return 0;
+  }, [initialData]);
+
+  const hasStepData = (stepId: string, data: Partial<TreatmentCenterOnboarding>): boolean => {
+    switch (stepId) {
+      case 'company_info':
+        return !!(data.company_info?.legal_name && data.selected_distributors?.length);
+      case 'business_classification':
+        return !!(data.business_info?.business_type?.length && data.business_info?.ownership_type);
+      case 'ownership':
+        return !!(data.ownership?.principal_owners?.length);
+      case 'financial_assessment':
+        return !!(data.financial_assessment?.annual_revenue_range);
+      case 'credit_application':
+        return !!(data.credit_application?.requested_credit_limit);
+      case 'purchasing_preferences':
+        return !!(data.purchasing_preferences?.preferred_purchasing_methods?.length);
+      case 'gpo_memberships':
+        return true; // Optional step
+      case 'online_services':
+        return !!(data.selected_online_services?.length || data.selected_user_roles?.length);
+      case 'office_hours':
+        return !!(data.office_hours?.timezone);
+      default:
+        return false;
+    }
   };
 
-  const [currentStepIndex, setCurrentStepIndex] = useState(getInitialStep());
-  const [formData, setFormData] = useState<Partial<TreatmentCenterOnboarding>>(
-    initialData || {
-      selected_distributors: [],
-      company_info: {
-        legal_name: '',
-        federal_tax_id: '',
-        legal_address: { street: '', city: '', state: '', zip: '' },
-        same_as_legal_address: false,
-      },
-      business_info: {
-        business_type: [],
-        years_in_business: 0,
-        ownership_type: 'llc',
-      },
-      contacts: {
-        primary_contact: { name: '', phone: '', email: '' },
-      },
-      ownership: {
-        principal_owners: [],
-        bankruptcy_history: false,
-      },
-      references: {
-        primary_bank: { name: '', contact_name: '', phone: '' },
-        primary_supplier: { name: '', contact_name: '', phone: '' },
-        additional_references: [],
-      },
-      payment_info: {
-        ach_preference: 'direct_debit',
-        bank_name: '',
-        bank_account_number: '',
-        bank_routing_number: '',
-        bank_address: { street: '', city: '', state: '', zip: '' },
-        statement_delivery_preference: 'email',
-      },
-      purchasing_preferences: {
-        preferred_purchasing_methods: [],
-        inventory_management_model: 'traditional_wholesale',
-        automated_reordering_enabled: false,
-        reorder_points: {},
-        inventory_turnover_targets: {},
-        storage_capacity_details: {},
-        temperature_controlled_storage: false,
-        hazmat_storage_capabilities: false,
-      },
-      financial_assessment: {
-        annual_revenue_range: '',
-        credit_score_range: '',
-        years_in_operation: 0,
-        insurance_coverage: {},
-        financial_guarantees: {},
-      },
-      licenses: {
-        additional_licenses: [],
-      },
-      documents: {
-        voided_check: false,
-        resale_tax_exemption_cert: false,
-        dea_registration_copy: false,
-        state_pharmacy_license_copy: false,
-        medical_license_copy: false,
-        financial_statements: false,
-        supplier_statements: false,
-        additional_documents: [],
-      },
-      authorizations: {
-        authorized_signature: { name: '', title: '', date: '' },
-        terms_accepted: false,
-      },
-      workflow: {
-        current_step: 'company_info',
-        completed_steps: [],
-        notes: [],
-      },
+  const handleDataChange = (stepData: Partial<TreatmentCenterOnboarding>) => {
+    const updatedData = { ...formData, ...stepData };
+    setFormData(updatedData);
+    
+    // Mark current step as completed if it has required data
+    const currentStep = ONBOARDING_STEPS[currentStepIndex];
+    if (hasStepData(currentStep.id, updatedData)) {
+      setCompletedSteps(prev => new Set([...prev, currentStep.id]));
     }
-  );
-
-  const { createApplication, updateApplication, isCreating } = useTreatmentCenterOnboarding();
-  const { initializeWorkflow, getWorkflowSteps } = useOnboardingWorkflow();
-  
-  // Auto-save functionality
-  const { manualSave, isSaving } = useAutoSave({
-    data: formData,
-    currentStep: currentStepIndex,
-    applicationId,
-    enabled: true,
-  });
-
-  // Get workflow steps if application exists
-  const { data: workflowSteps } = applicationId ? getWorkflowSteps(applicationId) : { data: [] };
-
-  const currentStep = steps[currentStepIndex];
-  const progress = ((currentStepIndex + 1) / steps.length) * 100;
+  };
 
   const handleNext = () => {
-    if (currentStepIndex < steps.length - 1) {
+    if (currentStepIndex < ONBOARDING_STEPS.length - 1) {
       setCurrentStepIndex(currentStepIndex + 1);
     }
   };
@@ -163,198 +169,140 @@ export const TreatmentCenterOnboardingWizard: React.FC<TreatmentCenterOnboarding
     }
   };
 
-  const handleStepData = (stepData: any) => {
-    setFormData(prevData => ({
-      ...prevData,
-      ...stepData,
-    }));
-  };
-
-  const handleSubmit = async () => {
-    try {
-      const finalData: TreatmentCenterOnboarding = {
-        id: applicationId || '',
-        status: 'submitted',
-        created_at: '',
-        updated_at: '',
-        ...formData,
-      } as TreatmentCenterOnboarding;
-
-      let resultApplication;
-      if (applicationId) {
-        // Update existing application to submitted status
-        resultApplication = await updateApplication({
-          id: applicationId,
-          updates: {
-            ...finalData,
-            status: 'submitted',
-            workflow: {
-              ...finalData.workflow,
-              current_step: 'complete',
-            }
-          }
-        });
-        
-        // Initialize workflow if not already done
-        if (!workflowSteps || workflowSteps.length === 0) {
-          await initializeWorkflow(applicationId);
-        }
-      } else {
-        resultApplication = await createApplication(finalData);
-        // Initialize workflow for new application
-        if (resultApplication?.id) {
-          await initializeWorkflow(resultApplication.id);
-        }
-      }
-      
-      onSubmit(finalData);
-    } catch (error) {
-      console.error('Error submitting onboarding application:', error);
-    }
-  };
-
-  const handleEditStep = (stepIndex: number) => {
+  const handleStepClick = (stepIndex: number) => {
     setCurrentStepIndex(stepIndex);
   };
 
+  const handleSubmit = () => {
+    onSubmit(formData);
+  };
+
+  const isCurrentStepValid = () => {
+    const currentStep = ONBOARDING_STEPS[currentStepIndex];
+    return !currentStep.required || completedSteps.has(currentStep.id);
+  };
+
+  const isFormComplete = () => {
+    return ONBOARDING_STEPS.filter(step => step.required).every(step => 
+      completedSteps.has(step.id)
+    );
+  };
+
+  const currentStep = ONBOARDING_STEPS[currentStepIndex];
   const StepComponent = currentStep.component;
+  const progress = ((currentStepIndex + 1) / ONBOARDING_STEPS.length) * 100;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-6xl mx-auto space-y-6">
       {/* Progress Header */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="flex items-center space-x-2">
-                <span>Treatment Center Onboarding</span>
-                {applicationId && (
-                  <Badge variant="outline" className="ml-2">
-                    Resuming Application
-                  </Badge>
-                )}
+              <CardTitle className="text-2xl">
+                {isEditing ? 'Edit Onboarding Application' : 'Treatment Center Onboarding'}
               </CardTitle>
               <CardDescription>
-                Step {currentStepIndex + 1} of {steps.length}: {currentStep.label}
+                Step {currentStepIndex + 1} of {ONBOARDING_STEPS.length}: {currentStep.title}
               </CardDescription>
             </div>
-            <div className="flex items-center space-x-4">
-              {isSaving && (
-                <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                  <Clock className="h-4 w-4 animate-spin" />
-                  <span>Saving...</span>
-                </div>
-              )}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={manualSave}
-                disabled={isSaving}
-                className="flex items-center space-x-2"
-              >
-                <Save className="h-4 w-4" />
-                <span>Save Progress</span>
-              </Button>
-              {applicationId && workflowSteps && workflowSteps.length > 0 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center space-x-2"
+            <Badge variant="outline" className="text-sm">
+              {Math.round(progress)}% Complete
+            </Badge>
+          </div>
+          <Progress value={progress} className="mt-4" />
+        </CardHeader>
+      </Card>
+
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Step Navigation Sidebar */}
+        <div className="lg:col-span-1">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Steps</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {ONBOARDING_STEPS.map((step, index) => (
+                <button
+                  key={step.id}
+                  onClick={() => handleStepClick(index)}
+                  className={`w-full text-left p-3 rounded-lg border transition-colors ${
+                    index === currentStepIndex
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : completedSteps.has(step.id)
+                      ? 'bg-green-50 border-green-200 text-green-800'
+                      : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                  }`}
                 >
-                  <Workflow className="h-4 w-4" />
-                  <span>View Workflow</span>
-                </Button>
-              )}
-              <Badge variant="outline">
-                {Math.round(progress)}% Complete
-              </Badge>
-            </div>
-          </div>
-          <Progress value={progress} className="w-full" />
-        </CardHeader>
-      </Card>
-
-      {/* Auto-save Status */}
-      <div className="flex items-center justify-between text-sm text-muted-foreground">
-        <div className="flex items-center space-x-2">
-          <CheckCircle2 className="h-4 w-4" />
-          <span>Auto-save enabled - Your progress is automatically saved</span>
+                  <div className="flex items-center space-x-2">
+                    {completedSteps.has(step.id) ? (
+                      <CheckCircle className="h-4 w-4" />
+                    ) : (
+                      <Circle className="h-4 w-4" />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-sm truncate">{step.title}</div>
+                      <div className="text-xs opacity-70 truncate">{step.description}</div>
+                    </div>
+                  </div>
+                  {step.required && (
+                    <div className="text-xs text-red-600 mt-1">Required</div>
+                  )}
+                </button>
+              ))}
+            </CardContent>
+          </Card>
         </div>
-        {applicationId && (
-          <span className="text-blue-600">Application ID: {applicationId.slice(0, 8)}...</span>
-        )}
-      </div>
 
-      {/* Step Navigation */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-wrap gap-2">
-            {steps.map((step, index) => (
-              <Button
-                key={step.key}
-                variant={index === currentStepIndex ? "default" : index < currentStepIndex ? "secondary" : "outline"}
-                size="sm"
-                onClick={() => setCurrentStepIndex(index)}
-                className="text-xs"
-              >
-                {index + 1}. {step.label}
-              </Button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+        {/* Main Content Area */}
+        <div className="lg:col-span-3">
+          <Card>
+            <CardHeader>
+              <CardTitle>{currentStep.title}</CardTitle>
+              <CardDescription>{currentStep.description}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <StepComponent
+                data={formData}
+                onDataChange={handleDataChange}
+                applicationId={formData.id}
+              />
+            </CardContent>
+          </Card>
 
-      {/* Current Step Content */}
-      <Card>
-        <CardHeader>
-          <CardTitle>{currentStep.label}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {currentStep.key === 'review' ? (
-            <ReviewStep
-              data={formData}
-              onDataChange={handleStepData}
-              onEditStep={handleEditStep}
-            />
-          ) : (
-            <StepComponent
-              data={formData}
-              onDataChange={handleStepData}
-            />
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Navigation Buttons */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex justify-between">
+          {/* Navigation Buttons */}
+          <div className="flex justify-between mt-6">
             <Button
               variant="outline"
               onClick={handlePrevious}
               disabled={currentStepIndex === 0}
             >
+              <ArrowLeft className="h-4 w-4 mr-2" />
               Previous
             </Button>
-            
-            <div className="flex gap-4">
-              {currentStepIndex === steps.length - 1 ? (
+
+            <div className="flex space-x-2">
+              {currentStepIndex < ONBOARDING_STEPS.length - 1 ? (
                 <Button
-                  onClick={handleSubmit}
-                  disabled={isCreating}
-                  className="bg-green-600 hover:bg-green-700"
+                  onClick={handleNext}
+                  disabled={!isCurrentStepValid()}
                 >
-                  {isCreating ? 'Submitting...' : 'Submit Application'}
+                  Next
+                  <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
               ) : (
-                <Button onClick={handleNext}>
-                  Next
+                <Button
+                  onClick={handleSubmit}
+                  disabled={!isFormComplete()}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  {isEditing ? 'Update Application' : 'Submit Application'}
                 </Button>
               )}
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 };
