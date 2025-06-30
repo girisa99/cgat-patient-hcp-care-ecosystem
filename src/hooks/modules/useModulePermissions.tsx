@@ -1,10 +1,15 @@
-
 /**
  * Module Permissions Hook
  * Focused on module access control
  */
 
-import { useAuthContext } from '@/components/auth/AuthProvider';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { Database } from '@/integrations/supabase/types';
+import { useToast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
+import { useAuthContext } from '@/components/auth/CleanAuthProvider';
 import { useModuleData } from './useModuleData';
 
 export const useModulePermissions = () => {

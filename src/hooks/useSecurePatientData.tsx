@@ -10,17 +10,12 @@ interface PatientData {
   last_name: string | null;
   email: string | null;
   phone: string | null;
-  date_of_birth: string | null;
-  medical_record_number: string | null;
-  emergency_contact_name: string | null;
-  emergency_contact_phone: string | null;
-  insurance_provider: string | null;
-  insurance_policy_number: string | null;
-  primary_care_physician: string | null;
-  medical_conditions: string[] | null;
-  medications: string[] | null;
-  allergies: string[] | null;
-  care_plan_status: string | null;
+  department: string | null;
+  facility_id: string | null;
+  avatar_url: string | null;
+  is_email_verified: boolean | null;
+  has_mfa_enabled: boolean | null;
+  last_login: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -56,8 +51,9 @@ export const useSecurePatientData = () => {
 
       console.log('🔒 Fetching secure patient data for user:', user.id);
       
+      // Query profiles table instead of patient_profiles
       const { data, error: fetchError } = await supabase
-        .from('patient_profiles')
+        .from('profiles')
         .select('*')
         .order('created_at', { ascending: false });
 

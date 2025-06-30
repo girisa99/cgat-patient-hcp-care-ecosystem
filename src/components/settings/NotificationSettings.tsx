@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
@@ -8,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useUserSettings } from '@/hooks/useUserSettings';
 import { useTwilioNotifications } from '@/hooks/useTwilioNotifications';
-import { useAuthContext } from '@/components/auth/AuthProvider';
+import { useAuthContext } from '@/components/auth/CleanAuthProvider';
 import { Bell, Mail, Smartphone, MessageSquare, Shield, Settings, Package, Clock, Send } from 'lucide-react';
 import { toast } from 'sonner';
 

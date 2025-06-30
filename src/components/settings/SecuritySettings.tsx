@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
@@ -10,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserSettings } from '@/hooks/useUserSettings';
-import { useAuthContext } from '@/components/auth/AuthProvider';
+import { useAuthContext } from '@/components/auth/CleanAuthProvider';
 import { Shield, Lock, Clock, Bell, Activity, Smartphone, AlertTriangle, Eye } from 'lucide-react';
 import { format } from 'date-fns';
 

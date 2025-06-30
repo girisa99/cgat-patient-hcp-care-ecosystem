@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { HealthcareButton } from '@/components/ui/healthcare-button';
 import { HealthcareInput } from '@/components/ui/healthcare-input';
@@ -6,7 +5,7 @@ import { HealthcareLabel } from '@/components/ui/healthcare-label';
 import { HealthcareCard, HealthcareCardContent, HealthcareCardDescription, HealthcareCardHeader, HealthcareCardTitle } from '@/components/ui/healthcare-card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuthActions } from '@/hooks/useAuthActions';
-import { useAuthContext } from '@/components/auth/AuthProvider';
+import { useAuthContext } from '@/components/auth/CleanAuthProvider';
 import { Eye, EyeOff, Mail, Lock, UserPlus, AlertCircle, LogOut, ArrowLeft } from 'lucide-react';
 import { Database } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
