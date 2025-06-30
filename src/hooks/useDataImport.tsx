@@ -23,11 +23,19 @@ export const useDataImport = () => {
     try {
       console.log('🚀 Starting seed data import...');
 
-      // 1. Load therapies
+      // 1. Load therapies - match the actual database schema
       console.log('📊 Loading therapies...');
+      const therapiesData = SEED_THERAPIES.map(therapy => ({
+        name: therapy.name,
+        therapy_type: therapy.therapy_type as any, // Type assertion for enum
+        description: therapy.description,
+        indication: therapy.indication_areas?.[0] || null, // Use first indication or null
+        is_active: therapy.is_active
+      }));
+
       const { error: therapiesError } = await supabase
         .from('therapies')
-        .upsert(SEED_THERAPIES, { onConflict: 'name' });
+        .upsert(therapiesData, { onConflict: 'name' });
       
       if (therapiesError) throw therapiesError;
 
@@ -39,19 +47,36 @@ export const useDataImport = () => {
       
       if (manufacturersError) throw manufacturersError;
 
-      // 3. Load modalities
+      // 3. Load modalities - match the actual database schema
       console.log('🧬 Loading modalities...');
+      const modalitiesData = SEED_MODALITIES.map(modality => ({
+        name: modality.name,
+        modality_type: modality.modality_type as any, // Type assertion for enum
+        description: modality.description,
+        administration_requirements: modality.administration_requirements,
+        cold_chain_requirements: modality.cold_chain_requirements,
+        manufacturing_complexity: modality.manufacturing_complexity,
+        is_active: modality.is_active
+      }));
+
       const { error: modalitiesError } = await supabase
         .from('modalities')
-        .upsert(SEED_MODALITIES, { onConflict: 'name' });
+        .upsert(modalitiesData, { onConflict: 'name' });
       
       if (modalitiesError) throw modalitiesError;
 
-      // 4. Load products
+      // 4. Load products - match the actual database schema
       console.log('💊 Loading products...');
+      const productsData = SEED_PRODUCTS.map(product => ({
+        name: product.name,
+        product_status: 'approved' as any, // Required field with default value
+        indication: product.indication_areas?.[0] || null, // Use first indication or null
+        is_active: product.is_active
+      }));
+
       const { error: productsError } = await supabase
         .from('products')
-        .upsert(SEED_PRODUCTS, { onConflict: 'name' });
+        .upsert(productsData, { onConflict: 'name' });
       
       if (productsError) throw productsError;
 
