@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { CleanAuthProvider } from "@/components/auth/CleanAuthProvider";
 import Index from "./pages/Index";
+import Dashboard from "./pages/Dashboard";
 import OnboardingDashboard from "./pages/OnboardingDashboard";
 import PatientsPage from "./pages/PatientsPage";
 import UsersPage from "./pages/UsersPage";
@@ -18,6 +19,7 @@ import SettingsPage from "./pages/SettingsPage";
 import TherapiesPage from "./pages/TherapiesPage";
 import ServicesPage from "./pages/ServicesPage";
 import DataImport from "./pages/DataImport";
+import ApiIntegrations from "./pages/ApiIntegrations";
 import { Layout } from "@/components/layout/Layout";
 
 const queryClient = new QueryClient();
@@ -32,11 +34,13 @@ const App = () => (
           <Layout>
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/onboarding" element={<OnboardingDashboard />} />
               <Route path="/patients" element={<PatientsPage />} />
               <Route path="/therapies" element={<TherapiesPage />} />
               <Route path="/services" element={<ServicesPage />} />
               <Route path="/data-import" element={<DataImport />} />
+              <Route path="/api-integrations" element={<ApiIntegrations />} />
               <Route path="/users" element={<UsersPage />} />
               <Route path="/facilities" element={<FacilitiesPage />} />
               <Route path="/modules" element={<ModulesPage />} />
