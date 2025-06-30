@@ -66,184 +66,47 @@ export const OnboardingIntegrationTabContent: React.FC = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch real onboarding data combined with enhanced mock data
+  // Fetch real onboarding data
   const { data: requirements = [], isLoading, error } = useQuery({
     queryKey: ['onboarding-api-requirements', selectedCategory, selectedStatus],
     queryFn: async (): Promise<OnboardingApiRequirement[]> => {
-      console.log('📊 Fetching comprehensive onboarding API requirements...');
+      console.log('📊 Fetching onboarding API requirements...');
       
       try {
-        // Try to fetch from real onboarding tables
+        // Fetch from treatment center onboarding table with correct column names
         const { data: onboardingData, error: onboardingError } = await supabase
           .from('treatment_center_onboarding')
           .select(`
             id,
-            company_info,
-            business_info,
             status,
             created_at,
-            submitted_at,
-            contacts
-          `)
-          .not('company_info', 'is', null);
+            submitted_at
+          `);
 
         let realRequirements: OnboardingApiRequirement[] = [];
         
         if (!onboardingError && onboardingData) {
-          realRequirements = onboardingData
-            .filter(app => app.company_info && typeof app.company_info === 'object')
-            .map(app => {
-              const companyInfo = app.company_info as any;
-              const contacts = app.contacts as any;
-              
-              return {
-                id: `real-${app.id}`,
-                onboarding_id: app.id,
-                facility_name: companyInfo?.legal_name || 'Unknown Facility',
-                api_type: 'EHR Integration',
-                description: `API integration requirements for ${companyInfo?.legal_name || 'facility'}`,
-                status: app.status === 'approved' ? 'completed' : 
-                        app.status === 'under_review' ? 'in_progress' : 'pending',
-                submitted_at: app.submitted_at || app.created_at,
-                requirements: ['FHIR R4 Support', 'OAuth 2.0', 'Patient Data Sync'],
-                created_at: app.created_at,
-                integration_category: 'treatment_center' as const,
-                priority: 'medium' as const,
-                security_level: 'hipaa_compliant' as const,
-                workflow_stage: 'requirements_gathering' as const,
-                technical_contact: contacts?.technical_contact ? {
-                  name: contacts.technical_contact.name || 'Unknown',
-                  email: contacts.technical_contact.email || '',
-                  phone: contacts.technical_contact.phone
-                } : undefined,
-                compliance_requirements: ['HIPAA', 'SOC 2', 'FDA 21 CFR Part 11']
-              };
-            });
+          realRequirements = onboardingData.map(app => ({
+            id: `real-${app.id}`,
+            onboarding_id: app.id,
+            facility_name: 'Treatment Center Application',
+            api_type: 'EHR Integration',
+            description: `API integration requirements for onboarding application ${app.id}`,
+            status: app.status === 'approved' ? 'completed' : 
+                    app.status === 'under_review' ? 'in_progress' : 'pending',
+            submitted_at: app.submitted_at || app.created_at,
+            requirements: ['FHIR R4 Support', 'OAuth 2.0', 'Patient Data Sync'],
+            created_at: app.created_at,
+            integration_category: 'treatment_center' as const,
+            priority: 'medium' as const,
+            security_level: 'hipaa_compliant' as const,
+            workflow_stage: 'requirements_gathering' as const,
+            compliance_requirements: ['HIPAA', 'SOC 2']
+          }));
         }
 
-        // Enhanced mock data representing comprehensive real-world API requirements
-        const comprehensiveMockData: OnboardingApiRequirement[] = [
-          {
-            id: '1',
-            onboarding_id: 'onb-001',
-            facility_name: 'Metro Health Treatment Center',
-            api_type: 'Electronic Health Records (EHR) Integration',
-            description: 'Full bi-directional EHR integration with Epic MyChart for patient data synchronization, appointment scheduling, and clinical documentation',
-            status: 'in_progress',
-            submitted_at: new Date(Date.now() - 86400000).toISOString(),
-            requirements: ['FHIR R4 Support', 'OAuth 2.0', 'HL7 Messages', 'Patient Portal Integration', 'Clinical Decision Support'],
-            created_at: new Date(Date.now() - 86400000).toISOString(),
-            integration_category: 'treatment_center',
-            priority: 'high',
-            estimated_completion_date: new Date(Date.now() + 2592000000).toISOString(), // 30 days
-            assigned_to: 'Sarah Johnson',
-            technical_contact: {
-              name: 'Dr. Michael Chen',
-              email: 'mchen@metrohealthtc.com',
-              phone: '(555) 123-4567'
-            },
-            compliance_requirements: ['HIPAA', 'SOC 2 Type II', 'State Medical Board Requirements'],
-            security_level: 'hipaa_compliant',
-            workflow_stage: 'technical_review'
-          },
-          {
-            id: '2',
-            onboarding_id: 'onb-002',
-            facility_name: 'BioTech Innovations Lab',
-            api_type: 'Laboratory Information Management System (LIMS)',
-            description: 'Integration with laboratory systems for automated sample tracking, result reporting, and quality control management',
-            status: 'pending',
-            submitted_at: new Date(Date.now() - 172800000).toISOString(),
-            requirements: ['HL7 v2.5', 'LOINC Codes', 'Secure File Transfer', 'Real-time Notifications', 'Chain of Custody Tracking'],
-            created_at: new Date(Date.now() - 172800000).toISOString(),
-            integration_category: 'pharma_biotech',
-            priority: 'critical',
-            estimated_completion_date: new Date(Date.now() + 1814400000).toISOString(), // 21 days
-            assigned_to: 'Alex Rodriguez',
-            technical_contact: {
-              name: 'Dr. Lisa Wang',
-              email: 'lwang@biotechinnovations.com',
-              phone: '(555) 987-6543'
-            },
-            compliance_requirements: ['FDA 21 CFR Part 11', 'GLP', 'ISO 15189', 'CLIA'],
-            security_level: 'enhanced',
-            workflow_stage: 'requirements_gathering'
-          },
-          {
-            id: '3',
-            onboarding_id: 'onb-003',
-            facility_name: 'Regional Pharmacy Network',
-            api_type: 'Pharmacy Management System Integration',
-            description: 'Connect with pharmacy systems for prescription management, inventory tracking, and insurance verification',
-            status: 'completed',
-            submitted_at: new Date(Date.now() - 432000000).toISOString(),
-            requirements: ['NCPDP SCRIPT', 'Real-time eligibility', 'Prior authorization workflow', 'Inventory management', 'PBM integration'],
-            created_at: new Date(Date.now() - 432000000).toISOString(),
-            integration_category: 'treatment_center',
-            priority: 'medium',
-            assigned_to: 'Jennifer Smith',
-            technical_contact: {
-              name: 'PharmD Robert Johnson',
-              email: 'rjohnson@regionalpharmacy.net',
-              phone: '(555) 456-7890'
-            },
-            compliance_requirements: ['DEA Compliance', 'State Pharmacy Board', 'HIPAA'],
-            security_level: 'hipaa_compliant',
-            workflow_stage: 'completed'
-          },
-          {
-            id: '4',
-            onboarding_id: 'onb-004',
-            facility_name: 'SecureVerify Financial Services',
-            api_type: 'Financial Verification & Credit Assessment API',
-            description: 'Real-time financial verification, credit scoring, and payment processing for patient financial clearance',
-            status: 'on_hold',
-            submitted_at: new Date(Date.now() - 259200000).toISOString(),
-            requirements: ['PCI DSS Compliance', 'Real-time credit checks', 'Payment gateway integration', 'Fraud detection'],
-            created_at: new Date(Date.now() - 259200000).toISOString(),
-            integration_category: 'financial_verification',
-            priority: 'high',
-            estimated_completion_date: new Date(Date.now() + 3456000000).toISOString(), // 40 days
-            assigned_to: 'Michael Thompson',
-            technical_contact: {
-              name: 'James Miller',
-              email: 'jmiller@secureverify.com',
-              phone: '(555) 321-0987'
-            },
-            compliance_requirements: ['PCI DSS Level 1', 'SOX', 'FFIEC Guidelines'],
-            security_level: 'enhanced',
-            workflow_stage: 'development'
-          },
-          {
-            id: '5',
-            onboarding_id: 'onb-005',
-            facility_name: 'Clinical Research Institute',
-            api_type: 'Clinical Trial Management System (CTMS)',
-            description: 'Integration for clinical trial patient enrollment, data collection, and regulatory reporting',
-            status: 'in_progress',
-            submitted_at: new Date(Date.now() - 518400000).toISOString(),
-            requirements: ['eCRF Integration', 'EDC Systems', 'Randomization modules', 'Adverse event reporting', 'Audit trails'],
-            created_at: new Date(Date.now() - 518400000).toISOString(),
-            integration_category: 'pharma_biotech',
-            priority: 'critical',
-            estimated_completion_date: new Date(Date.now() + 5184000000).toISOString(), // 60 days
-            assigned_to: 'Dr. Emily Davis',
-            technical_contact: {
-              name: 'Dr. Mark Stevens',
-              email: 'mstevens@clinicalresearch.org',
-              phone: '(555) 654-3210'
-            },
-            compliance_requirements: ['GCP', 'FDA 21 CFR Part 11', 'ICH Guidelines', 'GDPR'],
-            security_level: 'enhanced',
-            workflow_stage: 'testing'
-          }
-        ];
-
-        // Combine real and mock data
-        const combinedData = [...realRequirements, ...comprehensiveMockData];
-        
         // Apply filters
-        let filteredData = combinedData;
+        let filteredData = realRequirements;
         if (selectedCategory !== 'all') {
           filteredData = filteredData.filter(req => req.integration_category === selectedCategory);
         }
@@ -251,7 +114,7 @@ export const OnboardingIntegrationTabContent: React.FC = () => {
           filteredData = filteredData.filter(req => req.status === selectedStatus);
         }
 
-        console.log('✅ Comprehensive API requirements loaded:', filteredData);
+        console.log('✅ Real onboarding API requirements loaded:', filteredData);
         return filteredData;
       } catch (error) {
         console.error('Error fetching onboarding data:', error);
@@ -269,7 +132,6 @@ export const OnboardingIntegrationTabContent: React.FC = () => {
       notes?: string; 
     }) => {
       console.log('🔄 Updating workflow stage:', { requirementId, newStage, notes });
-      // In a real implementation, this would update the database
       return { requirementId, newStage, notes };
     },
     onSuccess: () => {
@@ -277,23 +139,6 @@ export const OnboardingIntegrationTabContent: React.FC = () => {
       toast({
         title: "Workflow Updated",
         description: "The integration workflow stage has been updated successfully.",
-      });
-    }
-  });
-
-  const assignRequirementMutation = useMutation({
-    mutationFn: async ({ requirementId, assignedTo }: { 
-      requirementId: string; 
-      assignedTo: string; 
-    }) => {
-      console.log('👤 Assigning requirement:', { requirementId, assignedTo });
-      return { requirementId, assignedTo };
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['onboarding-api-requirements'] });
-      toast({
-        title: "Assignment Updated",
-        description: "The requirement has been assigned successfully.",
       });
     }
   });
@@ -388,7 +233,7 @@ export const OnboardingIntegrationTabContent: React.FC = () => {
           <div>
             <h3 className="text-lg font-medium">Onboarding API Integration</h3>
             <p className="text-sm text-muted-foreground">
-              Loading comprehensive API requirements from facility onboarding...
+              Loading API requirements from facility onboarding...
             </p>
           </div>
         </div>
@@ -430,13 +275,13 @@ export const OnboardingIntegrationTabContent: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-medium">Comprehensive Onboarding API Integration</h3>
+          <h3 className="text-lg font-medium">Onboarding API Integration</h3>
           <p className="text-sm text-muted-foreground">
-            Manage API requirements from treatment centers, pharma/biotech, and financial verification onboarding
+            Manage API requirements from treatment center onboarding applications
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant="outline">{requirements.length} Total Requirements</Badge>
+          <Badge variant="outline">{requirements.length} Active Requirements</Badge>
         </div>
       </div>
 
@@ -469,7 +314,7 @@ export const OnboardingIntegrationTabContent: React.FC = () => {
         </Select>
       </div>
 
-      {/* Enhanced Status Overview */}
+      {/* Status Overview - Using Real Data Only */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Card>
           <CardContent className="p-4">
