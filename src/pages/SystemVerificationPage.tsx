@@ -6,16 +6,14 @@ import { SystemVerificationDashboard } from '@/components/admin/SystemVerificati
 
 const SystemVerificationPage: React.FC = () => {
   return (
-    <>
+    <UnifiedDashboardLayout>
       <Helmet>
         <title>System Verification - GENIE Healthcare Admin</title>
         <meta name="description" content="Comprehensive system verification and testing dashboard" />
       </Helmet>
       
-      <UnifiedDashboardLayout>
-        <SystemVerificationDashboard />
-      </UnifiedDashboardLayout>
-    </>
+      <SystemVerificationDashboard />
+    </UnifiedDashboardLayout>
   );
 };
 
