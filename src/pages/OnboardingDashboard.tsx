@@ -3,10 +3,10 @@ import React from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { CollaborativeOnboardingView } from '@/components/onboarding/CollaborativeOnboardingView';
-import { useOnboardingWorkflow } from '@/hooks/useOnboardingWorkflow';
+import { useTreatmentCenterOnboarding } from '@/hooks/useTreatmentCenterOnboarding';
 
 const OnboardingDashboard: React.FC = () => {
-  const { onboardingData, isLoading } = useOnboardingWorkflow();
+  const { onboardingApplications, isLoading } = useTreatmentCenterOnboarding();
 
   if (isLoading) {
     return (
