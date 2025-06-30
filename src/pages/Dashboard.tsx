@@ -1,204 +1,129 @@
 
 import React from 'react';
+import { useAuthContext } from '@/components/auth/CleanAuthProvider';
+import { Link } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
 import { PageContainer } from '@/components/layout/PageContainer';
-import { AdminStatsGrid, StatCard } from '@/components/layout/AdminStatsGrid';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, Building, Shield, Activity, Database, Zap } from 'lucide-react';
-import { ModulesOverviewCard } from '@/components/dashboard/ModulesOverviewCard';
-import { useUsers } from '@/hooks/useUsers';
-import { useFacilities } from '@/hooks/useFacilities';
-import { useModules } from '@/hooks/useModules';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Users, Building2, Settings, UserPlus, Database, Code } from 'lucide-react';
+import ProfileCard from '@/components/dashboard/ProfileCard';
 import { useAdminRealtime } from '@/hooks/useAdminRealtime';
-import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 const Dashboard = () => {
-  // Enable real-time updates for all admin areas
+  const { user, userRoles, profile } = useAuthContext();
+
+  // Enable real-time updates for dashboard
   useAdminRealtime({
     enableNotifications: true,
-    areas: ['userManagement', 'facility', 'rbac', 'dashboard', 'apiIntegration']
+    areas: ['dashboard', 'rbac', 'userManagement', 'apiIntegration']
   });
 
-  const { users, isLoading: isLoadingUsers } = useUsers();
-  const { facilities, isLoading: isLoadingFacilities } = useFacilities();
-  const { modules, isLoading: isLoadingModules } = useModules();
-
-  // Calculate real-time stats
-  const stats = {
-    totalUsers: users?.length || 0,
-    activeUsers: users?.filter(u => u.last_login && 
-      new Date(u.last_login) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-    ).length || 0,
-    totalFacilities: facilities?.length || 0,
-    activeFacilities: facilities?.filter(f => f.is_active).length || 0,
-    totalModules: modules?.length || 0,
-    activeModules: modules?.filter(m => m.is_active).length || 0,
-    usersWithRoles: users?.filter(u => u.user_roles && u.user_roles.length > 0).length || 0
-  };
-
-  const isLoading = isLoadingUsers || isLoadingFacilities || isLoadingModules;
-
-  if (isLoading) {
-    return (
-      <MainLayout>
-        <PageContainer title="Dashboard" subtitle="Loading dashboard data...">
-          <div className="flex justify-center items-center min-h-[400px]">
-            <LoadingSpinner size="lg" />
-          </div>
-        </PageContainer>
-      </MainLayout>
-    );
-  }
+  const isAdmin = userRoles.includes('superAdmin');
+  const isOnboarding = userRoles.includes('onboardingTeam');
+  const hasAdminAccess = isAdmin || isOnboarding;
 
   return (
     <MainLayout>
       <PageContainer
-        title="Admin Dashboard"
-        subtitle="Real-time overview of your healthcare platform with live updates"
+        title="Dashboard"
+        subtitle={`Welcome back, ${profile?.first_name || user?.email || 'User'}!`}
       >
-        <div className="space-y-6">
-          {/* Real-time Stats Grid */}
-          <AdminStatsGrid columns={6}>
-            <StatCard
-              title="Total Users"
-              value={stats.totalUsers}
-              icon={Users}
-              description="All registered users"
-              trend={{ value: "12", isPositive: true }}
-            />
-            <StatCard
-              title="Active Users"
-              value={stats.activeUsers}
-              icon={Activity}
-              description="Active in last 7 days"
-              trend={{ value: "8", isPositive: true }}
-            />
-            <StatCard
-              title="Total Facilities"
-              value={stats.totalFacilities}
-              icon={Building}
-              description="Healthcare facilities"
-            />
-            <StatCard
-              title="Active Facilities"
-              value={stats.activeFacilities}
-              icon={Zap}
-              description="Currently active"
-            />
-            <StatCard
-              title="System Modules"
-              value={stats.totalModules}
-              icon={Database}
-              description="Available modules"
-            />
-            <StatCard
-              title="Users with Roles"
-              value={stats.usersWithRoles}
-              icon={Shield}
-              description="Role-based access control"
-            />
-          </AdminStatsGrid>
-
-          {/* Real-time System Overview */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <ModulesOverviewCard />
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Activity className="h-5 w-5 mr-2" />
-                  Real-time System Status
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">User Management Updates</span>
-                    <div className="flex items-center">
-                      <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                      <span className="text-sm text-green-600">Live</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Facility Management</span>
-                    <div className="flex items-center">
-                      <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                      <span className="text-sm text-green-600">Live</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Module & RBAC Updates</span>
-                    <div className="flex items-center">
-                      <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                      <span className="text-sm text-green-600">Live</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">API Integrations</span>
-                    <div className="flex items-center">
-                      <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                      <span className="text-sm text-green-600">Live</span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Profile Card */}
+          <div className="lg:col-span-1">
+            <ProfileCard profile={profile} user={user} />
           </div>
 
-          {/* Additional Dashboard Content */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-sm text-gray-600">
-                  Real-time activity feed will appear here as changes occur across the system.
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>System Health</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-sm">Database</span>
-                    <span className="text-sm text-green-600">Healthy</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm">Real-time Updates</span>
-                    <span className="text-sm text-green-600">Active</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm">API Services</span>
-                    <span className="text-sm text-green-600">Operational</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
+          {/* Quick Actions */}
+          <div className="lg:col-span-2">
             <Card>
               <CardHeader>
                 <CardTitle>Quick Actions</CardTitle>
+                <CardDescription>Access your most used features</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
-                  <button className="w-full text-left text-sm text-blue-600 hover:text-blue-800">
-                    View All Users →
-                  </button>
-                  <button className="w-full text-left text-sm text-blue-600 hover:text-blue-800">
-                    Manage Facilities →
-                  </button>
-                  <button className="w-full text-left text-sm text-blue-600 hover:text-blue-800">
-                    Configure Modules →
-                  </button>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {hasAdminAccess && (
+                    <>
+                      <Link to="/users">
+                        <Button variant="outline" className="w-full h-20 flex-col">
+                          <Users className="h-6 w-6 mb-2" />
+                          User Management
+                        </Button>
+                      </Link>
+                      
+                      <Link to="/facilities">
+                        <Button variant="outline" className="w-full h-20 flex-col">
+                          <Building2 className="h-6 w-6 mb-2" />
+                          Facilities
+                        </Button>
+                      </Link>
+                    </>
+                  )}
+                  
+                  <Link to="/patients">
+                    <Button variant="outline" className="w-full h-20 flex-col">
+                      <UserPlus className="h-6 w-6 mb-2" />
+                      Patients
+                    </Button>
+                  </Link>
+                  
+                  {hasAdminAccess && (
+                    <>
+                      <Link to="/modules">
+                        <Button variant="outline" className="w-full h-20 flex-col">
+                          <Database className="h-6 w-6 mb-2" />
+                          Modules
+                        </Button>
+                      </Link>
+                      
+                      <Link to="/api-integrations">
+                        <Button variant="outline" className="w-full h-20 flex-col">
+                          <Code className="h-6 w-6 mb-2" />
+                          API Integrations
+                        </Button>
+                      </Link>
+                    </>
+                  )}
+                  
+                  <Link to="/settings">
+                    <Button variant="outline" className="w-full h-20 flex-col">
+                      <Settings className="h-6 w-6 mb-2" />
+                      Settings
+                    </Button>
+                  </Link>
                 </div>
               </CardContent>
             </Card>
           </div>
         </div>
+
+        {/* Role Information */}
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle>Your Access Level</CardTitle>
+            <CardDescription>Current roles and permissions</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {userRoles.length > 0 ? (
+                userRoles.map((role) => (
+                  <span
+                    key={role}
+                    className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium"
+                  >
+                    {role}
+                  </span>
+                ))
+              ) : (
+                <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm">
+                  No roles assigned
+                </span>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </PageContainer>
     </MainLayout>
   );

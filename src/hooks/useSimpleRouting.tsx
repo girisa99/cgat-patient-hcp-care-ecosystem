@@ -41,6 +41,11 @@ export const useSimpleRouting = ({ userRoles, isAuthenticated }: SimpleRoutingPr
         console.log('🗺️ Routing case manager to patients');
         return '/patients';
       }
+      
+      if (userRoles.includes('patientCaregiver')) {
+        console.log('🗺️ Routing patient to dashboard');
+        return '/dashboard';
+      }
     }
     
     // Default fallback - if authenticated but no specific roles, go to dashboard

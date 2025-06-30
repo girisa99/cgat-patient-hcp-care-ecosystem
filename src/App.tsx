@@ -13,6 +13,7 @@ import Facilities from "./pages/Facilities";
 import Modules from "./pages/Modules";
 import Onboarding from "./pages/Onboarding";
 import Settings from "./pages/Settings";
+import ApiIntegrations from "./pages/ApiIntegrations";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +33,7 @@ const App = () => (
             <Route path="/modules" element={<Modules />} />
             <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/api-integrations" element={<ApiIntegrations />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
