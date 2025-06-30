@@ -44,7 +44,7 @@ export const JsonImportTab: React.FC = () => {
       });
       
       setJsonInput('');
-    } catch (parseError) {
+    } catch (parseError: any) {
       console.error('❌ JSON parsing error:', parseError);
       console.error('❌ Error details:', {
         message: parseError.message,
@@ -57,7 +57,7 @@ export const JsonImportTab: React.FC = () => {
         description: `JSON parsing failed: ${parseError.message}. Please check your JSON format and try again.`,
         variant: "destructive",
       });
-    } catch (importError) {
+    } catch (importError: any) {
       console.error('❌ Import error:', importError);
       toast({
         title: "Import Failed",
