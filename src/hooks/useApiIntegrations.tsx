@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { InternalApiDetector } from '@/utils/api/InternalApiDetector';
@@ -79,11 +78,21 @@ export const useApiIntegrations = () => {
 
         // Generate core healthcare internal API
         const coreHealthcareIntegration = InternalApiDetector.generateMockInternalIntegration();
-        allIntegrations.push(coreHealthcareIntegration);
+        const coreHealthcareWithTimestamps = {
+          ...coreHealthcareIntegration,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        allIntegrations.push(coreHealthcareWithTimestamps);
 
         // Generate onboarding internal API
         const onboardingIntegration = OnboardingApiDetector.generateOnboardingIntegration();
-        allIntegrations.push(onboardingIntegration);
+        const onboardingWithTimestamps = {
+          ...onboardingIntegration,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        allIntegrations.push(onboardingWithTimestamps);
 
         // Add Twilio as a consumed external API with comprehensive processes
         const twilioIntegration: ApiIntegration = {
@@ -311,10 +320,21 @@ export const useApiIntegrations = () => {
 
       } catch (error) {
         console.error('Error fetching API integrations:', error);
-        // Return core integrations as fallback
+        // Return core integrations as fallback with timestamps
+        const coreIntegration = InternalApiDetector.generateMockInternalIntegration();
+        const onboardingIntegration = OnboardingApiDetector.generateOnboardingIntegration();
+        
         return [
-          InternalApiDetector.generateMockInternalIntegration(),
-          OnboardingApiDetector.generateOnboardingIntegration()
+          {
+            ...coreIntegration,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          },
+          {
+            ...onboardingIntegration,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          }
         ];
       }
     },
