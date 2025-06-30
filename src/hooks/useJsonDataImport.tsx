@@ -12,15 +12,13 @@ export const useJsonDataImport = () => {
     try {
       console.log('🚀 Starting JSON data import...');
 
-      // 1. Load therapies
+      // 1. Load therapies - using only fields that exist in the database
       if (jsonData.therapies) {
         console.log('📊 Loading therapies...');
         const therapiesData = jsonData.therapies.map((therapy: any) => ({
           name: therapy.name,
-          therapy_type: therapy.therapy_type,
+          therapy_type: therapy.therapy_type || 'cell_gene_therapy',
           description: therapy.description,
-          indication_areas: therapy.indication_areas,
-          regulatory_status: therapy.regulatory_status,
           is_active: true
         }));
 
@@ -56,7 +54,7 @@ export const useJsonDataImport = () => {
         console.log('🧬 Loading modalities...');
         const modalitiesData = jsonData.modalities.map((modality: any) => ({
           name: modality.name,
-          modality_type: modality.modality_type,
+          modality_type: modality.modality_type || 'cell_therapy',
           description: modality.description,
           administration_requirements: modality.administration_requirements,
           cold_chain_requirements: modality.cold_chain_requirements,
@@ -95,7 +93,7 @@ export const useJsonDataImport = () => {
         console.log('🏢 Loading service providers...');
         const providersData = jsonData.service_providers.map((provider: any) => ({
           name: provider.name,
-          provider_type: provider.provider_type,
+          provider_type: provider.provider_type || 'third_party',
           specializations: provider.specializations,
           geographic_coverage: provider.geographic_coverage,
           certifications: provider.certifications,
