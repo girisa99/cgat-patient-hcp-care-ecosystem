@@ -14,12 +14,10 @@ import {
   Shield,
   Database,
   Server,
-  RefreshCw
+  RefreshCw,
+  Activity
 } from 'lucide-react';
-import { useAuthContext } from '@/components/auth/CleanAuthProvider';
-import { useUnifiedUserData } from '@/hooks/useUnifiedUserData';
-import { useFacilities } from '@/hooks/useFacilities';
-import { useModules } from '@/hooks/useModules';
+import { integratedSystemVerifier } from '@/utils/verification/IntegratedSystemVerifier';
 
 interface VerificationResult {
   component: string;
@@ -29,251 +27,94 @@ interface VerificationResult {
   lastChecked?: Date;
 }
 
+interface BackgroundVerificationData {
+  results: VerificationResult[];
+  overallStatus: 'healthy' | 'warning' | 'critical';
+  healthScore: number;
+  lastUpdate: string;
+}
+
 export const SystemVerificationDashboard: React.FC = () => {
   const [verificationResults, setVerificationResults] = useState<VerificationResult[]>([]);
   const [isRunningTests, setIsRunningTests] = useState(false);
   const [lastFullCheck, setLastFullCheck] = useState<Date | null>(null);
+  const [backgroundData, setBackgroundData] = useState<BackgroundVerificationData | null>(null);
+  const [isLiveMode, setIsLiveMode] = useState(true);
 
-  // Hook instances for testing - using the working unified approach
-  const { user, isAuthenticated, userRoles, loading: authLoading } = useAuthContext();
-  const { allUsers, isLoading: usersLoading, error: usersError, meta } = useUnifiedUserData();
-  const { facilities, isLoading: facilitiesLoading, error: facilitiesError } = useFacilities();
-  const { modules, isLoading: modulesLoading, error: modulesError } = useModules();
-
-  const runVerificationTests = async () => {
-    setIsRunningTests(true);
-    const results: VerificationResult[] = [];
-
-    // Test Authentication
-    console.log('🔍 Testing Authentication System...');
+  // Load background automation results
+  const loadBackgroundResults = () => {
     try {
-      if (authLoading) {
-        results.push({
-          component: 'Authentication',
-          status: 'loading',
-          message: 'Authentication system is initializing...',
-          lastChecked: new Date()
-        });
-      } else if (isAuthenticated && user) {
-        const authDetails = [
-          `✅ User authenticated: ${user.email}`,
-          `✅ User ID: ${user.id}`,
-          `✅ Roles loaded: ${userRoles.length > 0 ? userRoles.join(', ') : 'No roles assigned'}`,
-          `✅ Session active: ${isAuthenticated ? 'Yes' : 'No'}`
-        ];
-        
-        results.push({
-          component: 'Authentication',
-          status: userRoles.length > 0 ? 'success' : 'warning',
-          message: userRoles.length > 0 ? 'Authentication system working correctly' : 'User authenticated but no roles assigned',
-          details: authDetails,
-          lastChecked: new Date()
-        });
-      } else {
-        results.push({
-          component: 'Authentication',
-          status: 'error',
-          message: 'User not authenticated or authentication failed',
-          details: ['❌ Please check login functionality'],
-          lastChecked: new Date()
-        });
+      const stored = localStorage.getItem('latest_automation_results');
+      if (stored) {
+        const data = JSON.parse(stored);
+        if (data.systemVerification) {
+          setBackgroundData({
+            results: data.systemVerification.results,
+            overallStatus: data.systemVerification.overallStatus,
+            healthScore: data.systemVerification.healthScore,
+            lastUpdate: data.timestamp
+          });
+          setVerificationResults(data.systemVerification.results);
+          setLastFullCheck(new Date(data.timestamp));
+        }
       }
-    } catch (error: any) {
-      results.push({
-        component: 'Authentication',
-        status: 'error',
-        message: 'Authentication system error',
-        details: [`❌ Error: ${error.message}`],
-        lastChecked: new Date()
-      });
+    } catch (error) {
+      console.error('Failed to load background results:', error);
     }
-
-    // Test User Management - Using unified user data
-    console.log('🔍 Testing User Management System...');
-    try {
-      if (usersLoading) {
-        results.push({
-          component: 'User Management',
-          status: 'loading',
-          message: 'Loading user data...',
-          lastChecked: new Date()
-        });
-      } else if (usersError) {
-        results.push({
-          component: 'User Management',
-          status: 'error',
-          message: 'User management system error',
-          details: [`❌ Error: ${usersError.message}`],
-          lastChecked: new Date()
-        });
-      } else if (allUsers && allUsers.length > 0) {
-        const userDetails = [
-          `✅ Total users loaded: ${meta.totalUsers}`,
-          `✅ Patients: ${meta.patientCount}`,
-          `✅ Healthcare staff: ${meta.staffCount}`,
-          `✅ Admin users: ${meta.adminCount}`,
-          `✅ Data source: ${meta.dataSource}`
-        ];
-        
-        results.push({
-          component: 'User Management',
-          status: 'success',
-          message: 'User management system working correctly',
-          details: userDetails,
-          lastChecked: new Date()
-        });
-      } else {
-        results.push({
-          component: 'User Management',
-          status: 'warning',
-          message: 'No users found in system',
-          details: ['⚠️ System may be empty or users not loading'],
-          lastChecked: new Date()
-        });
-      }
-    } catch (error: any) {
-      results.push({
-        component: 'User Management',
-        status: 'error',
-        message: 'User management system error',
-        details: [`❌ Error: ${error.message}`],
-        lastChecked: new Date()
-      });
-    }
-
-    // Test Facilities Management
-    console.log('🔍 Testing Facilities Management System...');
-    try {
-      if (facilitiesLoading) {
-        results.push({
-          component: 'Facilities Management',
-          status: 'loading',
-          message: 'Loading facilities data...',
-          lastChecked: new Date()
-        });
-      } else if (facilitiesError) {
-        results.push({
-          component: 'Facilities Management',
-          status: 'error',
-          message: 'Facilities management system error',
-          details: [`❌ Error: ${facilitiesError.message}`],
-          lastChecked: new Date()
-        });
-      } else if (facilities && facilities.length > 0) {
-        const facilityDetails = [
-          `✅ Total facilities loaded: ${facilities.length}`,
-          `✅ Active facilities: ${facilities.filter(f => f.is_active).length}`,
-          `✅ Facility types: ${[...new Set(facilities.map(f => f.facility_type))].join(', ')}`
-        ];
-        
-        results.push({
-          component: 'Facilities Management',
-          status: 'success',
-          message: 'Facilities management system working correctly',
-          details: facilityDetails,
-          lastChecked: new Date()
-        });
-      } else {
-        results.push({
-          component: 'Facilities Management',
-          status: 'warning',
-          message: 'No facilities found in system',
-          details: ['⚠️ System may be empty or facilities not loading'],
-          lastChecked: new Date()
-        });
-      }
-    } catch (error: any) {
-      results.push({
-        component: 'Facilities Management',
-        status: 'error',
-        message: 'Facilities management system error',
-        details: [`❌ Error: ${error.message}`],
-        lastChecked: new Date()
-      });
-    }
-
-    // Test Modules System
-    console.log('🔍 Testing Modules Management System...');
-    try {
-      if (modulesLoading) {
-        results.push({
-          component: 'Modules Management',
-          status: 'loading',
-          message: 'Loading modules data...',
-          lastChecked: new Date()
-        });
-      } else if (modulesError) {
-        results.push({
-          component: 'Modules Management',
-          status: 'error',
-          message: 'Modules management system error',
-          details: [`❌ Error: ${modulesError.message}`],
-          lastChecked: new Date()
-        });
-      } else if (modules && modules.length > 0) {
-        const moduleDetails = [
-          `✅ Total modules loaded: ${modules.length}`,
-          `✅ Active modules: ${modules.filter(m => m.is_active).length}`,
-          `✅ Module names: ${modules.map(m => m.name).join(', ')}`
-        ];
-        
-        results.push({
-          component: 'Modules Management',
-          status: 'success',
-          message: 'Modules management system working correctly',
-          details: moduleDetails,
-          lastChecked: new Date()
-        });
-      } else {
-        results.push({
-          component: 'Modules Management',
-          status: 'warning',
-          message: 'No modules found in system',
-          details: ['⚠️ System may be empty or modules not loading'],
-          lastChecked: new Date()
-        });
-      }
-    } catch (error: any) {
-      results.push({
-        component: 'Modules Management',
-        status: 'error',
-        message: 'Modules management system error',
-        details: [`❌ Error: ${error.message}`],
-        lastChecked: new Date()
-      });
-    }
-
-    // Test Database Connection
-    console.log('🔍 Testing Database Connection...');
-    try {
-      results.push({
-        component: 'Database Connection',
-        status: 'success',
-        message: 'Database connection active',
-        details: ['✅ Supabase client initialized', '✅ Database queries working'],
-        lastChecked: new Date()
-      });
-    } catch (error: any) {
-      results.push({
-        component: 'Database Connection',
-        status: 'error',
-        message: 'Database connection error',
-        details: [`❌ Error: ${error.message}`],
-        lastChecked: new Date()
-      });
-    }
-
-    setVerificationResults(results);
-    setLastFullCheck(new Date());
-    setIsRunningTests(false);
-    
-    console.log('✅ System verification completed:', results);
   };
 
+  // Manual verification (for immediate testing)
+  const runManualVerification = async () => {
+    setIsRunningTests(true);
+    setIsLiveMode(false);
+    
+    try {
+      console.log('🔍 Running manual system verification...');
+      const { results, overallStatus, healthScore } = await integratedSystemVerifier.runAutomatedSystemVerification();
+      
+      setVerificationResults(results);
+      setLastFullCheck(new Date());
+      setBackgroundData({
+        results,
+        overallStatus,
+        healthScore,
+        lastUpdate: new Date().toISOString()
+      });
+      
+      console.log('✅ Manual verification completed');
+    } catch (error) {
+      console.error('❌ Manual verification failed:', error);
+    } finally {
+      setIsRunningTests(false);
+    }
+  };
+
+  // Listen for background automation updates
   useEffect(() => {
-    // Run initial verification
-    runVerificationTests();
-  }, []);
+    // Load initial data
+    loadBackgroundResults();
+
+    // Listen for automation updates
+    const handleAutomationUpdate = (event: CustomEvent) => {
+      console.log('🔄 Received automation update:', event.detail);
+      loadBackgroundResults();
+      setIsLiveMode(true);
+    };
+
+    window.addEventListener('automation-cycle-complete', handleAutomationUpdate as EventListener);
+
+    // Refresh every 30 seconds to sync with background automation
+    const interval = setInterval(() => {
+      if (isLiveMode) {
+        loadBackgroundResults();
+      }
+    }, 30000);
+
+    return () => {
+      window.removeEventListener('automation-cycle-complete', handleAutomationUpdate as EventListener);
+      clearInterval(interval);
+    };
+  }, [isLiveMode]);
 
   const getStatusIcon = (status: VerificationResult['status']) => {
     switch (status) {
@@ -309,20 +150,82 @@ export const SystemVerificationDashboard: React.FC = () => {
     <div className="space-y-6 p-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">System Verification Dashboard</h1>
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <Activity className="h-6 w-6" />
+            Integrated System Verification
+          </h1>
           <p className="text-muted-foreground">
-            Comprehensive testing of all core application components
+            {isLiveMode ? '🔄 Live data from 30-minute background automation' : '📋 Manual verification results'}
           </p>
         </div>
-        <Button 
-          onClick={runVerificationTests}
-          disabled={isRunningTests}
-          className="flex items-center gap-2"
-        >
-          <RefreshCw className={`h-4 w-4 ${isRunningTests ? 'animate-spin' : ''}`} />
-          {isRunningTests ? 'Running Tests...' : 'Re-run Tests'}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button 
+            onClick={() => setIsLiveMode(!isLiveMode)}
+            variant="outline"
+            size="sm"
+          >
+            {isLiveMode ? (
+              <>
+                <Activity className="h-4 w-4 mr-2" />
+                Live Mode
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Manual Mode
+              </>
+            )}
+          </Button>
+          <Button 
+            onClick={runManualVerification}
+            disabled={isRunningTests}
+            variant="outline"
+            size="sm"
+          >
+            {isRunningTests ? (
+              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Database className="h-4 w-4 mr-2" />
+            )}
+            {isRunningTests ? 'Running...' : 'Manual Check'}
+          </Button>
+        </div>
       </div>
+
+      {/* Background Status Indicator */}
+      {backgroundData && (
+        <Card className={
+          backgroundData.overallStatus === 'healthy' ? 'border-green-200 bg-green-50' :
+          backgroundData.overallStatus === 'warning' ? 'border-yellow-200 bg-yellow-50' :
+          'border-red-200 bg-red-50'
+        }>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Shield className={
+                  backgroundData.overallStatus === 'healthy' ? 'h-6 w-6 text-green-600' :
+                  backgroundData.overallStatus === 'warning' ? 'h-6 w-6 text-yellow-600' :
+                  'h-6 w-6 text-red-600'
+                } />
+                <div>
+                  <h3 className="font-medium">System Health Score: {backgroundData.healthScore}/100</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Overall Status: {backgroundData.overallStatus.toUpperCase()} | 
+                    Last Updated: {new Date(backgroundData.lastUpdate).toLocaleString()}
+                  </p>
+                </div>
+              </div>
+              <Badge className={
+                backgroundData.overallStatus === 'healthy' ? 'bg-green-100 text-green-800' :
+                backgroundData.overallStatus === 'warning' ? 'bg-yellow-100 text-yellow-800' :
+                'bg-red-100 text-red-800'
+              }>
+                {backgroundData.overallStatus.toUpperCase()}
+              </Badge>
+            </div>
+          </div>
+        </Card>
+      )}
 
       {/* Overall Status */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -381,6 +284,7 @@ export const SystemVerificationDashboard: React.FC = () => {
           <CardTitle className="flex items-center gap-2">
             <Database className="h-5 w-5" />
             System Component Status
+            {isLiveMode && <Badge variant="outline">Live</Badge>}
           </CardTitle>
           {lastFullCheck && (
             <p className="text-sm text-muted-foreground">
@@ -431,22 +335,24 @@ export const SystemVerificationDashboard: React.FC = () => {
       {/* Quick Actions */}
       <Card>
         <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
+          <CardTitle>Integration Status</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Button variant="outline" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Test User Management
-            </Button>
-            <Button variant="outline" className="flex items-center gap-2">
-              <Building2 className="h-4 w-4" />
-              Test Facilities
-            </Button>
-            <Button variant="outline" className="flex items-center gap-2">
-              <Settings className="h-4 w-4" />
-              Test Modules
-            </Button>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg">
+              <Activity className="h-5 w-5 text-blue-600" />
+              <div>
+                <p className="font-medium text-blue-900">Background Automation</p>
+                <p className="text-sm text-blue-700">Runs every 30 minutes automatically</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 p-3 bg-green-50 rounded-lg">
+              <Shield className="h-5 w-5 text-green-600" />
+              <div>
+                <p className="font-medium text-green-900">Integrated Verification</p>
+                <p className="text-sm text-green-700">Combined with existing audit system</p>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>

@@ -1,14 +1,13 @@
-
 /**
  * Comprehensive Automation Coordinator
- * Ensures all verification systems run together every 30 minutes
- * Prevents missing any components and maintains consistency
+ * NOW INCLUDES INTEGRATED SYSTEM VERIFICATION
  */
 
 import { supabase } from '@/integrations/supabase/client';
 import { RealVerificationOrchestrator, RealSystemHealthResult } from './RealVerificationOrchestrator';
 import { DatabaseSyncVerifier, SyncVerificationResult } from './DatabaseSyncVerifier';
 import { ComprehensiveSystemVerifier, ComprehensiveVerificationResult } from './ComprehensiveSystemVerifier';
+import { integratedSystemVerifier } from './IntegratedSystemVerifier';
 import { performDatabaseSync } from '../dailyProgressTracker';
 
 export interface AutomationExecutionResult {
@@ -17,6 +16,11 @@ export interface AutomationExecutionResult {
   realSystemHealth: RealSystemHealthResult;
   syncVerification: SyncVerificationResult;
   comprehensiveResults: ComprehensiveVerificationResult;
+  systemVerification: {
+    results: any[];
+    overallStatus: 'healthy' | 'warning' | 'critical';
+    healthScore: number;
+  };
   healthScoreCalculation: {
     score: number;
     basedOnOriginalDB: boolean;
@@ -36,8 +40,7 @@ export class ComprehensiveAutomationCoordinator {
   private static lastExecution: string | null = null;
 
   /**
-   * Execute complete 30-minute automation cycle
-   * This is the main function called every 30 minutes
+   * Execute complete 30-minute automation cycle WITH INTEGRATED SYSTEM VERIFICATION
    */
   static async execute30MinuteAutomationCycle(): Promise<AutomationExecutionResult> {
     if (this.isRunning) {
@@ -51,6 +54,7 @@ export class ComprehensiveAutomationCoordinator {
 
     console.log(`🚀 STARTING 30-MINUTE COMPREHENSIVE AUTOMATION CYCLE: ${executionId}`);
     console.log(`📅 Execution Time: ${timestamp}`);
+    console.log(`🔄 NOW INCLUDING: Integrated System Verification`);
 
     try {
       // Step 1: Execute Real System Validation (ORIGINAL DATABASE ONLY)
@@ -65,15 +69,19 @@ export class ComprehensiveAutomationCoordinator {
       console.log('🔍 Step 3: Comprehensive System Verification...');
       const comprehensiveResults = await ComprehensiveSystemVerifier.performComprehensiveVerification();
 
-      // Step 4: Calculate Health Score (BASED ON ORIGINAL DATABASE ONLY)
-      console.log('🎯 Step 4: Health Score Calculation (Original DB Only)...');
+      // Step 4: Execute Integrated System Verification (NEW!)
+      console.log('⚡ Step 4: Integrated System Verification (Dashboard Components)...');
+      const systemVerification = await integratedSystemVerifier.runAutomatedSystemVerification();
+
+      // Step 5: Calculate Health Score (BASED ON ORIGINAL DATABASE ONLY)
+      console.log('🎯 Step 5: Health Score Calculation (Original DB Only)...');
       const healthScoreCalculation = this.calculateHealthScoreFromOriginalDB(
         realSystemHealth,
         comprehensiveResults
       );
 
-      // Step 5: Sync Results to Database Tables
-      console.log('💾 Step 5: Syncing Results to Database Tables...');
+      // Step 6: Sync Results to Database Tables
+      console.log('💾 Step 6: Syncing Results to Database Tables...');
       const syncToTablesCompleted = await this.syncResultsToTables(
         realSystemHealth,
         syncVerification,
@@ -81,12 +89,13 @@ export class ComprehensiveAutomationCoordinator {
         healthScoreCalculation
       );
 
-      // Step 6: Publish Results
-      console.log('📢 Step 6: Publishing Results...');
+      // Step 7: Publish Results (INCLUDING SYSTEM VERIFICATION)
+      console.log('📢 Step 7: Publishing Results with System Verification...');
       const resultsPublished = await this.publishResults(executionId, {
         realSystemHealth,
         syncVerification,
         comprehensiveResults,
+        systemVerification,
         healthScoreCalculation
       });
 
@@ -96,6 +105,7 @@ export class ComprehensiveAutomationCoordinator {
         realSystemHealth,
         syncVerification,
         comprehensiveResults,
+        systemVerification,
         healthScoreCalculation,
         automationStatus: {
           allComponentsExecuted: true,
@@ -109,6 +119,7 @@ export class ComprehensiveAutomationCoordinator {
       console.log('✅ 30-MINUTE AUTOMATION CYCLE COMPLETED SUCCESSFULLY');
       console.log(`📊 Health Score: ${healthScoreCalculation.score}/100 (Based on Original DB)`);
       console.log(`🔄 Sync Status: ${syncVerification.isInSync ? 'IN SYNC' : 'OUT OF SYNC'}`);
+      console.log(`⚡ System Verification: ${systemVerification.overallStatus.toUpperCase()} (${systemVerification.healthScore}/100)`);
       console.log(`💾 Results Synced: ${syncToTablesCompleted ? 'YES' : 'NO'}`);
 
       return automationResult;
@@ -237,7 +248,7 @@ export class ComprehensiveAutomationCoordinator {
   }
 
   /**
-   * Publish results for frontend consumption
+   * Publish results for frontend consumption (NOW INCLUDES SYSTEM VERIFICATION)
    */
   private static async publishResults(executionId: string, results: any): Promise<boolean> {
     try {
@@ -253,7 +264,7 @@ export class ComprehensiveAutomationCoordinator {
         detail: { executionId, results }
       }));
 
-      console.log('📢 Results published successfully');
+      console.log('📢 Results published successfully (including system verification)');
       return true;
 
     } catch (error) {
@@ -273,6 +284,7 @@ export class ComprehensiveAutomationCoordinator {
         realSystemValidation: true,
         databaseSyncVerification: true,
         comprehensiveVerification: true,
+        systemVerification: true, // NEW!
         healthScoreCalculation: true,
         resultsSyncing: true,
         resultsPublishing: true
