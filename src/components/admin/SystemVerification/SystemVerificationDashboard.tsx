@@ -25,7 +25,8 @@ interface VerificationResult {
   status: 'success' | 'error' | 'warning' | 'loading';
   message: string;
   details?: string[];
-  lastChecked?: Date;
+  lastChecked: string; // Changed from Date to string to match SystemVerificationResult
+  metrics?: Record<string, any>;
 }
 
 interface BackgroundVerificationData {
@@ -323,7 +324,7 @@ export const SystemVerificationDashboard: React.FC = () => {
                 {result.lastChecked && (
                   <div className="mt-2 pl-8">
                     <p className="text-xs text-muted-foreground">
-                      Checked: {result.lastChecked.toLocaleString()}
+                      Checked: {new Date(result.lastChecked).toLocaleString()}
                     </p>
                   </div>
                 )}
