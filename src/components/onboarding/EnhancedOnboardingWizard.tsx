@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -28,7 +27,7 @@ import { GPOMembershipStep } from './steps/GPOMembershipStep';
 import { SpecialProgramsStep } from './steps/SpecialProgramsStep';
 import { OnlinePlatformUsersStep } from './steps/OnlinePlatformUsersStep';
 import { EnhancedPaymentTermsStep } from './steps/EnhancedPaymentTermsStep';
-import { ApiIntegrationStep } from './steps/ApiIntegrationStep';
+import { ApiRequirementsStep } from './steps/ApiRequirementsStep';
 import { ReviewStep } from './steps/ReviewStep';
 import { 
   Building2, 
@@ -180,12 +179,12 @@ const ONBOARDING_TABS = [
     required: true,
   },
   {
-    id: 'api_integration',
-    title: 'API Integration',
-    description: 'API endpoints and integration configuration',
+    id: 'api_requirements',
+    title: 'API Requirements',
+    description: 'API integration needs and requirements',
     icon: Zap,
-    component: ApiIntegrationStep,
-    required: true,
+    component: ApiRequirementsStep,
+    required: false,
   },
   {
     id: 'gpo_memberships',
@@ -359,23 +358,14 @@ export const EnhancedOnboardingWizard: React.FC<EnhancedOnboardingWizardProps> =
       gpo_memberships: [],
       platform_users: [],
       program_340b: [],
-      api_integration: {
-        endpoints: [],
-        authentication_methods: [],
-        data_formats: [],
-        security_requirements: {
-          encryption_required: true,
-          api_key_authentication: false,
-          oauth2_authentication: false,
-          ip_whitelisting: false,
-          ssl_certificate_required: true,
-        },
-        documentation_preferences: {
-          swagger_documentation: false,
-          postman_collection: false,
-          sdk_required: false,
-          sandbox_environment: false,
-        },
+      api_requirements: {
+        needs_api_integration: false,
+        integration_priority: 'medium',
+        integration_timeline: 'within_3_months',
+        current_systems: [],
+        data_exchange_needs: [],
+        security_requirements: [],
+        additional_notes: '',
       },
     }
   );
@@ -423,8 +413,8 @@ export const EnhancedOnboardingWizard: React.FC<EnhancedOnboardingWizardProps> =
         return formData.selected_online_services?.length ? 'complete' : 'incomplete';
       case 'platform_users':
         return formData.platform_users?.length ? 'complete' : 'incomplete';
-      case 'api_integration':
-        return formData.api_integration?.endpoints?.length ? 'complete' : 'incomplete';
+      case 'api_requirements':
+        return formData.api_requirements?.needs_api_integration !== undefined ? 'complete' : 'incomplete';
       case 'gpo_memberships':
         return 'partial';
       case 'special_programs':
