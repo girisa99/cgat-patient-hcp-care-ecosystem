@@ -24,6 +24,20 @@ export type OwnershipType =
   | 'professional_corp' 
   | 'non_profit_corp';
 
+export type PurchasingMethod = 
+  | 'just_in_time' 
+  | 'bulk_ordering' 
+  | 'consignment' 
+  | 'drop_ship' 
+  | 'blanket_orders';
+
+export type InventoryModel = 
+  | 'traditional_wholesale' 
+  | 'consignment' 
+  | 'vendor_managed' 
+  | 'drop_ship_only' 
+  | 'hybrid';
+
 export interface CompanyInfo {
   legal_name: string;
   dba_name?: string;
@@ -57,6 +71,15 @@ export interface ContactsInfo {
 export interface OwnershipInfo {
   principal_owners: PrincipalOwner[];
   bankruptcy_history: boolean;
+  bankruptcy_explanation?: string;
+  controlling_entity?: ControllingEntity;
+}
+
+export interface ControllingEntity {
+  name: string;
+  relationship: string;
+  phone: string;
+  address: Address;
 }
 
 export interface ReferencesInfo {
@@ -72,11 +95,13 @@ export interface PaymentInfo {
   bank_routing_number: string;
   bank_address: Address;
   statement_delivery_preference: 'email' | 'mail';
+  payment_terms_requested?: string;
+  bank_phone?: string;
 }
 
 export interface CreditApplicationInfo {
   requested_credit_limit: string;
-  trade_references: Reference[];
+  trade_references: TradeReference[];
   bank_references: Reference[];
   credit_terms_requested: 'net_30' | 'net_60' | 'net_90' | 'other';
   personal_guarantee_required: boolean;
@@ -90,6 +115,10 @@ export interface FinancialAssessmentInfo {
   years_in_operation: number;
   insurance_coverage: InsuranceCoverage;
   financial_guarantees: FinancialGuarantees;
+  payment_history_rating?: string;
+  debt_to_equity_ratio?: number;
+  current_ratio?: number;
+  days_sales_outstanding?: number;
 }
 
 export interface OfficeHoursInfo {
@@ -106,20 +135,24 @@ export interface OfficeHoursInfo {
 }
 
 export interface PurchasingPreferencesInfo {
-  preferred_purchasing_methods: string[];
-  inventory_management_model: 'traditional_wholesale' | 'consignment' | 'just_in_time';
+  preferred_purchasing_methods: PurchasingMethod[];
+  inventory_management_model: InventoryModel;
   automated_reordering_enabled: boolean;
   reorder_points: Record<string, number>;
   inventory_turnover_targets: Record<string, number>;
   storage_capacity_details: Record<string, string>;
   temperature_controlled_storage: boolean;
   hazmat_storage_capabilities: boolean;
+  preferred_order_frequency?: string;
 }
 
 export interface LicensesInfo {
   additional_licenses: AdditionalLicense[];
   dea_number?: string;
   medical_license?: string;
+  hin_number?: string;
+  state_pharmacy_license?: string;
+  resale_tax_exemption?: string;
 }
 
 export interface DocumentsInfo {
@@ -198,12 +231,14 @@ export interface BankReference {
   name: string;
   contact_name: string;
   phone: string;
+  account_number?: string;
 }
 
 export interface SupplierReference {
   name: string;
   contact_name: string;
   phone: string;
+  account_number?: string;
 }
 
 export interface AdditionalReference {
@@ -216,6 +251,16 @@ export interface Reference {
   name: string;
   contact_name: string;
   phone: string;
+}
+
+export interface TradeReference {
+  company_name: string;
+  contact_name: string;
+  phone: string;
+  email?: string;
+  account_number?: string;
+  credit_limit?: string;
+  payment_terms?: string;
 }
 
 export interface InsuranceCoverage {
@@ -315,6 +360,16 @@ export interface ApiEndpoint {
   is_webhook: boolean;
 }
 
+export interface EnhancedPaymentTerms {
+  preferred_terms: string;
+  early_payment_discount: boolean;
+  discount_percentage?: number;
+  discount_days?: number;
+  consolidation_preferences: string[];
+  billing_frequency: string;
+  credit_limit_requested: number;
+}
+
 export interface TreatmentCenterOnboarding {
   id?: string;
   user_id?: string;
@@ -335,6 +390,7 @@ export interface TreatmentCenterOnboarding {
   payment_info: PaymentInfo;
   credit_application: CreditApplicationInfo;
   financial_assessment: FinancialAssessmentInfo;
+  enhanced_payment_terms?: EnhancedPaymentTerms;
   
   // Operations
   office_hours: OfficeHoursInfo;

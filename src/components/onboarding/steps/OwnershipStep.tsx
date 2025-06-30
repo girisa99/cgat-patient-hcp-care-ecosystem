@@ -26,7 +26,7 @@ export const OwnershipStep: React.FC<OwnershipStepProps> = ({ data, onDataChange
       ...ownership,
       principal_owners: [
         ...ownership.principal_owners,
-        { name: '', ownership_percentage: 0, ssn: '' }
+        { name: '', title: '', ownership_percentage: 0 }
       ]
     };
 
@@ -147,13 +147,22 @@ export const OwnershipStep: React.FC<OwnershipStepProps> = ({ data, onDataChange
                     </Button>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
                         <Label>Full Name *</Label>
                         <Input
                           value={owner.name}
                           onChange={(e) => updatePrincipalOwner(index, 'name', e.target.value)}
                           placeholder="Enter full name"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label>Title *</Label>
+                        <Input
+                          value={owner.title}
+                          onChange={(e) => updatePrincipalOwner(index, 'title', e.target.value)}
+                          placeholder="Enter title"
                           required
                         />
                       </div>
