@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { PageContainer } from '@/components/layout/PageContainer';
@@ -31,7 +30,7 @@ import UserModuleAccessDialog from '@/components/users/UserModuleAccessDialog';
 
 const Users = () => {
   const { toast } = useToast();
-  const { isAuthenticated, loading: authLoading } = useAuthContext();
+  const { isAuthenticated, loading: authLoading, userRoles, initialized } = useAuthContext();
   
   // Enable real-time updates for user management area
   useAdminRealtime({
@@ -65,13 +64,13 @@ const Users = () => {
   const [selectedUserEmail, setSelectedUserEmail] = useState<string>('');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Show loading while checking authentication
-  if (authLoading) {
+  // Wait for auth initialization before proceeding
+  if (!initialized || authLoading) {
     return (
       <MainLayout>
         <PageContainer
           title="Users Management"
-          subtitle="Checking authentication..."
+          subtitle="Initializing authentication..."
         >
           <div className="flex justify-center items-center min-h-[400px]">
             <LoadingSpinner size="lg" />
@@ -98,6 +97,39 @@ const Users = () => {
               </p>
               <p className="text-sm text-gray-500">
                 Please use the login form to authenticate with your credentials.
+              </p>
+              <Button 
+                onClick={() => window.location.href = '/'} 
+                className="mt-4"
+              >
+                Go to Login
+              </Button>
+            </div>
+          </div>
+        </PageContainer>
+      </MainLayout>
+    );
+  }
+
+  // Check if user has permission to access users management
+  const hasUserManagementAccess = userRoles.includes('superAdmin') || userRoles.includes('onboardingTeam');
+  
+  if (!hasUserManagementAccess) {
+    return (
+      <MainLayout>
+        <PageContainer
+          title="Users Management"
+          subtitle="Access Denied"
+        >
+          <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+            <AlertCircle className="h-16 w-16 text-red-500" />
+            <div className="text-center">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Access Restricted</h3>
+              <p className="text-gray-600 mb-4">
+                You need administrator or onboarding team permissions to access this module.
+              </p>
+              <p className="text-sm text-gray-500">
+                Current roles: {userRoles.join(', ') || 'None'}
               </p>
             </div>
           </div>

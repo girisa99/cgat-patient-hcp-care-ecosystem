@@ -4,6 +4,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 import { useAuthData } from '@/hooks/auth/useAuthData';
+import { AuthStateManager } from '@/utils/auth/authStateManager';
 
 type UserRole = Database['public']['Enums']['user_role'];
 
@@ -44,16 +45,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     try {
-      console.log('🚪 Signing out user...');
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error('❌ Error signing out:', error);
-        throw error;
-      }
-      console.log('✅ User signed out successfully');
+      console.log('🚪 Starting secure sign out process...');
+      await AuthStateManager.secureSignOut();
     } catch (error) {
       console.error('❌ Sign out failed:', error);
-      throw error;
+      // Force redirect anyway to ensure user is logged out
+      window.location.href = '/';
     }
   };
 
