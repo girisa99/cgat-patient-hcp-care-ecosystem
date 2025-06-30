@@ -17,6 +17,7 @@ import { PurchasingPreferencesStep } from './steps/PurchasingPreferencesStep';
 import { GPOMembershipStep } from './steps/GPOMembershipStep';
 import { OnlineServicesStep } from './steps/OnlineServicesStep';
 import { OfficeHoursStep } from './steps/OfficeHoursStep';
+import { ApiRequirementsStep } from './steps/ApiRequirementsStep';
 
 interface TreatmentCenterOnboardingWizardProps {
   onSubmit: (data: Partial<TreatmentCenterOnboarding>) => void;
@@ -90,6 +91,13 @@ const ONBOARDING_STEPS: Step[] = [
     required: true,
   },
   {
+    id: 'api_requirements',
+    title: 'API Requirements',
+    description: 'Technical integration needs and requirements',
+    component: ApiRequirementsStep,
+    required: false,
+  },
+  {
     id: 'office_hours',
     title: 'Office Hours',
     description: 'Operating hours and contact information',
@@ -139,6 +147,8 @@ export const TreatmentCenterOnboardingWizard: React.FC<TreatmentCenterOnboarding
         return true; // Optional step
       case 'online_services':
         return !!(data.selected_online_services?.length || data.selected_user_roles?.length);
+      case 'api_requirements':
+        return true; // Optional step - always considered complete
       case 'office_hours':
         return !!(data.office_hours?.timezone);
       default:

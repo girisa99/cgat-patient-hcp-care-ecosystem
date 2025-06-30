@@ -429,6 +429,19 @@ export interface EnhancedPaymentTerms {
   credit_limit_requested: number;
 }
 
+export interface ApiRequirements {
+  needs_api_integration: boolean;
+  integration_priority?: 'high' | 'medium' | 'low';
+  integration_timeline?: string;
+  current_systems: string[];
+  data_exchange_needs: string[];
+  security_requirements: string[];
+  technical_contact_name?: string;
+  technical_contact_email?: string;
+  technical_contact_phone?: string;
+  additional_notes?: string;
+}
+
 export interface TreatmentCenterOnboarding {
   id?: string;
   user_id?: string;
@@ -471,8 +484,8 @@ export interface TreatmentCenterOnboarding {
   program_340b: Program340B[];
   is_340b_entity?: boolean;
   
-  // API Integration
-  api_integration?: ApiIntegrationData;
+  // API Requirements (replaces api_integration)
+  api_requirements?: ApiRequirements;
   
   // Additional properties for database compatibility
   operational_hours?: Record<string, any>;

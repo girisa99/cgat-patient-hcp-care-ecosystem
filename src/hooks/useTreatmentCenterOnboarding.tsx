@@ -100,6 +100,8 @@ export const useTreatmentCenterOnboarding = () => {
           estimated_monthly_purchases: applicationData.business_info?.estimated_monthly_purchases,
           initial_order_amount: applicationData.business_info?.initial_order_amount,
           gpo_memberships: gpoMembershipsAsStrings,
+          // Store API requirements as JSON
+          api_requirements: applicationData.api_requirements || null,
           current_step: 'company_info',
           status: 'draft'
         })
