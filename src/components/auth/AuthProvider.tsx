@@ -1,10 +1,9 @@
 
 import React, { createContext, useContext } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 import { useAuthData } from '@/hooks/auth/useAuthData';
-import { AuthStateManager } from '@/utils/auth/authStateManager';
+import { useAuthActions } from '@/hooks/useAuthActions';
 
 type UserRole = Database['public']['Enums']['user_role'];
 
@@ -42,23 +41,22 @@ export const useAuthContext = () => {
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const authData = useAuthData();
+  const { signOut: performSignOut } = useAuthActions();
 
   const signOut = async () => {
     try {
-      console.log('🚪 Starting secure sign out process...');
-      await AuthStateManager.secureSignOut();
+      console.log('🚪 AuthProvider: Starting sign out process...');
+      await performSignOut();
     } catch (error) {
-      console.error('❌ Sign out failed:', error);
+      console.error('❌ AuthProvider: Sign out failed:', error);
       // Force redirect anyway to ensure user is logged out
       window.location.href = '/';
     }
   };
 
-  // Simplified refresh function
   const refreshUserData = async () => {
     if (authData.session?.user) {
       console.log('🔄 Refreshing user data');
-      // The useAuthData hook will handle the refresh automatically
       window.location.reload();
     }
   };

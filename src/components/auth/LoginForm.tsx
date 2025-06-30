@@ -23,7 +23,7 @@ const LoginForm = () => {
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [authError, setAuthError] = useState<string>('');
   const [isSendingResetEmail, setIsSendingResetEmail] = useState(false);
-  const { signIn, signUp, signOut, loading } = useAuthActions();
+  const { signIn, signUp, loading } = useAuthActions();
   const { user } = useAuthContext();
   const { toast } = useToast();
 
@@ -55,14 +55,14 @@ const LoginForm = () => {
         }
         console.log('📝 Starting signup process...');
         const result = await signUp(email, password, selectedRole);
-        if (!result.success) {
-          setAuthError(result.error || 'Failed to create account');
+        if (!result.success && result.error) {
+          setAuthError(result.error);
         }
       } else {
         console.log('🔑 Starting signin process...');
         const result = await signIn(email, password);
-        if (!result.success) {
-          setAuthError(result.error || 'Failed to sign in');
+        if (!result.success && result.error) {
+          setAuthError(result.error);
         }
       }
     } catch (error) {
@@ -109,10 +109,10 @@ const LoginForm = () => {
   };
 
   const handleSignOut = async () => {
-    console.log('🚪 Sign out requested');
+    console.log('🚪 Sign out requested from LoginForm');
+    const { signOut } = useAuthActions();
     const result = await signOut();
     if (result.success) {
-      // Clear form
       setEmail('');
       setPassword('');
       setSelectedRole('');

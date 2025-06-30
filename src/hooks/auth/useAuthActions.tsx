@@ -1,23 +1,15 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { logAuthError } from '@/utils/authErrorHandler';
+import { logAuthError } from '@/utils/auth/authErrorHandler';
 import { Database } from '@/integrations/supabase/types';
 
 type UserRole = Database['public']['Enums']['user_role'];
 
 /**
- * Hook for authentication actions and permissions
+ * Hook for authentication permissions checking
+ * Note: Main auth actions are now in src/hooks/useAuthActions.tsx
  */
 export const useAuthActions = (user: any, userRoles: UserRole[]) => {
-  const signOut = async () => {
-    try {
-      console.log('👋 Signing out user');
-      await supabase.auth.signOut();
-    } catch (error) {
-      logAuthError('signOut', error, user?.id);
-    }
-  };
-
   const hasRole = (role: UserRole): boolean => {
     return userRoles.includes(role);
   };
@@ -56,7 +48,6 @@ export const useAuthActions = (user: any, userRoles: UserRole[]) => {
   };
 
   return {
-    signOut,
     hasRole,
     hasPermission
   };
