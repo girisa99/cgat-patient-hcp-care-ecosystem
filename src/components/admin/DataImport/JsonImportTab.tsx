@@ -14,7 +14,10 @@ export const JsonImportTab: React.FC = () => {
   const [jsonInput, setJsonInput] = useState<string>('');
 
   const handleJsonImport = async () => {
+    console.log('🔍 Starting JSON validation process...');
+    
     if (!jsonInput.trim()) {
+      console.log('❌ Empty JSON input detected');
       toast({
         title: "Missing JSON Data",
         description: "Please enter JSON data to import.",
@@ -23,8 +26,16 @@ export const JsonImportTab: React.FC = () => {
       return;
     }
 
+    console.log('📝 JSON input length:', jsonInput.length);
+    console.log('📝 First 200 characters:', jsonInput.substring(0, 200));
+
     try {
+      console.log('🔄 Attempting to parse JSON...');
       const jsonData = JSON.parse(jsonInput);
+      console.log('✅ JSON parsed successfully');
+      console.log('📊 Parsed data structure:', Object.keys(jsonData));
+      console.log('📊 Full parsed data:', jsonData);
+      
       const results = await loadJsonData(jsonData);
       
       toast({
@@ -33,10 +44,24 @@ export const JsonImportTab: React.FC = () => {
       });
       
       setJsonInput('');
-    } catch (error) {
+    } catch (parseError) {
+      console.error('❌ JSON parsing error:', parseError);
+      console.error('❌ Error details:', {
+        message: parseError.message,
+        stack: parseError.stack,
+        inputSample: jsonInput.substring(0, 500)
+      });
+      
       toast({
         title: "Invalid JSON",
-        description: "Please check your JSON format and try again.",
+        description: `JSON parsing failed: ${parseError.message}. Please check your JSON format and try again.`,
+        variant: "destructive",
+      });
+    } catch (importError) {
+      console.error('❌ Import error:', importError);
+      toast({
+        title: "Import Failed",
+        description: `Import failed: ${importError.message}`,
         variant: "destructive",
       });
     }
@@ -60,7 +85,10 @@ export const JsonImportTab: React.FC = () => {
             id="json-input"
             placeholder="Paste your real market data JSON here..."
             value={jsonInput}
-            onChange={(e) => setJsonInput(e.target.value)}
+            onChange={(e) => {
+              console.log('📝 JSON input changed, new length:', e.target.value.length);
+              setJsonInput(e.target.value);
+            }}
             rows={15}
             className="font-mono text-sm"
           />
