@@ -21,6 +21,13 @@ import { PurchasingPreferencesStep } from './steps/PurchasingPreferencesStep';
 import { FinancialAssessmentStep } from './steps/FinancialAssessmentStep';
 import { ServiceSelectionStep } from './steps/ServiceSelectionStep';
 import { EnhancedTherapySelectionStep } from './steps/EnhancedTherapySelectionStep';
+import { CreditApplicationStep } from './steps/CreditApplicationStep';
+import { OfficeHoursStep } from './steps/OfficeHoursStep';
+import { OnlineServicesStep } from './steps/OnlineServicesStep';
+import { GPOMembershipStep } from './steps/GPOMembershipStep';
+import { SpecialProgramsStep } from './steps/SpecialProgramsStep';
+import { OnlinePlatformUsersStep } from './steps/OnlinePlatformUsersStep';
+import { EnhancedPaymentTermsStep } from './steps/EnhancedPaymentTermsStep';
 import { ReviewStep } from './steps/ReviewStep';
 import { 
   Building2, 
@@ -30,14 +37,17 @@ import {
   CheckCircle, 
   Save, 
   Clock,
-  ArrowRight,
-  ArrowLeft,
   Sparkles,
   Dna,
   Truck,
   Shield,
   Settings,
-  PenTool
+  PenTool,
+  Calendar,
+  Globe,
+  UserPlus,
+  Database,
+  Package
 } from 'lucide-react';
 
 interface EnhancedOnboardingWizardProps {
@@ -46,89 +56,175 @@ interface EnhancedOnboardingWizardProps {
   applicationId?: string;
 }
 
-interface StepGroup {
-  id: string;
-  title: string;
-  description: string;
-  icon: React.ElementType;
-  color: string;
-  steps: {
-    key: string;
-    label: string;
-    component: React.ComponentType<any>;
-    required: boolean;
-  }[];
-}
-
-const stepGroups: StepGroup[] = [
+const ONBOARDING_TABS = [
   {
-    id: 'basic_info',
-    title: 'Company Foundation',
-    description: 'Essential company details and business structure',
+    id: 'company_info',
+    title: 'Company Info',
+    description: 'Basic company information and details',
     icon: Building2,
-    color: 'blue',
-    steps: [
-      { key: 'company_info', label: 'Company Information', component: CompanyInfoStep, required: true },
-      { key: 'business_classification', label: 'Business Classification', component: BusinessClassificationStep, required: true },
-      { key: 'contacts', label: 'Key Contacts', component: ContactsStep, required: true },
-    ]
+    component: CompanyInfoStep,
+    required: true,
   },
   {
-    id: 'business_structure',
-    title: 'Business Structure',
-    description: 'Ownership, control, and business relationships',
+    id: 'business_classification',
+    title: 'Business Classification',
+    description: 'Business type and classification details',
+    icon: Settings,
+    component: BusinessClassificationStep,
+    required: true,
+  },
+  {
+    id: 'contacts',
+    title: 'Contacts',
+    description: 'Primary and additional contact information',
     icon: Users,
-    color: 'green',
-    steps: [
-      { key: 'ownership', label: 'Ownership & Control', component: OwnershipStep, required: true },
-      { key: 'references', label: 'Business References', component: ReferencesStep, required: false },
-    ]
+    component: ContactsStep,
+    required: true,
   },
   {
-    id: 'services_therapies',
-    title: 'Services & Therapies',
-    description: 'CGAT therapy selection and service provider configuration',
+    id: 'ownership',
+    title: 'Ownership',
+    description: 'Ownership structure and principal owners',
+    icon: Shield,
+    component: OwnershipStep,
+    required: true,
+  },
+  {
+    id: 'references',
+    title: 'References',
+    description: 'Business and trade references',
+    icon: FileText,
+    component: ReferencesStep,
+    required: true,
+  },
+  {
+    id: 'therapy_selection',
+    title: 'Therapy Selection',
+    description: 'CGAT therapy selection and configuration',
     icon: Dna,
-    color: 'purple',
-    steps: [
-      { key: 'therapy_selection', label: 'CGAT Therapy Selection', component: EnhancedTherapySelectionStep, required: true },
-      { key: 'service_selection', label: 'Service Provider Selection', component: ServiceSelectionStep, required: true },
-    ]
+    component: EnhancedTherapySelectionStep,
+    required: true,
   },
   {
-    id: 'operations',
-    title: 'Operations & Assessment',
-    description: 'Purchasing preferences and financial evaluation',
+    id: 'service_selection',
+    title: 'Service Selection',
+    description: 'Service provider selection and configuration',
     icon: Truck,
-    color: 'orange',
-    steps: [
-      { key: 'purchasing_preferences', label: 'Purchasing Preferences', component: PurchasingPreferencesStep, required: true },
-      { key: 'financial_assessment', label: 'Financial Assessment', component: FinancialAssessmentStep, required: true },
-    ]
+    component: ServiceSelectionStep,
+    required: true,
   },
   {
-    id: 'financial_legal',
-    title: 'Financial & Legal',
-    description: 'Banking, licenses, and compliance documentation',
+    id: 'purchasing_preferences',
+    title: 'Purchasing',
+    description: 'Purchasing preferences and inventory management',
+    icon: Package,
+    component: PurchasingPreferencesStep,
+    required: true,
+  },
+  {
+    id: 'financial_assessment',
+    title: 'Financial Assessment',
+    description: 'Financial evaluation and risk assessment',
     icon: CreditCard,
-    color: 'cyan',
-    steps: [
-      { key: 'payment_banking', label: 'Payment & Banking', component: PaymentBankingStep, required: true },
-      { key: 'licenses', label: 'Licenses & Certifications', component: LicensesStep, required: true },
-      { key: 'documents', label: 'Required Documents', component: DocumentsStep, required: true },
-    ]
+    component: FinancialAssessmentStep,
+    required: true,
   },
   {
-    id: 'finalization',
+    id: 'credit_application',
+    title: 'Credit Application',
+    description: 'Credit terms and application details',
+    icon: CreditCard,
+    component: CreditApplicationStep,
+    required: true,
+  },
+  {
+    id: 'payment_banking',
+    title: 'Payment & Banking',
+    description: 'Payment methods and banking information',
+    icon: CreditCard,
+    component: PaymentBankingStep,
+    required: true,
+  },
+  {
+    id: 'enhanced_payment_terms',
+    title: 'Payment Terms',
+    description: 'Enhanced payment terms and conditions',
+    icon: CreditCard,
+    component: EnhancedPaymentTermsStep,
+    required: true,
+  },
+  {
+    id: 'office_hours',
+    title: 'Office Hours',
+    description: 'Operating hours and schedule information',
+    icon: Calendar,
+    component: OfficeHoursStep,
+    required: true,
+  },
+  {
+    id: 'online_services',
+    title: 'Online Services',
+    description: 'Online platform services and features',
+    icon: Globe,
+    component: OnlineServicesStep,
+    required: true,
+  },
+  {
+    id: 'platform_users',
+    title: 'Platform Users',
+    description: 'Online platform user management',
+    icon: UserPlus,
+    component: OnlinePlatformUsersStep,
+    required: true,
+  },
+  {
+    id: 'gpo_memberships',
+    title: 'GPO Memberships',
+    description: 'Group purchasing organization memberships',
+    icon: Users,
+    component: GPOMembershipStep,
+    required: false,
+  },
+  {
+    id: 'special_programs',
+    title: 'Special Programs',
+    description: '340B and other special program participation',
+    icon: Database,
+    component: SpecialProgramsStep,
+    required: false,
+  },
+  {
+    id: 'licenses',
+    title: 'Licenses',
+    description: 'Required licenses and certifications',
+    icon: Shield,
+    component: LicensesStep,
+    required: true,
+  },
+  {
+    id: 'documents',
+    title: 'Documents',
+    description: 'Required document uploads and storage',
+    icon: FileText,
+    component: DocumentsStep,
+    required: true,
+  },
+  {
+    id: 'authorizations',
+    title: 'Signatures',
+    description: 'Authorizations and digital signatures',
+    icon: PenTool,
+    component: AuthorizationsStep,
+    required: true,
+  },
+  {
+    id: 'review',
     title: 'Review & Submit',
-    description: 'Final review, signatures, and submission',
+    description: 'Final review and application submission',
     icon: CheckCircle,
-    color: 'emerald',
-    steps: [
-      { key: 'authorizations', label: 'Authorizations & Signatures', component: AuthorizationsStep, required: true },
-      { key: 'review', label: 'Review & Submit', component: ReviewStep, required: true },
-    ]
-  }
+    component: ReviewStep,
+    required: true,
+  },
 ];
 
 export const EnhancedOnboardingWizard: React.FC<EnhancedOnboardingWizardProps> = ({
@@ -136,8 +232,7 @@ export const EnhancedOnboardingWizard: React.FC<EnhancedOnboardingWizardProps> =
   initialData,
   applicationId,
 }) => {
-  const [activeGroup, setActiveGroup] = useState('basic_info');
-  const [activeStep, setActiveStep] = useState('company_info');
+  const [activeTab, setActiveTab] = useState('company_info');
   
   const [formData, setFormData] = useState<Partial<TreatmentCenterOnboarding>>(
     initialData || {
@@ -172,6 +267,36 @@ export const EnhancedOnboardingWizard: React.FC<EnhancedOnboardingWizardProps> =
         bank_routing_number: '',
         bank_address: { street: '', city: '', state: '', zip: '' },
         statement_delivery_preference: 'email',
+      },
+      credit_application: {
+        requested_credit_limit: '',
+        trade_references: [],
+        bank_references: [],
+        credit_terms_requested: 'net_30',
+        personal_guarantee_required: false,
+        collateral_offered: false,
+        financial_statements_provided: false,
+      },
+      office_hours: {
+        monday: { open: '09:00', close: '17:00', closed: false },
+        tuesday: { open: '09:00', close: '17:00', closed: false },
+        wednesday: { open: '09:00', close: '17:00', closed: false },
+        thursday: { open: '09:00', close: '17:00', closed: false },
+        friday: { open: '09:00', close: '17:00', closed: false },
+        saturday: { open: '09:00', close: '17:00', closed: true },
+        sunday: { open: '09:00', close: '17:00', closed: true },
+        timezone: 'America/New_York',
+        emergency_contact: {
+          available_24_7: false,
+          phone: '',
+          email: '',
+          instructions: '',
+        },
+        special_hours: {
+          holidays_closed: true,
+          holiday_schedule: '',
+          seasonal_adjustments: '',
+        },
       },
       purchasing_preferences: {
         preferred_purchasing_methods: [],
@@ -212,6 +337,11 @@ export const EnhancedOnboardingWizard: React.FC<EnhancedOnboardingWizardProps> =
         completed_steps: [],
         notes: [],
       },
+      selected_online_services: [],
+      selected_user_roles: [],
+      gpo_memberships: [],
+      platform_users: [],
+      program_340b: [],
     }
   );
 
@@ -226,8 +356,8 @@ export const EnhancedOnboardingWizard: React.FC<EnhancedOnboardingWizardProps> =
   });
 
   // Calculate completion status
-  const getStepCompletion = (stepKey: string): 'complete' | 'incomplete' | 'partial' => {
-    switch (stepKey) {
+  const getTabCompletion = (tabId: string): 'complete' | 'incomplete' | 'partial' => {
+    switch (tabId) {
       case 'company_info':
         return formData.company_info?.legal_name && formData.company_info?.federal_tax_id ? 'complete' : 'incomplete';
       case 'business_classification':
@@ -246,8 +376,22 @@ export const EnhancedOnboardingWizard: React.FC<EnhancedOnboardingWizardProps> =
         return formData.purchasing_preferences?.preferred_purchasing_methods?.length ? 'complete' : 'incomplete';
       case 'financial_assessment':
         return formData.financial_assessment?.annual_revenue_range ? 'complete' : 'incomplete';
+      case 'credit_application':
+        return formData.credit_application?.requested_credit_limit ? 'complete' : 'incomplete';
       case 'payment_banking':
         return formData.payment_info?.bank_name && formData.payment_info?.bank_routing_number ? 'complete' : 'incomplete';
+      case 'enhanced_payment_terms':
+        return 'partial';
+      case 'office_hours':
+        return formData.office_hours?.timezone ? 'complete' : 'incomplete';
+      case 'online_services':
+        return formData.selected_online_services?.length ? 'complete' : 'incomplete';
+      case 'platform_users':
+        return formData.platform_users?.length ? 'complete' : 'incomplete';
+      case 'gpo_memberships':
+        return 'partial';
+      case 'special_programs':
+        return 'partial';
       case 'licenses':
         return 'partial';
       case 'documents':
@@ -261,63 +405,21 @@ export const EnhancedOnboardingWizard: React.FC<EnhancedOnboardingWizardProps> =
     }
   };
 
-  const getGroupCompletion = (groupId: string): number => {
-    const group = stepGroups.find(g => g.id === groupId);
-    if (!group) return 0;
-    
-    const completedSteps = group.steps.filter(step => getStepCompletion(step.key) === 'complete').length;
-    return Math.round((completedSteps / group.steps.length) * 100);
-  };
-
   const handleDataChange = (stepData: Partial<TreatmentCenterOnboarding>) => {
     const updatedData = { ...formData, ...stepData };
     setFormData(updatedData);
-  };
-
-  const handleStepClick = (groupId: string, stepKey: string) => {
-    setActiveGroup(groupId);
-    setActiveStep(stepKey);
   };
 
   const handleSubmit = () => {
     onSubmit(formData as TreatmentCenterOnboarding);
   };
 
-  const getStepIcon = (stepKey: string) => {
-    switch (stepKey) {
-      case 'company_info': return Building2;
-      case 'business_classification': return Settings;
-      case 'contacts': return Users;
-      case 'ownership': return Shield;
-      case 'references': return FileText;
-      case 'therapy_selection': return Dna;
-      case 'service_selection': return Truck;
-      case 'purchasing_preferences': return Settings;
-      case 'financial_assessment': return CreditCard;
-      case 'payment_banking': return CreditCard;
-      case 'licenses': return Shield;
-      case 'documents': return FileText;
-      case 'authorizations': return PenTool;
-      case 'review': return CheckCircle;
-      default: return FileText;
-    }
-  };
+  const completedTabs = ONBOARDING_TABS.filter(tab => getTabCompletion(tab.id) === 'complete').length;
+  const totalTabs = ONBOARDING_TABS.length;
+  const progressPercentage = Math.round((completedTabs / totalTabs) * 100);
 
-  const getColorClasses = (color: string) => {
-    const colorMap = {
-      blue: 'border-blue-500 bg-blue-50 text-blue-700',
-      green: 'border-green-500 bg-green-50 text-green-700',
-      purple: 'border-purple-500 bg-purple-50 text-purple-700',
-      orange: 'border-orange-500 bg-orange-50 text-orange-700',
-      cyan: 'border-cyan-500 bg-cyan-50 text-cyan-700',
-      emerald: 'border-emerald-500 bg-emerald-50 text-emerald-700',
-    };
-    return colorMap[color as keyof typeof colorMap] || colorMap.blue;
-  };
-
-  const currentGroup = stepGroups.find(group => group.id === activeGroup);
-  const currentStepData = currentGroup?.steps.find(step => step.key === activeStep);
-  const StepComponent = currentStepData?.component;
+  const currentTab = ONBOARDING_TABS.find(tab => tab.id === activeTab);
+  const StepComponent = currentTab?.component;
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
@@ -346,138 +448,77 @@ export const EnhancedOnboardingWizard: React.FC<EnhancedOnboardingWizardProps> =
                 )}
               </Button>
               <Badge variant="outline" className="text-sm">
-                Auto-save enabled
+                {progressPercentage}% Complete
               </Badge>
             </div>
           </div>
+          <Progress value={progressPercentage} className="mt-4" />
         </CardHeader>
       </Card>
 
-      {/* Main Tabbed Interface */}
-      <EnhancedTabs defaultValue={activeGroup} onValueChange={setActiveGroup}>
-        <EnhancedTabsList className="grid w-full grid-cols-6">
-          {stepGroups.map((group) => {
-            const IconComponent = group.icon;
-            const completion = getGroupCompletion(group.id);
+      {/* Main Tabbed Interface - No Sidebar */}
+      <EnhancedTabs value={activeTab} onValueChange={setActiveTab}>
+        <EnhancedTabsList className="grid w-full grid-cols-4 lg:grid-cols-7 xl:grid-cols-11 gap-1 h-auto p-2">
+          {ONBOARDING_TABS.map((tab) => {
+            const IconComponent = tab.icon;
+            const completion = getTabCompletion(tab.id);
             
             return (
               <EnhancedTabsTrigger
-                key={group.id}
-                value={group.id}
-                className="flex flex-col items-center p-4 h-auto"
-                icon={<IconComponent className="h-4 w-4" />}
+                key={tab.id}
+                value={tab.id}
+                className="flex flex-col items-center p-2 h-auto min-h-[80px] text-xs"
               >
+                <IconComponent className="h-4 w-4 mb-1" />
                 <div className="text-center">
-                  <div className="font-medium text-sm">{group.title}</div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    {completion}% complete
-                  </div>
-                  <Progress value={completion} className="h-1 w-16 mt-1" />
+                  <div className="font-medium">{tab.title}</div>
+                  {completion === 'complete' && (
+                    <CheckCircle className="h-3 w-3 text-green-600 mx-auto mt-1" />
+                  )}
+                  {tab.required && completion !== 'complete' && (
+                    <div className="text-xs text-red-600 mt-1">*</div>
+                  )}
                 </div>
               </EnhancedTabsTrigger>
             );
           })}
         </EnhancedTabsList>
 
-        {stepGroups.map((group) => (
-          <EnhancedTabsContent key={group.id} value={group.id} className="space-y-6">
-            {/* Group Header */}
-            <Card className={`border-l-4 ${getColorClasses(group.color)}`}>
+        {ONBOARDING_TABS.map((tab) => (
+          <EnhancedTabsContent key={tab.id} value={tab.id} className="space-y-6">
+            <Card>
               <CardHeader>
                 <div className="flex items-center space-x-3">
-                  <group.icon className="h-6 w-6" />
+                  <tab.icon className="h-6 w-6" />
                   <div>
-                    <CardTitle>{group.title}</CardTitle>
-                    <CardDescription>{group.description}</CardDescription>
+                    <CardTitle>{tab.title}</CardTitle>
+                    <CardDescription>{tab.description}</CardDescription>
                   </div>
                 </div>
               </CardHeader>
+              <CardContent>
+                {StepComponent && tab.id === activeTab && (
+                  <StepComponent
+                    data={formData}
+                    onDataChange={handleDataChange}
+                    applicationId={applicationId}
+                    onEditStep={(stepIndex: number) => {
+                      // Handle edit step navigation for review
+                      const targetTab = ONBOARDING_TABS[stepIndex];
+                      if (targetTab) {
+                        setActiveTab(targetTab.id);
+                      }
+                    }}
+                  />
+                )}
+              </CardContent>
             </Card>
-
-            {/* Steps Navigation */}
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-              {/* Step Sidebar */}
-              <div className="lg:col-span-1">
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base">Steps</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    {group.steps.map((step) => {
-                      const completion = getStepCompletion(step.key);
-                      const IconComponent = getStepIcon(step.key);
-                      
-                      return (
-                        <button
-                          key={step.key}
-                          onClick={() => handleStepClick(group.id, step.key)}
-                          className={`w-full text-left p-3 rounded-lg border transition-colors ${
-                            activeStep === step.key
-                              ? 'bg-primary text-primary-foreground border-primary'
-                              : completion === 'complete'
-                              ? 'bg-green-50 border-green-200 text-green-800'
-                              : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
-                          }`}
-                        >
-                          <div className="flex items-center space-x-2">
-                            <IconComponent className="h-4 w-4" />
-                            <div className="flex-1 min-w-0">
-                              <div className="font-medium text-sm truncate">{step.label}</div>
-                              <div className="text-xs opacity-70">
-                                {completion === 'complete' ? 'Complete' : step.required ? 'Required' : 'Optional'}
-                              </div>
-                            </div>
-                            {completion === 'complete' && (
-                              <CheckCircle className="h-4 w-4 text-green-600" />
-                            )}
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Step Content */}
-              <div className="lg:col-span-3">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>{currentStepData?.label}</CardTitle>
-                    <CardDescription>
-                      Complete this section of your onboarding application
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {StepComponent && (
-                      <StepComponent
-                        data={formData}
-                        onDataChange={handleDataChange}
-                        applicationId={applicationId}
-                        onEditStep={(stepIndex: number) => {
-                          // Handle edit step navigation for review
-                          const allSteps = stepGroups.flatMap(g => g.steps);
-                          const targetStep = allSteps[stepIndex];
-                          if (targetStep) {
-                            const targetGroup = stepGroups.find(g => 
-                              g.steps.some(s => s.key === targetStep.key)
-                            );
-                            if (targetGroup) {
-                              handleStepClick(targetGroup.id, targetStep.key);
-                            }
-                          }
-                        }}
-                      />
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
           </EnhancedTabsContent>
         ))}
       </EnhancedTabs>
 
       {/* Final Submit Section */}
-      {activeGroup === 'finalization' && activeStep === 'review' && (
+      {activeTab === 'review' && (
         <Card className="border-2 border-green-200 bg-green-50">
           <CardHeader>
             <CardTitle className="text-green-900 flex items-center space-x-2">
