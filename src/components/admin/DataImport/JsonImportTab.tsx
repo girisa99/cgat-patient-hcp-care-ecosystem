@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -44,26 +43,29 @@ export const JsonImportTab: React.FC = () => {
       });
       
       setJsonInput('');
-    } catch (parseError: any) {
-      console.error('❌ JSON parsing error:', parseError);
+    } catch (error: any) {
+      console.error('❌ Error during JSON import:', error);
       console.error('❌ Error details:', {
-        message: parseError.message,
-        stack: parseError.stack,
+        message: error.message,
+        stack: error.stack,
         inputSample: jsonInput.substring(0, 500)
       });
       
-      toast({
-        title: "Invalid JSON",
-        description: `JSON parsing failed: ${parseError.message}. Please check your JSON format and try again.`,
-        variant: "destructive",
-      });
-    } catch (importError: any) {
-      console.error('❌ Import error:', importError);
-      toast({
-        title: "Import Failed",
-        description: `Import failed: ${importError.message}`,
-        variant: "destructive",
-      });
+      // Check if it's a JSON parsing error
+      if (error instanceof SyntaxError || error.message.includes('JSON')) {
+        toast({
+          title: "Invalid JSON",
+          description: `JSON parsing failed: ${error.message}. Please check your JSON format and try again.`,
+          variant: "destructive",
+        });
+      } else {
+        // Handle import/database errors
+        toast({
+          title: "Import Failed",
+          description: `Import failed: ${error.message}`,
+          variant: "destructive",
+        });
+      }
     }
   };
 
