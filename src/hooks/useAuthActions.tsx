@@ -182,10 +182,146 @@ export const useAuthActions = () => {
     }
   };
 
+  const resendVerificationEmail = async (email: string): Promise<AuthResult> => {
+    setLoading(true);
+    console.log('📧 Resending verification email for:', email);
+    
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email.trim().toLowerCase(),
+        options: {
+          emailRedirectTo: `${window.location.origin}/`
+        }
+      });
+
+      if (error) {
+        console.error('❌ Resend verification error:', error);
+        toast({
+          title: "Error",
+          description: error.message || "Failed to resend verification email",
+          variant: "destructive",
+        });
+        return { success: false, error: error.message };
+      }
+
+      console.log('✅ Verification email resent successfully');
+      toast({
+        title: "Email Sent",
+        description: "Verification email has been resent. Please check your inbox.",
+      });
+      
+      return { success: true };
+    } catch (error: any) {
+      console.error('💥 Exception during resend verification:', error);
+      const errorMessage = "An unexpected error occurred while resending verification email";
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      return { success: false, error: errorMessage };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const assignUserRole = async (userId: string, roleName: UserRole): Promise<AuthResult> => {
+    setLoading(true);
+    console.log('🔄 Assigning role:', roleName, 'to user:', userId);
+    
+    try {
+      // Get the role ID from the roles table
+      const { data: role, error: roleError } = await supabase
+        .from('roles')
+        .select('id')
+        .eq('name', roleName)
+        .single();
+
+      if (roleError || !role) {
+        console.error('❌ Role not found:', roleName, roleError);
+        const errorMessage = `Role '${roleName}' not found`;
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
+        return { success: false, error: errorMessage };
+      }
+
+      // Check if user already has this role
+      const { data: existingRole, error: checkError } = await supabase
+        .from('user_roles')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('role_id', role.id)
+        .maybeSingle();
+
+      if (checkError) {
+        console.error('❌ Error checking existing role:', checkError);
+        const errorMessage = 'Error checking existing role assignment';
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
+        return { success: false, error: errorMessage };
+      }
+
+      if (existingRole) {
+        console.log('ℹ️ User already has this role assigned');
+        toast({
+          title: "Role Already Assigned",
+          description: "User already has this role assigned",
+        });
+        return { success: true };
+      }
+
+      // Assign the role to the user
+      const { error: assignError } = await supabase
+        .from('user_roles')
+        .insert({
+          user_id: userId,
+          role_id: role.id
+        });
+
+      if (assignError) {
+        console.error('❌ Error assigning role:', assignError);
+        toast({
+          title: "Error",
+          description: assignError.message || "Failed to assign role",
+          variant: "destructive",
+        });
+        return { success: false, error: assignError.message };
+      }
+
+      console.log('✅ Role assignment successful!');
+      toast({
+        title: "Role Assigned",
+        description: `Role '${roleName}' has been assigned successfully`,
+      });
+      
+      return { success: true };
+    } catch (error: any) {
+      console.error('💥 Exception in role assignment:', error);
+      const errorMessage = error.message || "Failed to assign role";
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      return { success: false, error: errorMessage };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     signIn,
     signUp,
     signOut,
+    resendVerificationEmail,
+    assignUserRole,
     loading
   };
 };

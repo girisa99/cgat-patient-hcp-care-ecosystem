@@ -6,6 +6,7 @@ import { useAuthContext } from '@/components/auth/AuthProvider';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import LoginForm from '@/components/auth/LoginForm';
 import HealthcareAuthLayout from '@/components/auth/HealthcareAuthLayout';
+import { AuthTestComponent } from '@/components/auth/AuthTestComponent';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -50,11 +51,17 @@ const Index = () => {
     return <LoadingSpinner />;
   }
 
-  // If no user, show the login form
+  // If no user, show the login form and test component
   if (!user) {
     return (
       <HealthcareAuthLayout>
-        <LoginForm />
+        <div className="space-y-8">
+          <LoginForm />
+          <div className="border-t pt-8">
+            <h2 className="text-lg font-semibold text-center mb-4">Development Tools</h2>
+            <AuthTestComponent />
+          </div>
+        </div>
       </HealthcareAuthLayout>
     );
   }
