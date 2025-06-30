@@ -15,13 +15,19 @@ export const useJsonDataImport = () => {
         hasTherapies: !!jsonData.therapies,
         hasManufacturers: !!jsonData.manufacturers,
         hasModalities: !!jsonData.modalities,
+        hasProducts: !!jsonData.products,
         hasServices: !!jsonData.services,
         hasServiceProviders: !!jsonData.service_providers,
+        hasClinicalTrials: !!jsonData.clinical_trials,
+        hasCommercialProducts: !!jsonData.commercial_products,
         therapiesCount: jsonData.therapies?.length || 0,
         manufacturersCount: jsonData.manufacturers?.length || 0,
         modalitiesCount: jsonData.modalities?.length || 0,
+        productsCount: jsonData.products?.length || 0,
         servicesCount: jsonData.services?.length || 0,
-        serviceProvidersCount: jsonData.service_providers?.length || 0
+        serviceProvidersCount: jsonData.service_providers?.length || 0,
+        clinicalTrialsCount: jsonData.clinical_trials?.length || 0,
+        commercialProductsCount: jsonData.commercial_products?.length || 0
       });
 
       // Helper function to safely insert data with duplicate checking
@@ -87,56 +93,84 @@ export const useJsonDataImport = () => {
         therapies: 0,
         manufacturers: 0,
         modalities: 0,
+        products: 0,
         services: 0,
-        service_providers: 0
+        service_providers: 0,
+        clinical_trials: 0,
+        commercial_products: 0
       };
 
-      // 1. Load therapies - map to actual schema
+      // 1. Load therapies - map to correct enum values
       if (jsonData.therapies && Array.isArray(jsonData.therapies)) {
-        const therapiesData = jsonData.therapies.map((therapy: any) => ({
-          name: therapy.name,
-          therapy_type: 'cell_gene_therapy', // Use valid enum value
-          description: therapy.description,
-          is_active: true
-          // Remove indication_areas as it doesn't exist in the schema
-        }));
+        const therapiesData = jsonData.therapies.map((therapy: any) => {
+          // Map therapy types to valid enum values
+          let therapyType = 'other_cgat'; // default
+          if (therapy.therapy_type === 'cell_gene_therapy' || therapy.therapy_type === 'cell_therapy') {
+            therapyType = 'car_t_cell';
+          } else if (therapy.therapy_type === 'gene_therapy') {
+            therapyType = 'gene_therapy';
+          }
+
+          return {
+            name: therapy.name,
+            therapy_type: therapyType,
+            description: therapy.description,
+            indication: therapy.indication_areas ? therapy.indication_areas.join(', ') : null,
+            regulatory_designations: therapy.regulatory_status ? [therapy.regulatory_status] : [],
+            special_handling_requirements: {},
+            is_active: true
+          };
+        });
 
         results.therapies = await safeInsert('therapies', therapiesData, 'name');
       }
 
-      // 2. Load manufacturers - map to actual schema
+      // 2. Load manufacturers - map to correct enum values
       if (jsonData.manufacturers && Array.isArray(jsonData.manufacturers)) {
-        const manufacturersData = jsonData.manufacturers.map((mfg: any) => ({
-          name: mfg.name,
-          manufacturer_type: mfg.manufacturer_type || 'biopharmaceutical',
-          headquarters_location: mfg.headquarters_location,
-          quality_certifications: Array.isArray(mfg.quality_certifications) ? mfg.quality_certifications : [],
-          manufacturing_capabilities: Array.isArray(mfg.manufacturing_capabilities) ? mfg.manufacturing_capabilities : [],
-          partnership_tier: mfg.partnership_tier || 'tier_3',
-          is_active: true
-        }));
+        const manufacturersData = jsonData.manufacturers.map((mfg: any) => {
+          // Map manufacturer types to valid enum values
+          let manufacturerType = 'other'; // default
+          if (mfg.manufacturer_type === 'biopharmaceutical') {
+            manufacturerType = 'pharma';
+          } else if (mfg.manufacturer_type === 'gene_therapy_specialist' || mfg.manufacturer_type === 'cell_therapy_specialist') {
+            manufacturerType = 'biotech';
+          }
+
+          return {
+            name: mfg.name,
+            manufacturer_type: manufacturerType,
+            headquarters_location: mfg.headquarters_location,
+            quality_certifications: Array.isArray(mfg.quality_certifications) ? mfg.quality_certifications : [],
+            manufacturing_capabilities: Array.isArray(mfg.manufacturing_capabilities) ? mfg.manufacturing_capabilities : [],
+            partnership_tier: mfg.partnership_tier === 'tier_1' ? 'preferred' : mfg.partnership_tier === 'tier_2' ? 'standard' : 'limited',
+            regulatory_status: {},
+            contact_info: mfg.contact_info || {},
+            is_active: true
+          };
+        });
 
         results.manufacturers = await safeInsert('manufacturers', manufacturersData, 'name');
       }
 
-      // 3. Load modalities - fix enum values
+      // 3. Load modalities - map to correct enum values
       if (jsonData.modalities && Array.isArray(jsonData.modalities)) {
         const modalitiesData = jsonData.modalities.map((modality: any) => {
-          // Map invalid enum values to valid ones
-          let modalityType = 'cell_therapy'; // default
-          if (modality.modality_type === 'gene_therapy' || modality.modality_type === 'gene_editing') {
-            modalityType = 'gene_therapy_crispr';
+          // Map modality types to valid enum values
+          let modalityType = 'autologous'; // default
+          if (modality.modality_type === 'gene_therapy') {
+            modalityType = 'viral_vector';
           } else if (modality.modality_type === 'cell_therapy') {
-            modalityType = 'cell_therapy_car_t';
+            modalityType = 'autologous';
           }
 
           return {
             name: modality.name,
             modality_type: modalityType,
             description: modality.description,
-            administration_requirements: modality.administration_requirements,
-            cold_chain_requirements: modality.cold_chain_requirements,
+            administration_requirements: modality.administration_requirements || {},
+            cold_chain_requirements: modality.cold_chain_requirements || {},
             manufacturing_complexity: modality.manufacturing_complexity || 'medium',
+            shelf_life_considerations: modality.shelf_life_considerations,
             is_active: true
           };
         });
@@ -144,7 +178,37 @@ export const useJsonDataImport = () => {
         results.modalities = await safeInsert('modalities', modalitiesData, 'name');
       }
 
-      // 4. Load services - remove capabilities field that doesn't exist
+      // 4. Load products
+      if (jsonData.products && Array.isArray(jsonData.products)) {
+        const productsData = jsonData.products.map((product: any) => {
+          // Map product status to valid enum values
+          let productStatus = 'preclinical'; // default
+          if (product.product_type === 'commercial') {
+            productStatus = 'approved';
+          } else if (product.product_type === 'investigational') {
+            productStatus = 'phase_3';
+          }
+
+          return {
+            name: product.name,
+            brand_name: product.brand_name,
+            product_status: productStatus,
+            indication: product.indication_areas ? product.indication_areas.join(', ') : null,
+            approval_date: product.regulatory_approvals?.fda?.date || null,
+            dosing_information: {},
+            contraindications: [],
+            special_populations: {},
+            distribution_requirements: {},
+            pricing_information: product.pricing_information || {},
+            market_access_considerations: {},
+            is_active: true
+          };
+        });
+
+        results.products = await safeInsert('products', productsData, 'name');
+      }
+
+      // 5. Load services
       if (jsonData.services && Array.isArray(jsonData.services)) {
         const servicesData = jsonData.services.map((service: any) => ({
           name: service.name,
@@ -152,13 +216,12 @@ export const useJsonDataImport = () => {
           description: service.description,
           geographic_coverage: Array.isArray(service.geographic_coverage) ? service.geographic_coverage : [],
           is_active: true
-          // Remove capabilities field as it doesn't exist in schema
         }));
 
         results.services = await safeInsert('services', servicesData, 'name');
       }
 
-      // 5. Load service providers - remove certifications field that doesn't exist
+      // 6. Load service providers
       if (jsonData.service_providers && Array.isArray(jsonData.service_providers)) {
         const providersData = jsonData.service_providers.map((provider: any) => {
           // Map provider types to valid enum values
@@ -176,17 +239,82 @@ export const useJsonDataImport = () => {
             geographic_coverage: Array.isArray(provider.geographic_coverage) ? provider.geographic_coverage : [],
             contact_info: provider.contact_info || {},
             is_active: true
-            // Remove certifications field as it doesn't exist in schema
           };
         });
 
         results.service_providers = await safeInsert('service_providers', providersData, 'name');
       }
 
+      // 7. Load clinical trials
+      if (jsonData.clinical_trials && Array.isArray(jsonData.clinical_trials)) {
+        const clinicalTrialsData = jsonData.clinical_trials.map((trial: any) => {
+          // Map trial status to valid enum values
+          let trialStatus = 'not_yet_recruiting'; // default
+          if (trial.trial_status === 'recruiting') {
+            trialStatus = 'recruiting';
+          } else if (trial.trial_status === 'active') {
+            trialStatus = 'active_not_recruiting';
+          } else if (trial.trial_status === 'completed') {
+            trialStatus = 'completed';
+          } else if (trial.trial_status === 'ongoing') {
+            trialStatus = 'active_not_recruiting';
+          }
+
+          // Map phase to valid enum values
+          let phase = 'preclinical'; // default
+          if (trial.phase === 'Phase I' || trial.phase === 'Phase 1') {
+            phase = 'phase_1';
+          } else if (trial.phase === 'Phase II' || trial.phase === 'Phase 2') {
+            phase = 'phase_2';
+          } else if (trial.phase === 'Phase III' || trial.phase === 'Phase 3') {
+            phase = 'phase_3';
+          } else if (trial.phase === 'Phase IV' || trial.phase === 'Phase 4') {
+            phase = 'phase_4';
+          }
+
+          return {
+            nct_number: trial.nct_number,
+            title: trial.title,
+            trial_status: trialStatus,
+            phase: phase,
+            primary_indication: trial.eligibility_criteria?.indication,
+            enrollment_target: trial.enrollment_target,
+            enrollment_current: 0,
+            primary_endpoint: trial.primary_endpoint,
+            secondary_endpoints: [],
+            investigational_sites: {},
+            sponsor_info: {},
+            eligibility_criteria: trial.eligibility_criteria || {},
+            trial_locations: [],
+            is_active: true
+          };
+        });
+
+        results.clinical_trials = await safeInsert('clinical_trials', clinicalTrialsData, 'nct_number');
+      }
+
+      // 8. Load commercial products
+      if (jsonData.commercial_products && Array.isArray(jsonData.commercial_products)) {
+        const commercialProductsData = jsonData.commercial_products.map((cp: any) => ({
+          launch_date: cp.launch_date,
+          market_regions: Array.isArray(cp.market_regions) ? cp.market_regions : [],
+          reimbursement_status: cp.reimbursement_status || {},
+          patient_access_programs: {},
+          distribution_channels: [],
+          volume_projections: cp.sales_performance || {},
+          competitive_landscape: {},
+          key_opinion_leaders: [],
+          medical_affairs_contacts: {},
+          is_active: true
+        }));
+
+        results.commercial_products = await safeInsert('commercial_products', commercialProductsData, 'launch_date');
+      }
+
       console.log('✅ All JSON data loaded successfully!');
       toast({
         title: "Success!",
-        description: `JSON data imported: ${results.therapies} therapies, ${results.manufacturers} manufacturers, ${results.modalities} modalities, ${results.services} services, ${results.service_providers} providers`,
+        description: `JSON data imported: ${results.therapies} therapies, ${results.manufacturers} manufacturers, ${results.modalities} modalities, ${results.products} products, ${results.services} services, ${results.service_providers} providers, ${results.clinical_trials} trials, ${results.commercial_products} commercial products`,
       });
 
       return results;
