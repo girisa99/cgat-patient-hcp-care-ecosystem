@@ -6,7 +6,6 @@ import {
   Users, 
   Building2, 
   Settings, 
-  BarChart3, 
   FileText,
   Database,
   Upload,
@@ -26,7 +25,6 @@ const navigation = [
   { name: 'Users', href: '/users', icon: Users },
   { name: 'Modules', href: '/modules', icon: Database },
   { name: 'Security', href: '/security', icon: Shield },
-  { name: 'Reports', href: '/reports', icon: BarChart3 },
   { name: 'Documents', href: '/documents', icon: FileText },
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
