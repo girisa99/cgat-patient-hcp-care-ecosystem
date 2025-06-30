@@ -218,7 +218,7 @@ const AuthDiagnostic = () => {
           <ul className="list-disc list-inside text-sm space-y-1">
             <li>If password reset works but login doesn't, the password might have been changed recently</li>
             <li>Check if email confirmation is required in Supabase Auth settings</li>
-            <li>Verify the user exists in Supabase Auth > Users dashboard</li>
+            <li>Verify the user exists in Supabase Auth &gt; Users dashboard</li>
             <li>Try using the latest password from the reset email</li>
             <li>Clear auth state and try again</li>
           </ul>
