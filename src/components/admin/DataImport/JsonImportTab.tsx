@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Upload, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Upload, CheckCircle, AlertTriangle, Info } from 'lucide-react';
 import { useJsonDataImport } from '@/hooks/useJsonDataImport';
 import { useToast } from '@/hooks/use-toast';
 
@@ -23,81 +23,26 @@ export const JsonImportTab: React.FC = () => {
     // Remove any BOM (Byte Order Mark)
     cleanedInput = cleanedInput.replace(/^\uFEFF/, '');
     
-    // Check for multiple JSON objects and wrap them in array if needed
-    const jsonObjects = [];
-    let currentPos = 0;
-    let braceCount = 0;
-    let inString = false;
-    let escaped = false;
-    let objectStart = -1;
-    
-    for (let i = 0; i < cleanedInput.length; i++) {
-      const char = cleanedInput[i];
-      
-      if (!inString) {
-        if (char === '{') {
-          if (braceCount === 0) {
-            objectStart = i;
-          }
-          braceCount++;
-        } else if (char === '}') {
-          braceCount--;
-          if (braceCount === 0 && objectStart !== -1) {
-            // Found complete JSON object
-            const objectStr = cleanedInput.substring(objectStart, i + 1);
-            jsonObjects.push(objectStr);
-            objectStart = -1;
-          }
-        } else if (char === '"') {
-          inString = true;
-        }
-      } else {
-        if (char === '"' && !escaped) {
-          inString = false;
-        }
-        escaped = (char === '\\' && !escaped);
-      }
+    // Basic validation - check if it looks like JSON
+    if (!cleanedInput.startsWith('{') && !cleanedInput.startsWith('[')) {
+      throw new Error('Input does not appear to be valid JSON. JSON must start with { or [');
     }
     
-    console.log('📊 Found JSON objects:', jsonObjects.length);
-    
-    // If we found multiple objects, try to parse each one
-    if (jsonObjects.length > 1) {
-      console.log('🔄 Multiple JSON objects detected, attempting to parse individually...');
-      
-      const parsedObjects = [];
-      for (let i = 0; i < jsonObjects.length; i++) {
-        try {
-          const parsed = JSON.parse(jsonObjects[i]);
-          parsedObjects.push(parsed);
-          console.log(`✅ Successfully parsed object ${i + 1}`);
-        } catch (error) {
-          console.error(`❌ Failed to parse object ${i + 1}:`, error);
-          throw new Error(`Invalid JSON in object ${i + 1}: ${error.message}`);
-        }
-      }
-      
-      // Try to merge objects if they have the same structure
-      if (parsedObjects.length > 0) {
-        const firstObj = parsedObjects[0];
-        if (typeof firstObj === 'object' && firstObj !== null) {
-          // Merge all objects
-          const mergedObject = {};
-          for (const obj of parsedObjects) {
-            Object.assign(mergedObject, obj);
-          }
-          return mergedObject;
-        }
-      }
+    if (!cleanedInput.endsWith('}') && !cleanedInput.endsWith(']')) {
+      throw new Error('Input does not appear to be valid JSON. JSON must end with } or ]');
     }
     
     // Try to parse as single JSON object
     try {
-      return JSON.parse(cleanedInput);
-    } catch (error) {
+      const parsed = JSON.parse(cleanedInput);
+      console.log('✅ JSON validated and cleaned successfully');
+      return parsed;
+    } catch (error: any) {
       console.error('❌ JSON parse error:', error);
       
       // Provide more specific error information
+      let errorMessage = `JSON parsing failed: ${error.message}`;
+      
       if (error.message.includes('position')) {
         const match = error.message.match(/position (\d+)/);
         if (match) {
@@ -109,15 +54,20 @@ export const JsonImportTab: React.FC = () => {
           const contextEnd = Math.min(cleanedInput.length, position + 50);
           const context = cleanedInput.substring(contextStart, contextEnd);
           
-          throw new Error(
-            `JSON parsing failed at line ${lineNumber}, column ${columnNumber}. ` +
-            `Context around error: "${context}". ` +
-            `Original error: ${error.message}`
-          );
+          errorMessage = `JSON parsing failed at line ${lineNumber}, column ${columnNumber}. Context: "${context}". Original error: ${error.message}`;
         }
       }
       
-      throw error;
+      // Check for common JSON errors and provide suggestions
+      if (error.message.includes('Expected property name')) {
+        errorMessage += '\n\nTip: Make sure all property names are enclosed in double quotes (not single quotes).';
+      } else if (error.message.includes('Unexpected token')) {
+        errorMessage += '\n\nTip: Check for missing commas, extra commas, or unescaped characters.';
+      } else if (error.message.includes('Unexpected end')) {
+        errorMessage += '\n\nTip: Check that all opening brackets { and [ have matching closing brackets } and ].';
+      }
+      
+      throw new Error(errorMessage);
     }
   };
 
@@ -172,6 +122,39 @@ export const JsonImportTab: React.FC = () => {
     console.log('📝 JSON input changed, new length:', value.length);
   };
 
+  const loadSampleData = () => {
+    const sampleJson = `{
+  "therapies": [
+    {
+      "name": "CAR-T Cell Therapy",
+      "therapy_type": "cell_gene_therapy",
+      "description": "Chimeric Antigen Receptor T-cell therapy for cancer treatment"
+    }
+  ],
+  "manufacturers": [
+    {
+      "name": "BioTech Manufacturing Inc",
+      "manufacturer_type": "contract_manufacturing",
+      "headquarters_location": "Boston, MA",
+      "quality_certifications": ["GMP", "ISO 13485"],
+      "manufacturing_capabilities": ["cell_therapy", "gene_therapy"],
+      "partnership_tier": "premium"
+    }
+  ],
+  "services": [
+    {
+      "name": "Cold Chain Logistics",
+      "service_type": "logistics",
+      "description": "Temperature-controlled distribution and storage",
+      "capabilities": ["transportation", "storage", "monitoring"],
+      "geographic_coverage": ["US", "EU"]
+    }
+  ]
+}`;
+    setJsonInput(sampleJson);
+    setValidationError('');
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -185,7 +168,17 @@ export const JsonImportTab: React.FC = () => {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="json-input">JSON Market Data</Label>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="json-input">JSON Market Data</Label>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={loadSampleData}
+              className="text-xs"
+            >
+              Load Sample Data
+            </Button>
+          </div>
           <Textarea
             id="json-input"
             placeholder="Paste your real market data JSON here..."
@@ -202,7 +195,7 @@ export const JsonImportTab: React.FC = () => {
               <AlertTriangle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
               <div className="text-sm">
                 <p className="font-medium text-red-800">JSON Validation Error:</p>
-                <p className="mt-1 text-red-700 whitespace-pre-wrap">{validationError}</p>
+                <pre className="mt-1 text-red-700 whitespace-pre-wrap text-xs">{validationError}</pre>
               </div>
             </div>
           </div>
@@ -220,15 +213,15 @@ export const JsonImportTab: React.FC = () => {
 
         <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
           <div className="flex items-start space-x-2">
-            <CheckCircle className="h-4 w-4 text-blue-500 mt-0.5" />
+            <Info className="h-4 w-4 text-blue-500 mt-0.5" />
             <div className="text-sm">
-              <p className="font-medium">Real Data Import Features:</p>
+              <p className="font-medium">JSON Format Requirements:</p>
               <ul className="mt-1 text-xs space-y-1">
-                <li>• Processes actual market data for therapies, manufacturers, modalities, services, and providers</li>
-                <li>• Automatically validates and cleans JSON formatting issues</li>
-                <li>• Handles multiple JSON objects and common formatting problems</li>
-                <li>• Provides detailed error information for troubleshooting</li>
-                <li>• Maintains data integrity and relationships</li>
+                <li>• Must be valid JSON format with proper syntax</li>
+                <li>• Property names must be enclosed in double quotes</li>
+                <li>• Supports: therapies, manufacturers, modalities, services, service_providers</li>
+                <li>• Click "Load Sample Data" to see the expected format</li>
+                <li>• Duplicate records (by name) will be automatically skipped</li>
               </ul>
             </div>
           </div>

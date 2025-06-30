@@ -46,7 +46,7 @@ export const useJsonDataImport = () => {
           try {
             // Check if item already exists
             const { data: existingData, error: checkError } = await supabase
-              .from(tableName)
+              .from(tableName as any)
               .select('id')
               .eq(uniqueField, item[uniqueField])
               .maybeSingle();
@@ -61,9 +61,9 @@ export const useJsonDataImport = () => {
               continue;
             }
 
-            // Insert new item
+            // Insert new item using simple insert (no ON CONFLICT)
             const { error: insertError } = await supabase
-              .from(tableName)
+              .from(tableName as any)
               .insert(item);
 
             if (insertError) {
