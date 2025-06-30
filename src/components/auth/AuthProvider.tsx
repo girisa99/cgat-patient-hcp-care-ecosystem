@@ -95,7 +95,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const refreshUserData = async () => {
-    if (session?.user && session?.access_token) {
+    if (session?.user) {
       console.log('🔄 Refreshing user data for authenticated session');
       const [roles, profileData] = await Promise.all([
         fetchUserRoles(session.user.id),
@@ -125,7 +125,47 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     console.log('🔄 AuthProvider: Setting up auth state listener...');
     let mounted = true;
 
-    // Get initial session
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, newSession) => {
+        console.log('🔄 Auth state change:', {
+          event,
+          hasSession: !!newSession,
+          hasUser: !!newSession?.user,
+          userEmail: newSession?.user?.email,
+          emailConfirmed: newSession?.user?.email_confirmed_at ? 'Yes' : 'No'
+        });
+        
+        if (!mounted) return;
+        
+        setSession(newSession);
+        setUser(newSession?.user ?? null);
+        
+        if (newSession?.user) {
+          console.log('✅ Valid session in auth change, fetching user data...');
+          const [roles, profileData] = await Promise.all([
+            fetchUserRoles(newSession.user.id),
+            fetchUserProfile(newSession.user.id)
+          ]);
+          if (mounted) {
+            setUserRoles(roles);
+            setProfile(profileData);
+          }
+        } else {
+          console.log('⚠️ No valid session in auth change, clearing user data');
+          if (mounted) {
+            setUserRoles([]);
+            setProfile(null);
+          }
+        }
+        
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    );
+
+    // THEN check for existing session
     const getInitialSession = async () => {
       try {
         const { data: { session: initialSession }, error } = await supabase.auth.getSession();
@@ -141,15 +181,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log('🔄 Initial session check:', {
           hasSession: !!initialSession,
           hasUser: !!initialSession?.user,
-          hasAccessToken: !!initialSession?.access_token,
-          userEmail: initialSession?.user?.email
+          userEmail: initialSession?.user?.email,
+          emailConfirmed: initialSession?.user?.email_confirmed_at ? 'Yes' : 'No'
         });
 
         if (mounted) {
           setSession(initialSession);
           setUser(initialSession?.user ?? null);
           
-          if (initialSession?.user && initialSession?.access_token) {
+          if (initialSession?.user) {
             console.log('✅ Valid initial session found, fetching user data...');
             const [roles, profileData] = await Promise.all([
               fetchUserRoles(initialSession.user.id),
@@ -177,47 +217,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
 
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, newSession) => {
-        console.log('🔄 Auth state change:', {
-          event,
-          hasSession: !!newSession,
-          hasUser: !!newSession?.user,
-          hasAccessToken: !!newSession?.access_token,
-          userEmail: newSession?.user?.email
-        });
-        
-        if (!mounted) return;
-        
-        setSession(newSession);
-        setUser(newSession?.user ?? null);
-        
-        if (newSession?.user && newSession?.access_token) {
-          console.log('✅ Valid session in auth change, fetching user data...');
-          const [roles, profileData] = await Promise.all([
-            fetchUserRoles(newSession.user.id),
-            fetchUserProfile(newSession.user.id)
-          ]);
-          if (mounted) {
-            setUserRoles(roles);
-            setProfile(profileData);
-          }
-        } else {
-          console.log('⚠️ No valid session in auth change, clearing user data');
-          if (mounted) {
-            setUserRoles([]);
-            setProfile(null);
-          }
-        }
-        
-        if (mounted) {
-          setLoading(false);
-        }
-      }
-    );
-
-    // Get initial session
+    // Get initial session after setting up listener
     getInitialSession();
 
     return () => {
@@ -227,7 +227,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  const isAuthenticated = !!(session?.access_token && user);
+  const isAuthenticated = !!(session && user && user.email_confirmed_at);
 
   const value = {
     user,

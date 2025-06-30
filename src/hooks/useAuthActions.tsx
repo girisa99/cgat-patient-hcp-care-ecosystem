@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { AuthStateManager } from '@/utils/auth/authStateManager';
+import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 
 type UserRole = Database['public']['Enums']['user_role'];
@@ -19,27 +19,60 @@ export const useAuthActions = () => {
     console.log('🔑 Starting sign in process for:', email);
     
     try {
-      const result = await AuthStateManager.secureSignIn(email, password);
+      // Clean the email input
+      const cleanEmail = email.trim().toLowerCase();
+      console.log('🧹 Cleaned email:', cleanEmail);
       
-      if (!result.success) {
-        console.error('❌ Sign in failed:', result.error);
+      // Attempt sign in with cleaned credentials
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: cleanEmail,
+        password: password.trim(),
+      });
+
+      if (error) {
+        console.error('❌ Sign in error:', error);
+        let errorMessage = error.message;
+        
+        // Enhanced error handling
+        if (error.message.includes('Invalid login credentials')) {
+          errorMessage = 'Invalid email or password. Please check your credentials and try again.';
+        } else if (error.message.includes('Email not confirmed')) {
+          errorMessage = 'Please verify your email address before signing in. Check your inbox for a verification email.';
+        } else if (error.message.includes('Too many requests')) {
+          errorMessage = 'Too many login attempts. Please wait a few minutes before trying again.';
+        }
+        
         toast({
           title: "Authentication Failed",
-          description: result.error || "Invalid email or password",
+          description: errorMessage,
           variant: "destructive",
         });
-      } else {
-        console.log('✅ Sign in successful');
+        return { success: false, error: errorMessage };
+      }
+
+      if (data.user && data.session) {
+        console.log('✅ Sign in successful for user:', data.user.id);
+        console.log('📧 User email confirmed:', data.user.email_confirmed_at ? 'Yes' : 'No');
+        
         toast({
           title: "Welcome Back",
           description: "Successfully signed in to Healthcare Portal",
         });
+        
+        return { success: true };
       }
-      
-      return result;
+
+      const fallbackError = 'Authentication failed - no user or session returned';
+      console.error('❌', fallbackError);
+      toast({
+        title: "Authentication Failed",
+        description: fallbackError,
+        variant: "destructive",
+      });
+      return { success: false, error: fallbackError };
     } catch (error: any) {
       console.error('💥 Exception during sign in:', error);
-      const errorMessage = "An unexpected error occurred during sign in";
+      const errorMessage = error.message || "An unexpected error occurred during sign in";
       toast({
         title: "Error",
         description: errorMessage,
@@ -57,7 +90,7 @@ export const useAuthActions = () => {
     
     try {
       // Clean up first
-      await AuthStateManager.cleanupAuthState();
+      // await AuthStateManager.cleanupAuthState();
       
       const redirectUrl = `${window.location.origin}/`;
       
@@ -306,7 +339,7 @@ Try using a personal email address (Gmail, Yahoo, Outlook) or contact your admin
       }
       
       // Clean up auth state
-      await AuthStateManager.cleanupAuthState();
+      // await AuthStateManager.cleanupAuthState();
       
       console.log('✅ Sign out successful');
       toast({
