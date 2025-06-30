@@ -1,9 +1,11 @@
+
 import React, { useState } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, AlertCircle } from 'lucide-react';
 import { useUsers } from '@/hooks/useUsers';
+import { useAuthContext } from '@/components/auth/AuthProvider';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { useToast } from '@/hooks/use-toast';
 import { useAdminRealtime } from '@/hooks/useAdminRealtime';
@@ -29,6 +31,7 @@ import UserModuleAccessDialog from '@/components/users/UserModuleAccessDialog';
 
 const Users = () => {
   const { toast } = useToast();
+  const { isAuthenticated, loading: authLoading } = useAuthContext();
   
   // Enable real-time updates for user management area
   useAdminRealtime({
@@ -61,6 +64,47 @@ const Users = () => {
   const [selectedUserName, setSelectedUserName] = useState<string>('');
   const [selectedUserEmail, setSelectedUserEmail] = useState<string>('');
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Show loading while checking authentication
+  if (authLoading) {
+    return (
+      <MainLayout>
+        <PageContainer
+          title="Users Management"
+          subtitle="Checking authentication..."
+        >
+          <div className="flex justify-center items-center min-h-[400px]">
+            <LoadingSpinner size="lg" />
+          </div>
+        </PageContainer>
+      </MainLayout>
+    );
+  }
+
+  // Show authentication required message
+  if (!isAuthenticated) {
+    return (
+      <MainLayout>
+        <PageContainer
+          title="Users Management"
+          subtitle="Authentication Required"
+        >
+          <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+            <AlertCircle className="h-16 w-16 text-orange-500" />
+            <div className="text-center">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Authentication Required</h3>
+              <p className="text-gray-600 mb-4">
+                You need to sign in to access the Users Management module.
+              </p>
+              <p className="text-sm text-gray-500">
+                Please use the login form to authenticate with your credentials.
+              </p>
+            </div>
+          </div>
+        </PageContainer>
+      </MainLayout>
+    );
+  }
 
   const handleCreateUser = () => {
     setCreateUserOpen(true);
@@ -201,11 +245,15 @@ const Users = () => {
           subtitle="Error loading user data"
         >
           <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
-            <p className="text-red-600">Failed to load users: {error.message}</p>
-            <Button onClick={handleRefresh} variant="outline">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Try Again
-            </Button>
+            <AlertCircle className="h-16 w-16 text-red-500" />
+            <div className="text-center">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Failed to Load Users</h3>
+              <p className="text-red-600 mb-4">{error.message}</p>
+              <Button onClick={handleRefresh} variant="outline">
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Try Again
+              </Button>
+            </div>
           </div>
         </PageContainer>
       </MainLayout>

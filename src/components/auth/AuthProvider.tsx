@@ -14,6 +14,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   profile: any | null;
   refreshUserData: () => Promise<void>;
+  isAuthenticated: boolean;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -24,6 +25,7 @@ const AuthContext = createContext<AuthContextType>({
   signOut: async () => {},
   profile: null,
   refreshUserData: async () => {},
+  isAuthenticated: false,
 });
 
 export const useAuthContext = () => {
@@ -93,7 +95,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const refreshUserData = async () => {
-    if (session?.user) {
+    if (session?.user && session?.access_token) {
+      console.log('🔄 Refreshing user data for authenticated session');
       const [roles, profileData] = await Promise.all([
         fetchUserRoles(session.user.id),
         fetchUserProfile(session.user.id)
@@ -120,61 +123,111 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     console.log('🔄 AuthProvider: Setting up auth state listener...');
+    let mounted = true;
+
+    // Get initial session
+    const getInitialSession = async () => {
+      try {
+        const { data: { session: initialSession }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('❌ Error getting initial session:', error);
+          if (mounted) {
+            setLoading(false);
+          }
+          return;
+        }
+
+        console.log('🔄 Initial session check:', {
+          hasSession: !!initialSession,
+          hasUser: !!initialSession?.user,
+          hasAccessToken: !!initialSession?.access_token,
+          userEmail: initialSession?.user?.email
+        });
+
+        if (mounted) {
+          setSession(initialSession);
+          setUser(initialSession?.user ?? null);
+          
+          if (initialSession?.user && initialSession?.access_token) {
+            console.log('✅ Valid initial session found, fetching user data...');
+            const [roles, profileData] = await Promise.all([
+              fetchUserRoles(initialSession.user.id),
+              fetchUserProfile(initialSession.user.id)
+            ]);
+            if (mounted) {
+              setUserRoles(roles);
+              setProfile(profileData);
+            }
+          } else {
+            console.log('⚠️ No valid initial session found');
+            if (mounted) {
+              setUserRoles([]);
+              setProfile(null);
+            }
+          }
+          
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('❌ Error in getInitialSession:', error);
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
 
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('🔄 Auth state change:', event, session?.user?.email, 'Access token present:', !!session?.access_token);
+      async (event, newSession) => {
+        console.log('🔄 Auth state change:', {
+          event,
+          hasSession: !!newSession,
+          hasUser: !!newSession?.user,
+          hasAccessToken: !!newSession?.access_token,
+          userEmail: newSession?.user?.email
+        });
         
-        setSession(session);
-        setUser(session?.user ?? null);
+        if (!mounted) return;
         
-        if (session?.user && session?.access_token) {
-          console.log('✅ Valid session with access token, fetching user data...');
-          // Fetch user roles and profile when user is authenticated
+        setSession(newSession);
+        setUser(newSession?.user ?? null);
+        
+        if (newSession?.user && newSession?.access_token) {
+          console.log('✅ Valid session in auth change, fetching user data...');
           const [roles, profileData] = await Promise.all([
-            fetchUserRoles(session.user.id),
-            fetchUserProfile(session.user.id)
+            fetchUserRoles(newSession.user.id),
+            fetchUserProfile(newSession.user.id)
           ]);
-          setUserRoles(roles);
-          setProfile(profileData);
+          if (mounted) {
+            setUserRoles(roles);
+            setProfile(profileData);
+          }
         } else {
-          console.log('⚠️ No session or access token, clearing user data');
-          setUserRoles([]);
-          setProfile(null);
+          console.log('⚠️ No valid session in auth change, clearing user data');
+          if (mounted) {
+            setUserRoles([]);
+            setProfile(null);
+          }
         }
         
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     );
 
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('🔄 AuthProvider: Initial session check:', session?.user?.email, 'Access token present:', !!session?.access_token);
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user && session?.access_token) {
-        console.log('✅ Initial session valid, fetching user data...');
-        Promise.all([
-          fetchUserRoles(session.user.id),
-          fetchUserProfile(session.user.id)
-        ]).then(([roles, profileData]) => {
-          setUserRoles(roles);
-          setProfile(profileData);
-          setLoading(false);
-        });
-      } else {
-        console.log('⚠️ No initial session or access token');
-        setLoading(false);
-      }
-    });
+    getInitialSession();
 
     return () => {
       console.log('🔄 AuthProvider: Cleaning up auth subscription');
+      mounted = false;
       subscription.unsubscribe();
     };
   }, []);
+
+  const isAuthenticated = !!(session?.access_token && user);
 
   const value = {
     user,
@@ -184,6 +237,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signOut,
     profile,
     refreshUserData,
+    isAuthenticated,
   };
 
   return (

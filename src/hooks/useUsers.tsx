@@ -58,7 +58,7 @@ interface UserWithRoles extends Profile {
 export const useUsers = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { session, user } = useAuthContext();
+  const { session, user, isAuthenticated } = useAuthContext();
 
   const {
     data: users,
@@ -68,21 +68,22 @@ export const useUsers = () => {
   } = useQuery({
     queryKey: ['users'],
     queryFn: async () => {
-      console.log('🔍 Fetching users - using optimized edge function...');
-      console.log('🔍 Session details:', {
+      console.log('🔍 Fetching users - checking authentication first...');
+      console.log('🔍 Auth status:', {
+        isAuthenticated,
         hasSession: !!session,
         hasAccessToken: !!session?.access_token,
         userEmail: session?.user?.email,
         userId: session?.user?.id
       });
       
-      if (!session?.access_token) {
-        console.error('❌ No access token available for edge function call');
-        throw new Error('Authentication required - no access token');
+      if (!isAuthenticated || !session?.access_token) {
+        console.error('❌ Not authenticated or no access token available');
+        throw new Error('Authentication required - please sign in to access user data');
       }
 
       try {
-        console.log('📡 Calling manage-user-profiles edge function...');
+        console.log('📡 Calling manage-user-profiles edge function with auth token...');
         const { data: response, error: functionError } = await supabase.functions.invoke('manage-user-profiles', {
           body: {
             action: 'list'
@@ -142,12 +143,12 @@ export const useUsers = () => {
         throw err;
       }
     },
-    retry: 2,
+    retry: 1,
     retryDelay: 1000,
     staleTime: 30000,
     gcTime: 300000,
-    refetchOnWindowFocus: true,
-    enabled: !!(session?.access_token && user), // Only run query when we have both session and user
+    refetchOnWindowFocus: false,
+    enabled: isAuthenticated && !!session?.access_token, // Only run when authenticated
   });
 
   const createUserMutation = useMutation({
