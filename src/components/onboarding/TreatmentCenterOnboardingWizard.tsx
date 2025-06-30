@@ -1,11 +1,12 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { TreatmentCenterOnboarding } from '@/types/onboarding';
 import { useTreatmentCenterOnboarding } from '@/hooks/useTreatmentCenterOnboarding';
+import { useAutoSave } from '@/hooks/useAutoSave';
 import { CompanyInfoStep } from './steps/CompanyInfoStep';
 import { BusinessClassificationStep } from './steps/BusinessClassificationStep';
 import { ContactsStep } from './steps/ContactsStep';
@@ -16,9 +17,12 @@ import { LicensesStep } from './steps/LicensesStep';
 import { DocumentsStep } from './steps/DocumentsStep';
 import { AuthorizationsStep } from './steps/AuthorizationsStep';
 import { ReviewStep } from './steps/ReviewStep';
+import { Save, Clock, CheckCircle2 } from 'lucide-react';
 
 interface TreatmentCenterOnboardingWizardProps {
   onSubmit: (data: TreatmentCenterOnboarding) => void;
+  initialData?: Partial<TreatmentCenterOnboarding>;
+  applicationId?: string;
 }
 
 const steps = [
@@ -36,66 +40,87 @@ const steps = [
 
 export const TreatmentCenterOnboardingWizard: React.FC<TreatmentCenterOnboardingWizardProps> = ({
   onSubmit,
+  initialData,
+  applicationId,
 }) => {
-  const [currentStepIndex, setCurrentStepIndex] = useState(0);
-  const [formData, setFormData] = useState<Partial<TreatmentCenterOnboarding>>({
-    selected_distributors: [],
-    company_info: {
-      legal_name: '',
-      federal_tax_id: '',
-      legal_address: { street: '', city: '', state: '', zip: '' },
-      same_as_legal_address: false,
-    },
-    business_info: {
-      business_type: [],
-      years_in_business: 0,
-      ownership_type: 'llc',
-    },
-    contacts: {
-      primary_contact: { name: '', phone: '', email: '' },
-    },
-    ownership: {
-      principal_owners: [],
-      bankruptcy_history: false,
-    },
-    references: {
-      primary_bank: { name: '', contact_name: '', phone: '' },
-      primary_supplier: { name: '', contact_name: '', phone: '' },
-      additional_references: [],
-    },
-    payment_info: {
-      ach_preference: 'direct_debit',
-      bank_name: '',
-      bank_account_number: '',
-      bank_routing_number: '',
-      bank_address: { street: '', city: '', state: '', zip: '' },
-      statement_delivery_preference: 'email',
-    },
-    licenses: {
-      additional_licenses: [],
-    },
-    documents: {
-      voided_check: false,
-      resale_tax_exemption_cert: false,
-      dea_registration_copy: false,
-      state_pharmacy_license_copy: false,
-      medical_license_copy: false,
-      financial_statements: false,
-      supplier_statements: false,
-      additional_documents: [],
-    },
-    authorizations: {
-      authorized_signature: { name: '', title: '', date: '' },
-      terms_accepted: false,
-    },
-    workflow: {
-      current_step: 'company_info',
-      completed_steps: [],
-      notes: [],
-    },
-  });
+  // Initialize step based on initial data
+  const getInitialStep = () => {
+    if (initialData?.workflow?.current_step) {
+      const stepIndex = steps.findIndex(step => step.key === initialData.workflow.current_step);
+      return stepIndex >= 0 ? stepIndex : 0;
+    }
+    return 0;
+  };
+
+  const [currentStepIndex, setCurrentStepIndex] = useState(getInitialStep());
+  const [formData, setFormData] = useState<Partial<TreatmentCenterOnboarding>>(
+    initialData || {
+      selected_distributors: [],
+      company_info: {
+        legal_name: '',
+        federal_tax_id: '',
+        legal_address: { street: '', city: '', state: '', zip: '' },
+        same_as_legal_address: false,
+      },
+      business_info: {
+        business_type: [],
+        years_in_business: 0,
+        ownership_type: 'llc',
+      },
+      contacts: {
+        primary_contact: { name: '', phone: '', email: '' },
+      },
+      ownership: {
+        principal_owners: [],
+        bankruptcy_history: false,
+      },
+      references: {
+        primary_bank: { name: '', contact_name: '', phone: '' },
+        primary_supplier: { name: '', contact_name: '', phone: '' },
+        additional_references: [],
+      },
+      payment_info: {
+        ach_preference: 'direct_debit',
+        bank_name: '',
+        bank_account_number: '',
+        bank_routing_number: '',
+        bank_address: { street: '', city: '', state: '', zip: '' },
+        statement_delivery_preference: 'email',
+      },
+      licenses: {
+        additional_licenses: [],
+      },
+      documents: {
+        voided_check: false,
+        resale_tax_exemption_cert: false,
+        dea_registration_copy: false,
+        state_pharmacy_license_copy: false,
+        medical_license_copy: false,
+        financial_statements: false,
+        supplier_statements: false,
+        additional_documents: [],
+      },
+      authorizations: {
+        authorized_signature: { name: '', title: '', date: '' },
+        terms_accepted: false,
+      },
+      workflow: {
+        current_step: 'company_info',
+        completed_steps: [],
+        notes: [],
+      },
+    }
+  );
 
   const { createApplication, isCreating } = useTreatmentCenterOnboarding();
+  
+  // Auto-save functionality
+  const { manualSave, isSaving } = useAutoSave({
+    data: formData,
+    currentStep: currentStepIndex,
+    applicationId,
+    enabled: true,
+  });
 
   const currentStep = steps[currentStepIndex];
   const progress = ((currentStepIndex + 1) / steps.length) * 100;
@@ -122,14 +147,27 @@ export const TreatmentCenterOnboardingWizard: React.FC<TreatmentCenterOnboarding
   const handleSubmit = async () => {
     try {
       const finalData: TreatmentCenterOnboarding = {
-        id: '',
-        status: 'draft',
+        id: applicationId || '',
+        status: 'submitted',
         created_at: '',
         updated_at: '',
         ...formData,
       } as TreatmentCenterOnboarding;
 
-      await createApplication(finalData);
+      if (applicationId) {
+        // Update existing application to submitted status
+        await createApplication({
+          ...finalData,
+          status: 'submitted',
+          workflow: {
+            ...finalData.workflow,
+            current_step: 'complete',
+          }
+        });
+      } else {
+        await createApplication(finalData);
+      }
+      
       onSubmit(finalData);
     } catch (error) {
       console.error('Error submitting onboarding application:', error);
@@ -145,18 +183,54 @@ export const TreatmentCenterOnboardingWizard: React.FC<TreatmentCenterOnboarding
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Treatment Center Onboarding</CardTitle>
+              <CardTitle className="flex items-center space-x-2">
+                <span>Treatment Center Onboarding</span>
+                {applicationId && (
+                  <Badge variant="outline" className="ml-2">
+                    Resuming Application
+                  </Badge>
+                )}
+              </CardTitle>
               <CardDescription>
                 Step {currentStepIndex + 1} of {steps.length}: {currentStep.label}
               </CardDescription>
             </div>
-            <Badge variant="outline">
-              {Math.round(progress)}% Complete
-            </Badge>
+            <div className="flex items-center space-x-4">
+              {isSaving && (
+                <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                  <Clock className="h-4 w-4 animate-spin" />
+                  <span>Saving...</span>
+                </div>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={manualSave}
+                disabled={isSaving}
+                className="flex items-center space-x-2"
+              >
+                <Save className="h-4 w-4" />
+                <span>Save Progress</span>
+              </Button>
+              <Badge variant="outline">
+                {Math.round(progress)}% Complete
+              </Badge>
+            </div>
           </div>
           <Progress value={progress} className="w-full" />
         </CardHeader>
       </Card>
+
+      {/* Auto-save Status */}
+      <div className="flex items-center justify-between text-sm text-muted-foreground">
+        <div className="flex items-center space-x-2">
+          <CheckCircle2 className="h-4 w-4" />
+          <span>Auto-save enabled - Your progress is automatically saved</span>
+        </div>
+        {applicationId && (
+          <span className="text-blue-600">Application ID: {applicationId.slice(0, 8)}...</span>
+        )}
+      </div>
 
       {/* Step Navigation */}
       <Card>
