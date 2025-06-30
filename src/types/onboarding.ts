@@ -1,4 +1,3 @@
-
 export interface TreatmentCenterOnboarding {
   // Basic Information
   id: string;
@@ -106,6 +105,28 @@ export interface TreatmentCenterOnboarding {
     assigned_to?: string;
     notes: WorkflowNote[];
   };
+  
+  // Enhanced fields for comprehensive onboarding
+  operational_hours?: {
+    monday?: { open: string; close: string; };
+    tuesday?: { open: string; close: string; };
+    wednesday?: { open: string; close: string; };
+    thursday?: { open: string; close: string; };
+    friday?: { open: string; close: string; };
+    saturday?: { open: string; close: string; };
+    sunday?: { open: string; close: string; };
+  };
+  
+  payment_terms_preference?: string;
+  preferred_payment_methods?: string[];
+  is_340b_entity?: boolean;
+  gpo_memberships?: string[];
+  
+  // New complex data structures
+  platform_users?: PlatformUser[];
+  program_340b?: Program340B[];
+  gpo_memberships_detailed?: GPOMembership[];
+  enhanced_payment_terms?: EnhancedPaymentTerms;
 }
 
 export interface Address {
@@ -181,6 +202,64 @@ export interface WorkflowNote {
   content: string;
   created_at: string;
   type: 'note' | 'status_change' | 'document_upload';
+}
+
+export interface PlatformUser {
+  user_type: 'primary_admin' | 'secondary_admin' | 'ordering_user' | 'receiving_user' | 'accounting_user';
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone?: string;
+  department?: string;
+  access_level: 'full' | 'limited' | 'view_only';
+  can_place_orders: boolean;
+  can_manage_users: boolean;
+  can_view_reports: boolean;
+  notification_preferences?: {
+    email_orders?: boolean;
+    email_shipments?: boolean;
+    email_invoices?: boolean;
+    sms_urgent?: boolean;
+  };
+}
+
+export interface Program340B {
+  program_type: 'hospital' | 'fqhc' | 'ryan_white' | 'other';
+  registration_number: string;
+  parent_entity_name?: string;
+  contract_pharmacy_locations?: string[];
+  eligible_drug_categories?: string[];
+  compliance_contact_name?: string;
+  compliance_contact_email?: string;
+  compliance_contact_phone?: string;
+  audit_requirements?: any;
+}
+
+export interface GPOMembership {
+  gpo_name: string;
+  membership_number?: string;
+  contract_effective_date?: string;
+  contract_expiration_date?: string;
+  primary_contact_name?: string;
+  primary_contact_email?: string;
+  primary_contact_phone?: string;
+  covered_categories?: string[];
+  tier_level?: string;
+  rebate_information?: any;
+}
+
+export interface EnhancedPaymentTerms {
+  preferred_terms: 'net_30' | 'net_60' | 'net_90' | '2_10_net_30' | 'cod' | 'prepay';
+  credit_limit_requested?: number;
+  payment_method: 'ach' | 'wire' | 'check' | 'credit_card';
+  early_payment_discount_interest: boolean;
+  consolidation_preferences?: {
+    enable_consolidation: boolean;
+    consolidation_level?: 'facility' | 'department' | 'organization';
+    separate_controlled_substances: boolean;
+    separate_specialty_orders: boolean;
+  };
+  billing_frequency?: 'daily' | 'weekly' | 'monthly';
 }
 
 export type BusinessType = 

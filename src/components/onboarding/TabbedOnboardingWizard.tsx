@@ -18,6 +18,9 @@ import { AuthorizationsStep } from './steps/AuthorizationsStep';
 import { ReviewStep } from './steps/ReviewStep';
 import { Save, Clock, Users, Share } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { OnlinePlatformUsersStep } from './steps/OnlinePlatformUsersStep';
+import { SpecialProgramsStep } from './steps/SpecialProgramsStep';
+import { EnhancedPaymentTermsStep } from './steps/EnhancedPaymentTermsStep';
 
 interface TabbedOnboardingWizardProps {
   onSubmit: (data: TreatmentCenterOnboarding) => void;
@@ -43,7 +46,7 @@ const tabGroups: TabGroup[] = [
     id: 'basic_info',
     label: 'Basic Information',
     description: 'Company details and business classification',
-    completionWeight: 25,
+    completionWeight: 20,
     steps: [
       { key: 'company_info', label: 'Company Information', component: CompanyInfoStep, required: true },
       { key: 'business_classification', label: 'Business Classification', component: BusinessClassificationStep, required: true },
@@ -54,19 +57,38 @@ const tabGroups: TabGroup[] = [
     id: 'business_details',
     label: 'Business Details',
     description: 'Ownership structure and business references',
-    completionWeight: 25,
+    completionWeight: 15,
     steps: [
       { key: 'ownership', label: 'Ownership & Control', component: OwnershipStep, required: true },
       { key: 'references', label: 'Business References', component: ReferencesStep, required: false },
     ]
   },
   {
+    id: 'platform_users',
+    label: 'Platform Users',
+    description: 'Online platform user accounts and permissions',
+    completionWeight: 15,
+    steps: [
+      { key: 'online_platform_users', label: 'Online Platform Users', component: OnlinePlatformUsersStep, required: true },
+    ]
+  },
+  {
+    id: 'special_programs',
+    label: 'Special Programs',
+    description: '340B programs and GPO memberships',
+    completionWeight: 15,
+    steps: [
+      { key: 'special_programs', label: '340B & GPO Programs', component: SpecialProgramsStep, required: false },
+    ]
+  },
+  {
     id: 'financial_legal',
     label: 'Financial & Legal',
     description: 'Banking, licenses, and documentation',
-    completionWeight: 30,
+    completionWeight: 20,
     steps: [
-      { key: 'payment_banking', label: 'Payment & Banking', component: PaymentBankingStep, required: true },
+      { key: 'enhanced_payment_terms', label: 'Payment Terms & Billing', component: EnhancedPaymentTermsStep, required: true },
+      { key: 'payment_banking', label: 'Banking Information', component: PaymentBankingStep, required: true },
       { key: 'licenses', label: 'Licenses & Certifications', component: LicensesStep, required: true },
       { key: 'documents', label: 'Required Documents', component: DocumentsStep, required: true },
     ]
@@ -75,7 +97,7 @@ const tabGroups: TabGroup[] = [
     id: 'finalization',
     label: 'Finalization',
     description: 'Review, signatures, and submission',
-    completionWeight: 20,
+    completionWeight: 15,
     steps: [
       { key: 'authorizations', label: 'Authorizations & Signatures', component: AuthorizationsStep, required: true },
       { key: 'review', label: 'Review & Submit', component: ReviewStep, required: true },
@@ -160,7 +182,7 @@ export const TabbedOnboardingWizard: React.FC<TabbedOnboardingWizardProps> = ({
     enabled: true,
   });
 
-  // Calculate completion status for each step
+  // Enhanced completion status calculation
   const getStepCompletion = (stepKey: string): 'complete' | 'incomplete' | 'needs_review' => {
     switch (stepKey) {
       case 'company_info':
@@ -173,6 +195,16 @@ export const TabbedOnboardingWizard: React.FC<TabbedOnboardingWizardProps> = ({
         return formData.ownership?.principal_owners?.length ? 'complete' : 'incomplete';
       case 'references':
         return formData.references?.primary_bank?.name ? 'complete' : 'incomplete';
+      case 'online_platform_users':
+        const platformUsers = (formData as any)?.platform_users || [];
+        return platformUsers.length > 0 ? 'complete' : 'incomplete';
+      case 'special_programs':
+        const is340b = (formData as any)?.is_340b_entity;
+        const gpoMemberships = (formData as any)?.gpo_memberships_detailed || [];
+        return is340b || gpoMemberships.length > 0 ? 'complete' : 'incomplete';
+      case 'enhanced_payment_terms':
+        const paymentTerms = (formData as any)?.enhanced_payment_terms;
+        return paymentTerms?.preferred_terms && paymentTerms?.payment_method ? 'complete' : 'incomplete';
       case 'payment_banking':
         return formData.payment_info?.bank_name && formData.payment_info?.bank_routing_number ? 'complete' : 'incomplete';
       case 'licenses':
@@ -217,7 +249,7 @@ export const TabbedOnboardingWizard: React.FC<TabbedOnboardingWizardProps> = ({
       await navigator.clipboard.writeText(shareUrl);
       toast({
         title: "Share Link Copied",
-        description: "Share this link with collaborators to allow them to help complete the application.",
+        description: "Share this link with collaborators to help complete the application.",
       });
     } catch (error) {
       toast({

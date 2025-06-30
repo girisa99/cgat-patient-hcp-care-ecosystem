@@ -65,19 +65,115 @@ export const useTreatmentCenterOnboarding = () => {
           number_of_employees: applicationData.business_info?.number_of_employees,
           estimated_monthly_purchases: applicationData.business_info?.estimated_monthly_purchases,
           initial_order_amount: applicationData.business_info?.initial_order_amount,
+          // New enhanced fields
+          operational_hours: applicationData.operational_hours || {},
+          payment_terms_preference: applicationData.payment_terms_preference,
+          preferred_payment_methods: applicationData.preferred_payment_methods || [],
+          is_340b_entity: applicationData.is_340b_entity || false,
+          gpo_memberships: applicationData.gpo_memberships || [],
           current_step: 'company_info'
         })
         .select()
         .single();
 
       if (error) throw error;
+
+      // Handle related data insertions
+      const onboardingId = data.id;
+
+      // Insert platform users
+      if (applicationData.platform_users?.length) {
+        const platformUsersData = applicationData.platform_users.map(user => ({
+          onboarding_id: onboardingId,
+          user_type: user.user_type,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          email: user.email,
+          phone: user.phone,
+          department: user.department,
+          access_level: user.access_level,
+          can_place_orders: user.can_place_orders,
+          can_manage_users: user.can_manage_users,
+          can_view_reports: user.can_view_reports,
+          notification_preferences: user.notification_preferences || {}
+        }));
+
+        const { error: usersError } = await supabase
+          .from('onboarding_platform_users')
+          .insert(platformUsersData);
+
+        if (usersError) throw usersError;
+      }
+
+      // Insert 340B programs
+      if (applicationData.program_340b?.length) {
+        const program340bData = applicationData.program_340b.map(program => ({
+          onboarding_id: onboardingId,
+          program_type: program.program_type,
+          registration_number: program.registration_number,
+          parent_entity_name: program.parent_entity_name,
+          contract_pharmacy_locations: program.contract_pharmacy_locations || [],
+          eligible_drug_categories: program.eligible_drug_categories || [],
+          compliance_contact_name: program.compliance_contact_name,
+          compliance_contact_email: program.compliance_contact_email,
+          compliance_contact_phone: program.compliance_contact_phone,
+          audit_requirements: program.audit_requirements || {}
+        }));
+
+        const { error: programsError } = await supabase
+          .from('onboarding_340b_programs')
+          .insert(program340bData);
+
+        if (programsError) throw programsError;
+      }
+
+      // Insert GPO memberships
+      if (applicationData.gpo_memberships_detailed?.length) {
+        const gpoData = applicationData.gpo_memberships_detailed.map(membership => ({
+          onboarding_id: onboardingId,
+          gpo_name: membership.gpo_name,
+          membership_number: membership.membership_number,
+          contract_effective_date: membership.contract_effective_date,
+          contract_expiration_date: membership.contract_expiration_date,
+          primary_contact_name: membership.primary_contact_name,
+          primary_contact_email: membership.primary_contact_email,
+          primary_contact_phone: membership.primary_contact_phone,
+          covered_categories: membership.covered_categories || [],
+          tier_level: membership.tier_level,
+          rebate_information: membership.rebate_information || {}
+        }));
+
+        const { error: gpoError } = await supabase
+          .from('onboarding_gpo_memberships')
+          .insert(gpoData);
+
+        if (gpoError) throw gpoError;
+      }
+
+      // Insert enhanced payment terms
+      if (applicationData.enhanced_payment_terms) {
+        const { error: paymentError } = await supabase
+          .from('onboarding_payment_terms')
+          .insert({
+            onboarding_id: onboardingId,
+            preferred_terms: applicationData.enhanced_payment_terms.preferred_terms,
+            credit_limit_requested: applicationData.enhanced_payment_terms.credit_limit_requested,
+            payment_method: applicationData.enhanced_payment_terms.payment_method,
+            early_payment_discount_interest: applicationData.enhanced_payment_terms.early_payment_discount_interest,
+            consolidation_preferences: applicationData.enhanced_payment_terms.consolidation_preferences || {},
+            billing_frequency: applicationData.enhanced_payment_terms.billing_frequency
+          });
+
+        if (paymentError) throw paymentError;
+      }
+
       return data;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['onboarding-applications'] });
       toast({
         title: "Success",
-        description: "Onboarding application created successfully!",
+        description: "Comprehensive onboarding application created successfully!",
       });
       return data;
     },

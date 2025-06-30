@@ -1159,6 +1159,59 @@ export type Database = {
         }
         Relationships: []
       }
+      onboarding_340b_programs: {
+        Row: {
+          audit_requirements: Json | null
+          compliance_contact_email: string | null
+          compliance_contact_name: string | null
+          compliance_contact_phone: string | null
+          contract_pharmacy_locations: string[] | null
+          created_at: string | null
+          eligible_drug_categories: string[] | null
+          id: string
+          onboarding_id: string
+          parent_entity_name: string | null
+          program_type: string
+          registration_number: string
+        }
+        Insert: {
+          audit_requirements?: Json | null
+          compliance_contact_email?: string | null
+          compliance_contact_name?: string | null
+          compliance_contact_phone?: string | null
+          contract_pharmacy_locations?: string[] | null
+          created_at?: string | null
+          eligible_drug_categories?: string[] | null
+          id?: string
+          onboarding_id: string
+          parent_entity_name?: string | null
+          program_type: string
+          registration_number: string
+        }
+        Update: {
+          audit_requirements?: Json | null
+          compliance_contact_email?: string | null
+          compliance_contact_name?: string | null
+          compliance_contact_phone?: string | null
+          contract_pharmacy_locations?: string[] | null
+          created_at?: string | null
+          eligible_drug_categories?: string[] | null
+          id?: string
+          onboarding_id?: string
+          parent_entity_name?: string | null
+          program_type?: string
+          registration_number?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_340b_programs_onboarding_id_fkey"
+            columns: ["onboarding_id"]
+            isOneToOne: false
+            referencedRelation: "treatment_center_onboarding"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       onboarding_additional_licenses: {
         Row: {
           created_at: string | null
@@ -1366,6 +1419,165 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "onboarding_document_uploads_onboarding_id_fkey"
+            columns: ["onboarding_id"]
+            isOneToOne: false
+            referencedRelation: "treatment_center_onboarding"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_gpo_memberships: {
+        Row: {
+          contract_effective_date: string | null
+          contract_expiration_date: string | null
+          covered_categories: string[] | null
+          created_at: string | null
+          gpo_name: string
+          id: string
+          membership_number: string | null
+          onboarding_id: string
+          primary_contact_email: string | null
+          primary_contact_name: string | null
+          primary_contact_phone: string | null
+          rebate_information: Json | null
+          tier_level: string | null
+        }
+        Insert: {
+          contract_effective_date?: string | null
+          contract_expiration_date?: string | null
+          covered_categories?: string[] | null
+          created_at?: string | null
+          gpo_name: string
+          id?: string
+          membership_number?: string | null
+          onboarding_id: string
+          primary_contact_email?: string | null
+          primary_contact_name?: string | null
+          primary_contact_phone?: string | null
+          rebate_information?: Json | null
+          tier_level?: string | null
+        }
+        Update: {
+          contract_effective_date?: string | null
+          contract_expiration_date?: string | null
+          covered_categories?: string[] | null
+          created_at?: string | null
+          gpo_name?: string
+          id?: string
+          membership_number?: string | null
+          onboarding_id?: string
+          primary_contact_email?: string | null
+          primary_contact_name?: string | null
+          primary_contact_phone?: string | null
+          rebate_information?: Json | null
+          tier_level?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_gpo_memberships_onboarding_id_fkey"
+            columns: ["onboarding_id"]
+            isOneToOne: false
+            referencedRelation: "treatment_center_onboarding"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_payment_terms: {
+        Row: {
+          billing_frequency: string | null
+          consolidation_preferences: Json | null
+          created_at: string | null
+          credit_limit_requested: number | null
+          early_payment_discount_interest: boolean | null
+          id: string
+          onboarding_id: string
+          payment_method: string
+          preferred_terms: string
+        }
+        Insert: {
+          billing_frequency?: string | null
+          consolidation_preferences?: Json | null
+          created_at?: string | null
+          credit_limit_requested?: number | null
+          early_payment_discount_interest?: boolean | null
+          id?: string
+          onboarding_id: string
+          payment_method: string
+          preferred_terms: string
+        }
+        Update: {
+          billing_frequency?: string | null
+          consolidation_preferences?: Json | null
+          created_at?: string | null
+          credit_limit_requested?: number | null
+          early_payment_discount_interest?: boolean | null
+          id?: string
+          onboarding_id?: string
+          payment_method?: string
+          preferred_terms?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_payment_terms_onboarding_id_fkey"
+            columns: ["onboarding_id"]
+            isOneToOne: false
+            referencedRelation: "treatment_center_onboarding"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_platform_users: {
+        Row: {
+          access_level: string
+          can_manage_users: boolean | null
+          can_place_orders: boolean | null
+          can_view_reports: boolean | null
+          created_at: string | null
+          department: string | null
+          email: string
+          first_name: string
+          id: string
+          last_name: string
+          notification_preferences: Json | null
+          onboarding_id: string
+          phone: string | null
+          user_type: string
+        }
+        Insert: {
+          access_level: string
+          can_manage_users?: boolean | null
+          can_place_orders?: boolean | null
+          can_view_reports?: boolean | null
+          created_at?: string | null
+          department?: string | null
+          email: string
+          first_name: string
+          id?: string
+          last_name: string
+          notification_preferences?: Json | null
+          onboarding_id: string
+          phone?: string | null
+          user_type: string
+        }
+        Update: {
+          access_level?: string
+          can_manage_users?: boolean | null
+          can_place_orders?: boolean | null
+          can_view_reports?: boolean | null
+          created_at?: string | null
+          department?: string | null
+          email?: string
+          first_name?: string
+          id?: string
+          last_name?: string
+          notification_preferences?: Json | null
+          onboarding_id?: string
+          phone?: string | null
+          user_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_platform_users_onboarding_id_fkey"
             columns: ["onboarding_id"]
             isOneToOne: false
             referencedRelation: "treatment_center_onboarding"
@@ -1840,18 +2052,23 @@ export type Database = {
           estimated_monthly_purchases: number | null
           federal_tax_id: string | null
           financial_statements_uploaded: boolean | null
+          gpo_memberships: string[] | null
           guarantor_date: string | null
           guarantor_name: string | null
           guarantor_ssn: string | null
           hin_number: string | null
           id: string
           initial_order_amount: number | null
+          is_340b_entity: boolean | null
           legal_name: string | null
           medical_license: string | null
           medical_license_copy_uploaded: boolean | null
           number_of_employees: number | null
+          operational_hours: Json | null
           ownership_type: Database["public"]["Enums"]["ownership_type"] | null
+          payment_terms_preference: string | null
           payment_terms_requested: string | null
+          preferred_payment_methods: string[] | null
           resale_tax_exemption: string | null
           resale_tax_exemption_cert_uploaded: boolean | null
           same_as_legal_address: boolean | null
@@ -1897,18 +2114,23 @@ export type Database = {
           estimated_monthly_purchases?: number | null
           federal_tax_id?: string | null
           financial_statements_uploaded?: boolean | null
+          gpo_memberships?: string[] | null
           guarantor_date?: string | null
           guarantor_name?: string | null
           guarantor_ssn?: string | null
           hin_number?: string | null
           id?: string
           initial_order_amount?: number | null
+          is_340b_entity?: boolean | null
           legal_name?: string | null
           medical_license?: string | null
           medical_license_copy_uploaded?: boolean | null
           number_of_employees?: number | null
+          operational_hours?: Json | null
           ownership_type?: Database["public"]["Enums"]["ownership_type"] | null
+          payment_terms_preference?: string | null
           payment_terms_requested?: string | null
+          preferred_payment_methods?: string[] | null
           resale_tax_exemption?: string | null
           resale_tax_exemption_cert_uploaded?: boolean | null
           same_as_legal_address?: boolean | null
@@ -1954,18 +2176,23 @@ export type Database = {
           estimated_monthly_purchases?: number | null
           federal_tax_id?: string | null
           financial_statements_uploaded?: boolean | null
+          gpo_memberships?: string[] | null
           guarantor_date?: string | null
           guarantor_name?: string | null
           guarantor_ssn?: string | null
           hin_number?: string | null
           id?: string
           initial_order_amount?: number | null
+          is_340b_entity?: boolean | null
           legal_name?: string | null
           medical_license?: string | null
           medical_license_copy_uploaded?: boolean | null
           number_of_employees?: number | null
+          operational_hours?: Json | null
           ownership_type?: Database["public"]["Enums"]["ownership_type"] | null
+          payment_terms_preference?: string | null
           payment_terms_requested?: string | null
+          preferred_payment_methods?: string[] | null
           resale_tax_exemption?: string | null
           resale_tax_exemption_cert_uploaded?: boolean | null
           same_as_legal_address?: boolean | null
