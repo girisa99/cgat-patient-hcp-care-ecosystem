@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -48,6 +47,11 @@ export const useTreatmentCenterOnboarding = () => {
     mutationFn: async (applicationData: Partial<TreatmentCenterOnboarding>) => {
       if (!user?.id) throw new Error('User not authenticated');
 
+      // Convert GPO memberships to string array for database storage
+      const gpoMembershipsAsStrings = applicationData.gpo_memberships?.map(
+        membership => typeof membership === 'string' ? membership : membership.gpo_name
+      ) || [];
+
       const { data, error } = await supabase
         .from('treatment_center_onboarding')
         .insert({
@@ -70,7 +74,7 @@ export const useTreatmentCenterOnboarding = () => {
           payment_terms_preference: applicationData.payment_terms_preference,
           preferred_payment_methods: applicationData.preferred_payment_methods || [],
           is_340b_entity: applicationData.is_340b_entity || false,
-          gpo_memberships: applicationData.gpo_memberships || [],
+          gpo_memberships: gpoMembershipsAsStrings,
           current_step: 'company_info'
         })
         .select()

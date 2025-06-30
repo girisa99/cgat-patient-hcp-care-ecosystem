@@ -14,6 +14,12 @@ interface OfficeHoursStepProps {
   onDataChange: (data: Partial<TreatmentCenterOnboarding>) => void;
 }
 
+interface DayHours {
+  open: string;
+  close: string;
+  closed: boolean;
+}
+
 export const OfficeHoursStep: React.FC<OfficeHoursStepProps> = ({ data, onDataChange }) => {
   const officeHours = data.office_hours || {
     monday: { open: '', close: '', closed: false },
@@ -50,12 +56,15 @@ export const OfficeHoursStep: React.FC<OfficeHoursStepProps> = ({ data, onDataCh
   };
 
   const updateDayHours = (day: string, field: string, value: any) => {
+    const currentDayHours = officeHours[day as keyof typeof officeHours] as DayHours;
+    const updatedDayHours: DayHours = {
+      ...currentDayHours,
+      [field]: value
+    };
+
     const updatedOfficeHours = {
       ...officeHours,
-      [day]: {
-        ...officeHours[day as keyof typeof officeHours],
-        [field]: value
-      }
+      [day]: updatedDayHours
     };
 
     onDataChange({
@@ -158,7 +167,7 @@ export const OfficeHoursStep: React.FC<OfficeHoursStepProps> = ({ data, onDataCh
         </CardHeader>
         <CardContent className="space-y-4">
           {daysOfWeek.map((day) => {
-            const dayHours = officeHours[day.key as keyof typeof officeHours] as any;
+            const dayHours = officeHours[day.key as keyof typeof officeHours] as DayHours;
             
             return (
               <div key={day.key} className="flex items-center space-x-4 p-4 border rounded-lg">
