@@ -12,6 +12,7 @@ import Patients from "./pages/Patients";
 import Facilities from "./pages/Facilities";
 import Modules from "./pages/Modules";
 import Onboarding from "./pages/Onboarding";
+import TreatmentCenterOnboarding from "./pages/TreatmentCenterOnboarding";
 import Settings from "./pages/Settings";
 import ApiIntegrations from "./pages/ApiIntegrations";
 import AuditLog from "./pages/AuditLog";
@@ -33,6 +34,7 @@ const App = () => (
             <Route path="/facilities" element={<Facilities />} />
             <Route path="/modules" element={<Modules />} />
             <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/onboarding/treatment-center" element={<TreatmentCenterOnboarding />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/api-integrations" element={<ApiIntegrations />} />
             <Route path="/audit-log" element={<AuditLog />} />
