@@ -40,7 +40,9 @@ export const useIntelligentRouting = () => {
 
           if (data) {
             setHasAutoRoute(data.auto_route || false);
-            setPreferredDashboard(data.preferred_dashboard || 'unified');
+            // Ensure we only set valid dashboard preferences
+            const dashboardPref = data.preferred_dashboard === 'module-specific' ? 'module-specific' : 'unified';
+            setPreferredDashboard(dashboardPref);
             setDefaultModule(data.default_module || null);
             setUserPreferences(data);
           }

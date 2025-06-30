@@ -58,8 +58,8 @@ const AssignModuleDialog: React.FC<AssignModuleDialogProps> = ({
     onOpenChange(false);
   };
 
-  // Get user's currently assigned modules
-  const assignedModuleIds = userModules?.map(m => m.module_id) || [];
+  // Get user's currently assigned modules - using the correct property names
+  const assignedModuleIds = userModules?.map(m => m.id) || [];
   
   // Filter out already assigned modules
   const availableModules = modules?.filter(m => !assignedModuleIds.includes(m.id)) || [];
@@ -107,13 +107,8 @@ const AssignModuleDialog: React.FC<AssignModuleDialogProps> = ({
                 </h4>
                 <div className="flex flex-wrap gap-2">
                   {userModules.map((module) => (
-                    <Badge key={module.module_id} variant="secondary">
-                      {module.module_name}
-                      {module.expires_at && (
-                        <span className="ml-1 text-xs opacity-75">
-                          (expires {new Date(module.expires_at).toLocaleDateString()})
-                        </span>
-                      )}
+                    <Badge key={module.id} variant="secondary">
+                      {module.moduleName}
                     </Badge>
                   ))}
                 </div>
