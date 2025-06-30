@@ -21,6 +21,7 @@ import ServicesPage from "./pages/ServicesPage";
 import DataImport from "./pages/DataImport";
 import ApiIntegrations from "./pages/ApiIntegrations";
 import ApiServicesPage from "./pages/ApiServicesPage";
+import SystemVerificationPage from "./pages/SystemVerificationPage";
 
 const queryClient = new QueryClient();
 
@@ -48,6 +49,7 @@ const App = () => (
             <Route path="/reports" element={<ReportsPage />} />
             <Route path="/documents" element={<DocumentsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/system-verification" element={<SystemVerificationPage />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
