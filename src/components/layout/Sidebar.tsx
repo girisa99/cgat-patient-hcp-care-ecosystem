@@ -6,7 +6,6 @@ import {
   Users, 
   Building2, 
   Settings, 
-  FileText,
   Database,
   Upload,
   UserPlus,
@@ -25,7 +24,6 @@ const navigation = [
   { name: 'Users', href: '/users', icon: Users },
   { name: 'Modules', href: '/modules', icon: Database },
   { name: 'Security', href: '/security', icon: Shield },
-  { name: 'Documents', href: '/documents', icon: FileText },
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
