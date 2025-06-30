@@ -460,6 +460,148 @@ export type Database = {
         }
         Relationships: []
       }
+      clinical_trials: {
+        Row: {
+          actual_completion_date: string | null
+          created_at: string | null
+          eligibility_criteria: Json | null
+          enrollment_current: number | null
+          enrollment_target: number | null
+          estimated_completion_date: string | null
+          id: string
+          investigational_sites: Json | null
+          is_active: boolean | null
+          nct_number: string | null
+          patient_population: string | null
+          phase: string | null
+          primary_endpoint: string | null
+          primary_indication: string | null
+          product_id: string | null
+          secondary_endpoints: string[] | null
+          sponsor_info: Json | null
+          start_date: string | null
+          title: string
+          trial_locations: string[] | null
+          trial_status: Database["public"]["Enums"]["trial_status"]
+          updated_at: string | null
+        }
+        Insert: {
+          actual_completion_date?: string | null
+          created_at?: string | null
+          eligibility_criteria?: Json | null
+          enrollment_current?: number | null
+          enrollment_target?: number | null
+          estimated_completion_date?: string | null
+          id?: string
+          investigational_sites?: Json | null
+          is_active?: boolean | null
+          nct_number?: string | null
+          patient_population?: string | null
+          phase?: string | null
+          primary_endpoint?: string | null
+          primary_indication?: string | null
+          product_id?: string | null
+          secondary_endpoints?: string[] | null
+          sponsor_info?: Json | null
+          start_date?: string | null
+          title: string
+          trial_locations?: string[] | null
+          trial_status: Database["public"]["Enums"]["trial_status"]
+          updated_at?: string | null
+        }
+        Update: {
+          actual_completion_date?: string | null
+          created_at?: string | null
+          eligibility_criteria?: Json | null
+          enrollment_current?: number | null
+          enrollment_target?: number | null
+          estimated_completion_date?: string | null
+          id?: string
+          investigational_sites?: Json | null
+          is_active?: boolean | null
+          nct_number?: string | null
+          patient_population?: string | null
+          phase?: string | null
+          primary_endpoint?: string | null
+          primary_indication?: string | null
+          product_id?: string | null
+          secondary_endpoints?: string[] | null
+          sponsor_info?: Json | null
+          start_date?: string | null
+          title?: string
+          trial_locations?: string[] | null
+          trial_status?: Database["public"]["Enums"]["trial_status"]
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinical_trials_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      commercial_products: {
+        Row: {
+          competitive_landscape: Json | null
+          created_at: string | null
+          distribution_channels: string[] | null
+          id: string
+          is_active: boolean | null
+          key_opinion_leaders: string[] | null
+          launch_date: string | null
+          market_regions: string[] | null
+          medical_affairs_contacts: Json | null
+          patient_access_programs: Json | null
+          product_id: string | null
+          reimbursement_status: Json | null
+          updated_at: string | null
+          volume_projections: Json | null
+        }
+        Insert: {
+          competitive_landscape?: Json | null
+          created_at?: string | null
+          distribution_channels?: string[] | null
+          id?: string
+          is_active?: boolean | null
+          key_opinion_leaders?: string[] | null
+          launch_date?: string | null
+          market_regions?: string[] | null
+          medical_affairs_contacts?: Json | null
+          patient_access_programs?: Json | null
+          product_id?: string | null
+          reimbursement_status?: Json | null
+          updated_at?: string | null
+          volume_projections?: Json | null
+        }
+        Update: {
+          competitive_landscape?: Json | null
+          created_at?: string | null
+          distribution_channels?: string[] | null
+          id?: string
+          is_active?: boolean | null
+          key_opinion_leaders?: string[] | null
+          launch_date?: string | null
+          market_regions?: string[] | null
+          medical_affairs_contacts?: Json | null
+          patient_access_programs?: Json | null
+          product_id?: string | null
+          reimbursement_status?: Json | null
+          updated_at?: string | null
+          volume_projections?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commercial_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       developer_applications: {
         Row: {
           company_name: string
@@ -956,6 +1098,51 @@ export type Database = {
         }
         Relationships: []
       }
+      manufacturers: {
+        Row: {
+          contact_info: Json | null
+          created_at: string | null
+          headquarters_location: string | null
+          id: string
+          is_active: boolean | null
+          manufacturer_type: string | null
+          manufacturing_capabilities: string[] | null
+          name: string
+          partnership_tier: string | null
+          quality_certifications: string[] | null
+          regulatory_status: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          contact_info?: Json | null
+          created_at?: string | null
+          headquarters_location?: string | null
+          id?: string
+          is_active?: boolean | null
+          manufacturer_type?: string | null
+          manufacturing_capabilities?: string[] | null
+          name: string
+          partnership_tier?: string | null
+          quality_certifications?: string[] | null
+          regulatory_status?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          contact_info?: Json | null
+          created_at?: string | null
+          headquarters_location?: string | null
+          id?: string
+          is_active?: boolean | null
+          manufacturer_type?: string | null
+          manufacturing_capabilities?: string[] | null
+          name?: string
+          partnership_tier?: string | null
+          quality_certifications?: string[] | null
+          regulatory_status?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       marketplace_listings: {
         Row: {
           category: string
@@ -1044,6 +1231,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      modalities: {
+        Row: {
+          administration_requirements: Json | null
+          cold_chain_requirements: Json | null
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          manufacturing_complexity: string | null
+          modality_type: Database["public"]["Enums"]["modality_type"]
+          name: string
+          shelf_life_considerations: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          administration_requirements?: Json | null
+          cold_chain_requirements?: Json | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          manufacturing_complexity?: string | null
+          modality_type: Database["public"]["Enums"]["modality_type"]
+          name: string
+          shelf_life_considerations?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          administration_requirements?: Json | null
+          cold_chain_requirements?: Json | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          manufacturing_complexity?: string | null
+          modality_type?: Database["public"]["Enums"]["modality_type"]
+          name?: string
+          shelf_life_considerations?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       module_permissions: {
         Row: {
@@ -1725,6 +1954,122 @@ export type Database = {
           },
         ]
       }
+      onboarding_therapy_selections: {
+        Row: {
+          clinical_trial_id: string | null
+          commercial_product_id: string | null
+          created_at: string | null
+          id: string
+          infrastructure_requirements: Json | null
+          onboarding_id: string | null
+          patient_volume_estimate: number | null
+          preferred_start_date: string | null
+          priority_level: string | null
+          product_id: string | null
+          selected_provider_id: string | null
+          selection_rationale: string | null
+          service_id: string | null
+          special_requirements: Json | null
+          staff_training_needs: Json | null
+          therapy_id: string | null
+          timeline_considerations: Json | null
+          treatment_readiness_level: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          clinical_trial_id?: string | null
+          commercial_product_id?: string | null
+          created_at?: string | null
+          id?: string
+          infrastructure_requirements?: Json | null
+          onboarding_id?: string | null
+          patient_volume_estimate?: number | null
+          preferred_start_date?: string | null
+          priority_level?: string | null
+          product_id?: string | null
+          selected_provider_id?: string | null
+          selection_rationale?: string | null
+          service_id?: string | null
+          special_requirements?: Json | null
+          staff_training_needs?: Json | null
+          therapy_id?: string | null
+          timeline_considerations?: Json | null
+          treatment_readiness_level?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          clinical_trial_id?: string | null
+          commercial_product_id?: string | null
+          created_at?: string | null
+          id?: string
+          infrastructure_requirements?: Json | null
+          onboarding_id?: string | null
+          patient_volume_estimate?: number | null
+          preferred_start_date?: string | null
+          priority_level?: string | null
+          product_id?: string | null
+          selected_provider_id?: string | null
+          selection_rationale?: string | null
+          service_id?: string | null
+          special_requirements?: Json | null
+          staff_training_needs?: Json | null
+          therapy_id?: string | null
+          timeline_considerations?: Json | null
+          treatment_readiness_level?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_therapy_selections_clinical_trial_id_fkey"
+            columns: ["clinical_trial_id"]
+            isOneToOne: false
+            referencedRelation: "clinical_trials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_therapy_selections_commercial_product_id_fkey"
+            columns: ["commercial_product_id"]
+            isOneToOne: false
+            referencedRelation: "commercial_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_therapy_selections_onboarding_id_fkey"
+            columns: ["onboarding_id"]
+            isOneToOne: false
+            referencedRelation: "treatment_center_onboarding"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_therapy_selections_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_therapy_selections_selected_provider_id_fkey"
+            columns: ["selected_provider_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_therapy_selections_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_therapy_selections_therapy_id_fkey"
+            columns: ["therapy_id"]
+            isOneToOne: false
+            referencedRelation: "therapies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       onboarding_workflow_notes: {
         Row: {
           author_id: string
@@ -1780,6 +2125,94 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      products: {
+        Row: {
+          approval_date: string | null
+          brand_name: string | null
+          contraindications: string[] | null
+          created_at: string | null
+          distribution_requirements: Json | null
+          dosing_information: Json | null
+          id: string
+          indication: string | null
+          is_active: boolean | null
+          manufacturer_id: string | null
+          market_access_considerations: Json | null
+          modality_id: string | null
+          name: string
+          ndc_number: string | null
+          pricing_information: Json | null
+          product_status: Database["public"]["Enums"]["product_status"]
+          special_populations: Json | null
+          therapy_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          approval_date?: string | null
+          brand_name?: string | null
+          contraindications?: string[] | null
+          created_at?: string | null
+          distribution_requirements?: Json | null
+          dosing_information?: Json | null
+          id?: string
+          indication?: string | null
+          is_active?: boolean | null
+          manufacturer_id?: string | null
+          market_access_considerations?: Json | null
+          modality_id?: string | null
+          name: string
+          ndc_number?: string | null
+          pricing_information?: Json | null
+          product_status: Database["public"]["Enums"]["product_status"]
+          special_populations?: Json | null
+          therapy_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          approval_date?: string | null
+          brand_name?: string | null
+          contraindications?: string[] | null
+          created_at?: string | null
+          distribution_requirements?: Json | null
+          dosing_information?: Json | null
+          id?: string
+          indication?: string | null
+          is_active?: boolean | null
+          manufacturer_id?: string | null
+          market_access_considerations?: Json | null
+          modality_id?: string | null
+          name?: string
+          ndc_number?: string | null
+          pricing_information?: Json | null
+          product_status?: Database["public"]["Enums"]["product_status"]
+          special_populations?: Json | null
+          therapy_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_manufacturer_id_fkey"
+            columns: ["manufacturer_id"]
+            isOneToOne: false
+            referencedRelation: "manufacturers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_modality_id_fkey"
+            columns: ["modality_id"]
+            isOneToOne: false
+            referencedRelation: "modalities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_therapy_id_fkey"
+            columns: ["therapy_id"]
+            isOneToOne: false
+            referencedRelation: "therapies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -2237,6 +2670,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      therapies: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          indication: string | null
+          is_active: boolean | null
+          mechanism_of_action: string | null
+          name: string
+          regulatory_designations: string[] | null
+          special_handling_requirements: Json | null
+          target_population: string | null
+          therapy_type: Database["public"]["Enums"]["therapy_type"]
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          indication?: string | null
+          is_active?: boolean | null
+          mechanism_of_action?: string | null
+          name: string
+          regulatory_designations?: string[] | null
+          special_handling_requirements?: Json | null
+          target_population?: string | null
+          therapy_type: Database["public"]["Enums"]["therapy_type"]
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          indication?: string | null
+          is_active?: boolean | null
+          mechanism_of_action?: string | null
+          name?: string
+          regulatory_designations?: string[] | null
+          special_handling_requirements?: Json | null
+          target_population?: string | null
+          therapy_type?: Database["public"]["Enums"]["therapy_type"]
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       treatment_center_onboarding: {
         Row: {
@@ -2794,6 +3272,15 @@ export type Database = {
         | "treatmentFacility"
         | "referralFacility"
         | "prescriberFacility"
+      modality_type:
+        | "autologous"
+        | "allogeneic"
+        | "viral_vector"
+        | "non_viral"
+        | "protein_based"
+        | "antibody_drug_conjugate"
+        | "radioligand"
+        | "combination"
       onboarding_status:
         | "draft"
         | "submitted"
@@ -2821,6 +3308,13 @@ export type Database = {
         | "c_corp"
         | "professional_corp"
         | "non_profit_corp"
+      product_status:
+        | "preclinical"
+        | "phase_1"
+        | "phase_2"
+        | "phase_3"
+        | "approved"
+        | "discontinued"
       service_provider_type: "internal" | "external_partner" | "third_party"
       service_type:
         | "3pl"
@@ -2828,6 +3322,23 @@ export type Database = {
         | "specialty_pharmacy"
         | "order_management"
         | "patient_hub_services"
+      therapy_type:
+        | "car_t_cell"
+        | "gene_therapy"
+        | "advanced_biologics"
+        | "personalized_medicine"
+        | "radioligand_therapy"
+        | "cell_therapy"
+        | "immunotherapy"
+        | "other_cgat"
+      trial_status:
+        | "not_yet_recruiting"
+        | "recruiting"
+        | "active_not_recruiting"
+        | "completed"
+        | "suspended"
+        | "terminated"
+        | "withdrawn"
       user_role:
         | "superAdmin"
         | "healthcareProvider"
@@ -2970,6 +3481,16 @@ export const Constants = {
         "referralFacility",
         "prescriberFacility",
       ],
+      modality_type: [
+        "autologous",
+        "allogeneic",
+        "viral_vector",
+        "non_viral",
+        "protein_based",
+        "antibody_drug_conjugate",
+        "radioligand",
+        "combination",
+      ],
       onboarding_status: [
         "draft",
         "submitted",
@@ -3000,6 +3521,14 @@ export const Constants = {
         "professional_corp",
         "non_profit_corp",
       ],
+      product_status: [
+        "preclinical",
+        "phase_1",
+        "phase_2",
+        "phase_3",
+        "approved",
+        "discontinued",
+      ],
       service_provider_type: ["internal", "external_partner", "third_party"],
       service_type: [
         "3pl",
@@ -3007,6 +3536,25 @@ export const Constants = {
         "specialty_pharmacy",
         "order_management",
         "patient_hub_services",
+      ],
+      therapy_type: [
+        "car_t_cell",
+        "gene_therapy",
+        "advanced_biologics",
+        "personalized_medicine",
+        "radioligand_therapy",
+        "cell_therapy",
+        "immunotherapy",
+        "other_cgat",
+      ],
+      trial_status: [
+        "not_yet_recruiting",
+        "recruiting",
+        "active_not_recruiting",
+        "completed",
+        "suspended",
+        "terminated",
+        "withdrawn",
       ],
       user_role: [
         "superAdmin",

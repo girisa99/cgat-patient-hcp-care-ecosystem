@@ -22,7 +22,7 @@ import { useToast } from '@/hooks/use-toast';
 import { OnlinePlatformUsersStep } from './steps/OnlinePlatformUsersStep';
 import { SpecialProgramsStep } from './steps/SpecialProgramsStep';
 import { EnhancedPaymentTermsStep } from './steps/EnhancedPaymentTermsStep';
-import { ServiceSelectionStep } from './steps/ServiceSelectionStep';
+import { EnhancedTherapySelectionStep } from './steps/EnhancedTherapySelectionStep';
 
 interface TabbedOnboardingWizardProps {
   onSubmit: (data: TreatmentCenterOnboarding) => void;
@@ -66,12 +66,12 @@ const tabGroups: TabGroup[] = [
     ]
   },
   {
-    id: 'service_selection',
-    label: 'Service Selection',
-    description: 'Choose services and providers for CGAT therapies',
-    completionWeight: 20,
+    id: 'therapy_selection',
+    label: 'CGAT Therapy Selection',
+    description: 'Choose CGAT therapies, products, and service providers',
+    completionWeight: 25,
     steps: [
-      { key: 'service_selection', label: 'Service & Provider Selection', component: ServiceSelectionStep, required: true },
+      { key: 'enhanced_therapy_selection', label: 'CGAT Therapy & Service Selection', component: EnhancedTherapySelectionStep, required: true },
     ]
   },
   {
@@ -108,7 +108,7 @@ const tabGroups: TabGroup[] = [
     id: 'finalization',
     label: 'Finalization',
     description: 'Review, signatures, and submission',
-    completionWeight: 10,
+    completionWeight: 5,
     steps: [
       { key: 'authorizations', label: 'Authorizations & Signatures', component: AuthorizationsStep, required: true },
       { key: 'review', label: 'Review & Submit', component: ReviewStep, required: true },
@@ -206,8 +206,8 @@ export const TabbedOnboardingWizard: React.FC<TabbedOnboardingWizardProps> = ({
         return formData.ownership?.principal_owners?.length ? 'complete' : 'incomplete';
       case 'references':
         return formData.references?.primary_bank?.name ? 'complete' : 'incomplete';
-      case 'service_selection':
-        // This will be checked via the ServiceSelectionStep component
+      case 'enhanced_therapy_selection':
+        // This will be checked via the EnhancedTherapySelectionStep component
         return 'incomplete';
       case 'online_platform_users':
         const platformUsers = (formData as any)?.platform_users || [];
@@ -304,7 +304,7 @@ export const TabbedOnboardingWizard: React.FC<TabbedOnboardingWizardProps> = ({
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <CardTitle className="flex items-center space-x-2">
-                <span>Treatment Center Onboarding</span>
+                <span>CGAT Treatment Center Onboarding</span>
                 {applicationId && (
                   <Badge variant="outline" className="ml-2">
                     Application #{applicationId.slice(0, 8)}
@@ -388,7 +388,7 @@ export const TabbedOnboardingWizard: React.FC<TabbedOnboardingWizardProps> = ({
           <div className="flex items-center space-x-3">
             <Users className="h-5 w-5 text-blue-600" />
             <div>
-              <h4 className="font-medium text-blue-900">Collaborative Application</h4>
+              <h4 className="font-medium text-blue-900">Collaborative CGAT Application</h4>
               <p className="text-sm text-blue-700">
                 You can share this application with colleagues to help complete sections. 
                 All changes are automatically saved and synced in real-time.
