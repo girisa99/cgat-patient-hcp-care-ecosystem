@@ -192,25 +192,28 @@ export class UpdateFirstGateway {
 
   /**
    * Check database for existing implementations
+   * Simplified approach to avoid complex type issues
    */
   private static async checkDatabaseForAlternatives(request: DevelopmentRequest): Promise<string[]> {
     const alternatives: string[] = [];
 
     try {
-      // Check if table exists in database by querying information_schema
+      // Instead of querying information_schema, check if we can select from the table
+      // This is a simpler approach that works within Supabase's constraints
       if (request.tableName) {
-        const { data: tableInfo } = await supabase
-          .from('information_schema.tables')
-          .select('table_name')
-          .eq('table_schema', 'public')
-          .eq('table_name', request.tableName)
-          .maybeSingle();
+        // Try to query the table - if it exists, this will succeed; if not, it will fail
+        const { error } = await supabase
+          .from(request.tableName as any)
+          .select('*')
+          .limit(1);
 
-        if (tableInfo) {
+        // If no error, the table exists
+        if (!error) {
           alternatives.push(`Database Table: ${request.tableName} already exists`);
         }
       }
     } catch (error) {
+      // Table doesn't exist or we don't have permission - that's fine
       console.log('Database check skipped:', error);
     }
 
