@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { PageContainer } from '@/components/layout/PageContainer';
@@ -10,6 +9,7 @@ import { useSavedApplications } from '@/hooks/useSavedApplications';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { FileText, Building, Users, Shield, AlertCircle, Zap, CheckCircle } from 'lucide-react';
 
 const TreatmentCenterOnboardingPage = () => {

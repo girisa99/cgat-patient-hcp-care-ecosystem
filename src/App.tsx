@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,7 +12,7 @@ import Patients from "./pages/Patients";
 import Facilities from "./pages/Facilities";
 import Modules from "./pages/Modules";
 import Onboarding from "./pages/Onboarding";
-import TreatmentCenterOnboarding from "./pages/TreatmentCenterOnboarding";
+import TreatmentCenterOnboardingPage from "./pages/TreatmentCenterOnboarding";
 import Settings from "./pages/Settings";
 import ApiIntegrations from "./pages/ApiIntegrations";
 import AuditLog from "./pages/AuditLog";
