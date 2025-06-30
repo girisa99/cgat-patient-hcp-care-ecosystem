@@ -3346,6 +3346,9 @@ export type Database = {
         | "caseManager"
         | "onboardingTeam"
         | "patientCaregiver"
+        | "financeTeam"
+        | "contractTeam"
+        | "workflowManager"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3563,6 +3566,9 @@ export const Constants = {
         "caseManager",
         "onboardingTeam",
         "patientCaregiver",
+        "financeTeam",
+        "contractTeam",
+        "workflowManager",
       ],
     },
   },
