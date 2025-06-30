@@ -1,9 +1,9 @@
 
 import { useEffect, useState } from 'react';
-import { useAuthContext } from '@/components/auth/SimpleAuthProvider';
+import { useAuthContext } from '@/components/auth/CleanAuthProvider';
 import { useSimpleRouting } from '@/hooks/useSimpleRouting';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
-import SimpleLoginForm from '@/components/auth/SimpleLoginForm';
+import CleanLoginForm from '@/components/auth/CleanLoginForm';
 import HealthcareAuthLayout from '@/components/auth/HealthcareAuthLayout';
 
 const Index = () => {
@@ -14,12 +14,12 @@ const Index = () => {
   useEffect(() => {
     // Only attempt routing once we have complete auth data
     if (!initialized || loading) {
-      console.log('⏳ Waiting for auth initialization...');
+      console.log('⏳ Waiting for clean auth initialization...');
       return;
     }
 
     if (!isAuthenticated) {
-      console.log('👤 No authentication, showing login form');
+      console.log('👤 No authentication, showing clean login form');
       setHasAttemptedRouting(true);
       return;
     }
@@ -31,7 +31,7 @@ const Index = () => {
     }
 
     if (!hasAttemptedRouting) {
-      console.log('🚀 Performing automatic routing...');
+      console.log('🚀 Performing automatic routing with clean auth...');
       setHasAttemptedRouting(true);
       
       // Small delay to ensure UI is ready
@@ -47,7 +47,7 @@ const Index = () => {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <LoadingSpinner size="lg" />
-          <p className="mt-4 text-gray-600">Loading...</p>
+          <p className="mt-4 text-gray-600">Initializing GENIE...</p>
         </div>
       </div>
     );
@@ -59,7 +59,7 @@ const Index = () => {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <LoadingSpinner size="lg" />
-          <p className="mt-4 text-gray-600">Redirecting...</p>
+          <p className="mt-4 text-gray-600">Redirecting to your dashboard...</p>
         </div>
       </div>
     );
@@ -84,10 +84,10 @@ const Index = () => {
     );
   }
 
-  // Show login form for unauthenticated users
+  // Show clean login form for unauthenticated users
   return (
     <HealthcareAuthLayout>
-      <SimpleLoginForm />
+      <CleanLoginForm />
     </HealthcareAuthLayout>
   );
 };
