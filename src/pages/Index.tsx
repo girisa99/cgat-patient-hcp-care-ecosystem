@@ -12,35 +12,47 @@ const Index = () => {
   const { performRouting } = useSimpleRouting({ userRoles, isAuthenticated });
   const [hasAttemptedRouting, setHasAttemptedRouting] = useState(false);
   const [showDiagnostic, setShowDiagnostic] = useState(false);
+  const [routingTimeout, setRoutingTimeout] = useState<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
+    // Clear any existing timeout
+    if (routingTimeout) {
+      clearTimeout(routingTimeout);
+    }
+
     // Only attempt routing once we have complete auth data
     if (!initialized || loading) {
-      console.log('⏳ Waiting for clean auth initialization...');
+      console.log('⏳ Waiting for auth initialization...');
       return;
     }
 
     if (!isAuthenticated) {
-      console.log('👤 No authentication, showing clean login form');
+      console.log('👤 No authentication, showing login form');
       setHasAttemptedRouting(true);
       return;
     }
 
-    if (userRoles.length === 0) {
-      console.log('⚠️ User authenticated but no roles found');
-      setHasAttemptedRouting(true);
-      return;
-    }
-
-    if (!hasAttemptedRouting) {
-      console.log('🚀 Performing automatic routing with clean auth...');
+    // If authenticated, attempt routing regardless of role status
+    if (isAuthenticated && !hasAttemptedRouting) {
+      console.log('🚀 User authenticated, attempting routing...');
+      console.log('📊 Current user roles:', userRoles);
+      
       setHasAttemptedRouting(true);
       
-      // Small delay to ensure UI is ready
-      setTimeout(() => {
+      // Set a timeout to perform routing, allowing time for roles to load
+      const timeout = setTimeout(() => {
+        console.log('🚀 Performing routing with roles:', userRoles);
         performRouting();
-      }, 100);
+      }, 500); // Give roles time to load
+      
+      setRoutingTimeout(timeout);
     }
+
+    return () => {
+      if (routingTimeout) {
+        clearTimeout(routingTimeout);
+      }
+    };
   }, [initialized, loading, isAuthenticated, userRoles, hasAttemptedRouting, performRouting]);
 
   // Show loading while initializing
@@ -56,30 +68,44 @@ const Index = () => {
   }
 
   // Show routing message for authenticated users
-  if (isAuthenticated && userRoles.length > 0 && !hasAttemptedRouting) {
+  if (isAuthenticated && !hasAttemptedRouting) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <LoadingSpinner size="lg" />
-          <p className="mt-4 text-gray-600">Redirecting to your dashboard...</p>
+          <p className="mt-4 text-gray-600">Preparing your dashboard...</p>
         </div>
       </div>
     );
   }
 
-  // Show no roles message for authenticated users without roles
-  if (isAuthenticated && userRoles.length === 0) {
+  // If authenticated but still on index after routing attempt, show a manual option
+  if (isAuthenticated && hasAttemptedRouting) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 max-w-md">
-            <h3 className="text-lg font-semibold text-yellow-800 mb-2">Account Setup Required</h3>
-            <p className="text-yellow-700 mb-4">
-              Your account is authenticated but no roles have been assigned yet.
+          <div className="bg-green-50 border border-green-200 rounded-lg p-6 max-w-md">
+            <h3 className="text-lg font-semibold text-green-800 mb-2">Welcome Back!</h3>
+            <p className="text-green-700 mb-4">
+              You are successfully logged in as {user?.email}
             </p>
-            <p className="text-sm text-yellow-600">
-              Please contact your administrator to assign appropriate roles to your account.
+            <p className="text-sm text-green-600 mb-4">
+              Roles: {userRoles.length > 0 ? userRoles.join(', ') : 'Loading...'}
             </p>
+            <div className="space-y-2">
+              <button
+                onClick={() => window.location.href = '/dashboard'}
+                className="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
+              >
+                Go to Dashboard
+              </button>
+              <button
+                onClick={() => window.location.href = '/users'}
+                className="w-full bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 transition-colors"
+              >
+                Go to Users
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -103,7 +129,7 @@ const Index = () => {
     );
   }
 
-  // Show clean login form for unauthenticated users
+  // Show login form for unauthenticated users
   return (
     <HealthcareAuthLayout>
       <div className="space-y-4">

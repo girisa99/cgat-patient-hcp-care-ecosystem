@@ -14,35 +14,52 @@ export const useSimpleRouting = ({ userRoles, isAuthenticated }: SimpleRoutingPr
   const navigate = useNavigate();
 
   const getDefaultRoute = useCallback((): string => {
-    if (!isAuthenticated || userRoles.length === 0) {
+    if (!isAuthenticated) {
       return '/';
     }
 
-    // Simple, clear routing logic
-    if (userRoles.includes('superAdmin')) {
-      return '/dashboard';
+    console.log('🗺️ Determining route for roles:', userRoles);
+
+    // If we have roles, use them for routing
+    if (userRoles.length > 0) {
+      if (userRoles.includes('superAdmin')) {
+        console.log('🗺️ Routing super admin to dashboard');
+        return '/dashboard';
+      }
+      
+      if (userRoles.includes('onboardingTeam')) {
+        console.log('🗺️ Routing onboarding team to onboarding');
+        return '/onboarding';
+      }
+      
+      if (userRoles.includes('healthcareProvider') || userRoles.includes('nurse')) {
+        console.log('🗺️ Routing healthcare staff to patients');
+        return '/patients';
+      }
+      
+      if (userRoles.includes('caseManager')) {
+        console.log('🗺️ Routing case manager to patients');
+        return '/patients';
+      }
     }
     
-    if (userRoles.includes('onboardingTeam')) {
-      return '/onboarding';
-    }
-    
-    if (userRoles.includes('healthcareProvider') || userRoles.includes('nurse')) {
-      return '/patients';
-    }
-    
-    if (userRoles.includes('caseManager')) {
-      return '/patients';
-    }
-    
-    // Default fallback
+    // Default fallback - if authenticated but no specific roles, go to dashboard
+    console.log('🗺️ Using default dashboard route');
     return '/dashboard';
   }, [userRoles, isAuthenticated]);
 
   const performRouting = useCallback(() => {
     const route = getDefaultRoute();
-    console.log('🚀 Routing to:', route, 'for roles:', userRoles);
-    navigate(route, { replace: true });
+    console.log('🚀 Navigating to:', route, 'for roles:', userRoles);
+    
+    try {
+      navigate(route, { replace: true });
+      console.log('✅ Navigation completed to:', route);
+    } catch (error) {
+      console.error('❌ Navigation error:', error);
+      // Fallback to direct navigation
+      window.location.href = route;
+    }
   }, [getDefaultRoute, navigate, userRoles]);
 
   return {
