@@ -15,7 +15,11 @@ import {
   Database,
   ExternalLink,
   Workflow,
-  Search
+  Search,
+  Shield,
+  GitBranch,
+  FileText,
+  Settings
 } from 'lucide-react';
 
 // Import hooks - using the correct one for external APIs
@@ -74,6 +78,41 @@ export const ApiServicesModule: React.FC = () => {
     error
   });
 
+  // Calculate comprehensive stats from integrations
+  const calculateStats = () => {
+    if (!integrations) return {
+      totalSchemas: 0,
+      totalSecurity: 0,
+      totalMappings: 0,
+      totalModules: 0,
+      totalTypes: 0,
+      totalDocs: 0
+    };
+
+    return {
+      totalSchemas: integrations.reduce((sum, integration) => 
+        sum + Object.keys(integration.schemas || {}).length, 0
+      ),
+      totalSecurity: integrations.reduce((sum, integration) => 
+        sum + (integration.rlsPolicies?.length || 0), 0
+      ),
+      totalMappings: integrations.reduce((sum, integration) => 
+        sum + (integration.mappings?.length || 0), 0
+      ),
+      totalModules: integrations.reduce((sum, integration) => 
+        sum + (integration.category === 'onboarding' ? 3 : 1), 0
+      ), // Onboarding has 3 modules, others have 1
+      totalTypes: integrations.reduce((sum, integration) => 
+        sum + Object.keys(integration.schemas || {}).length, 0
+      ), // Same as schemas for now
+      totalDocs: integrations.reduce((sum, integration) => 
+        sum + (integration.documentation ? 1 : 0), 0
+      )
+    };
+  };
+
+  const stats = calculateStats();
+
   // Log external APIs data for debugging
   console.log('🔍 External APIs data for consuming tab:', externalApis);
 
@@ -109,11 +148,11 @@ export const ApiServicesModule: React.FC = () => {
   };
 
   const OverviewStats = () => (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+    <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6">
       <Card className="border-l-4 border-l-blue-500">
         <CardContent className="p-4">
           <div className="flex items-center gap-2">
-            <Server className="h-8 w-8 text-blue-500" />
+            <Server className="h-6 w-6 text-blue-500" />
             <div>
               <p className="text-2xl font-bold">{internalApis?.length || 0}</p>
               <p className="text-sm text-muted-foreground">Internal APIs</p>
@@ -125,7 +164,7 @@ export const ApiServicesModule: React.FC = () => {
       <Card className="border-l-4 border-l-green-500">
         <CardContent className="p-4">
           <div className="flex items-center gap-2">
-            <ArrowDownCircle className="h-8 w-8 text-green-500" />
+            <ArrowDownCircle className="h-6 w-6 text-green-500" />
             <div>
               <p className="text-2xl font-bold">{externalApis?.length || 0}</p>
               <p className="text-sm text-muted-foreground">Consuming APIs</p>
@@ -137,10 +176,10 @@ export const ApiServicesModule: React.FC = () => {
       <Card className="border-l-4 border-l-purple-500">
         <CardContent className="p-4">
           <div className="flex items-center gap-2">
-            <ArrowUpCircle className="h-8 w-8 text-purple-500" />
+            <Database className="h-6 w-6 text-purple-500" />
             <div>
-              <p className="text-2xl font-bold">{publishedApis?.length || 0}</p>
-              <p className="text-sm text-muted-foreground">Published APIs</p>
+              <p className="text-2xl font-bold">{stats.totalSchemas}</p>
+              <p className="text-sm text-muted-foreground">Schemas</p>
             </div>
           </div>
         </CardContent>
@@ -149,10 +188,34 @@ export const ApiServicesModule: React.FC = () => {
       <Card className="border-l-4 border-l-orange-500">
         <CardContent className="p-4">
           <div className="flex items-center gap-2">
-            <Users className="h-8 w-8 text-orange-500" />
+            <Shield className="h-6 w-6 text-orange-500" />
             <div>
-              <p className="text-2xl font-bold">{marketplaceStats?.approvedApplications || 0}</p>
-              <p className="text-sm text-muted-foreground">Developer Apps</p>
+              <p className="text-2xl font-bold">{stats.totalSecurity}</p>
+              <p className="text-sm text-muted-foreground">Security</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <Card className="border-l-4 border-l-teal-500">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-2">
+            <GitBranch className="h-6 w-6 text-teal-500" />
+            <div>
+              <p className="text-2xl font-bold">{stats.totalMappings}</p>
+              <p className="text-sm text-muted-foreground">Mappings</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <Card className="border-l-4 border-l-indigo-500">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-2">
+            <FileText className="h-6 w-6 text-indigo-500" />
+            <div>
+              <p className="text-2xl font-bold">{stats.totalDocs}</p>
+              <p className="text-sm text-muted-foreground">Docs</p>
             </div>
           </div>
         </CardContent>
@@ -178,6 +241,7 @@ export const ApiServicesModule: React.FC = () => {
             </p>
             <div className="flex items-center gap-2">
               <Badge variant="outline">{internalApis?.length || 0} APIs</Badge>
+              <Badge variant="outline">{stats.totalSchemas} Schemas</Badge>
               <Badge variant="outline">Healthcare Ready</Badge>
             </div>
           </CardContent>
@@ -196,6 +260,7 @@ export const ApiServicesModule: React.FC = () => {
             </p>
             <div className="flex items-center gap-2">
               <Badge variant="outline">{externalApis?.length || 0} Integrations</Badge>
+              <Badge variant="outline">{stats.totalSecurity} Security Policies</Badge>
               <Badge variant="outline">HIPAA Compliant</Badge>
             </div>
           </CardContent>
@@ -214,6 +279,7 @@ export const ApiServicesModule: React.FC = () => {
             </p>
             <div className="flex items-center gap-2">
               <Badge variant="outline">{publishedApis?.length || 0} Published</Badge>
+              <Badge variant="outline">{marketplaceStats?.approvedApplications || 0} Developer Apps</Badge>
               <Badge variant="outline">FDA Compliant</Badge>
             </div>
           </CardContent>
@@ -231,6 +297,7 @@ export const ApiServicesModule: React.FC = () => {
               Manage API requirements from treatment centers, pharma/biotech companies, and financial verification workflows.
             </p>
             <div className="flex items-center gap-2">
+              <Badge variant="outline">{stats.totalMappings} Mappings</Badge>
               <Badge variant="outline">Multi-Category</Badge>
               <Badge variant="outline">Workflow Management</Badge>
               <Badge variant="outline">Compliance Tracking</Badge>
@@ -291,7 +358,7 @@ export const ApiServicesModule: React.FC = () => {
       <AutoIntegrationBanner />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="grid w-full grid-cols-8">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="internal">Internal APIs</TabsTrigger>
           <TabsTrigger value="consuming">Consuming</TabsTrigger>
