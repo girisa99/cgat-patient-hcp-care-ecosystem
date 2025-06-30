@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { PageContainer } from '@/components/layout/PageContainer';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
-import { EnhancedOnboardingWizard } from '@/components/onboarding/EnhancedOnboardingWizard';
+import { TabbedOnboardingWizard } from '@/components/onboarding/TabbedOnboardingWizard';
 import { SavedApplicationsDialog } from '@/components/onboarding/SavedApplicationsDialog';
 import { TreatmentCenterOnboarding } from '@/types/onboarding';
 import { useSavedApplications } from '@/hooks/useSavedApplications';
@@ -119,7 +118,7 @@ const TreatmentCenterOnboardingPage = () => {
     return (
       <ProtectedRoute>
         <MainLayout>
-          <EnhancedOnboardingWizard 
+          <TabbedOnboardingWizard 
             onSubmit={handleSubmit}
             initialData={resumeData?.data}
             applicationId={resumeData?.applicationId}
@@ -151,10 +150,10 @@ const TreatmentCenterOnboardingPage = () => {
                   </div>
                   <div>
                     <CardTitle className="text-3xl font-bold bg-gradient-to-r from-blue-700 to-indigo-700 bg-clip-text text-transparent">
-                      New Enhanced Experience
+                      Enhanced Tab-Based Experience
                     </CardTitle>
                     <CardDescription className="text-lg text-gray-700">
-                      Redesigned for efficiency, collaboration, and user experience
+                      Redesigned with tabs for better organization and more space
                     </CardDescription>
                   </div>
                 </div>
@@ -163,26 +162,26 @@ const TreatmentCenterOnboardingPage = () => {
                   {[
                     {
                       icon: Award,
-                      title: "Smart Organization",
-                      description: "Logically grouped sections for intuitive workflow",
+                      title: "Tab Organization",
+                      description: "Clear sections with dedicated tabs for focused workflow",
                       color: "blue"
                     },
                     {
                       icon: Star,
-                      title: "Visual Progress",
-                      description: "Clear indicators at every level of completion",
+                      title: "More Space",
+                      description: "Expanded content area for better form completion",
                       color: "purple"
                     },
                     {
                       icon: Users,
-                      title: "Team Collaboration",
-                      description: "Share and complete applications together",
+                      title: "New Features",
+                      description: "Credit applications, GPO memberships, and office hours",
                       color: "green"
                     },
                     {
                       icon: Shield,
-                      title: "Smart Validation",
-                      description: "Intelligent status tracking and guidance",
+                      title: "Enhanced Navigation",
+                      description: "Step-by-step progress tracking within each tab",
                       color: "orange"
                     }
                   ].map((feature, index) => (
@@ -226,39 +225,36 @@ const TreatmentCenterOnboardingPage = () => {
               </Card>
             )}
 
-            {/* Process Overview */}
+            {/* Enhanced Process Overview */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-2xl">Streamlined Application Journey</CardTitle>
+                <CardTitle className="text-2xl">Enhanced Tab-Based Journey</CardTitle>
                 <CardDescription className="text-lg">
-                  Our improved process groups related information for a smoother experience
+                  Organized sections with expanded functionality for a complete onboarding experience
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                   {[
                     {
                       title: 'Company Foundation',
-                      description: 'Essential company details and business structure',
+                      description: 'Company details, business classification, contacts, and office hours',
                       icon: Building,
                       color: 'blue',
-                      weight: '25%',
-                      steps: ['Company Information', 'Business Classification', 'Key Contacts']
+                      steps: ['Company Information', 'Business Classification', 'Key Contacts', 'Office Hours']
                     },
                     {
                       title: 'Business Structure',
-                      description: 'Ownership details and business relationships',
+                      description: 'Ownership, references, and GPO memberships',
                       icon: Users,
                       color: 'green',
-                      weight: '20%',
-                      steps: ['Ownership & Control', 'Business References']
+                      steps: ['Ownership & Control', 'Business References', 'GPO Memberships']
                     },
                     {
                       title: 'Services & Therapies',
                       description: 'CGAT therapy and service provider selection',
                       icon: Sparkles,
                       color: 'purple',
-                      weight: '15%',
                       steps: ['CGAT Therapy Selection', 'Service Provider Selection']
                     },
                     {
@@ -266,24 +262,28 @@ const TreatmentCenterOnboardingPage = () => {
                       description: 'Purchasing preferences and financial evaluation',
                       icon: Zap,
                       color: 'orange',
-                      weight: '20%',
                       steps: ['Purchasing Preferences', 'Financial Assessment']
                     },
                     {
-                      title: 'Financial & Legal',
-                      description: 'Banking, licenses, and compliance documentation',
+                      title: 'Financial & Credit',
+                      description: 'Banking, credit applications, and payment terms',
                       icon: Shield,
                       color: 'cyan',
-                      weight: '15%',
-                      steps: ['Payment & Banking', 'Licenses', 'Documents']
+                      steps: ['Payment & Banking', 'Credit Application']
+                    },
+                    {
+                      title: 'Compliance & Documentation',
+                      description: 'Licenses, certifications, and required documents',
+                      icon: FileText,
+                      color: 'indigo',
+                      steps: ['Licenses & Certifications', 'Required Documents']
                     },
                     {
                       title: 'Review & Submit',
                       description: 'Final review, signatures, and submission',
                       icon: CheckCircle,
                       color: 'emerald',
-                      weight: '5%',
-                      steps: ['Authorizations', 'Final Review']
+                      steps: ['Authorizations & Signatures', 'Final Review']
                     }
                   ].map((section, index) => (
                     <Card key={index} className={`border-l-4 border-l-${section.color}-400 hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-${section.color}-50/30 to-white`}>
@@ -292,8 +292,8 @@ const TreatmentCenterOnboardingPage = () => {
                           <div className={`p-2 bg-${section.color}-100 rounded-lg`}>
                             <section.icon className={`h-5 w-5 text-${section.color}-700`} />
                           </div>
-                          <Badge variant="outline" className={`border-${section.color}-300 text-${section.color}-700`}>
-                            {section.weight}
+                          <Badge variant="outline" className={`border-${section.color}-300 text-${section.color}-700 text-xs`}>
+                            {section.steps.length} steps
                           </Badge>
                         </div>
                         <CardTitle className="text-lg">{section.title}</CardTitle>
@@ -320,7 +320,7 @@ const TreatmentCenterOnboardingPage = () => {
               <CardHeader className="text-center">
                 <CardTitle className="text-2xl text-green-900">Ready to Get Started?</CardTitle>
                 <CardDescription className="text-lg text-green-700">
-                  Join our healthcare network with confidence
+                  Experience our enhanced tab-based onboarding process
                 </CardDescription>
               </CardHeader>
               <CardContent className="text-center space-y-6">
@@ -349,18 +349,18 @@ const TreatmentCenterOnboardingPage = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-2xl mx-auto">
                   <div className="text-center p-4">
                     <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-600" />
-                    <h4 className="font-medium text-green-900">Auto-Save</h4>
-                    <p className="text-sm text-green-700">Never lose your progress</p>
+                    <h4 className="font-medium text-green-900">Enhanced Features</h4>
+                    <p className="text-sm text-green-700">Credit apps, GPO, office hours</p>
                   </div>
                   <div className="text-center p-4">
                     <Users className="h-8 w-8 mx-auto mb-2 text-green-600" />
-                    <h4 className="font-medium text-green-900">Collaborate</h4>
-                    <p className="text-sm text-green-700">Work with your team</p>
+                    <h4 className="font-medium text-green-900">Better Organization</h4>
+                    <p className="text-sm text-green-700">Tab-based navigation</p>
                   </div>
                   <div className="text-center p-4">
                     <Shield className="h-8 w-8 mx-auto mb-2 text-green-600" />
-                    <h4 className="font-medium text-green-900">Secure</h4>
-                    <p className="text-sm text-green-700">Enterprise-grade security</p>
+                    <h4 className="font-medium text-green-900">More Space</h4>
+                    <p className="text-sm text-green-700">Expanded content area</p>
                   </div>
                 </div>
               </CardContent>

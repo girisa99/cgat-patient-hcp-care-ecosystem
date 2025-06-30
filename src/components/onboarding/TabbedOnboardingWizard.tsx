@@ -3,10 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { EnhancedTabs, EnhancedTabsList, EnhancedTabsTrigger, EnhancedTabsContent } from '@/components/ui/enhanced-tabs';
 import { TreatmentCenterOnboarding } from '@/types/onboarding';
 import { useTreatmentCenterOnboarding } from '@/hooks/useTreatmentCenterOnboarding';
 import { useAutoSave } from '@/hooks/useAutoSave';
-import { AnimatedJourney } from './AnimatedJourney';
 import { CompanyInfoStep } from './steps/CompanyInfoStep';
 import { BusinessClassificationStep } from './steps/BusinessClassificationStep';
 import { ContactsStep } from './steps/ContactsStep';
@@ -16,13 +17,31 @@ import { PaymentBankingStep } from './steps/PaymentBankingStep';
 import { LicensesStep } from './steps/LicensesStep';
 import { DocumentsStep } from './steps/DocumentsStep';
 import { AuthorizationsStep } from './steps/AuthorizationsStep';
-import { ReviewStep } from './steps/ReviewStep';
-import { Save, Clock, Users, Share } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { OnlinePlatformUsersStep } from './steps/OnlinePlatformUsersStep';
-import { SpecialProgramsStep } from './steps/SpecialProgramsStep';
-import { EnhancedPaymentTermsStep } from './steps/EnhancedPaymentTermsStep';
+import { PurchasingPreferencesStep } from './steps/PurchasingPreferencesStep';
+import { FinancialAssessmentStep } from './steps/FinancialAssessmentStep';
+import { ServiceSelectionStep } from './steps/ServiceSelectionStep';
 import { EnhancedTherapySelectionStep } from './steps/EnhancedTherapySelectionStep';
+import { ReviewStep } from './steps/ReviewStep';
+import { CreditApplicationStep } from './steps/CreditApplicationStep';
+import { GPOMembershipStep } from './steps/GPOMembershipStep';
+import { OfficeHoursStep } from './steps/OfficeHoursStep';
+import { 
+  Building2, 
+  Users, 
+  CreditCard, 
+  FileText, 
+  CheckCircle, 
+  Save, 
+  Clock,
+  ArrowRight,
+  ArrowLeft,
+  Sparkles,
+  Dna,
+  Truck,
+  DollarSign,
+  Calendar,
+  Shield
+} from 'lucide-react';
 
 interface TabbedOnboardingWizardProps {
   onSubmit: (data: TreatmentCenterOnboarding) => void;
@@ -30,85 +49,96 @@ interface TabbedOnboardingWizardProps {
   applicationId?: string;
 }
 
-interface TabGroup {
+interface TabSection {
   id: string;
-  label: string;
+  title: string;
   description: string;
+  icon: React.ElementType;
+  color: string;
   steps: {
     key: string;
     label: string;
     component: React.ComponentType<any>;
     required: boolean;
   }[];
-  completionWeight: number;
 }
 
-const tabGroups: TabGroup[] = [
+const tabSections: TabSection[] = [
   {
-    id: 'basic_info',
-    label: 'Basic Information',
-    description: 'Company details and business classification',
-    completionWeight: 20,
+    id: 'company_foundation',
+    title: 'Company Foundation',
+    description: 'Essential company details and business structure',
+    icon: Building2,
+    color: 'blue',
     steps: [
       { key: 'company_info', label: 'Company Information', component: CompanyInfoStep, required: true },
       { key: 'business_classification', label: 'Business Classification', component: BusinessClassificationStep, required: true },
       { key: 'contacts', label: 'Key Contacts', component: ContactsStep, required: true },
+      { key: 'office_hours', label: 'Office Hours', component: OfficeHoursStep, required: false },
     ]
   },
   {
-    id: 'business_details',
-    label: 'Business Details',
-    description: 'Ownership structure and business references',
-    completionWeight: 15,
+    id: 'business_structure',
+    title: 'Business Structure',
+    description: 'Ownership, control, and business relationships',
+    icon: Users,
+    color: 'green',
     steps: [
       { key: 'ownership', label: 'Ownership & Control', component: OwnershipStep, required: true },
       { key: 'references', label: 'Business References', component: ReferencesStep, required: false },
+      { key: 'gpo_membership', label: 'GPO Memberships', component: GPOMembershipStep, required: false },
     ]
   },
   {
-    id: 'therapy_selection',
-    label: 'CGAT Therapy Selection',
-    description: 'Choose CGAT therapies, products, and service providers',
-    completionWeight: 25,
+    id: 'services_therapies',
+    title: 'Services & Therapies',
+    description: 'CGAT therapy selection and service provider configuration',
+    icon: Dna,
+    color: 'purple',
     steps: [
-      { key: 'enhanced_therapy_selection', label: 'CGAT Therapy & Service Selection', component: EnhancedTherapySelectionStep, required: true },
+      { key: 'therapy_selection', label: 'CGAT Therapy Selection', component: EnhancedTherapySelectionStep, required: true },
+      { key: 'service_selection', label: 'Service Provider Selection', component: ServiceSelectionStep, required: true },
     ]
   },
   {
-    id: 'platform_users',
-    label: 'Platform Users',
-    description: 'Online platform user accounts and permissions',
-    completionWeight: 10,
+    id: 'operations',
+    title: 'Operations & Assessment',
+    description: 'Purchasing preferences and financial evaluation',
+    icon: Truck,
+    color: 'orange',
     steps: [
-      { key: 'online_platform_users', label: 'Online Platform Users', component: OnlinePlatformUsersStep, required: true },
+      { key: 'purchasing_preferences', label: 'Purchasing Preferences', component: PurchasingPreferencesStep, required: true },
+      { key: 'financial_assessment', label: 'Financial Assessment', component: FinancialAssessmentStep, required: true },
     ]
   },
   {
-    id: 'special_programs',
-    label: 'Special Programs',
-    description: '340B programs and GPO memberships',
-    completionWeight: 10,
+    id: 'financial_credit',
+    title: 'Financial & Credit',
+    description: 'Banking, credit applications, and payment terms',
+    icon: CreditCard,
+    color: 'cyan',
     steps: [
-      { key: 'special_programs', label: '340B & GPO Programs', component: SpecialProgramsStep, required: false },
+      { key: 'payment_banking', label: 'Payment & Banking', component: PaymentBankingStep, required: true },
+      { key: 'credit_application', label: 'Credit Application', component: CreditApplicationStep, required: false },
     ]
   },
   {
-    id: 'financial_legal',
-    label: 'Financial & Legal',
-    description: 'Banking, licenses, and documentation',
-    completionWeight: 15,
+    id: 'compliance_docs',
+    title: 'Compliance & Documentation',
+    description: 'Licenses, certifications, and required documents',
+    icon: Shield,
+    color: 'indigo',
     steps: [
-      { key: 'enhanced_payment_terms', label: 'Payment Terms & Billing', component: EnhancedPaymentTermsStep, required: true },
-      { key: 'payment_banking', label: 'Banking Information', component: PaymentBankingStep, required: true },
       { key: 'licenses', label: 'Licenses & Certifications', component: LicensesStep, required: true },
       { key: 'documents', label: 'Required Documents', component: DocumentsStep, required: true },
     ]
   },
   {
     id: 'finalization',
-    label: 'Finalization',
-    description: 'Review, signatures, and submission',
-    completionWeight: 5,
+    title: 'Review & Submit',
+    description: 'Final review, signatures, and submission',
+    icon: CheckCircle,
+    color: 'emerald',
     steps: [
       { key: 'authorizations', label: 'Authorizations & Signatures', component: AuthorizationsStep, required: true },
       { key: 'review', label: 'Review & Submit', component: ReviewStep, required: true },
@@ -121,8 +151,9 @@ export const TabbedOnboardingWizard: React.FC<TabbedOnboardingWizardProps> = ({
   initialData,
   applicationId,
 }) => {
-  const [activeTab, setActiveTab] = useState('basic_info');
+  const [activeTab, setActiveTab] = useState('company_foundation');
   const [activeStep, setActiveStep] = useState('company_info');
+  
   const [formData, setFormData] = useState<Partial<TreatmentCenterOnboarding>>(
     initialData || {
       selected_distributors: [],
@@ -157,6 +188,23 @@ export const TabbedOnboardingWizard: React.FC<TabbedOnboardingWizardProps> = ({
         bank_address: { street: '', city: '', state: '', zip: '' },
         statement_delivery_preference: 'email',
       },
+      purchasing_preferences: {
+        preferred_purchasing_methods: [],
+        inventory_management_model: 'traditional_wholesale',
+        automated_reordering_enabled: false,
+        reorder_points: {},
+        inventory_turnover_targets: {},
+        storage_capacity_details: {},
+        temperature_controlled_storage: false,
+        hazmat_storage_capabilities: false,
+      },
+      financial_assessment: {
+        annual_revenue_range: '',
+        credit_score_range: '',
+        years_in_operation: 0,
+        insurance_coverage: {},
+        financial_guarantees: {},
+      },
       licenses: {
         additional_licenses: [],
       },
@@ -179,11 +227,41 @@ export const TabbedOnboardingWizard: React.FC<TabbedOnboardingWizardProps> = ({
         completed_steps: [],
         notes: [],
       },
+      credit_application: {
+        requested_credit_limit: '',
+        trade_references: [],
+        bank_references: [],
+        credit_terms_requested: 'net_30',
+        personal_guarantee_required: false,
+        collateral_offered: false,
+        financial_statements_provided: false
+      },
+      gpo_memberships: [],
+      office_hours: {
+        monday: { open: '', close: '', closed: false },
+        tuesday: { open: '', close: '', closed: false },
+        wednesday: { open: '', close: '', closed: false },
+        thursday: { open: '', close: '', closed: false },
+        friday: { open: '', close: '', closed: false },
+        saturday: { open: '', close: '', closed: true },
+        sunday: { open: '', close: '', closed: true },
+        timezone: '',
+        emergency_contact: {
+          available_24_7: false,
+          phone: '',
+          email: '',
+          instructions: ''
+        },
+        special_hours: {
+          holidays_closed: true,
+          holiday_schedule: '',
+          seasonal_adjustments: ''
+        }
+      }
     }
   );
 
-  const { createApplication, isCreating } = useTreatmentCenterOnboarding();
-  const { toast } = useToast();
+  const { createApplication, updateApplication, isCreating } = useTreatmentCenterOnboarding();
   
   // Auto-save functionality
   const { manualSave, isSaving } = useAutoSave({
@@ -193,8 +271,8 @@ export const TabbedOnboardingWizard: React.FC<TabbedOnboardingWizardProps> = ({
     enabled: true,
   });
 
-  // Enhanced completion status calculation
-  const getStepCompletion = (stepKey: string): 'complete' | 'incomplete' | 'needs_review' => {
+  // Calculate completion status
+  const getStepCompletion = (stepKey: string): 'complete' | 'incomplete' | 'partial' => {
     switch (stepKey) {
       case 'company_info':
         return formData.company_info?.legal_name && formData.company_info?.federal_tax_id ? 'complete' : 'incomplete';
@@ -206,48 +284,51 @@ export const TabbedOnboardingWizard: React.FC<TabbedOnboardingWizardProps> = ({
         return formData.ownership?.principal_owners?.length ? 'complete' : 'incomplete';
       case 'references':
         return formData.references?.primary_bank?.name ? 'complete' : 'incomplete';
-      case 'enhanced_therapy_selection':
-        // This will be checked via the EnhancedTherapySelectionStep component
+      case 'therapy_selection':
         return 'incomplete';
-      case 'online_platform_users':
-        const platformUsers = (formData as any)?.platform_users || [];
-        return platformUsers.length > 0 ? 'complete' : 'incomplete';
-      case 'special_programs':
-        const is340b = (formData as any)?.is_340b_entity;
-        const gpoMemberships = (formData as any)?.gpo_memberships_detailed || [];
-        return is340b || gpoMemberships.length > 0 ? 'complete' : 'incomplete';
-      case 'enhanced_payment_terms':
-        const paymentTerms = (formData as any)?.enhanced_payment_terms;
-        return paymentTerms?.preferred_terms && paymentTerms?.payment_method ? 'complete' : 'incomplete';
+      case 'service_selection':
+        return 'incomplete';
+      case 'purchasing_preferences':
+        return formData.purchasing_preferences?.preferred_purchasing_methods?.length ? 'complete' : 'incomplete';
+      case 'financial_assessment':
+        return formData.financial_assessment?.annual_revenue_range ? 'complete' : 'incomplete';
       case 'payment_banking':
         return formData.payment_info?.bank_name && formData.payment_info?.bank_routing_number ? 'complete' : 'incomplete';
+      case 'credit_application':
+        return formData.credit_application?.requested_credit_limit ? 'complete' : 'incomplete';
+      case 'gpo_membership':
+        return formData.gpo_memberships?.length ? 'complete' : 'incomplete';
+      case 'office_hours':
+        return formData.office_hours?.timezone ? 'complete' : 'incomplete';
       case 'licenses':
         return formData.licenses?.dea_number || formData.licenses?.medical_license ? 'complete' : 'incomplete';
       case 'documents':
         const requiredDocs = ['voided_check', 'resale_tax_exemption_cert', 'financial_statements'];
         const uploadedCount = requiredDocs.filter(doc => formData.documents?.[doc as keyof typeof formData.documents]).length;
-        return uploadedCount >= 2 ? 'complete' : uploadedCount > 0 ? 'needs_review' : 'incomplete';
+        return uploadedCount >= 2 ? 'complete' : uploadedCount > 0 ? 'partial' : 'incomplete';
       case 'authorizations':
         return formData.authorizations?.terms_accepted && formData.authorizations?.authorized_signature?.name ? 'complete' : 'incomplete';
       case 'review':
-        return 'incomplete'; // Always incomplete until final submission
+        return 'incomplete';
       default:
         return 'incomplete';
     }
   };
 
+  const getTabProgress = (tabId: string): number => {
+    const tab = tabSections.find(t => t.id === tabId);
+    if (!tab) return 0;
+    
+    const completedSteps = tab.steps.filter(step => getStepCompletion(step.key) === 'complete').length;
+    return Math.round((completedSteps / tab.steps.length) * 100);
+  };
+
   const getOverallProgress = (): number => {
-    let totalWeight = 0;
-    let completedWeight = 0;
-    
-    tabGroups.forEach(tab => {
-      totalWeight += tab.completionWeight;
-      const completedSteps = tab.steps.filter(step => getStepCompletion(step.key) === 'complete').length;
-      const tabProgress = Math.round((completedSteps / tab.steps.length) * 100);
-      completedWeight += (tabProgress / 100) * tab.completionWeight;
-    });
-    
-    return Math.round(completedWeight);
+    const totalSteps = tabSections.reduce((acc, tab) => acc + tab.steps.length, 0);
+    const completedSteps = tabSections.reduce((acc, tab) => {
+      return acc + tab.steps.filter(step => getStepCompletion(step.key) === 'complete').length;
+    }, 0);
+    return Math.round((completedSteps / totalSteps) * 100);
   };
 
   const handleStepData = (stepData: any) => {
@@ -257,146 +338,309 @@ export const TabbedOnboardingWizard: React.FC<TabbedOnboardingWizardProps> = ({
     }));
   };
 
-  const handleShare = async () => {
+  const handleSubmit = async () => {
     try {
-      const shareUrl = `${window.location.origin}/onboarding/collaborate/${applicationId}`;
-      await navigator.clipboard.writeText(shareUrl);
-      toast({
-        title: "Share Link Copied",
-        description: "Share this link with collaborators to help complete the application.",
-      });
+      const finalData: TreatmentCenterOnboarding = {
+        id: applicationId || '',
+        status: 'submitted',
+        created_at: '',
+        updated_at: '',
+        ...formData,
+      } as TreatmentCenterOnboarding;
+
+      let resultApplication;
+      if (applicationId) {
+        resultApplication = await updateApplication({
+          id: applicationId,
+          updates: {
+            ...finalData,
+            status: 'submitted',
+          }
+        });
+      } else {
+        resultApplication = await createApplication(finalData);
+      }
+      
+      onSubmit(finalData);
     } catch (error) {
-      toast({
-        title: "Share Failed",
-        description: "Could not copy share link. Please try again.",
-        variant: "destructive",
-      });
+      console.error('Error submitting onboarding application:', error);
     }
   };
 
-  const handleSectionChange = (sectionId: string) => {
-    setActiveTab(sectionId);
-    // Set the first step of the section as active
-    const section = tabGroups.find(tab => tab.id === sectionId);
-    if (section) {
-      setActiveStep(section.steps[0].key);
+  const getCurrentTabSteps = () => {
+    return tabSections.find(tab => tab.id === activeTab)?.steps || [];
+  };
+
+  const getCurrentStepIndex = () => {
+    const steps = getCurrentTabSteps();
+    return steps.findIndex(step => step.key === activeStep);
+  };
+
+  const goToNextStep = () => {
+    const currentSteps = getCurrentTabSteps();
+    const currentIndex = getCurrentStepIndex();
+    
+    if (currentIndex < currentSteps.length - 1) {
+      // Move to next step in current tab
+      setActiveStep(currentSteps[currentIndex + 1].key);
+    } else {
+      // Move to first step of next tab
+      const currentTabIndex = tabSections.findIndex(tab => tab.id === activeTab);
+      if (currentTabIndex < tabSections.length - 1) {
+        const nextTab = tabSections[currentTabIndex + 1];
+        setActiveTab(nextTab.id);
+        setActiveStep(nextTab.steps[0].key);
+      }
     }
   };
 
-  const handleStepChange = (stepKey: string) => {
-    setActiveStep(stepKey);
-    // Find which section this step belongs to and make it active
-    const section = tabGroups.find(tab => tab.steps.some(step => step.key === stepKey));
-    if (section) {
-      setActiveTab(section.id);
+  const goToPreviousStep = () => {
+    const currentSteps = getCurrentTabSteps();
+    const currentIndex = getCurrentStepIndex();
+    
+    if (currentIndex > 0) {
+      // Move to previous step in current tab
+      setActiveStep(currentSteps[currentIndex - 1].key);
+    } else {
+      // Move to last step of previous tab
+      const currentTabIndex = tabSections.findIndex(tab => tab.id === activeTab);
+      if (currentTabIndex > 0) {
+        const prevTab = tabSections[currentTabIndex - 1];
+        setActiveTab(prevTab.id);
+        setActiveStep(prevTab.steps[prevTab.steps.length - 1].key);
+      }
     }
   };
 
-  const currentTabGroup = tabGroups.find(tab => tab.id === activeTab);
-  const currentStepInfo = currentTabGroup?.steps.find(step => step.key === activeStep);
+  const currentTabInfo = tabSections.find(tab => tab.id === activeTab);
+  const currentStepInfo = currentTabInfo?.steps.find(step => step.key === activeStep);
   const StepComponent = currentStepInfo?.component;
 
+  const overallProgress = getOverallProgress();
+
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      {/* Action Header */}
-      <Card>
+    <div className="max-w-7xl mx-auto space-y-6">
+      {/* Header */}
+      <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <div className="flex-1">
-              <CardTitle className="flex items-center space-x-2">
-                <span>CGAT Treatment Center Onboarding</span>
-                {applicationId && (
-                  <Badge variant="outline" className="ml-2">
-                    Application #{applicationId.slice(0, 8)}
-                  </Badge>
-                )}
+            <div>
+              <CardTitle className="text-2xl font-bold text-blue-900">
+                Treatment Center Onboarding
               </CardTitle>
+              <CardDescription className="text-blue-700 text-lg">
+                Complete your registration to join our healthcare network
+              </CardDescription>
             </div>
             <div className="flex items-center space-x-4">
               {isSaving && (
-                <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                <div className="flex items-center space-x-2 text-sm text-blue-600">
                   <Clock className="h-4 w-4 animate-spin" />
-                  <span>Saving...</span>
+                  <span>Auto-saving...</span>
                 </div>
               )}
               <Button
                 variant="outline"
                 size="sm"
-                onClick={handleShare}
-                className="flex items-center space-x-2"
-              >
-                <Share className="h-4 w-4" />
-                <span>Share</span>
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
                 onClick={manualSave}
                 disabled={isSaving}
-                className="flex items-center space-x-2"
+                className="border-blue-300 text-blue-700 hover:bg-blue-50"
               >
-                <Save className="h-4 w-4" />
-                <span>Save</span>
+                <Save className="h-4 w-4 mr-2" />
+                Save Progress
               </Button>
             </div>
+          </div>
+          
+          {/* Overall Progress */}
+          <div className="mt-4">
+            <div className="flex justify-between text-sm text-blue-700 mb-2">
+              <span>Overall Progress</span>
+              <span className="font-semibold">{overallProgress}% Complete</span>
+            </div>
+            <Progress value={overallProgress} className="h-3" />
           </div>
         </CardHeader>
       </Card>
 
-      {/* Animated Journey */}
-      <AnimatedJourney
-        sections={tabGroups}
-        activeSection={activeTab}
-        activeStep={activeStep}
-        getStepCompletion={getStepCompletion}
-        onSectionChange={handleSectionChange}
-        onStepChange={handleStepChange}
-        overallProgress={getOverallProgress()}
-      />
+      {/* Enhanced Tabs */}
+      <EnhancedTabs value={activeTab} onValueChange={setActiveTab}>
+        <EnhancedTabsList className="grid grid-cols-7 h-auto p-1 bg-gray-50">
+          {tabSections.map((tab) => {
+            const IconComponent = tab.icon;
+            const progress = getTabProgress(tab.id);
+            
+            return (
+              <EnhancedTabsTrigger
+                key={tab.id}
+                value={tab.id}
+                className={`flex flex-col items-center p-4 space-y-2 ${
+                  progress === 100 ? 'text-green-700' : progress > 0 ? 'text-blue-700' : 'text-gray-600'
+                }`}
+                icon={<IconComponent className="h-5 w-5" />}
+              >
+                <div className="text-center">
+                  <div className="font-medium text-xs">{tab.title}</div>
+                  <div className="text-xs text-muted-foreground">{progress}%</div>
+                </div>
+                {progress === 100 && (
+                  <CheckCircle className="h-3 w-3 text-green-600" />
+                )}
+              </EnhancedTabsTrigger>
+            );
+          })}
+        </EnhancedTabsList>
 
-      {/* Current Step Content */}
-      {StepComponent && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center space-x-2">
-                  <span>{currentStepInfo?.label}</span>
-                  {currentStepInfo?.required && (
-                    <Badge variant="destructive" className="text-xs">Required</Badge>
-                  )}
-                </CardTitle>
-                <CardDescription>
-                  Step {currentTabGroup?.steps.findIndex(s => s.key === activeStep)! + 1} of {currentTabGroup?.steps.length} in {currentTabGroup?.label}
-                </CardDescription>
+        {tabSections.map((tab) => (
+          <EnhancedTabsContent key={tab.id} value={tab.id}>
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+              {/* Step Navigation */}
+              <div className="lg:col-span-1">
+                <Card className="sticky top-6">
+                  <CardHeader className={`bg-gradient-to-r from-${tab.color}-50 to-${tab.color}-100 rounded-t-lg`}>
+                    <CardTitle className="flex items-center space-x-2">
+                      <tab.icon className={`h-5 w-5 text-${tab.color}-700`} />
+                      <span className={`text-${tab.color}-900`}>{tab.title}</span>
+                    </CardTitle>
+                    <CardDescription className={`text-${tab.color}-700`}>
+                      {tab.description}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    <div className="space-y-2">
+                      {tab.steps.map((step, index) => {
+                        const completion = getStepCompletion(step.key);
+                        const isActive = activeStep === step.key;
+                        
+                        return (
+                          <button
+                            key={step.key}
+                            onClick={() => setActiveStep(step.key)}
+                            className={`w-full text-left p-3 rounded-lg transition-all duration-200 ${
+                              isActive
+                                ? `bg-${tab.color}-100 border-2 border-${tab.color}-300`
+                                : 'bg-gray-50 hover:bg-gray-100 border-2 border-transparent'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-3">
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                                  completion === 'complete'
+                                    ? 'bg-green-100 text-green-700'
+                                    : completion === 'partial'
+                                    ? 'bg-yellow-100 text-yellow-700'
+                                    : isActive
+                                    ? `bg-${tab.color}-100 text-${tab.color}-700`
+                                    : 'bg-gray-200 text-gray-600'
+                                }`}>
+                                  {completion === 'complete' ? (
+                                    <CheckCircle className="h-4 w-4" />
+                                  ) : (
+                                    index + 1
+                                  )}
+                                </div>
+                                <div>
+                                  <div className="font-medium text-sm">{step.label}</div>
+                                  {step.required && (
+                                    <Badge variant="secondary" className="text-xs mt-1">
+                                      Required
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                              {completion === 'complete' && (
+                                <CheckCircle className="h-4 w-4 text-green-600" />
+                              )}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Main Content Area */}
+              <div className="lg:col-span-3">
+                <Card className="min-h-[600px]">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="flex items-center space-x-2">
+                          <span>{currentStepInfo?.label}</span>
+                          {currentStepInfo?.required && (
+                            <Badge variant="destructive" className="text-xs">Required</Badge>
+                          )}
+                        </CardTitle>
+                        <CardDescription>
+                          Step {getCurrentStepIndex() + 1} of {getCurrentTabSteps().length} in {currentTabInfo?.title}
+                        </CardDescription>
+                      </div>
+                      <Badge variant="outline" className="text-sm">
+                        {getStepCompletion(activeStep) === 'complete' ? 'Complete' : 'In Progress'}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pb-8">
+                    {StepComponent && (
+                      <StepComponent
+                        data={formData}
+                        onDataChange={handleStepData}
+                        applicationId={applicationId}
+                      />
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Navigation Buttons */}
+                <div className="flex justify-between mt-6">
+                  <Button
+                    variant="outline"
+                    onClick={goToPreviousStep}
+                    disabled={activeTab === 'company_foundation' && activeStep === 'company_info'}
+                    className="flex items-center space-x-2"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    <span>Previous</span>
+                  </Button>
+
+                  <div className="flex space-x-4">
+                    {activeStep === 'review' ? (
+                      <Button
+                        onClick={handleSubmit}
+                        disabled={isCreating}
+                        className="bg-green-600 hover:bg-green-700 flex items-center space-x-2"
+                        size="lg"
+                      >
+                        {isCreating ? (
+                          <>
+                            <Clock className="h-4 w-4 animate-spin" />
+                            <span>Submitting...</span>
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle className="h-4 w-4" />
+                            <span>Submit Application</span>
+                          </>
+                        )}
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={goToNextStep}
+                        className="flex items-center space-x-2"
+                        size="lg"
+                      >
+                        <span>Continue</span>
+                        <ArrowRight className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
-          </CardHeader>
-          <CardContent>
-            <StepComponent
-              data={formData}
-              onDataChange={handleStepData}
-              applicationId={applicationId}
-            />
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Collaboration Info */}
-      <Card className="bg-blue-50 border-blue-200">
-        <CardContent className="p-4">
-          <div className="flex items-center space-x-3">
-            <Users className="h-5 w-5 text-blue-600" />
-            <div>
-              <h4 className="font-medium text-blue-900">Collaborative CGAT Application</h4>
-              <p className="text-sm text-blue-700">
-                You can share this application with colleagues to help complete sections. 
-                All changes are automatically saved and synced in real-time.
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </EnhancedTabsContent>
+        ))}
+      </EnhancedTabs>
     </div>
   );
 };
