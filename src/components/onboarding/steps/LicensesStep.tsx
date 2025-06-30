@@ -4,14 +4,48 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TreatmentCenterOnboarding } from '@/types/onboarding';
 import { Separator } from '@/components/ui/separator';
-import { Plus, X, Shield, FileText, Calendar } from 'lucide-react';
+import { Plus, X, Shield, FileText, Calendar, AlertTriangle } from 'lucide-react';
 
 interface LicensesStepProps {
   data: Partial<TreatmentCenterOnboarding>;
   onDataChange: (data: Partial<TreatmentCenterOnboarding>) => void;
 }
+
+const LICENSE_TYPES = [
+  { value: 'controlled_substance', label: 'Controlled Substance License' },
+  { value: 'clia_certificate', label: 'CLIA Certificate' },
+  { value: 'state_medical', label: 'State Medical License' },
+  { value: 'nursing_home', label: 'Nursing Home License' },
+  { value: 'laboratory', label: 'Laboratory License' },
+  { value: 'radiation_safety', label: 'Radiation Safety License' },
+  { value: 'waste_management', label: 'Medical Waste Management' },
+  { value: 'fire_department', label: 'Fire Department Permit' },
+  { value: 'building_permit', label: 'Building/Occupancy Permit' },
+  { value: 'other', label: 'Other License/Certification' }
+];
+
+const US_STATES = [
+  { value: 'AL', label: 'Alabama' }, { value: 'AK', label: 'Alaska' }, { value: 'AZ', label: 'Arizona' },
+  { value: 'AR', label: 'Arkansas' }, { value: 'CA', label: 'California' }, { value: 'CO', label: 'Colorado' },
+  { value: 'CT', label: 'Connecticut' }, { value: 'DE', label: 'Delaware' }, { value: 'FL', label: 'Florida' },
+  { value: 'GA', label: 'Georgia' }, { value: 'HI', label: 'Hawaii' }, { value: 'ID', label: 'Idaho' },
+  { value: 'IL', label: 'Illinois' }, { value: 'IN', label: 'Indiana' }, { value: 'IA', label: 'Iowa' },
+  { value: 'KS', label: 'Kansas' }, { value: 'KY', label: 'Kentucky' }, { value: 'LA', label: 'Louisiana' },
+  { value: 'ME', label: 'Maine' }, { value: 'MD', label: 'Maryland' }, { value: 'MA', label: 'Massachusetts' },
+  { value: 'MI', label: 'Michigan' }, { value: 'MN', label: 'Minnesota' }, { value: 'MS', label: 'Mississippi' },
+  { value: 'MO', label: 'Missouri' }, { value: 'MT', label: 'Montana' }, { value: 'NE', label: 'Nebraska' },
+  { value: 'NV', label: 'Nevada' }, { value: 'NH', label: 'New Hampshire' }, { value: 'NJ', label: 'New Jersey' },
+  { value: 'NM', label: 'New Mexico' }, { value: 'NY', label: 'New York' }, { value: 'NC', label: 'North Carolina' },
+  { value: 'ND', label: 'North Dakota' }, { value: 'OH', label: 'Ohio' }, { value: 'OK', label: 'Oklahoma' },
+  { value: 'OR', label: 'Oregon' }, { value: 'PA', label: 'Pennsylvania' }, { value: 'RI', label: 'Rhode Island' },
+  { value: 'SC', label: 'South Carolina' }, { value: 'SD', label: 'South Dakota' }, { value: 'TN', label: 'Tennessee' },
+  { value: 'TX', label: 'Texas' }, { value: 'UT', label: 'Utah' }, { value: 'VT', label: 'Vermont' },
+  { value: 'VA', label: 'Virginia' }, { value: 'WA', label: 'Washington' }, { value: 'WV', label: 'West Virginia' },
+  { value: 'WI', label: 'Wisconsin' }, { value: 'WY', label: 'Wyoming' }
+];
 
 export const LicensesStep: React.FC<LicensesStepProps> = ({ data, onDataChange }) => {
   const licenses = data.licenses || {
@@ -94,8 +128,10 @@ export const LicensesStep: React.FC<LicensesStepProps> = ({ data, onDataChange }
                 id="dea-number"
                 value={licenses.dea_number || ''}
                 onChange={(e) => updateLicense('dea_number', e.target.value)}
-                placeholder="Enter DEA number"
+                placeholder="B12345678"
+                maxLength={9}
               />
+              <p className="text-xs text-muted-foreground mt-1">Required for controlled substances</p>
             </div>
             <div>
               <Label htmlFor="hin-number">HIN (Health Industry Number)</Label>
@@ -105,6 +141,7 @@ export const LicensesStep: React.FC<LicensesStepProps> = ({ data, onDataChange }
                 onChange={(e) => updateLicense('hin_number', e.target.value)}
                 placeholder="Enter HIN number"
               />
+              <p className="text-xs text-muted-foreground mt-1">Healthcare industry identifier</p>
             </div>
           </div>
 
@@ -117,6 +154,7 @@ export const LicensesStep: React.FC<LicensesStepProps> = ({ data, onDataChange }
                 onChange={(e) => updateLicense('medical_license', e.target.value)}
                 placeholder="Enter medical license"
               />
+              <p className="text-xs text-muted-foreground mt-1">State medical practice license</p>
             </div>
             <div>
               <Label htmlFor="pharmacy-license">State Pharmacy License</Label>
@@ -126,6 +164,7 @@ export const LicensesStep: React.FC<LicensesStepProps> = ({ data, onDataChange }
                 onChange={(e) => updateLicense('state_pharmacy_license', e.target.value)}
                 placeholder="Enter pharmacy license"
               />
+              <p className="text-xs text-muted-foreground mt-1">Required for pharmaceutical operations</p>
             </div>
           </div>
 
@@ -137,6 +176,7 @@ export const LicensesStep: React.FC<LicensesStepProps> = ({ data, onDataChange }
               onChange={(e) => updateLicense('resale_tax_exemption', e.target.value)}
               placeholder="Enter tax exemption number"
             />
+            <p className="text-xs text-muted-foreground mt-1">Sales tax exemption certificate number</p>
           </div>
         </CardContent>
       </Card>
@@ -186,12 +226,21 @@ export const LicensesStep: React.FC<LicensesStepProps> = ({ data, onDataChange }
                 <CardContent className="space-y-4">
                   <div>
                     <Label>License Type *</Label>
-                    <Input
+                    <Select
                       value={license.type}
-                      onChange={(e) => updateAdditionalLicense(index, 'type', e.target.value)}
-                      placeholder="e.g., Controlled Substance License, CLIA Certificate"
-                      required
-                    />
+                      onValueChange={(value) => updateAdditionalLicense(index, 'type', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select license type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {LICENSE_TYPES.map((type) => (
+                          <SelectItem key={type.value} value={type.value}>
+                            {type.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -205,13 +254,21 @@ export const LicensesStep: React.FC<LicensesStepProps> = ({ data, onDataChange }
                     </div>
                     <div>
                       <Label>Issuing State *</Label>
-                      <Input
+                      <Select
                         value={license.state}
-                        onChange={(e) => updateAdditionalLicense(index, 'state', e.target.value)}
-                        placeholder="State code (e.g., CA, NY)"
-                        maxLength={2}
-                        required
-                      />
+                        onValueChange={(value) => updateAdditionalLicense(index, 'state', value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select state" />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-60">
+                          {US_STATES.map((state) => (
+                            <SelectItem key={state.value} value={state.value}>
+                              {state.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                   <div>
@@ -223,7 +280,9 @@ export const LicensesStep: React.FC<LicensesStepProps> = ({ data, onDataChange }
                       type="date"
                       value={license.expiration_date || ''}
                       onChange={(e) => updateAdditionalLicense(index, 'expiration_date', e.target.value)}
+                      min={new Date().toISOString().split('T')[0]}
                     />
+                    <p className="text-xs text-muted-foreground mt-1">Leave blank if license doesn't expire</p>
                   </div>
                 </CardContent>
               </Card>
@@ -235,7 +294,7 @@ export const LicensesStep: React.FC<LicensesStepProps> = ({ data, onDataChange }
       {/* Important Notice */}
       <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
         <div className="flex items-start space-x-3">
-          <Shield className="h-5 w-5 text-amber-600 mt-0.5" />
+          <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5" />
           <div>
             <h4 className="font-medium text-amber-900">License Documentation Required</h4>
             <p className="text-sm text-amber-700 mt-1">
