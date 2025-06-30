@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -31,6 +30,7 @@ import { DeveloperTabContent } from '@/components/admin/ApiIntegrations/tabs/Dev
 import { ApiKeysTabContent } from '@/components/admin/ApiIntegrations/tabs/ApiKeysTabContent';
 import { TestingTabContent } from '@/components/admin/ApiIntegrations/tabs/TestingTabContent';
 import { OnboardingIntegrationTabContent } from '@/components/admin/ApiIntegrations/tabs/OnboardingIntegrationTabContent';
+import AutoIntegrationBanner from '../ApiIntegrations/AutoIntegrationBanner';
 
 console.log('🔧 ApiServicesModule: Starting component definition');
 
@@ -105,7 +105,7 @@ export const ApiServicesModule: React.FC = () => {
   };
 
   const OverviewStats = () => (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+    <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
       <Card className="border-l-4 border-l-blue-500">
         <CardContent className="p-4">
           <div className="flex items-center gap-2">
@@ -153,6 +153,18 @@ export const ApiServicesModule: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+
+      <Card className="border-l-4 border-l-teal-500">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-2">
+            <Workflow className="h-8 w-8 text-teal-500" />
+            <div>
+              <p className="text-2xl font-bold">47</p>
+              <p className="text-sm text-muted-foreground">Onboarding APIs</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 
@@ -170,11 +182,11 @@ export const ApiServicesModule: React.FC = () => {
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground mb-4">
-              Manage and monitor your internal APIs, endpoints, and configurations.
+              Manage and monitor your internal APIs, endpoints, and configurations for treatment centers and healthcare facilities.
             </p>
             <div className="flex items-center gap-2">
               <Badge variant="outline">{internalApis?.length || 0} APIs</Badge>
-              <Badge variant="outline">Active</Badge>
+              <Badge variant="outline">Healthcare Ready</Badge>
             </div>
           </CardContent>
         </Card>
@@ -188,11 +200,11 @@ export const ApiServicesModule: React.FC = () => {
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground mb-4">
-              Integrate with third-party APIs and manage external dependencies.
+              Integrate with third-party APIs including EHR systems, pharmacy networks, and financial verification services.
             </p>
             <div className="flex items-center gap-2">
               <Badge variant="outline">{externalApis?.length || 0} Integrations</Badge>
-              <Badge variant="outline">Active</Badge>
+              <Badge variant="outline">HIPAA Compliant</Badge>
             </div>
           </CardContent>
         </Card>
@@ -201,16 +213,16 @@ export const ApiServicesModule: React.FC = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <ArrowUpCircle className="h-5 w-5 text-purple-500" />
-              API Publishing
+              API Publishing & Marketplace
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground mb-4">
-              Publish your internal APIs for external consumption and developer access.
+              Publish your healthcare APIs for external consumption and manage developer access with compliance controls.
             </p>
             <div className="flex items-center gap-2">
               <Badge variant="outline">{publishedApis?.length || 0} Published</Badge>
-              <Badge variant="outline">Marketplace</Badge>
+              <Badge variant="outline">FDA Compliant</Badge>
             </div>
           </CardContent>
         </Card>
@@ -219,16 +231,17 @@ export const ApiServicesModule: React.FC = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Workflow className="h-5 w-5 text-teal-500" />
-              Onboarding Integration
+              Comprehensive Onboarding Integration
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground mb-4">
-              Process API requirements submitted during facility onboarding workflows.
+              Manage API requirements from treatment centers, pharma/biotech companies, and financial verification workflows.
             </p>
             <div className="flex items-center gap-2">
-              <Badge variant="outline">Automated Processing</Badge>
-              <Badge variant="outline">Requirements</Badge>
+              <Badge variant="outline">Multi-Category</Badge>
+              <Badge variant="outline">Workflow Management</Badge>
+              <Badge variant="outline">Compliance Tracking</Badge>
             </div>
           </CardContent>
         </Card>
@@ -266,21 +279,24 @@ export const ApiServicesModule: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">API Services</h1>
+          <h1 className="text-2xl font-bold">Healthcare API Services Platform</h1>
           <p className="text-muted-foreground">
-            Comprehensive API management platform for internal APIs, external integrations, publishing, and developer tools
+            Comprehensive API management for treatment centers, pharma/biotech companies, financial verification, and healthcare integrations
           </p>
         </div>
         <div className="relative w-72">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
-            placeholder="Search APIs and services..."
+            placeholder="Search APIs and healthcare services..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
           />
         </div>
       </div>
+
+      {/* Enhanced AutoIntegrationBanner */}
+      <AutoIntegrationBanner />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-8">
