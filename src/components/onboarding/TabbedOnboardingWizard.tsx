@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,6 +25,7 @@ import { ReviewStep } from './steps/ReviewStep';
 import { CreditApplicationStep } from './steps/CreditApplicationStep';
 import { GPOMembershipStep } from './steps/GPOMembershipStep';
 import { OfficeHoursStep } from './steps/OfficeHoursStep';
+import { OnlineServicesStep } from './steps/OnlineServicesStep';
 import { 
   Building2, 
   Users, 
@@ -99,6 +99,7 @@ const tabSections: TabSection[] = [
     steps: [
       { key: 'therapy_selection', label: 'CGAT Therapy Selection', component: EnhancedTherapySelectionStep, required: true },
       { key: 'service_selection', label: 'Service Provider Selection', component: ServiceSelectionStep, required: true },
+      { key: 'online_services', label: 'Online Platform Services', component: OnlineServicesStep, required: false },
     ]
   },
   {
@@ -258,7 +259,9 @@ export const TabbedOnboardingWizard: React.FC<TabbedOnboardingWizardProps> = ({
           holiday_schedule: '',
           seasonal_adjustments: ''
         }
-      }
+      },
+      selected_online_services: [],
+      selected_user_roles: []
     }
   );
 
@@ -289,6 +292,8 @@ export const TabbedOnboardingWizard: React.FC<TabbedOnboardingWizardProps> = ({
         return 'incomplete';
       case 'service_selection':
         return 'incomplete';
+      case 'online_services':
+        return formData.selected_online_services?.length || formData.selected_user_roles?.length ? 'complete' : 'incomplete';
       case 'purchasing_preferences':
         return formData.purchasing_preferences?.preferred_purchasing_methods?.length ? 'complete' : 'incomplete';
       case 'financial_assessment':

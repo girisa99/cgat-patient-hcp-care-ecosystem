@@ -246,6 +246,10 @@ export interface TreatmentCenterOnboarding {
   program_340b?: Program340B[];
   gpo_memberships_detailed?: GPOMembership[];
   enhanced_payment_terms?: EnhancedPaymentTerms;
+  
+  // NEW: Online Platform Services
+  selected_online_services?: string[];
+  selected_user_roles?: string[];
 }
 
 // NEW: Trade Reference interface

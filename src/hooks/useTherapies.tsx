@@ -1,9 +1,9 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/components/auth/CleanAuthProvider';
 import { useToast } from '@/hooks/use-toast';
+import { useSeedData } from '@/hooks/useSeedData';
 import { 
   Therapy, 
   Modality, 
@@ -18,115 +18,155 @@ export const useTherapies = () => {
   const { user } = useAuthContext();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  // Use seed data as fallback
+  const seedData = useSeedData();
 
-  // Fetch all therapies
+  // Fetch all therapies - use seed data as fallback
   const { data: therapies, isLoading: isLoadingTherapies } = useQuery({
     queryKey: ['therapies'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('therapies')
-        .select('*')
-        .eq('is_active', true)
-        .order('name');
+      try {
+        const { data, error } = await supabase
+          .from('therapies')
+          .select('*')
+          .eq('is_active', true)
+          .order('name');
 
-      if (error) throw error;
-      return data as Therapy[];
+        if (error) throw error;
+        
+        // If no data from database, use seed data
+        return data?.length > 0 ? data as Therapy[] : seedData.therapies as any[];
+      } catch (error) {
+        console.log('Using seed data for therapies:', error);
+        return seedData.therapies as any[];
+      }
     },
   });
 
-  // Fetch all modalities
+  // Fetch all modalities - use seed data as fallback
   const { data: modalities, isLoading: isLoadingModalities } = useQuery({
     queryKey: ['modalities'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('modalities')
-        .select('*')
-        .eq('is_active', true)
-        .order('name');
+      try {
+        const { data, error } = await supabase
+          .from('modalities')
+          .select('*')
+          .eq('is_active', true)
+          .order('name');
 
-      if (error) throw error;
-      return data as Modality[];
+        if (error) throw error;
+        
+        return data?.length > 0 ? data as Modality[] : seedData.modalities as any[];
+      } catch (error) {
+        console.log('Using seed data for modalities:', error);
+        return seedData.modalities as any[];
+      }
     },
   });
 
-  // Fetch all manufacturers
+  // Fetch all manufacturers - use seed data as fallback
   const { data: manufacturers, isLoading: isLoadingManufacturers } = useQuery({
     queryKey: ['manufacturers'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('manufacturers')
-        .select('*')
-        .eq('is_active', true)
-        .order('name');
+      try {
+        const { data, error } = await supabase
+          .from('manufacturers')
+          .select('*')
+          .eq('is_active', true)
+          .order('name');
 
-      if (error) throw error;
-      return data as Manufacturer[];
+        if (error) throw error;
+        
+        return data?.length > 0 ? data as Manufacturer[] : seedData.manufacturers as any[];
+      } catch (error) {
+        console.log('Using seed data for manufacturers:', error);
+        return seedData.manufacturers as any[];
+      }
     },
   });
 
-  // Fetch products with related data
+  // Fetch products with related data - use seed data as fallback
   const { data: products, isLoading: isLoadingProducts } = useQuery({
     queryKey: ['products'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('products')
-        .select(`
-          *,
-          therapy:therapies(*),
-          modality:modalities(*),
-          manufacturer:manufacturers(*)
-        `)
-        .eq('is_active', true)
-        .order('name');
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select(`
+            *,
+            therapy:therapies(*),
+            modality:modalities(*),
+            manufacturer:manufacturers(*)
+          `)
+          .eq('is_active', true)
+          .order('name');
 
-      if (error) throw error;
-      return data as Product[];
+        if (error) throw error;
+        
+        return data?.length > 0 ? data as Product[] : seedData.products as any[];
+      } catch (error) {
+        console.log('Using seed data for products:', error);
+        return seedData.products as any[];
+      }
     },
   });
 
-  // Fetch clinical trials
+  // Fetch clinical trials - use seed data as fallback
   const { data: clinicalTrials, isLoading: isLoadingTrials } = useQuery({
     queryKey: ['clinical-trials'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('clinical_trials')
-        .select(`
-          *,
-          product:products(
+      try {
+        const { data, error } = await supabase
+          .from('clinical_trials')
+          .select(`
             *,
-            therapy:therapies(*),
-            modality:modalities(*),
-            manufacturer:manufacturers(*)
-          )
-        `)
-        .eq('is_active', true)
-        .order('title');
+            product:products(
+              *,
+              therapy:therapies(*),
+              modality:modalities(*),
+              manufacturer:manufacturers(*)
+            )
+          `)
+          .eq('is_active', true)
+          .order('title');
 
-      if (error) throw error;
-      return data as ClinicalTrial[];
+        if (error) throw error;
+        
+        return data?.length > 0 ? data as ClinicalTrial[] : seedData.clinicalTrials as any[];
+      } catch (error) {
+        console.log('Using seed data for clinical trials:', error);
+        return seedData.clinicalTrials as any[];
+      }
     },
   });
 
-  // Fetch commercial products
+  // Fetch commercial products - use seed data as fallback
   const { data: commercialProducts, isLoading: isLoadingCommercialProducts } = useQuery({
     queryKey: ['commercial-products'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('commercial_products')
-        .select(`
-          *,
-          product:products(
+      try {
+        const { data, error } = await supabase
+          .from('commercial_products')
+          .select(`
             *,
-            therapy:therapies(*),
-            modality:modalities(*),
-            manufacturer:manufacturers(*)
-          )
-        `)
-        .eq('is_active', true)
-        .order('created_at', { ascending: false });
+            product:products(
+              *,
+              therapy:therapies(*),
+              modality:modalities(*),
+              manufacturer:manufacturers(*)
+            )
+          `)
+          .eq('is_active', true)
+          .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      return data as CommercialProduct[];
+        if (error) throw error;
+        
+        return data?.length > 0 ? data as CommercialProduct[] : seedData.commercialProducts as any[];
+      } catch (error) {
+        console.log('Using seed data for commercial products:', error);
+        return seedData.commercialProducts as any[];
+      }
     },
   });
 
@@ -273,12 +313,12 @@ export const useTherapies = () => {
     products,
     clinicalTrials,
     commercialProducts,
-    isLoadingTherapies,
-    isLoadingModalities,
-    isLoadingManufacturers,
-    isLoadingProducts,
-    isLoadingTrials,
-    isLoadingCommercialProducts,
+    isLoadingTherapies: isLoadingTherapies || seedData.isLoading,
+    isLoadingModalities: isLoadingModalities || seedData.isLoading,
+    isLoadingManufacturers: isLoadingManufacturers || seedData.isLoading,
+    isLoadingProducts: isLoadingProducts || seedData.isLoading,
+    isLoadingTrials: isLoadingTrials || seedData.isLoading,
+    isLoadingCommercialProducts: isLoadingCommercialProducts || seedData.isLoading,
     getTherapySelections,
     saveTherapySelection: saveTherapySelectionMutation.mutate,
     deleteTherapySelection: deleteTherapySelectionMutation.mutate,

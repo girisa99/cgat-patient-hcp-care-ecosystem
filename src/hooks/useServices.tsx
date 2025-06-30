@@ -1,63 +1,81 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/components/auth/CleanAuthProvider';
 import { useToast } from '@/hooks/use-toast';
+import { useSeedData } from '@/hooks/useSeedData';
 import { ServiceProvider, Service, ServiceSelection, ServiceProviderCapability } from '@/types/services';
 
 export const useServices = () => {
   const { user } = useAuthContext();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  // Use seed data as fallback
+  const seedData = useSeedData();
 
-  // Fetch all service providers
+  // Fetch all service providers - use seed data as fallback
   const { data: serviceProviders, isLoading: isLoadingProviders } = useQuery({
     queryKey: ['service-providers'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('service_providers')
-        .select('*')
-        .eq('is_active', true)
-        .order('name');
+      try {
+        const { data, error } = await supabase
+          .from('service_providers')
+          .select('*')
+          .eq('is_active', true)
+          .order('name');
 
-      if (error) throw error;
-      return data as ServiceProvider[];
+        if (error) throw error;
+        return data?.length > 0 ? data as ServiceProvider[] : seedData.serviceProviders as any[];
+      } catch (error) {
+        console.log('Using seed data for service providers:', error);
+        return seedData.serviceProviders as any[];
+      }
     },
   });
 
-  // Fetch all services with their providers
+  // Fetch all services with their providers - use seed data as fallback
   const { data: services, isLoading: isLoadingServices } = useQuery({
     queryKey: ['services'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('services')
-        .select(`
-          *,
-          service_provider:service_providers(*)
-        `)
-        .eq('is_active', true)
-        .order('name');
+      try {
+        const { data, error } = await supabase
+          .from('services')
+          .select(`
+            *,
+            service_provider:service_providers(*)
+          `)
+          .eq('is_active', true)
+          .order('name');
 
-      if (error) throw error;
-      return data as Service[];
+        if (error) throw error;
+        return data?.length > 0 ? data as Service[] : seedData.services as any[];
+      } catch (error) {
+        console.log('Using seed data for services:', error);
+        return seedData.services as any[];
+      }
     },
   });
 
-  // Fetch service provider capabilities
+  // Fetch service provider capabilities - use seed data as fallback
   const { data: capabilities, isLoading: isLoadingCapabilities } = useQuery({
     queryKey: ['service-provider-capabilities'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('service_provider_capabilities')
-        .select(`
-          *,
-          service_provider:service_providers(*)
-        `)
-        .order('therapy_area, service_type');
+      try {
+        const { data, error } = await supabase
+          .from('service_provider_capabilities')
+          .select(`
+            *,
+            service_provider:service_providers(*)
+          `)
+          .order('therapy_area, service_type');
 
-      if (error) throw error;
-      return data as ServiceProviderCapability[];
+        if (error) throw error;
+        return data?.length > 0 ? data as ServiceProviderCapability[] : seedData.capabilities as any[];
+      } catch (error) {
+        console.log('Using seed data for capabilities:', error);
+        return seedData.capabilities as any[];
+      }
     },
   });
 
@@ -176,9 +194,11 @@ export const useServices = () => {
     serviceProviders,
     services,
     capabilities,
-    isLoadingProviders,
-    isLoadingServices,
-    isLoadingCapabilities,
+    onlineServices: seedData.onlineServices,
+    userRoles: seedData.userRoles,
+    isLoadingProviders: isLoadingProviders || seedData.isLoading,
+    isLoadingServices: isLoadingServices || seedData.isLoading,
+    isLoadingCapabilities: isLoadingCapabilities || seedData.isLoading,
     getServiceSelections,
     saveServiceSelection: saveServiceSelectionMutation.mutate,
     deleteServiceSelection: deleteServiceSelectionMutation.mutate,
