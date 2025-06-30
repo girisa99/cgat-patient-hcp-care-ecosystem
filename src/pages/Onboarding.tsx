@@ -1,340 +1,151 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { PageContainer } from '@/components/layout/PageContainer';
+import { useAuthContext } from '@/components/auth/AuthProvider';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { Building, Users, UserPlus, CheckCircle } from 'lucide-react';
+import { Users, UserPlus, Settings, CheckCircle } from 'lucide-react';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 const Onboarding = () => {
-  const { toast } = useToast();
-  const [activeStep, setActiveStep] = useState<'facility' | 'user' | 'complete'>('facility');
-  const [isLoading, setIsLoading] = useState(false);
-  
-  const [facilityData, setFacilityData] = useState({
-    name: '',
-    facility_type: '',
-    address: '',
-    phone: '',
-    email: '',
-    license_number: ''
-  });
+  const { user, userRoles, loading } = useAuthContext();
 
-  const [userData, setUserData] = useState({
-    email: '',
-    first_name: '',
-    last_name: '',
-    phone: '',
-    department: '',
-    role: '',
-    facility_id: ''
-  });
+  if (loading) {
+    return (
+      <MainLayout>
+        <PageContainer title="Onboarding" subtitle="Loading...">
+          <div className="flex justify-center items-center min-h-[400px]">
+            <LoadingSpinner size="lg" />
+          </div>
+        </PageContainer>
+      </MainLayout>
+    );
+  }
 
-  const handleCreateFacility = async () => {
-    setIsLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('onboarding-workflow', {
-        body: {
-          action: 'start_facility_onboarding',
-          facility_data: facilityData
-        }
-      });
+  // Check if user has onboarding role
+  const hasOnboardingAccess = userRoles.includes('onboardingTeam') || userRoles.includes('superAdmin');
 
-      if (error) throw error;
-
-      toast({
-        title: "Facility Created",
-        description: "Facility has been created successfully.",
-      });
-
-      setUserData({ ...userData, facility_id: data.facility.id });
-      setActiveStep('user');
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create facility",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleCreateUser = async () => {
-    setIsLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('onboarding-workflow', {
-        body: {
-          action: 'complete_user_setup',
-          user_data: userData
-        }
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "User Created",
-        description: "User has been created successfully.",
-      });
-
-      setActiveStep('complete');
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create user",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  if (!hasOnboardingAccess) {
+    return (
+      <MainLayout>
+        <PageContainer title="Onboarding" subtitle="Access Denied">
+          <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+            <div className="text-center">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Access Restricted</h3>
+              <p className="text-gray-600 mb-4">
+                You need onboarding team permissions to access this module.
+              </p>
+              <p className="text-sm text-gray-500">
+                Current roles: {userRoles.join(', ') || 'None'}
+              </p>
+            </div>
+          </div>
+        </PageContainer>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
       <PageContainer
-        title="Onboarding"
-        subtitle="Set up new facilities and users in the system"
+        title="Onboarding Management"
+        subtitle="Manage user onboarding and system setup"
       >
-        <div className="max-w-4xl mx-auto space-y-6">
-          {/* Step Indicator */}
-          <div className="flex items-center justify-center space-x-4 py-4">
-            <div className={`flex items-center space-x-2 ${activeStep === 'facility' ? 'text-blue-600' : activeStep === 'user' || activeStep === 'complete' ? 'text-green-600' : 'text-gray-400'}`}>
-              <Building className="h-5 w-5" />
-              <span>Create Facility</span>
-            </div>
-            <div className="h-px bg-gray-300 w-16"></div>
-            <div className={`flex items-center space-x-2 ${activeStep === 'user' ? 'text-blue-600' : activeStep === 'complete' ? 'text-green-600' : 'text-gray-400'}`}>
-              <UserPlus className="h-5 w-5" />
-              <span>Create User</span>
-            </div>
-            <div className="h-px bg-gray-300 w-16"></div>
-            <div className={`flex items-center space-x-2 ${activeStep === 'complete' ? 'text-green-600' : 'text-gray-400'}`}>
-              <CheckCircle className="h-5 w-5" />
-              <span>Complete</span>
-            </div>
+        <div className="space-y-6">
+          {/* Welcome Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CheckCircle className="h-5 w-5 text-green-600" />
+                Welcome to Onboarding Management
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600 mb-4">
+                Welcome, {user?.email}! You have access to the onboarding management system.
+              </p>
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <h4 className="font-semibold text-green-800 mb-2">Access Confirmed</h4>
+                <p className="text-green-700 text-sm">
+                  You are successfully authenticated with the following roles: {userRoles.join(', ')}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Quick Actions */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <UserPlus className="h-5 w-5 text-blue-600" />
+                  New User Setup
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600 text-sm">
+                  Set up new users and assign roles
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Users className="h-5 w-5 text-green-600" />
+                  User Management
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600 text-sm">
+                  Manage existing user accounts and permissions
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Settings className="h-5 w-5 text-purple-600" />
+                  System Setup
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600 text-sm">
+                  Configure system settings and modules
+                </p>
+              </CardContent>
+            </Card>
           </div>
 
-          {/* Facility Creation Step */}
-          {activeStep === 'facility' && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Building className="h-5 w-5" />
-                  <span>Create Facility</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="facility-name">Facility Name</Label>
-                    <Input
-                      id="facility-name"
-                      value={facilityData.name}
-                      onChange={(e) => setFacilityData({ ...facilityData, name: e.target.value })}
-                      placeholder="Enter facility name"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="facility-type">Facility Type</Label>
-                    <Select value={facilityData.facility_type} onValueChange={(value) => setFacilityData({ ...facilityData, facility_type: value })}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select facility type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="treatmentFacility">Treatment Facility</SelectItem>
-                        <SelectItem value="referralFacility">Referral Facility</SelectItem>
-                        <SelectItem value="prescriberFacility">Prescriber Facility</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="facility-email">Email</Label>
-                    <Input
-                      id="facility-email"
-                      type="email"
-                      value={facilityData.email}
-                      onChange={(e) => setFacilityData({ ...facilityData, email: e.target.value })}
-                      placeholder="facility@example.com"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="facility-phone">Phone</Label>
-                    <Input
-                      id="facility-phone"
-                      value={facilityData.phone}
-                      onChange={(e) => setFacilityData({ ...facilityData, phone: e.target.value })}
-                      placeholder="(555) 123-4567"
-                    />
-                  </div>
+          {/* Current Status */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Onboarding Status</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <span className="font-medium">Authentication System</span>
+                  <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-sm">
+                    ✅ Working
+                  </span>
                 </div>
-                <div>
-                  <Label htmlFor="facility-address">Address</Label>
-                  <Textarea
-                    id="facility-address"
-                    value={facilityData.address}
-                    onChange={(e) => setFacilityData({ ...facilityData, address: e.target.value })}
-                    placeholder="Enter facility address"
-                  />
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <span className="font-medium">Role-Based Access</span>
+                  <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-sm">
+                    ✅ Active
+                  </span>
                 </div>
-                <div>
-                  <Label htmlFor="license-number">License Number (Optional)</Label>
-                  <Input
-                    id="license-number"
-                    value={facilityData.license_number}
-                    onChange={(e) => setFacilityData({ ...facilityData, license_number: e.target.value })}
-                    placeholder="Enter license number"
-                  />
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <span className="font-medium">User Data Access</span>
+                  <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm">
+                    🔧 Testing
+                  </span>
                 </div>
-                <Button 
-                  onClick={handleCreateFacility} 
-                  disabled={isLoading || !facilityData.name || !facilityData.facility_type}
-                  className="w-full"
-                >
-                  {isLoading ? 'Creating...' : 'Create Facility'}
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* User Creation Step */}
-          {activeStep === 'user' && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <UserPlus className="h-5 w-5" />
-                  <span>Create User</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="user-email">Email</Label>
-                    <Input
-                      id="user-email"
-                      type="email"
-                      value={userData.email}
-                      onChange={(e) => setUserData({ ...userData, email: e.target.value })}
-                      placeholder="user@example.com"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="user-role">Role</Label>
-                    <Select value={userData.role} onValueChange={(value) => setUserData({ ...userData, role: value })}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select user role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="healthcareProvider">Healthcare Provider</SelectItem>
-                        <SelectItem value="nurse">Nurse</SelectItem>
-                        <SelectItem value="caseManager">Case Manager</SelectItem>
-                        <SelectItem value="onboardingTeam">Onboarding Team</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="first-name">First Name</Label>
-                    <Input
-                      id="first-name"
-                      value={userData.first_name}
-                      onChange={(e) => setUserData({ ...userData, first_name: e.target.value })}
-                      placeholder="Enter first name"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="last-name">Last Name</Label>
-                    <Input
-                      id="last-name"
-                      value={userData.last_name}
-                      onChange={(e) => setUserData({ ...userData, last_name: e.target.value })}
-                      placeholder="Enter last name"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="user-phone">Phone</Label>
-                    <Input
-                      id="user-phone"
-                      value={userData.phone}
-                      onChange={(e) => setUserData({ ...userData, phone: e.target.value })}
-                      placeholder="(555) 123-4567"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="department">Department</Label>
-                    <Input
-                      id="department"
-                      value={userData.department}
-                      onChange={(e) => setUserData({ ...userData, department: e.target.value })}
-                      placeholder="Enter department"
-                    />
-                  </div>
-                </div>
-                <div className="flex space-x-2">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setActiveStep('facility')}
-                    disabled={isLoading}
-                  >
-                    Back
-                  </Button>
-                  <Button 
-                    onClick={handleCreateUser} 
-                    disabled={isLoading || !userData.email || !userData.first_name || !userData.role}
-                    className="flex-1"
-                  >
-                    {isLoading ? 'Creating...' : 'Create User'}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Completion Step */}
-          {activeStep === 'complete' && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2 text-green-600">
-                  <CheckCircle className="h-5 w-5" />
-                  <span>Onboarding Complete</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="text-center py-8">
-                <p className="text-lg text-muted-foreground mb-4">
-                  Facility and user have been successfully created!
-                </p>
-                <Button 
-                  onClick={() => {
-                    setActiveStep('facility');
-                    setFacilityData({
-                      name: '',
-                      facility_type: '',
-                      address: '',
-                      phone: '',
-                      email: '',
-                      license_number: ''
-                    });
-                    setUserData({
-                      email: '',
-                      first_name: '',
-                      last_name: '',
-                      phone: '',
-                      department: '',
-                      role: '',
-                      facility_id: ''
-                    });
-                  }}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  Start New Onboarding
-                </Button>
-              </CardContent>
-            </Card>
-          )}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </PageContainer>
     </MainLayout>

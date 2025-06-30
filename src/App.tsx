@@ -5,59 +5,38 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/components/auth/AuthProvider";
-import { lazy, Suspense } from "react";
-import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import Index from "./pages/Index";
+import Dashboard from "./pages/Dashboard";
+import Users from "./pages/Users";
+import Patients from "./pages/Patients";
+import Facilities from "./pages/Facilities";
+import Modules from "./pages/Modules";
+import Onboarding from "./pages/Onboarding";
+import Settings from "./pages/Settings";
 
-// Lazy load components
-const Index = lazy(() => import("./pages/Index"));
-const Dashboard = lazy(() => import("./pages/Dashboard"));
-const Users = lazy(() => import("./pages/Users"));
-const Onboarding = lazy(() => import("./pages/Onboarding"));
-const Patients = lazy(() => import("./pages/Patients"));
-const Facilities = lazy(() => import("./pages/Facilities"));
-const Modules = lazy(() => import("./pages/Modules"));
-const ApiIntegrations = lazy(() => import("./pages/ApiIntegrations"));
-const AuditLog = lazy(() => import("./pages/AuditLog"));
-const AdminVerificationTest = lazy(() => import("./pages/AdminVerificationTest"));
-const Settings = lazy(() => import("./pages/Settings"));
+const queryClient = new QueryClient();
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 60 * 1000,
-      retry: 1,
-    },
-  },
-});
-
-function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <AuthProvider>
       <TooltipProvider>
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <AuthProvider>
-            <Suspense fallback={<LoadingSpinner />}>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/users" element={<Users />} />
-                <Route path="/onboarding" element={<Onboarding />} />
-                <Route path="/patients" element={<Patients />} />
-                <Route path="/facilities" element={<Facilities />} />
-                <Route path="/modules" element={<Modules />} />
-                <Route path="/api-integrations" element={<ApiIntegrations />} />
-                <Route path="/audit-log" element={<AuditLog />} />
-                <Route path="/admin-verification" element={<AdminVerificationTest />} />
-                <Route path="/settings" element={<Settings />} />
-              </Routes>
-            </Suspense>
-          </AuthProvider>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/users" element={<Users />} />
+            <Route path="/patients" element={<Patients />} />
+            <Route path="/facilities" element={<Facilities />} />
+            <Route path="/modules" element={<Modules />} />
+            <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/settings" element={<Settings />} />
+          </Routes>
         </BrowserRouter>
       </TooltipProvider>
-    </QueryClientProvider>
-  );
-}
+    </AuthProvider>
+  </QueryClientProvider>
+);
 
 export default App;

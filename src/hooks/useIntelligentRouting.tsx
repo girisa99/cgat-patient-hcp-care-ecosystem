@@ -13,7 +13,7 @@ interface ModuleProgress {
 
 export const useIntelligentRouting = () => {
   const navigate = useNavigate();
-  const { userRoles, profile } = useAuthContext();
+  const { userRoles, profile, user } = useAuthContext();
   const { userPreferences, updatePreferences } = useUserSettings();
   const [isRouting, setIsRouting] = useState(false);
   const [moduleProgress, setModuleProgress] = useState<ModuleProgress[]>([]);
@@ -25,6 +25,7 @@ export const useIntelligentRouting = () => {
       { id: 'patients', path: '/patients', requiredRoles: ['superAdmin', 'healthcareProvider', 'nurse'] },
       { id: 'facilities', path: '/facilities', requiredRoles: ['superAdmin', 'healthcareProvider'] },
       { id: 'modules', path: '/modules', requiredRoles: ['superAdmin'] },
+      { id: 'onboarding', path: '/onboarding', requiredRoles: ['onboardingTeam'] },
       { id: 'settings', path: '/settings', requiredRoles: [] },
     ];
 
@@ -47,11 +48,12 @@ export const useIntelligentRouting = () => {
     try {
       console.log('🚀 Performing intelligent routing...');
       console.log('User roles:', userRoles);
+      console.log('User email:', user?.email);
       console.log('User preferences:', userPreferences);
 
       // Get accessible modules
       const accessibleModules = getAccessibleModules();
-      console.log('Accessible modules:', accessibleModules);
+      console.log('Accessible modules:', accessibleModules.map(m => m.id));
 
       // Check user preferences first
       if (userPreferences?.auto_route && userPreferences?.default_module) {
@@ -60,39 +62,38 @@ export const useIntelligentRouting = () => {
         );
         
         if (preferredModule) {
-          console.log('Routing to preferred module:', preferredModule.path);
+          console.log('✅ Routing to preferred module:', preferredModule.path);
           navigate(preferredModule.path, { replace: true });
           return;
         }
       }
 
-      // Check preferred dashboard setting
-      if (userPreferences?.preferred_dashboard === 'unified' || !userPreferences?.preferred_dashboard) {
-        console.log('Routing to unified dashboard');
-        navigate('/dashboard', { replace: true });
-        return;
-      }
-
-      // Default fallback based on user roles
+      // Role-based routing logic
       if (userRoles.includes('superAdmin')) {
-        console.log('Super admin detected, routing to dashboard');
+        console.log('✅ Super admin detected, routing to dashboard');
         navigate('/dashboard', { replace: true });
+      } else if (userRoles.includes('onboardingTeam')) {
+        console.log('✅ Onboarding team detected, routing to onboarding');
+        navigate('/onboarding', { replace: true });
       } else if (userRoles.includes('healthcareProvider') || userRoles.includes('nurse')) {
-        console.log('Healthcare provider/nurse detected, routing to patients');
+        console.log('✅ Healthcare provider/nurse detected, routing to patients');
+        navigate('/patients', { replace: true });
+      } else if (userRoles.includes('caseManager')) {
+        console.log('✅ Case manager detected, routing to patients');
         navigate('/patients', { replace: true });
       } else {
-        console.log('Default routing to dashboard');
+        console.log('✅ Default routing to dashboard');
         navigate('/dashboard', { replace: true });
       }
 
     } catch (error) {
-      console.error('Error in intelligent routing:', error);
+      console.error('❌ Error in intelligent routing:', error);
       // Always fallback to dashboard on error
       navigate('/dashboard', { replace: true });
     } finally {
       setIsRouting(false);
     }
-  }, [navigate, userRoles, userPreferences, getAccessibleModules]);
+  }, [navigate, userRoles, userPreferences, getAccessibleModules, user]);
 
   return {
     performIntelligentRouting,
