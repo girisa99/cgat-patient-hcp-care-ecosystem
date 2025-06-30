@@ -29,7 +29,8 @@ const OnboardingDashboard: React.FC = () => {
   const handleWizardSubmit = async (data: any) => {
     try {
       if (editingApplicationId) {
-        await updateApplication(editingApplicationId, data);
+        // Fix: Pass an object with id and updates properties
+        await updateApplication({ id: editingApplicationId, updates: data });
         toast({
           title: "Application Updated",
           description: "Your onboarding application has been updated successfully.",
@@ -102,6 +103,28 @@ const OnboardingDashboard: React.FC = () => {
       ? onboardingApplications?.find(app => app.id === editingApplicationId)
       : null;
 
+    // Fix: Transform the database data to match the TypeScript interface
+    const transformedApplication = existingApplication ? {
+      ...existingApplication,
+      // Handle operational_hours type conversion
+      operational_hours: typeof existingApplication.operational_hours === 'string' 
+        ? JSON.parse(existingApplication.operational_hours) 
+        : existingApplication.operational_hours,
+      // Handle other potential Json type fields that might need conversion
+      gpo_memberships: Array.isArray(existingApplication.gpo_memberships) 
+        ? existingApplication.gpo_memberships 
+        : existingApplication.gpo_memberships ? [existingApplication.gpo_memberships] : [],
+      preferred_payment_methods: Array.isArray(existingApplication.preferred_payment_methods)
+        ? existingApplication.preferred_payment_methods
+        : existingApplication.preferred_payment_methods ? [existingApplication.preferred_payment_methods] : [],
+      selected_distributors: Array.isArray(existingApplication.selected_distributors)
+        ? existingApplication.selected_distributors
+        : existingApplication.selected_distributors ? [existingApplication.selected_distributors] : [],
+      business_types: Array.isArray(existingApplication.business_types)
+        ? existingApplication.business_types
+        : existingApplication.business_types ? [existingApplication.business_types] : []
+    } : null;
+
     return (
       <MainLayout>
         <PageContainer
@@ -116,7 +139,7 @@ const OnboardingDashboard: React.FC = () => {
         >
           <TreatmentCenterOnboardingWizard 
             onSubmit={handleWizardSubmit}
-            initialData={existingApplication}
+            initialData={transformedApplication}
             isEditing={!!editingApplicationId}
           />
         </PageContainer>
