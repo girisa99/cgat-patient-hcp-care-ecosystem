@@ -254,10 +254,18 @@ const TreatmentCenterOnboardingPage = () => {
                       steps: ['Ownership & Control', 'Business References']
                     },
                     {
-                      title: 'Operations & Assessment',
-                      description: 'Purchasing preferences and financial evaluation',
+                      title: 'Services & Therapies',
+                      description: 'CGAT therapy and service provider selection',
                       icon: Sparkles,
                       color: 'purple',
+                      weight: '15%',
+                      steps: ['CGAT Therapy Selection', 'Service Provider Selection']
+                    },
+                    {
+                      title: 'Operations & Assessment',
+                      description: 'Purchasing preferences and financial evaluation',
+                      icon: Zap,
+                      color: 'orange',
                       weight: '20%',
                       steps: ['Purchasing Preferences', 'Financial Assessment']
                     },
@@ -265,8 +273,8 @@ const TreatmentCenterOnboardingPage = () => {
                       title: 'Financial & Legal',
                       description: 'Banking, licenses, and compliance documentation',
                       icon: Shield,
-                      color: 'orange',
-                      weight: '25%',
+                      color: 'cyan',
+                      weight: '15%',
                       steps: ['Payment & Banking', 'Licenses', 'Documents']
                     },
                     {
@@ -274,7 +282,7 @@ const TreatmentCenterOnboardingPage = () => {
                       description: 'Final review, signatures, and submission',
                       icon: CheckCircle,
                       color: 'emerald',
-                      weight: '10%',
+                      weight: '5%',
                       steps: ['Authorizations', 'Final Review']
                     }
                   ].map((section, index) => (
