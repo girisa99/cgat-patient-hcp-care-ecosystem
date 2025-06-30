@@ -1,11 +1,10 @@
 
 import { useEffect, useState } from 'react';
-import { useAuthContext } from '@/components/auth/AuthProvider';
+import { useAuthContext } from '@/components/auth/SimpleAuthProvider';
 import { useSimpleRouting } from '@/hooks/useSimpleRouting';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
-import LoginForm from '@/components/auth/LoginForm';
+import SimpleLoginForm from '@/components/auth/SimpleLoginForm';
 import HealthcareAuthLayout from '@/components/auth/HealthcareAuthLayout';
-import { AuthTestComponent } from '@/components/auth/AuthTestComponent';
 
 const Index = () => {
   const { user, loading, isAuthenticated, userRoles, initialized } = useAuthContext();
@@ -88,13 +87,7 @@ const Index = () => {
   // Show login form for unauthenticated users
   return (
     <HealthcareAuthLayout>
-      <div className="space-y-8">
-        <LoginForm />
-        <div className="border-t pt-8">
-          <h2 className="text-lg font-semibold text-center mb-4">Development Tools</h2>
-          <AuthTestComponent />
-        </div>
-      </div>
+      <SimpleLoginForm />
     </HealthcareAuthLayout>
   );
 };
