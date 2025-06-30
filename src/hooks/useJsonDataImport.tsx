@@ -91,73 +91,94 @@ export const useJsonDataImport = () => {
         service_providers: 0
       };
 
-      // 1. Load therapies
+      // 1. Load therapies - map to actual schema
       if (jsonData.therapies && Array.isArray(jsonData.therapies)) {
         const therapiesData = jsonData.therapies.map((therapy: any) => ({
           name: therapy.name,
-          therapy_type: therapy.therapy_type || 'cell_gene_therapy',
+          therapy_type: 'cell_gene_therapy', // Use valid enum value
           description: therapy.description,
           is_active: true
+          // Remove indication_areas as it doesn't exist in the schema
         }));
 
         results.therapies = await safeInsert('therapies', therapiesData, 'name');
       }
 
-      // 2. Load manufacturers
+      // 2. Load manufacturers - map to actual schema
       if (jsonData.manufacturers && Array.isArray(jsonData.manufacturers)) {
         const manufacturersData = jsonData.manufacturers.map((mfg: any) => ({
           name: mfg.name,
-          manufacturer_type: mfg.manufacturer_type,
+          manufacturer_type: mfg.manufacturer_type || 'biopharmaceutical',
           headquarters_location: mfg.headquarters_location,
-          quality_certifications: mfg.quality_certifications,
-          manufacturing_capabilities: mfg.manufacturing_capabilities,
-          partnership_tier: mfg.partnership_tier,
+          quality_certifications: Array.isArray(mfg.quality_certifications) ? mfg.quality_certifications : [],
+          manufacturing_capabilities: Array.isArray(mfg.manufacturing_capabilities) ? mfg.manufacturing_capabilities : [],
+          partnership_tier: mfg.partnership_tier || 'tier_3',
           is_active: true
         }));
 
         results.manufacturers = await safeInsert('manufacturers', manufacturersData, 'name');
       }
 
-      // 3. Load modalities
+      // 3. Load modalities - fix enum values
       if (jsonData.modalities && Array.isArray(jsonData.modalities)) {
-        const modalitiesData = jsonData.modalities.map((modality: any) => ({
-          name: modality.name,
-          modality_type: modality.modality_type || 'cell_therapy',
-          description: modality.description,
-          administration_requirements: modality.administration_requirements,
-          cold_chain_requirements: modality.cold_chain_requirements,
-          manufacturing_complexity: modality.manufacturing_complexity || 'medium',
-          is_active: true
-        }));
+        const modalitiesData = jsonData.modalities.map((modality: any) => {
+          // Map invalid enum values to valid ones
+          let modalityType = 'cell_therapy'; // default
+          if (modality.modality_type === 'gene_therapy' || modality.modality_type === 'gene_editing') {
+            modalityType = 'gene_therapy_crispr';
+          } else if (modality.modality_type === 'cell_therapy') {
+            modalityType = 'cell_therapy_car_t';
+          }
+
+          return {
+            name: modality.name,
+            modality_type: modalityType,
+            description: modality.description,
+            administration_requirements: modality.administration_requirements,
+            cold_chain_requirements: modality.cold_chain_requirements,
+            manufacturing_complexity: modality.manufacturing_complexity || 'medium',
+            is_active: true
+          };
+        });
 
         results.modalities = await safeInsert('modalities', modalitiesData, 'name');
       }
 
-      // 4. Load services
+      // 4. Load services - remove capabilities field that doesn't exist
       if (jsonData.services && Array.isArray(jsonData.services)) {
         const servicesData = jsonData.services.map((service: any) => ({
           name: service.name,
           service_type: service.service_type,
           description: service.description,
-          capabilities: service.capabilities,
-          geographic_coverage: service.geographic_coverage,
+          geographic_coverage: Array.isArray(service.geographic_coverage) ? service.geographic_coverage : [],
           is_active: true
+          // Remove capabilities field as it doesn't exist in schema
         }));
 
         results.services = await safeInsert('services', servicesData, 'name');
       }
 
-      // 5. Load service providers
+      // 5. Load service providers - remove certifications field that doesn't exist
       if (jsonData.service_providers && Array.isArray(jsonData.service_providers)) {
-        const providersData = jsonData.service_providers.map((provider: any) => ({
-          name: provider.name,
-          provider_type: provider.provider_type || 'third_party',
-          specializations: provider.specializations,
-          geographic_coverage: provider.geographic_coverage,
-          certifications: provider.certifications,
-          contact_info: provider.contact_info,
-          is_active: true
-        }));
+        const providersData = jsonData.service_providers.map((provider: any) => {
+          // Map provider types to valid enum values
+          let providerType = 'third_party'; // default
+          if (provider.provider_type === 'logistics') {
+            providerType = 'external_partner';
+          } else if (provider.provider_type === 'manufacturing') {
+            providerType = 'internal';
+          }
+
+          return {
+            name: provider.name,
+            provider_type: providerType,
+            specializations: Array.isArray(provider.specializations) ? provider.specializations : [],
+            geographic_coverage: Array.isArray(provider.geographic_coverage) ? provider.geographic_coverage : [],
+            contact_info: provider.contact_info || {},
+            is_active: true
+            // Remove certifications field as it doesn't exist in schema
+          };
+        });
 
         results.service_providers = await safeInsert('service_providers', providersData, 'name');
       }
