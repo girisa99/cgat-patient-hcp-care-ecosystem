@@ -1661,6 +1661,70 @@ export type Database = {
           },
         ]
       }
+      onboarding_service_selections: {
+        Row: {
+          created_at: string | null
+          custom_requirements: Json | null
+          estimated_volume: Json | null
+          id: string
+          onboarding_id: string | null
+          preferred_start_date: string | null
+          selected_provider_id: string | null
+          selection_rationale: string | null
+          service_id: string | null
+          therapy_area: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          custom_requirements?: Json | null
+          estimated_volume?: Json | null
+          id?: string
+          onboarding_id?: string | null
+          preferred_start_date?: string | null
+          selected_provider_id?: string | null
+          selection_rationale?: string | null
+          service_id?: string | null
+          therapy_area?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          custom_requirements?: Json | null
+          estimated_volume?: Json | null
+          id?: string
+          onboarding_id?: string | null
+          preferred_start_date?: string | null
+          selected_provider_id?: string | null
+          selection_rationale?: string | null
+          service_id?: string | null
+          therapy_area?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_service_selections_onboarding_id_fkey"
+            columns: ["onboarding_id"]
+            isOneToOne: false
+            referencedRelation: "treatment_center_onboarding"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_service_selections_selected_provider_id_fkey"
+            columns: ["selected_provider_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_service_selections_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       onboarding_workflow_notes: {
         Row: {
           author_id: string
@@ -2025,6 +2089,154 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      service_provider_capabilities: {
+        Row: {
+          capability_level: string | null
+          certifications: string[] | null
+          created_at: string | null
+          experience_years: number | null
+          geographic_restrictions: string[] | null
+          id: string
+          is_preferred: boolean | null
+          regulatory_compliance: Json | null
+          service_provider_id: string | null
+          service_type: Database["public"]["Enums"]["service_type"]
+          therapy_area: string | null
+          updated_at: string | null
+          volume_capacity: Json | null
+        }
+        Insert: {
+          capability_level?: string | null
+          certifications?: string[] | null
+          created_at?: string | null
+          experience_years?: number | null
+          geographic_restrictions?: string[] | null
+          id?: string
+          is_preferred?: boolean | null
+          regulatory_compliance?: Json | null
+          service_provider_id?: string | null
+          service_type: Database["public"]["Enums"]["service_type"]
+          therapy_area?: string | null
+          updated_at?: string | null
+          volume_capacity?: Json | null
+        }
+        Update: {
+          capability_level?: string | null
+          certifications?: string[] | null
+          created_at?: string | null
+          experience_years?: number | null
+          geographic_restrictions?: string[] | null
+          id?: string
+          is_preferred?: boolean | null
+          regulatory_compliance?: Json | null
+          service_provider_id?: string | null
+          service_type?: Database["public"]["Enums"]["service_type"]
+          therapy_area?: string | null
+          updated_at?: string | null
+          volume_capacity?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_provider_capabilities_service_provider_id_fkey"
+            columns: ["service_provider_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_providers: {
+        Row: {
+          capabilities: string[] | null
+          certification_details: Json | null
+          contact_info: Json | null
+          created_at: string | null
+          description: string | null
+          geographic_coverage: string[] | null
+          id: string
+          is_active: boolean | null
+          name: string
+          provider_type: Database["public"]["Enums"]["service_provider_type"]
+          updated_at: string | null
+        }
+        Insert: {
+          capabilities?: string[] | null
+          certification_details?: Json | null
+          contact_info?: Json | null
+          created_at?: string | null
+          description?: string | null
+          geographic_coverage?: string[] | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          provider_type: Database["public"]["Enums"]["service_provider_type"]
+          updated_at?: string | null
+        }
+        Update: {
+          capabilities?: string[] | null
+          certification_details?: Json | null
+          contact_info?: Json | null
+          created_at?: string | null
+          description?: string | null
+          geographic_coverage?: string[] | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          provider_type?: Database["public"]["Enums"]["service_provider_type"]
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      services: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          pricing_model: Json | null
+          requirements: Json | null
+          service_provider_id: string | null
+          service_type: Database["public"]["Enums"]["service_type"]
+          sla_requirements: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          pricing_model?: Json | null
+          requirements?: Json | null
+          service_provider_id?: string | null
+          service_type: Database["public"]["Enums"]["service_type"]
+          sla_requirements?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          pricing_model?: Json | null
+          requirements?: Json | null
+          service_provider_id?: string | null
+          service_type?: Database["public"]["Enums"]["service_type"]
+          sla_requirements?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "services_service_provider_id_fkey"
+            columns: ["service_provider_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       treatment_center_onboarding: {
         Row: {
@@ -2609,6 +2821,13 @@ export type Database = {
         | "c_corp"
         | "professional_corp"
         | "non_profit_corp"
+      service_provider_type: "internal" | "external_partner" | "third_party"
+      service_type:
+        | "3pl"
+        | "specialty_distribution"
+        | "specialty_pharmacy"
+        | "order_management"
+        | "patient_hub_services"
       user_role:
         | "superAdmin"
         | "healthcareProvider"
@@ -2780,6 +2999,14 @@ export const Constants = {
         "c_corp",
         "professional_corp",
         "non_profit_corp",
+      ],
+      service_provider_type: ["internal", "external_partner", "third_party"],
+      service_type: [
+        "3pl",
+        "specialty_distribution",
+        "specialty_pharmacy",
+        "order_management",
+        "patient_hub_services",
       ],
       user_role: [
         "superAdmin",

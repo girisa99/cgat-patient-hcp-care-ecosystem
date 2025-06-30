@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,6 +22,7 @@ import { useToast } from '@/hooks/use-toast';
 import { OnlinePlatformUsersStep } from './steps/OnlinePlatformUsersStep';
 import { SpecialProgramsStep } from './steps/SpecialProgramsStep';
 import { EnhancedPaymentTermsStep } from './steps/EnhancedPaymentTermsStep';
+import { ServiceSelectionStep } from './steps/ServiceSelectionStep';
 
 interface TabbedOnboardingWizardProps {
   onSubmit: (data: TreatmentCenterOnboarding) => void;
@@ -64,10 +66,19 @@ const tabGroups: TabGroup[] = [
     ]
   },
   {
+    id: 'service_selection',
+    label: 'Service Selection',
+    description: 'Choose services and providers for CGAT therapies',
+    completionWeight: 20,
+    steps: [
+      { key: 'service_selection', label: 'Service & Provider Selection', component: ServiceSelectionStep, required: true },
+    ]
+  },
+  {
     id: 'platform_users',
     label: 'Platform Users',
     description: 'Online platform user accounts and permissions',
-    completionWeight: 15,
+    completionWeight: 10,
     steps: [
       { key: 'online_platform_users', label: 'Online Platform Users', component: OnlinePlatformUsersStep, required: true },
     ]
@@ -76,7 +87,7 @@ const tabGroups: TabGroup[] = [
     id: 'special_programs',
     label: 'Special Programs',
     description: '340B programs and GPO memberships',
-    completionWeight: 15,
+    completionWeight: 10,
     steps: [
       { key: 'special_programs', label: '340B & GPO Programs', component: SpecialProgramsStep, required: false },
     ]
@@ -85,7 +96,7 @@ const tabGroups: TabGroup[] = [
     id: 'financial_legal',
     label: 'Financial & Legal',
     description: 'Banking, licenses, and documentation',
-    completionWeight: 20,
+    completionWeight: 15,
     steps: [
       { key: 'enhanced_payment_terms', label: 'Payment Terms & Billing', component: EnhancedPaymentTermsStep, required: true },
       { key: 'payment_banking', label: 'Banking Information', component: PaymentBankingStep, required: true },
@@ -97,7 +108,7 @@ const tabGroups: TabGroup[] = [
     id: 'finalization',
     label: 'Finalization',
     description: 'Review, signatures, and submission',
-    completionWeight: 15,
+    completionWeight: 10,
     steps: [
       { key: 'authorizations', label: 'Authorizations & Signatures', component: AuthorizationsStep, required: true },
       { key: 'review', label: 'Review & Submit', component: ReviewStep, required: true },
@@ -195,6 +206,9 @@ export const TabbedOnboardingWizard: React.FC<TabbedOnboardingWizardProps> = ({
         return formData.ownership?.principal_owners?.length ? 'complete' : 'incomplete';
       case 'references':
         return formData.references?.primary_bank?.name ? 'complete' : 'incomplete';
+      case 'service_selection':
+        // This will be checked via the ServiceSelectionStep component
+        return 'incomplete';
       case 'online_platform_users':
         const platformUsers = (formData as any)?.platform_users || [];
         return platformUsers.length > 0 ? 'complete' : 'incomplete';
@@ -362,6 +376,7 @@ export const TabbedOnboardingWizard: React.FC<TabbedOnboardingWizardProps> = ({
             <StepComponent
               data={formData}
               onDataChange={handleStepData}
+              applicationId={applicationId}
             />
           </CardContent>
         </Card>
