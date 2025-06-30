@@ -2,6 +2,7 @@
 import React from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { PageContainer } from '@/components/layout/PageContainer';
+import { CompactUserManagement } from '@/components/users/CompactUserManagement';
 
 const UsersPage: React.FC = () => {
   return (
@@ -10,7 +11,7 @@ const UsersPage: React.FC = () => {
         title="Users"
         subtitle="Manage user accounts and permissions"
       >
-        <p>User management content will be implemented here.</p>
+        <CompactUserManagement />
       </PageContainer>
     </MainLayout>
   );
