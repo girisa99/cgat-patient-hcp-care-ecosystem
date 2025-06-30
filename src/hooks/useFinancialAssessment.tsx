@@ -5,6 +5,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/components/auth/CleanAuthProvider';
 import { useToast } from '@/hooks/use-toast';
 
+type RiskLevel = 'low' | 'medium' | 'high' | 'very_high';
+
 export interface FinancialAssessment {
   id?: string;
   onboarding_id: string;
@@ -18,7 +20,7 @@ export interface FinancialAssessment {
   insurance_coverage: any;
   financial_guarantees: any;
   risk_assessment_score?: number;
-  risk_level?: string;
+  risk_level?: RiskLevel;
   credit_limit_recommendation?: number;
   payment_terms_recommendation?: string;
 }
@@ -59,6 +61,13 @@ export const useFinancialAssessment = () => {
     },
   });
 
+  const determineRiskLevel = (score: number): RiskLevel => {
+    if (score <= 25) return 'low';
+    if (score <= 50) return 'medium';
+    if (score <= 75) return 'high';
+    return 'very_high';
+  };
+
   const saveAssessment = useMutation({
     mutationFn: async (assessment: FinancialAssessment) => {
       // Calculate risk score first
@@ -67,15 +76,27 @@ export const useFinancialAssessment = () => {
         riskScore = await calculateRiskScore.mutateAsync(assessment);
       }
 
-      const assessmentData = {
-        ...assessment,
+      const dbAssessment = {
+        onboarding_id: assessment.onboarding_id,
+        annual_revenue_range: assessment.annual_revenue_range,
+        credit_score_range: assessment.credit_score_range,
+        years_in_operation: assessment.years_in_operation,
+        debt_to_equity_ratio: assessment.debt_to_equity_ratio,
+        current_ratio: assessment.current_ratio,
+        days_sales_outstanding: assessment.days_sales_outstanding,
+        payment_history_rating: assessment.payment_history_rating,
+        insurance_coverage: assessment.insurance_coverage,
+        financial_guarantees: assessment.financial_guarantees,
         risk_assessment_score: riskScore,
+        risk_level: determineRiskLevel(riskScore),
+        credit_limit_recommendation: assessment.credit_limit_recommendation,
+        payment_terms_recommendation: assessment.payment_terms_recommendation,
       };
 
       if (assessment.id) {
         const { data, error } = await supabase
           .from('onboarding_financial_assessment')
-          .update(assessmentData)
+          .update(dbAssessment)
           .eq('id', assessment.id)
           .select()
           .single();
@@ -85,7 +106,7 @@ export const useFinancialAssessment = () => {
       } else {
         const { data, error } = await supabase
           .from('onboarding_financial_assessment')
-          .insert(assessmentData)
+          .insert(dbAssessment)
           .select()
           .single();
 

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -134,7 +133,7 @@ export const TreatmentCenterOnboardingWizard: React.FC<TreatmentCenterOnboarding
     }
   );
 
-  const { createApplication, isCreating } = useTreatmentCenterOnboarding();
+  const { createApplication, updateApplication, isCreating } = useTreatmentCenterOnboarding();
   const { initializeWorkflow, getWorkflowSteps } = useOnboardingWorkflow();
   
   // Auto-save functionality
@@ -180,9 +179,10 @@ export const TreatmentCenterOnboardingWizard: React.FC<TreatmentCenterOnboarding
         ...formData,
       } as TreatmentCenterOnboarding;
 
+      let resultApplication;
       if (applicationId) {
         // Update existing application to submitted status
-        await createApplication({
+        resultApplication = await updateApplication({
           ...finalData,
           status: 'submitted',
           workflow: {
@@ -196,10 +196,10 @@ export const TreatmentCenterOnboardingWizard: React.FC<TreatmentCenterOnboarding
           await initializeWorkflow(applicationId);
         }
       } else {
-        const newApplication = await createApplication(finalData);
+        resultApplication = await createApplication(finalData);
         // Initialize workflow for new application
-        if (newApplication?.id) {
-          await initializeWorkflow(newApplication.id);
+        if (resultApplication?.id) {
+          await initializeWorkflow(resultApplication.id);
         }
       }
       

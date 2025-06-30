@@ -8,14 +8,14 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { TreatmentCenterOnboarding } from '@/types/onboarding';
+import { TreatmentCenterOnboarding, PurchasingMethod, InventoryModel } from '@/types/onboarding';
 
 interface PurchasingPreferencesStepProps {
   data: Partial<TreatmentCenterOnboarding>;
   onDataChange: (data: Partial<TreatmentCenterOnboarding>) => void;
 }
 
-const PURCHASING_METHODS = [
+const PURCHASING_METHODS: { value: PurchasingMethod; label: string }[] = [
   { value: 'just_in_time', label: 'Just-in-Time' },
   { value: 'bulk_ordering', label: 'Bulk Ordering' },
   { value: 'consignment', label: 'Consignment' },
@@ -23,7 +23,7 @@ const PURCHASING_METHODS = [
   { value: 'blanket_orders', label: 'Blanket Orders' },
 ];
 
-const INVENTORY_MODELS = [
+const INVENTORY_MODELS: { value: InventoryModel; label: string }[] = [
   { value: 'traditional_wholesale', label: 'Traditional Wholesale' },
   { value: 'consignment', label: 'Consignment' },
   { value: 'vendor_managed', label: 'Vendor Managed' },
@@ -37,7 +37,7 @@ export const PurchasingPreferencesStep: React.FC<PurchasingPreferencesStepProps>
 }) => {
   const purchasingData = data.purchasing_preferences || {
     preferred_purchasing_methods: [],
-    inventory_management_model: 'traditional_wholesale',
+    inventory_management_model: 'traditional_wholesale' as InventoryModel,
     automated_reordering_enabled: false,
     reorder_points: {},
     preferred_order_frequency: '',
@@ -57,7 +57,7 @@ export const PurchasingPreferencesStep: React.FC<PurchasingPreferencesStepProps>
     });
   };
 
-  const togglePurchasingMethod = (method: string) => {
+  const togglePurchasingMethod = (method: PurchasingMethod) => {
     const currentMethods = purchasingData.preferred_purchasing_methods || [];
     const updatedMethods = currentMethods.includes(method)
       ? currentMethods.filter(m => m !== method)
@@ -98,7 +98,7 @@ export const PurchasingPreferencesStep: React.FC<PurchasingPreferencesStepProps>
             <Label htmlFor="inventory_model">Inventory Management Model</Label>
             <Select
               value={purchasingData.inventory_management_model}
-              onValueChange={(value) => updatePurchasingData({ inventory_management_model: value })}
+              onValueChange={(value: InventoryModel) => updatePurchasingData({ inventory_management_model: value })}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select inventory model" />
