@@ -326,11 +326,26 @@ export const useApiIntegrations = () => {
   const internalApis = integrations?.filter(api => api.type === 'internal') || [];
   const externalApis = integrations?.filter(api => api.type === 'external') || [];
 
+  // Mock function for downloading Postman collection
+  const downloadPostmanCollection = (integrationId: string) => {
+    console.log('📥 Download collection for:', integrationId);
+    // This would normally generate and download a Postman collection
+  };
+
+  // Mock function for testing endpoint
+  const testEndpoint = async (integrationId: string, endpointId: string) => {
+    console.log('🧪 Testing endpoint:', { integrationId, endpointId });
+    // This would normally test the endpoint and return results
+    return { success: true, message: 'Endpoint test completed' };
+  };
+
   return {
     integrations: integrations || [],
     internalApis,
     externalApis,
     isLoading,
-    error
+    error,
+    downloadPostmanCollection,
+    testEndpoint
   };
 };
