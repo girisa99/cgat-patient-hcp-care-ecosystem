@@ -31,12 +31,16 @@ export const useAutoSave = ({
     if (currentDataString === lastSavedRef.current) return;
 
     try {
-      const saveData = {
+      const currentStepName = getCurrentStepName(currentStep);
+      const completedSteps = getCompletedSteps(currentStep);
+      
+      const saveData: Partial<TreatmentCenterOnboarding> = {
         ...data,
         workflow: {
           ...data.workflow,
-          current_step: getCurrentStepName(currentStep) as OnboardingStep,
-          completed_steps: getCompletedSteps(currentStep) as OnboardingStep[],
+          current_step: currentStepName,
+          completed_steps: completedSteps,
+          notes: data.workflow?.notes || []
         }
       };
 
