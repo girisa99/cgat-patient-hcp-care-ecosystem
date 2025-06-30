@@ -5,6 +5,8 @@ import { PageContainer } from '@/components/layout/PageContainer';
 import { ApiServicesModule } from '@/components/admin/ApiServices/ApiServicesModule';
 
 const ApiServicesPage: React.FC = () => {
+  console.log('🚀 ApiServicesPage: Component rendering started');
+  
   return (
     <MainLayout>
       <PageContainer
@@ -19,5 +21,7 @@ const ApiServicesPage: React.FC = () => {
     </MainLayout>
   );
 };
+
+console.log('✅ ApiServicesPage: Component defined successfully');
 
 export default ApiServicesPage;

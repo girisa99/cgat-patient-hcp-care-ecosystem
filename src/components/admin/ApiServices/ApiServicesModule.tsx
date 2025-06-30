@@ -14,24 +14,117 @@ import {
   ExternalLink,
   Upload
 } from 'lucide-react';
-import { useApiIntegrations } from '@/hooks/useApiIntegrations';
-import { useExternalApis } from '@/hooks/useExternalApis';
-import { useEnhancedExternalApis } from '@/hooks/useEnhancedExternalApis';
-import { InternalApisTabContent } from '../ApiIntegrations/tabs/InternalApisTabContent';
-import { ExternalApisTabContent } from '../ApiIntegrations/tabs/ExternalApisTabContent';
-import { PublishedApisTabContent } from '../ApiIntegrations/tabs/PublishedApisTabContent';
-import { DeveloperTabContent } from '../ApiIntegrations/tabs/DeveloperTabContent';
-import { ApiKeysTabContent } from '../ApiIntegrations/tabs/ApiKeysTabContent';
-import { TestingTabContent } from '../ApiIntegrations/tabs/TestingTabContent';
-import { DataImportModule } from '../DataImportModule';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
 
+console.log('🔧 ApiServicesModule: Starting imports');
+
+// Import hooks with error handling
+let useApiIntegrations, useExternalApis, useEnhancedExternalApis;
+try {
+  const apiIntegrationsHook = require('@/hooks/useApiIntegrations');
+  useApiIntegrations = apiIntegrationsHook.useApiIntegrations;
+  console.log('✅ useApiIntegrations imported successfully');
+} catch (error) {
+  console.error('❌ Error importing useApiIntegrations:', error);
+  useApiIntegrations = () => ({ integrations: [], isLoading: false, error: null, internalApis: [], externalApis: [] });
+}
+
+try {
+  const externalApisHook = require('@/hooks/useExternalApis');
+  useExternalApis = externalApisHook.useExternalApis;
+  console.log('✅ useExternalApis imported successfully');
+} catch (error) {
+  console.error('❌ Error importing useExternalApis:', error);
+  useExternalApis = () => ({ externalApis: [], marketplaceStats: {}, isLoadingExternalApis: false });
+}
+
+try {
+  const enhancedExternalApisHook = require('@/hooks/useEnhancedExternalApis');
+  useEnhancedExternalApis = enhancedExternalApisHook.useEnhancedExternalApis;
+  console.log('✅ useEnhancedExternalApis imported successfully');
+} catch (error) {
+  console.error('❌ Error importing useEnhancedExternalApis:', error);
+  useEnhancedExternalApis = () => ({ externalApis: [] });
+}
+
+// Import tab components with error handling
+let InternalApisTabContent, ExternalApisTabContent, PublishedApisTabContent, DeveloperTabContent, ApiKeysTabContent, TestingTabContent, DataImportModule;
+
+try {
+  const internalTab = require('@/components/admin/ApiIntegrations/tabs/InternalApisTabContent');
+  InternalApisTabContent = internalTab.InternalApisTabContent;
+  console.log('✅ InternalApisTabContent imported successfully');
+} catch (error) {
+  console.error('❌ Error importing InternalApisTabContent:', error);
+  InternalApisTabContent = () => <div>InternalApisTabContent not available</div>;
+}
+
+try {
+  const externalTab = require('@/components/admin/ApiIntegrations/tabs/ExternalApisTabContent');
+  ExternalApisTabContent = externalTab.ExternalApisTabContent;
+  console.log('✅ ExternalApisTabContent imported successfully');
+} catch (error) {
+  console.error('❌ Error importing ExternalApisTabContent:', error);
+  ExternalApisTabContent = () => <div>ExternalApisTabContent not available</div>;
+}
+
+try {
+  const publishedTab = require('@/components/admin/ApiIntegrations/tabs/PublishedApisTabContent');
+  PublishedApisTabContent = publishedTab.PublishedApisTabContent;
+  console.log('✅ PublishedApisTabContent imported successfully');
+} catch (error) {
+  console.error('❌ Error importing PublishedApisTabContent:', error);
+  PublishedApisTabContent = () => <div>PublishedApisTabContent not available</div>;
+}
+
+try {
+  const developerTab = require('@/components/admin/ApiIntegrations/tabs/DeveloperTabContent');
+  DeveloperTabContent = developerTab.DeveloperTabContent;
+  console.log('✅ DeveloperTabContent imported successfully');
+} catch (error) {
+  console.error('❌ Error importing DeveloperTabContent:', error);
+  DeveloperTabContent = () => <div>DeveloperTabContent not available</div>;
+}
+
+try {
+  const apiKeysTab = require('@/components/admin/ApiIntegrations/tabs/ApiKeysTabContent');
+  ApiKeysTabContent = apiKeysTab.ApiKeysTabContent;
+  console.log('✅ ApiKeysTabContent imported successfully');
+} catch (error) {
+  console.error('❌ Error importing ApiKeysTabContent:', error);
+  ApiKeysTabContent = () => <div>ApiKeysTabContent not available</div>;
+}
+
+try {
+  const testingTab = require('@/components/admin/ApiIntegrations/tabs/TestingTabContent');
+  TestingTabContent = testingTab.TestingTabContent;
+  console.log('✅ TestingTabContent imported successfully');
+} catch (error) {
+  console.error('❌ Error importing TestingTabContent:', error);
+  TestingTabContent = () => <div>TestingTabContent not available</div>;
+}
+
+try {
+  const dataImport = require('@/components/admin/DataImportModule');
+  DataImportModule = dataImport.DataImportModule;
+  console.log('✅ DataImportModule imported successfully');
+} catch (error) {
+  console.error('❌ Error importing DataImportModule:', error);
+  DataImportModule = () => <div>DataImportModule not available</div>;
+}
+
+console.log('🎯 ApiServicesModule: All imports completed');
+
 export const ApiServicesModule: React.FC = () => {
+  console.log('🚀 ApiServicesModule: Component rendering started');
+  
   const [activeTab, setActiveTab] = useState('overview');
   const [searchTerm, setSearchTerm] = useState('');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
+  console.log('🔄 ApiServicesModule: Initializing hooks');
+  
   const { 
     integrations, 
     isLoading, 
@@ -52,31 +145,44 @@ export const ApiServicesModule: React.FC = () => {
     externalApis: enhancedPublishedApis 
   } = useEnhancedExternalApis();
 
+  console.log('📊 ApiServicesModule: Hook data:', {
+    integrations: integrations?.length || 0,
+    internalApis: internalApis?.length || 0,
+    externalApis: externalApis?.length || 0,
+    publishedApis: publishedApis?.length || 0,
+    isLoading,
+    isLoadingExternalApis,
+    error
+  });
+
   const handleDownloadCollection = (integrationId: string) => {
+    console.log('📥 Download collection for:', integrationId);
     if (downloadPostmanCollection) {
       downloadPostmanCollection(integrationId);
     }
   };
 
   const handleViewDetails = (integrationId: string) => {
-    console.log('View details for:', integrationId);
+    console.log('👁️ View details for:', integrationId);
   };
 
   const handleViewDocumentation = (integrationId: string) => {
-    console.log('View documentation for:', integrationId);
+    console.log('📚 View documentation for:', integrationId);
   };
 
   const handleCopyUrl = (url: string) => {
     navigator.clipboard.writeText(url);
+    console.log('📋 URL copied:', url);
   };
 
   const handleTestEndpoint = async (integrationId: string, endpointId: string) => {
     try {
+      console.log('🧪 Testing endpoint:', { integrationId, endpointId });
       if (testEndpoint) {
         await testEndpoint(integrationId, endpointId);
       }
     } catch (error) {
-      console.error('Error testing endpoint:', error);
+      console.error('❌ Error testing endpoint:', error);
     }
   };
 
@@ -213,6 +319,7 @@ export const ApiServicesModule: React.FC = () => {
   );
 
   if (isLoading || isLoadingExternalApis) {
+    console.log('⏳ ApiServicesModule: Showing loading state');
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
@@ -222,6 +329,20 @@ export const ApiServicesModule: React.FC = () => {
       </div>
     );
   }
+
+  if (error) {
+    console.error('❌ ApiServicesModule: Error state:', error);
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <Database className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <p className="text-red-600">Error loading API services: {error.message}</p>
+        </div>
+      </div>
+    );
+  }
+
+  console.log('✅ ApiServicesModule: Rendering main content');
 
   return (
     <div className="space-y-6">
@@ -325,3 +446,5 @@ export const ApiServicesModule: React.FC = () => {
     </div>
   );
 };
+
+console.log('✅ ApiServicesModule: Component definition completed');
