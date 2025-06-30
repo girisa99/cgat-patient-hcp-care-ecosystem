@@ -67,6 +67,89 @@ export interface TreatmentCenterOnboarding {
     statement_delivery_preference: 'email' | 'fax' | 'mail';
     payment_terms_requested?: string;
   };
+
+  // NEW: Purchasing Preferences
+  purchasing_preferences?: {
+    preferred_purchasing_methods: PurchasingMethod[];
+    inventory_management_model: InventoryModel;
+    automated_reordering_enabled: boolean;
+    reorder_points: any;
+    preferred_order_frequency?: string;
+    inventory_turnover_targets: any;
+    storage_capacity_details: any;
+    temperature_controlled_storage: boolean;
+    hazmat_storage_capabilities: boolean;
+  };
+
+  // NEW: Financial Assessment
+  financial_assessment?: {
+    annual_revenue_range?: string;
+    credit_score_range?: string;
+    years_in_operation?: number;
+    debt_to_equity_ratio?: number;
+    current_ratio?: number;
+    days_sales_outstanding?: number;
+    payment_history_rating?: string;
+    insurance_coverage: any;
+    financial_guarantees: any;
+    risk_assessment_score?: number;
+    risk_level?: 'low' | 'medium' | 'high' | 'very_high';
+    credit_limit_recommendation?: number;
+    payment_terms_recommendation?: string;
+  };
+
+  // NEW: Compliance Requirements
+  compliance_requirements?: {
+    required_compliance_programs: ComplianceProgram[];
+    quality_assurance_protocols: any;
+    documentation_requirements: any;
+    staff_training_requirements: any;
+    audit_frequency_preferences?: string;
+    regulatory_reporting_needs: any;
+    patient_safety_protocols: any;
+    adverse_event_reporting_system: boolean;
+  };
+
+  // NEW: Technology Integration
+  technology_integration?: {
+    current_ehr_system?: string;
+    current_inventory_system?: string;
+    preferred_integration_method: TechnologyIntegration;
+    api_capabilities: any;
+    edi_transaction_sets: string[];
+    real_time_inventory_tracking: boolean;
+    automated_billing_integration: boolean;
+    reporting_dashboard_requirements: any;
+    mobile_access_requirements: any;
+    security_requirements: any;
+  };
+
+  // NEW: SLA Requirements
+  sla_requirements?: {
+    delivery_time_requirements: any;
+    emergency_delivery_needs: boolean;
+    service_tier: SLATier;
+    uptime_requirements: number;
+    response_time_requirements: any;
+    escalation_procedures: any;
+    performance_metrics: any;
+    penalty_structures: any;
+  };
+
+  // NEW: Contract Terms
+  contract_terms?: {
+    contract_duration_months: number;
+    auto_renewal_clause: boolean;
+    pricing_structure: any;
+    volume_discounts: any;
+    rebate_programs: any;
+    exclusivity_agreements: any;
+    termination_clauses: any;
+    force_majeure_provisions: any;
+    liability_limitations: any;
+    intellectual_property_terms: any;
+    data_protection_clauses: any;
+  };
   
   // Licenses & Certifications
   licenses: {
@@ -262,6 +345,40 @@ export interface EnhancedPaymentTerms {
   billing_frequency?: 'daily' | 'weekly' | 'monthly';
 }
 
+// NEW: Type definitions for new enums
+export type PurchasingMethod = 
+  | 'just_in_time'
+  | 'bulk_ordering'
+  | 'consignment'
+  | 'drop_ship'
+  | 'blanket_orders';
+
+export type InventoryModel = 
+  | 'traditional_wholesale'
+  | 'consignment'
+  | 'vendor_managed'
+  | 'drop_ship_only'
+  | 'hybrid';
+
+export type ComplianceProgram = 
+  | 'joint_commission'
+  | 'cap_accreditation'
+  | 'iso_certification'
+  | 'fda_inspection_ready'
+  | 'state_board_compliance';
+
+export type TechnologyIntegration = 
+  | 'edi_integration'
+  | 'api_integration'
+  | 'manual_processes'
+  | 'hybrid_approach';
+
+export type SLATier = 
+  | 'standard'
+  | 'priority'
+  | 'critical'
+  | 'emergency_only';
+
 export type BusinessType = 
   | 'acute_care'
   | 'primary_care'
@@ -293,6 +410,8 @@ export type OnboardingStep =
   | 'ownership'
   | 'references'
   | 'payment_banking'
+  | 'purchasing_preferences'
+  | 'financial_assessment'
   | 'licenses'
   | 'documents'
   | 'authorizations'

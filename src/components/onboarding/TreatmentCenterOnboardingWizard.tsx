@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { TreatmentCenterOnboarding } from '@/types/onboarding';
 import { useTreatmentCenterOnboarding } from '@/hooks/useTreatmentCenterOnboarding';
 import { useAutoSave } from '@/hooks/useAutoSave';
+import { useOnboardingWorkflow } from '@/hooks/useOnboardingWorkflow';
 import { CompanyInfoStep } from './steps/CompanyInfoStep';
 import { BusinessClassificationStep } from './steps/BusinessClassificationStep';
 import { ContactsStep } from './steps/ContactsStep';
@@ -15,8 +17,10 @@ import { PaymentBankingStep } from './steps/PaymentBankingStep';
 import { LicensesStep } from './steps/LicensesStep';
 import { DocumentsStep } from './steps/DocumentsStep';
 import { AuthorizationsStep } from './steps/AuthorizationsStep';
+import { PurchasingPreferencesStep } from './steps/PurchasingPreferencesStep';
+import { FinancialAssessmentStep } from './steps/FinancialAssessmentStep';
 import { ReviewStep } from './steps/ReviewStep';
-import { Save, Clock, CheckCircle2 } from 'lucide-react';
+import { Save, Clock, CheckCircle2, Workflow } from 'lucide-react';
 
 interface TreatmentCenterOnboardingWizardProps {
   onSubmit: (data: TreatmentCenterOnboarding) => void;
@@ -31,6 +35,8 @@ const steps = [
   { key: 'ownership', label: 'Ownership & Control', component: OwnershipStep },
   { key: 'references', label: 'References', component: ReferencesStep },
   { key: 'payment_banking', label: 'Payment & Banking', component: PaymentBankingStep },
+  { key: 'purchasing_preferences', label: 'Purchasing Preferences', component: PurchasingPreferencesStep },
+  { key: 'financial_assessment', label: 'Financial Assessment', component: FinancialAssessmentStep },
   { key: 'licenses', label: 'Licenses & Certifications', component: LicensesStep },
   { key: 'documents', label: 'Required Documents', component: DocumentsStep },
   { key: 'authorizations', label: 'Authorizations & Signatures', component: AuthorizationsStep },
@@ -86,6 +92,23 @@ export const TreatmentCenterOnboardingWizard: React.FC<TreatmentCenterOnboarding
         bank_address: { street: '', city: '', state: '', zip: '' },
         statement_delivery_preference: 'email',
       },
+      purchasing_preferences: {
+        preferred_purchasing_methods: [],
+        inventory_management_model: 'traditional_wholesale',
+        automated_reordering_enabled: false,
+        reorder_points: {},
+        inventory_turnover_targets: {},
+        storage_capacity_details: {},
+        temperature_controlled_storage: false,
+        hazmat_storage_capabilities: false,
+      },
+      financial_assessment: {
+        annual_revenue_range: '',
+        credit_score_range: '',
+        years_in_operation: 0,
+        insurance_coverage: {},
+        financial_guarantees: {},
+      },
       licenses: {
         additional_licenses: [],
       },
@@ -112,6 +135,7 @@ export const TreatmentCenterOnboardingWizard: React.FC<TreatmentCenterOnboarding
   );
 
   const { createApplication, isCreating } = useTreatmentCenterOnboarding();
+  const { initializeWorkflow, getWorkflowSteps } = useOnboardingWorkflow();
   
   // Auto-save functionality
   const { manualSave, isSaving } = useAutoSave({
@@ -120,6 +144,9 @@ export const TreatmentCenterOnboardingWizard: React.FC<TreatmentCenterOnboarding
     applicationId,
     enabled: true,
   });
+
+  // Get workflow steps if application exists
+  const { data: workflowSteps } = applicationId ? getWorkflowSteps(applicationId) : { data: [] };
 
   const currentStep = steps[currentStepIndex];
   const progress = ((currentStepIndex + 1) / steps.length) * 100;
@@ -163,8 +190,17 @@ export const TreatmentCenterOnboardingWizard: React.FC<TreatmentCenterOnboarding
             current_step: 'complete',
           }
         });
+        
+        // Initialize workflow if not already done
+        if (!workflowSteps || workflowSteps.length === 0) {
+          await initializeWorkflow(applicationId);
+        }
       } else {
-        await createApplication(finalData);
+        const newApplication = await createApplication(finalData);
+        // Initialize workflow for new application
+        if (newApplication?.id) {
+          await initializeWorkflow(newApplication.id);
+        }
       }
       
       onSubmit(finalData);
@@ -215,6 +251,16 @@ export const TreatmentCenterOnboardingWizard: React.FC<TreatmentCenterOnboarding
                 <Save className="h-4 w-4" />
                 <span>Save Progress</span>
               </Button>
+              {applicationId && workflowSteps && workflowSteps.length > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center space-x-2"
+                >
+                  <Workflow className="h-4 w-4" />
+                  <span>View Workflow</span>
+                </Button>
+              )}
               <Badge variant="outline">
                 {Math.round(progress)}% Complete
               </Badge>

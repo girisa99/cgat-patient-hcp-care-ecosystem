@@ -1523,6 +1523,118 @@ export type Database = {
           },
         ]
       }
+      onboarding_audit_trail: {
+        Row: {
+          action_description: string
+          action_type: string
+          created_at: string | null
+          id: string
+          ip_address: unknown | null
+          new_values: Json | null
+          old_values: Json | null
+          onboarding_id: string | null
+          section_affected: string | null
+          session_id: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action_description: string
+          action_type: string
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          new_values?: Json | null
+          old_values?: Json | null
+          onboarding_id?: string | null
+          section_affected?: string | null
+          session_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action_description?: string
+          action_type?: string
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          new_values?: Json | null
+          old_values?: Json | null
+          onboarding_id?: string | null
+          section_affected?: string | null
+          session_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_audit_trail_onboarding_id_fkey"
+            columns: ["onboarding_id"]
+            isOneToOne: false
+            referencedRelation: "treatment_center_onboarding"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_compliance_requirements: {
+        Row: {
+          adverse_event_reporting_system: boolean | null
+          audit_frequency_preferences: string | null
+          created_at: string | null
+          documentation_requirements: Json | null
+          id: string
+          onboarding_id: string | null
+          patient_safety_protocols: Json | null
+          quality_assurance_protocols: Json | null
+          regulatory_reporting_needs: Json | null
+          required_compliance_programs:
+            | Database["public"]["Enums"]["compliance_program"][]
+            | null
+          staff_training_requirements: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          adverse_event_reporting_system?: boolean | null
+          audit_frequency_preferences?: string | null
+          created_at?: string | null
+          documentation_requirements?: Json | null
+          id?: string
+          onboarding_id?: string | null
+          patient_safety_protocols?: Json | null
+          quality_assurance_protocols?: Json | null
+          regulatory_reporting_needs?: Json | null
+          required_compliance_programs?:
+            | Database["public"]["Enums"]["compliance_program"][]
+            | null
+          staff_training_requirements?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          adverse_event_reporting_system?: boolean | null
+          audit_frequency_preferences?: string | null
+          created_at?: string | null
+          documentation_requirements?: Json | null
+          id?: string
+          onboarding_id?: string | null
+          patient_safety_protocols?: Json | null
+          quality_assurance_protocols?: Json | null
+          regulatory_reporting_needs?: Json | null
+          required_compliance_programs?:
+            | Database["public"]["Enums"]["compliance_program"][]
+            | null
+          staff_training_requirements?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_compliance_requirements_onboarding_id_fkey"
+            columns: ["onboarding_id"]
+            isOneToOne: false
+            referencedRelation: "treatment_center_onboarding"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       onboarding_contacts: {
         Row: {
           contact_type: string
@@ -1560,6 +1672,68 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "onboarding_contacts_onboarding_id_fkey"
+            columns: ["onboarding_id"]
+            isOneToOne: false
+            referencedRelation: "treatment_center_onboarding"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_contract_terms: {
+        Row: {
+          auto_renewal_clause: boolean | null
+          contract_duration_months: number | null
+          created_at: string | null
+          data_protection_clauses: Json | null
+          exclusivity_agreements: Json | null
+          force_majeure_provisions: Json | null
+          id: string
+          intellectual_property_terms: Json | null
+          liability_limitations: Json | null
+          onboarding_id: string | null
+          pricing_structure: Json | null
+          rebate_programs: Json | null
+          termination_clauses: Json | null
+          updated_at: string | null
+          volume_discounts: Json | null
+        }
+        Insert: {
+          auto_renewal_clause?: boolean | null
+          contract_duration_months?: number | null
+          created_at?: string | null
+          data_protection_clauses?: Json | null
+          exclusivity_agreements?: Json | null
+          force_majeure_provisions?: Json | null
+          id?: string
+          intellectual_property_terms?: Json | null
+          liability_limitations?: Json | null
+          onboarding_id?: string | null
+          pricing_structure?: Json | null
+          rebate_programs?: Json | null
+          termination_clauses?: Json | null
+          updated_at?: string | null
+          volume_discounts?: Json | null
+        }
+        Update: {
+          auto_renewal_clause?: boolean | null
+          contract_duration_months?: number | null
+          created_at?: string | null
+          data_protection_clauses?: Json | null
+          exclusivity_agreements?: Json | null
+          force_majeure_provisions?: Json | null
+          id?: string
+          intellectual_property_terms?: Json | null
+          liability_limitations?: Json | null
+          onboarding_id?: string | null
+          pricing_structure?: Json | null
+          rebate_programs?: Json | null
+          termination_clauses?: Json | null
+          updated_at?: string | null
+          volume_discounts?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_contract_terms_onboarding_id_fkey"
             columns: ["onboarding_id"]
             isOneToOne: false
             referencedRelation: "treatment_center_onboarding"
@@ -1648,6 +1822,74 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "onboarding_document_uploads_onboarding_id_fkey"
+            columns: ["onboarding_id"]
+            isOneToOne: false
+            referencedRelation: "treatment_center_onboarding"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_financial_assessment: {
+        Row: {
+          annual_revenue_range: string | null
+          created_at: string | null
+          credit_limit_recommendation: number | null
+          credit_score_range: string | null
+          current_ratio: number | null
+          days_sales_outstanding: number | null
+          debt_to_equity_ratio: number | null
+          financial_guarantees: Json | null
+          id: string
+          insurance_coverage: Json | null
+          onboarding_id: string | null
+          payment_history_rating: string | null
+          payment_terms_recommendation: string | null
+          risk_assessment_score: number | null
+          risk_level: Database["public"]["Enums"]["risk_level"] | null
+          updated_at: string | null
+          years_in_operation: number | null
+        }
+        Insert: {
+          annual_revenue_range?: string | null
+          created_at?: string | null
+          credit_limit_recommendation?: number | null
+          credit_score_range?: string | null
+          current_ratio?: number | null
+          days_sales_outstanding?: number | null
+          debt_to_equity_ratio?: number | null
+          financial_guarantees?: Json | null
+          id?: string
+          insurance_coverage?: Json | null
+          onboarding_id?: string | null
+          payment_history_rating?: string | null
+          payment_terms_recommendation?: string | null
+          risk_assessment_score?: number | null
+          risk_level?: Database["public"]["Enums"]["risk_level"] | null
+          updated_at?: string | null
+          years_in_operation?: number | null
+        }
+        Update: {
+          annual_revenue_range?: string | null
+          created_at?: string | null
+          credit_limit_recommendation?: number | null
+          credit_score_range?: string | null
+          current_ratio?: number | null
+          days_sales_outstanding?: number | null
+          debt_to_equity_ratio?: number | null
+          financial_guarantees?: Json | null
+          id?: string
+          insurance_coverage?: Json | null
+          onboarding_id?: string | null
+          payment_history_rating?: string | null
+          payment_terms_recommendation?: string | null
+          risk_assessment_score?: number | null
+          risk_level?: Database["public"]["Enums"]["risk_level"] | null
+          updated_at?: string | null
+          years_in_operation?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_financial_assessment_onboarding_id_fkey"
             columns: ["onboarding_id"]
             isOneToOne: false
             referencedRelation: "treatment_center_onboarding"
@@ -1849,6 +2091,68 @@ export type Database = {
           },
         ]
       }
+      onboarding_purchasing_preferences: {
+        Row: {
+          automated_reordering_enabled: boolean | null
+          created_at: string | null
+          hazmat_storage_capabilities: boolean | null
+          id: string
+          inventory_management_model: Database["public"]["Enums"]["inventory_model"]
+          inventory_turnover_targets: Json | null
+          onboarding_id: string | null
+          preferred_order_frequency: string | null
+          preferred_purchasing_methods:
+            | Database["public"]["Enums"]["purchasing_method"][]
+            | null
+          reorder_points: Json | null
+          storage_capacity_details: Json | null
+          temperature_controlled_storage: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          automated_reordering_enabled?: boolean | null
+          created_at?: string | null
+          hazmat_storage_capabilities?: boolean | null
+          id?: string
+          inventory_management_model: Database["public"]["Enums"]["inventory_model"]
+          inventory_turnover_targets?: Json | null
+          onboarding_id?: string | null
+          preferred_order_frequency?: string | null
+          preferred_purchasing_methods?:
+            | Database["public"]["Enums"]["purchasing_method"][]
+            | null
+          reorder_points?: Json | null
+          storage_capacity_details?: Json | null
+          temperature_controlled_storage?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          automated_reordering_enabled?: boolean | null
+          created_at?: string | null
+          hazmat_storage_capabilities?: boolean | null
+          id?: string
+          inventory_management_model?: Database["public"]["Enums"]["inventory_model"]
+          inventory_turnover_targets?: Json | null
+          onboarding_id?: string | null
+          preferred_order_frequency?: string | null
+          preferred_purchasing_methods?:
+            | Database["public"]["Enums"]["purchasing_method"][]
+            | null
+          reorder_points?: Json | null
+          storage_capacity_details?: Json | null
+          temperature_controlled_storage?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_purchasing_preferences_onboarding_id_fkey"
+            columns: ["onboarding_id"]
+            isOneToOne: false
+            referencedRelation: "treatment_center_onboarding"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       onboarding_references: {
         Row: {
           account_number: string | null
@@ -1950,6 +2254,118 @@ export type Database = {
             columns: ["service_id"]
             isOneToOne: false
             referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_sla_requirements: {
+        Row: {
+          created_at: string | null
+          delivery_time_requirements: Json | null
+          emergency_delivery_needs: boolean | null
+          escalation_procedures: Json | null
+          id: string
+          onboarding_id: string | null
+          penalty_structures: Json | null
+          performance_metrics: Json | null
+          response_time_requirements: Json | null
+          service_tier: Database["public"]["Enums"]["sla_tier"]
+          updated_at: string | null
+          uptime_requirements: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          delivery_time_requirements?: Json | null
+          emergency_delivery_needs?: boolean | null
+          escalation_procedures?: Json | null
+          id?: string
+          onboarding_id?: string | null
+          penalty_structures?: Json | null
+          performance_metrics?: Json | null
+          response_time_requirements?: Json | null
+          service_tier?: Database["public"]["Enums"]["sla_tier"]
+          updated_at?: string | null
+          uptime_requirements?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          delivery_time_requirements?: Json | null
+          emergency_delivery_needs?: boolean | null
+          escalation_procedures?: Json | null
+          id?: string
+          onboarding_id?: string | null
+          penalty_structures?: Json | null
+          performance_metrics?: Json | null
+          response_time_requirements?: Json | null
+          service_tier?: Database["public"]["Enums"]["sla_tier"]
+          updated_at?: string | null
+          uptime_requirements?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_sla_requirements_onboarding_id_fkey"
+            columns: ["onboarding_id"]
+            isOneToOne: false
+            referencedRelation: "treatment_center_onboarding"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_technology_integration: {
+        Row: {
+          api_capabilities: Json | null
+          automated_billing_integration: boolean | null
+          created_at: string | null
+          current_ehr_system: string | null
+          current_inventory_system: string | null
+          edi_transaction_sets: string[] | null
+          id: string
+          mobile_access_requirements: Json | null
+          onboarding_id: string | null
+          preferred_integration_method: Database["public"]["Enums"]["technology_integration"]
+          real_time_inventory_tracking: boolean | null
+          reporting_dashboard_requirements: Json | null
+          security_requirements: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          api_capabilities?: Json | null
+          automated_billing_integration?: boolean | null
+          created_at?: string | null
+          current_ehr_system?: string | null
+          current_inventory_system?: string | null
+          edi_transaction_sets?: string[] | null
+          id?: string
+          mobile_access_requirements?: Json | null
+          onboarding_id?: string | null
+          preferred_integration_method: Database["public"]["Enums"]["technology_integration"]
+          real_time_inventory_tracking?: boolean | null
+          reporting_dashboard_requirements?: Json | null
+          security_requirements?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          api_capabilities?: Json | null
+          automated_billing_integration?: boolean | null
+          created_at?: string | null
+          current_ehr_system?: string | null
+          current_inventory_system?: string | null
+          edi_transaction_sets?: string[] | null
+          id?: string
+          mobile_access_requirements?: Json | null
+          onboarding_id?: string | null
+          preferred_integration_method?: Database["public"]["Enums"]["technology_integration"]
+          real_time_inventory_tracking?: boolean | null
+          reporting_dashboard_requirements?: Json | null
+          security_requirements?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_technology_integration_onboarding_id_fkey"
+            columns: ["onboarding_id"]
+            isOneToOne: false
+            referencedRelation: "treatment_center_onboarding"
             referencedColumns: ["id"]
           },
         ]
@@ -2098,6 +2514,68 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "onboarding_workflow_notes_onboarding_id_fkey"
+            columns: ["onboarding_id"]
+            isOneToOne: false
+            referencedRelation: "treatment_center_onboarding"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_workflow_steps: {
+        Row: {
+          approval_level: string | null
+          assigned_to: string | null
+          completion_date: string | null
+          created_at: string | null
+          dependencies: string[] | null
+          due_date: string | null
+          escalation_rules: Json | null
+          id: string
+          onboarding_id: string | null
+          required_documents: string[] | null
+          status: string | null
+          step_name: string
+          step_order: number
+          step_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          approval_level?: string | null
+          assigned_to?: string | null
+          completion_date?: string | null
+          created_at?: string | null
+          dependencies?: string[] | null
+          due_date?: string | null
+          escalation_rules?: Json | null
+          id?: string
+          onboarding_id?: string | null
+          required_documents?: string[] | null
+          status?: string | null
+          step_name: string
+          step_order: number
+          step_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          approval_level?: string | null
+          assigned_to?: string | null
+          completion_date?: string | null
+          created_at?: string | null
+          dependencies?: string[] | null
+          due_date?: string | null
+          escalation_rules?: Json | null
+          id?: string
+          onboarding_id?: string | null
+          required_documents?: string[] | null
+          status?: string | null
+          step_name?: string
+          step_order?: number
+          step_type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_workflow_steps_onboarding_id_fkey"
             columns: ["onboarding_id"]
             isOneToOne: false
             referencedRelation: "treatment_center_onboarding"
@@ -3140,12 +3618,26 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_financial_risk_score: {
+        Args: {
+          p_annual_revenue_range: string
+          p_years_in_operation: number
+          p_debt_to_equity_ratio: number
+          p_current_ratio: number
+          p_days_sales_outstanding: number
+        }
+        Returns: number
+      }
       check_user_has_role: {
         Args: {
           check_user_id: string
           role_name: Database["public"]["Enums"]["user_role"]
         }
         Returns: boolean
+      }
+      determine_risk_level: {
+        Args: { p_risk_score: number }
+        Returns: Database["public"]["Enums"]["risk_level"]
       }
       generate_api_key: {
         Args: { key_type: string }
@@ -3197,8 +3689,23 @@ export type Database = {
         }
         Returns: boolean
       }
+      initialize_onboarding_workflow: {
+        Args: { p_onboarding_id: string }
+        Returns: undefined
+      }
       initialize_user_settings: {
         Args: { user_id: string }
+        Returns: undefined
+      }
+      log_onboarding_audit: {
+        Args: {
+          p_onboarding_id: string
+          p_action_type: string
+          p_action_description: string
+          p_section_affected?: string
+          p_old_values?: Json
+          p_new_values?: Json
+        }
         Returns: undefined
       }
       log_security_event: {
@@ -3267,11 +3774,23 @@ export type Database = {
         | "supplier"
         | "government"
         | "other"
+      compliance_program:
+        | "joint_commission"
+        | "cap_accreditation"
+        | "iso_certification"
+        | "fda_inspection_ready"
+        | "state_board_compliance"
       distributor_type: "amerisource_bergen" | "cardinal_health" | "mckesson"
       facility_type:
         | "treatmentFacility"
         | "referralFacility"
         | "prescriberFacility"
+      inventory_model:
+        | "traditional_wholesale"
+        | "consignment"
+        | "vendor_managed"
+        | "drop_ship_only"
+        | "hybrid"
       modality_type:
         | "autologous"
         | "allogeneic"
@@ -3315,6 +3834,13 @@ export type Database = {
         | "phase_3"
         | "approved"
         | "discontinued"
+      purchasing_method:
+        | "just_in_time"
+        | "bulk_ordering"
+        | "consignment"
+        | "drop_ship"
+        | "blanket_orders"
+      risk_level: "low" | "medium" | "high" | "very_high"
       service_provider_type: "internal" | "external_partner" | "third_party"
       service_type:
         | "3pl"
@@ -3322,6 +3848,12 @@ export type Database = {
         | "specialty_pharmacy"
         | "order_management"
         | "patient_hub_services"
+      sla_tier: "standard" | "priority" | "critical" | "emergency_only"
+      technology_integration:
+        | "edi_integration"
+        | "api_integration"
+        | "manual_processes"
+        | "hybrid_approach"
       therapy_type:
         | "car_t_cell"
         | "gene_therapy"
@@ -3478,11 +4010,25 @@ export const Constants = {
         "government",
         "other",
       ],
+      compliance_program: [
+        "joint_commission",
+        "cap_accreditation",
+        "iso_certification",
+        "fda_inspection_ready",
+        "state_board_compliance",
+      ],
       distributor_type: ["amerisource_bergen", "cardinal_health", "mckesson"],
       facility_type: [
         "treatmentFacility",
         "referralFacility",
         "prescriberFacility",
+      ],
+      inventory_model: [
+        "traditional_wholesale",
+        "consignment",
+        "vendor_managed",
+        "drop_ship_only",
+        "hybrid",
       ],
       modality_type: [
         "autologous",
@@ -3532,6 +4078,14 @@ export const Constants = {
         "approved",
         "discontinued",
       ],
+      purchasing_method: [
+        "just_in_time",
+        "bulk_ordering",
+        "consignment",
+        "drop_ship",
+        "blanket_orders",
+      ],
+      risk_level: ["low", "medium", "high", "very_high"],
       service_provider_type: ["internal", "external_partner", "third_party"],
       service_type: [
         "3pl",
@@ -3539,6 +4093,13 @@ export const Constants = {
         "specialty_pharmacy",
         "order_management",
         "patient_hub_services",
+      ],
+      sla_tier: ["standard", "priority", "critical", "emergency_only"],
+      technology_integration: [
+        "edi_integration",
+        "api_integration",
+        "manual_processes",
+        "hybrid_approach",
       ],
       therapy_type: [
         "car_t_cell",
