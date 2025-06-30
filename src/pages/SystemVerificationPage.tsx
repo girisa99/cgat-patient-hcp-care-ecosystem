@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
-import DashboardLayout from '@/components/layout/DashboardLayout';
+import UnifiedDashboardLayout from '@/components/layout/UnifiedDashboardLayout';
 import { SystemVerificationDashboard } from '@/components/admin/SystemVerification/SystemVerificationDashboard';
 
 const SystemVerificationPage: React.FC = () => {
@@ -12,9 +12,9 @@ const SystemVerificationPage: React.FC = () => {
         <meta name="description" content="Comprehensive system verification and testing dashboard" />
       </Helmet>
       
-      <DashboardLayout>
+      <UnifiedDashboardLayout>
         <SystemVerificationDashboard />
-      </DashboardLayout>
+      </UnifiedDashboardLayout>
     </>
   );
 };
