@@ -14,7 +14,7 @@ import {
   Users, 
   Database,
   ExternalLink,
-  Upload,
+  Workflow,
   Search
 } from 'lucide-react';
 
@@ -30,7 +30,7 @@ import { PublishedApisTabContent } from '@/components/admin/ApiIntegrations/tabs
 import { DeveloperTabContent } from '@/components/admin/ApiIntegrations/tabs/DeveloperTabContent';
 import { ApiKeysTabContent } from '@/components/admin/ApiIntegrations/tabs/ApiKeysTabContent';
 import { TestingTabContent } from '@/components/admin/ApiIntegrations/tabs/TestingTabContent';
-import { DataImportModule } from '@/components/admin/DataImportModule';
+import { OnboardingIntegrationTabContent } from '@/components/admin/ApiIntegrations/tabs/OnboardingIntegrationTabContent';
 
 console.log('🔧 ApiServicesModule: Starting component definition');
 
@@ -218,17 +218,17 @@ export const ApiServicesModule: React.FC = () => {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Code className="h-5 w-5 text-orange-500" />
-              Developer Tools
+              <Workflow className="h-5 w-5 text-teal-500" />
+              Onboarding Integration
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground mb-4">
-              API keys, testing tools, documentation, and developer portal management.
+              Process API requirements submitted during facility onboarding workflows.
             </p>
             <div className="flex items-center gap-2">
-              <Badge variant="outline">Testing Suite</Badge>
-              <Badge variant="outline">Documentation</Badge>
+              <Badge variant="outline">Automated Processing</Badge>
+              <Badge variant="outline">Requirements</Badge>
             </div>
           </CardContent>
         </Card>
@@ -288,10 +288,10 @@ export const ApiServicesModule: React.FC = () => {
           <TabsTrigger value="internal">Internal APIs</TabsTrigger>
           <TabsTrigger value="consuming">Consuming</TabsTrigger>
           <TabsTrigger value="publishing">Publishing</TabsTrigger>
+          <TabsTrigger value="onboarding">Onboarding</TabsTrigger>
           <TabsTrigger value="developer">Developer</TabsTrigger>
           <TabsTrigger value="keys">API Keys</TabsTrigger>
           <TabsTrigger value="testing">Testing</TabsTrigger>
-          <TabsTrigger value="data-import">Data Import</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-4">
@@ -331,6 +331,10 @@ export const ApiServicesModule: React.FC = () => {
           />
         </TabsContent>
 
+        <TabsContent value="onboarding" className="mt-4">
+          <OnboardingIntegrationTabContent />
+        </TabsContent>
+
         <TabsContent value="developer" className="mt-4">
           <DeveloperTabContent />
         </TabsContent>
@@ -345,20 +349,6 @@ export const ApiServicesModule: React.FC = () => {
             onClose={() => {}}
             onTestEndpoint={handleTestEndpoint}
           />
-        </TabsContent>
-
-        <TabsContent value="data-import" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Upload className="h-5 w-5" />
-                Data Import & API Access
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <DataImportModule />
-            </CardContent>
-          </Card>
         </TabsContent>
       </Tabs>
     </div>
