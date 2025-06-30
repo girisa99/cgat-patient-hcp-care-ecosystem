@@ -4,10 +4,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAuthActions } from '@/hooks/useAuthActions';
 import { EmailValidationHelper } from '@/utils/auth/emailValidationHelper';
 import { Mail, AlertCircle, CheckCircle, AlertTriangle, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface EnhancedResendVerificationDialogProps {
   open: boolean;
@@ -22,12 +23,49 @@ const EnhancedResendVerificationDialog: React.FC<EnhancedResendVerificationDialo
   userEmail,
   userName
 }) => {
-  const { resendVerificationEmail, loading } = useAuthActions();
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const [validationResult, setValidationResult] = useState<any>(null);
   const [isValidating, setIsValidating] = useState(false);
   const [customEmail, setCustomEmail] = useState(userEmail);
   const [useCustomEmail, setUseCustomEmail] = useState(false);
+
+  const resendVerificationEmail = async (email: string) => {
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email
+      });
+
+      if (error) {
+        console.error('❌ Error resending verification email:', error);
+        toast({
+          title: "Error",
+          description: error.message || "Failed to resend verification email",
+          variant: "destructive",
+        });
+        return { success: false, error: error.message };
+      }
+
+      toast({
+        title: "Email Sent",
+        description: "Verification email has been sent successfully.",
+      });
+      return { success: true };
+    } catch (error: any) {
+      console.error('❌ Exception resending verification email:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+      return { success: false, error: error.message };
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const validateEmailAddress = async (email: string) => {
     setIsValidating(true);
@@ -135,83 +173,22 @@ const EnhancedResendVerificationDialog: React.FC<EnhancedResendVerificationDialo
               />
               <Label htmlFor="use-custom">Use different email address</Label>
             </div>
-
+            
             {useCustomEmail && (
-              <div className="space-y-2 pl-6">
-                <Label htmlFor="custom-email">Email Address</Label>
+              <div className="ml-6 space-y-2">
+                <Label htmlFor="custom-email">Custom Email Address</Label>
                 <Input
                   id="custom-email"
                   type="email"
                   value={customEmail}
                   onChange={(e) => setCustomEmail(e.target.value)}
-                  placeholder="Enter email address"
+                  placeholder="Enter alternative email address"
                 />
               </div>
             )}
           </div>
 
-          {/* Email Validation Test */}
-          <div className="space-y-3">
-            <Button
-              variant="outline"
-              onClick={handleTestEmail}
-              disabled={isValidating}
-              className="w-full"
-            >
-              {isValidating ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Testing Email...
-                </>
-              ) : (
-                <>
-                  <AlertTriangle className="h-4 w-4 mr-2" />
-                  Test Email Validation
-                </>
-              )}
-            </Button>
-
-            {/* Validation Results */}
-            {validationResult && (
-              <Alert className={validationResult.isValid ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}>
-                <div className="flex items-start gap-2">
-                  {validationResult.isValid ? (
-                    <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
-                  ) : (
-                    <AlertCircle className="h-5 w-5 text-red-600 mt-0.5" />
-                  )}
-                  <div className="flex-1">
-                    <AlertDescription>
-                      <div className={validationResult.isValid ? 'text-green-800' : 'text-red-800'}>
-                        {validationResult.isValid ? (
-                          <strong>✅ Email validation passed!</strong>
-                        ) : (
-                          <div>
-                            <strong>❌ Email validation failed:</strong>
-                            <p className="mt-1">{validationResult.error}</p>
-                          </div>
-                        )}
-                      </div>
-                      
-                      {validationResult.suggestions && validationResult.suggestions.length > 0 && (
-                        <div className="mt-2">
-                          <p className="font-medium">Suggestions:</p>
-                          <ul className="list-disc pl-5 mt-1 space-y-1">
-                            {validationResult.suggestions.map((suggestion: string, index: number) => (
-                              <li key={index} className="text-sm">{suggestion}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    </AlertDescription>
-                  </div>
-                </div>
-              </Alert>
-            )}
-          </div>
-
-          {/* Email Sent Success */}
-          {emailSent && (
+          {emailSent ? (
             <div className="bg-green-50 border border-green-200 rounded-lg p-4">
               <div className="flex items-center gap-3">
                 <CheckCircle className="h-5 w-5 text-green-600" />
@@ -223,51 +200,62 @@ const EnhancedResendVerificationDialog: React.FC<EnhancedResendVerificationDialo
                 </div>
               </div>
             </div>
-          )}
-
-          {/* Common Issues Help */}
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="text-sm font-medium text-amber-800">Common Email Issues:</p>
-                <ul className="text-sm text-amber-700 mt-2 space-y-1">
-                  <li>• Corporate email domains may block external emails</li>
-                  <li>• Try using Gmail, Outlook, or Yahoo for testing</li>
-                  <li>• Check spam/junk folders for verification emails</li>
-                  <li>• Some email addresses may be blacklisted by the provider</li>
-                </ul>
+          ) : (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-sm text-amber-800">
+                    This will send a new email verification link to <strong>{useCustomEmail ? customEmail : userEmail}</strong>. 
+                    The user will need to click the link in their email to verify their account.
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
+          )}
           
-          {/* Action Buttons */}
           <div className="flex justify-end space-x-2 pt-4">
             <Button
               variant="outline"
               onClick={handleClose}
-              disabled={loading || isValidating}
+              disabled={loading}
             >
               {emailSent ? 'Close' : 'Cancel'}
             </Button>
             {!emailSent && (
-              <Button 
-                onClick={handleResendEmail}
-                disabled={loading || isValidating || (validationResult && !validationResult.isValid)}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                {loading ? (
-                  <div className="flex items-center space-x-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span>Sending...</span>
-                  </div>
-                ) : (
-                  <>
-                    <Mail className="h-4 w-4 mr-2" />
-                    Send Verification Email
-                  </>
-                )}
-              </Button>
+              <>
+                <Button 
+                  onClick={handleTestEmail}
+                  disabled={loading || isValidating}
+                  variant="secondary"
+                >
+                  {isValidating ? (
+                    <div className="flex items-center space-x-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Testing...</span>
+                    </div>
+                  ) : (
+                    'Test Email'
+                  )}
+                </Button>
+                <Button 
+                  onClick={handleResendEmail}
+                  disabled={loading}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  {loading ? (
+                    <div className="flex items-center space-x-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <span>Sending...</span>
+                    </div>
+                  ) : (
+                    <>
+                      <Mail className="h-4 w-4 mr-2" />
+                      Send Verification Email
+                    </>
+                  )}
+                </Button>
+              </>
             )}
           </div>
         </div>

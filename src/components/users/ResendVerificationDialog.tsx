@@ -2,8 +2,9 @@
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { useAuthActions } from '@/hooks/useAuthActions';
 import { Mail, AlertCircle, CheckCircle } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface ResendVerificationDialogProps {
   open: boolean;
@@ -18,8 +19,45 @@ const ResendVerificationDialog: React.FC<ResendVerificationDialogProps> = ({
   userEmail,
   userName
 }) => {
-  const { resendVerificationEmail, loading } = useAuthActions();
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+
+  const resendVerificationEmail = async (email: string) => {
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email
+      });
+
+      if (error) {
+        console.error('❌ Error resending verification email:', error);
+        toast({
+          title: "Error",
+          description: error.message || "Failed to resend verification email",
+          variant: "destructive",
+        });
+        return { success: false, error: error.message };
+      }
+
+      toast({
+        title: "Email Sent",
+        description: "Verification email has been sent successfully.",
+      });
+      return { success: true };
+    } catch (error: any) {
+      console.error('❌ Exception resending verification email:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+      return { success: false, error: error.message };
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleResendEmail = async () => {
     console.log('📧 Resending verification email for:', userEmail);

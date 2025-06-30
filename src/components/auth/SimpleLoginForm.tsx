@@ -4,7 +4,7 @@ import { HealthcareButton } from '@/components/ui/healthcare-button';
 import { HealthcareInput } from '@/components/ui/healthcare-input';
 import { HealthcareLabel } from '@/components/ui/healthcare-label';
 import { HealthcareCard, HealthcareCardContent, HealthcareCardDescription, HealthcareCardHeader, HealthcareCardTitle } from '@/components/ui/healthcare-card';
-import { useAuthContext } from '@/components/auth/SimpleAuthProvider';
+import { useAuthContext } from '@/components/auth/CleanAuthProvider';
 import { Eye, EyeOff, Mail, Lock, AlertCircle, LogOut } from 'lucide-react';
 
 const SimpleLoginForm = () => {

@@ -4,8 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAuthActions } from '@/hooks/useAuthActions';
-import { useAuthContext } from '@/components/auth/AuthProvider';
+import { useAuthContext } from '@/components/auth/CleanAuthProvider';
 import { Database } from '@/integrations/supabase/types';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -15,27 +14,12 @@ export const AuthTestComponent = () => {
   const [email, setEmail] = useState('admin@geniecellgene.com');
   const [password, setPassword] = useState('admin123');
   const [role, setRole] = useState<UserRole>('superAdmin');
-  const { signIn, signUp, assignUserRole, loading } = useAuthActions();
-  const { user, session, isAuthenticated } = useAuthContext();
+  const { signIn, user, session, isAuthenticated, loading } = useAuthContext();
 
   const handleTestSignIn = async () => {
     console.log('🧪 Testing sign in with:', { email, password });
     const result = await signIn(email, password);
     console.log('🧪 Sign in result:', result);
-  };
-
-  const handleCreateTestUser = async () => {
-    console.log('🧪 Creating test user with:', { email, password, role });
-    const result = await signUp(email, password, role);
-    console.log('🧪 Sign up result:', result);
-  };
-
-  const handleAssignRole = async () => {
-    if (user) {
-      console.log('🧪 Assigning role to current user:', { userId: user.id, role });
-      const result = await assignUserRole(user.id, role);
-      console.log('🧪 Role assignment result:', result);
-    }
   };
 
   const handleDirectDbTest = async () => {
@@ -104,23 +88,6 @@ export const AuthTestComponent = () => {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="test-role">Role</Label>
-          <select
-            id="test-role"
-            value={role}
-            onChange={(e) => setRole(e.target.value as UserRole)}
-            className="w-full p-2 border border-gray-300 rounded"
-          >
-            <option value="superAdmin">Super Admin</option>
-            <option value="onboardingTeam">Onboarding Team</option>
-            <option value="healthcareProvider">Healthcare Provider</option>
-            <option value="nurse">Nurse</option>
-            <option value="caseManager">Case Manager</option>
-            <option value="patientCaregiver">Patient Caregiver</option>
-          </select>
-        </div>
-
-        <div className="space-y-2">
           <Button 
             onClick={handleTestSignIn} 
             disabled={loading}
@@ -128,26 +95,6 @@ export const AuthTestComponent = () => {
           >
             Test Sign In
           </Button>
-          
-          <Button 
-            onClick={handleCreateTestUser} 
-            disabled={loading}
-            variant="outline"
-            className="w-full"
-          >
-            Create Test User
-          </Button>
-
-          {user && (
-            <Button 
-              onClick={handleAssignRole} 
-              disabled={loading}
-              variant="secondary"
-              className="w-full"
-            >
-              Assign Role to Current User
-            </Button>
-          )}
 
           <Button 
             onClick={handleDirectDbTest} 

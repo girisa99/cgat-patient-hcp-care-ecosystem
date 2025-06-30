@@ -1,8 +1,8 @@
 
 import React from 'react';
-import { useAuthContext } from './AuthProvider';
+import { useAuthContext } from './CleanAuthProvider';
 import { Database } from '@/integrations/supabase/types';
-import LoginForm from './LoginForm';
+import CleanLoginForm from './CleanLoginForm';
 import HealthcareAuthLayout from './HealthcareAuthLayout';
 
 type UserRole = Database['public']['Enums']['user_role'];
@@ -34,7 +34,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   if (!user) {
     return (
       <HealthcareAuthLayout>
-        <LoginForm />
+        <CleanLoginForm />
       </HealthcareAuthLayout>
     );
   }

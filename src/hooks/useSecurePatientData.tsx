@@ -1,123 +1,105 @@
 
-/**
- * Secure Patient Data Hook
- * 
- * This hook provides additional security layers and monitoring for patient data access.
- * Use this when you need extra security validation or audit logging.
- */
-
-import { useCallback } from 'react';
-import { useSecureAuth } from '@/hooks/useSecureAuth';
-import { usePatients } from '@/hooks/usePatients';
-import { validatePatientData, PATIENT_ROLE } from '@/utils/patientDataHelpers';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { useAuthContext } from '@/components/auth/CleanAuthProvider';
+
+interface PatientData {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  email: string | null;
+  phone: string | null;
+  date_of_birth: string | null;
+  medical_record_number: string | null;
+  emergency_contact_name: string | null;
+  emergency_contact_phone: string | null;
+  insurance_provider: string | null;
+  insurance_policy_number: string | null;
+  primary_care_physician: string | null;
+  medical_conditions: string[] | null;
+  medications: string[] | null;
+  allergies: string[] | null;
+  care_plan_status: string | null;
+  created_at: string;
+  updated_at: string;
+}
 
 export const useSecurePatientData = () => {
-  const { hasRole, user } = useSecureAuth();
-  const { patients, isLoading, error, refetch } = usePatients();
+  const [patients, setPatients] = useState<PatientData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
+  const { user, userRoles } = useAuthContext();
 
-  /**
-   * Verifies user has permission to access patient data
-   */
-  const verifyPatientAccess = useCallback(async (): Promise<boolean> => {
+  const fetchPatients = async () => {
     if (!user) {
-      console.warn('⚠️ No authenticated user for patient data access');
-      return false;
+      setError('Authentication required');
+      setLoading(false);
+      return;
     }
 
-    // Check if user has roles that can access patient data
-    const allowedRoles = ['superAdmin', 'caseManager', 'healthcareProvider'];
-    const hasAccess = allowedRoles.some(role => hasRole(role as any));
-    
-    if (!hasAccess) {
-      console.warn(`⚠️ User ${user.email} lacks permission to access patient data`);
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Check if user has appropriate role
+      const canAccessPatients = userRoles.some(role => 
+        ['superAdmin', 'healthcareProvider', 'nurse', 'caseManager'].includes(role)
+      );
+
+      if (!canAccessPatients) {
+        setError('Insufficient permissions to access patient data');
+        setLoading(false);
+        return;
+      }
+
+      console.log('🔒 Fetching secure patient data for user:', user.id);
       
-      // Log unauthorized access attempt
-      await supabase.from('audit_logs').insert({
-        action: 'UNAUTHORIZED_PATIENT_ACCESS_ATTEMPT',
-        table_name: 'auth.users',
-        record_id: user.id,
-        new_values: {
-          attempted_by: user.email,
-          timestamp: new Date().toISOString(),
-          reason: 'Insufficient role permissions'
-        }
+      const { data, error: fetchError } = await supabase
+        .from('patient_profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (fetchError) {
+        console.error('❌ Error fetching patient data:', fetchError);
+        setError(fetchError.message);
+        toast({
+          title: "Error",
+          description: "Failed to fetch patient data",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log('✅ Successfully fetched patient data:', data?.length || 0, 'patients');
+      setPatients(data || []);
+      
+    } catch (err: any) {
+      console.error('❌ Exception fetching patients:', err);
+      setError(err.message);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred while fetching patient data",
+        variant: "destructive",
       });
-      
-      return false;
+    } finally {
+      setLoading(false);
     }
+  };
 
-    return true;
-  }, [user, hasRole]);
+  useEffect(() => {
+    fetchPatients();
+  }, [user, userRoles]);
 
-  /**
-   * Gets patient data with additional security validation
-   */
-  const getSecurePatientData = useCallback(async () => {
-    const hasAccess = await verifyPatientAccess();
-    if (!hasAccess) {
-      throw new Error('Unauthorized: Insufficient permissions to access patient data');
-    }
-
-    if (!patients) {
-      return [];
-    }
-
-    // Validate each patient record
-    const validatedPatients = patients.filter(patient => {
-      try {
-        validatePatientData(patient);
-        return true;
-      } catch (error) {
-        console.error('❌ Patient data validation failed:', error, patient);
-        return false;
-      }
-    });
-
-    // Log patient data access for audit
-    await supabase.from('audit_logs').insert({
-      action: 'PATIENT_DATA_ACCESSED',
-      table_name: 'auth.users',
-      record_id: user?.id,
-      new_values: {
-        accessed_by: user?.email,
-        patient_count: validatedPatients.length,
-        timestamp: new Date().toISOString()
-      }
-    });
-
-    return validatedPatients;
-  }, [patients, verifyPatientAccess, user]);
-
-  /**
-   * Gets a specific patient by ID with security validation
-   */
-  const getPatientById = useCallback(async (patientId: string) => {
-    const securePatients = await getSecurePatientData();
-    const patient = securePatients.find(p => p.id === patientId);
-    
-    if (!patient) {
-      console.warn(`⚠️ Patient not found or access denied: ${patientId}`);
-      return null;
-    }
-
-    return patient;
-  }, [getSecurePatientData]);
+  const refetch = () => {
+    fetchPatients();
+  };
 
   return {
     patients,
-    isLoading,
+    loading,
     error,
-    refetch,
-    verifyPatientAccess,
-    getSecurePatientData,
-    getPatientById,
-    // Security metadata
-    security: {
-      dataSource: 'auth.users via manage-user-profiles edge function',
-      roleRequired: PATIENT_ROLE,
-      auditLogged: true,
-      accessControlEnabled: true
-    }
+    refetch
   };
 };

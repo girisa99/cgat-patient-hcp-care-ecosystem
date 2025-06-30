@@ -13,7 +13,7 @@ import { generateHookCode, generateComponentCode } from '@/utils/schema/codeGene
 import { autoRegisterModules, autoModuleWatcher } from '@/utils/autoModuleRegistration';
 import { validateModuleSecurity, sanitizeModuleConfig } from '@/utils/security/moduleSecurityValidator';
 import { validateModulePermission } from '@/utils/security/authSecurityHelpers';
-import { useAuthContext } from '@/components/auth/AuthProvider';
+import { useAuthContext } from '@/components/auth/CleanAuthProvider';
 import { AutoModuleConfig } from '@/utils/schema/types';
 import { moduleRegistry } from '@/utils/moduleRegistry';
 
