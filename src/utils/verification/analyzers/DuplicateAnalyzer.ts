@@ -1,93 +1,99 @@
 
 /**
- * Duplicate Code Analysis Utilities
- * Specialized analyzer for finding duplicate code patterns
+ * Duplicate Code Analyzer
+ * Detects duplicate components, hooks, and other code patterns
  */
 
 export interface DuplicateAnalysisResult {
   duplicateComponents: string[];
-  duplicateUtilities: string[];
   duplicateHooks: string[];
   duplicateServices: string[];
+  duplicateUtilities: string[];
   duplicateTypes: string[];
-  similarCodeBlocks: string[];
-  recommendedConsolidation: string[];
+  totalDuplicates: number;
+  severityScore: number;
 }
 
 export class DuplicateAnalyzer {
   /**
-   * Analyze duplicate code patterns across the codebase
+   * Analyze system for duplicate code patterns
    */
   static analyzeDuplicates(): DuplicateAnalysisResult {
-    console.log('🔍 Analyzing duplicate code patterns...');
+    console.log('🔍 Analyzing code duplicates...');
 
-    const mockResult: DuplicateAnalysisResult = {
-      duplicateComponents: [
-        'EnhancedIssuesTab.tsx vs IssuesTab.tsx - similar structure',
-        'Multiple verification tab components with overlapping functionality'
-      ],
-      duplicateUtilities: [
-        'Multiple validation utilities with similar purposes',
-        'Date formatting functions scattered across files',
-        'Similar error handling patterns'
-      ],
-      duplicateHooks: [
-        'useFixedIssuesTracker variations',
-        'Multiple verification hooks with similar logic'
-      ],
-      duplicateServices: [
-        'Verification service classes with overlapping functionality',
-        'Multiple API client services with similar patterns'
-      ],
-      duplicateTypes: [
-        'Issue-related type definitions scattered across files',
-        'Verification result types with similar structure'
-      ],
-      similarCodeBlocks: [
-        'Issue processing logic duplicated across components',
-        'Toast notification patterns repeated',
-        'Loading state handling duplicated'
-      ],
-      recommendedConsolidation: [
-        'Create shared issue processing hook',
-        'Consolidate verification tab components',
-        'Extract common toast notification utility',
-        'Unify loading state management'
-      ]
+    // In a real implementation, this would scan the actual codebase
+    // For now, we'll simulate the analysis
+    const duplicateComponents = this.findDuplicateComponents();
+    const duplicateHooks = this.findDuplicateHooks();
+    const duplicateServices = this.findDuplicateServices();
+    const duplicateUtilities = this.findDuplicateUtilities();
+    const duplicateTypes = this.findDuplicateTypes();
+
+    const totalDuplicates = duplicateComponents.length + duplicateHooks.length + 
+                           duplicateServices.length + duplicateUtilities.length + 
+                           duplicateTypes.length;
+
+    const severityScore = this.calculateSeverityScore(totalDuplicates);
+
+    return {
+      duplicateComponents,
+      duplicateHooks,
+      duplicateServices,
+      duplicateUtilities,
+      duplicateTypes,
+      totalDuplicates,
+      severityScore
     };
-
-    return mockResult;
   }
 
   /**
-   * Find exact code duplicates
+   * Find duplicate components
    */
-  static findExactDuplicates(): string[] {
-    return [
-      'convertFixedIssuesToIssues function appears in multiple files',
-      'Similar useEffect patterns for issue processing'
-    ];
+  private static findDuplicateComponents(): string[] {
+    // Simulate duplicate component detection
+    return [];
   }
 
   /**
-   * Find similar code patterns that could be refactored
+   * Find duplicate hooks
    */
-  static findSimilarPatterns(): {
-    pattern: string;
-    locations: string[];
-    consolidationOpportunity: string;
-  }[] {
-    return [
-      {
-        pattern: 'Issue processing and categorization',
-        locations: ['EnhancedIssuesTab.tsx', 'IssuesTab.tsx', 'IssuesDataProcessor.ts'],
-        consolidationOpportunity: 'Create shared useIssueProcessor hook'
-      },
-      {
-        pattern: 'Real fix handling logic',
-        locations: ['EnhancedIssuesTab.tsx', 'IssuesTab.tsx'],
-        consolidationOpportunity: 'Extract shared useRealFixHandler hook'
-      }
-    ];
+  private static findDuplicateHooks(): string[] {
+    // Simulate duplicate hook detection
+    return [];
+  }
+
+  /**
+   * Find duplicate services
+   */
+  private static findDuplicateServices(): string[] {
+    // Simulate duplicate service detection
+    return [];
+  }
+
+  /**
+   * Find duplicate utilities
+   */
+  private static findDuplicateUtilities(): string[] {
+    // Simulate duplicate utility detection
+    return [];
+  }
+
+  /**
+   * Find duplicate types
+   */
+  private static findDuplicateTypes(): string[] {
+    // Simulate duplicate type detection
+    return [];
+  }
+
+  /**
+   * Calculate severity score based on duplicate count
+   */
+  private static calculateSeverityScore(totalDuplicates: number): number {
+    if (totalDuplicates === 0) return 100;
+    if (totalDuplicates <= 5) return 80;
+    if (totalDuplicates <= 10) return 60;
+    if (totalDuplicates <= 20) return 40;
+    return 20;
   }
 }

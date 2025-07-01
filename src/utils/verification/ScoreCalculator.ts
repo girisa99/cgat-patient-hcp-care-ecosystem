@@ -1,7 +1,7 @@
 
 /**
  * Score Calculator
- * Utility for calculating overall system health scores
+ * Calculates overall system health scores and generates action plans
  */
 
 export class ScoreCalculator {
@@ -13,46 +13,32 @@ export class ScoreCalculator {
     mockDataResult: any;
     codeQualityResult: any;
     databaseResult: any;
-    moduleRegistryResult?: any;
-    typescriptResult?: any;
+    moduleRegistryResult: any;
+    typescriptResult: any;
   }): number {
-    console.log('📊 Calculating overall system score...');
-
-    // Weight different aspects of the system
     const weights = {
       singleSource: 0.25,
       mockData: 0.15,
-      codeQuality: 0.25,
+      codeQuality: 0.20,
       database: 0.20,
-      modules: 0.10,
-      typescript: 0.05
+      moduleRegistry: 0.10,
+      typescript: 0.10
     };
 
-    let score = 0;
-    
-    // Single source compliance (0-100)
-    score += (results.singleSourceResult?.summary?.complianceScore || 80) * weights.singleSource;
-    
-    // Mock data usage (0-100)
-    score += (results.mockDataResult?.databaseUsageScore || 85) * weights.mockData;
-    
-    // Code quality (based on issues found)
-    const codeQualityScore = this.calculateCodeQualityScore(results.codeQualityResult);
-    score += codeQualityScore * weights.codeQuality;
-    
-    // Database health (0-100)
-    const databaseScore = this.calculateDatabaseScore(results.databaseResult);
-    score += databaseScore * weights.database;
-    
-    // Module registry health (0-100)
-    const moduleScore = this.calculateModuleScore(results.moduleRegistryResult);
-    score += moduleScore * weights.modules;
-    
-    // TypeScript health (0-100)
-    const typescriptScore = this.calculateTypescriptScore(results.typescriptResult);
-    score += typescriptScore * weights.typescript;
+    const scores = {
+      singleSource: results.singleSourceResult?.summary?.complianceScore || 0,
+      mockData: results.mockDataResult?.databaseUsageScore || 0,
+      codeQuality: results.codeQualityResult?.duplicates?.severityScore || 0,
+      database: results.databaseResult?.overallScore || 0,
+      moduleRegistry: results.moduleRegistryResult?.healthScore || 0,
+      typescript: results.typescriptResult?.typeConsistencyScore || 0
+    };
 
-    return Math.round(Math.max(0, Math.min(100, score)));
+    const weightedScore = Object.entries(weights).reduce((total, [key, weight]) => {
+      return total + (scores[key as keyof typeof scores] * weight);
+    }, 0);
+
+    return Math.round(weightedScore);
   }
 
   /**
@@ -66,121 +52,76 @@ export class ScoreCalculator {
   }
 
   /**
-   * Identify critical issues
+   * Identify critical issues across all systems
    */
-  static identifyCriticalIssues(results: {
-    singleSourceResult: any;
-    mockDataResult: any;
-    codeQualityResult: any;
-    databaseResult: any;
-  }): string[] {
+  static identifyCriticalIssues(results: any): string[] {
     const criticalIssues: string[] = [];
 
-    // Check for critical violations
-    if (results.singleSourceResult?.violations?.length > 5) {
-      criticalIssues.push('Multiple single source violations detected');
+    // Check single source violations
+    if (results.singleSourceResult?.violations?.length > 0) {
+      criticalIssues.push('Single source of truth violations detected');
     }
 
-    if (results.mockDataResult?.violations?.length > 3) {
-      criticalIssues.push('Excessive mock data usage in production code');
+    // Check mock data usage
+    if (results.mockDataResult?.violations?.length > 0) {
+      criticalIssues.push('Mock data usage in production code');
     }
 
-    if (results.codeQualityResult?.duplicates?.components?.length > 5) {
-      criticalIssues.push('High number of duplicate components detected');
+    // Check database issues
+    if (results.databaseResult?.overallScore < 70) {
+      criticalIssues.push('Database integrity and performance issues');
     }
 
-    if (results.databaseResult?.schemas?.inconsistencies?.length > 0) {
-      criticalIssues.push('Database schema inconsistencies found');
+    // Check code quality
+    if (results.codeQualityResult?.duplicates?.totalDuplicates > 10) {
+      criticalIssues.push('High code duplication detected');
     }
 
     return criticalIssues;
   }
 
   /**
-   * Generate action plan
+   * Generate action plan based on critical issues
    */
   static generateActionPlan(criticalIssues: string[]): string[] {
     const actionPlan: string[] = [];
 
-    criticalIssues.forEach(issue => {
-      if (issue.includes('single source')) {
-        actionPlan.push('Refactor duplicate code to follow single source principle');
-      }
-      if (issue.includes('mock data')) {
-        actionPlan.push('Replace mock data with real database connections');
-      }
-      if (issue.includes('duplicate components')) {
-        actionPlan.push('Consolidate duplicate components into reusable modules');
-      }
-      if (issue.includes('schema inconsistencies')) {
-        actionPlan.push('Review and fix database schema inconsistencies');
-      }
-    });
+    if (criticalIssues.includes('Single source of truth violations detected')) {
+      actionPlan.push('1. Consolidate duplicate data sources and create unified interfaces');
+    }
 
-    // Add general improvements
-    actionPlan.push('Implement automated code quality checks');
-    actionPlan.push('Set up continuous integration for code analysis');
+    if (criticalIssues.includes('Mock data usage in production code')) {
+      actionPlan.push('2. Replace all mock data with real database connections');
+    }
+
+    if (criticalIssues.includes('Database integrity and performance issues')) {
+      actionPlan.push('3. Optimize database schema and add missing indexes');
+    }
+
+    if (criticalIssues.includes('High code duplication detected')) {
+      actionPlan.push('4. Refactor duplicate code into reusable components');
+    }
+
+    // Add general recommendations
+    if (actionPlan.length === 0) {
+      actionPlan.push('1. Continue regular system maintenance and monitoring');
+      actionPlan.push('2. Implement automated quality checks');
+    }
+
+    actionPlan.push(`${actionPlan.length + 1}. Schedule regular system health reviews`);
+    actionPlan.push(`${actionPlan.length + 1}. Set up automated alerts for system degradation`);
 
     return actionPlan;
   }
 
   /**
-   * Estimate cleanup time
+   * Estimate cleanup time based on issue count
    */
-  static estimateCleanupTime(criticalIssuesCount: number): string {
-    if (criticalIssuesCount === 0) return '0-1 hours';
-    if (criticalIssuesCount <= 2) return '2-4 hours';
-    if (criticalIssuesCount <= 5) return '1-2 days';
-    return '3-5 days';
-  }
-
-  private static calculateCodeQualityScore(codeQualityResult: any): number {
-    if (!codeQualityResult) return 80;
-
-    let score = 100;
-    
-    // Deduct points for duplicates
-    const duplicatesCount = (codeQualityResult.duplicates?.components?.length || 0) +
-                           (codeQualityResult.duplicates?.hooks?.length || 0) +
-                           (codeQualityResult.duplicates?.utilities?.length || 0);
-    score -= duplicatesCount * 5;
-
-    // Deduct points for dead code
-    const deadCodeCount = (codeQualityResult.deadCode?.unusedFiles?.length || 0) +
-                         (codeQualityResult.deadCode?.unusedFunctions?.length || 0);
-    score -= deadCodeCount * 3;
-
-    return Math.max(0, score);
-  }
-
-  private static calculateDatabaseScore(databaseResult: any): number {
-    if (!databaseResult) return 85;
-
-    let score = 100;
-    score -= (databaseResult.tables?.missingIndexes?.length || 0) * 5;
-    score -= (databaseResult.relationships?.broken?.length || 0) * 10;
-    score -= (databaseResult.schemas?.inconsistencies?.length || 0) * 15;
-
-    return Math.max(0, score);
-  }
-
-  private static calculateModuleScore(moduleResult: any): number {
-    if (!moduleResult) return 90;
-
-    let score = 100;
-    score -= (moduleResult.duplicateModules?.length || 0) * 10;
-    score -= (moduleResult.orphanedComponents?.length || 0) * 5;
-
-    return Math.max(0, score);
-  }
-
-  private static calculateTypescriptScore(typescriptResult: any): number {
-    if (!typescriptResult) return 85;
-
-    let score = 100;
-    score -= (typescriptResult.duplicateTypes?.length || 0) * 5;
-    score -= (typescriptResult.missingTypes?.length || 0) * 3;
-
-    return Math.max(0, score);
+  static estimateCleanupTime(issueCount: number): string {
+    if (issueCount === 0) return '0 hours';
+    if (issueCount <= 5) return '2-4 hours';
+    if (issueCount <= 10) return '1-2 days';
+    if (issueCount <= 20) return '3-5 days';
+    return '1-2 weeks';
   }
 }
