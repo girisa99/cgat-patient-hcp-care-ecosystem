@@ -47,32 +47,29 @@ export const PatientsList: React.FC<PatientsListProps> = ({
   const safePatients = Array.isArray(patients) ? patients : [];
 
   const handleView = (patientId: string) => {
-    console.log('👁️ Viewing patient:', patientId);
+    console.log('👁️ PatientsList: Viewing patient:', patientId);
     if (onView) {
       onView(patientId);
     } else {
-      // Default view action - could open a patient details modal/page
-      console.log('View patient details for:', patientId);
+      console.log('No onView handler provided');
     }
   };
 
   const handleEdit = (patientId: string) => {
-    console.log('✏️ Editing patient:', patientId);
+    console.log('✏️ PatientsList: Editing patient:', patientId);
     if (onEdit) {
       onEdit(patientId);
     } else {
-      // Default edit action - could open an edit form
-      console.log('Edit patient details for:', patientId);
+      console.log('No onEdit handler provided');
     }
   };
 
   const handleDeactivate = (patientId: string, patientName: string) => {
-    console.log('🚫 Deactivating patient:', patientId, patientName);
+    console.log('🚫 PatientsList: Deactivating patient:', patientId, patientName);
     if (onDeactivate) {
       onDeactivate(patientId, patientName);
     } else {
-      // Default deactivate action - could show confirmation dialog
-      console.log('Deactivate patient:', patientId, patientName);
+      console.log('No onDeactivate handler provided');
     }
   };
 

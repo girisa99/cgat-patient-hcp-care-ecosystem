@@ -7,14 +7,20 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Plus, Users, Activity, UserCheck, Calendar, Search, Filter, Download } from 'lucide-react';
-import PatientsList from '@/components/patients/PatientsList';
+import { PatientsList } from '@/components/admin/PatientManagement/PatientsList';
+import { PatientViewDialog } from '@/components/admin/PatientManagement/PatientViewDialog';
+import { PatientEditDialog } from '@/components/admin/PatientManagement/PatientEditDialog';
 import CreatePatientDialog from '@/components/patients/CreatePatientDialog';
-import EditPatientDialog from '@/components/patients/EditPatientDialog';
 import { useUnifiedUserManagement } from '@/hooks/useUnifiedUserManagement';
+import { useToast } from '@/hooks/use-toast';
 
 const Patients = () => {
   const { users, isLoading, getPatients, searchUsers, meta } = useUnifiedUserManagement();
+  const { toast } = useToast();
+  
+  // Dialog states
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -28,25 +34,58 @@ const Patients = () => {
   );
 
   const handleCreatePatient = () => {
+    console.log('🆕 Opening create patient dialog');
     setCreateDialogOpen(true);
   };
 
-  const handleEditPatient = (patient: any) => {
-    console.log('✏️ Opening edit dialog for patient:', patient.id);
-    setSelectedPatient(patient);
-    setEditDialogOpen(true);
+  const handleViewPatient = (patientId: string) => {
+    console.log('👁️ Patients page: Opening view dialog for patient:', patientId);
+    const patient = patients.find(p => p.id === patientId);
+    if (patient) {
+      setSelectedPatient(patient);
+      setViewDialogOpen(true);
+    } else {
+      toast({
+        title: "Patient Not Found",
+        description: "Could not find the selected patient.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleViewPatient = (patient: any) => {
-    console.log('👁️ Viewing patient details:', patient.id);
-    // For now, just open edit dialog to view details
-    setSelectedPatient(patient);
-    setEditDialogOpen(true);
+  const handleEditPatient = (patientId: string) => {
+    console.log('✏️ Patients page: Opening edit dialog for patient:', patientId);
+    const patient = patients.find(p => p.id === patientId);
+    if (patient) {
+      setSelectedPatient(patient);
+      setEditDialogOpen(true);
+    } else {
+      toast({
+        title: "Patient Not Found",
+        description: "Could not find the selected patient.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleDeactivatePatient = (patient: any) => {
-    console.log('🚫 Deactivating patient:', patient.id);
-    // TODO: Implement deactivation logic using unified user management
+  const handleDeactivatePatient = (patientId: string, patientName: string) => {
+    console.log('🚫 Patients page: Deactivating patient:', patientId, patientName);
+    
+    // Show confirmation toast for now - in a real app this would open a confirmation dialog
+    toast({
+      title: "Deactivate Patient",
+      description: `Are you sure you want to deactivate ${patientName}? This feature will be implemented in the next update.`,
+    });
+  };
+
+  const handleCloseViewDialog = () => {
+    setViewDialogOpen(false);
+    setSelectedPatient(null);
+  };
+
+  const handleCloseEditDialog = () => {
+    setEditDialogOpen(false);
+    setSelectedPatient(null);
   };
 
   // Calculate stats from real data
@@ -144,7 +183,6 @@ const Patients = () => {
             <CardContent className="p-6">
               <PatientsList 
                 patients={filteredPatients}
-                onEditPatient={handleEditPatient}
                 onView={handleViewPatient}
                 onEdit={handleEditPatient}
                 onDeactivate={handleDeactivatePatient}
@@ -166,11 +204,19 @@ const Patients = () => {
         />
 
         {selectedPatient && (
-          <EditPatientDialog
-            patient={selectedPatient}
-            open={editDialogOpen}
-            onOpenChange={setEditDialogOpen}
-          />
+          <>
+            <PatientViewDialog
+              patient={selectedPatient}
+              open={viewDialogOpen}
+              onClose={handleCloseViewDialog}
+            />
+
+            <PatientEditDialog
+              patient={selectedPatient}
+              open={editDialogOpen}
+              onClose={handleCloseEditDialog}
+            />
+          </>
         )}
       </PageContainer>
     </MainLayout>
