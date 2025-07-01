@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -233,18 +234,18 @@ const UnifiedDashboard: React.FC = () => {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {userModules?.map((module) => (
-              <Card key={module.id} className="cursor-pointer hover:shadow-md transition-shadow">
+              <Card key={module.module_id} className="cursor-pointer hover:shadow-md transition-shadow">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="font-medium">{module.moduleName}</h3>
+                      <h3 className="font-medium">{module.module_name}</h3>
                       <p className="text-sm text-gray-500 mt-1">
-                        {module.description || 'No description available'}
+                        {module.module_description || 'No description available'}
                       </p>
                     </div>
                     <Button 
                       size="sm" 
-                      onClick={() => navigate(`/${module.moduleName.toLowerCase()}`)}
+                      onClick={() => navigate(`/${module.module_name.toLowerCase()}`)}
                     >
                       Open
                     </Button>

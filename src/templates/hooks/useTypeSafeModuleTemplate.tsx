@@ -65,7 +65,7 @@ export const useTypeSafeModuleTemplate = <T extends DatabaseTables>(
   // Universal update with validation
   const updateWithValidation = async (id: string, data: any) => {
     const validatedData = validateAndCorrect(data);
-    return mutationsHook.updateItem(id, validatedData);
+    return mutationsHook.updateItem({ id, updates: validatedData });
   };
 
   // Enhanced search and filtering
@@ -110,10 +110,10 @@ export const useTypeSafeModuleTemplate = <T extends DatabaseTables>(
     // Enhanced mutations
     createItem: createWithValidation,
     updateItem: updateWithValidation,
-    deleteItem: mutationsHook.deleteItem,
+    deleteItem: mutationsHook.deleteItem || (() => Promise.resolve()),
     isCreating: mutationsHook.isCreating,
     isUpdating: mutationsHook.isUpdating,
-    isDeleting: mutationsHook.isDeleting,
+    isDeleting: mutationsHook.isDeleting || false,
     
     // Validation system
     isTableValid: validationHook.isValid,
@@ -129,7 +129,7 @@ export const useTypeSafeModuleTemplate = <T extends DatabaseTables>(
     // Backward compatibility
     create: createWithValidation,
     update: updateWithValidation,
-    delete: mutationsHook.deleteItem,
+    delete: mutationsHook.deleteItem || (() => Promise.resolve()),
     
     // Comprehensive metadata
     meta: {

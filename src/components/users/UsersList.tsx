@@ -1,293 +1,151 @@
 
-/**
- * PRIMARY COMPONENT: UsersList
- * 
- * ⚠️  CANONICAL SOURCE OF TRUTH - DO NOT DUPLICATE ⚠️
- * 
- * This is the primary users list component used throughout the application.
- * Displays users in a comprehensive table format with all necessary actions.
- * 
- * USAGE LOCATIONS:
- * - src/pages/Users.tsx (primary usage)
- * - Any component that needs to display user lists
- * 
- * FEATURES:
- * - Comprehensive user table display
- * - Real-time filtering and search
- * - Role and facility information display
- * - Action buttons for user management
- * - Loading and error states
- * - Responsive design
- * 
- * MODIFICATIONS:
- * - Always update this file for user list display changes
- * - Do not create alternative user list components
- * - Keep table structure consistent
- * 
- * LAST UPDATED: 2025-06-29
- * MAINTAINER: System Architecture Team
- */
-
-import React, { useState, useMemo } from 'react';
-import { Badge } from '@/components/ui/badge';
+import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { AlertCircle, Users, Clock } from 'lucide-react';
-import { useUsers } from '@/hooks/useUsers';
-import LoadingSpinner from '@/components/ui/LoadingSpinner';
-import UserActions from './UserActions';
-import UserAccessSummary from './UserAccessSummary';
-import UserRolesBadgeGroup from './UserRolesBadgeGroup';
-import UserModuleAccessIndicator from './UserModuleAccessIndicator';
-import UserPermissionsBadge from './UserPermissionsBadge';
-import EnhancedUserFilters from './EnhancedUserFilters';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { MoreHorizontal, Edit, UserPlus, Building, Shield, Mail, UserX } from 'lucide-react';
+import { UserWithRoles } from '@/types/userManagement';
 
 interface UsersListProps {
-  onCreateUser: () => void;
+  users: any[];
+  onEditUser: (user: any) => void;
   onAssignRole: (userId: string) => void;
   onRemoveRole?: (userId: string) => void;
   onAssignFacility: (userId: string) => void;
-  onEditUser: (user: any) => void;
-  onManagePermissions?: (userId: string, userName: string) => void;
-  onAssignModule?: (userId: string, userName: string) => void;
+  onManagePermissions: (userId: string, userName: string) => void;
+  onAssignModule: (userId: string, userName: string) => void;
   onResendVerification?: (userEmail: string, userName: string) => void;
   onDeactivateUser?: (userId: string, userName: string, userEmail: string) => void;
   onViewModules?: (userId: string, userName: string) => void;
 }
 
 const UsersList: React.FC<UsersListProps> = ({
-  onCreateUser,
+  users,
+  onEditUser,
   onAssignRole,
   onRemoveRole,
   onAssignFacility,
-  onEditUser,
   onManagePermissions,
   onAssignModule,
   onResendVerification,
   onDeactivateUser,
   onViewModules
 }) => {
-  const { users, isLoading, error } = useUsers();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [roleFilter, setRoleFilter] = useState<string>('all');
-  const [verificationFilter, setVerificationFilter] = useState<string>('all');
-  const [viewMode, setViewMode] = useState<'table' | 'detailed'>('table');
-
-  // Filter and search users
-  const filteredUsers = useMemo(() => {
-    if (!users) return [];
-    
-    return users.filter(user => {
-      // Search filter
-      const matchesSearch = !searchTerm || 
-        user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.last_name?.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      // Role filter
-      const userRoles = user.user_roles?.map(ur => ur.roles.name) || [];
-      const matchesRole = roleFilter === 'all' || 
-        (roleFilter === 'no-role' && userRoles.length === 0) ||
-        userRoles.includes(roleFilter as any);
-      
-      // Verification filter - simplified since email_confirmed_at is not available
-      const matchesVerification = verificationFilter === 'all' ||
-        (verificationFilter === 'verified') ||
-        (verificationFilter === 'unverified');
-      
-      return matchesSearch && matchesRole && matchesVerification;
-    });
-  }, [users, searchTerm, roleFilter, verificationFilter]);
-
-  const handleClearFilters = () => {
-    setSearchTerm('');
-    setRoleFilter('all');
-    setVerificationFilter('all');
-  };
-
-  const getVerificationStatus = (user: any) => {
-    if (!user.email) return null;
-    
-    // Simplified verification status since we don't have email_confirmed_at
-    return (
-      <Badge variant="default" className="text-xs bg-green-100 text-green-800 border-green-300">
-        Active
-      </Badge>
-    );
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center py-8">
-        <LoadingSpinner size="lg" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="text-center py-8">
-        <div className="flex items-center justify-center gap-2 text-red-600 mb-2">
-          <AlertCircle className="h-5 w-5" />
-          <span>Failed to load users</span>
-        </div>
-        <p className="text-gray-600 text-sm">{error.message}</p>
-      </div>
-    );
-  }
-
   if (!users || users.length === 0) {
     return (
-      <div className="text-center py-8">
-        <Users className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">No Users Found</h3>
-        <p className="text-gray-600 mb-4">Get started by creating your first user.</p>
-      </div>
+      <Card>
+        <CardContent className="p-8 text-center">
+          <p className="text-gray-500">No users found.</p>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
     <div className="space-y-4">
-      {/* Enhanced Filters */}
-      <EnhancedUserFilters
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-        roleFilter={roleFilter}
-        onRoleFilterChange={setRoleFilter}
-        verificationFilter={verificationFilter}
-        onVerificationFilterChange={setVerificationFilter}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-        resultsCount={filteredUsers.length}
-        totalCount={users.length}
-        onClearFilters={handleClearFilters}
-      />
-
-      {/* Users Display */}
-      <Card>
-        <CardContent className="p-0">
-          {viewMode === 'table' ? (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>User</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Roles</TableHead>
-                    <TableHead>Facility</TableHead>
-                    <TableHead>Permissions</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredUsers.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">
-                            {user.first_name || user.last_name 
-                              ? `${user.first_name || ''} ${user.last_name || ''}`.trim()
-                              : 'No Name'
-                            }
-                          </div>
-                          <div className="text-sm text-gray-600">{user.email}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {getVerificationStatus(user)}
-                      </TableCell>
-                      <TableCell>
-                        <UserRolesBadgeGroup user={user} variant="compact" />
-                      </TableCell>
-                      <TableCell>
-                        {user.facilities ? (
-                          <Badge variant="outline">
-                            {user.facilities.name}
-                          </Badge>
-                        ) : (
-                          <span className="text-gray-400 text-sm">No Facility</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <UserPermissionsBadge userId={user.id} />
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1 text-sm text-gray-600">
-                          <Clock className="h-3 w-3" />
-                          {new Date(user.created_at).toLocaleDateString()}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <UserActions
-                          user={user}
-                          onEditUser={onEditUser}
-                          onAssignRole={onAssignRole}
-                          onRemoveRole={onRemoveRole}
-                          onAssignFacility={onAssignFacility}
-                          onManagePermissions={onManagePermissions || ((userId, userName) => console.log('Manage permissions:', userId, userName))}
-                          onAssignModule={onAssignModule}
-                          onResendVerification={onResendVerification}
-                          onDeactivateUser={onDeactivateUser}
-                          onViewModules={onViewModules}
-                        />
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          ) : (
-            <div className="p-4 space-y-4">
-              {filteredUsers.map((user) => (
-                <Card key={user.id} className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 space-y-3">
-                      <div className="flex items-center gap-4">
-                        <div>
-                          <div className="font-medium text-lg">
-                            {user.first_name || user.last_name 
-                              ? `${user.first_name || ''} ${user.last_name || ''}`.trim()
-                              : 'No Name'
-                            }
-                          </div>
-                          <div className="text-sm text-gray-600">{user.email}</div>
-                        </div>
-                        {getVerificationStatus(user)}
-                      </div>
-                      
-                      <div className="grid md:grid-cols-2 gap-4">
-                        <UserAccessSummary user={user} />
-                        <div className="space-y-2">
-                          <UserModuleAccessIndicator userId={user.id} />
-                          <div className="pt-2">
-                            <UserPermissionsBadge userId={user.id} />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="ml-4">
-                      <UserActions
-                        user={user}
-                        onEditUser={onEditUser}
-                        onAssignRole={onAssignRole}
-                        onRemoveRole={onRemoveRole}
-                        onAssignFacility={onAssignFacility}
-                        onManagePermissions={onManagePermissions || ((userId, userName) => console.log('Manage permissions:', userId, userName))}
-                        onAssignModule={onAssignModule}
-                        onResendVerification={onResendVerification}
-                        onDeactivateUser={onDeactivateUser}
-                        onViewModules={onViewModules}
-                      />
+      {users.map((user) => {
+        const userName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email;
+        const userRoles = user.user_roles || [];
+        const userFacilities = user.facilities || null;
+        
+        return (
+          <Card key={user.id}>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3">
+                    <div>
+                      <h3 className="font-medium">{userName}</h3>
+                      <p className="text-sm text-gray-500">{user.email}</p>
                     </div>
                   </div>
-                </Card>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {userRoles.length > 0 ? (
+                      userRoles.map((userRole: any, index: number) => (
+                        <Badge key={index} variant="secondary">
+                          {userRole.roles?.name || 'Unknown Role'}
+                        </Badge>
+                      ))
+                    ) : (
+                      <Badge variant="outline">No roles assigned</Badge>
+                    )}
+                    
+                    {userFacilities && (
+                      <Badge variant="outline" className="text-blue-600">
+                        {userFacilities.name}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+                
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => onEditUser(user)}>
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit User
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuItem onClick={() => onAssignRole(user.id)}>
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      Assign Role
+                    </DropdownMenuItem>
+                    
+                    {onRemoveRole && userRoles.length > 0 && (
+                      <DropdownMenuItem onClick={() => onRemoveRole(user.id)}>
+                        <UserX className="h-4 w-4 mr-2" />
+                        Remove Role
+                      </DropdownMenuItem>
+                    )}
+                    
+                    <DropdownMenuItem onClick={() => onAssignFacility(user.id)}>
+                      <Building className="h-4 w-4 mr-2" />
+                      Assign Facility
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuItem onClick={() => onManagePermissions(user.id, userName)}>
+                      <Shield className="h-4 w-4 mr-2" />
+                      Manage Permissions
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuItem onClick={() => onAssignModule(user.id, userName)}>
+                      <Shield className="h-4 w-4 mr-2" />
+                      Assign Module
+                    </DropdownMenuItem>
+                    
+                    {onViewModules && (
+                      <DropdownMenuItem onClick={() => onViewModules(user.id, userName)}>
+                        <Shield className="h-4 w-4 mr-2" />
+                        View Modules
+                      </DropdownMenuItem>
+                    )}
+                    
+                    {onResendVerification && (
+                      <DropdownMenuItem onClick={() => onResendVerification(user.email, userName)}>
+                        <Mail className="h-4 w-4 mr-2" />
+                        Resend Verification
+                      </DropdownMenuItem>
+                    )}
+                    
+                    {onDeactivateUser && (
+                      <DropdownMenuItem onClick={() => onDeactivateUser(user.id, userName, user.email)}>
+                        <UserX className="h-4 w-4 mr-2" />
+                        Deactivate User
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 };

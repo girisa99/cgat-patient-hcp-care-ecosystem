@@ -1,59 +1,58 @@
 
 import React, { useState, useMemo } from 'react';
-import { PageHeader } from '@/components/shared/PageHeader';
-import { DataTable } from '@/components/shared/DataTable';
-import { StatusBadge } from '@/components/shared/StatusBadge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, Plus, BarChart3, Users, Activity } from 'lucide-react';
-import { ModuleConfig } from '@/utils/moduleValidation';
+import { 
+  Search, 
+  Plus, 
+  Edit, 
+  Trash2, 
+  MoreHorizontal,
+  TrendingUp,
+  Users,
+  Activity
+} from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+
+interface ColumnConfig {
+  key: string;
+  header: string;
+  render?: (item: any) => React.ReactNode;
+  sortable?: boolean;
+}
 
 interface ExtensibleModuleTemplateProps<T = any> {
-  config: ModuleConfig;
-  data?: T[];
-  isLoading?: boolean;
+  config: {
+    tableName: string;
+    moduleName: string;
+    requiredFields: string[];
+  };
+  data: T[];
+  isLoading: boolean;
   statistics?: {
     total: number;
-    active: number;
-    inactive: number;
-    recentlyCreated: number;
+    active?: number;
+    inactive?: number;
+    [key: string]: any;
   };
   onAdd?: () => void;
   onEdit?: (item: T) => void;
   onDelete?: (item: T) => void;
   onSearch?: (query: string) => T[];
-  customColumns?: Array<{
-    key: string;
-    header: string;
-    render?: (item: T) => React.ReactNode;
-  }>;
+  customColumns?: ColumnConfig[];
   customActions?: React.ReactNode;
   enableSearch?: boolean;
   enableStats?: boolean;
   searchPlaceholder?: string;
 }
 
-/**
- * Universal Extensible Module Template Component
- * 
- * This is the single source of truth for all module UI components.
- * Automatically adapts to any module type with intelligent defaults.
- * 
- * Features:
- * - Universal compatibility with all data structures
- * - Intelligent column detection and rendering
- * - Built-in search and filtering
- * - Automatic statistics generation
- * - Responsive design
- * - Accessibility compliance
- * - Extensible action system
- */
-export const ExtensibleModuleTemplate = <T extends { id: string; created_at?: string; status?: string }>({
+export const ExtensibleModuleTemplate = <T extends Record<string, any>>({
   config,
-  data = [],
-  isLoading = false,
+  data,
+  isLoading,
   statistics,
   onAdd,
   onEdit,
@@ -63,238 +62,262 @@ export const ExtensibleModuleTemplate = <T extends { id: string; created_at?: st
   customActions,
   enableSearch = true,
   enableStats = true,
-  searchPlaceholder
+  searchPlaceholder = "Search items..."
 }: ExtensibleModuleTemplateProps<T>) => {
   const [searchQuery, setSearchQuery] = useState('');
-  
-  // Intelligent column generation
-  const columns = useMemo(() => {
-    if (customColumns) return customColumns;
+  const [filteredData, setFilteredData] = useState<T[]>(data);
+
+  // Handle search
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    if (onSearch) {
+      const filtered = onSearch(query);
+      setFilteredData(filtered);
+    } else {
+      // Default search logic
+      const filtered = data.filter((item: T) => {
+        const searchableFields = ['name', 'title', 'first_name', 'last_name', 'email'];
+        return searchableFields.some(field => 
+          item[field]?.toString().toLowerCase().includes(query.toLowerCase())
+        );
+      });
+      setFilteredData(filtered);
+    }
+  };
+
+  // Auto-detect columns from data
+  const autoDetectedColumns = useMemo(() => {
+    if (!data.length) return [];
     
-    // Smart column detection based on data structure
-    const sampleItem = data[0];
-    if (!sampleItem) return [];
-    
-    const detectedColumns = [];
+    const firstItem = data[0];
+    const commonColumns: ColumnConfig[] = [];
     
     // Primary identifier column
-    if (sampleItem.name || sampleItem.title || sampleItem.first_name) {
-      detectedColumns.push({
-        key: 'name',
+    if ('name' in firstItem || 'title' in firstItem || 'first_name' in firstItem) {
+      commonColumns.push({
+        key: 'primary',
         header: 'Name',
         render: (item: T) => (
-          <div className="flex flex-col">
-            <span className="font-medium">
-              {(item as any).name || 
-               (item as any).title || 
-               `${(item as any).first_name || ''} ${(item as any).last_name || ''}`.trim() || 
-               'N/A'}
-            </span>
-            {(item as any).email && (
-              <span className="text-sm text-muted-foreground">{(item as any).email}</span>
-            )}
+          <div className="font-medium">
+            {(item as any).name || (item as any).title || 
+             `${(item as any).first_name || ''} ${(item as any).last_name || ''}`.trim() || 
+             'Unnamed'}
           </div>
+        )
+      });
+    }
+    
+    // Email column
+    if ('email' in firstItem) {
+      commonColumns.push({
+        key: 'email',
+        header: 'Email',
+        render: (item: T) => (
+          <div className="text-sm text-gray-600">{(item as any).email}</div>
         )
       });
     }
     
     // Status column
-    if (sampleItem.status) {
-      detectedColumns.push({
+    if ('status' in firstItem || 'is_active' in firstItem) {
+      commonColumns.push({
         key: 'status',
         header: 'Status',
-        render: (item: T) => <StatusBadge status={(item as any).status || 'active'} />
-      });
-    }
-    
-    // Role or type column
-    if ((sampleItem as any).role || (sampleItem as any).type || (sampleItem as any).facility_type) {
-      detectedColumns.push({
-        key: 'role',
-        header: 'Role/Type',
         render: (item: T) => (
-          <Badge variant="outline">
-            {(item as any).role || (item as any).type || (item as any).facility_type || 'N/A'}
+          <Badge variant={(item as any).status === 'active' || (item as any).is_active ? 'default' : 'secondary'}>
+            {(item as any).status || ((item as any).is_active ? 'Active' : 'Inactive')}
           </Badge>
         )
       });
     }
     
-    // Date column
-    if (sampleItem.created_at) {
-      detectedColumns.push({
+    // Created date column
+    if ('created_at' in firstItem) {
+      commonColumns.push({
         key: 'created_at',
         header: 'Created',
-        render: (item: T) => {
-          const date = item.created_at || (item as any).created_at;
-          return date ? new Date(date).toLocaleDateString() : 'N/A';
-        }
+        render: (item: T) => (
+          <div className="text-sm text-gray-500">
+            {new Date((item as any).created_at).toLocaleDateString()}
+          </div>
+        )
       });
     }
     
-    return detectedColumns;
-  }, [data, customColumns]);
-  
-  // Add action column if needed
-  const finalColumns = useMemo(() => {
-    if (!onEdit && !onDelete) return columns;
-    
-    return [
-      ...columns,
-      {
-        key: 'actions',
-        header: 'Actions',
-        render: (item: T) => (
-          <div className="flex space-x-2">
-            {onEdit && (
-              <Button
-                onClick={() => onEdit(item)}
-                variant="ghost"
-                size="sm"
-                className="text-blue-600 hover:text-blue-800"
-              >
-                Edit
-              </Button>
-            )}
-            {onDelete && (
-              <Button
-                onClick={() => onDelete(item)}
-                variant="ghost"
-                size="sm"
-                className="text-red-600 hover:text-red-800"
-              >
-                Delete
-              </Button>
-            )}
-          </div>
-        )
-      }
-    ];
-  }, [columns, onEdit, onDelete]);
-  
-  // Filtered data based on search
-  const filteredData = useMemo(() => {
-    if (!searchQuery.trim() || !onSearch) return data;
-    return onSearch(searchQuery);
-  }, [data, searchQuery, onSearch]);
-  
-  // Generate statistics if not provided
-  const displayStats = useMemo(() => {
-    if (statistics) return statistics;
-    if (!enableStats) return null;
-    
-    const total = data.length;
-    const active = data.filter((item: any) => item.status === 'active').length;
-    const inactive = total - active;
-    const recentlyCreated = data.filter((item: any) => {
-      const created = new Date(item.created_at || item.created_at);
-      const week = new Date();
-      week.setDate(week.getDate() - 7);
-      return created > week;
-    }).length;
-    
-    return { total, active, inactive, recentlyCreated };
-  }, [data, statistics, enableStats]);
-  
-  const statsCards = displayStats ? [
-    { label: 'Total', value: displayStats.total, color: 'text-blue-600', icon: BarChart3 },
-    { label: 'Active', value: displayStats.active, color: 'text-green-600', icon: Users },
-    { label: 'Inactive', value: displayStats.inactive, color: 'text-gray-600', icon: Users },
-    { label: 'Recent', value: displayStats.recentlyCreated, color: 'text-purple-600', icon: Activity },
-  ] : [];
+    return commonColumns;
+  }, [data]);
+
+  const columns = customColumns || autoDetectedColumns;
+  const displayData = searchQuery ? filteredData : data;
+
+  // Update filtered data when main data changes
+  React.useEffect(() => {
+    if (!searchQuery) {
+      setFilteredData(data);
+    } else {
+      handleSearch(searchQuery);
+    }
+  }, [data, searchQuery]);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="flex justify-between items-center">
+          <h2 className="text-2xl font-bold">{config.moduleName}</h2>
+        </div>
+        <div className="flex justify-center p-8">
+          <LoadingSpinner size="lg" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* Universal Header */}
-      <PageHeader
-        title={config.moduleName}
-        description={`Manage ${config.moduleName.toLowerCase()} records with intelligent automation`}
-        stats={statsCards}
-        actions={
-          <div className="flex items-center gap-2">
-            {customActions}
-            {onAdd && (
-              <Button onClick={onAdd} className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                Add {config.moduleName}
-              </Button>
-            )}
-          </div>
-        }
-      />
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">{config.moduleName}</h2>
+        <div className="flex gap-2">
+          {customActions}
+          {onAdd && (
+            <Button onClick={onAdd}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add {config.moduleName.slice(0, -1)}
+            </Button>
+          )}
+        </div>
+      </div>
 
-      {/* Search and Filters */}
-      {enableSearch && onSearch && (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center space-x-2">
-              <Search className="h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder={searchPlaceholder || `Search ${config.moduleName.toLowerCase()}...`}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="max-w-sm"
-              />
-              {searchQuery && (
-                <Badge variant="secondary">
-                  {filteredData.length} of {data.length} results
-                </Badge>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+      {/* Statistics */}
+      {enableStats && statistics && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Total</p>
+                  <p className="text-2xl font-bold">{statistics.total}</p>
+                </div>
+                <Users className="h-8 w-8 text-gray-400" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          {statistics.active !== undefined && (
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Active</p>
+                    <p className="text-2xl font-bold">{statistics.active}</p>
+                  </div>
+                  <Activity className="h-8 w-8 text-green-500" />
+                </div>
+              </CardContent>
+            </Card>
+          )}
+          
+          {statistics.inactive !== undefined && (
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Inactive</p>
+                    <p className="text-2xl font-bold">{statistics.inactive}</p>
+                  </div>
+                  <TrendingUp className="h-8 w-8 text-gray-400" />
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       )}
 
-      {/* Main Data Table */}
-      <Card>
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <CardTitle>All {config.moduleName} Records</CardTitle>
-            <div className="text-sm text-muted-foreground">
-              Table: {config.tableName} | Total: {filteredData.length}
-            </div>
+      {/* Search */}
+      {enableSearch && (
+        <div className="flex items-center space-x-2">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder={searchPlaceholder}
+              value={searchQuery}
+              onChange={(e) => handleSearch(e.target.value)}
+              className="pl-10"
+            />
           </div>
-        </CardHeader>
-        <CardContent>
-          <DataTable
-            data={filteredData}
-            columns={finalColumns}
-            isLoading={isLoading}
-            emptyMessage={
-              searchQuery 
-                ? `No ${config.moduleName.toLowerCase()} found matching "${searchQuery}"`
-                : `No ${config.moduleName.toLowerCase()} records found`
-            }
-          />
+        </div>
+      )}
+
+      {/* Data Table */}
+      <Card>
+        <CardContent className="p-0">
+          {displayData.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              {searchQuery ? 'No items match your search.' : `No ${config.moduleName.toLowerCase()} found.`}
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    {columns.map((column) => (
+                      <th key={column.key} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        {column.header}
+                      </th>
+                    ))}
+                    {(onEdit || onDelete) && (
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    )}
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {displayData.map((item, index) => (
+                    <tr key={(item as any).id || index} className="hover:bg-gray-50">
+                      {columns.map((column) => (
+                        <td key={column.key} className="px-6 py-4 whitespace-nowrap">
+                          {column.render ? column.render(item) : (item as any)[column.key]}
+                        </td>
+                      ))}
+                      {(onEdit || onDelete) && (
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              {onEdit && (
+                                <DropdownMenuItem onClick={() => onEdit(item)}>
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Edit
+                                </DropdownMenuItem>
+                              )}
+                              {onDelete && (
+                                <DropdownMenuItem 
+                                  onClick={() => onDelete(item)}
+                                  className="text-red-600"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete
+                                </DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </CardContent>
       </Card>
-
-      {/* Debug Information (Development Only) */}
-      {process.env.NODE_ENV === 'development' && (
-        <Card className="border-yellow-200 bg-yellow-50">
-          <CardHeader>
-            <CardTitle className="text-yellow-800 text-sm">
-              🔧 Universal Template Debug
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-xs text-yellow-700 space-y-1">
-              <div><strong>Module:</strong> {config.moduleName}</div>
-              <div><strong>Table:</strong> {config.tableName}</div>
-              <div><strong>Required Fields:</strong> {config.requiredFields.join(', ')}</div>
-              <div><strong>Data Count:</strong> {data.length}</div>
-              <div><strong>Filtered Count:</strong> {filteredData.length}</div>
-              <div><strong>Columns Detected:</strong> {columns.length}</div>
-              <div><strong>Loading:</strong> {isLoading ? 'Yes' : 'No'}</div>
-              <div><strong>Search Enabled:</strong> {enableSearch ? 'Yes' : 'No'}</div>
-              <div><strong>Stats Enabled:</strong> {enableStats ? 'Yes' : 'No'}</div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 };
 
-// Legacy compatibility
 export default ExtensibleModuleTemplate;

@@ -32,8 +32,8 @@ const RoutingPreferences = () => {
           <div>
             <h4 className="font-medium mb-2">Accessible Modules:</h4>
             {userModules?.map((module) => (
-              <div key={module.id} className="flex items-center justify-between p-2 border rounded">
-                <span>{module.moduleName}</span>
+              <div key={module.module_id} className="flex items-center justify-between p-2 border rounded">
+                <span>{module.module_name}</span>
               </div>
             ))}
           </div>
