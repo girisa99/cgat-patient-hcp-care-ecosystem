@@ -6,8 +6,8 @@
 export interface ComponentServiceInfo {
   name: string;
   type: 'component' | 'service' | 'hook';
-  path?: string; // Added missing path property
-  filePath?: string; // Alternative path property name
+  path?: string;
+  filePath?: string;
   isProtected: boolean;
   lastModified: string;
   permissions?: string[];
