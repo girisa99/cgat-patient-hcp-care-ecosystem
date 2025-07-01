@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Edit, UserPlus, Building, Minus, Key, Shield, Mail, UserX, Eye } from 'lucide-react';
@@ -89,108 +90,127 @@ const UserActions: React.FC<UserActionsProps> = ({
 
   // Check if user needs email verification (not confirmed)
   const needsEmailVerification = !user.email_confirmed_at && user.email;
+  const hasRoles = user.user_roles && user.user_roles.length > 0;
 
   return (
-    <div className="flex items-center gap-1">
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={handleEditUser}
-        title="Edit User"
-        className="h-8 w-8 p-0"
-      >
-        <Edit className="h-3 w-3" />
-      </Button>
-      
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={handleAssignRole}
-        title="Assign Role"
-        className="h-8 w-8 p-0"
-      >
-        <UserPlus className="h-3 w-3" />
-      </Button>
-
-      {onRemoveRole && (
+    <div className="flex flex-wrap items-center gap-2">
+      {/* Primary Actions */}
+      <div className="flex items-center gap-1">
         <Button
           variant="outline"
           size="sm"
-          onClick={handleRemoveRole}
-          title="Remove Role"
-          className="h-8 w-8 p-0"
+          onClick={handleEditUser}
+          title="Edit User"
+          className="h-8 px-3 text-xs"
         >
-          <Minus className="h-3 w-3" />
+          <Edit className="h-3 w-3 mr-1" />
+          Edit
         </Button>
-      )}
-      
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={handleAssignFacility}
-        title="Assign Facility"
-        className="h-8 w-8 p-0"
-      >
-        <Building className="h-3 w-3" />
-      </Button>
-      
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={handleManagePermissions}
-        title="Manage Permissions"
-        className="h-8 w-8 p-0"
-      >
-        <Key className="h-3 w-3" />
-      </Button>
-
-      {onAssignModule && (
+        
         <Button
           variant="outline"
           size="sm"
-          onClick={handleAssignModule}
-          title="Assign Module"
-          className="h-8 w-8 p-0"
+          onClick={handleAssignRole}
+          title="Assign Role"
+          className="h-8 px-3 text-xs"
         >
-          <Shield className="h-3 w-3" />
+          <UserPlus className="h-3 w-3 mr-1" />
+          Role
         </Button>
-      )}
 
-      {onViewModules && (
         <Button
           variant="outline"
           size="sm"
-          onClick={handleViewModules}
-          title="View Module Access"
-          className="h-8 w-8 p-0 text-blue-600 border-blue-300 hover:bg-blue-50"
+          onClick={handleAssignFacility}
+          title="Assign Facility"
+          className="h-8 px-3 text-xs"
         >
-          <Eye className="h-3 w-3" />
+          <Building className="h-3 w-3 mr-1" />
+          Facility
         </Button>
-      )}
+      </div>
 
-      {needsEmailVerification && onResendVerification && (
+      {/* Secondary Actions */}
+      <div className="flex items-center gap-1">
         <Button
           variant="outline"
           size="sm"
-          onClick={handleResendVerification}
-          title="Resend Verification Email"
-          className="h-8 w-8 p-0 text-orange-600 border-orange-300 hover:bg-orange-50"
+          onClick={handleManagePermissions}
+          title="Manage Permissions"
+          className="h-8 px-3 text-xs text-blue-600 border-blue-300 hover:bg-blue-50"
         >
-          <Mail className="h-3 w-3" />
+          <Key className="h-3 w-3 mr-1" />
+          Permissions
         </Button>
-      )}
 
-      {onDeactivateUser && (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleDeactivateUser}
-          title="Deactivate User"
-          className="h-8 w-8 p-0 text-red-600 border-red-300 hover:bg-red-50"
-        >
-          <UserX className="h-3 w-3" />
-        </Button>
-      )}
+        {onViewModules && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleViewModules}
+            title="View Module Access"
+            className="h-8 px-3 text-xs text-purple-600 border-purple-300 hover:bg-purple-50"
+          >
+            <Eye className="h-3 w-3 mr-1" />
+            Modules
+          </Button>
+        )}
+
+        {onAssignModule && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleAssignModule}
+            title="Assign Module"
+            className="h-8 px-3 text-xs text-purple-600 border-purple-300 hover:bg-purple-50"
+          >
+            <Shield className="h-3 w-3 mr-1" />
+            Assign Module
+          </Button>
+        )}
+      </div>
+
+      {/* Conditional Actions */}
+      <div className="flex items-center gap-1">
+        {hasRoles && onRemoveRole && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRemoveRole}
+            title="Remove Role"
+            className="h-8 px-3 text-xs text-orange-600 border-orange-300 hover:bg-orange-50"
+          >
+            <Minus className="h-3 w-3 mr-1" />
+            Remove Role
+          </Button>
+        )}
+
+        {needsEmailVerification && onResendVerification && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleResendVerification}
+            title="Resend Verification Email"
+            className="h-8 px-3 text-xs text-amber-600 border-amber-300 hover:bg-amber-50"
+          >
+            <Mail className="h-3 w-3 mr-1" />
+            Resend Email
+          </Button>
+        )}
+
+        {onDeactivateUser && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleDeactivateUser}
+            title="Deactivate User"
+            className="h-8 px-3 text-xs text-red-600 border-red-300 hover:bg-red-50"
+          >
+            <UserX className="h-3 w-3 mr-1" />
+            Deactivate
+          </Button>
+        )}
+      </div>
     </div>
   );
 };
