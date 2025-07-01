@@ -91,7 +91,7 @@ interface ConsolidatedMetrics {
 
 /**
  * Enhanced hook for comprehensive API service details with real data synchronization
- * Fixed to handle empty external data and provide proper metrics
+ * Fixed to properly enhance individual API objects with calculated metrics
  */
 export const useApiServiceDetails = () => {
   const { toast } = useToast();
@@ -242,7 +242,10 @@ export const useApiServiceDetails = () => {
         const hasSchemas = apiEndpointsForThisApi.some(e => e.request_schema || e.response_schema);
         const securedEndpoints = apiEndpointsForThisApi.filter(e => e.requires_authentication);
         const publicEndpoints = apiEndpointsForThisApi.filter(e => e.is_public);
+        const schemaCompleteness = apiEndpointsForThisApi.length > 0 ? 
+          (apiEndpointsForThisApi.filter(e => e.request_schema || e.response_schema).length / apiEndpointsForThisApi.length) * 100 : 0;
 
+        // Create enhanced API object with proper metrics
         const consolidatedApi: ApiService = {
           ...internalApi,
           // Override with external data if available
@@ -252,17 +255,19 @@ export const useApiServiceDetails = () => {
             status: externalMatch.status,
             published_at: externalMatch.published_at
           }),
-          // Real endpoint metrics (including mock data for realistic display)
+          // FIXED: Properly set endpoint metrics on the API object itself
           endpoints_count: apiEndpointsForThisApi.length,
+          rls_policies_count: internalApi.rls_policies_count || 0,
+          data_mappings_count: internalApi.data_mappings_count || 0,
+          // Enhanced fields
           actualEndpoints: apiEndpointsForThisApi,
           hasSchemas,
           securedEndpointsCount: securedEndpoints.length,
           publicEndpointsCount: publicEndpoints.length,
-          schemaCompleteness: apiEndpointsForThisApi.length > 0 ? 
-            (apiEndpointsForThisApi.filter(e => e.request_schema || e.response_schema).length / apiEndpointsForThisApi.length) * 100 : 0,
+          schemaCompleteness,
           documentationCoverage: internalApi.documentation_url ? 100 : 0,
           // Sync status
-          isSynced: !!externalMatch || apiEndpointsForThisApi.length > 0, // Consider synced if has endpoints
+          isSynced: !!externalMatch || apiEndpointsForThisApi.length > 0,
           syncedAt: externalMatch?.updated_at || new Date().toISOString()
         };
 
@@ -274,15 +279,17 @@ export const useApiServiceDetails = () => {
           syncStatus.unsyncedCount++;
         }
 
-        console.log(`📊 Consolidated API: ${internalApi.name}`, {
+        console.log(`📊 Enhanced API: ${internalApi.name}`, {
           hasExternalMatch: !!externalMatch,
-          endpointsCount: apiEndpointsForThisApi.length,
+          endpointsCount: consolidatedApi.endpoints_count,
+          securedCount: consolidatedApi.securedEndpointsCount,
           schemaCompleteness: Math.round(consolidatedApi.schemaCompleteness || 0),
+          rlsPolicies: consolidatedApi.rls_policies_count,
           isSynced: consolidatedApi.isSynced
         });
       });
 
-      // Add any external APIs that don't have internal matches
+      // Add external-only APIs that don't have internal matches
       (externalApiRegistry || []).forEach(externalApi => {
         const hasInternalMatch = internalApiServices.some(internal => 
           internal.id === externalApi.internal_api_id || 
@@ -293,6 +300,12 @@ export const useApiServiceDetails = () => {
           const apiEndpointsForThisApi = (apiEndpoints || []).filter(endpoint => 
             endpoint.external_api_id === externalApi.id
           );
+
+          const hasSchemas = apiEndpointsForThisApi.some(e => e.request_schema || e.response_schema);
+          const securedEndpoints = apiEndpointsForThisApi.filter(e => e.requires_authentication);
+          const publicEndpoints = apiEndpointsForThisApi.filter(e => e.is_public);
+          const schemaCompleteness = apiEndpointsForThisApi.length > 0 ? 
+            (apiEndpointsForThisApi.filter(e => e.request_schema || e.response_schema).length / apiEndpointsForThisApi.length) * 100 : 0;
 
           const consolidatedApi: ApiService = {
             id: externalApi.id,
@@ -310,13 +323,16 @@ export const useApiServiceDetails = () => {
             created_at: externalApi.created_at,
             updated_at: externalApi.updated_at,
             created_by: externalApi.created_by,
+            // Properly set metrics
             endpoints_count: apiEndpointsForThisApi.length,
+            rls_policies_count: 0,
+            data_mappings_count: 0,
+            // Enhanced fields
             actualEndpoints: apiEndpointsForThisApi,
-            hasSchemas: apiEndpointsForThisApi.some(e => e.request_schema || e.response_schema),
-            securedEndpointsCount: apiEndpointsForThisApi.filter(e => e.requires_authentication).length,
-            publicEndpointsCount: apiEndpointsForThisApi.filter(e => e.is_public).length,
-            schemaCompleteness: apiEndpointsForThisApi.length > 0 ? 
-              (apiEndpointsForThisApi.filter(e => e.request_schema || e.response_schema).length / apiEndpointsForThisApi.length) * 100 : 0,
+            hasSchemas,
+            securedEndpointsCount: securedEndpoints.length,
+            publicEndpointsCount: publicEndpoints.length,
+            schemaCompleteness,
             documentationCoverage: externalApi.documentation_url ? 100 : 0,
             isSynced: false, // External-only
             isExternalOnly: true
@@ -329,6 +345,7 @@ export const useApiServiceDetails = () => {
       console.log('✅ API data consolidation complete:', {
         totalConsolidated: consolidatedApis.length,
         totalEndpoints: consolidatedApis.reduce((sum, api) => sum + (api.endpoints_count || 0), 0),
+        apisWithEndpoints: consolidatedApis.filter(api => (api.endpoints_count || 0) > 0).length,
         syncStatus
       });
 
@@ -509,9 +526,9 @@ export const useApiServiceDetails = () => {
     
     // Meta information
     meta: {
-      dataSource: 'Fully synchronized internal + external data with proper metrics',
+      dataSource: 'Fully synchronized internal + external data with proper individual API metrics',
       lastSync: new Date().toISOString(),
-      version: 'consolidated-sync-v4-validated'
+      version: 'consolidated-sync-v5-individual-metrics-fixed'
     }
   };
 };

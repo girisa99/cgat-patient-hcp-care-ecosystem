@@ -55,29 +55,49 @@ export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = React.mem
     publishedCount: publishedApis.length
   });
 
-  // Use consolidated data to derive filtered lists for each tab type
+  // Use consolidated data to derive filtered lists for each tab type - ensuring single source of truth
   const consolidatedApis = consolidatedData?.consolidatedApis || integrations;
   
-  // Filter consolidated data for each tab type - ensuring single source of truth
-  const consolidatedInternalApis = consolidatedApis.filter(api => 
-    api.type === 'internal' || api.direction === 'inbound'
-  );
+  // FIXED: Improved filtering logic for different API categories
+  const consolidatedInternalApis = consolidatedApis.filter(api => {
+    // Internal APIs: type=internal OR direction=inbound OR purpose includes internal operations
+    return api.type === 'internal' || 
+           api.direction === 'inbound' || 
+           (api.purpose && api.purpose.includes('internal'));
+  });
   
-  const consolidatedExternalApis = consolidatedApis.filter(api => 
-    api.type === 'external' || api.direction === 'outbound' || api.direction === 'bidirectional'
-  );
+  const consolidatedExternalApis = consolidatedApis.filter(api => {
+    // External APIs: type=external OR direction=outbound/bidirectional OR purpose includes consuming
+    return api.type === 'external' || 
+           api.direction === 'outbound' || 
+           api.direction === 'bidirectional' ||
+           (api.purpose && api.purpose.includes('consuming'));
+  });
   
-  const consolidatedPublishedApis = consolidatedApis.filter(api => 
-    api.status === 'published' || api.lifecycle_stage === 'production'
-  );
+  const consolidatedPublishedApis = consolidatedApis.filter(api => {
+    // Published APIs: status=published OR lifecycle_stage=production OR purpose includes publishing
+    return api.status === 'published' || 
+           api.lifecycle_stage === 'production' ||
+           (api.purpose && api.purpose.includes('publishing'));
+  });
 
   // Log the filtered counts to verify single source of truth
-  console.log('📊 Single Source of Truth Metrics:', {
+  console.log('📊 Single Source of Truth Metrics (FIXED):', {
     totalApis: consolidatedApis.length,
     internalApis: consolidatedInternalApis.length,
     externalApis: consolidatedExternalApis.length,
     publishedApis: consolidatedPublishedApis.length,
-    syncStatus: consolidatedData?.syncStatus
+    syncStatus: consolidatedData?.syncStatus,
+    // Debug individual API details
+    apisWithEndpoints: consolidatedApis.filter(api => (api.endpoints_count || 0) > 0).length,
+    firstApiDetails: consolidatedApis[0] ? {
+      name: consolidatedApis[0].name,
+      endpoints_count: consolidatedApis[0].endpoints_count,
+      rls_policies_count: consolidatedApis[0].rls_policies_count,
+      type: consolidatedApis[0].type,
+      direction: consolidatedApis[0].direction,
+      purpose: consolidatedApis[0].purpose
+    } : null
   });
 
   return (
