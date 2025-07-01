@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -66,7 +67,7 @@ const ProfileSettings = () => {
         <CardContent className="space-y-6">
           <div className="flex items-center gap-4">
             <Avatar className="h-20 w-20">
-              <AvatarImage src={profile?.avatar_url || ''} />
+              <AvatarImage src="" />
               <AvatarFallback className="text-lg">
                 {profile?.first_name?.[0]}{profile?.last_name?.[0]}
               </AvatarFallback>
