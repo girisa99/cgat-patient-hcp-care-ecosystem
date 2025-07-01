@@ -1,19 +1,21 @@
 
-import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Edit, UserPlus, Building, Shield, Mail, UserX } from 'lucide-react';
-import { useUsers } from '@/hooks/useUsers';
+import { Badge } from '@/components/ui/badge';
+import { Search, Users, Filter } from 'lucide-react';
+import { useConsolidatedUsers } from '@/hooks/useConsolidatedUsers';
+import UserActions from './UserActions';
+import UserRolesBadgeGroup from './UserRolesBadgeGroup';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 interface UsersListProps {
-  onCreateUser?: () => void;
   onEditUser: (user: any) => void;
   onAssignRole: (userId: string) => void;
-  onRemoveRole?: (userId: string) => void;
+  onRemoveRole?: (userId: string) => void; 
   onAssignFacility: (userId: string) => void;
-  onManagePermissions?: (userId: string, userName: string) => void;
+  onManagePermissions: (userId: string, userName: string) => void;
   onAssignModule?: (userId: string, userName: string) => void;
   onResendVerification?: (userEmail: string, userName: string) => void;
   onDeactivateUser?: (userId: string, userName: string, userEmail: string) => void;
@@ -21,7 +23,6 @@ interface UsersListProps {
 }
 
 const UsersList: React.FC<UsersListProps> = ({
-  onCreateUser,
   onEditUser,
   onAssignRole,
   onRemoveRole,
@@ -32,137 +33,127 @@ const UsersList: React.FC<UsersListProps> = ({
   onDeactivateUser,
   onViewModules
 }) => {
-  const { users, isLoading } = useUsers();
+  const { users, isLoading, searchUsers } = useConsolidatedUsers();
+  const [searchQuery, setSearchQuery] = useState('');
 
   if (isLoading) {
     return (
       <Card>
         <CardContent className="p-8 text-center">
-          <p className="text-gray-500">Loading users...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p>Loading users...</p>
         </CardContent>
       </Card>
     );
   }
 
-  if (!users || users.length === 0) {
-    return (
-      <Card>
-        <CardContent className="p-8 text-center">
-          <p className="text-gray-500">No users found.</p>
-        </CardContent>
-      </Card>
-    );
-  }
+  const filteredUsers = searchUsers(searchQuery);
 
   return (
-    <div className="space-y-4">
-      {users.map((user) => {
-        const userName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email;
-        const userRoles = user.user_roles || [];
-        const userFacilities = user.facilities || null;
-        
-        return (
-          <Card key={user.id}>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3">
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            <CardTitle>Users ({filteredUsers.length})</CardTitle>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search users..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 w-80"
+              />
+            </div>
+            <Button variant="outline" size="sm">
+              <Filter className="h-4 w-4 mr-2" />
+              Filter
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>User</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Roles</TableHead>
+                <TableHead>Facility</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredUsers.map((user) => (
+                <TableRow key={user.id}>
+                  <TableCell>
                     <div>
-                      <h3 className="font-medium">{userName}</h3>
-                      <p className="text-sm text-gray-500">{user.email}</p>
+                      <div className="font-medium">
+                        {user.first_name || user.last_name 
+                          ? `${user.first_name || ''} ${user.last_name || ''}`.trim()
+                          : 'No name'
+                        }
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        ID: {user.id.slice(0, 8)}...
+                      </div>
                     </div>
-                  </div>
-                  
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {userRoles.length > 0 ? (
-                      userRoles.map((userRole: any, index: number) => (
-                        <Badge key={index} variant="secondary">
-                          {userRole.roles?.name || 'Unknown Role'}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-col">
+                      <span>{user.email}</span>
+                      {!user.email_confirmed_at && (
+                        <Badge variant="outline" className="text-xs text-amber-600 border-amber-300 w-fit">
+                          Unverified
                         </Badge>
-                      ))
-                    ) : (
-                      <Badge variant="outline">No roles assigned</Badge>
-                    )}
-                    
-                    {userFacilities && (
-                      <Badge variant="outline" className="text-blue-600">
-                        {userFacilities.name}
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <UserRolesBadgeGroup user={user} />
+                  </TableCell>
+                  <TableCell>
+                    {user.facilities ? (
+                      <Badge variant="outline" className="text-xs">
+                        {user.facilities.name}
                       </Badge>
+                    ) : (
+                      <span className="text-gray-400">No facility</span>
                     )}
-                  </div>
-                </div>
-                
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => onEditUser(user)}>
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit User
-                    </DropdownMenuItem>
-                    
-                    <DropdownMenuItem onClick={() => onAssignRole(user.id)}>
-                      <UserPlus className="h-4 w-4 mr-2" />
-                      Assign Role
-                    </DropdownMenuItem>
-                    
-                    {onRemoveRole && userRoles.length > 0 && (
-                      <DropdownMenuItem onClick={() => onRemoveRole(user.id)}>
-                        <UserX className="h-4 w-4 mr-2" />
-                        Remove Role
-                      </DropdownMenuItem>
-                    )}
-                    
-                    <DropdownMenuItem onClick={() => onAssignFacility(user.id)}>
-                      <Building className="h-4 w-4 mr-2" />
-                      Assign Facility
-                    </DropdownMenuItem>
-                    
-                    {onManagePermissions && (
-                      <DropdownMenuItem onClick={() => onManagePermissions(user.id, userName)}>
-                        <Shield className="h-4 w-4 mr-2" />
-                        Manage Permissions
-                      </DropdownMenuItem>
-                    )}
-                    
-                    {onAssignModule && (
-                      <DropdownMenuItem onClick={() => onAssignModule(user.id, userName)}>
-                        <Shield className="h-4 w-4 mr-2" />
-                        Assign Module
-                      </DropdownMenuItem>
-                    )}
-                    
-                    {onViewModules && (
-                      <DropdownMenuItem onClick={() => onViewModules(user.id, userName)}>
-                        <Shield className="h-4 w-4 mr-2" />
-                        View Modules
-                      </DropdownMenuItem>
-                    )}
-                    
-                    {onResendVerification && (
-                      <DropdownMenuItem onClick={() => onResendVerification(user.email, userName)}>
-                        <Mail className="h-4 w-4 mr-2" />
-                        Resend Verification
-                      </DropdownMenuItem>
-                    )}
-                    
-                    {onDeactivateUser && (
-                      <DropdownMenuItem onClick={() => onDeactivateUser(user.id, userName, user.email)}>
-                        <UserX className="h-4 w-4 mr-2" />
-                        Deactivate User
-                      </DropdownMenuItem>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </CardContent>
-          </Card>
-        );
-      })}
-    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge 
+                      variant={user.email_confirmed_at ? "default" : "secondary"}
+                      className={user.email_confirmed_at ? "bg-green-100 text-green-800" : ""}
+                    >
+                      {user.email_confirmed_at ? 'Active' : 'Pending'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <UserActions
+                      user={user}
+                      onEditUser={onEditUser}
+                      onAssignRole={onAssignRole}
+                      onRemoveRole={onRemoveRole}
+                      onAssignFacility={onAssignFacility}
+                      onManagePermissions={onManagePermissions}
+                      onAssignModule={onAssignModule}
+                      onResendVerification={onResendVerification}
+                      onDeactivateUser={onDeactivateUser}
+                      onViewModules={onViewModules}
+                    />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

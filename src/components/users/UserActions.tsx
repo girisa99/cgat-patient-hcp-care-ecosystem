@@ -101,7 +101,7 @@ const UserActions: React.FC<UserActionsProps> = ({
           size="sm"
           onClick={handleEditUser}
           title="Edit User"
-          className="h-8 px-3 text-xs"
+          className="h-8 px-3 text-xs hover:bg-blue-50 border-blue-200"
         >
           <Edit className="h-3 w-3 mr-1" />
           Edit
@@ -112,7 +112,7 @@ const UserActions: React.FC<UserActionsProps> = ({
           size="sm"
           onClick={handleAssignRole}
           title="Assign Role"
-          className="h-8 px-3 text-xs"
+          className="h-8 px-3 text-xs hover:bg-green-50 border-green-200"
         >
           <UserPlus className="h-3 w-3 mr-1" />
           Role
@@ -123,7 +123,7 @@ const UserActions: React.FC<UserActionsProps> = ({
           size="sm"
           onClick={handleAssignFacility}
           title="Assign Facility"
-          className="h-8 px-3 text-xs"
+          className="h-8 px-3 text-xs hover:bg-purple-50 border-purple-200"
         >
           <Building className="h-3 w-3 mr-1" />
           Facility
