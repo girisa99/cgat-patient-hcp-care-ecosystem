@@ -1,51 +1,65 @@
 
 import { useState, useEffect } from 'react';
 import { useAuthContext } from '@/components/auth/CleanAuthProvider';
+import { useUnifiedUserManagement } from './useUnifiedUserManagement';
+import { useFacilities } from './useFacilities';
+import { useModules } from './useModules';
+import { useApiServices } from './useApiServices';
 
 export const useDashboard = () => {
-  const [dashboardData, setDashboardData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { user, isAuthenticated, profile, userRoles, signOut } = useAuthContext();
+  
+  // Get real data from all consolidated sources
+  const { users, meta: userMeta } = useUnifiedUserManagement();
+  const { facilities, getFacilityStats } = useFacilities();
+  const { modules, getModuleStats } = useModules();
+  const { apiServices, getApiServiceStats } = useApiServices();
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      setLoading(true);
-      setError(null);
-
-      try {
-        // Simulate fetching dashboard data (replace with actual data fetching logic)
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        const data = {
-          welcomeMessage: `Welcome, ${user?.email || 'Guest'}!`,
-          summary: 'This is a summary of your dashboard data.',
-          items: [
-            { id: 1, name: 'Item 1' },
-            { id: 2, name: 'Item 2' },
-            { id: 3, name: 'Item 3' },
-          ],
-          totalUsers: 150,
-          totalFacilities: 25,
-          systemHealth: 'healthy',
-          apiIntegrations: 8
-        };
-        setDashboardData(data);
-      } catch (err: any) {
-        setError(err.message || 'Failed to fetch dashboard data.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (isAuthenticated && user) {
-      fetchDashboardData();
-    } else {
-      setDashboardData(null);
-    }
-  }, [isAuthenticated, user]);
+  const dashboardData = {
+    // Real metrics from consolidated sources
+    totalUsers: userMeta.totalUsers,
+    totalFacilities: facilities.length,
+    totalModules: modules.length,
+    totalApiServices: apiServices.length,
+    
+    // Detailed stats
+    userStats: {
+      admins: userMeta.adminCount,
+      staff: userMeta.staffCount,
+      patients: userMeta.patientCount
+    },
+    facilityStats: getFacilityStats(),
+    moduleStats: getModuleStats(),
+    apiServiceStats: getApiServiceStats(),
+    
+    // System health based on real data
+    systemHealth: facilities.length > 0 && modules.length > 0 ? 'healthy' : 'warning',
+    apiIntegrations: apiServices.length,
+    
+    // Welcome message with real data
+    welcomeMessage: `Welcome back${profile?.first_name ? `, ${profile.first_name}` : ''}!`,
+    summary: `Managing ${userMeta.totalUsers} users across ${facilities.length} facilities`,
+    
+    // Real data items
+    items: [
+      { id: 1, name: `${userMeta.totalUsers} Users`, type: 'users' },
+      { id: 2, name: `${facilities.length} Facilities`, type: 'facilities' },
+      { id: 3, name: `${modules.length} Modules`, type: 'modules' },
+      { id: 4, name: `${apiServices.length} API Services`, type: 'api-services' }
+    ]
+  };
 
   const handleLogout = async () => {
-    await signOut();
+    setLoading(true);
+    try {
+      await signOut();
+    } catch (err: any) {
+      setError(err.message || 'Failed to logout');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return {
@@ -55,6 +69,22 @@ export const useDashboard = () => {
     error,
     handleLogout,
     profile,
-    userRoles: userRoles || []
+    userRoles: userRoles || [],
+    // Consolidated data access
+    users,
+    facilities,
+    modules,
+    apiServices,
+    // Meta information showing single source
+    meta: {
+      dataSources: {
+        users: userMeta.dataSource,
+        facilities: 'facilities table via direct query',
+        modules: 'modules table via direct query',
+        apiServices: 'api_integration_registry table via direct query'
+      },
+      version: 'unified-dashboard-v1',
+      consolidated: true
+    }
   };
 };
