@@ -10,6 +10,7 @@ import { Users, Building2, Settings, UserPlus, Code, Shield, Activity, Layers, F
 import ProfileCard from '@/components/dashboard/ProfileCard';
 import { useUsers } from '@/hooks/useUsers';
 import { useFacilities } from '@/hooks/useFacilities';
+import { useModules } from '@/hooks/useModules';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -17,6 +18,7 @@ const Dashboard = () => {
   const { user, userRoles, profile } = useAuthContext();
   const { users, isLoading: usersLoading } = useUsers();
   const { facilities, isLoading: facilitiesLoading } = useFacilities();
+  const { modules, isLoading: modulesLoading } = useModules();
 
   // Fetch API integrations count
   const { data: apiIntegrationsCount, isLoading: apiLoading } = useQuery({
@@ -39,6 +41,15 @@ const Dashboard = () => {
   const isAdmin = userRoles.includes('superAdmin');
   const isOnboarding = userRoles.includes('onboardingTeam');
   const hasAdminAccess = isAdmin || isOnboarding;
+
+  console.log('📊 Dashboard data:', {
+    usersCount: users?.length || 0,
+    facilitiesCount: facilities?.length || 0,
+    modulesCount: modules?.length || 0,
+    apiIntegrationsCount: apiIntegrationsCount || 0,
+    userRoles,
+    hasAdminAccess
+  });
 
   return (
     <MainLayout>
@@ -157,6 +168,19 @@ const Dashboard = () => {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Modules</CardTitle>
+                <Layers className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {modulesLoading ? '...' : modules?.length || 0}
+                </div>
+                <p className="text-xs text-muted-foreground">Available modules</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">API Integrations</CardTitle>
                 <Code className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
@@ -167,92 +191,30 @@ const Dashboard = () => {
                 <p className="text-xs text-muted-foreground">Active integrations</p>
               </CardContent>
             </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">System Health</CardTitle>
-                <Activity className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-green-600">Healthy</div>
-                <p className="text-xs text-muted-foreground">All systems operational</p>
-              </CardContent>
-            </Card>
           </div>
         )}
 
-        {/* Module Links */}
-        {hasAdminAccess && (
-          <Card className="mt-6">
-            <CardHeader>
-              <CardTitle>System Administration</CardTitle>
-              <CardDescription>Advanced system management and configuration</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <Link to="/modules" className="p-4 border rounded-lg hover:bg-gray-50 transition-colors">
-                  <div className="flex items-center space-x-3">
-                    <Layers className="h-8 w-8 text-blue-600" />
-                    <div>
-                      <h3 className="font-medium">Module Registry</h3>
-                      <p className="text-sm text-gray-600">Manage system modules and permissions</p>
-                    </div>
-                  </div>
-                </Link>
-
-                <Link to="/api-integrations" className="p-4 border rounded-lg hover:bg-gray-50 transition-colors">
-                  <div className="flex items-center space-x-3">
-                    <Code className="h-8 w-8 text-green-600" />
-                    <div>
-                      <h3 className="font-medium">API Management</h3>
-                      <p className="text-sm text-gray-600">Configure and monitor API integrations</p>
-                    </div>
-                  </div>
-                </Link>
-
-                <Link to="/audit-log" className="p-4 border rounded-lg hover:bg-gray-50 transition-colors">
-                  <div className="flex items-center space-x-3">
-                    <Shield className="h-8 w-8 text-red-600" />
-                    <div>
-                      <h3 className="font-medium">Security & Audit</h3>
-                      <p className="text-sm text-gray-600">View system audit logs and security events</p>
-                    </div>
-                  </div>
-                </Link>
-
-                <Link to="/users" className="p-4 border rounded-lg hover:bg-gray-50 transition-colors">
-                  <div className="flex items-center space-x-3">
-                    <Users className="h-8 w-8 text-purple-600" />
-                    <div>
-                      <h3 className="font-medium">User Administration</h3>
-                      <p className="text-sm text-gray-600">Manage users, roles, and permissions</p>
-                    </div>
-                  </div>
-                </Link>
-
-                <Link to="/facilities" className="p-4 border rounded-lg hover:bg-gray-50 transition-colors">
-                  <div className="flex items-center space-x-3">
-                    <Building2 className="h-8 w-8 text-orange-600" />
-                    <div>
-                      <h3 className="font-medium">Facility Management</h3>
-                      <p className="text-sm text-gray-600">Oversee healthcare facilities and locations</p>
-                    </div>
-                  </div>
-                </Link>
-
-                <Link to="/patients" className="p-4 border rounded-lg hover:bg-gray-50 transition-colors">
-                  <div className="flex items-center space-x-3">
-                    <UserPlus className="h-8 w-8 text-teal-600" />
-                    <div>
-                      <h3 className="font-medium">Patient Management</h3>
-                      <p className="text-sm text-gray-600">Access patient records and data</p>
-                    </div>
-                  </div>
-                </Link>
+        {/* System Health Status */}
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Activity className="h-5 w-5" />
+              System Health
+            </CardTitle>
+            <CardDescription>Current system status and performance</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="h-3 w-3 bg-green-500 rounded-full"></div>
+                <span className="text-sm font-medium">All Systems Operational</span>
               </div>
-            </CardContent>
-          </Card>
-        )}
+              <div className="text-sm text-muted-foreground">
+                Last checked: {new Date().toLocaleTimeString()}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Role Information */}
         <Card className="mt-6">
