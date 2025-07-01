@@ -1,10 +1,11 @@
 
-import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import React from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useUserMutations } from '@/hooks/users/useUserMutations';
+import { Label } from '@/components/ui/label';
+import { useUnifiedUserManagement } from '@/hooks/useUnifiedUserManagement';
+import { useRoles } from '@/hooks/useRoles';
 import { Database } from '@/integrations/supabase/types';
 
 type UserRole = Database['public']['Enums']['user_role'];
@@ -13,70 +14,86 @@ interface AssignRoleDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   userId: string | null;
-  userName: string;
 }
 
-const AssignRoleDialog: React.FC<AssignRoleDialogProps> = ({ open, onOpenChange, userId, userName }) => {
-  const { assignRole, isAssigningRole } = useUserMutations();
-  const [selectedRole, setSelectedRole] = useState<UserRole>('onboardingTeam');
+const AssignRoleDialog: React.FC<AssignRoleDialogProps> = ({
+  open,
+  onOpenChange,
+  userId
+}) => {
+  const { assignRole, isAssigningRole } = useUnifiedUserManagement();
+  const { roles, isLoading: rolesLoading } = useRoles();
+  const [selectedRole, setSelectedRole] = React.useState<string>('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!userId) return;
+  const handleAssign = async () => {
+    if (!userId || !selectedRole) return;
 
     try {
-      await assignRole({
-        userId,
-        roleName: selectedRole
-      });
-      
+      await assignRole({ userId, roleName: selectedRole as UserRole });
+      setSelectedRole('');
       onOpenChange(false);
-      setSelectedRole('onboardingTeam');
     } catch (error) {
-      console.error('Failed to assign role:', error);
+      console.error('Role assignment error:', error);
     }
   };
 
+  const handleClose = () => {
+    setSelectedRole('');
+    onOpenChange(false);
+  };
+
+  if (rolesLoading) {
+    return (
+      <Dialog open={open} onOpenChange={handleClose}>
+        <DialogContent>
+          <div className="flex items-center justify-center p-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>Assign Role</DialogTitle>
-          <DialogDescription>
-            Assign a role to {userName}
-          </DialogDescription>
         </DialogHeader>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
+        <div className="space-y-4">
+          <div>
             <Label htmlFor="role">Select Role</Label>
-            <Select value={selectedRole} onValueChange={(value: UserRole) => setSelectedRole(value)}>
+            <Select value={selectedRole} onValueChange={setSelectedRole}>
               <SelectTrigger>
-                <SelectValue placeholder="Select a role" />
+                <SelectValue placeholder="Choose a role" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="onboardingTeam">Onboarding Team</SelectItem>
-                <SelectItem value="superAdmin">Super Administrator</SelectItem>
-                <SelectItem value="healthcareProvider">Healthcare Provider</SelectItem>
-                <SelectItem value="nurse">Nurse</SelectItem>
-                <SelectItem value="caseManager">Case Manager</SelectItem>
-                <SelectItem value="patientCaregiver">Patient Caregiver</SelectItem>
-                <SelectItem value="financeTeam">Finance Team</SelectItem>
-                <SelectItem value="contractTeam">Contract Team</SelectItem>
-                <SelectItem value="workflowManager">Workflow Manager</SelectItem>
+                {roles.map((role) => (
+                  <SelectItem key={role.id} value={role.name}>
+                    <div>
+                      <div className="font-medium">{role.name}</div>
+                      {role.description && (
+                        <div className="text-sm text-gray-500">{role.description}</div>
+                      )}
+                    </div>
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
 
-          <div className="flex justify-end gap-3">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <div className="flex justify-end space-x-2">
+            <Button variant="outline" onClick={handleClose}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isAssigningRole}>
+            <Button 
+              onClick={handleAssign} 
+              disabled={!selectedRole || isAssigningRole}
+            >
               {isAssigningRole ? 'Assigning...' : 'Assign Role'}
             </Button>
           </div>
-        </form>
+        </div>
       </DialogContent>
     </Dialog>
   );

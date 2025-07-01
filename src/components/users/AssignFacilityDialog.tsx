@@ -1,77 +1,94 @@
 
-import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import React from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useUserMutations } from '@/hooks/users/useUserMutations';
+import { Label } from '@/components/ui/label';
+import { useUnifiedUserManagement } from '@/hooks/useUnifiedUserManagement';
 import { useFacilities } from '@/hooks/useFacilities';
 
 interface AssignFacilityDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   userId: string | null;
-  userName: string;
 }
 
-const AssignFacilityDialog: React.FC<AssignFacilityDialogProps> = ({ open, onOpenChange, userId, userName }) => {
-  const { assignFacility, isAssigningFacility } = useUserMutations();
-  const { facilities } = useFacilities();
-  const [selectedFacilityId, setSelectedFacilityId] = useState<string>('');
+const AssignFacilityDialog: React.FC<AssignFacilityDialogProps> = ({
+  open,
+  onOpenChange,
+  userId
+}) => {
+  const { assignFacility, isAssigningFacility } = useUnifiedUserManagement();
+  const { facilities, isLoading: facilitiesLoading } = useFacilities();
+  const [selectedFacility, setSelectedFacility] = React.useState<string>('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!userId || !selectedFacilityId) return;
+  const handleAssign = async () => {
+    if (!userId || !selectedFacility) return;
 
     try {
-      await assignFacility({
-        userId,
-        facilityId: selectedFacilityId
-      });
-      
+      await assignFacility({ userId, facilityId: selectedFacility });
+      setSelectedFacility('');
       onOpenChange(false);
-      setSelectedFacilityId('');
     } catch (error) {
-      console.error('Failed to assign facility:', error);
+      console.error('Facility assignment error:', error);
     }
   };
 
+  const handleClose = () => {
+    setSelectedFacility('');
+    onOpenChange(false);
+  };
+
+  if (facilitiesLoading) {
+    return (
+      <Dialog open={open} onOpenChange={handleClose}>
+        <DialogContent>
+          <div className="flex items-center justify-center p-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>Assign Facility</DialogTitle>
-          <DialogDescription>
-            Assign facility access to {userName}
-          </DialogDescription>
         </DialogHeader>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
+        <div className="space-y-4">
+          <div>
             <Label htmlFor="facility">Select Facility</Label>
-            <Select value={selectedFacilityId} onValueChange={setSelectedFacilityId}>
+            <Select value={selectedFacility} onValueChange={setSelectedFacility}>
               <SelectTrigger>
-                <SelectValue placeholder="Select a facility" />
+                <SelectValue placeholder="Choose a facility" />
               </SelectTrigger>
               <SelectContent>
                 {facilities.map((facility) => (
                   <SelectItem key={facility.id} value={facility.id}>
-                    {facility.name} - {facility.facility_type}
+                    <div>
+                      <div className="font-medium">{facility.name}</div>
+                      <div className="text-sm text-gray-500">{facility.facility_type}</div>
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
-          <div className="flex justify-end gap-3">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <div className="flex justify-end space-x-2">
+            <Button variant="outline" onClick={handleClose}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isAssigningFacility || !selectedFacilityId}>
+            <Button 
+              onClick={handleAssign} 
+              disabled={!selectedFacility || isAssigningFacility}
+            >
               {isAssigningFacility ? 'Assigning...' : 'Assign Facility'}
             </Button>
           </div>
-        </form>
+        </div>
       </DialogContent>
     </Dialog>
   );

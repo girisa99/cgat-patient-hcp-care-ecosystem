@@ -1,11 +1,13 @@
 
-import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import React from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useUserMutations } from '@/hooks/users/useUserMutations';
+import { useForm } from 'react-hook-form';
+import { useUnifiedUserManagement } from '@/hooks/useUnifiedUserManagement';
+import { useRoles } from '@/hooks/useRoles';
 import { useFacilities } from '@/hooks/useFacilities';
 import { Database } from '@/integrations/supabase/types';
 
@@ -16,135 +18,125 @@ interface CreateUserDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onOpenChange }) => {
-  const { createUser, isCreatingUser } = useUserMutations();
-  const { facilities } = useFacilities();
-  
-  const [formData, setFormData] = useState({
-    email: '',
-    first_name: '',
-    last_name: '',
-    phone: '',
-    department: '',
-    role: 'onboardingTeam' as UserRole,
-    facility_id: ''
-  });
+interface CreateUserFormData {
+  email: string;
+  first_name: string;
+  last_name: string;
+  phone?: string;
+  department?: string;
+  role: UserRole;
+  facility_id?: string;
+}
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
+  open,
+  onOpenChange
+}) => {
+  const { createUser, isCreatingUser } = useUnifiedUserManagement();
+  const { roles } = useRoles();
+  const { facilities } = useFacilities();
+
+  const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<CreateUserFormData>();
+
+  const selectedRole = watch('role');
+
+  const onSubmit = async (data: CreateUserFormData) => {
     try {
-      await createUser({
-        ...formData,
-        facility_id: formData.facility_id || undefined
-      });
-      
-      // Reset form
-      setFormData({
-        email: '',
-        first_name: '',
-        last_name: '',
-        phone: '',
-        department: '',
-        role: 'onboardingTeam',
-        facility_id: ''
-      });
-      
+      await createUser(data);
+      reset();
       onOpenChange(false);
     } catch (error) {
-      console.error('Failed to create user:', error);
+      console.error('Create user error:', error);
     }
   };
 
+  const handleClose = () => {
+    reset();
+    onOpenChange(false);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Create New User</DialogTitle>
-          <DialogDescription>
-            Add a new user to the system with appropriate role and facility access.
-          </DialogDescription>
         </DialogHeader>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
+            <div>
               <Label htmlFor="first_name">First Name</Label>
               <Input
                 id="first_name"
-                value={formData.first_name}
-                onChange={(e) => setFormData(prev => ({ ...prev, first_name: e.target.value }))}
-                required
+                {...register('first_name', { required: 'First name is required' })}
               />
+              {errors.first_name && (
+                <p className="text-sm text-red-600 mt-1">{errors.first_name.message}</p>
+              )}
             </div>
-            <div className="space-y-2">
+            <div>
               <Label htmlFor="last_name">Last Name</Label>
               <Input
                 id="last_name"
-                value={formData.last_name}
-                onChange={(e) => setFormData(prev => ({ ...prev, last_name: e.target.value }))}
-                required
+                {...register('last_name', { required: 'Last name is required' })}
               />
+              {errors.last_name && (
+                <p className="text-sm text-red-600 mt-1">{errors.last_name.message}</p>
+              )}
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div>
             <Label htmlFor="email">Email</Label>
             <Input
               id="email"
               type="email"
-              value={formData.email}
-              onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-              required
+              {...register('email', { 
+                required: 'Email is required',
+                pattern: {
+                  value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                  message: 'Invalid email address'
+                }
+              })}
             />
+            {errors.email && (
+              <p className="text-sm text-red-600 mt-1">{errors.email.message}</p>
+            )}
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="phone">Phone</Label>
+          <div>
+            <Label htmlFor="phone">Phone (Optional)</Label>
             <Input
               id="phone"
-              value={formData.phone}
-              onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+              {...register('phone')}
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="department">Department</Label>
-            <Input
-              id="department"
-              value={formData.department}
-              onChange={(e) => setFormData(prev => ({ ...prev, department: e.target.value }))}
-            />
-          </div>
-
-          <div className="space-y-2">
+          <div>
             <Label htmlFor="role">Role</Label>
-            <Select value={formData.role} onValueChange={(value: UserRole) => setFormData(prev => ({ ...prev, role: value }))}>
+            <Select onValueChange={(value) => setValue('role', value as UserRole)}>
               <SelectTrigger>
                 <SelectValue placeholder="Select a role" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="onboardingTeam">Onboarding Team</SelectItem>
-                <SelectItem value="superAdmin">Super Administrator</SelectItem>
-                <SelectItem value="healthcareProvider">Healthcare Provider</SelectItem>
-                <SelectItem value="nurse">Nurse</SelectItem>
-                <SelectItem value="caseManager">Case Manager</SelectItem>
-                <SelectItem value="patientCaregiver">Patient Caregiver</SelectItem>
-                <SelectItem value="financeTeam">Finance Team</SelectItem>
-                <SelectItem value="contractTeam">Contract Team</SelectItem>
-                <SelectItem value="workflowManager">Workflow Manager</SelectItem>
+                {roles.map((role) => (
+                  <SelectItem key={role.id} value={role.name}>
+                    {role.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
+            {errors.role && (
+              <p className="text-sm text-red-600 mt-1">Role is required</p>
+            )}
           </div>
 
-          <div className="space-y-2">
+          <div>
             <Label htmlFor="facility">Facility (Optional)</Label>
-            <Select value={formData.facility_id} onValueChange={(value) => setFormData(prev => ({ ...prev, facility_id: value }))}>
+            <Select onValueChange={(value) => setValue('facility_id', value)}>
               <SelectTrigger>
-                <SelectValue placeholder="Select a facility (optional)" />
+                <SelectValue placeholder="Select a facility" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">No facility</SelectItem>
                 {facilities.map((facility) => (
                   <SelectItem key={facility.id} value={facility.id}>
                     {facility.name}
@@ -154,8 +146,16 @@ const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onOpenChange 
             </Select>
           </div>
 
-          <div className="flex justify-end gap-3">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <div>
+            <Label htmlFor="department">Department (Optional)</Label>
+            <Input
+              id="department"
+              {...register('department')}
+            />
+          </div>
+
+          <div className="flex justify-end space-x-2">
+            <Button type="button" variant="outline" onClick={handleClose}>
               Cancel
             </Button>
             <Button type="submit" disabled={isCreatingUser}>

@@ -13,8 +13,7 @@ import {
   AlertTriangle,
   Loader2
 } from 'lucide-react';
-import { useUsers } from '@/hooks/useUsers';
-import { useUnifiedUserData } from '@/hooks/useUnifiedUserData';
+import { useUnifiedUserManagement } from '@/hooks/useUnifiedUserManagement';
 import { useFacilities } from '@/hooks/useFacilities';
 import { useModules } from '@/hooks/useModules';
 
@@ -22,23 +21,22 @@ const CoreFunctionalityVerification = () => {
   const [verificationResults, setVerificationResults] = useState<any[]>([]);
   const [isVerifying, setIsVerifying] = useState(false);
 
-  // Test all core hooks
-  const usersHook = useUsers();
-  const unifiedUserData = useUnifiedUserData();
+  // Test all core hooks - using unified system
+  const { users, isLoading: usersLoading, error: usersError, meta } = useUnifiedUserManagement();
   const facilitiesHook = useFacilities();
   const modulesHook = useModules();
 
   // Add detailed logging
   console.log('🔍 CoreFunctionalityVerification - Hook States:', {
     users: {
-      count: usersHook.users?.length || 0,
-      isLoading: usersHook.isLoading,
-      error: usersHook.error?.message
+      count: users?.length || 0,
+      isLoading: usersLoading,
+      error: usersError?.message
     },
     unifiedData: {
-      totalUsers: unifiedUserData.meta?.totalUsers || 0,
-      isLoading: unifiedUserData.isLoading,
-      error: unifiedUserData.error?.message
+      totalUsers: meta?.totalUsers || 0,
+      isLoading: usersLoading,
+      error: usersError?.message
     },
     facilities: {
       count: facilitiesHook.facilities?.length || 0,
@@ -57,26 +55,26 @@ const CoreFunctionalityVerification = () => {
     const results = [];
 
     try {
-      // Test Users functionality
+      // Test Users functionality - using unified system
       results.push({
-        name: 'Users Hook',
-        status: usersHook.error ? 'error' : usersHook.isLoading ? 'loading' : 'success',
+        name: 'Unified User Management',
+        status: usersError ? 'error' : usersLoading ? 'loading' : 'success',
         data: {
-          users: usersHook.users?.length || 0,
-          error: usersHook.error?.message
+          users: users?.length || 0,
+          error: usersError?.message
         }
       });
 
       // Test Unified User Data
       results.push({
         name: 'Unified User Data',
-        status: unifiedUserData.error ? 'error' : unifiedUserData.isLoading ? 'loading' : 'success',
+        status: usersError ? 'error' : usersLoading ? 'loading' : 'success',
         data: {
-          totalUsers: unifiedUserData.meta?.totalUsers || 0,
-          patients: unifiedUserData.meta?.patientCount || 0,
-          staff: unifiedUserData.meta?.staffCount || 0,
-          admins: unifiedUserData.meta?.adminCount || 0,
-          error: unifiedUserData.error?.message
+          totalUsers: meta?.totalUsers || 0,
+          patients: meta?.patientCount || 0,
+          staff: meta?.staffCount || 0,
+          admins: meta?.adminCount || 0,
+          error: usersError?.message
         }
       });
 
@@ -179,14 +177,14 @@ const CoreFunctionalityVerification = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {usersHook.users?.length || 0}
+                  {users?.length || 0}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Total users in system
                 </p>
-                {usersHook.error && (
+                {usersError && (
                   <p className="text-xs text-red-600 mt-1">
-                    Error: {usersHook.error.message}
+                    Error: {usersError.message}
                   </p>
                 )}
               </CardContent>
@@ -219,14 +217,14 @@ const CoreFunctionalityVerification = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {unifiedUserData.meta?.patientCount || 0}
+                  {meta?.patientCount || 0}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Registered patients
                 </p>
-                {unifiedUserData.error && (
+                {usersError && (
                   <p className="text-xs text-red-600 mt-1">
-                    Error: {unifiedUserData.error.message}
+                    Error: {usersError.message}
                   </p>
                 )}
               </CardContent>
@@ -298,10 +296,10 @@ const CoreFunctionalityVerification = () => {
             <CardContent>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <span>Users Hook Status:</span>
-                  {usersHook.error ? (
-                    <Badge variant="destructive">Error: {usersHook.error.message}</Badge>
-                  ) : usersHook.isLoading ? (
+                  <span>Unified User Management Status:</span>
+                  {usersError ? (
+                    <Badge variant="destructive">Error: {usersError.message}</Badge>
+                  ) : usersLoading ? (
                     <Badge className="bg-blue-100 text-blue-800">Loading</Badge>
                   ) : (
                     <Badge className="bg-green-100 text-green-800">Working</Badge>
@@ -309,13 +307,11 @@ const CoreFunctionalityVerification = () => {
                 </div>
                 <div className="flex items-center justify-between">
                   <span>Total Users:</span>
-                  <span>{usersHook.users?.length || 0}</span>
+                  <span>{users?.length || 0}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span>Create User Function:</span>
-                  <Badge className={usersHook.createUser ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>
-                    {usersHook.createUser ? 'Available' : 'Not Available'}
-                  </Badge>
+                  <span>Data Source:</span>
+                  <span>{meta?.dataSource || 'N/A'}</span>
                 </div>
               </div>
             </CardContent>

@@ -1,15 +1,15 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { useConsolidatedUsers } from '@/hooks/useConsolidatedUsers';
+import { useUnifiedUserManagement } from '@/hooks/useUnifiedUserManagement';
 import { UsersTableHeader } from './UsersTableHeader';
 import { UserTableRow } from './UserTableRow';
-import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import UserActions from './UserActions';
 
 interface UsersListProps {
   onEditUser: (user: any) => void;
   onAssignRole: (userId: string) => void;
-  onRemoveRole?: (userId: string) => void; 
+  onRemoveRole?: (userId: string) => void;
   onAssignFacility: (userId: string) => void;
   onManagePermissions: (userId: string, userName: string) => void;
   onAssignModule?: (userId: string, userName: string) => void;
@@ -29,60 +29,56 @@ const UsersList: React.FC<UsersListProps> = ({
   onDeactivateUser,
   onViewModules
 }) => {
-  const { users, isLoading, searchUsers } = useConsolidatedUsers();
-  const [searchQuery, setSearchQuery] = useState('');
+  const { users, isLoading, searchUsers } = useUnifiedUserManagement();
+  const [searchQuery, setSearchQuery] = React.useState('');
+
+  const filteredUsers = searchUsers(searchQuery);
 
   if (isLoading) {
     return (
       <Card>
         <CardContent className="p-8 text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p>Loading users...</p>
+          <p>Loading users from unified data source...</p>
         </CardContent>
       </Card>
     );
   }
 
-  const filteredUsers = searchUsers(searchQuery);
-
   return (
     <Card>
-      <UsersTableHeader 
+      <UsersTableHeader
         userCount={filteredUsers.length}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
       />
       <CardContent>
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>User</TableHead>
-                <TableHead>Email Status</TableHead>
-                <TableHead>Roles</TableHead>
-                <TableHead>Facility</TableHead>
-                <TableHead>Account Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredUsers.map((user) => (
-                <UserTableRow
-                  key={user.id}
-                  user={user}
-                  onEditUser={onEditUser}
-                  onAssignRole={onAssignRole}
-                  onRemoveRole={onRemoveRole}
-                  onAssignFacility={onAssignFacility}
-                  onManagePermissions={onManagePermissions}
-                  onAssignModule={onAssignModule}
-                  onResendVerification={onResendVerification}
-                  onDeactivateUser={onDeactivateUser}
-                  onViewModules={onViewModules}
-                />
-              ))}
-            </TableBody>
-          </Table>
+        <div className="space-y-4">
+          {filteredUsers.length > 0 ? (
+            filteredUsers.map((user) => (
+              <div key={user.id} className="border rounded-lg p-4">
+                <UserTableRow user={user} />
+                <div className="mt-3 flex justify-end">
+                  <UserActions
+                    user={user}
+                    onEditUser={onEditUser}
+                    onAssignRole={onAssignRole}
+                    onRemoveRole={onRemoveRole}
+                    onAssignFacility={onAssignFacility}
+                    onManagePermissions={onManagePermissions}
+                    onAssignModule={onAssignModule}
+                    onResendVerification={onResendVerification}
+                    onDeactivateUser={onDeactivateUser}
+                    onViewModules={onViewModules}
+                  />
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              {searchQuery ? 'No users found matching your search.' : 'No users found.'}
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

@@ -1,51 +1,46 @@
 
 /**
- * Universal Template Hooks - PHASE 1 COMPLETE ✅
- * 
- * All modules have been successfully consolidated under the universal template system.
- * This is now the single source of truth for all module functionality.
+ * Template System Hooks - Extensible Module Template System
+ * Single source of truth for all template-based functionality
  */
 
-// Main universal template hook
+// Core template system
 export { useTypeSafeModuleTemplate } from './useTypeSafeModuleTemplate';
+export { useExtensibleModuleRegistry } from './useExtensibleModuleRegistry';
 
-// Focused hooks for specific concerns
-export { useModuleData } from './useModuleData';
-export { useModuleMutations } from './useModuleMutations';
-export { useModuleValidation } from './useModuleValidation';
+// Template configurations for existing modules
+export { useTemplateUsers } from './useTemplateUsers';
+export { useTemplateFacilities } from './useTemplateFacilities';
+export { useTemplatePatients } from './useTemplatePatients';
+export { useTemplateOnboarding } from './useTemplateOnboarding';
 
-// Legacy compatibility - now points to unified template
-export { useTypeSafeModuleTemplate as useModuleTemplate } from './useTypeSafeModuleTemplate';
+// Module detection and automation
+export { useAutomaticModuleDetection } from './useAutomaticModuleDetection';
+export { useModuleRegistryManager } from './useModuleRegistryManager';
 
-// ✅ FULLY CONSOLIDATED MODULE HOOKS (All using unified template)
-export { useUsers } from '../../hooks/useUsers';
-export { useFacilities } from '../../hooks/useFacilities';
-export { useModules } from '../../hooks/useModules';
+// Template utilities
+export { moduleRegistry } from './moduleRegistry';
+export type { 
+  ModuleConfig, 
+  ModuleTemplate,
+  ExtensibleModuleProps,
+  TemplateSystemMeta 
+} from './types';
 
-// ✅ NEWLY CONSOLIDATED MODULE HOOKS
-export { useOnboarding } from '../../hooks/useOnboarding';
-export { useApiServices } from '../../hooks/useApiServices';
-export { useAuditLogs } from '../../hooks/useAuditLogs';
-
-// Specialized module hooks for granular access
-export { usePatientData } from '../../hooks/patients/usePatientData';
-export { usePatientMutations } from '../../hooks/patients/usePatientMutations';
-export { useFacilityData } from '../../hooks/facilities/useFacilityData';
-export { useFacilityMutations } from '../../hooks/facilities/useFacilityMutations';
-export { useModuleData as useModulesData } from '../../hooks/modules/useModuleData';
-export { useModuleMutations as useModulesMutations } from '../../hooks/modules/useModuleMutations';
+// Unified system integration - uses the main unified user management
+import { useUnifiedUserManagement } from '@/hooks/useUnifiedUserManagement';
 
 /**
- * CONSOLIDATION STATUS: ✅ PHASE 1 COMPLETE
- * 
- * All major modules are now consolidated:
- * - ✅ Patients: Fully consolidated with validation and stats
- * - ✅ Users: Already consolidated (from previous work)
- * - ✅ Facilities: Fully consolidated with data and mutations
- * - ✅ Modules: Fully consolidated with access control
- * - ✅ Onboarding: Consolidated with workflow support
- * - ✅ API Services: Consolidated with integration registry
- * - ✅ Audit Logs: Consolidated with analytics
- * 
- * Ready for Phase 2: Advanced Features & Optimizations
+ * Template-compatible wrapper for unified user management
+ * Maintains compatibility with template system while using single source of truth
  */
+export const useTemplateUnifiedUsers = () => {
+  const unifiedData = useUnifiedUserManagement();
+  
+  return {
+    ...unifiedData,
+    templateSystemCompatible: true,
+    dataSource: 'unified-user-management',
+    version: 'template-v1'
+  };
+};

@@ -14,7 +14,7 @@ export const USER_MANAGEMENT_CONFIG = {
     'patient1@geniecellgene.com',
     'care_manager@geniecellgene.com',
     'patient2@geniecellgene.com'
-  ],
+  ] as const,
 
   // Query keys - centralized cache management
   QUERY_KEYS: {
@@ -39,7 +39,7 @@ export const USER_MANAGEMENT_CONFIG = {
 
 // Utility functions
 export const isVerifiedEmail = (email: string): boolean => {
-  return USER_MANAGEMENT_CONFIG.VERIFIED_EMAILS.includes(email.toLowerCase());
+  return USER_MANAGEMENT_CONFIG.VERIFIED_EMAILS.includes(email.toLowerCase() as any);
 };
 
 export const isAdminRole = (roleName: string): boolean => {

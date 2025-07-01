@@ -1,114 +1,116 @@
 
-import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import React from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { useQueryClient } from '@tanstack/react-query';
-import { useUsers } from '@/hooks/useUsers';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { AlertTriangle } from 'lucide-react';
+import { useUnifiedUserManagement } from '@/hooks/useUnifiedUserManagement';
+import { Database } from '@/integrations/supabase/types';
+
+type UserRole = Database['public']['Enums']['user_role'];
 
 interface RemoveRoleDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   userId: string | null;
-  userName: string;
 }
 
-const RemoveRoleDialog: React.FC<RemoveRoleDialogProps> = ({ open, onOpenChange, userId, userName }) => {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const { users } = useUsers();
-  const [selectedRoleId, setSelectedRoleId] = useState<string>('');
-  const [userRoles, setUserRoles] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+const RemoveRoleDialog: React.FC<RemoveRoleDialogProps> = ({
+  open,
+  onOpenChange,
+  userId
+}) => {
+  const { users, removeRole, isRemovingRole } = useUnifiedUserManagement();
+  const [selectedRole, setSelectedRole] = React.useState<string>('');
 
-  useEffect(() => {
-    if (userId && open) {
-      const user = users.find(u => u.id === userId);
-      setUserRoles(user?.user_roles || []);
-    }
-  }, [userId, users, open]);
+  const user = users.find(u => u.id === userId);
+  const userRoles = user?.user_roles || [];
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!userId || !selectedRoleId) return;
+  const handleRemove = async () => {
+    if (!userId || !selectedRole) return;
 
-    setIsLoading(true);
     try {
-      const { error } = await supabase
-        .from('user_roles')
-        .delete()
-        .eq('user_id', userId)
-        .eq('role_id', selectedRoleId);
-
-      if (error) throw error;
-
-      toast({
-        title: "Role Removed",
-        description: `Role has been removed from ${userName}`,
-      });
-
-      queryClient.invalidateQueries({ queryKey: ['users'] });
+      await removeRole({ userId, roleName: selectedRole as UserRole });
+      setSelectedRole('');
       onOpenChange(false);
-      setSelectedRoleId('');
-    } catch (error: any) {
-      console.error('Failed to remove role:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to remove role",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
+    } catch (error) {
+      console.error('Role removal error:', error);
     }
   };
 
+  const handleClose = () => {
+    setSelectedRole('');
+    onOpenChange(false);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent>
         <DialogHeader>
-          <DialogTitle>Remove Role</DialogTitle>
-          <DialogDescription>
-            Remove a role from {userName}
-          </DialogDescription>
+          <DialogTitle className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-orange-600" />
+            Remove Role
+          </DialogTitle>
         </DialogHeader>
+        <div className="space-y-4">
+          {userRoles.length === 0 ? (
+            <div className="text-center py-4 text-gray-500">
+              This user has no roles assigned.
+            </div>
+          ) : (
+            <>
+              <div>
+                <Label>Current Roles</Label>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {userRoles.map((userRole, index) => (
+                    <Badge key={index} variant="outline">
+                      {userRole.roles.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="role">Select Role to Remove</Label>
-            <Select value={selectedRoleId} onValueChange={setSelectedRoleId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a role to remove" />
-              </SelectTrigger>
-              <SelectContent>
-                {userRoles.map((userRole, index) => (
-                  <SelectItem key={index} value={userRole.role_id || index.toString()}>
-                    {userRole.roles?.name || 'Unknown Role'}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+              <div>
+                <Label htmlFor="role">Select Role to Remove</Label>
+                <Select value={selectedRole} onValueChange={setSelectedRole}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a role to remove" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {userRoles.map((userRole, index) => (
+                      <SelectItem key={index} value={userRole.roles.name}>
+                        {userRole.roles.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-          {userRoles.length === 0 && (
-            <p className="text-sm text-gray-500">This user has no roles assigned.</p>
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                <p className="text-sm text-orange-800">
+                  <strong>Warning:</strong> Removing a role will revoke all permissions associated with that role.
+                </p>
+              </div>
+            </>
           )}
 
-          <div className="flex justify-end gap-3">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <div className="flex justify-end space-x-2">
+            <Button variant="outline" onClick={handleClose}>
               Cancel
             </Button>
-            <Button 
-              type="submit" 
-              disabled={isLoading || !selectedRoleId}
-              variant="destructive"
-            >
-              {isLoading ? 'Removing...' : 'Remove Role'}
-            </Button>
+            {userRoles.length > 0 && (
+              <Button 
+                variant="destructive"
+                onClick={handleRemove} 
+                disabled={!selectedRole || isRemovingRole}
+              >
+                {isRemovingRole ? 'Removing...' : 'Remove Role'}
+              </Button>
+            )}
           </div>
-        </form>
+        </div>
       </DialogContent>
     </Dialog>
   );

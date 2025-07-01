@@ -1,10 +1,10 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useUsers } from '@/hooks/useUsers';
+import { useUnifiedUserManagement } from '@/hooks/useUnifiedUserManagement';
 
 export const UserManagement: React.FC = () => {
-  const { users, isLoading } = useUsers();
+  const { users, isLoading } = useUnifiedUserManagement();
 
   if (isLoading) {
     return <div>Loading users...</div>;

@@ -1,59 +1,58 @@
 
-import { useConsolidatedUsers } from '@/hooks/useConsolidatedUsers';
-import { getPatientUsers } from '@/utils/userDataHelpers';
-import type { UserWithRoles } from '@/types/userManagement';
+import { useUnifiedUserManagement } from '@/hooks/useUnifiedUserManagement';
 
 /**
- * Consolidated Patients Hook - Uses the consolidated user data architecture
+ * Consolidated Patients Hook - Uses Unified User Management
+ * This hook is a wrapper around the unified system for patient-specific functionality
  */
 export const useConsolidatedPatients = () => {
-  const { allUsers, isLoading, error, refetch, meta } = useConsolidatedUsers();
+  const { 
+    users, 
+    isLoading, 
+    error, 
+    getPatients,
+    searchUsers,
+    meta 
+  } = useUnifiedUserManagement();
 
-  // Filter for patient users using existing helper
-  const patients = getPatientUsers(allUsers || []);
+  const patients = getPatients();
 
-  console.log('🏥 Consolidated patients:', {
-    totalUsers: allUsers?.length || 0,
-    patientUsers: patients.length,
-    dataSource: 'consolidated user data'
-  });
-
-  const searchPatients = (query: string): UserWithRoles[] => {
-    if (!query.trim()) return patients;
-    
-    return patients.filter((patient: UserWithRoles) => 
-      patient.first_name?.toLowerCase().includes(query.toLowerCase()) ||
-      patient.last_name?.toLowerCase().includes(query.toLowerCase()) ||
-      patient.email?.toLowerCase().includes(query.toLowerCase())
+  const searchPatients = (query: string) => {
+    const allFilteredUsers = searchUsers(query);
+    return allFilteredUsers.filter(user => 
+      user.user_roles.some(userRole => userRole.roles.name === 'patientCaregiver')
     );
   };
 
   const getPatientStats = () => {
     return {
       total: patients.length,
-      active: patients.filter(p => p.created_at).length,
+      verified: patients.filter(p => p.email_confirmed_at).length,
       withFacilities: patients.filter(p => p.facilities).length,
-      recentlyAdded: patients.filter(p => {
-        const createdDate = new Date(p.created_at || '');
-        const weekAgo = new Date();
-        weekAgo.setDate(weekAgo.getDate() - 7);
-        return createdDate > weekAgo;
+      recent: patients.filter(p => {
+        const createdAt = new Date(p.created_at);
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        return createdAt > thirtyDaysAgo;
       }).length
     };
   };
 
   return {
+    // Data
     patients,
     isLoading,
     error,
-    refetch,
+    
+    // Utilities
     searchPatients,
     getPatientStats,
+    
+    // Meta information from unified system
     meta: {
       ...meta,
-      patientCount: patients.length,
-      dataSource: 'consolidated user architecture',
-      consolidatedVersion: true
+      patientSpecific: true,
+      filterApplied: 'patientCaregiver role'
     }
   };
 };
