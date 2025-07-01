@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuthContext } from '@/components/auth/CleanAuthProvider';
 import { useUnifiedUserManagement } from './useUnifiedUserManagement';
 import { useFacilities } from './useFacilities';

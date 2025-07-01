@@ -1,91 +1,116 @@
 
-import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { CleanAuthProvider } from "./components/auth/CleanAuthProvider";
-import ProtectedRoute from "./components/auth/ProtectedRoute";
-import Index from "./pages/Index";
-import Dashboard from "./pages/Dashboard";
-import Settings from "./pages/Settings";
-import Users from "./pages/Users";
-import Facilities from "./pages/Facilities";
-import Modules from "./pages/Modules";
-import Patients from "./pages/Patients";
-import Onboarding from "./pages/Onboarding";
-import ApiIntegrations from "./pages/ApiIntegrations";
-import AuditLog from "./pages/AuditLog";
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { CleanAuthProvider } from '@/components/auth/CleanAuthProvider';
+import { Toaster } from '@/components/ui/toaster';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
+
+// Import pages
+import LoginPage from '@/pages/LoginPage';
+import DashboardPage from '@/pages/DashboardPage';
+import UsersPage from '@/pages/UsersPage';
+import FacilitiesPage from '@/pages/FacilitiesPage';
+import ModulesPage from '@/pages/ModulesPage';
+import PatientsPage from '@/pages/PatientsPage';
+import ApiServicesPage from '@/pages/ApiServicesPage';
+import DataImportPage from '@/pages/DataImport';
+import ConsolidationPage from '@/pages/ConsolidationPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
-      staleTime: 1000 * 60 * 5, // 5 minutes
+      refetchOnWindowFocus: false,
     },
   },
 });
 
 function App() {
   console.log('🚀 App rendering...');
-  
+
   return (
     <QueryClientProvider client={queryClient}>
       <CleanAuthProvider>
-        <TooltipProvider>
+        <Router>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            
+            <Route
+              path="/users"
+              element={
+                <ProtectedRoute>
+                  <UsersPage />
+                </ProtectedRoute>
+              }
+            />
+            
+            <Route
+              path="/facilities"
+              element={
+                <ProtectedRoute>
+                  <FacilitiesPage />
+                </ProtectedRoute>
+              }
+            />
+            
+            <Route
+              path="/modules"
+              element={
+                <ProtectedRoute>
+                  <ModulesPage />
+                </ProtectedRoute>
+              }
+            />
+            
+            <Route
+              path="/patients"
+              element={
+                <ProtectedRoute>
+                  <PatientsPage />
+                </ProtectedRoute>
+              }
+            />
+            
+            <Route
+              path="/api-services"
+              element={
+                <ProtectedRoute>
+                  <ApiServicesPage />
+                </ProtectedRoute>
+              }
+            />
+            
+            <Route
+              path="/data-import"
+              element={
+                <ProtectedRoute>
+                  <DataImportPage />
+                </ProtectedRoute>
+              }
+            />
+            
+            <Route
+              path="/consolidation"
+              element={
+                <ProtectedRoute>
+                  <ConsolidationPage />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
           <Toaster />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              {/* Redirect old login route to index */}
-              <Route path="/login" element={<Navigate to="/" replace />} />
-              <Route path="/dashboard" element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              } />
-              <Route path="/settings" element={
-                <ProtectedRoute>
-                  <Settings />
-                </ProtectedRoute>
-              } />
-              <Route path="/users" element={
-                <ProtectedRoute>
-                  <Users />
-                </ProtectedRoute>
-              } />
-              <Route path="/facilities" element={
-                <ProtectedRoute>
-                  <Facilities />
-                </ProtectedRoute>
-              } />
-              <Route path="/modules" element={
-                <ProtectedRoute>
-                  <Modules />
-                </ProtectedRoute>
-              } />
-              <Route path="/patients" element={
-                <ProtectedRoute>
-                  <Patients />
-                </ProtectedRoute>
-              } />
-              <Route path="/onboarding" element={
-                <ProtectedRoute>
-                  <Onboarding />
-                </ProtectedRoute>
-              } />
-              <Route path="/api-integrations" element={
-                <ProtectedRoute>
-                  <ApiIntegrations />
-                </ProtectedRoute>
-              } />
-              <Route path="/audit-log" element={
-                <ProtectedRoute>
-                  <AuditLog />
-                </ProtectedRoute>
-              } />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
+        </Router>
       </CleanAuthProvider>
     </QueryClientProvider>
   );

@@ -4,28 +4,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { 
   Server, 
   Globe, 
   ArrowUpCircle, 
   ArrowDownCircle, 
-  Code, 
-  Users, 
   Database,
-  ExternalLink,
-  Workflow,
   Search,
   Shield,
   GitBranch,
-  FileText,
-  Settings
+  FileText
 } from 'lucide-react';
 
-// Import hooks - using the correct one for external APIs
-import { useApiIntegrations } from '@/hooks/useApiIntegrations.tsx'; // Use the .tsx version with Twilio data
-import { useExternalApis } from '@/hooks/useExternalApis';
-import { useEnhancedExternalApis } from '@/hooks/useEnhancedExternalApis';
+// Use consolidated hook
+import { useApiServices } from '@/hooks/useApiServices';
 
 // Import tab components
 import { InternalApisTabContent } from '@/components/admin/ApiIntegrations/tabs/InternalApisTabContent';
@@ -37,8 +29,6 @@ import { TestingTabContent } from '@/components/admin/ApiIntegrations/tabs/Testi
 import { OnboardingIntegrationTabContent } from '@/components/admin/ApiIntegrations/tabs/OnboardingIntegrationTabContent';
 import AutoIntegrationBanner from '../ApiIntegrations/AutoIntegrationBanner';
 
-console.log('🔧 ApiServicesModule: Starting component definition');
-
 export const ApiServicesModule: React.FC = () => {
   console.log('🚀 ApiServicesModule: Component rendering started');
   
@@ -46,81 +36,28 @@ export const ApiServicesModule: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
-  console.log('🔄 ApiServicesModule: Initializing hooks');
-  
+  // Use consolidated hook
   const { 
-    integrations, 
-    isLoading, 
-    error, 
+    apiServices,
     internalApis,
     externalApis,
-    downloadPostmanCollection,
-    testEndpoint
-  } = useApiIntegrations();
-  
-  const { 
-    externalApis: publishedApis, 
-    marketplaceStats,
-    isLoadingExternalApis 
-  } = useExternalApis();
-
-  const { 
-    externalApis: enhancedPublishedApis 
-  } = useEnhancedExternalApis();
+    isLoading, 
+    error, 
+    getApiServiceStats
+  } = useApiServices();
 
   console.log('📊 ApiServicesModule: Hook data:', {
-    integrations: integrations?.length || 0,
+    apiServices: apiServices?.length || 0,
     internalApis: internalApis?.length || 0,
     externalApis: externalApis?.length || 0,
-    publishedApis: publishedApis?.length || 0,
     isLoading,
-    isLoadingExternalApis,
     error
   });
 
-  // Calculate comprehensive stats from integrations
-  const calculateStats = () => {
-    if (!integrations) return {
-      totalSchemas: 0,
-      totalSecurity: 0,
-      totalMappings: 0,
-      totalModules: 0,
-      totalTypes: 0,
-      totalDocs: 0
-    };
-
-    return {
-      totalSchemas: integrations.reduce((sum, integration) => 
-        sum + Object.keys(integration.schemas || {}).length, 0
-      ),
-      totalSecurity: integrations.reduce((sum, integration) => 
-        sum + (integration.rlsPolicies?.length || 0), 0
-      ),
-      totalMappings: integrations.reduce((sum, integration) => 
-        sum + (integration.mappings?.length || 0), 0
-      ),
-      totalModules: integrations.reduce((sum, integration) => 
-        sum + (integration.category === 'onboarding' ? 3 : 1), 0
-      ), // Onboarding has 3 modules, others have 1
-      totalTypes: integrations.reduce((sum, integration) => 
-        sum + Object.keys(integration.schemas || {}).length, 0
-      ), // Same as schemas for now
-      totalDocs: integrations.reduce((sum, integration) => 
-        sum + (integration.documentation ? 1 : 0), 0
-      )
-    };
-  };
-
-  const stats = calculateStats();
-
-  // Log external APIs data for debugging
-  console.log('🔍 External APIs data for consuming tab:', externalApis);
+  const stats = getApiServiceStats();
 
   const handleDownloadCollection = (integrationId: string) => {
     console.log('📥 Download collection for:', integrationId);
-    if (downloadPostmanCollection) {
-      downloadPostmanCollection(integrationId);
-    }
   };
 
   const handleViewDetails = (integrationId: string) => {
@@ -139,9 +76,6 @@ export const ApiServicesModule: React.FC = () => {
   const handleTestEndpoint = async (integrationId: string, endpointId: string) => {
     try {
       console.log('🧪 Testing endpoint:', { integrationId, endpointId });
-      if (testEndpoint) {
-        await testEndpoint(integrationId, endpointId);
-      }
     } catch (error) {
       console.error('❌ Error testing endpoint:', error);
     }
@@ -154,7 +88,7 @@ export const ApiServicesModule: React.FC = () => {
           <div className="flex items-center gap-2">
             <Server className="h-6 w-6 text-blue-500" />
             <div>
-              <p className="text-2xl font-bold">{internalApis?.length || 0}</p>
+              <p className="text-2xl font-bold">{stats.internal}</p>
               <p className="text-sm text-muted-foreground">Internal APIs</p>
             </div>
           </div>
@@ -166,7 +100,7 @@ export const ApiServicesModule: React.FC = () => {
           <div className="flex items-center gap-2">
             <ArrowDownCircle className="h-6 w-6 text-green-500" />
             <div>
-              <p className="text-2xl font-bold">{externalApis?.length || 0}</p>
+              <p className="text-2xl font-bold">{stats.consuming}</p>
               <p className="text-sm text-muted-foreground">Consuming APIs</p>
             </div>
           </div>
@@ -178,8 +112,8 @@ export const ApiServicesModule: React.FC = () => {
           <div className="flex items-center gap-2">
             <Database className="h-6 w-6 text-purple-500" />
             <div>
-              <p className="text-2xl font-bold">{stats.totalSchemas}</p>
-              <p className="text-sm text-muted-foreground">Schemas</p>
+              <p className="text-2xl font-bold">{stats.external}</p>
+              <p className="text-sm text-muted-foreground">External APIs</p>
             </div>
           </div>
         </CardContent>
@@ -190,8 +124,8 @@ export const ApiServicesModule: React.FC = () => {
           <div className="flex items-center gap-2">
             <Shield className="h-6 w-6 text-orange-500" />
             <div>
-              <p className="text-2xl font-bold">{stats.totalSecurity}</p>
-              <p className="text-sm text-muted-foreground">Security</p>
+              <p className="text-2xl font-bold">{stats.active}</p>
+              <p className="text-sm text-muted-foreground">Active</p>
             </div>
           </div>
         </CardContent>
@@ -202,8 +136,8 @@ export const ApiServicesModule: React.FC = () => {
           <div className="flex items-center gap-2">
             <GitBranch className="h-6 w-6 text-teal-500" />
             <div>
-              <p className="text-2xl font-bold">{stats.totalMappings}</p>
-              <p className="text-sm text-muted-foreground">Mappings</p>
+              <p className="text-2xl font-bold">{stats.total}</p>
+              <p className="text-sm text-muted-foreground">Total Services</p>
             </div>
           </div>
         </CardContent>
@@ -214,8 +148,8 @@ export const ApiServicesModule: React.FC = () => {
           <div className="flex items-center gap-2">
             <FileText className="h-6 w-6 text-indigo-500" />
             <div>
-              <p className="text-2xl font-bold">{stats.totalDocs}</p>
-              <p className="text-sm text-muted-foreground">Docs</p>
+              <p className="text-2xl font-bold">{Object.keys(stats.typeBreakdown).length}</p>
+              <p className="text-sm text-muted-foreground">Types</p>
             </div>
           </div>
         </CardContent>
@@ -240,8 +174,7 @@ export const ApiServicesModule: React.FC = () => {
               Manage and monitor your internal APIs, endpoints, and configurations for treatment centers and healthcare facilities.
             </p>
             <div className="flex items-center gap-2">
-              <Badge variant="outline">{internalApis?.length || 0} APIs</Badge>
-              <Badge variant="outline">{stats.totalSchemas} Schemas</Badge>
+              <Badge variant="outline">{stats.internal} APIs</Badge>
               <Badge variant="outline">Healthcare Ready</Badge>
             </div>
           </CardContent>
@@ -259,48 +192,8 @@ export const ApiServicesModule: React.FC = () => {
               Integrate with third-party APIs including EHR systems, pharmacy networks, and financial verification services.
             </p>
             <div className="flex items-center gap-2">
-              <Badge variant="outline">{externalApis?.length || 0} Integrations</Badge>
-              <Badge variant="outline">{stats.totalSecurity} Security Policies</Badge>
+              <Badge variant="outline">{stats.external} Integrations</Badge>
               <Badge variant="outline">HIPAA Compliant</Badge>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ArrowUpCircle className="h-5 w-5 text-purple-500" />
-              API Publishing & Marketplace
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground mb-4">
-              Publish your healthcare APIs for external consumption and manage developer access with compliance controls.
-            </p>
-            <div className="flex items-center gap-2">
-              <Badge variant="outline">{publishedApis?.length || 0} Published</Badge>
-              <Badge variant="outline">{marketplaceStats?.approvedApplications || 0} Developer Apps</Badge>
-              <Badge variant="outline">FDA Compliant</Badge>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Workflow className="h-5 w-5 text-teal-500" />
-              Comprehensive Onboarding Integration
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground mb-4">
-              Manage API requirements from treatment centers, pharma/biotech companies, and financial verification workflows.
-            </p>
-            <div className="flex items-center gap-2">
-              <Badge variant="outline">{stats.totalMappings} Mappings</Badge>
-              <Badge variant="outline">Multi-Category</Badge>
-              <Badge variant="outline">Workflow Management</Badge>
-              <Badge variant="outline">Compliance Tracking</Badge>
             </div>
           </CardContent>
         </Card>
@@ -308,8 +201,7 @@ export const ApiServicesModule: React.FC = () => {
     </div>
   );
 
-  if (isLoading || isLoadingExternalApis) {
-    console.log('⏳ ApiServicesModule: Showing loading state');
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
@@ -321,7 +213,6 @@ export const ApiServicesModule: React.FC = () => {
   }
 
   if (error) {
-    console.error('❌ ApiServicesModule: Error state:', error);
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
@@ -331,8 +222,6 @@ export const ApiServicesModule: React.FC = () => {
       </div>
     );
   }
-
-  console.log('✅ ApiServicesModule: Rendering main content');
 
   return (
     <div className="space-y-6">
@@ -354,7 +243,6 @@ export const ApiServicesModule: React.FC = () => {
         </div>
       </div>
 
-      {/* Enhanced AutoIntegrationBanner */}
       <AutoIntegrationBanner />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -375,7 +263,7 @@ export const ApiServicesModule: React.FC = () => {
 
         <TabsContent value="internal" className="mt-4">
           <InternalApisTabContent
-            internalApis={internalApis || []}
+            internalApis={internalApis}
             searchTerm={searchTerm}
             createDialogOpen={createDialogOpen}
             setCreateDialogOpen={setCreateDialogOpen}
@@ -388,7 +276,7 @@ export const ApiServicesModule: React.FC = () => {
 
         <TabsContent value="consuming" className="mt-4">
           <ExternalApisTabContent
-            externalApis={externalApis || []}
+            externalApis={externalApis}
             searchTerm={searchTerm}
             createDialogOpen={createDialogOpen}
             setCreateDialogOpen={setCreateDialogOpen}
@@ -401,7 +289,7 @@ export const ApiServicesModule: React.FC = () => {
 
         <TabsContent value="publishing" className="mt-4">
           <PublishedApisTabContent 
-            publishedApis={enhancedPublishedApis || publishedApis || []}
+            publishedApis={[]}
             searchTerm={searchTerm}
           />
         </TabsContent>
@@ -420,7 +308,7 @@ export const ApiServicesModule: React.FC = () => {
 
         <TabsContent value="testing" className="mt-4">
           <TestingTabContent
-            integrations={integrations || []}
+            integrations={apiServices}
             onClose={() => {}}
             onTestEndpoint={handleTestEndpoint}
           />
@@ -429,5 +317,3 @@ export const ApiServicesModule: React.FC = () => {
     </div>
   );
 };
-
-console.log('✅ ApiServicesModule: Component definition completed');
