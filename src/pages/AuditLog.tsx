@@ -8,31 +8,22 @@ import { Button } from '@/components/ui/button';
 import { RefreshCw, Shield, Activity, Database, AlertTriangle } from 'lucide-react';
 import { AuditLogList } from '@/components/audit/AuditLogList';
 import { AuditLogFilters } from '@/components/audit/AuditLogFilters';
-import { useAuditLogs, useAuditLogStats } from '@/hooks/useAuditLogs';
+import { useAuditLogs } from '@/hooks/useAuditLogs';
 
 const AuditLog = () => {
   const [filters, setFilters] = useState({});
   
-  // Use REAL audit logs data with real-time updates
-  const { data: auditLogsResponse, isLoading, error, refetch } = useAuditLogs(filters);
-  const { data: stats } = useAuditLogStats();
+  // Use consolidated audit logs hook with proper destructuring
+  const { auditLogs, isLoading, error, refetch, getAuditStats } = useAuditLogs();
+  const stats = getAuditStats();
 
   console.log('🔍 Audit Log Debug:', {
-    auditLogsResponse,
+    auditLogs,
     isLoading,
     error,
     stats,
     filters
   });
-
-  const auditLogs = auditLogsResponse?.data || [];
-  
-  // Provide proper default values for metadata with correct typing
-  const metadata = auditLogsResponse?.metadata || {
-    total_logs: 0,
-    today_logs: 0,
-    filtered_count: 0
-  };
 
   const handleClearFilters = () => {
     setFilters({});
@@ -44,9 +35,9 @@ const AuditLog = () => {
   };
 
   // Calculate stats from real data with proper fallbacks
-  const totalLogs = metadata.total_logs;
-  const todayLogs = metadata.today_logs;
-  const filteredCount = metadata.filtered_count || auditLogs.length;
+  const totalLogs = stats.total;
+  const todayLogs = stats.today;
+  const filteredCount = auditLogs.length;
 
   const headerActions = (
     <Button onClick={handleRefresh} disabled={isLoading}>

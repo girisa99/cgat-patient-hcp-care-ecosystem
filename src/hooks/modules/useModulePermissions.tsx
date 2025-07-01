@@ -1,3 +1,4 @@
+
 /**
  * Module Permissions Hook
  * Focused on module access control
@@ -14,7 +15,7 @@ import { useModuleData } from './useModuleData';
 
 export const useModulePermissions = () => {
   const { userRoles } = useAuthContext();
-  const { userModules } = useModuleData();
+  const { data: modules } = useModuleData();
 
   // Check if user has access to a specific module
   const hasModuleAccess = (moduleName: string): boolean => {
@@ -24,14 +25,14 @@ export const useModulePermissions = () => {
       return true;
     }
 
-    const hasAccess = userModules?.some(module => module.module_name === moduleName) || false;
+    const hasAccess = modules?.some(module => module.name === moduleName) || false;
     console.log('🔍 Module access check:', moduleName, 'Access:', hasAccess);
-    console.log('🔍 User modules:', userModules?.map(m => m.module_name));
+    console.log('🔍 User modules:', modules?.map(m => m.name));
     return hasAccess;
   };
 
   return {
     hasModuleAccess,
-    userModules: userModules || []
+    userModules: modules || []
   };
 };

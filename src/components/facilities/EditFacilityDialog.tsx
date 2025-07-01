@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useFacilities } from '@/hooks/useFacilities';
 import {
@@ -73,9 +72,10 @@ const EditFacilityDialog: React.FC<EditFacilityDialogProps> = ({
       return;
     }
 
+    // Fix: Match the expected function signature
     updateFacility({
-      facilityId: facility.id,
-      facilityData: {
+      id: facility.id,
+      updates: {
         ...formData,
         address: formData.address || null,
         phone: formData.phone || null,
