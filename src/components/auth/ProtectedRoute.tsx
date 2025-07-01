@@ -15,10 +15,10 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   console.log('🛡️ ProtectedRoute check:', { isLoading, isAuthenticated, hasUser: !!user });
 
   useEffect(() => {
-    // Only redirect if not loading and not authenticated
+    // Only redirect if not loading and not authenticated - redirect to index instead of login
     if (!isLoading && !isAuthenticated) {
-      console.log('🔄 Redirecting to login...');
-      navigate('/login', { replace: true });
+      console.log('🔄 Redirecting to index for authentication...');
+      navigate('/', { replace: true });
     }
   }, [isLoading, isAuthenticated, navigate]);
 
