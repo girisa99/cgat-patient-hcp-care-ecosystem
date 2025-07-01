@@ -7,7 +7,6 @@
 // Core user management components
 export { default as UsersList } from './UsersList';
 export { default as UserActions } from './UserActions';
-export { default as CompactUserManagement } from './CompactUserManagement';
 export { default as EnhancedUserFilters } from './EnhancedUserFilters';
 
 // Dialog components

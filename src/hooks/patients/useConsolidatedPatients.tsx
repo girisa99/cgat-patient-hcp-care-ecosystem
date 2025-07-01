@@ -1,14 +1,13 @@
 
-import { useUnifiedUserData } from '@/hooks/useUnifiedUserData';
+import { useConsolidatedUsers } from '@/hooks/useConsolidatedUsers';
 import { getPatientUsers } from '@/utils/userDataHelpers';
 import type { UserWithRoles } from '@/types/userManagement';
 
 /**
- * Consolidated Patients Hook - Uses existing unified data architecture
- * Following "Update First" principle - no new tables or relationships needed
+ * Consolidated Patients Hook - Uses the consolidated user data architecture
  */
 export const useConsolidatedPatients = () => {
-  const { allUsers, isLoading, error, refetch, meta } = useUnifiedUserData();
+  const { allUsers, isLoading, error, refetch, meta } = useConsolidatedUsers();
 
   // Filter for patient users using existing helper
   const patients = getPatientUsers(allUsers || []);
@@ -16,7 +15,7 @@ export const useConsolidatedPatients = () => {
   console.log('🏥 Consolidated patients:', {
     totalUsers: allUsers?.length || 0,
     patientUsers: patients.length,
-    dataSource: 'unified user data'
+    dataSource: 'consolidated user data'
   });
 
   const searchPatients = (query: string): UserWithRoles[] => {
@@ -53,7 +52,7 @@ export const useConsolidatedPatients = () => {
     meta: {
       ...meta,
       patientCount: patients.length,
-      dataSource: 'existing unified architecture',
+      dataSource: 'consolidated user architecture',
       consolidatedVersion: true
     }
   };
