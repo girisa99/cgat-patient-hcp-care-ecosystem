@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   Server, 
   Globe, 
@@ -37,8 +38,9 @@ import { TestingTabContent } from '@/components/admin/ApiIntegrations/tabs/Testi
 import { OnboardingIntegrationTabContent } from '@/components/admin/ApiIntegrations/tabs/OnboardingIntegrationTabContent';
 import AutoIntegrationBanner from '../ApiIntegrations/AutoIntegrationBanner';
 
-// Import the new validator component
+// Import the new components
 import { ApiDataValidator } from '@/components/admin/ApiIntegrations/ApiDataValidator';
+import { ApiDuplicateAnalyzer } from '@/components/admin/ApiIntegrations/ApiDuplicateAnalyzer';
 
 export const ApiServicesModule: React.FC = () => {
   console.log('🚀 ApiServicesModule: Using consolidated real data with validation');
@@ -96,7 +98,7 @@ export const ApiServicesModule: React.FC = () => {
   );
   
   const publishingApis = consolidatedApis.filter(api => 
-    api.status === 'active' && (api.lifecycle_stage === 'production' || api.type === 'internal')
+    api.status === 'active' && (api.status === 'active' || api.type === 'internal')
   );
 
   console.log('📊 ApiServicesModule: Critical Analysis:', {
@@ -470,6 +472,9 @@ export const ApiServicesModule: React.FC = () => {
           </CardContent>
         </Card>
       )}
+      
+      {/* Add the new Duplicate Analyzer */}
+      <ApiDuplicateAnalyzer />
       
       {/* Add Data Validator */}
       <ApiDataValidator />
