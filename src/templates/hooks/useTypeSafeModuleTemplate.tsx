@@ -1,10 +1,9 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Database } from '@/integrations/supabase/types';
 
 export interface ModuleConfig {
-  tableName: keyof Database['public']['Tables']; // Use proper table name type
+  tableName: string; // Simplified to avoid type recursion
   moduleName: string;
   requiredFields: string[];
   customValidation?: (data: any) => boolean;
@@ -18,7 +17,7 @@ export const useTypeSafeModuleTemplate = (config: ModuleConfig) => {
       
       // Fetch actual data from the table with proper typing
       const { data, error } = await supabase
-        .from(config.tableName)
+        .from(config.tableName as any) // Cast to any to avoid type issues
         .select('*')
         .limit(100);
 
@@ -65,7 +64,7 @@ export const useTypeSafeModuleTemplate = (config: ModuleConfig) => {
 
   const createItem = async (itemData: any) => {
     const { data, error } = await supabase
-      .from(config.tableName)
+      .from(config.tableName as any)
       .insert(itemData)
       .select()
       .single();
@@ -76,7 +75,7 @@ export const useTypeSafeModuleTemplate = (config: ModuleConfig) => {
 
   const updateItem = async (id: string, updates: any) => {
     const { data, error } = await supabase
-      .from(config.tableName)
+      .from(config.tableName as any)
       .update(updates)
       .eq('id', id)
       .select()
@@ -88,7 +87,7 @@ export const useTypeSafeModuleTemplate = (config: ModuleConfig) => {
 
   const deleteItem = async (id: string) => {
     const { error } = await supabase
-      .from(config.tableName)
+      .from(config.tableName as any)
       .delete()
       .eq('id', id);
 
