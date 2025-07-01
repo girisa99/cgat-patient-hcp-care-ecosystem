@@ -17,13 +17,15 @@ import {
   restoreRegistryFromBackup
 } from './registryUtils';
 
-// Export types
+// Export types from main registry
 export type { 
-  ComponentServiceInfo, 
-  RegisteredModule, 
-  AutoRegistrationConfig, 
-  RegistryStats 
-} from './types';
+  ModuleConfig,
+  ComponentServiceInfo,
+  RegisteredModule,
+  AutoRegistrationConfig,
+  RegistryStats,
+  ModuleRegistry as ModuleRegistryType
+} from '../moduleRegistry';
 
 // Export main class
 export { ModuleRegistry } from './ModuleRegistryClass';
@@ -54,8 +56,5 @@ export {
   cleanupOrphanedComponents
 } from './componentManagementUtils';
 
-// Global module registry instance
-export const moduleRegistry = new ModuleRegistry();
-
-// Initialize with default modules
-initializeDefaultModules(moduleRegistry);
+// Re-export the main registry instance
+export { moduleRegistry } from '../moduleRegistry';
