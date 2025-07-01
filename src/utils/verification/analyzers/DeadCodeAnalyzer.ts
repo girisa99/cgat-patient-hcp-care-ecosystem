@@ -8,6 +8,7 @@ export interface DeadCodeAnalysisResult {
   unusedImports: string[];
   unusedFunctions: string[];
   unusedComponents: string[];
+  unusedFiles: string[];
   namingConsistency: {
     violations: string[];
     score: number;
@@ -33,6 +34,10 @@ export class DeadCodeAnalyzer {
       ],
       unusedComponents: [
         'Some verification components may be deprecated'
+      ],
+      unusedFiles: [
+        'Deprecated analyzer files that are no longer used',
+        'Old utility files that have been replaced'
       ],
       namingConsistency: {
         violations: [

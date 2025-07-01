@@ -8,6 +8,8 @@ export interface DuplicateAnalysisResult {
   duplicateComponents: string[];
   duplicateUtilities: string[];
   duplicateHooks: string[];
+  duplicateServices: string[];
+  duplicateTypes: string[];
   similarCodeBlocks: string[];
   recommendedConsolidation: string[];
 }
@@ -32,6 +34,14 @@ export class DuplicateAnalyzer {
       duplicateHooks: [
         'useFixedIssuesTracker variations',
         'Multiple verification hooks with similar logic'
+      ],
+      duplicateServices: [
+        'Verification service classes with overlapping functionality',
+        'Multiple API client services with similar patterns'
+      ],
+      duplicateTypes: [
+        'Issue-related type definitions scattered across files',
+        'Verification result types with similar structure'
       ],
       similarCodeBlocks: [
         'Issue processing logic duplicated across components',
