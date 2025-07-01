@@ -33,6 +33,7 @@ export interface NavItem {
   }>;
 }
 
+// SINGLE SOURCE OF TRUTH for all navigation
 export const navItems: NavItem[] = [
   {
     title: "Dashboard",
@@ -43,7 +44,7 @@ export const navItems: NavItem[] = [
     items: []
   },
   {
-    title: "User Management",
+    title: "User Management", // Consolidated - single route
     url: "/users",
     to: "/users",
     icon: Users,
@@ -115,3 +116,16 @@ export const navItems: NavItem[] = [
     items: []
   }
 ];
+
+// Helper functions for consistent route access
+export const getRouteByPath = (path: string) => {
+  return navItems.find(item => item.to === path);
+};
+
+export const getAllRoutes = () => {
+  return navItems.map(item => ({ path: item.to, title: item.title }));
+};
+
+export const isValidRoute = (path: string) => {
+  return navItems.some(item => item.to === path);
+};
