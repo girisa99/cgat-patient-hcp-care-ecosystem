@@ -14,7 +14,7 @@ export { useUnifiedUserManagement } from './useUnifiedUserManagement';
 // Dashboard - Single Source
 export { useDashboard } from './useDashboard';
 
-// API Services - Single Source
+// API Services - CONSOLIDATED Single Source (REAL DATA)
 export { useApiServices } from './useApiServices';
 
 // Facilities - Single Source
@@ -25,6 +25,12 @@ export { useModules } from './useModules';
 
 // Consolidation Analysis
 export { useConsolidationAnalysis } from './useConsolidationAnalysis';
+
+// External APIs - Enhanced functionality
+export { useExternalApis } from './useExternalApis';
+export { useEnhancedExternalApis } from './useEnhancedExternalApis';
+export { usePublishedApiIntegration } from './usePublishedApiIntegration';
+export { useExternalApiPublishing } from './useExternalApiPublishing';
 
 // Specialized hooks
 export { useUserDeactivation } from './mutations/useUserDeactivation';
@@ -39,16 +45,28 @@ export { useIntelligentRouting } from './useIntelligentRouting';
 export { useToast } from './use-toast';
 
 /**
- * IMPORTANT: This is the ONLY hooks export file.
- * All hooks are consolidated here to ensure single source of truth.
+ * CONSOLIDATED API SERVICES ARCHITECTURE
+ * 
+ * PRIMARY SOURCE: useApiServices (uses api_integration_registry table)
+ * - Real data from Supabase database
+ * - Proper RLS policies applied
+ * - CRUD operations with mutations
+ * - Statistics and filtering
+ * 
+ * ENHANCED FEATURES:
+ * - useExternalApis: External API publishing and marketplace
+ * - usePublishedApiIntegration: Developer portal integration
+ * - useExternalApiPublishing: Publishing workflow management
  * 
  * DO NOT:
- * - Create duplicate hooks
+ * - Create duplicate API hooks
+ * - Use mock data - all data comes from database
  * - Import hooks from other index files
- * - Create separate hook export files
+ * - Create separate API export files
  * 
  * ALWAYS:
- * - Import hooks from this central location
- * - Add new hooks to this index
- * - Verify no duplicates exist
+ * - Use useApiServices as primary source
+ * - Verify RLS policies are working
+ * - Check data comes from real tables
+ * - Ensure single source of truth
  */

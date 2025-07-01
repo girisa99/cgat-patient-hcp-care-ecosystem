@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { 
   Server, 
   Globe, 
@@ -13,10 +14,12 @@ import {
   Search,
   Shield,
   GitBranch,
-  FileText
+  FileText,
+  Plus,
+  Settings
 } from 'lucide-react';
 
-// Use consolidated hook
+// Use consolidated hook with real data
 import { useApiServices } from '@/hooks/useApiServices';
 
 // Import tab components
@@ -30,52 +33,104 @@ import { OnboardingIntegrationTabContent } from '@/components/admin/ApiIntegrati
 import AutoIntegrationBanner from '../ApiIntegrations/AutoIntegrationBanner';
 
 export const ApiServicesModule: React.FC = () => {
-  console.log('🚀 ApiServicesModule: Component rendering started');
+  console.log('🚀 ApiServicesModule: Using consolidated real data source');
   
   const [activeTab, setActiveTab] = useState('overview');
   const [searchTerm, setSearchTerm] = useState('');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
-  // Use consolidated hook
+  // Use consolidated hook with real data
   const { 
     apiServices,
     internalApis,
     externalApis,
+    consumingApis,
+    publishingApis,
     isLoading, 
     error, 
-    getApiServiceStats
+    getApiServiceStats,
+    createApiService,
+    updateApiService,
+    deleteApiService,
+    isCreatingApiService
   } = useApiServices();
 
-  console.log('📊 ApiServicesModule: Hook data:', {
-    apiServices: apiServices?.length || 0,
-    internalApis: internalApis?.length || 0,
-    externalApis: externalApis?.length || 0,
+  console.log('📊 ApiServicesModule: Real data stats:', {
+    total: apiServices?.length || 0,
+    internal: internalApis?.length || 0,
+    external: externalApis?.length || 0,
+    consuming: consumingApis?.length || 0,
+    publishing: publishingApis?.length || 0,
     isLoading,
-    error
+    error: error?.message
   });
 
   const stats = getApiServiceStats();
 
   const handleDownloadCollection = (integrationId: string) => {
     console.log('📥 Download collection for:', integrationId);
+    const integration = apiServices.find(api => api.id === integrationId);
+    if (integration) {
+      // Generate and download Postman collection using real data
+      const collection = {
+        info: {
+          name: integration.name,
+          description: integration.description || 'API Collection',
+          schema: 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json'
+        },
+        item: [{
+          name: integration.name,
+          request: {
+            method: 'GET',
+            header: [],
+            url: integration.base_url || `${window.location.origin}/api/v1/${integration.id}`
+          }
+        }]
+      };
+      
+      const blob = new Blob([JSON.stringify(collection, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${integration.name}-collection.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
   };
 
   const handleViewDetails = (integrationId: string) => {
     console.log('👁️ View details for:', integrationId);
+    const integration = apiServices.find(api => api.id === integrationId);
+    if (integration) {
+      console.log('Integration details:', integration);
+    }
   };
 
   const handleViewDocumentation = (integrationId: string) => {
     console.log('📚 View documentation for:', integrationId);
+    const integration = apiServices.find(api => api.id === integrationId);
+    if (integration?.documentation_url) {
+      window.open(integration.documentation_url, '_blank');
+    }
   };
 
-  const handleCopyUrl = (url: string) => {
+  const handleCopyUrl = (integrationId: string) => {
+    const integration = apiServices.find(api => api.id === integrationId);
+    const url = integration?.base_url || `${window.location.origin}/api/v1/${integrationId}`;
     navigator.clipboard.writeText(url);
     console.log('📋 URL copied:', url);
   };
 
-  const handleTestEndpoint = async (integrationId: string, endpointId: string) => {
+  const handleTestEndpoint = async (integrationId: string, endpointId?: string) => {
     try {
       console.log('🧪 Testing endpoint:', { integrationId, endpointId });
+      const integration = apiServices.find(api => api.id === integrationId);
+      if (integration) {
+        const testUrl = integration.base_url || `${window.location.origin}/api/v1/${integrationId}`;
+        // Perform actual API test
+        const response = await fetch(testUrl, { method: 'GET' });
+        console.log('Test result:', response.status, response.statusText);
+      }
     } catch (error) {
       console.error('❌ Error testing endpoint:', error);
     }
@@ -184,7 +239,7 @@ export const ApiServicesModule: React.FC = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Globe className="h-5 w-5 text-green-500" />
-              External API Consumption
+              External API Integration
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -198,6 +253,22 @@ export const ApiServicesModule: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Real-time API Statistics</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {Object.entries(stats.categoryBreakdown).map(([category, count]) => (
+              <div key={category} className="text-center">
+                <p className="text-2xl font-bold text-blue-600">{count}</p>
+                <p className="text-sm text-muted-foreground capitalize">{category}</p>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 
@@ -206,7 +277,7 @@ export const ApiServicesModule: React.FC = () => {
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
           <Database className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading API services...</p>
+          <p className="text-muted-foreground">Loading API services from database...</p>
         </div>
       </div>
     );
@@ -218,6 +289,9 @@ export const ApiServicesModule: React.FC = () => {
         <div className="text-center">
           <Database className="h-12 w-12 text-red-500 mx-auto mb-4" />
           <p className="text-red-600">Error loading API services: {error.message}</p>
+          <Button onClick={() => window.location.reload()} className="mt-4">
+            Retry
+          </Button>
         </div>
       </div>
     );
@@ -229,17 +303,26 @@ export const ApiServicesModule: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold">Healthcare API Services Platform</h1>
           <p className="text-muted-foreground">
-            Comprehensive API management for treatment centers, pharma/biotech companies, financial verification, and healthcare integrations
+            Comprehensive API management with real data from {stats.total} registered services
           </p>
         </div>
-        <div className="relative w-72">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-          <Input
-            placeholder="Search APIs and healthcare services..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
+        <div className="flex items-center gap-4">
+          <div className="relative w-72">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Input
+              placeholder="Search APIs and healthcare services..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Button 
+            onClick={() => setCreateDialogOpen(true)}
+            disabled={isCreatingApiService}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            New API
+          </Button>
         </div>
       </div>
 
@@ -276,7 +359,7 @@ export const ApiServicesModule: React.FC = () => {
 
         <TabsContent value="consuming" className="mt-4">
           <ExternalApisTabContent
-            externalApis={externalApis}
+            externalApis={consumingApis}
             searchTerm={searchTerm}
             createDialogOpen={createDialogOpen}
             setCreateDialogOpen={setCreateDialogOpen}
@@ -289,7 +372,7 @@ export const ApiServicesModule: React.FC = () => {
 
         <TabsContent value="publishing" className="mt-4">
           <PublishedApisTabContent 
-            publishedApis={[]}
+            publishedApis={publishingApis}
             searchTerm={searchTerm}
           />
         </TabsContent>

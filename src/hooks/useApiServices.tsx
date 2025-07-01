@@ -5,17 +5,17 @@ import { useToast } from '@/hooks/use-toast';
 
 /**
  * Consolidated API Services Hook - Single Source of Truth
- * Combines all API service functionality into one unified hook
+ * Uses real data from api_integration_registry table
  */
 export const useApiServices = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Main query for API services data
+  // Main query for API services data from real database
   const { data: apiServices, isLoading, error, refetch } = useQuery({
     queryKey: ['api-services'],
     queryFn: async () => {
-      console.log('🔍 Fetching API services from consolidated source...');
+      console.log('🔍 Fetching API services from api_integration_registry...');
       
       const { data, error } = await supabase
         .from('api_integration_registry')
@@ -34,7 +34,7 @@ export const useApiServices = () => {
     staleTime: 30000,
     meta: {
       description: 'Fetches all API integration services',
-      dataSource: 'api_integration_registry table via direct query'
+      dataSource: 'api_integration_registry table'
     }
   });
 
@@ -106,18 +106,50 @@ export const useApiServices = () => {
     }
   });
 
-  // Helper functions
+  // Delete API service mutation
+  const deleteApiServiceMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('api_integration_registry')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      return id;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['api-services'] });
+      toast({
+        title: "API Service Deleted",
+        description: "API service has been deleted successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete API service",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Helper functions using real data
   const getApiServiceStats = () => {
     const stats = {
       total: apiServices?.length || 0,
       active: apiServices?.filter(s => s.status === 'active').length || 0,
       inactive: apiServices?.filter(s => s.status !== 'active').length || 0,
-      internal: apiServices?.filter(s => s.direction === 'internal').length || 0,
-      external: apiServices?.filter(s => s.direction === 'external').length || 0,
-      consuming: apiServices?.filter(s => s.direction === 'consuming').length || 0,
+      internal: apiServices?.filter(s => s.direction === 'inbound').length || 0,
+      external: apiServices?.filter(s => s.direction === 'outbound').length || 0,
+      consuming: apiServices?.filter(s => s.direction === 'bidirectional').length || 0,
       typeBreakdown: apiServices?.reduce((acc, service) => {
         const type = service.type || 'unknown';
         acc[type] = (acc[type] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>) || {},
+      categoryBreakdown: apiServices?.reduce((acc, service) => {
+        const category = service.category || 'uncategorized';
+        acc[category] = (acc[category] || 0) + 1;
         return acc;
       }, {} as Record<string, number>) || {}
     };
@@ -130,41 +162,59 @@ export const useApiServices = () => {
     return (apiServices || []).filter((service: any) => 
       service.name?.toLowerCase().includes(query.toLowerCase()) ||
       service.description?.toLowerCase().includes(query.toLowerCase()) ||
-      service.category?.toLowerCase().includes(query.toLowerCase())
+      service.category?.toLowerCase().includes(query.toLowerCase()) ||
+      service.purpose?.toLowerCase().includes(query.toLowerCase())
     );
   };
 
-  // Categorize API services
-  const internalApis = apiServices?.filter(s => s.direction === 'internal') || [];
-  const externalApis = apiServices?.filter(s => s.direction === 'external' || s.direction === 'consuming') || [];
+  // Filter APIs by type and direction using real data
+  const internalApis = apiServices?.filter(s => 
+    s.type === 'internal' || s.direction === 'inbound'
+  ) || [];
+  
+  const externalApis = apiServices?.filter(s => 
+    s.type === 'external' || s.direction === 'outbound' || s.direction === 'bidirectional'
+  ) || [];
+
+  const consumingApis = apiServices?.filter(s => 
+    s.direction === 'bidirectional' || s.purpose?.includes('consuming')
+  ) || [];
+
+  const publishingApis = apiServices?.filter(s => 
+    s.lifecycle_stage === 'production' && s.status === 'active'
+  ) || [];
 
   return {
-    // Data
+    // Data from real database
     apiServices: apiServices || [],
     internalApis,
     externalApis,
+    consumingApis,
+    publishingApis,
     
     // State
     isLoading,
     error,
     refetch,
     
-    // Actions
+    // Actions using real mutations
     createApiService: createApiServiceMutation.mutate,
     updateApiService: updateApiServiceMutation.mutate,
+    deleteApiService: deleteApiServiceMutation.mutate,
     isCreatingApiService: createApiServiceMutation.isPending,
     isUpdatingApiService: updateApiServiceMutation.isPending,
+    isDeletingApiService: deleteApiServiceMutation.isPending,
     
-    // Utilities
+    // Utilities using real data
     getApiServiceStats,
     searchApiServices,
     
     // Meta information
     meta: {
       totalServices: apiServices?.length || 0,
-      dataSource: 'api_integration_registry table via direct query',
+      dataSource: 'api_integration_registry table - real data',
       lastFetch: new Date().toISOString(),
-      version: 'consolidated-v1'
+      version: 'consolidated-v2-real-data'
     }
   };
 };

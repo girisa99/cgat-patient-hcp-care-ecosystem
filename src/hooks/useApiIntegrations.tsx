@@ -1,221 +1,236 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { useApiServices } from './useApiServices';
 
-interface ApiIntegration {
-  id: string;
-  name: string;
-  type: 'internal' | 'external';
-  status: 'active' | 'inactive' | 'draft' | 'deprecated';
-  description: string;
-  baseUrl?: string;
-  version: string;
-  endpoints: any[];
-  schemas: Record<string, any>;
-  rlsPolicies: any[];
-  mappings: any[];
-  documentation?: {
-    specificationUrl?: string;
-    fieldMappings?: any[];
-    generatedSchemas?: any[];
-    databaseTables?: string[];
-    rlsPolicies?: any[];
-    endpoints?: any[];
-  };
-  category?: string;
-  direction?: 'inbound' | 'outbound';
-  createdAt: string;
-  updatedAt: string;
-}
-
+/**
+ * API Integrations Hook - Works with External API Registry
+ * Connects to external_api_registry table for published APIs
+ */
 export const useApiIntegrations = () => {
+  const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  // Get base API services data
+  const { 
+    apiServices: internalApiServices, 
+    internalApis, 
+    externalApis: baseExternalApis,
+    isLoading: isLoadingBase 
+  } = useApiServices();
 
-  const {
-    data: integrations,
-    isLoading,
-    error
-  } = useQuery({
-    queryKey: ['api-integrations'],
-    queryFn: async (): Promise<ApiIntegration[]> => {
-      console.log('📊 Fetching API integrations...');
-      
-      try {
-        // Fetch real API integrations from registry
-        const { data: registryApis, error: registryError } = await supabase
-          .from('api_integration_registry')
-          .select('*');
-
-        let allIntegrations: ApiIntegration[] = [];
-
-        // Add registry APIs if available
-        if (!registryError && registryApis) {
-          allIntegrations = registryApis.map((api) => ({
-            id: api.id,
-            name: api.name,
-            type: api.type as 'internal' | 'external',
-            status: api.status as 'active' | 'inactive' | 'draft' | 'deprecated',
-            description: api.description || 'No description provided',
-            baseUrl: api.base_url,
-            version: api.version,
-            endpoints: [],
-            schemas: {},
-            rlsPolicies: [],
-            mappings: [],
-            category: api.category,
-            direction: api.direction as 'inbound' | 'outbound',
-            createdAt: api.created_at,
-            updatedAt: api.updated_at,
-            documentation: {
-              specificationUrl: api.documentation_url,
-              fieldMappings: [],
-              generatedSchemas: [],
-              databaseTables: [],
-              rlsPolicies: [],
-              endpoints: []
-            }
-          }));
-        }
-
-        // Add some basic integrations if registry is empty
-        if (allIntegrations.length === 0) {
-          allIntegrations = [
-            {
-              id: 'core-healthcare-api',
-              name: 'Core Healthcare API',
-              type: 'internal',
-              status: 'active',
-              description: 'Core healthcare API for patient management and treatment workflows',
-              baseUrl: '/api/healthcare',
-              version: '1.0.0',
-              endpoints: [],
-              schemas: {},
-              rlsPolicies: [],
-              mappings: [],
-              category: 'healthcare',
-              direction: 'inbound',
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString()
-            },
-            {
-              id: 'twilio-external-api',
-              name: 'Twilio Communications Platform',
-              type: 'external',
-              status: 'active',
-              description: 'Twilio integration for SMS, voice, and communication workflows',
-              baseUrl: 'https://api.twilio.com',
-              version: '2010-04-01',
-              endpoints: [],
-              schemas: {},
-              rlsPolicies: [],
-              mappings: [],
-              category: 'Communications',
-              direction: 'outbound',
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString()
-            }
-          ];
-        }
-
-        console.log('✅ API integrations loaded:', {
-          total: allIntegrations.length,
-          internal: allIntegrations.filter(i => i.type === 'internal').length,
-          external: allIntegrations.filter(i => i.type === 'external').length
-        });
-        
-        return allIntegrations;
-
-      } catch (error) {
-        console.error('Error fetching API integrations:', error);
-        // Return fallback data instead of empty array
-        return [
-          {
-            id: 'fallback-internal-api',
-            name: 'Internal Healthcare API',
-            type: 'internal',
-            status: 'active',
-            description: 'Fallback internal API for core healthcare functionality',
-            baseUrl: '/api/internal',
-            version: '1.0.0',
-            endpoints: [],
-            schemas: {},
-            rlsPolicies: [],
-            mappings: [],
-            category: 'healthcare',
-            direction: 'inbound',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          }
-        ];
-      }
-    },
-    staleTime: 30000,
-    refetchInterval: 60000
-  });
-
-  // Separate integrations by type for easier consumption
-  const internalApis = integrations?.filter(api => api.type === 'internal') || [];
-  const externalApis = integrations?.filter(api => api.type === 'external') || [];
-
-  // Mock function for downloading Postman collection
-  const downloadPostmanCollection = (integrationId: string) => {
-    console.log('📥 Download collection for:', integrationId);
-  };
-
-  // Mock function for testing endpoint
-  const testEndpoint = async (integrationId: string, endpointId: string) => {
-    console.log('🧪 Testing endpoint:', { integrationId, endpointId });
-    return { success: true, message: 'Endpoint test completed' };
-  };
-
-  // Add registerIntegration mutation
-  const registerIntegrationMutation = useMutation({
-    mutationFn: async (integration: Partial<ApiIntegration>) => {
-      console.log('📝 Registering new integration:', integration);
+  // Get external API registry data (published APIs)
+  const { data: externalApiRegistry, isLoading: isLoadingExternal } = useQuery({
+    queryKey: ['external-api-registry'],
+    queryFn: async () => {
+      console.log('🔍 Fetching external API registry...');
       
       const { data, error } = await supabase
-        .from('api_integration_registry')
-        .insert({
-          name: integration.name || '',
-          description: integration.description || '',
-          type: integration.type || 'external',
-          category: integration.category || 'integration',
-          purpose: integration.category || 'integration',
-          version: integration.version || '1.0.0',
-          base_url: integration.baseUrl || '',
-          status: integration.status || 'active',
-          direction: integration.direction || 'outbound'
-        })
-        .select()
-        .single();
+        .from('external_api_registry')
+        .select(`
+          *,
+          external_api_endpoints (
+            id,
+            external_path,
+            method,
+            summary,
+            description,
+            is_public,
+            requires_authentication
+          )
+        `)
+        .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      return data;
+      if (error) {
+        console.error('❌ Error fetching external API registry:', error);
+        throw error;
+      }
+
+      console.log('✅ External API registry fetched:', data?.length || 0);
+      return data || [];
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['api-integrations'] });
+    staleTime: 30000
+  });
+
+  // Get API endpoints for external APIs
+  const { data: apiEndpoints, isLoading: isLoadingEndpoints } = useQuery({
+    queryKey: ['external-api-endpoints'],
+    queryFn: async () => {
+      console.log('🔍 Fetching API endpoints...');
+      
+      const { data, error } = await supabase
+        .from('external_api_endpoints')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('❌ Error fetching API endpoints:', error);
+        throw error;
+      }
+
+      console.log('✅ API endpoints fetched:', data?.length || 0);
+      return data || [];
+    },
+    staleTime: 30000
+  });
+
+  // Download Postman collection mutation
+  const downloadPostmanCollectionMutation = useMutation({
+    mutationFn: async (integrationId: string) => {
+      // Find the integration
+      const integration = [...(internalApiServices || []), ...(externalApiRegistry || [])]
+        .find(api => api.id === integrationId);
+      
+      if (!integration) {
+        throw new Error('API integration not found');
+      }
+
+      // Generate Postman collection
+      const collection = {
+        info: {
+          name: integration.name || integration.external_name,
+          description: integration.description || integration.external_description || 'API Collection',
+          schema: 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json',
+          version: integration.version || '1.0.0'
+        },
+        item: apiEndpoints
+          ?.filter(endpoint => endpoint.external_api_id === integrationId)
+          ?.map(endpoint => ({
+            name: endpoint.summary || endpoint.external_path,
+            request: {
+              method: endpoint.method?.toUpperCase() || 'GET',
+              header: [
+                {
+                  key: 'Content-Type',
+                  value: 'application/json'
+                },
+                ...(endpoint.requires_authentication ? [{
+                  key: 'Authorization',
+                  value: 'Bearer {{api_key}}'
+                }] : [])
+              ],
+              url: {
+                raw: `${integration.base_url || '{{base_url}}'}${endpoint.external_path}`,
+                host: ['{{base_url}}'],
+                path: endpoint.external_path?.split('/').filter(Boolean) || []
+              },
+              description: endpoint.description || ''
+            }
+          })) || []
+      };
+
+      return collection;
+    },
+    onSuccess: (collection, integrationId) => {
+      // Download the collection
+      const blob = new Blob([JSON.stringify(collection, null, 2)], { 
+        type: 'application/json' 
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${collection.info.name}-postman-collection.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "Collection Downloaded",
+        description: "Postman collection has been downloaded successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Download Failed",
+        description: error.message || "Failed to download Postman collection",
+        variant: "destructive",
+      });
     }
   });
 
-  const registerIntegration = (integration: Partial<ApiIntegration>) => {
-    registerIntegrationMutation.mutate(integration);
-  };
+  // Test endpoint mutation
+  const testEndpointMutation = useMutation({
+    mutationFn: async ({ integrationId, endpointId }: { integrationId: string; endpointId?: string }) => {
+      const integration = [...(internalApiServices || []), ...(externalApiRegistry || [])]
+        .find(api => api.id === integrationId);
+      
+      if (!integration) {
+        throw new Error('API integration not found');
+      }
 
-  console.log('🔍 API integrations breakdown:', {
-    total: integrations?.length || 0,
-    internal: internalApis.length,
-    external: externalApis.length
+      let testUrl = integration.base_url || `${window.location.origin}/api/v1/${integrationId}`;
+      
+      if (endpointId) {
+        const endpoint = apiEndpoints?.find(ep => ep.id === endpointId);
+        if (endpoint) {
+          testUrl += endpoint.external_path;
+        }
+      }
+
+      console.log('🧪 Testing endpoint:', testUrl);
+      
+      const response = await fetch(testUrl, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      return {
+        status: response.status,
+        statusText: response.statusText,
+        url: testUrl,
+        timestamp: new Date().toISOString()
+      };
+    },
+    onSuccess: (result) => {
+      toast({
+        title: "Endpoint Test Completed",
+        description: `Status: ${result.status} ${result.statusText}`,
+        variant: result.status >= 200 && result.status < 300 ? "default" : "destructive"
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Test Failed",
+        description: error.message || "Failed to test endpoint",
+        variant: "destructive",
+      });
+    }
   });
 
+  // Combine all integrations
+  const allIntegrations = [
+    ...(internalApiServices || []).map(api => ({ ...api, source: 'internal' })),
+    ...(externalApiRegistry || []).map(api => ({ ...api, source: 'external' }))
+  ];
+
   return {
-    integrations: integrations || [],
-    internalApis,
-    externalApis,
-    isLoading,
-    error,
-    downloadPostmanCollection,
-    testEndpoint,
-    registerIntegration,
-    isRegistering: registerIntegrationMutation.isPending
+    // Data - Real from database
+    integrations: allIntegrations,
+    internalApis: internalApis || [],
+    externalApis: externalApiRegistry || [],
+    apiEndpoints: apiEndpoints || [],
+    
+    // Loading states
+    isLoading: isLoadingBase || isLoadingExternal || isLoadingEndpoints,
+    
+    // Actions
+    downloadPostmanCollection: downloadPostmanCollectionMutation.mutate,
+    testEndpoint: testEndpointMutation.mutate,
+    isDownloading: downloadPostmanCollectionMutation.isPending,
+    isTesting: testEndpointMutation.isPending,
+    
+    // Meta
+    meta: {
+      totalIntegrations: allIntegrations.length,
+      internalCount: internalApis?.length || 0,
+      externalCount: externalApiRegistry?.length || 0,
+      endpointsCount: apiEndpoints?.length || 0,
+      dataSource: 'api_integration_registry + external_api_registry tables',
+      version: 'real-data-v1'
+    }
   };
 };
