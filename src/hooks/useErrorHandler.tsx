@@ -1,55 +1,50 @@
 
+import { useToast } from './use-toast';
 import { useCallback } from 'react';
-import { useToast } from '@/hooks/use-toast';
-import { errorManager, AppError } from '@/utils/error/ErrorManager';
 
-export interface UseErrorHandlerOptions {
+interface ErrorContext {
   component?: string;
-  showToast?: boolean;
-  customHandler?: (error: AppError) => void;
+  operation?: string;
+  metadata?: Record<string, any>;
 }
 
-export const useErrorHandler = (options: UseErrorHandlerOptions = {}) => {
+interface ErrorHandlerOptions {
+  component: string;
+  showToast?: boolean;
+  logToConsole?: boolean;
+}
+
+export const useErrorHandler = (options: ErrorHandlerOptions) => {
   const { toast } = useToast();
-  const { component, showToast = true, customHandler } = options;
+  const { component, showToast = true, logToConsole = true } = options;
 
-  const handleError = useCallback((error: Error | AppError, context?: Record<string, any>) => {
-    const appError = errorManager.handleError(error, {
-      ...context,
-      component
-    });
+  const handleError = useCallback((
+    error: any, 
+    context?: ErrorContext
+  ) => {
+    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+    const errorDetails = {
+      component,
+      operation: context?.operation,
+      error: errorMessage,
+      metadata: context?.metadata,
+      timestamp: new Date().toISOString()
+    };
 
-    // Show toast notification if enabled
-    if (showToast && (appError.severity === 'high' || appError.severity === 'critical')) {
+    if (logToConsole) {
+      console.error(`❌ Error in ${component}:`, errorDetails);
+    }
+
+    if (showToast) {
       toast({
-        title: 'An error occurred',
-        description: appError.message,
-        variant: 'destructive'
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
       });
     }
 
-    // Execute custom handler if provided
-    if (customHandler) {
-      customHandler(appError);
-    }
+    return errorDetails;
+  }, [component, showToast, logToConsole, toast]);
 
-    return appError;
-  }, [toast, component, showToast, customHandler]);
-
-  const handleAsyncError = useCallback(async <T>(
-    asyncOperation: () => Promise<T>,
-    context?: Record<string, any>
-  ): Promise<T | null> => {
-    try {
-      return await asyncOperation();
-    } catch (error) {
-      handleError(error as Error, context);
-      return null;
-    }
-  }, [handleError]);
-
-  return {
-    handleError,
-    handleAsyncError
-  };
+  return { handleError };
 };
