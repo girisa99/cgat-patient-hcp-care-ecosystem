@@ -3,24 +3,22 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Plus, 
   Search, 
   Filter,
   Download,
-  Edit,
-  Mail,
-  Phone,
-  Building2,
   Users,
-  UserPlus,
   MoreHorizontal
 } from 'lucide-react';
 import { useConsolidatedUsers } from '@/hooks/useConsolidatedUsers';
+import { useUserManagementDialogs } from '@/hooks/useUserManagementDialogs';
+
+// Import existing components instead of creating new ones
 import UsersList from '@/components/users/UsersList';
 import BulkRoleAssignment from '@/components/users/BulkRoleAssignment';
+import { UserManagementDialogs } from './UserManagementDialogs';
 
 export const ConsolidatedUserManagement: React.FC = () => {
   const { 
@@ -28,14 +26,32 @@ export const ConsolidatedUserManagement: React.FC = () => {
     isLoading, 
     getUserStats, 
     searchUsers,
-    createUser,
-    assignRole,
-    assignFacility,
     meta
   } = useConsolidatedUsers();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('users');
+
+  // Use existing dialog management hook
+  const {
+    createUserOpen,
+    setCreateUserOpen,
+    editUserOpen,
+    setEditUserOpen,
+    assignRoleOpen,
+    setAssignRoleOpen,
+    removeRoleOpen,
+    setRemoveRoleOpen,
+    assignFacilityOpen,
+    setAssignFacilityOpen,
+    selectedUserId,
+    selectedUser,
+    handleAssignRole,
+    handleRemoveRole,
+    handleAssignFacility,
+    handleEditUser,
+    resetSelection
+  } = useUserManagementDialogs();
 
   const stats = getUserStats();
   const filteredUsers = searchUsers(searchQuery);
@@ -50,24 +66,13 @@ export const ConsolidatedUserManagement: React.FC = () => {
   }
 
   const handleCreateUser = () => {
-    // TODO: Implement create user dialog
-    console.log('Create user clicked');
+    setCreateUserOpen(true);
   };
 
-  const handleAssignRole = (userId: string) => {
-    // TODO: Implement role assignment dialog
-    console.log('Assign role clicked for user:', userId);
-  };
-
-  const handleAssignFacility = (userId: string) => {
-    // TODO: Implement facility assignment dialog
-    console.log('Assign facility clicked for user:', userId);
-  };
-
-  const handleEditUser = (user: any) => {
-    // TODO: Implement edit user dialog
-    console.log('Edit user clicked:', user);
-  };
+  // Get selected user name for dialog titles
+  const selectedUserName = selectedUser 
+    ? `${selectedUser.first_name || ''} ${selectedUser.last_name || ''}`.trim() || selectedUser.email
+    : '';
 
   return (
     <div className="space-y-6">
@@ -103,7 +108,7 @@ export const ConsolidatedUserManagement: React.FC = () => {
           </div>
         </div>
         <div className="flex items-center gap-3 p-4 bg-green-50 rounded-lg">
-          <Badge className="h-5 w-5 bg-green-600" />
+          <div className="h-5 w-5 bg-green-600 rounded" />
           <div>
             <div className="text-xl font-semibold text-green-900">{stats.withRoles}</div>
             <div className="text-sm text-green-700">With Roles</div>
@@ -117,7 +122,7 @@ export const ConsolidatedUserManagement: React.FC = () => {
           </div>
         </div>
         <div className="flex items-center gap-3 p-4 bg-orange-50 rounded-lg">
-          <Building2 className="h-5 w-5 text-orange-600" />
+          <div className="h-5 w-5 bg-orange-600 rounded" />
           <div>
             <div className="text-xl font-semibold text-orange-900">{stats.withFacilities}</div>
             <div className="text-sm text-orange-700">With Facilities</div>
@@ -174,70 +179,59 @@ export const ConsolidatedUserManagement: React.FC = () => {
             </TabsList>
             
             <TabsContent value="users" className="mt-6">
-              <div className="space-y-4">
-                {filteredUsers.map((user) => (
-                  <div key={user.id} className="border rounded-lg p-4 hover:bg-gray-50">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="font-medium text-lg">
-                            {user.first_name} {user.last_name}
-                          </h3>
-                          {user.user_roles?.map((userRole, index) => (
-                            <Badge key={index} variant="outline">
-                              {userRole.roles?.name || 'Unknown'}
-                            </Badge>
-                          ))}
-                        </div>
-                        
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2 text-sm text-gray-600">
-                            <Mail className="h-4 w-4" />
-                            {user.email}
-                          </div>
-                          {user.phone && (
-                            <div className="flex items-center gap-2 text-sm text-gray-600">
-                              <Phone className="h-4 w-4" />
-                              {user.phone}
-                            </div>
-                          )}
-                          {user.facilities && (
-                            <div className="flex items-center gap-2 text-sm text-gray-600">
-                              <Building2 className="h-4 w-4" />
-                              {user.facilities.name}
-                            </div>
-                          )}
-                        </div>
-                        
-                        <div className="mt-2 text-xs text-gray-500">
-                          Created: {new Date(user.created_at).toLocaleDateString()}
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-2">
-                        <Button variant="outline" size="sm" onClick={() => handleEditUser(user)}>
-                          <Edit className="h-4 w-4 mr-1" />
-                          Edit
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                
-                {filteredUsers.length === 0 && (
-                  <div className="text-center py-8">
-                    <p className="text-gray-500">No users found matching your search.</p>
-                  </div>
-                )}
-              </div>
+              {/* Use existing UsersList component with all the existing functionality */}
+              <UsersList
+                onEditUser={handleEditUser}
+                onAssignRole={handleAssignRole}
+                onRemoveRole={handleRemoveRole}
+                onAssignFacility={handleAssignFacility}
+                onManagePermissions={(userId, userName) => {
+                  console.log('Manage permissions for:', userId, userName);
+                  // TODO: Implement when needed
+                }}
+                onAssignModule={(userId, userName) => {
+                  console.log('Assign module for:', userId, userName);
+                  // TODO: Implement when needed
+                }}
+                onResendVerification={(userEmail, userName) => {
+                  console.log('Resend verification for:', userEmail, userName);
+                  // TODO: Implement when needed 
+                }}
+                onDeactivateUser={(userId, userName, userEmail) => {
+                  console.log('Deactivate user:', userId, userName, userEmail);
+                  // TODO: Implement when needed
+                }}
+                onViewModules={(userId, userName) => {
+                  console.log('View modules for:', userId, userName);
+                  // TODO: Implement when needed
+                }}
+              />
             </TabsContent>
             
             <TabsContent value="bulk" className="mt-6">
+              {/* Use existing BulkRoleAssignment component */}
               <BulkRoleAssignment />
             </TabsContent>
           </Tabs>
         </CardContent>
       </Card>
+
+      {/* Use existing UserManagementDialogs component */}
+      <UserManagementDialogs
+        createUserOpen={createUserOpen}
+        setCreateUserOpen={setCreateUserOpen}
+        editUserOpen={editUserOpen}
+        setEditUserOpen={setEditUserOpen}
+        assignRoleOpen={assignRoleOpen}
+        setAssignRoleOpen={setAssignRoleOpen}
+        removeRoleOpen={removeRoleOpen}
+        setRemoveRoleOpen={setRemoveRoleOpen}
+        assignFacilityOpen={assignFacilityOpen}
+        setAssignFacilityOpen={setAssignFacilityOpen}
+        selectedUserId={selectedUserId}
+        selectedUser={selectedUser}
+        selectedUserName={selectedUserName}
+      />
     </div>
   );
 };
