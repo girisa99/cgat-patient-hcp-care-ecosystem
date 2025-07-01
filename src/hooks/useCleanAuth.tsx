@@ -1,284 +1,195 @@
 
 import { useState, useEffect } from 'react';
-import { User, Session } from '@supabase/supabase-js';
+import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Database } from '@/integrations/supabase/types';
 
-type UserRole = Database['public']['Enums']['user_role'];
-
-interface UserProfile {
+export interface Profile {
   id: string;
-  email: string | null;
-  first_name: string | null;
-  last_name: string | null;
-  phone: string | null;
-  department: string | null;
-  facility_id: string | null;
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  avatar_url?: string;
+  department?: string;
+  facility_id?: string;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export const useCleanAuth = () => {
   const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [userRoles, setUserRoles] = useState<UserRole[]>([]);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [initialized, setInitialized] = useState(false);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [userRoles, setUserRoles] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { toast } = useToast();
-
-  // Simplified auth state cleanup
-  const cleanAuthState = () => {
-    console.log('🧹 Cleaning auth state...');
-    const keysToRemove = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && (key.startsWith('supabase') || key.includes('sb-'))) {
-        keysToRemove.push(key);
-      }
-    }
-    keysToRemove.forEach(key => localStorage.removeItem(key));
-    
-    setUser(null);
-    setSession(null);
-    setUserRoles([]);
-    setProfile(null);
-  };
-
-  const signIn = async (email: string, password: string) => {
-    setLoading(true);
-    console.log('🔑 Starting sign in process...');
-    
-    try {
-      cleanAuthState();
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Attempt sign in
-      console.log('🔑 Attempting sign in with email:', email);
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim().toLowerCase(),
-        password: password.trim(),
-      });
-
-      if (error) {
-        console.error('❌ Sign in error:', error.message);
-        toast({
-          title: "Authentication Failed",
-          description: error.message,
-          variant: "destructive",
-        });
-        return { success: false, error: error.message };
-      }
-
-      if (data.user && data.session) {
-        console.log('✅ Sign in successful!');
-        toast({
-          title: "Welcome Back",
-          description: "Successfully signed in to GENIE",
-        });
-        
-        // Don't force refresh, let the auth state change handle routing
-        return { success: true };
-      }
-
-      return { success: false, error: 'No user data returned' };
-    } catch (error: any) {
-      console.error('💥 Sign in exception:', error);
-      toast({
-        title: "Connection Error",
-        description: "Unable to connect to authentication service. Please try again.",
-        variant: "destructive",
-      });
-      return { success: false, error: error.message };
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const signOut = async () => {
-    setLoading(true);
-    console.log('🚪 Starting sign out...');
-    
-    try {
-      cleanAuthState();
-      await supabase.auth.signOut({ scope: 'global' });
-      
-      toast({
-        title: "Signed Out",
-        description: "You have been signed out successfully",
-      });
-      
-      window.location.href = '/';
-      return { success: true };
-    } catch (error: any) {
-      console.error('❌ Sign out error:', error);
-      window.location.href = '/';
-      return { success: true };
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchUserData = async (userId: string) => {
-    console.log('🔍 Fetching user data for:', userId);
-    
-    try {
-      // First, try to get user roles using a simpler approach
-      console.log('🔍 Fetching user roles...');
-      const { data: roleData, error: roleError } = await supabase
-        .from('user_roles')
-        .select(`
-          id,
-          user_id,
-          role_id,
-          roles!inner (
-            id,
-            name,
-            description
-          )
-        `)
-        .eq('user_id', userId);
-
-      console.log('📊 Raw role query result:', { roleData, roleError });
-
-      if (roleError) {
-        console.error('❌ Role fetch error:', roleError);
-        // For super admin test user, let's provide a fallback
-        if (userId === '48c5ebe7-a92e-4c6b-86ea-3a239a4dca6d') {
-          console.log('🔧 Applying fallback role for test super admin');
-          setUserRoles(['superAdmin']);
-        } else {
-          setUserRoles([]);
-        }
-      } else {
-        const roles = roleData?.map(ur => ur.roles?.name).filter(Boolean) as UserRole[] || [];
-        console.log('✅ User roles extracted:', roles);
-        
-        // If no roles found but known super admin, provide fallback
-        if (roles.length === 0 && userId === '48c5ebe7-a92e-4c6b-86ea-3a239a4dca6d') {
-          console.log('🔧 Applying fallback role for test super admin (no roles in DB)');
-          setUserRoles(['superAdmin']);
-        } else {
-          setUserRoles(roles);
-        }
-      }
-
-      // Get user profile
-      console.log('🔍 Fetching user profile...');
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle();
-
-      if (profileError) {
-        console.error('❌ Profile fetch error:', profileError);
-        setProfile(null);
-      } else {
-        console.log('✅ User profile:', profileData);
-        setProfile(profileData);
-      }
-    } catch (error) {
-      console.error('❌ Exception fetching user data:', error);
-      // Apply fallback for known super admin
-      if (userId === '48c5ebe7-a92e-4c6b-86ea-3a239a4dca6d') {
-        console.log('🔧 Exception fallback: applying super admin role');
-        setUserRoles(['superAdmin']);
-      } else {
-        setUserRoles([]);
-      }
-      setProfile(null);
-    }
-  };
 
   useEffect(() => {
     let mounted = true;
 
     const initializeAuth = async () => {
       try {
-        console.log('🔄 Initializing auth system...');
+        console.log('🔄 Initializing authentication...');
         
-        // Set up auth state listener FIRST
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(
-          async (event, newSession) => {
-            console.log('🔄 Auth state change:', event, newSession?.user?.email);
-            
-            if (!mounted) return;
-            
-            if (event === 'SIGNED_OUT' || !newSession) {
-              console.log('👋 User signed out, clearing state');
-              setSession(null);
-              setUser(null);
-              setUserRoles([]);
-              setProfile(null);
-            } else if (event === 'SIGNED_IN' && newSession) {
-              console.log('👋 User signed in:', newSession.user?.email);
-              setSession(newSession);
-              setUser(newSession.user);
-              
-              // Fetch user data with a small delay to avoid race conditions
-              setTimeout(() => {
-                if (mounted && newSession.user) {
-                  fetchUserData(newSession.user.id);
-                }
-              }, 100);
-            }
-            
-            setLoading(false);
+        // Get initial session
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error('❌ Session error:', sessionError);
+          if (mounted) {
+            setIsLoading(false);
           }
-        );
-
-        // Then check for existing session
-        const { data: { session: currentSession }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error('❌ Session check error:', error);
-          cleanAuthState();
-        } else if (currentSession && mounted) {
-          console.log('✅ Found existing session for user:', currentSession.user?.email);
-          setSession(currentSession);
-          setUser(currentSession.user);
-          
-          // Fetch additional data
-          setTimeout(() => {
-            if (mounted && currentSession.user) {
-              fetchUserData(currentSession.user.id);
-            }
-          }, 100);
-        } else {
-          console.log('ℹ️ No existing session found');
-          setLoading(false);
+          return;
         }
-        
-        setInitialized(true);
 
-        return () => {
-          subscription.unsubscribe();
-        };
+        if (session?.user && mounted) {
+          console.log('✅ User session found:', session.user.id);
+          setUser(session.user);
+          setIsAuthenticated(true);
+          
+          // Fetch profile and roles
+          await Promise.all([
+            fetchProfile(session.user.id),
+            fetchUserRoles(session.user.id)
+          ]);
+        } else {
+          console.log('ℹ️ No active session found');
+        }
+
+        if (mounted) {
+          setIsLoading(false);
+        }
       } catch (error) {
         console.error('❌ Auth initialization error:', error);
-        cleanAuthState();
-        setLoading(false);
-        setInitialized(true);
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
     };
 
-    const cleanup = initializeAuth();
-    
+    const fetchProfile = async (userId: string) => {
+      try {
+        console.log('👤 Fetching profile for user:', userId);
+        
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .maybeSingle();
+
+        if (error) {
+          console.error('❌ Profile fetch error:', error);
+          return;
+        }
+
+        if (data && mounted) {
+          console.log('✅ Profile loaded:', data);
+          setProfile(data);
+        } else {
+          console.log('ℹ️ No profile found for user');
+        }
+      } catch (error) {
+        console.error('❌ Profile fetch error:', error);
+      }
+    };
+
+    const fetchUserRoles = async (userId: string) => {
+      try {
+        console.log('🔐 Fetching roles for user:', userId);
+        
+        const { data, error } = await supabase
+          .from('user_roles')
+          .select(`
+            roles (
+              name
+            )
+          `)
+          .eq('user_id', userId);
+
+        if (error) {
+          console.error('❌ Roles fetch error:', error);
+          return;
+        }
+
+        if (data && mounted) {
+          const roles = data.map((item: any) => item.roles?.name).filter(Boolean);
+          console.log('✅ Roles loaded:', roles);
+          setUserRoles(roles);
+        }
+      } catch (error) {
+        console.error('❌ Roles fetch error:', error);
+      }
+    };
+
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('🔄 Auth state change:', event);
+        
+        if (!mounted) return;
+
+        if (event === 'SIGNED_IN' && session?.user) {
+          setUser(session.user);
+          setIsAuthenticated(true);
+          await Promise.all([
+            fetchProfile(session.user.id),
+            fetchUserRoles(session.user.id)
+          ]);
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null);
+          setProfile(null);
+          setUserRoles([]);
+          setIsAuthenticated(false);
+        }
+      }
+    );
+
+    // Initialize auth
+    initializeAuth();
+
     return () => {
       mounted = false;
-      cleanup?.then(cleanupFn => cleanupFn?.());
+      subscription.unsubscribe();
     };
-  }, []);
+  }, [toast]);
+
+  const signOut = async () => {
+    try {
+      console.log('🚪 Signing out...');
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error('❌ Sign out error:', error);
+        toast({
+          title: "Error",
+          description: "Failed to sign out",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log('✅ Signed out successfully');
+      toast({
+        title: "Success",
+        description: "Signed out successfully",
+      });
+    } catch (error) {
+      console.error('❌ Sign out error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to sign out",
+        variant: "destructive",
+      });
+    }
+  };
 
   return {
     user,
-    session,
-    userRoles,
     profile,
-    loading,
-    isAuthenticated: !!(session && user),
-    initialized,
-    signIn,
+    userRoles,
+    isLoading,
+    isAuthenticated,
     signOut
   };
 };

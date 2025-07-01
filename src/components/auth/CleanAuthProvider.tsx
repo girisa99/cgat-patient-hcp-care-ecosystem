@@ -1,44 +1,25 @@
 
-import React, { createContext, useContext } from 'react';
-import { User, Session } from '@supabase/supabase-js';
-import { Database } from '@/integrations/supabase/types';
+import React, { createContext, useContext, ReactNode } from 'react';
 import { useCleanAuth } from '@/hooks/useCleanAuth';
-
-type UserRole = Database['public']['Enums']['user_role'];
+import type { User } from '@supabase/supabase-js';
+import type { Profile } from '@/hooks/useCleanAuth';
 
 interface AuthContextType {
   user: User | null;
-  session: Session | null;
-  userRoles: UserRole[];
-  loading: boolean;
-  signOut: () => Promise<any>;
-  signIn: (email: string, password: string) => Promise<any>;
-  profile: any | null;
+  profile: Profile | null;
+  userRoles: string[];
+  isLoading: boolean;
   isAuthenticated: boolean;
-  initialized: boolean;
+  signOut: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType>({
-  user: null,
-  session: null,
-  userRoles: [],
-  loading: true,
-  signOut: async () => {},
-  signIn: async () => {},
-  profile: null,
-  isAuthenticated: false,
-  initialized: false,
-});
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const useAuthContext = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuthContext must be used within CleanAuthProvider');
-  }
-  return context;
-};
+interface CleanAuthProviderProps {
+  children: ReactNode;
+}
 
-export const CleanAuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const CleanAuthProvider: React.FC<CleanAuthProviderProps> = ({ children }) => {
   const auth = useCleanAuth();
 
   return (
@@ -46,4 +27,12 @@ export const CleanAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       {children}
     </AuthContext.Provider>
   );
+};
+
+export const useAuthContext = (): AuthContextType => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuthContext must be used within a CleanAuthProvider');
+  }
+  return context;
 };
