@@ -91,6 +91,14 @@ export const navItems: NavItem[] = [
     items: []
   },
   {
+    title: "Active Verification",
+    url: "/active-verification",
+    to: "/active-verification",
+    icon: CheckCircle2,
+    isActive: false,
+    items: []
+  },
+  {
     title: "Onboarding",
     url: "/onboarding",
     to: "/onboarding",
@@ -99,87 +107,10 @@ export const navItems: NavItem[] = [
     items: []
   },
   {
-    title: "Admin",
-    url: "#",
-    to: "#",
-    icon: Settings,
-    isActive: false,
-    items: [
-      {
-        title: "System Analysis",
-        url: "/admin/system-analysis",
-        to: "/admin/system-analysis",
-        icon: BarChart3
-      },
-      {
-        title: "System Assessment", 
-        url: "/admin/system-assessment",
-        to: "/admin/system-assessment",
-        icon: Search
-      },
-      {
-        title: "API Services",
-        url: "/admin/api-services",
-        to: "/admin/api-services",
-        icon: Globe
-      },
-      {
-        title: "API Integrations",
-        url: "/admin/api-integrations",
-        to: "/admin/api-integrations", 
-        icon: Cloud
-      },
-      {
-        title: "Data Import",
-        url: "/admin/data-import",
-        to: "/admin/data-import",
-        icon: Database
-      },
-      {
-        title: "System Status",
-        url: "/admin/system-status",
-        to: "/admin/system-status",
-        icon: Activity
-      },
-      {
-        title: "User Management",
-        url: "/admin/user-management",
-        to: "/admin/user-management",
-        icon: Users
-      },
-      {
-        title: "Patient Management",
-        url: "/admin/patient-management",
-        to: "/admin/patient-management", 
-        icon: Users
-      },
-      {
-        title: "Auto Module Manager",
-        url: "/admin/auto-module-manager",
-        to: "/admin/auto-module-manager",
-        icon: Package
-      },
-      {
-        title: "System Verification",
-        url: "/admin/system-verification",
-        to: "/admin/system-verification",
-        icon: CheckCircle2
-      }
-    ]
-  },
-  {
     title: "Security",
     url: "/security",
     to: "/security",
     icon: Shield,
-    isActive: false,
-    items: []
-  },
-  {
-    title: "Reports",
-    url: "/reports",
-    to: "/reports", 
-    icon: FileText,
     isActive: false,
     items: []
   }

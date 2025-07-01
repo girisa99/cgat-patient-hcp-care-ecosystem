@@ -14,18 +14,10 @@ import SecurityDashboard from "@/components/security/SecurityDashboard";
 import { ModulesManagement } from "@/components/modules/ModulesManagement";
 import { FacilitiesManagement } from "@/components/facilities/FacilitiesManagement";
 import { CollaborativeOnboardingView } from "@/components/onboarding/CollaborativeOnboardingView";
-import { SystemAnalysisDashboard } from "@/components/admin/SystemAnalysisDashboard";
-import SystemAssessmentDashboard from "@/components/admin/SystemAssessment/SystemAssessmentDashboard";
-import { ApiServicesModule } from "@/components/admin/ApiServices/ApiServicesModule";
-import OptimizedApiIntegrationsManager from "@/components/admin/ApiIntegrations/OptimizedApiIntegrationsManager";
-import { DataImportModule } from "@/components/admin/DataImportModule";
-import { SystemStatusDashboard } from "@/components/admin/SystemStatusDashboard";
-import { UserManagementMain } from "@/components/admin/UserManagement/UserManagementMain";
 import Patients from "@/pages/Patients";
-import AutoModuleManager from "@/components/admin/AutoModuleManager";
-import Reports from "@/pages/Reports";
 import ApiServices from "@/pages/ApiServices";
 import DataImport from "@/pages/DataImport";
+import ActiveVerification from "@/pages/ActiveVerification";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -57,24 +49,12 @@ const App = () => {
                 <Route path="/modules" element={<ModulesManagement />} />
                 <Route path="/api-services" element={<ApiServices />} />
                 <Route path="/data-import" element={<DataImport />} />
+                <Route path="/active-verification" element={<ActiveVerification />} />
                 <Route path="/onboarding" element={<CollaborativeOnboardingView />} />
                 <Route path="/security" element={<SecurityDashboard />} />
-                <Route path="/reports" element={<Reports />} />
                 
-                {/* Admin Routes */}
-                <Route path="/admin/system-analysis" element={<SystemAnalysisDashboard />} />
-                <Route path="/admin/system-assessment" element={<SystemAssessmentDashboard />} />
-                <Route path="/admin/api-services" element={<ApiServicesModule />} />
-                <Route path="/admin/api-integrations" element={<OptimizedApiIntegrationsManager />} />
-                <Route path="/admin/data-import" element={<DataImportModule />} />
-                <Route path="/admin/system-status" element={<SystemStatusDashboard />} />
-                <Route path="/admin/user-management" element={<UserManagementMain />} />
-                <Route path="/admin/patient-management" element={<Patients />} />
-                <Route path="/admin/auto-module-manager" element={<AutoModuleManager />} />
-                <Route path="/admin/system-verification" element={<AdminVerificationTest />} />
-                
-                {/* Fallback for other admin routes */}
-                <Route path="/admin/*" element={<UnifiedDashboard />} />
+                {/* Fallback route */}
+                <Route path="*" element={<UnifiedDashboard />} />
               </Routes>
             </MainLayout>
           </BrowserRouter>

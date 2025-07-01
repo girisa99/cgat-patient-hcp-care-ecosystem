@@ -24,17 +24,23 @@ export const PatientCard: React.FC<PatientCardProps> = ({
     ? `${patient.first_name} ${patient.last_name}`
     : patient.email || 'Unknown Patient';
 
-  const handleView = () => {
+  const handleView = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     console.log('👁️ PatientCard: View button clicked for patient:', patient.id);
     onView(patient.id);
   };
 
-  const handleEdit = () => {
+  const handleEdit = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     console.log('✏️ PatientCard: Edit button clicked for patient:', patient.id);
     onEdit(patient.id);
   };
 
-  const handleDeactivate = () => {
+  const handleDeactivate = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     console.log('🚫 PatientCard: Deactivate button clicked for patient:', patient.id);
     onDeactivate(patient.id, patientName);
   };
@@ -70,6 +76,7 @@ export const PatientCard: React.FC<PatientCardProps> = ({
                 onClick={handleView}
                 title="View Patient Details"
                 className="h-8 px-3"
+                type="button"
               >
                 <Eye className="h-4 w-4" />
               </Button>
@@ -80,6 +87,7 @@ export const PatientCard: React.FC<PatientCardProps> = ({
                 onClick={handleEdit}
                 title="Edit Patient"
                 className="h-8 px-3"
+                type="button"
               >
                 <Edit className="h-4 w-4" />
               </Button>
@@ -91,6 +99,7 @@ export const PatientCard: React.FC<PatientCardProps> = ({
                 disabled={isDeactivating}
                 title="Deactivate Patient"
                 className="h-8 px-3 text-red-600 hover:bg-red-50 border-red-200"
+                type="button"
               >
                 <UserX className="h-4 w-4" />
               </Button>
