@@ -270,12 +270,6 @@ export class ComprehensiveAutomationCoordinator {
         breadcrumbsWorking: false,
         menuStructureValid: false
       },
-      syncVerification: {
-        isFullySynced: false,
-        pendingChanges: [],
-        lastSyncTime: new Date().toISOString(),
-        syncErrors: [`Automation error: ${error.message}`]
-      },
       recommendations: ['Review automation configuration', 'Check system logs'],
       automationMetadata: {
         dataSource: 'original_database',
