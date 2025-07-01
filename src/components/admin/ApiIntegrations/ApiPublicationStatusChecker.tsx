@@ -113,11 +113,18 @@ const ApiPublicationStatusChecker = () => {
               <SelectValue placeholder="Choose an API to check publication status" />
             </SelectTrigger>
             <SelectContent>
-              {integrations.map((api) => (
-                <SelectItem key={api.id} value={api.id}>
-                  {api.name} - {api.endpoints?.length || 0} endpoints
-                </SelectItem>
-              ))}
+              {integrations.map((api) => {
+                const apiData = api as any;
+                const displayName = apiData.name || 'API Service';
+                const endpointCount = api.source === 'external' 
+                  ? apiData.external_api_endpoints?.length || 0 
+                  : apiData.endpoints_count || 0;
+                return (
+                  <SelectItem key={api.id} value={api.id}>
+                    {displayName} - {endpointCount} endpoints
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
         </div>
@@ -128,7 +135,9 @@ const ApiPublicationStatusChecker = () => {
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2">
                   {statusInfo.icon}
-                  <h3 className="font-semibold">{selectedApi.name}</h3>
+                  <h3 className="font-semibold">
+                    {(selectedApi as any).name || 'API Service'}
+                  </h3>
                 </div>
                 <Badge className={statusInfo.color}>
                   {statusInfo.status.replace('_', ' ').toUpperCase()}

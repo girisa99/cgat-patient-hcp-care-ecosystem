@@ -3706,6 +3706,10 @@ export type Database = {
         Args: { user_id: string }
         Returns: undefined
       }
+      is_admin_user: {
+        Args: { check_user_id: string }
+        Returns: boolean
+      }
       log_onboarding_audit: {
         Args: {
           p_onboarding_id: string

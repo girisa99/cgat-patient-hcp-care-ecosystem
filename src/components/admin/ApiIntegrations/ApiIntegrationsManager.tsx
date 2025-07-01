@@ -9,7 +9,6 @@ import { ApiIntegrationsStats } from './ApiIntegrationsStats';
 import { ApiIntegrationsTabs } from './ApiIntegrationsTabs';
 import { Input } from '@/components/ui/input';
 import { Search, Settings, Code, Globe, Key, BarChart3, Zap } from 'lucide-react';
-import { ApiIntegration } from '@/utils/api/ApiIntegrationTypes';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
@@ -17,7 +16,6 @@ const ApiIntegrationsManager = () => {
   const { 
     integrations, 
     isLoading, 
-    error, 
     internalApis,
     externalApis,
     downloadPostmanCollection,
@@ -29,7 +27,7 @@ const ApiIntegrationsManager = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedIntegration, setSelectedIntegration] = useState<ApiIntegration | null>(null);
+  const [selectedIntegration, setSelectedIntegration] = useState<any>(null);
 
   console.log('🔍 API Services Manager State:', {
     integrations: integrations?.length || 0,
@@ -38,8 +36,7 @@ const ApiIntegrationsManager = () => {
     publishedForDevelopers: publishedApisForDevelopers?.length || 0,
     activeTab,
     isLoading,
-    isLoadingPublishedApis,
-    error: error?.message
+    isLoadingPublishedApis
   });
 
   // Quick stats for the overview
@@ -49,7 +46,12 @@ const ApiIntegrationsManager = () => {
     externalApis: externalApis?.length || 0,
     publishedApis: publishedApisForDevelopers?.length || 0,
     developerApis: publishedApisForDevelopers?.length || 0,
-    activeEndpoints: integrations?.reduce((sum, i) => sum + (i.endpoints?.length || 0), 0) || 0
+    activeEndpoints: integrations?.reduce((sum, i) => {
+      const endpointCount = i.source === 'external' 
+        ? (i as any).external_api_endpoints?.length || 0 
+        : (i as any).endpoints_count || 0;
+      return sum + endpointCount;
+    }, 0) || 0
   };
 
   const handleDownloadCollection = (integrationId: string) => {
@@ -63,7 +65,9 @@ const ApiIntegrationsManager = () => {
     if (integration) {
       const integrationWithDescription = {
         ...integration,
-        description: integration.description || 'No description provided'
+        description: integration.source === 'external' 
+          ? (integration as any).external_description || 'No description provided'
+          : (integration as any).description || 'No description provided'
       };
       setSelectedIntegration(integrationWithDescription);
     }
@@ -77,10 +81,10 @@ const ApiIntegrationsManager = () => {
     navigator.clipboard.writeText(url);
   };
 
-  const handleTestEndpoint = async (integrationId: string, endpointId: string) => {
+  const handleTestEndpoint = async (integrationId: string, endpointId?: string) => {
     try {
       if (testEndpoint) {
-        await testEndpoint(integrationId, endpointId);
+        await testEndpoint({ integrationId, endpointId });
       }
     } catch (error) {
       console.error('Error testing endpoint:', error);
@@ -89,10 +93,6 @@ const ApiIntegrationsManager = () => {
 
   if (isLoading || isLoadingPublishedApis) {
     return <LoadingState title="API Services" description="Loading comprehensive API management tools..." />;
-  }
-
-  if (error) {
-    return <ErrorState title="API Services" error={{ message: typeof error === 'string' ? error : error.message }} />;
   }
 
   if (selectedIntegration) {

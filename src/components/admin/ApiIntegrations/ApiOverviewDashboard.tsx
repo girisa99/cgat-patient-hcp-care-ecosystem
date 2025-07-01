@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -41,9 +42,13 @@ const ApiOverviewDashboard = () => {
   const [selectedApiForAnalytics, setSelectedApiForAnalytics] = useState<any>(null);
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
 
-  // Separate APIs by type
-  const consumedApis = integrations?.filter(api => api.type === 'external') || [];
-  const internalApis = integrations?.filter(api => api.type === 'internal') || [];
+  // Separate APIs by type and source
+  const consumedApis = integrations?.filter(api => 
+    api.source === 'internal' && (api as any).type === 'external'
+  ) || [];
+  const internalApis = integrations?.filter(api => 
+    api.source === 'internal' && (api as any).type === 'internal'
+  ) || [];
   const publishedInternalApis = externalApis || [];
 
   const getStatusColor = (status: string) => {
@@ -202,58 +207,61 @@ const ApiOverviewDashboard = () => {
         </Card>
       ) : (
         <div className="grid gap-4">
-          {consumedApis.map((api) => (
-            <Card key={api.id} className="border-l-4 border-l-green-500">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-2 flex-1">
-                    <div className="flex items-center gap-2">
-                      <Globe className="h-5 w-5 text-green-500" />
-                      <h4 className="font-semibold">{api.name}</h4>
-                      <Badge variant="outline">External</Badge>
-                      <Badge className={getStatusColor(api.status)}>
-                        {api.status}
-                      </Badge>
+          {consumedApis.map((api) => {
+            const apiData = api as any;
+            return (
+              <Card key={api.id} className="border-l-4 border-l-green-500">
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-2 flex-1">
+                      <div className="flex items-center gap-2">
+                        <Globe className="h-5 w-5 text-green-500" />
+                        <h4 className="font-semibold">{apiData.name || 'API Service'}</h4>
+                        <Badge variant="outline">External</Badge>
+                        <Badge className={getStatusColor(apiData.status || 'active')}>
+                          {apiData.status || 'active'}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {apiData.description || 'No description available'}
+                      </p>
+                      <div className="flex items-center gap-4 text-sm">
+                        <span className="flex items-center gap-1">
+                          <Database className="h-3 w-3" />
+                          {apiData.endpoints_count || 0} endpoints
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Activity className="h-3 w-3" />
+                          v{apiData.version || '1.0.0'}
+                        </span>
+                        {apiData.base_url && (
+                          <a 
+                            href={apiData.base_url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 text-blue-500 hover:underline"
+                          >
+                            <ExternalLink className="h-3 w-3" />
+                            API Docs
+                          </a>
+                        )}
+                      </div>
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      {api.description}
-                    </p>
-                    <div className="flex items-center gap-4 text-sm">
-                      <span className="flex items-center gap-1">
-                        <Database className="h-3 w-3" />
-                        {api.endpoints?.length || 0} endpoints
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Activity className="h-3 w-3" />
-                        v{api.version}
-                      </span>
-                      {api.baseUrl && (
-                        <a 
-                          href={api.baseUrl} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-1 text-blue-500 hover:underline"
-                        >
-                          <ExternalLink className="h-3 w-3" />
-                          API Docs
-                        </a>
-                      )}
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline">
+                        <Eye className="h-3 w-3 mr-1" />
+                        View
+                      </Button>
+                      <Button size="sm" variant="outline">
+                        <Settings className="h-3 w-3 mr-1" />
+                        Configure
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline">
-                      <Eye className="h-3 w-3 mr-1" />
-                      View
-                    </Button>
-                    <Button size="sm" variant="outline">
-                      <Settings className="h-3 w-3 mr-1" />
-                      Configure
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>
@@ -467,12 +475,15 @@ const ApiOverviewDashboard = () => {
                   Third-party APIs integrated into our platform
                 </p>
                 <div className="space-y-2">
-                  {consumedApis.slice(0, 3).map((api) => (
-                    <div key={api.id} className="flex items-center justify-between text-sm">
-                      <span>{api.name}</span>
-                      <Badge variant="outline">{api.status}</Badge>
-                    </div>
-                  ))}
+                  {consumedApis.slice(0, 3).map((api) => {
+                    const apiData = api as any;
+                    return (
+                      <div key={api.id} className="flex items-center justify-between text-sm">
+                        <span>{apiData.name || 'API Service'}</span>
+                        <Badge variant="outline">{apiData.status || 'active'}</Badge>
+                      </div>
+                    );
+                  })}
                   {consumedApis.length > 3 && (
                     <p className="text-xs text-muted-foreground">
                       +{consumedApis.length - 3} more APIs
@@ -521,29 +532,27 @@ const ApiOverviewDashboard = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Configuration Dialog */}
-      <ExternalApiConfigDialog
-        open={showConfigDialog}
-        onOpenChange={(open) => {
-          setShowConfigDialog(open);
-          if (!open) {
+      {/* Config Dialog */}
+      {showConfigDialog && selectedApiForConfig && (
+        <ExternalApiConfigDialog
+          api={selectedApiForConfig}
+          onClose={() => {
+            setShowConfigDialog(false);
             setSelectedApiForConfig(null);
-          }
-        }}
-        api={selectedApiForConfig}
-      />
+          }}
+        />
+      )}
 
       {/* Analytics Dialog */}
-      <ExternalApiAnalyticsDialog
-        open={showAnalyticsDialog}
-        onOpenChange={(open) => {
-          setShowAnalyticsDialog(open);
-          if (!open) {
+      {showAnalyticsDialog && selectedApiForAnalytics && (
+        <ExternalApiAnalyticsDialog
+          api={selectedApiForAnalytics}
+          onClose={() => {
+            setShowAnalyticsDialog(false);
             setSelectedApiForAnalytics(null);
-          }
-        }}
-        api={selectedApiForAnalytics}
-      />
+          }}
+        />
+      )}
     </div>
   );
 };
