@@ -46,7 +46,7 @@ export const ConsolidatedUserManagement: React.FC = () => {
   const [assignModuleOpen, setAssignModuleOpen] = useState(false);
   const [selectedUserEmail, setSelectedUserEmail] = useState('');
 
-  // Use existing dialog management hook
+  // Use existing dialog management hook - including setSelectedUserId
   const {
     createUserOpen,
     setCreateUserOpen,
@@ -60,6 +60,7 @@ export const ConsolidatedUserManagement: React.FC = () => {
     setAssignFacilityOpen,
     selectedUserId,
     selectedUser,
+    setSelectedUserId,
     handleAssignRole,
     handleRemoveRole,
     handleAssignFacility,
