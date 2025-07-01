@@ -12,6 +12,7 @@ export type Profile = Database['public']['Tables']['profiles']['Row'];
 
 // Extended user types
 export interface UserWithRoles extends Profile {
+  updated_at?: string; // Add the missing updated_at property
   user_roles: {
     roles: {
       name: UserRole;

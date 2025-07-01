@@ -22,3 +22,25 @@ export interface RealtimeEvent {
 }
 
 export type RealtimeEventCallback = (event: RealtimeEvent) => void;
+
+export interface RealtimeSubscription {
+  id: string;
+  tableName: string;
+  callback: RealtimeEventCallback;
+  isActive: boolean;
+}
+
+export interface RealtimeChannel {
+  id: string;
+  name: string;
+  tableName: string;
+  isConnected: boolean;
+  subscriberCount: number;
+}
+
+export interface RealtimeStatus {
+  isConnected: boolean;
+  activeChannels: number;
+  totalSubscribers: number;
+  lastActivity: string;
+}

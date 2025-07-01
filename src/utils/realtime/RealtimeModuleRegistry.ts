@@ -16,7 +16,7 @@ export interface AdminModuleConfig {
   apiIntegrationImpact: boolean;
 }
 
-class RealtimeModuleRegistry {
+export class RealtimeModuleRegistry {
   private adminModules: AdminModuleConfig[] = [
     {
       tableName: 'modules',

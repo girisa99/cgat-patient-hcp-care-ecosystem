@@ -4,11 +4,11 @@
  */
 
 // Export main classes
-export { RealtimeManager } from './RealtimeManager';
+export { RealtimeManager, realtimeManager } from './RealtimeManager';
 export { RealtimeChannelManager } from './RealtimeChannelManager';
 export { RealtimeEventHandler } from './RealtimeEventHandler';
 export { RealtimeSubscriptionManager } from './RealtimeSubscriptionManager';
-export { RealtimeModuleRegistry } from './RealtimeModuleRegistry';
+export { RealtimeModuleRegistry, realtimeModuleRegistry } from './RealtimeModuleRegistry';
 
 // Export types
 export type {
@@ -16,11 +16,12 @@ export type {
   RealtimeSubscription,
   RealtimeChannel,
   RealtimeConfig,
-  RealtimeStatus
+  RealtimeStatus,
+  RealtimeEventCallback
 } from './RealtimeTypes';
 
-// Export main hook (remove the non-existent ones)
+// Export main hook
 export { useRealtime } from '../../hooks/useRealtime';
 
 // Initialize global realtime manager
-export const globalRealtimeManager = RealtimeManager.getInstance();
+export const globalRealtimeManager = realtimeManager;

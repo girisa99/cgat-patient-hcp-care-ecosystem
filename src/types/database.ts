@@ -6,9 +6,9 @@ export type Facility = Database['public']['Tables']['facilities']['Row'];
 export type Module = Database['public']['Tables']['modules']['Row'];
 export type Profile = Database['public']['Tables']['profiles']['Row'];
 
-// Extended types with proper structure that includes all required Profile properties
+// Extended types with proper structure that matches UserWithRoles from userManagement.ts
 export interface ExtendedProfile {
-  // Core Profile properties (making them all optional to match actual data structure)
+  // Core Profile properties
   id: string;
   email: string;
   first_name?: string | null;
@@ -18,17 +18,19 @@ export interface ExtendedProfile {
   updated_at?: string;
   facility_id?: string | null;
   
-  // Additional extended properties
+  // Additional extended properties - match UserWithRoles structure
   is_active?: boolean;
   user_roles: Array<{
-    role_id?: string; // Make optional to match actual data
     roles: {
-      id?: string; // Make optional to match actual data
       name: Database['public']['Enums']['user_role'];
       description: string | null;
     };
   }>;
-  facilities?: Facility | null;
+  facilities?: {
+    id: string;
+    name: string;
+    facility_type: string;
+  } | null;
   
   // Optional extended properties
   avatar_url?: string | null;

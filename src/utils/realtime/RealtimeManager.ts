@@ -9,15 +9,23 @@ import { RealtimeEventHandler } from './RealtimeEventHandler';
 import { RealtimeSubscriptionManager } from './RealtimeSubscriptionManager';
 import { RealtimeConfig, RealtimeEvent, RealtimeEventCallback } from './RealtimeTypes';
 
-class RealtimeManager {
+export class RealtimeManager {
   private channelManager: RealtimeChannelManager;
   private eventHandler: RealtimeEventHandler;
   private subscriptionManager: RealtimeSubscriptionManager;
+  private static instance: RealtimeManager;
 
   constructor() {
     this.channelManager = new RealtimeChannelManager();
     this.eventHandler = new RealtimeEventHandler();
     this.subscriptionManager = new RealtimeSubscriptionManager();
+  }
+
+  static getInstance(): RealtimeManager {
+    if (!RealtimeManager.instance) {
+      RealtimeManager.instance = new RealtimeManager();
+    }
+    return RealtimeManager.instance;
   }
 
   /**
@@ -122,7 +130,7 @@ class RealtimeManager {
 }
 
 // Global singleton instance
-export const realtimeManager = new RealtimeManager();
+export const realtimeManager = RealtimeManager.getInstance();
 
 // Auto-initialize on module load
 if (typeof window !== 'undefined') {

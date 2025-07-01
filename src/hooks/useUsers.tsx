@@ -3,6 +3,7 @@ import { useTypeSafeModuleTemplate } from '@/templates/hooks/useTypeSafeModuleTe
 import { useUserMutations } from './users/useUserMutations';
 import { useUnifiedUserData } from './useUnifiedUserData';
 import type { ExtendedProfile } from '@/types/database';
+import type { UserWithRoles } from '@/types/userManagement';
 
 export const useUsers = () => {
   const config = {
@@ -17,26 +18,28 @@ export const useUsers = () => {
   const { allUsers, isLoading, error, refetch } = useUnifiedUserData();
   const { createUser, assignRole, assignFacility, isCreatingUser, isAssigningRole, isAssigningFacility } = useUserMutations();
 
-  // Ensure users have the expected structure with safe defaults and proper typing
-  const users: ExtendedProfile[] = (allUsers || []).map(user => ({
+  // Convert UserWithRoles to ExtendedProfile format for consistency
+  const users: ExtendedProfile[] = (allUsers || []).map((user: UserWithRoles) => ({
     id: user.id,
     email: user.email,
     first_name: user.first_name || null,
     last_name: user.last_name || null,
     phone: user.phone || null,
     created_at: user.created_at || new Date().toISOString(),
-    updated_at: user.updated_at || new Date().toISOString(), // Add fallback for updated_at
+    updated_at: user.updated_at || new Date().toISOString(),
     facility_id: user.facility_id || null,
     is_active: true, // Default to active
     user_roles: (user.user_roles || []).map(userRole => ({
-      role_id: userRole.role_id || '', // Add default role_id
       roles: {
-        id: userRole.roles?.id || '', // Add default id
         name: userRole.roles?.name || 'user' as any,
         description: userRole.roles?.description || null
       }
     })),
-    facilities: user.facilities || null,
+    facilities: user.facilities ? {
+      id: user.facilities.id,
+      name: user.facilities.name,
+      facility_type: user.facilities.facility_type
+    } : null,
     // Add missing properties from ExtendedProfile
     avatar_url: null,
     department: null,
