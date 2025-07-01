@@ -15,12 +15,15 @@ import {
   GitBranch,
   FileText,
   Plus,
-  Settings
+  Settings,
+  Code,
+  Key
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-// Use consolidated hook with real data
+// Use consolidated hooks with real data
 import { useApiServices } from '@/hooks/useApiServices';
+import { useApiServiceDetails } from '@/hooks/useApiServiceDetails';
 
 // Import tab components
 import { InternalApisTabContent } from '@/components/admin/ApiIntegrations/tabs/InternalApisTabContent';
@@ -33,79 +36,68 @@ import { OnboardingIntegrationTabContent } from '@/components/admin/ApiIntegrati
 import AutoIntegrationBanner from '../ApiIntegrations/AutoIntegrationBanner';
 
 export const ApiServicesModule: React.FC = () => {
-  console.log('🚀 ApiServicesModule: Using consolidated real data source - Fixed alignment');
+  console.log('🚀 ApiServicesModule: Using consolidated real data with detailed stats');
   
   const [activeTab, setActiveTab] = useState('overview');
   const [searchTerm, setSearchTerm] = useState('');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const { toast } = useToast();
 
-  // Use consolidated hook with real data - single source of truth
+  // Use consolidated hooks with real data
   const { 
     apiServices,
-    internalApis,
-    externalApis,
-    consumingApis,
-    publishingApis,
     isLoading, 
     error, 
-    getApiServiceStats,
     createApiService,
     updateApiService,
     deleteApiService,
     isCreatingApiService
   } = useApiServices();
 
-  // Fixed data alignment - ensure consistent filtering
-  const correctedStats = React.useMemo(() => {
-    console.log('🔍 Correcting metrics alignment:', {
-      totalServices: apiServices?.length || 0,
-      rawInternalApis: internalApis?.length || 0,
-      rawExternalApis: externalApis?.length || 0,
-      rawConsumingApis: consumingApis?.length || 0,
-      rawPublishingApis: publishingApis?.length || 0
-    });
+  const { 
+    apiEndpoints,
+    getDetailedApiStats,
+    consolidateApiServices
+  } = useApiServiceDetails();
 
-    // Use the same filtering logic everywhere for consistency
-    const correctedInternalApis = apiServices?.filter(api => 
-      api.direction === 'inbound' || api.type === 'internal'
-    ) || [];
-    
-    const correctedExternalApis = apiServices?.filter(api => 
-      api.direction === 'outbound' || api.type === 'external'
-    ) || [];
-    
-    const correctedConsumingApis = apiServices?.filter(api => 
-      api.direction === 'bidirectional' || (api.purpose && api.purpose.toLowerCase().includes('consuming'))
-    ) || [];
-    
-    const correctedPublishingApis = apiServices?.filter(api => 
-      api.status === 'active' && (api.lifecycle_stage === 'production' || api.type === 'internal')
-    ) || [];
+  // Consolidate APIs to remove duplicates
+  const consolidatedApis = React.useMemo(() => {
+    if (!apiServices) return [];
+    return consolidateApiServices(apiServices);
+  }, [apiServices, consolidateApiServices]);
 
-    const correctedActiveApis = apiServices?.filter(api => api.status === 'active') || [];
+  // Get detailed stats with real data
+  const detailedStats = React.useMemo(() => {
+    return getDetailedApiStats(consolidatedApis);
+  }, [consolidatedApis, getDetailedApiStats]);
 
-    return {
-      total: apiServices?.length || 0,
-      internal: correctedInternalApis.length,
-      external: correctedExternalApis.length,
-      consuming: correctedConsumingApis.length,
-      publishing: correctedPublishingApis.length,
-      active: correctedActiveApis.length,
-      typeBreakdown: apiServices?.reduce((acc, service) => {
-        const type = service.type || 'unknown';
-        acc[type] = (acc[type] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>) || {},
-      categoryBreakdown: apiServices?.reduce((acc, service) => {
-        const category = service.category || 'uncategorized';
-        acc[category] = (acc[category] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>) || {}
-    };
-  }, [apiServices, internalApis, externalApis, consumingApis, publishingApis]);
+  // Filter APIs with consistent logic
+  const internalApis = consolidatedApis.filter(api => 
+    api.direction === 'inbound' || api.type === 'internal'
+  );
+  
+  const externalApis = consolidatedApis.filter(api => 
+    api.direction === 'outbound' || api.type === 'external'
+  );
+  
+  const consumingApis = consolidatedApis.filter(api => 
+    api.direction === 'bidirectional' || (api.purpose && api.purpose.toLowerCase().includes('consuming'))
+  );
+  
+  const publishingApis = consolidatedApis.filter(api => 
+    api.status === 'active' && (api.lifecycle_stage === 'production' || api.type === 'internal')
+  );
 
-  console.log('📊 ApiServicesModule: Corrected aligned stats:', correctedStats);
+  console.log('📊 ApiServicesModule: Detailed real stats:', {
+    totalApis: consolidatedApis.length,
+    totalEndpoints: detailedStats.totalEndpoints,
+    totalSchemas: detailedStats.totalSchemas,
+    totalDocs: detailedStats.totalDocs,
+    internal: internalApis.length,
+    external: externalApis.length,
+    consuming: consumingApis.length,
+    publishing: publishingApis.length
+  });
 
   // Functional handlers - ensure all buttons work
   const handleDownloadCollection = React.useCallback((integrationId: string) => {
@@ -257,7 +249,7 @@ export const ApiServicesModule: React.FC = () => {
           <div className="flex items-center gap-2">
             <Server className="h-6 w-6 text-blue-500" />
             <div>
-              <p className="text-2xl font-bold">{correctedStats.internal}</p>
+              <p className="text-2xl font-bold">{internalApis.length}</p>
               <p className="text-sm text-muted-foreground">Internal APIs</p>
             </div>
           </div>
@@ -269,8 +261,8 @@ export const ApiServicesModule: React.FC = () => {
           <div className="flex items-center gap-2">
             <ArrowDownCircle className="h-6 w-6 text-green-500" />
             <div>
-              <p className="text-2xl font-bold">{correctedStats.consuming}</p>
-              <p className="text-sm text-muted-foreground">Consuming APIs</p>
+              <p className="text-2xl font-bold">{detailedStats.totalEndpoints}</p>
+              <p className="text-sm text-muted-foreground">Total Endpoints</p>
             </div>
           </div>
         </CardContent>
@@ -281,8 +273,8 @@ export const ApiServicesModule: React.FC = () => {
           <div className="flex items-center gap-2">
             <Database className="h-6 w-6 text-purple-500" />
             <div>
-              <p className="text-2xl font-bold">{correctedStats.external}</p>
-              <p className="text-sm text-muted-foreground">External APIs</p>
+              <p className="text-2xl font-bold">{detailedStats.totalSchemas}</p>
+              <p className="text-sm text-muted-foreground">Schemas</p>
             </div>
           </div>
         </CardContent>
@@ -293,8 +285,8 @@ export const ApiServicesModule: React.FC = () => {
           <div className="flex items-center gap-2">
             <Shield className="h-6 w-6 text-orange-500" />
             <div>
-              <p className="text-2xl font-bold">{correctedStats.active}</p>
-              <p className="text-sm text-muted-foreground">Active</p>
+              <p className="text-2xl font-bold">{detailedStats.totalSecurityPolicies}</p>
+              <p className="text-sm text-muted-foreground">Security</p>
             </div>
           </div>
         </CardContent>
@@ -305,7 +297,7 @@ export const ApiServicesModule: React.FC = () => {
           <div className="flex items-center gap-2">
             <GitBranch className="h-6 w-6 text-teal-500" />
             <div>
-              <p className="text-2xl font-bold">{correctedStats.total}</p>
+              <p className="text-2xl font-bold">{consolidatedApis.length}</p>
               <p className="text-sm text-muted-foreground">Total Services</p>
             </div>
           </div>
@@ -317,8 +309,8 @@ export const ApiServicesModule: React.FC = () => {
           <div className="flex items-center gap-2">
             <FileText className="h-6 w-6 text-indigo-500" />
             <div>
-              <p className="text-2xl font-bold">{Object.keys(correctedStats.typeBreakdown).length}</p>
-              <p className="text-sm text-muted-foreground">Types</p>
+              <p className="text-2xl font-bold">{detailedStats.totalDocs}</p>
+              <p className="text-sm text-muted-foreground">Documentation</p>
             </div>
           </div>
         </CardContent>
@@ -335,16 +327,30 @@ export const ApiServicesModule: React.FC = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Server className="h-5 w-5 text-blue-500" />
-              Internal API Management
+              API Services Overview (Consolidated)
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground mb-4">
-              Manage and monitor your internal APIs, endpoints, and configurations for treatment centers and healthcare facilities.
-            </p>
-            <div className="flex items-center gap-2">
-              <Badge variant="outline">{correctedStats.internal} APIs</Badge>
-              <Badge variant="outline">Healthcare Ready</Badge>
+            <div className="space-y-3">
+              {Object.values(detailedStats.apiBreakdown).slice(0, 3).map((api: any) => (
+                <div key={api.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div>
+                    <h4 className="font-medium">{api.name}</h4>
+                    <p className="text-sm text-muted-foreground">
+                      {api.endpointCount} endpoints • {api.type} • {api.status}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline">{api.category}</Badge>
+                    {api.hasDocumentation && (
+                      <Badge variant="outline" className="text-blue-600">
+                        <FileText className="h-3 w-3 mr-1" />
+                        Docs
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
@@ -352,37 +358,32 @@ export const ApiServicesModule: React.FC = () => {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Globe className="h-5 w-5 text-green-500" />
-              External API Integration
+              <Database className="h-5 w-5 text-green-500" />
+              Real-time Metrics
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground mb-4">
-              Integrate with third-party APIs including EHR systems, pharmacy networks, and financial verification services.
-            </p>
-            <div className="flex items-center gap-2">
-              <Badge variant="outline">{correctedStats.external} Integrations</Badge>
-              <Badge variant="outline">HIPAA Compliant</Badge>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-center">
+                <p className="text-2xl font-bold text-blue-600">{detailedStats.totalEndpoints}</p>
+                <p className="text-sm text-muted-foreground">Active Endpoints</p>
+              </div>
+              <div className="text-center">  
+                <p className="text-2xl font-bold text-green-600">{detailedStats.totalSchemas}</p>
+                <p className="text-sm text-muted-foreground">API Schemas</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-purple-600">{detailedStats.totalSecurityPolicies}</p>
+                <p className="text-sm text-muted-foreground">Security Policies</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-orange-600">{detailedStats.totalDocs}</p>
+                <p className="text-sm text-muted-foreground">Documentation</p>
+              </div>
             </div>
           </CardContent>
         </Card>
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Real-time API Statistics (Aligned Data)</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {Object.entries(correctedStats.categoryBreakdown).map(([category, count]) => (
-              <div key={category} className="text-center">
-                <p className="text-2xl font-bold text-blue-600">{count}</p>
-                <p className="text-sm text-muted-foreground capitalize">{category}</p>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 
@@ -417,7 +418,7 @@ export const ApiServicesModule: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold">Healthcare API Services Platform</h1>
           <p className="text-muted-foreground">
-            Comprehensive API management with real data from {correctedStats.total} registered services (Metrics Aligned)
+            Consolidated API management with {consolidatedApis.length} services and {detailedStats.totalEndpoints} endpoints
           </p>
         </div>
         <div className="flex items-center gap-4">
@@ -445,9 +446,9 @@ export const ApiServicesModule: React.FC = () => {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-8">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="internal">Internal ({correctedStats.internal})</TabsTrigger>
-          <TabsTrigger value="consuming">Consuming ({correctedStats.consuming})</TabsTrigger>
-          <TabsTrigger value="publishing">Publishing ({correctedStats.publishing})</TabsTrigger>
+          <TabsTrigger value="internal">Internal ({internalApis.length})</TabsTrigger>
+          <TabsTrigger value="consuming">Consuming ({consumingApis.length})</TabsTrigger>
+          <TabsTrigger value="publishing">Publishing ({publishingApis.length})</TabsTrigger>
           <TabsTrigger value="onboarding">Onboarding</TabsTrigger>
           <TabsTrigger value="developer">Developer</TabsTrigger>
           <TabsTrigger value="keys">API Keys</TabsTrigger>
