@@ -1,14 +1,12 @@
 
 import { useState, useEffect } from 'react';
 import { useAuthContext } from '@/components/auth/CleanAuthProvider';
-import { useAuthActions } from '@/hooks/useAuthActions';
 
 export const useDashboard = () => {
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { user, isAuthenticated, profile, userRoles } = useAuthContext();
-  const { signOut } = useAuthActions();
+  const { user, isAuthenticated, profile, userRoles, signOut } = useAuthContext();
 
   useEffect(() => {
     const fetchDashboardData = async () => {
