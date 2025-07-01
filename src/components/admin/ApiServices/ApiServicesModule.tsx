@@ -120,7 +120,7 @@ export const ApiServicesModule: React.FC = () => {
     console.log('📋 URL copied:', url);
   };
 
-  const handleTestEndpoint = async (integrationId: string, endpointId?: string) => {
+  const handleTestEndpoint = async (integrationId: string, endpointId?: string): Promise<void> => {
     try {
       console.log('🧪 Testing endpoint:', { integrationId, endpointId });
       const integration = apiServices.find(api => api.id === integrationId);
@@ -132,6 +132,7 @@ export const ApiServicesModule: React.FC = () => {
       }
     } catch (error) {
       console.error('❌ Error testing endpoint:', error);
+      throw error; // Re-throw to let the component handle it
     }
   };
 

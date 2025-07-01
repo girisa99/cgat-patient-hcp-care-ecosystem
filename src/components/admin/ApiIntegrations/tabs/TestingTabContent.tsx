@@ -8,7 +8,7 @@ import { Play, AlertCircle, CheckCircle } from 'lucide-react';
 
 interface TestingTabContentProps {
   integrations: any[];
-  onTestEndpoint?: (integrationId: string, endpointId: string) => void;
+  onTestEndpoint?: (integrationId: string, endpointId?: string) => Promise<void>;
 }
 
 export const TestingTabContent: React.FC<TestingTabContentProps> = ({
@@ -21,31 +21,36 @@ export const TestingTabContent: React.FC<TestingTabContentProps> = ({
   const [isLoading, setIsLoading] = useState(false);
 
   const currentIntegration = integrations.find(i => i.id === selectedIntegration);
-  const currentEndpoint = currentIntegration?.endpoints?.find((e: any) => e.id === selectedEndpoint);
+  
+  // Handle different integration types - use consistent property names
+  const endpoints = currentIntegration?.integrationType === 'external' 
+    ? currentIntegration?.external_api_endpoints || []
+    : currentIntegration?.endpoints || [];
+    
+  const currentEndpoint = endpoints.find((e: any) => e.id === selectedEndpoint);
 
   const handleTest = async () => {
     if (!selectedIntegration || !selectedEndpoint) return;
     
     setIsLoading(true);
     try {
-      // Call the test endpoint function without expecting a return value
       if (onTestEndpoint) {
-        onTestEndpoint(selectedIntegration, selectedEndpoint);
+        await onTestEndpoint(selectedIntegration, selectedEndpoint);
       }
       
-      // Add a mock successful result since the function returns void
+      // Add a successful result since the function returns void
       setTestResults(prev => [{
         timestamp: new Date().toISOString(),
-        integration: currentIntegration?.name,
-        endpoint: currentEndpoint?.name,
+        integration: currentIntegration?.name || currentIntegration?.external_name,
+        endpoint: currentEndpoint?.name || currentEndpoint?.summary,
         method: currentEndpoint?.method,
         result: { success: true, message: 'Test completed successfully' }
       }, ...prev.slice(0, 9)]);
     } catch (error) {
       setTestResults(prev => [{
         timestamp: new Date().toISOString(),
-        integration: currentIntegration?.name,
-        endpoint: currentEndpoint?.name,
+        integration: currentIntegration?.name || currentIntegration?.external_name,
+        endpoint: currentEndpoint?.name || currentEndpoint?.summary,
         method: currentEndpoint?.method,
         result: { success: false, error: error instanceof Error ? error.message : 'Test failed' }
       }, ...prev.slice(0, 9)]);
@@ -71,7 +76,7 @@ export const TestingTabContent: React.FC<TestingTabContentProps> = ({
                 <SelectContent>
                   {integrations.map((integration) => (
                     <SelectItem key={integration.id} value={integration.id}>
-                      {integration.name}
+                      {integration.name || integration.external_name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -89,9 +94,9 @@ export const TestingTabContent: React.FC<TestingTabContentProps> = ({
                   <SelectValue placeholder="Choose an endpoint" />
                 </SelectTrigger>
                 <SelectContent>
-                  {currentIntegration?.endpoints?.map((endpoint: any) => (
+                  {endpoints.map((endpoint: any) => (
                     <SelectItem key={endpoint.id} value={endpoint.id}>
-                      {endpoint.method} {endpoint.name}
+                      {endpoint.method} {endpoint.name || endpoint.summary}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -103,9 +108,13 @@ export const TestingTabContent: React.FC<TestingTabContentProps> = ({
             <div className="p-4 border rounded-lg bg-muted/50">
               <div className="flex items-center gap-2 mb-2">
                 <Badge variant="outline">{currentEndpoint.method}</Badge>
-                <span className="font-mono text-sm">{currentEndpoint.url}</span>
+                <span className="font-mono text-sm">
+                  {currentEndpoint.url || currentEndpoint.external_path}
+                </span>
               </div>
-              <p className="text-sm text-muted-foreground">{currentEndpoint.description}</p>
+              <p className="text-sm text-muted-foreground">
+                {currentEndpoint.description}
+              </p>
             </div>
           )}
 

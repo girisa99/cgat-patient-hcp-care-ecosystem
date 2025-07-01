@@ -27,7 +27,7 @@ interface ApiIntegrationsTabsProps {
   onViewDetails: (id: string) => void;
   onViewDocumentation: (id: string) => void;
   onCopyUrl: (url: string) => void;
-  onTestEndpoint: (integrationId: string, endpointId: string) => void;
+  onTestEndpoint: (integrationId: string, endpointId?: string) => Promise<void>;
 }
 
 export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = React.memo(({
