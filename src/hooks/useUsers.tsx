@@ -1,10 +1,12 @@
 
 import { useTypeSafeModuleTemplate } from '@/templates/hooks/useTypeSafeModuleTemplate';
+import { useUserMutations } from './users/useUserMutations';
 
 /**
- * Users Hook - Now using Universal Template
+ * Users Hook - Now using Universal Template with backward compatibility
  * 
- * Unified with the template system while maintaining all existing functionality.
+ * Unified with the template system while maintaining all existing functionality
+ * and expected properties for existing components.
  */
 export const useUsers = () => {
   const config = {
@@ -19,6 +21,7 @@ export const useUsers = () => {
   };
 
   const templateResult = useTypeSafeModuleTemplate(config);
+  const { createUser, assignRole, assignFacility, isCreatingUser, isAssigningRole, isAssigningFacility } = useUserMutations();
 
   // User-specific filtering (exclude system accounts)
   const users = templateResult.items.filter((item: any) => 
@@ -63,9 +66,14 @@ export const useUsers = () => {
     refetch: templateResult.refetch,
     
     // Mutations (backward compatible)
-    createUser: templateResult.createItem,
+    createUser,
+    assignRole,
+    assignFacility,
     updateUser: templateResult.updateItem,
     deleteUser: templateResult.deleteItem,
+    isCreatingUser,
+    isAssigningRole,
+    isAssigningFacility,
     isCreating: templateResult.isCreating,
     isUpdating: templateResult.isUpdating,
     isDeleting: templateResult.isDeleting,

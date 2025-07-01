@@ -30,7 +30,7 @@ const AssignModuleDialog: React.FC<AssignModuleDialogProps> = ({
     modules,
     userModules,
     assignModule,
-    isLoadingModules,
+    isLoading: isLoadingModules,
     isLoadingUserModules,
     isAssigning,
     error
@@ -46,30 +46,39 @@ const AssignModuleDialog: React.FC<AssignModuleDialogProps> = ({
       expiresAt: expiresAt || null
     });
     
-    // Reset form and close dialog
-    setSelectedModuleId('');
-    setExpiresAt('');
     onOpenChange(false);
   };
-
-  const handleClose = () => {
-    setSelectedModuleId('');
-    setExpiresAt('');
-    onOpenChange(false);
-  };
-
-  // Get user's currently assigned modules - using the correct property names
-  const assignedModuleIds = userModules?.map(m => m.id) || [];
-  
-  // Filter out already assigned modules
-  const availableModules = modules?.filter(m => !assignedModuleIds.includes(m.id)) || [];
 
   if (isLoadingModules || isLoadingUserModules) {
     return (
-      <Dialog open={open} onOpenChange={handleClose}>
-        <DialogContent className="sm:max-w-[500px]">
-          <div className="flex justify-center items-center py-8">
-            <LoadingSpinner size="lg" />
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Shield className="h-5 w-5" />
+              Loading...
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex justify-center p-4">
+            <Loader2 className="h-8 w-8 animate-spin" />
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  if (error) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertCircle className="h-5 w-5" />
+              Error Loading Modules
+            </DialogTitle>
+          </DialogHeader>
+          <div className="p-4 text-center text-muted-foreground">
+            {error.message || 'Failed to load modules'}
           </div>
         </DialogContent>
       </Dialog>
@@ -77,117 +86,98 @@ const AssignModuleDialog: React.FC<AssignModuleDialogProps> = ({
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[600px]">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Shield className="h-5 w-5" />
-            Assign Module Access
+            Assign Module to {userName}
           </DialogTitle>
           <DialogDescription>
-            Grant {userName} access to specific modules. Module access can be temporary or permanent.
+            Grant access to a specific module for this user.
           </DialogDescription>
         </DialogHeader>
         
-        <div className="space-y-6">
-          {error && (
-            <div className="flex items-center gap-2 text-red-600 bg-red-50 p-3 rounded-lg">
-              <AlertCircle className="h-5 w-5" />
-              <span>Error loading modules: {error.message}</span>
-            </div>
-          )}
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="module">Select Module</Label>
+            <Select value={selectedModuleId} onValueChange={setSelectedModuleId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Choose a module to assign" />
+              </SelectTrigger>
+              <SelectContent>
+                {modules?.map((module) => (
+                  <SelectItem key={module.id} value={module.id}>
+                    <div className="flex items-center justify-between w-full">
+                      <span>{module.name}</span>
+                      {module.is_active && (
+                        <Badge variant="outline" className="ml-2">Active</Badge>
+                      )}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-          {/* Current Module Assignments */}
-          {userModules && userModules.length > 0 && (
+          <div className="space-y-2">
+            <Label htmlFor="expiration" className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              Expiration Date (Optional)
+            </Label>
+            <input
+              type="datetime-local"
+              id="expiration"
+              value={expiresAt}
+              onChange={(e) => setExpiresAt(e.target.value)}
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            />
+          </div>
+
+          {selectedModuleId && (
             <Card>
-              <CardContent className="p-4">
-                <h4 className="font-medium mb-3 flex items-center gap-2">
-                  <Shield className="h-4 w-4" />
-                  Current Module Access
-                </h4>
-                <div className="flex flex-wrap gap-2">
-                  {userModules.map((module) => (
-                    <Badge key={module.id} variant="secondary">
-                      {module.moduleName}
-                    </Badge>
-                  ))}
-                </div>
+              <CardContent className="pt-4">
+                {(() => {
+                  const selectedModule = modules?.find(m => m.id === selectedModuleId);
+                  return selectedModule ? (
+                    <div>
+                      <h4 className="font-medium">{selectedModule.name}</h4>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {selectedModule.description || 'No description available'}
+                      </p>
+                      <div className="flex gap-2 mt-2">
+                        <Badge variant={selectedModule.is_active ? "default" : "secondary"}>
+                          {selectedModule.is_active ? "Active" : "Inactive"}
+                        </Badge>
+                      </div>
+                    </div>
+                  ) : null;
+                })()}
               </CardContent>
             </Card>
           )}
 
-          {/* Module Selection */}
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="module-select">Select Module</Label>
-              <Select value={selectedModuleId} onValueChange={setSelectedModuleId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose a module to assign..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableModules.length === 0 ? (
-                    <SelectItem value="no-modules" disabled>
-                      No additional modules available
-                    </SelectItem>
-                  ) : (
-                    availableModules.map((module) => (
-                      <SelectItem key={module.id} value={module.id}>
-                        <div>
-                          <div className="font-medium">{module.name}</div>
-                          {module.description && (
-                            <div className="text-sm text-gray-500">{module.description}</div>
-                          )}
-                        </div>
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Expiration Date (Optional) */}
-            <div className="space-y-2">
-              <Label htmlFor="expires-at" className="flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                Access Expiration (Optional)
-              </Label>
-              <input
-                id="expires-at"
-                type="datetime-local"
-                value={expiresAt}
-                onChange={(e) => setExpiresAt(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                min={new Date().toISOString().slice(0, 16)}
-              />
-              <p className="text-sm text-gray-600">
-                Leave empty for permanent access. Set a date/time for temporary access.
-              </p>
-            </div>
-          </div>
-          
-          {/* Action Buttons */}
-          <div className="flex justify-end space-x-3 pt-4">
+          <div className="flex gap-2 pt-4">
             <Button
               variant="outline"
-              onClick={handleClose}
+              onClick={() => onOpenChange(false)}
+              className="flex-1"
               disabled={isAssigning}
             >
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={handleAssignModule}
-              disabled={!selectedModuleId || isAssigning || availableModules.length === 0}
+              disabled={!selectedModuleId || isAssigning}
+              className="flex-1"
             >
               {isAssigning ? (
-                <div className="flex items-center space-x-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Assigning...</span>
-                </div>
-              ) : (
                 <>
-                  <Shield className="h-4 w-4 mr-2" />
-                  Assign Module
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Assigning...
                 </>
+              ) : (
+                'Assign Module'
               )}
             </Button>
           </div>

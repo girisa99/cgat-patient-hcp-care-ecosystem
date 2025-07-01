@@ -1,10 +1,13 @@
 
 import { useTypeSafeModuleTemplate } from '@/templates/hooks/useTypeSafeModuleTemplate';
+import { useModuleData } from './modules/useModuleData';
+import { useModuleMutations } from './modules/useModuleMutations';
 
 /**
- * Modules Hook - Now using Universal Template
+ * Modules Hook - Now using Universal Template with backward compatibility
  * 
- * Unified with the template system for consistent module management.
+ * Unified with the template system for consistent module management while
+ * maintaining all expected properties for existing components.
  */
 export const useModules = () => {
   const config = {
@@ -17,6 +20,8 @@ export const useModules = () => {
   };
 
   const templateResult = useTypeSafeModuleTemplate(config);
+  const { userModules, isLoadingUserModules } = useModuleData();
+  const { createModule, assignModule, assignModuleToRole, isCreating, isAssigning, isAssigningToRole } = useModuleMutations();
 
   // Module-specific filtering
   const modules = templateResult.items.filter((item: any) => 
@@ -30,6 +35,15 @@ export const useModules = () => {
     return modules.filter((module: any) => 
       module.name?.toLowerCase().includes(query.toLowerCase()) ||
       module.description?.toLowerCase().includes(query.toLowerCase())
+    );
+  };
+
+  // Module access check function
+  const hasModuleAccess = (moduleName: string) => {
+    if (!userModules) return false;
+    return userModules.some((module: any) => 
+      module.module_name?.toLowerCase() === moduleName.toLowerCase() ||
+      module.moduleName?.toLowerCase() === moduleName.toLowerCase()
     );
   };
 
@@ -49,17 +63,28 @@ export const useModules = () => {
   return {
     // Core functionality (backward compatible)
     modules,
+    userModules,
     isLoading: templateResult.isLoading,
+    isLoadingModules: templateResult.isLoading,
+    isLoadingUserModules,
     error: templateResult.error,
     refetch: templateResult.refetch,
     
     // Mutations (backward compatible)
-    createModule: templateResult.createItem,
+    createModule,
+    assignModule,
+    assignModuleToRole,
     updateModule: templateResult.updateItem,
     deleteModule: templateResult.deleteItem,
-    isCreating: templateResult.isCreating,
+    isCreating,
+    isCreatingModule: isCreating,
+    isAssigning,
+    isAssigningToRole,
     isUpdating: templateResult.isUpdating,
     isDeleting: templateResult.isDeleting,
+    
+    // Module access functionality
+    hasModuleAccess,
     
     // Enhanced functionality
     searchModules,

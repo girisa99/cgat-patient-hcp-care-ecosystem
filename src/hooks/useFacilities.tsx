@@ -1,24 +1,106 @@
 
 import { useTypeSafeModuleTemplate } from '@/templates/hooks/useTypeSafeModuleTemplate';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { Database } from '@/integrations/supabase/types';
+
+type FacilityType = Database['public']['Enums']['facility_type'];
 
 /**
- * Facilities Hook - Now using Universal Template
+ * Facilities Hook - Now using Universal Template with backward compatibility
  * 
- * Consolidated with the template system while preserving all facility-specific functionality.
+ * Consolidated with the template system while preserving all facility-specific functionality
+ * and expected properties for existing components.
  */
 export const useFacilities = () => {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
   const config = {
     tableName: 'facilities' as const,
     moduleName: 'Facilities',
     requiredFields: ['name', 'facility_type'],
     customValidation: (data: any) => {
       // Validate facility types
-      const validTypes = ['hospital', 'clinic', 'pharmacy', 'laboratory', 'imaging_center'];
+      const validTypes = ['treatmentFacility', 'referralFacility', 'prescriberFacility'];
       return validTypes.includes(data.facility_type);
     }
   };
 
   const templateResult = useTypeSafeModuleTemplate(config);
+
+  // Custom create facility mutation
+  const createFacilityMutation = useMutation({
+    mutationFn: async (facilityData: {
+      name: string;
+      facility_type: FacilityType;
+      address?: string;
+      phone?: string;
+      email?: string;
+      license_number?: string;
+      npi_number?: string;
+    }) => {
+      const { error } = await supabase
+        .from('facilities')
+        .insert(facilityData);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['facilities'] });
+      templateResult.refetch();
+      toast({
+        title: "Facility Created",
+        description: "New facility has been created successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create facility",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Custom update facility mutation
+  const updateFacilityMutation = useMutation({
+    mutationFn: async ({ facilityId, facilityData }: {
+      facilityId: string;
+      facilityData: Partial<{
+        name: string;
+        facility_type: FacilityType;
+        address: string | null;
+        phone: string | null;
+        email: string | null;
+        license_number: string | null;
+        npi_number: string | null;
+      }>;
+    }) => {
+      const { error } = await supabase
+        .from('facilities')
+        .update(facilityData)
+        .eq('id', facilityId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['facilities'] });
+      templateResult.refetch();
+      toast({
+        title: "Facility Updated",
+        description: "Facility has been updated successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update facility",
+        variant: "destructive",
+      });
+    }
+  });
 
   // Facility-specific filtering
   const facilities = templateResult.items.filter((item: any) => 
@@ -54,9 +136,9 @@ export const useFacilities = () => {
       typeDistribution,
       licensed,
       withNPI,
-      hospitals: typeDistribution.hospital || 0,
-      clinics: typeDistribution.clinic || 0,
-      pharmacies: typeDistribution.pharmacy || 0
+      treatmentFacilities: typeDistribution.treatmentFacility || 0,
+      referralFacilities: typeDistribution.referralFacility || 0,
+      prescriberFacilities: typeDistribution.prescriberFacility || 0
     };
   };
 
@@ -68,11 +150,13 @@ export const useFacilities = () => {
     refetch: templateResult.refetch,
     
     // Mutations (backward compatible)
-    createFacility: templateResult.createItem,
-    updateFacility: templateResult.updateItem,
+    createFacility: createFacilityMutation.mutate,
+    updateFacility: updateFacilityMutation.mutate,
     deleteFacility: templateResult.deleteItem,
     isCreating: templateResult.isCreating,
+    isCreatingFacility: createFacilityMutation.isPending,
     isUpdating: templateResult.isUpdating,
+    isUpdatingFacility: updateFacilityMutation.isPending,
     isDeleting: templateResult.isDeleting,
     
     // Enhanced functionality
