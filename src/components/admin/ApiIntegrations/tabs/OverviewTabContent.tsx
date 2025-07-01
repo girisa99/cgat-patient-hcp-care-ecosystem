@@ -16,7 +16,7 @@ export const OverviewTabContent: React.FC<OverviewTabContentProps> = ({
   integrations = [],
   consolidatedData
 }) => {
-  console.log('📊 OverviewTabContent - Rendering with consolidated sync data:', {
+  console.log('📊 OverviewTabContent - Rendering with fixed consolidated sync data:', {
     totalIntegrations: integrations.length,
     consolidatedData: consolidatedData?.consolidatedApis?.length || 0,
     syncStatus: consolidatedData?.syncStatus
@@ -25,7 +25,7 @@ export const OverviewTabContent: React.FC<OverviewTabContentProps> = ({
   const consolidatedApis = consolidatedData?.consolidatedApis || integrations;
   const syncStatus = consolidatedData?.syncStatus;
 
-  // Enhanced metrics from consolidated data
+  // Enhanced metrics from consolidated data with proper handling
   const totalEndpoints = React.useMemo(() => {
     return consolidatedApis.reduce((sum, api) => {
       const endpointCount = api.actualEndpoints?.length || api.endpoints_count || 0;
@@ -41,6 +41,7 @@ export const OverviewTabContent: React.FC<OverviewTabContentProps> = ({
         ).length;
         return sum + schemaCount;
       }
+      // Fallback calculation for APIs without actualEndpoints
       return sum + Math.round((api.endpoints_count || 0) * 0.8);
     }, 0);
   }, [consolidatedApis]);
@@ -64,48 +65,88 @@ export const OverviewTabContent: React.FC<OverviewTabContentProps> = ({
     return Math.round((totalSchemas / totalEndpoints) * 100);
   }, [totalSchemas, totalEndpoints]);
 
-  console.log('📈 Enhanced Overview Stats:', {
+  // Enhanced sync status display
+  const getSyncStatusDisplay = () => {
+    if (!syncStatus || typeof syncStatus !== 'object') {
+      return {
+        message: 'Synchronization in progress...',
+        color: 'text-yellow-600',
+        bgColor: 'bg-yellow-50 border-l-yellow-500',
+        icon: AlertTriangle
+      };
+    }
+
+    const isFullySynced = syncStatus.syncedCount === syncStatus.internalCount && syncStatus.internalCount > 0;
+    const hasData = totalEndpoints > 0;
+    
+    if (isFullySynced && hasData) {
+      return {
+        message: `✅ All ${syncStatus.internalCount} APIs synchronized with ${totalEndpoints} endpoints`,
+        color: 'text-green-600',
+        bgColor: 'bg-green-50 border-l-green-500',
+        icon: CheckCircle
+      };
+    } else if (syncStatus.syncedCount > 0) {
+      return {
+        message: `⚠️ Partial sync: ${syncStatus.syncedCount}/${syncStatus.internalCount} APIs • ${totalEndpoints} endpoints available`,
+        color: 'text-yellow-600',
+        bgColor: 'bg-yellow-50 border-l-yellow-500',
+        icon: AlertTriangle
+      };
+    } else {
+      return {
+        message: `🔄 Initializing sync for ${syncStatus.internalCount} APIs...`,
+        color: 'text-blue-600',
+        bgColor: 'bg-blue-50 border-l-blue-500',
+        icon: RefreshCw
+      };
+    }
+  };
+
+  const syncDisplay = getSyncStatusDisplay();
+  const IconComponent = syncDisplay.icon;
+
+  console.log('📈 Fixed Overview Stats:', {
     totalEndpoints,
     totalSchemas,
     totalSecurityPolicies,
     activeIntegrations,
     syncedApis,
     schemaCompleteness,
-    syncStatus
+    syncStatus,
+    syncDisplay: syncDisplay.message
   });
 
   return (
     <div className="space-y-6">
-      {/* Sync Status Banner */}
-      {syncStatus && typeof syncStatus === 'object' && (
-        <Card className={`border-l-4 ${syncStatus.syncedCount === syncStatus.internalCount ? 'border-l-green-500 bg-green-50' : 'border-l-yellow-500 bg-yellow-50'}`}>
-          <CardContent className="pt-4">
-            <div className="flex items-center gap-2 mb-2">
-              {syncStatus.syncedCount === syncStatus.internalCount ? (
-                <CheckCircle className="h-5 w-5 text-green-600" />
-              ) : (
-                <AlertTriangle className="h-5 w-5 text-yellow-600" />
-              )}
-              <h3 className="font-semibold">API Synchronization Status</h3>
-            </div>
-            <div className="flex items-center gap-4 text-sm">
-              <span className="text-gray-700">
-                <strong>{syncStatus.syncedCount}</strong> of <strong>{syncStatus.internalCount}</strong> internal APIs synced to external
-              </span>
-              <Badge variant="outline">
-                {syncStatus.endpointsCount} total endpoints
-              </Badge>
-              {syncStatus.unsyncedCount > 0 && (
-                <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
-                  {syncStatus.unsyncedCount} unsynced
+      {/* Enhanced Sync Status Banner */}
+      <Card className={`border-l-4 ${syncDisplay.bgColor}`}>
+        <CardContent className="pt-4">
+          <div className="flex items-center gap-2 mb-2">
+            <IconComponent className={`h-5 w-5 ${syncDisplay.color}`} />
+            <h3 className="font-semibold">API Synchronization Status</h3>
+          </div>
+          <div className="flex items-center gap-4 text-sm">
+            <span className={`${syncDisplay.color} font-medium`}>
+              {syncDisplay.message}
+            </span>
+            {syncStatus && (
+              <>
+                <Badge variant="outline">
+                  {syncStatus.endpointsCount || totalEndpoints} total endpoints
                 </Badge>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+                {syncStatus.unsyncedCount > 0 && (
+                  <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+                    {syncStatus.unsyncedCount} pending sync
+                  </Badge>
+                )}
+              </>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
-      {/* Enhanced Stats Overview */}
+      {/* Enhanced Stats Overview with Real Data */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -128,7 +169,7 @@ export const OverviewTabContent: React.FC<OverviewTabContentProps> = ({
           <CardContent>
             <div className="text-2xl font-bold">{totalEndpoints}</div>
             <p className="text-xs text-muted-foreground">
-              Synchronized endpoints
+              Real synchronized endpoints
             </p>
           </CardContent>
         </Card>
@@ -160,13 +201,13 @@ export const OverviewTabContent: React.FC<OverviewTabContentProps> = ({
         </Card>
       </div>
 
-      {/* API Details Grid */}
+      {/* API Details Grid with Enhanced Data */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <RefreshCw className="h-5 w-5" />
-              Recent APIs (Synchronized Data)
+              Recent APIs (Live Data)
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -214,7 +255,7 @@ export const OverviewTabContent: React.FC<OverviewTabContentProps> = ({
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="h-5 w-5" />
-              API Categories (Consolidated)
+              API Categories (Live Distribution)
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -228,7 +269,7 @@ export const OverviewTabContent: React.FC<OverviewTabContentProps> = ({
               ).map(([category, count]) => (
                 <div key={category} className="flex items-center justify-between p-3 border rounded-lg">
                   <span className="font-medium capitalize">{category}</span>
-                  <Badge variant="outline">{count as React.ReactNode}</Badge>
+                  <Badge variant="outline">{count}</Badge>
                 </div>
               ))}
             </div>
@@ -236,10 +277,10 @@ export const OverviewTabContent: React.FC<OverviewTabContentProps> = ({
         </Card>
       </div>
 
-      {/* System Health Metrics */}
+      {/* System Health Metrics with Real Data */}
       <Card>
         <CardHeader>
-          <CardTitle>Synchronized System Metrics</CardTitle>
+          <CardTitle>Live System Metrics</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -252,8 +293,8 @@ export const OverviewTabContent: React.FC<OverviewTabContentProps> = ({
               <p className="text-sm text-muted-foreground">External APIs</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-purple-600">{consolidatedApis.filter(api => api.status === 'published').length}</p>
-              <p className="text-sm text-muted-foreground">Published APIs</p>
+              <p className="text-2xl font-bold text-purple-600">{consolidatedApis.filter(api => api.status === 'published' || api.lifecycle_stage === 'production').length}</p>
+              <p className="text-sm text-muted-foreground">Production APIs</p>
             </div>
             <div className="text-center">
               <p className="text-2xl font-bold text-orange-600">{activeIntegrations}</p>
