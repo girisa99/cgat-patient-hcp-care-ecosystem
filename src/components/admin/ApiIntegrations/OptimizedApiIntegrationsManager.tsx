@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Activity, Database, Link, Plus } from 'lucide-react';
+import { useApiServices } from '@/hooks/useApiServices';
 
 interface ApiIntegration {
   id: string;
@@ -15,10 +16,10 @@ interface ApiIntegration {
 }
 
 interface OptimizedApiIntegrationsManagerProps {
-  integrations: ApiIntegration[];
-  onCreateIntegration: () => void;
-  onEditIntegration: (id: string) => void;
-  onDeleteIntegration: (id: string) => void;
+  integrations?: ApiIntegration[];
+  onCreateIntegration?: () => void;
+  onEditIntegration?: (id: string) => void;
+  onDeleteIntegration?: (id: string) => void;
 }
 
 // Memoized integration card to prevent unnecessary re-renders
@@ -86,11 +87,48 @@ const IntegrationCard = memo(({
 IntegrationCard.displayName = 'IntegrationCard';
 
 const OptimizedApiIntegrationsManager: React.FC<OptimizedApiIntegrationsManagerProps> = memo(({
-  integrations,
+  integrations: propIntegrations,
   onCreateIntegration,
   onEditIntegration,
   onDeleteIntegration
 }) => {
+  // Use hook data if no props provided (single source of truth)
+  const { integrations: hookIntegrations } = useApiServices();
+  
+  // Convert hook data to expected format if needed
+  const integrations = propIntegrations || (hookIntegrations || []).map(api => ({
+    id: api.id,
+    name: api.name || 'Unnamed API',
+    status: (api.status as 'active' | 'inactive' | 'error') || 'inactive',
+    type: (api.type as 'internal' | 'external') || 'internal',
+    endpoint: api.base_url || api.baseUrl || 'No endpoint',
+    lastSync: api.updated_at || api.updatedAt || 'Never'
+  }));
+
+  const handleCreateIntegration = useCallback(() => {
+    if (onCreateIntegration) {
+      onCreateIntegration();
+    } else {
+      console.log('Create integration clicked');
+    }
+  }, [onCreateIntegration]);
+
+  const handleEditIntegration = useCallback((id: string) => {
+    if (onEditIntegration) {
+      onEditIntegration(id);
+    } else {
+      console.log('Edit integration:', id);
+    }
+  }, [onEditIntegration]);
+
+  const handleDeleteIntegration = useCallback((id: string) => {
+    if (onDeleteIntegration) {
+      onDeleteIntegration(id);
+    } else {
+      console.log('Delete integration:', id);
+    }
+  }, [onDeleteIntegration]);
+
   // Memoize statistics to prevent recalculation on every render
   const stats = useMemo(() => {
     const active = integrations.filter(i => i.status === 'active').length;
@@ -109,7 +147,7 @@ const OptimizedApiIntegrationsManager: React.FC<OptimizedApiIntegrationsManagerP
             Manage your API connections and integrations
           </p>
         </div>
-        <Button onClick={onCreateIntegration}>
+        <Button onClick={handleCreateIntegration}>
           <Plus className="h-4 w-4 mr-2" />
           Add Integration
         </Button>
@@ -149,11 +187,20 @@ const OptimizedApiIntegrationsManager: React.FC<OptimizedApiIntegrationsManagerP
           <IntegrationCard
             key={integration.id}
             integration={integration}
-            onEdit={onEditIntegration}
-            onDelete={onDeleteIntegration}
+            onEdit={handleEditIntegration}
+            onDelete={handleDeleteIntegration}
           />
         ))}
       </div>
+
+      {integrations.length === 0 && (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <Activity className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <p className="text-muted-foreground">No API integrations found.</p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 });

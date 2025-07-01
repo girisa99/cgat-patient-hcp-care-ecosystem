@@ -4,15 +4,16 @@ import { UserCheck } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PatientCard } from './PatientCard';
 import { Progress } from '@/components/ui/progress';
+import { useUnifiedUserManagement } from '@/hooks/useUnifiedUserManagement';
 
 interface PatientsListProps {
-  patients: any[];
-  onView: (patientId: string) => void;
-  onEdit: (patientId: string) => void;
-  onDeactivate: (patientId: string, patientName: string) => void;
-  isDeactivating: boolean;
-  isLoading: boolean;
-  searchTerm: string;
+  patients?: any[];
+  onView?: (patientId: string) => void;
+  onEdit?: (patientId: string) => void;
+  onDeactivate?: (patientId: string, patientName: string) => void;
+  isDeactivating?: boolean;
+  isLoading?: boolean;
+  searchTerm?: string;
   onBulkDeactivate?: (selectedPatients: string[]) => void;
   isBulkProcessing?: boolean;
   bulkProgress?: number;
@@ -21,21 +22,55 @@ interface PatientsListProps {
 }
 
 export const PatientsList: React.FC<PatientsListProps> = ({
-  patients = [], // Default to empty array to prevent undefined errors
+  patients: propPatients,
   onView,
   onEdit,
   onDeactivate,
-  isDeactivating,
-  isLoading,
-  searchTerm,
+  isDeactivating = false,
+  isLoading: propIsLoading,
+  searchTerm = '',
   onBulkDeactivate,
   isBulkProcessing = false,
   bulkProgress = 0,
   isMobileApp = false,
   isOnline = true
 }) => {
+  // Use hook data if no props provided (single source of truth)
+  const { users, isLoading: hookIsLoading } = useUnifiedUserManagement();
+  
+  // Get patients from hook if not provided via props
+  const patients = propPatients || users.filter(user => 
+    user.user_roles?.some(userRole => userRole.roles?.name === 'patient' || userRole.roles?.name === 'patientCaregiver')
+  );
+  
+  const isLoading = propIsLoading !== undefined ? propIsLoading : hookIsLoading;
+
   // Ensure patients is always an array
   const safePatients = Array.isArray(patients) ? patients : [];
+
+  const handleView = (patientId: string) => {
+    if (onView) {
+      onView(patientId);
+    } else {
+      console.log('View patient:', patientId);
+    }
+  };
+
+  const handleEdit = (patientId: string) => {
+    if (onEdit) {
+      onEdit(patientId);
+    } else {
+      console.log('Edit patient:', patientId);
+    }
+  };
+
+  const handleDeactivate = (patientId: string, patientName: string) => {
+    if (onDeactivate) {
+      onDeactivate(patientId, patientName);
+    } else {
+      console.log('Deactivate patient:', patientId, patientName);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -89,9 +124,9 @@ export const PatientsList: React.FC<PatientsListProps> = ({
             <PatientCard
               key={patient.id}
               patient={patient}
-              onView={onView}
-              onEdit={onEdit}
-              onDeactivate={onDeactivate}
+              onView={handleView}
+              onEdit={handleEdit}
+              onDeactivate={handleDeactivate}
               isDeactivating={isDeactivating}
             />
           ))}
