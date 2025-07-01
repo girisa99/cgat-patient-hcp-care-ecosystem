@@ -230,7 +230,6 @@ const ApiIntegrationsManager = () => {
         onViewDocumentation={handleViewDocumentation}
         onCopyUrl={handleCopyUrl}
         onTestEndpoint={handleTestEndpoint}
-        onClose={() => setSelectedIntegration(null)}
       />
     </div>
   );

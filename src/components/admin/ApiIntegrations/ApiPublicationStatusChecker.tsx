@@ -221,7 +221,7 @@ const ApiPublicationStatusChecker = () => {
             <p>Select an API above to check its publication status</p>
           </div>
         )}
-      </div>
+      </CardContent>
     </Card>
   );
 };

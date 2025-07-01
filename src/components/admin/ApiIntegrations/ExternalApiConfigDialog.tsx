@@ -10,20 +10,17 @@ interface ExternalApiConfigDialogProps {
   api: any;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onClose?: () => void;
 }
 
 const ExternalApiConfigDialog: React.FC<ExternalApiConfigDialogProps> = ({
   api,
   open,
-  onOpenChange,
-  onClose
+  onOpenChange
 }) => {
   if (!api) return null;
 
   const handleClose = () => {
     onOpenChange(false);
-    onClose?.();
   };
 
   return (

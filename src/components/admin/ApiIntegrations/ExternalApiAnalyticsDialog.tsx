@@ -9,20 +9,17 @@ interface ExternalApiAnalyticsDialogProps {
   api: any;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onClose?: () => void;
 }
 
 const ExternalApiAnalyticsDialog: React.FC<ExternalApiAnalyticsDialogProps> = ({
   api,
   open,
-  onOpenChange,
-  onClose
+  onOpenChange
 }) => {
   if (!api) return null;
 
   const handleClose = () => {
     onOpenChange(false);
-    onClose?.();
   };
 
   return (
