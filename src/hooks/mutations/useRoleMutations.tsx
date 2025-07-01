@@ -66,14 +66,15 @@ export const useRoleMutations = () => {
     },
     onSuccess: () => {
       console.log('🔄 Invalidating users cache after role assignment...');
-      queryClient.invalidateQueries({ queryKey: createUserQueryKey('all') });
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['unified-user-management'] });
       toast({
         title: "Role Assigned",
-        description: "User role has been updated successfully.",
+        description: "User role has been assigned successfully.",
       });
     },
     onError: (error: any) => {
-      console.error('❌ Assign role error:', error);
+      console.error('❌ Role assignment failed:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to assign role",
@@ -82,8 +83,63 @@ export const useRoleMutations = () => {
     }
   });
 
+  const removeRoleMutation = useMutation({
+    mutationFn: async ({ userId, roleName }: { userId: string; roleName: UserRole }) => {
+      console.log('🔄 Removing role via database operations:', roleName, 'from user:', userId);
+      
+      try {
+        const { data: role, error: roleError } = await supabase
+          .from('roles')
+          .select('id')
+          .eq('name', roleName)
+          .single();
+
+        if (roleError || !role) {
+          console.error('❌ Role not found:', roleName, roleError);
+          throw new Error(`Role '${roleName}' not found`);
+        }
+
+        const { error: deleteError } = await supabase
+          .from('user_roles')
+          .delete()
+          .eq('user_id', userId)
+          .eq('role_id', role.id);
+
+        if (deleteError) {
+          console.error('❌ Error removing role:', deleteError);
+          throw new Error(deleteError.message);
+        }
+
+        console.log('✅ Role removal successful!');
+        return { success: true };
+      } catch (err) {
+        console.error('💥 Exception in role removal:', err);
+        throw err;
+      }
+    },
+    onSuccess: () => {
+      console.log('🔄 Invalidating users cache after role removal...');
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['unified-user-management'] });
+      toast({
+        title: "Role Removed",
+        description: "User role has been removed successfully.",
+      });
+    },
+    onError: (error: any) => {
+      console.error('❌ Role removal failed:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to remove role",
+        variant: "destructive",
+      });
+    }
+  });
+
   return {
     assignRole: assignRoleMutation.mutate,
-    isAssigningRole: assignRoleMutation.isPending
+    removeRole: removeRoleMutation.mutate,
+    isAssigningRole: assignRoleMutation.isPending,
+    isRemovingRole: removeRoleMutation.isPending,
   };
 };

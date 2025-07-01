@@ -3710,6 +3710,10 @@ export type Database = {
         Args: { check_user_id: string }
         Returns: boolean
       }
+      is_admin_user_safe: {
+        Args: { check_user_id: string }
+        Returns: boolean
+      }
       log_onboarding_audit: {
         Args: {
           p_onboarding_id: string

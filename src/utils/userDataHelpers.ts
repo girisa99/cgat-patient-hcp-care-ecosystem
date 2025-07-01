@@ -1,128 +1,106 @@
+
 /**
- * User Data Management Utilities
- * 
- * This file contains helper functions and constants to ensure consistent
- * user data handling across ALL areas of the application.
- * 
- * CRITICAL: All user data MUST come from auth.users table via edge functions.
+ * User Data Helpers - Consolidated utilities for user management
+ * SINGLE SOURCE OF TRUTH for user data operations
  */
 
 import { Database } from '@/integrations/supabase/types';
-import type { UserWithRoles } from '@/types/userManagement';
 
-type UserRole = Database['public']['Enums']['user_role'];
+export type UserRole = Database['public']['Enums']['user_role'];
 
-export const USER_ROLES = {
-  SUPER_ADMIN: 'superAdmin' as const,
-  CASE_MANAGER: 'caseManager' as const,
-  HEALTHCARE_PROVIDER: 'healthcareProvider' as const,
-  NURSE: 'nurse' as const,
-  PATIENT_CAREGIVER: 'patientCaregiver' as const,
-  ONBOARDING_TEAM: 'onboardingTeam' as const,
-} as const;
+export interface UserWithRoles {
+  id: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  phone?: string | null;
+  created_at: string;
+  updated_at?: string;
+  facility_id?: string | null;
+  email_confirmed_at?: string | null;
+  last_sign_in_at?: string | null;
+  email_confirmed?: boolean;
+  user_roles: {
+    roles: {
+      name: string;
+      description: string | null;
+    };
+  }[];
+  facilities?: {
+    id: string;
+    name: string;
+    facility_type: string;
+  } | null;
+}
 
 /**
- * Validates that a user object has the correct role
+ * Create standardized query key for user-related queries
  */
-export const userHasRole = (user: UserWithRoles, role: UserRole): boolean => {
-  if (!user?.user_roles || !Array.isArray(user.user_roles)) {
-    console.warn('⚠️ User object missing user_roles array:', user?.email);
-    return false;
+export const createUserQueryKey = (prefix: string, additionalKeys?: (string | number)[]): string[] => {
+  const baseKey = [prefix];
+  if (additionalKeys) {
+    baseKey.push(...additionalKeys.map(key => String(key)));
   }
-  
-  return user.user_roles.some((ur: any) => ur.roles?.name === role);
+  return baseKey;
 };
 
 /**
- * Validates user data structure to ensure consistency
+ * Extract user roles from UserWithRoles object
  */
-export const validateUserData = (user: any) => {
-  const requiredFields = ['id', 'email', 'created_at'];
-  const missingFields = requiredFields.filter(field => !user[field]);
-  
-  if (missingFields.length > 0) {
-    console.error('❌ User data validation failed. Missing fields:', missingFields, user);
-    throw new Error(`Invalid user data: missing ${missingFields.join(', ')}`);
+export const extractUserRoles = (user: UserWithRoles): string[] => {
+  return user.user_roles?.map(ur => ur.roles.name) || [];
+};
+
+/**
+ * Check if user has specific role
+ */
+export const userHasRole = (user: UserWithRoles, roleName: string): boolean => {
+  const roles = extractUserRoles(user);
+  return roles.includes(roleName);
+};
+
+/**
+ * Check if user has admin privileges
+ */
+export const userIsAdmin = (user: UserWithRoles): boolean => {
+  return userHasRole(user, 'superAdmin') || userHasRole(user, 'onboardingTeam');
+};
+
+/**
+ * Format user display name
+ */
+export const formatUserDisplayName = (user: UserWithRoles): string => {
+  if (user.first_name && user.last_name) {
+    return `${user.first_name} ${user.last_name}`;
   }
-  
-  return true;
+  if (user.first_name) {
+    return user.first_name;
+  }
+  return user.email;
 };
 
 /**
- * Standardized error messages for user data operations
+ * Get user's primary role (first role if multiple)
  */
-export const USER_ERROR_MESSAGES = {
-  FETCH_FAILED: 'Failed to fetch user data from auth.users table',
-  INVALID_ROLE: 'User does not have required role',
-  EDGE_FUNCTION_ERROR: 'Error calling manage-user-profiles edge function',
-  DATA_VALIDATION_FAILED: 'User data validation failed',
-  UNAUTHORIZED_ACCESS: 'Unauthorized access to user data'
-} as const;
-
-/**
- * Creates a standardized query key for user-related cache entries
- */
-export const createUserQueryKey = (operation: string, filters?: Record<string, any>) => {
-  const baseKey = ['users', operation];
-  return filters ? [...baseKey, filters] : baseKey;
+export const getUserPrimaryRole = (user: UserWithRoles): string | null => {
+  const roles = extractUserRoles(user);
+  return roles.length > 0 ? roles[0] : null;
 };
 
 /**
- * Filters users by specific roles
+ * Filter users by role
  */
-export const filterUsersByRole = (users: UserWithRoles[], role: UserRole): UserWithRoles[] => {
-  return users.filter(user => userHasRole(user, role));
+export const filterUsersByRole = (users: UserWithRoles[], roleName: string): UserWithRoles[] => {
+  return users.filter(user => userHasRole(user, roleName));
 };
 
 /**
- * Filters users by multiple roles
+ * Sort users by name
  */
-export const filterUsersByRoles = (users: UserWithRoles[], roles: UserRole[]): UserWithRoles[] => {
-  return users.filter(user => roles.some(role => userHasRole(user, role)));
+export const sortUsersByName = (users: UserWithRoles[]): UserWithRoles[] => {
+  return [...users].sort((a, b) => {
+    const nameA = formatUserDisplayName(a).toLowerCase();
+    const nameB = formatUserDisplayName(b).toLowerCase();
+    return nameA.localeCompare(nameB);
+  });
 };
-
-/**
- * Gets users with administrative access (superAdmin, caseManager, onboardingTeam)
- */
-export const getAdminUsers = (users: UserWithRoles[]): UserWithRoles[] => {
-  return filterUsersByRoles(users, [
-    USER_ROLES.SUPER_ADMIN,
-    USER_ROLES.CASE_MANAGER,
-    USER_ROLES.ONBOARDING_TEAM
-  ]);
-};
-
-/**
- * Gets healthcare staff users (healthcareProvider, nurse)
- */
-export const getHealthcareStaff = (users: UserWithRoles[]): UserWithRoles[] => {
-  return filterUsersByRoles(users, [
-    USER_ROLES.HEALTHCARE_PROVIDER,
-    USER_ROLES.NURSE
-  ]);
-};
-
-/**
- * Gets patient users only
- */
-export const getPatientUsers = (users: UserWithRoles[]): UserWithRoles[] => {
-  return filterUsersByRole(users, USER_ROLES.PATIENT_CAREGIVER);
-};
-
-/**
- * DEVELOPMENT GUIDELINES:
- * 
- * When working with user data across the application:
- * 1. Always import and use these utilities
- * 2. Use userHasRole() to validate user roles
- * 3. Use validateUserData() before processing user records
- * 4. Use standardized error messages for consistent UX
- * 5. Use createUserQueryKey() for cache management
- * 6. Use filter functions for role-based operations
- * 
- * NEVER:
- * - Query profiles table directly for user data
- * - Bypass role validation
- * - Create custom user data fetching logic
- * - Use different query patterns across components
- */

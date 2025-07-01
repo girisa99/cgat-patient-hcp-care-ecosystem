@@ -1,228 +1,198 @@
 
-import React, { useState } from 'react';
-import { useApiIntegrations } from '@/hooks/useApiIntegrations.tsx';
-import { usePublishedApiIntegration } from '@/hooks/usePublishedApiIntegration';
-import IntegrationDetailView from './IntegrationDetailView';
-import { LoadingState } from '../shared/LoadingState';
-import { ErrorState } from '../shared/ErrorState';
-import { ApiIntegrationsStats } from './ApiIntegrationsStats';
+import React, { useState, useCallback } from 'react';
+import { useApiIntegrations } from '@/hooks/useApiIntegrations';
+import { SearchInput } from '@/components/ui/search-input';
 import { ApiIntegrationsTabs } from './ApiIntegrationsTabs';
-import { Input } from '@/components/ui/input';
-import { Search, Settings, Code, Globe, Key, BarChart3, Zap } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { Card, CardContent } from '@/components/ui/card';
+import { AlertCircle } from 'lucide-react';
 
-const ApiIntegrationsManager = () => {
-  const { 
-    integrations, 
-    isLoading, 
+const ApiIntegrationsManager: React.FC = () => {
+  const [activeTab, setActiveTab] = useState('overview');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+
+  const {
+    integrations,
     internalApis,
     externalApis,
-    downloadPostmanCollection,
-    testEndpoint
-  } = useApiIntegrations();
-  
-  const { publishedApisForDevelopers, isLoadingPublishedApis } = usePublishedApiIntegration();
-  
-  const [activeTab, setActiveTab] = useState('overview');
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedIntegration, setSelectedIntegration] = useState<any>(null);
-
-  console.log('🔍 API Services Manager State:', {
-    integrations: integrations?.length || 0,
-    internalApis: internalApis?.length || 0,
-    externalApis: externalApis?.length || 0,
-    publishedForDevelopers: publishedApisForDevelopers?.length || 0,
-    activeTab,
     isLoading,
-    isLoadingPublishedApis
+    downloadPostmanCollection,
+    testEndpoint,
+    isDownloading,
+    isTesting,
+    meta
+  } = useApiIntegrations();
+
+  console.log('🔍 ApiIntegrationsManager - Data loaded:', {
+    totalIntegrations: integrations.length,
+    internalCount: internalApis.length,
+    externalCount: externalApis.length,
+    meta,
+    isLoading
   });
 
-  // Quick stats for the overview
-  const quickStats = {
-    totalIntegrations: integrations?.length || 0,
-    internalApis: internalApis?.length || 0,
-    externalApis: externalApis?.length || 0,
-    publishedApis: publishedApisForDevelopers?.length || 0,
-    developerApis: publishedApisForDevelopers?.length || 0,
-    activeEndpoints: integrations?.reduce((sum, i) => {
-      const endpointCount = (i as any).integrationType === 'external' 
-        ? (i as any).external_api_endpoints?.length || 0 
-        : (i as any).endpoints_count || 0;
-      return sum + endpointCount;
-    }, 0) || 0
-  };
+  // Filter integrations based on search term
+  const filteredIntegrations = React.useMemo(() => {
+    if (!searchTerm.trim()) return integrations;
+    
+    return integrations.filter((integration: any) => {
+      const name = integration.name || integration.external_name || '';
+      const description = integration.description || integration.external_description || '';
+      const category = integration.category || '';
+      
+      return (
+        name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        category.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    });
+  }, [integrations, searchTerm]);
 
-  const handleDownloadCollection = (integrationId: string) => {
-    if (downloadPostmanCollection) {
-      downloadPostmanCollection(integrationId);
-    }
-  };
+  // Filter APIs by type for tabs
+  const filteredInternalApis = React.useMemo(() => {
+    if (!searchTerm.trim()) return internalApis;
+    
+    return internalApis.filter((api: any) => {
+      const name = api.name || '';
+      const description = api.description || '';
+      const category = api.category || '';
+      
+      return (
+        name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        category.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    });
+  }, [internalApis, searchTerm]);
 
-  const handleViewDetails = (integrationId: string) => {
-    const integration = integrations?.find(i => i.id === integrationId);
-    if (integration) {
-      const integrationWithDescription = {
-        ...integration,
-        description: (integration as any).integrationType === 'external' 
-          ? (integration as any).external_description || 'No description provided'
-          : (integration as any).description || 'No description provided'
-      };
-      setSelectedIntegration(integrationWithDescription);
-    }
-  };
+  const filteredExternalApis = React.useMemo(() => {
+    if (!searchTerm.trim()) return externalApis;
+    
+    return externalApis.filter((api: any) => {
+      const name = api.external_name || api.name || '';
+      const description = api.external_description || api.description || '';
+      const category = api.category || '';
+      
+      return (
+        name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        category.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    });
+  }, [externalApis, searchTerm]);
 
-  const handleViewDocumentation = (integrationId: string) => {
-    console.log('Opening documentation for integration:', integrationId);
-  };
+  // Create published APIs list (external APIs with published status)
+  const publishedApis = React.useMemo(() => {
+    return externalApis.filter((api: any) => api.status === 'published');
+  }, [externalApis]);
 
-  const handleCopyUrl = (url: string) => {
+  const handleTabChange = useCallback((value: string) => {
+    setActiveTab(value);
+  }, []);
+
+  const handleDownloadCollection = useCallback((id: string) => {
+    console.log('📥 Downloading Postman collection for:', id);
+    downloadPostmanCollection(id);
+  }, [downloadPostmanCollection]);
+
+  const handleViewDetails = useCallback((id: string) => {
+    console.log('👁️ Viewing details for integration:', id);
+    // TODO: Implement view details functionality
+  }, []);
+
+  const handleViewDocumentation = useCallback((id: string) => {
+    console.log('📚 Viewing documentation for integration:', id);
+    // TODO: Implement view documentation functionality
+  }, []);
+
+  const handleCopyUrl = useCallback((url: string) => {
     navigator.clipboard.writeText(url);
-  };
+    console.log('📋 Copied URL to clipboard:', url);
+  }, []);
 
-  const handleTestEndpoint = async (integrationId: string, endpointId?: string) => {
-    try {
-      if (testEndpoint) {
-        await testEndpoint({ integrationId, endpointId });
-      }
-    } catch (error) {
-      console.error('Error testing endpoint:', error);
-    }
-  };
+  const handleTestEndpoint = useCallback(async (integrationId: string, endpointId?: string) => {
+    console.log('🧪 Testing endpoint:', integrationId, endpointId);
+    await testEndpoint({ integrationId, endpointId });
+  }, [testEndpoint]);
 
-  if (isLoading || isLoadingPublishedApis) {
-    return <LoadingState title="API Services" description="Loading comprehensive API management tools..." />;
-  }
-
-  if (selectedIntegration) {
+  if (isLoading) {
     return (
-      <IntegrationDetailView
-        integrationId={selectedIntegration.id}
-        onBack={() => setSelectedIntegration(null)}
-      />
+      <div className="flex items-center justify-center min-h-[400px]">
+        <LoadingSpinner size="lg" />
+      </div>
     );
   }
 
   return (
     <div className="space-y-6">
       {/* Header Section */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold">API Services Hub</h1>
-          <p className="text-muted-foreground mt-2">
-            Complete API lifecycle management - from development to consumption
+          <h1 className="text-2xl font-bold text-gray-900">API Services</h1>
+          <p className="text-gray-600">
+            Manage your API integrations, endpoints, and developer tools
           </p>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="relative w-72">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input
-              placeholder="Search APIs, endpoints, documentation..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          <Button variant="outline">
-            <Settings className="h-4 w-4 mr-2" />
-            Settings
-          </Button>
+        
+        <div className="flex items-center gap-2 text-sm text-gray-500">
+          <span>Total APIs: {meta.totalIntegrations}</span>
+          <span>•</span>
+          <span>Internal: {meta.internalCount}</span>
+          <span>•</span>
+          <span>External: {meta.externalCount}</span>
         </div>
       </div>
 
-      {/* Quick Stats Overview */}
-      <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center">
-              <Code className="h-4 w-4 mr-2 text-blue-500" />
-              Total APIs
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{quickStats.totalIntegrations}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center">
-              <Globe className="h-4 w-4 mr-2 text-green-500" />
-              Internal
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{quickStats.internalApis}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center">
-              <Zap className="h-4 w-4 mr-2 text-orange-500" />
-              External
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{quickStats.externalApis}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center">
-              <Key className="h-4 w-4 mr-2 text-purple-500" />
-              Published
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{quickStats.publishedApis}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center">
-              <BarChart3 className="h-4 w-4 mr-2 text-red-500" />
-              Developer
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{quickStats.developerApis}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center">
-              <Globe className="h-4 w-4 mr-2 text-indigo-500" />
-              Endpoints
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{quickStats.activeEndpoints}</div>
-          </CardContent>
-        </Card>
+      {/* Search Section */}
+      <div className="max-w-md">
+        <SearchInput
+          placeholder="Search APIs by name, description, or category..."
+          value={searchTerm}
+          onChange={setSearchTerm}
+          className="w-full"
+        />
       </div>
 
-      {/* Detailed Stats */}
-      <ApiIntegrationsStats
-        totalIntegrations={integrations?.length || 0}
-        internalApis={internalApis?.length || 0}
-        externalApis={externalApis?.length || 0}
-        publishedApis={publishedApisForDevelopers?.length || 0}
-      />
+      {/* Debug Information (only in development) */}
+      {process.env.NODE_ENV === 'development' && (
+        <Card className="border-blue-200 bg-blue-50">
+          <CardContent className="pt-4">
+            <div className="text-sm text-blue-800">
+              <strong>Debug Info:</strong> {meta.dataSource} | 
+              Total: {meta.totalIntegrations} | 
+              Internal: {meta.internalCount} | 
+              External: {meta.externalCount} | 
+              Endpoints: {meta.endpointsCount}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-      {/* Main Tabs Interface */}
+      {/* No Data State */}
+      {!isLoading && integrations.length === 0 && (
+        <Card className="border-yellow-200 bg-yellow-50">
+          <CardContent className="flex items-center gap-3 pt-4">
+            <AlertCircle className="h-5 w-5 text-yellow-600" />
+            <div>
+              <p className="text-yellow-800 font-medium">No API Services Found</p>
+              <p className="text-yellow-700 text-sm">
+                Get started by creating your first API integration or importing external APIs.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Main Tabs Content */}
       <ApiIntegrationsTabs
         activeTab={activeTab}
-        onTabChange={setActiveTab}
+        onTabChange={handleTabChange}
         searchTerm={searchTerm}
-        integrations={integrations || []}
-        internalApis={internalApis || []}
-        externalApis={externalApis || []}
-        publishedApis={publishedApisForDevelopers || []}
+        integrations={filteredIntegrations}
+        internalApis={filteredInternalApis}
+        externalApis={filteredExternalApis}
+        publishedApis={publishedApis}
         createDialogOpen={createDialogOpen}
         onCreateDialogChange={setCreateDialogOpen}
         onDownloadCollection={handleDownloadCollection}
@@ -231,6 +201,19 @@ const ApiIntegrationsManager = () => {
         onCopyUrl={handleCopyUrl}
         onTestEndpoint={handleTestEndpoint}
       />
+
+      {/* Loading States */}
+      {(isDownloading || isTesting) && (
+        <div className="fixed bottom-4 right-4 bg-blue-100 border border-blue-300 rounded-lg p-3">
+          <div className="flex items-center gap-2 text-blue-800">
+            <LoadingSpinner size="sm" />
+            <span className="text-sm">
+              {isDownloading && 'Downloading collection...'}
+              {isTesting && 'Testing endpoint...'}
+            </span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
