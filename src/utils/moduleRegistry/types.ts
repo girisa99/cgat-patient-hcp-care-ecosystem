@@ -7,10 +7,13 @@ export interface ComponentServiceInfo {
   name: string;
   type: 'component' | 'service' | 'hook';
   path: string;
+  filePath?: string; // Optional for backward compatibility
   description?: string;
   isProtected?: boolean;
   dependencies?: string[];
   version?: string;
+  permissions?: string[]; // Added for RBAC functionality
+  lastModified?: string; // Added for tracking changes
 }
 
 export interface RegisteredModule {
@@ -20,6 +23,7 @@ export interface RegisteredModule {
   status: 'active' | 'deprecated' | 'development';
   tableName?: string;
   requiredFields?: string[];
+  optionalFields?: string[]; // Added missing property
   components?: ComponentServiceInfo[];
   services?: ComponentServiceInfo[];
   hooks?: ComponentServiceInfo[];

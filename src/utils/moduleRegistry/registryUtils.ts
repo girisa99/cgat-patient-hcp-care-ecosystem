@@ -51,8 +51,7 @@ export const initializeDefaultModules = (registry: ModuleRegistry): void => {
       requiredFields: ['id', 'email'],
       optionalFields: ['first_name', 'last_name'],
       version: '1.0.0',
-      lastUpdated: new Date().toISOString(),
-      dependencies: [],
+      lastUpdated: new Date(),
       status: 'active',
       description: 'User management module'
     },
@@ -62,8 +61,7 @@ export const initializeDefaultModules = (registry: ModuleRegistry): void => {
       requiredFields: ['id', 'name'],
       optionalFields: ['address', 'phone'],
       version: '1.0.0',
-      lastUpdated: new Date().toISOString(),
-      dependencies: [],
+      lastUpdated: new Date(),
       status: 'active',
       description: 'Facility management module'
     }

@@ -11,7 +11,7 @@ export const scanForRealComponents = (moduleName: string): ComponentServiceInfo[
     {
       name: `${moduleName}List`,
       type: 'component',
-      filePath: `src/components/${moduleName.toLowerCase()}/${moduleName}List.tsx`,
+      path: `src/components/${moduleName.toLowerCase()}/${moduleName}List.tsx`,
       isProtected: false,
       permissions: ['read'],
       lastModified: new Date().toISOString()
@@ -19,7 +19,7 @@ export const scanForRealComponents = (moduleName: string): ComponentServiceInfo[
     {
       name: `Create${moduleName}Dialog`,
       type: 'component',
-      filePath: `src/components/${moduleName.toLowerCase()}/Create${moduleName}Dialog.tsx`,
+      path: `src/components/${moduleName.toLowerCase()}/Create${moduleName}Dialog.tsx`,
       isProtected: true,
       permissions: ['create'],
       lastModified: new Date().toISOString()
@@ -34,7 +34,7 @@ export const scanForRealHooks = (moduleName: string): ComponentServiceInfo[] => 
     {
       name: `use${moduleName}`,
       type: 'hook',
-      filePath: `src/hooks/use${moduleName}.tsx`,
+      path: `src/hooks/use${moduleName}.tsx`,
       isProtected: false,
       permissions: ['read'],
       lastModified: new Date().toISOString()
@@ -49,7 +49,7 @@ export const scanForRealServices = (moduleName: string): ComponentServiceInfo[] 
     {
       name: `${moduleName}Service`,
       type: 'service',
-      filePath: `src/services/${moduleName}Service.ts`,
+      path: `src/services/${moduleName}Service.ts`,
       isProtected: true,
       permissions: ['read', 'write'],
       lastModified: new Date().toISOString()

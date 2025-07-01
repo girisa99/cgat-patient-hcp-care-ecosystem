@@ -178,25 +178,19 @@ export const useConsolidatedDataImport = () => {
   };
 
   return {
-    // Import functions
     importUsers,
     importFacilities,
     importFromAPI,
-    
-    // Utility functions
     parseCSV,
     validateData,
-    
-    // State
     isImporting,
     importProgress,
-    
-    // Meta information
+    // Consolidated metadata
     meta: {
-      dataSource: 'Consolidated import using unified hooks',
-      version: 'consolidated-import-v1',
+      dataSource: 'unified-data-import-system',
+      version: 'consolidated-v1',
       supportedTypes: ['users', 'facilities'],
-      supportedFormats: ['CSV', 'JSON', 'API']
+      usesConsolidatedHooks: true
     }
   };
 };

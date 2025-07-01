@@ -1,43 +1,86 @@
 
 /**
- * Component Management Utilities for Module Registry
+ * Component Management Utilities
  */
 
 import { ComponentServiceInfo, RegisteredModule } from './types';
+import { ModuleRegistry } from './ModuleRegistryClass';
 
 export const registerComponentsToModule = (
-  moduleName: string, 
+  registry: ModuleRegistry,
+  moduleName: string,
   components: ComponentServiceInfo[]
 ): boolean => {
-  console.log(`📝 Registering ${components.length} components to ${moduleName}`);
-  return true;
+  try {
+    components.forEach(component => {
+      registry.addComponentToModule(moduleName, component);
+    });
+    return true;
+  } catch (error) {
+    console.error('Failed to register components:', error);
+    return false;
+  }
 };
 
-export const getComponentsByPermission = (permission: string): ComponentServiceInfo[] => {
-  console.log(`🔍 Getting components with permission: ${permission}`);
-  return [];
+export const getComponentsByPermission = (
+  registry: ModuleRegistry,
+  permission: string
+): ComponentServiceInfo[] => {
+  const allComponents = registry.getAllComponents();
+  return allComponents
+    .map(item => item.component)
+    .filter(component => component.permissions?.includes(permission));
 };
 
-export const getProtectedComponents = (): ComponentServiceInfo[] => {
-  console.log('🔒 Getting protected components');
-  return [];
+export const getProtectedComponents = (
+  registry: ModuleRegistry
+): ComponentServiceInfo[] => {
+  const allComponents = registry.getAllComponents();
+  return allComponents
+    .map(item => item.component)
+    .filter(component => component.isProtected === true);
 };
 
-export const getModuleComponentStats = (moduleName: string) => {
+export const getModuleComponentStats = (
+  registry: ModuleRegistry,
+  moduleName: string
+): { components: number; services: number; hooks: number; protected: number } => {
+  const components = registry.getModuleComponentsForRBAC(moduleName);
+  
   return {
-    total: 0,
-    components: 0,
-    services: 0,
-    hooks: 0,
-    protected: 0
+    components: components.filter(c => c.type === 'component').length,
+    services: components.filter(c => c.type === 'service').length,
+    hooks: components.filter(c => c.type === 'hook').length,
+    protected: components.filter(c => c.isProtected).length
   };
 };
 
 export const validateComponent = (component: ComponentServiceInfo): boolean => {
-  return !!(component.name && component.type && component.filePath);
+  return !!(component.name && component.type && component.path);
 };
 
-export const cleanupOrphanedComponents = (): number => {
-  console.log('🧹 Cleaning up orphaned components');
-  return 0;
+export const cleanupOrphanedComponents = (registry: ModuleRegistry): number => {
+  let cleanedCount = 0;
+  const modules = registry.getAll();
+  
+  modules.forEach(module => {
+    const validComponents = (module.components || []).filter(validateComponent);
+    const validServices = (module.services || []).filter(validateComponent);
+    const validHooks = (module.hooks || []).filter(validateComponent);
+    
+    const originalCount = (module.components?.length || 0) + 
+                         (module.services?.length || 0) + 
+                         (module.hooks?.length || 0);
+    const newCount = validComponents.length + validServices.length + validHooks.length;
+    
+    cleanedCount += originalCount - newCount;
+    
+    // Update module with cleaned components
+    module.components = validComponents;
+    module.services = validServices;
+    module.hooks = validHooks;
+    module.lastUpdated = new Date();
+  });
+  
+  return cleanedCount;
 };
