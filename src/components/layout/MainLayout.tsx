@@ -17,7 +17,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   return (
     <div className="min-h-screen bg-background">
       {/* Fixed Header */}
-      <Header />
+      <Header onMenuClick={() => setSidebarOpen(true)} />
       
       {/* Mobile Menu Bar */}
       {isMobile && (
@@ -35,7 +35,9 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         
         {/* Content Area */}
         <ContentArea isMobile={isMobile}>
-          {children}
+          <div className="p-6">
+            {children}
+          </div>
         </ContentArea>
       </div>
     </div>

@@ -24,7 +24,7 @@ const SidebarContainer: React.FC<SidebarContainerProps> = ({
 
   return (
     <div className="w-64 flex-shrink-0">
-      <div className="fixed left-0 top-16 w-64 h-[calc(100vh-4rem)] bg-gray-50 border-r border-gray-200 overflow-y-auto">
+      <div className="fixed left-0 top-16 w-64 h-[calc(100vh-4rem)] bg-white border-r border-gray-200 overflow-y-auto">
         <Sidebar />
       </div>
     </div>

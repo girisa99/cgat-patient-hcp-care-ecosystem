@@ -11,7 +11,7 @@ const ContentArea: React.FC<ContentAreaProps> = ({ children, isMobile }) => {
     <main className={`
       flex-1 
       min-h-[calc(100vh-4rem)]
-      ${isMobile ? 'pt-12' : ''} 
+      ${isMobile ? 'pt-12' : 'ml-64'} 
       overflow-x-hidden
     `}>
       {children}
