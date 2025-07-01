@@ -1,22 +1,18 @@
 
 /**
- * Consolidated User Management Hooks
- * Single export point for all user-related functionality
+ * User Management Hooks - Single Source of Truth
+ * All user management functionality consolidated
  */
 
-// Main consolidated hook
-export { useConsolidatedUsers } from '../useConsolidatedUsers';
+// Main unified hook - single source of truth
+export { useUnifiedUserManagement } from '../useUnifiedUserManagement';
 
-// User mutations (kept separate for specific operations)
-export { useUserMutations } from './useUserMutations';
+// Specialized hooks for specific functionality
+export { useUserDeactivation } from '../mutations/useUserDeactivation';
+export { usePermissions } from '../usePermissions';
+export { useUserManagementDialogs } from '../useUserManagementDialogs';
 
-// Specialized mutation hooks
-export { useRoleMutations } from '../mutations/useRoleMutations';
-export { useFacilityMutations } from '../mutations/useFacilityMutations';
-
-// Patient-specific consolidated hook
-export { useConsolidatedPatients } from '../patients/useConsolidatedPatients';
-
-// Aliases for backward compatibility
-export { useConsolidatedUsers as useUsers } from '../useConsolidatedUsers';
-export { useConsolidatedUsers as useUnifiedUserData } from '../useConsolidatedUsers';
+// Backward compatibility aliases
+export { useUnifiedUserManagement as useUsers } from '../useUnifiedUserManagement';
+export { useUnifiedUserManagement as useConsolidatedUsers } from '../useUnifiedUserManagement';
+export { useUnifiedUserManagement as useUnifiedUserData } from '../useUnifiedUserManagement';

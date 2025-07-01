@@ -1,6 +1,8 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Edit, UserPlus, Building, Minus, Key, Shield, Mail, UserX, Eye, CheckCircle } from 'lucide-react';
+import { isVerifiedEmail } from '@/config/userManagement';
 
 interface UserActionsProps {
   user: any;
@@ -31,85 +33,19 @@ const UserActions: React.FC<UserActionsProps> = ({
     ? `${user.first_name || ''} ${user.last_name || ''}`.trim()
     : user.email;
 
-  // Check for verified email addresses
-  const verifiedEmails = [
-    'superadmintest@geniecellgene.com',
-    'customer_onboarding@geniecellgene.com', 
-    'nursetest@geniecellgene.com',
-    'hcptest1@geniecellgene.com',
-    'patient1@geniecellgene.com',
-    'care_manager@geniecellgene.com',
-    'patient2@geniecellgene.com'
-  ];
-
+  // Use centralized verification check
   const isEmailVerified = Boolean(user.email_confirmed_at) || 
-    (user.email && verifiedEmails.includes(user.email.toLowerCase()));
-
-  const handleEditUser = () => {
-    console.log('✏️ Edit button clicked for user:', user.id, userName);
-    console.log('👤 User data being passed to edit dialog:', user);
-    onEditUser(user);
-  };
-
-  const handleAssignRole = () => {
-    console.log('👤 Opening role assignment for user:', user.id, userName);
-    onAssignRole(user.id);
-  };
-
-  const handleRemoveRole = () => {
-    if (onRemoveRole) {
-      console.log('➖ Opening role removal for user:', user.id, userName);
-      onRemoveRole(user.id);
-    }
-  };
-
-  const handleAssignFacility = () => {
-    console.log('🏢 Opening facility assignment for user:', user.id, userName);
-    onAssignFacility(user.id);
-  };
-
-  const handleManagePermissions = () => {
-    console.log('🔒 Opening permission management for user:', user.id, userName);
-    onManagePermissions(user.id, userName);
-  };
-
-  const handleAssignModule = () => {
-    if (onAssignModule) {
-      console.log('📦 Opening module assignment for user:', user.id, userName);
-      onAssignModule(user.id, userName);
-    }
-  };
-
-  const handleResendVerification = () => {
-    if (onResendVerification) {
-      console.log('📧 Resending verification email for user:', user.email, userName);
-      onResendVerification(user.email, userName);
-    }
-  };
-
-  const handleDeactivateUser = () => {
-    if (onDeactivateUser) {
-      console.log('🚫 Opening deactivation dialog for user:', user.id, userName);
-      onDeactivateUser(user.id, userName, user.email);
-    }
-  };
-
-  const handleViewModules = () => {
-    if (onViewModules) {
-      console.log('👁️ Opening module access view for user:', user.id, userName);
-      onViewModules(user.id, userName);
-    }
-  };
+    (user.email ? isVerifiedEmail(user.email) : false);
 
   const hasRoles = user.user_roles && user.user_roles.length > 0;
 
   return (
     <div className="flex items-center gap-1">
-      {/* Always visible actions */}
+      {/* Core actions */}
       <Button
         variant="outline"
         size="sm"
-        onClick={handleEditUser}
+        onClick={() => onEditUser(user)}
         title="Edit User"
         className="h-8 w-8 p-0 hover:bg-blue-50 border-blue-200"
       >
@@ -119,7 +55,7 @@ const UserActions: React.FC<UserActionsProps> = ({
       <Button
         variant="outline"
         size="sm"
-        onClick={handleAssignRole}
+        onClick={() => onAssignRole(user.id)}
         title="Assign Role"
         className="h-8 w-8 p-0 hover:bg-green-50 border-green-200"
       >
@@ -129,7 +65,7 @@ const UserActions: React.FC<UserActionsProps> = ({
       <Button
         variant="outline"
         size="sm"
-        onClick={handleAssignFacility}
+        onClick={() => onAssignFacility(user.id)}
         title="Assign Facility"
         className="h-8 w-8 p-0 hover:bg-purple-50 border-purple-200"
       >
@@ -139,19 +75,19 @@ const UserActions: React.FC<UserActionsProps> = ({
       <Button
         variant="outline"
         size="sm"
-        onClick={handleManagePermissions}
+        onClick={() => onManagePermissions(user.id, userName)}
         title="Manage Permissions"
         className="h-8 w-8 p-0 text-blue-600 border-blue-300 hover:bg-blue-50"
       >
         <Key className="h-3 w-3" />
       </Button>
 
-      {/* Conditional actions based on user state */}
+      {/* Conditional actions */}
       {onViewModules && (
         <Button
           variant="outline"
           size="sm"
-          onClick={handleViewModules}
+          onClick={() => onViewModules(user.id, userName)}
           title="View Module Access"
           className="h-8 w-8 p-0 text-purple-600 border-purple-300 hover:bg-purple-50"
         >
@@ -163,7 +99,7 @@ const UserActions: React.FC<UserActionsProps> = ({
         <Button
           variant="outline"
           size="sm"
-          onClick={handleAssignModule}
+          onClick={() => onAssignModule(user.id, userName)}
           title="Assign Module"
           className="h-8 w-8 p-0 text-purple-600 border-purple-300 hover:bg-purple-50"
         >
@@ -175,7 +111,7 @@ const UserActions: React.FC<UserActionsProps> = ({
         <Button
           variant="outline"
           size="sm"
-          onClick={handleRemoveRole}
+          onClick={() => onRemoveRole(user.id)}
           title="Remove Role"
           className="h-8 w-8 p-0 text-orange-600 border-orange-300 hover:bg-orange-50"
         >
@@ -183,12 +119,12 @@ const UserActions: React.FC<UserActionsProps> = ({
         </Button>
       )}
 
-      {/* Email verification actions - only show for unverified users */}
+      {/* Email verification actions */}
       {!isEmailVerified && onResendVerification && (
         <Button
           variant="outline"
           size="sm"
-          onClick={handleResendVerification}
+          onClick={() => onResendVerification(user.email, userName)}
           title="Resend Verification Email"
           className="h-8 w-8 p-0 text-amber-600 border-amber-300 hover:bg-amber-50"
         >
@@ -196,7 +132,6 @@ const UserActions: React.FC<UserActionsProps> = ({
         </Button>
       )}
 
-      {/* Verification status indicator for verified users */}
       {isEmailVerified && (
         <Button
           variant="outline"
@@ -213,7 +148,7 @@ const UserActions: React.FC<UserActionsProps> = ({
         <Button
           variant="outline"
           size="sm"
-          onClick={handleDeactivateUser}
+          onClick={() => onDeactivateUser(user.id, userName, user.email)}
           title="Deactivate User"
           className="h-8 w-8 p-0 text-red-600 border-red-300 hover:bg-red-50"
         >

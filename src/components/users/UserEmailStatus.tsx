@@ -2,6 +2,7 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, AlertCircle } from 'lucide-react';
+import { isVerifiedEmail } from '@/config/userManagement';
 
 interface UserEmailStatusProps {
   user: {
@@ -11,19 +12,9 @@ interface UserEmailStatusProps {
 }
 
 export const UserEmailStatus: React.FC<UserEmailStatusProps> = ({ user }) => {
-  // Check for verified email addresses
-  const verifiedEmails = [
-    'superadmintest@geniecellgene.com',
-    'customer_onboarding@geniecellgene.com', 
-    'nursetest@geniecellgene.com',
-    'hcptest1@geniecellgene.com',
-    'patient1@geniecellgene.com',
-    'care_manager@geniecellgene.com',
-    'patient2@geniecellgene.com'
-  ];
-
+  // Use centralized verification check
   const isEmailVerified = Boolean(user.email_confirmed_at) || 
-    (user.email && verifiedEmails.includes(user.email.toLowerCase()));
+    (user.email ? isVerifiedEmail(user.email) : false);
 
   return (
     <div className="flex items-center gap-2">

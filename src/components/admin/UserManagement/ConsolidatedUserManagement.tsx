@@ -10,7 +10,7 @@ import {
   Download,
   Users
 } from 'lucide-react';
-import { useConsolidatedUsers } from '@/hooks/useConsolidatedUsers';
+import { useUnifiedUserManagement } from '@/hooks/useUnifiedUserManagement';
 import { useUserManagementDialogs } from '@/hooks/useUserManagementDialogs';
 import { useUserDeactivation } from '@/hooks/mutations/useUserDeactivation';
 
@@ -31,12 +31,12 @@ export const ConsolidatedUserManagement: React.FC = () => {
     getUserStats, 
     searchUsers,
     meta
-  } = useConsolidatedUsers();
+  } = useUnifiedUserManagement();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('users');
   
-  // Additional dialog states for extended functionality
+  // Additional dialog states
   const [resendVerificationOpen, setResendVerificationOpen] = useState(false);
   const [viewModulesOpen, setViewModulesOpen] = useState(false);
   const [deactivateUserOpen, setDeactivateUserOpen] = useState(false);
@@ -44,7 +44,7 @@ export const ConsolidatedUserManagement: React.FC = () => {
   const [assignModuleOpen, setAssignModuleOpen] = useState(false);
   const [selectedUserEmail, setSelectedUserEmail] = useState('');
 
-  // Use existing dialog management hook - including setSelectedUserId
+  // Use existing dialog management hook
   const {
     createUserOpen,
     setCreateUserOpen,
@@ -75,7 +75,7 @@ export const ConsolidatedUserManagement: React.FC = () => {
     return (
       <div className="text-center py-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-        <p className="text-gray-500">Loading users from consolidated data source...</p>
+        <p className="text-gray-500">Loading users from unified data source...</p>
       </div>
     );
   }
@@ -115,7 +115,6 @@ export const ConsolidatedUserManagement: React.FC = () => {
     setViewModulesOpen(true);
   };
 
-  // Get selected user name for dialog titles
   const selectedUserName = selectedUser 
     ? `${selectedUser.first_name || ''} ${selectedUser.last_name || ''}`.trim() || selectedUser.email
     : '';
@@ -127,7 +126,7 @@ export const ConsolidatedUserManagement: React.FC = () => {
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-blue-900 text-lg">
             <Users className="h-5 w-5" />
-            Consolidated User Management
+            Unified User Management System
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -139,12 +138,12 @@ export const ConsolidatedUserManagement: React.FC = () => {
               <span><strong>Staff:</strong> {meta.staffCount}</span>
               <span><strong>Admins:</strong> {meta.adminCount}</span>
             </div>
-            <p className="text-xs"><strong>Last Updated:</strong> {new Date(meta.lastFetched).toLocaleString()}</p>
+            <p className="text-xs"><strong>Version:</strong> {meta.version} | <strong>Last Updated:</strong> {new Date(meta.lastFetched).toLocaleString()}</p>
           </div>
         </CardContent>
       </Card>
 
-      {/* Compact Stats */}
+      {/* Stats */}
       <UserManagementStats stats={stats} />
 
       {/* Main Content */}
@@ -153,7 +152,7 @@ export const ConsolidatedUserManagement: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="text-xl">User Management</CardTitle>
-              <p className="text-gray-600 mt-1">Manage users, roles, and permissions across the platform</p>
+              <p className="text-gray-600 mt-1">Unified system for managing users, roles, and permissions</p>
             </div>
             <Button onClick={handleCreateUser}>
               <Plus className="h-4 w-4 mr-2" />
