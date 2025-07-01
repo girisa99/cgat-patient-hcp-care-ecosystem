@@ -17,7 +17,9 @@ import {
   Plus,
   Settings,
   Code,
-  Key
+  Key,
+  AlertCircle,
+  AlertTriangle
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -41,7 +43,7 @@ import { ApiDataValidator } from '@/components/admin/ApiIntegrations/ApiDataVali
 export const ApiServicesModule: React.FC = () => {
   console.log('🚀 ApiServicesModule: Using consolidated real data with validation');
   
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('validation'); // Start with validation tab
   const [searchTerm, setSearchTerm] = useState('');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const { toast } = useToast();
@@ -60,7 +62,8 @@ export const ApiServicesModule: React.FC = () => {
   const { 
     apiEndpoints,
     getDetailedApiStats,
-    consolidateApiServices
+    consolidateApiServices,
+    analyzeCoreApis
   } = useApiServiceDetails();
 
   // Consolidate APIs to remove duplicates
@@ -73,6 +76,11 @@ export const ApiServicesModule: React.FC = () => {
   const detailedStats = React.useMemo(() => {
     return getDetailedApiStats(consolidatedApis);
   }, [consolidatedApis, getDetailedApiStats]);
+
+  // Analyze core API duplicates
+  const coreApiAnalysis = React.useMemo(() => {
+    return analyzeCoreApis(apiServices);
+  }, [apiServices, analyzeCoreApis]);
 
   // Filter APIs with consistent logic
   const internalApis = consolidatedApis.filter(api => 
@@ -91,15 +99,14 @@ export const ApiServicesModule: React.FC = () => {
     api.status === 'active' && (api.lifecycle_stage === 'production' || api.type === 'internal')
   );
 
-  console.log('📊 ApiServicesModule: Detailed real stats:', {
-    totalApis: consolidatedApis.length,
+  console.log('📊 ApiServicesModule: Critical Analysis:', {
+    totalOriginalApis: apiServices?.length || 0,
+    totalConsolidatedApis: consolidatedApis.length,
     totalEndpoints: detailedStats.totalEndpoints,
-    totalSchemas: detailedStats.totalSchemas,
-    totalDocs: detailedStats.totalDocs,
+    coreApiDuplicates: coreApiAnalysis.hasDuplicates,
+    coreApiCount: coreApiAnalysis.coreApis.length,
     internal: internalApis.length,
-    external: externalApis.length,
-    consuming: consumingApis.length,
-    publishing: publishingApis.length
+    external: externalApis.length
   });
 
   // Functional handlers - ensure all buttons work
@@ -418,13 +425,100 @@ export const ApiServicesModule: React.FC = () => {
     );
   }
 
+  const ValidationContent = () => (
+    <div className="space-y-6">
+      {/* Critical Alert if duplicates found */}
+      {coreApiAnalysis.hasDuplicates && (
+        <Card className="border-red-500 bg-red-50">
+          <CardHeader>
+            <CardTitle className="text-red-700 flex items-center gap-2">
+              <AlertCircle className="h-5 w-5" />
+              CRITICAL: Duplicate Core APIs Detected
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <p className="text-red-800">
+                Found {coreApiAnalysis.coreApis.length} core healthcare APIs. This explains the endpoint count mismatch 
+                (Total: {detailedStats.totalEndpoints}, Internal shown: {internalApis.reduce((sum, api) => sum + (api.endpoints_count || 0), 0)}).
+              </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {coreApiAnalysis.coreApis.map(api => (
+                  <Card key={api.id} className="border-orange-300">
+                    <CardContent className="pt-4">
+                      <h4 className="font-bold text-orange-800">{api.name}</h4>
+                      <div className="text-sm text-orange-700 space-y-1">
+                        <p>Type: {api.type} | Direction: {api.direction}</p>
+                        <p>Endpoints: {api.endpoints_count || 0}</p>
+                        <p>ID: {api.id}</p>
+                        <p>Created: {new Date(api.created_at).toLocaleDateString()}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+              
+              <Alert className="border-yellow-500 bg-yellow-50">
+                <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                <AlertDescription className="text-yellow-800">
+                  <strong>Immediate Action Required:</strong> These duplicate APIs are causing data fragmentation. 
+                  Choose ONE as your single source of truth and deprecate the others.
+                </AlertDescription>
+              </Alert>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      
+      {/* Add Data Validator */}
+      <ApiDataValidator />
+      
+      {/* Stats Overview */}
+      <OverviewStats />
+      
+      {/* Consolidation Summary */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Data Consolidation Summary</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-red-600">{apiServices?.length || 0}</p>
+              <p className="text-sm text-muted-foreground">Original APIs (with duplicates)</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-green-600">{consolidatedApis.length}</p>
+              <p className="text-sm text-muted-foreground">Consolidated APIs</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-blue-600">{detailedStats.totalEndpoints}</p>
+              <p className="text-sm text-muted-foreground">Total Endpoints</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-purple-600">{coreApiAnalysis.coreApis.length}</p>
+              <p className="text-sm text-muted-foreground">Core APIs (Should be 1)</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Healthcare API Services Platform</h1>
           <p className="text-muted-foreground">
-            Consolidated API management with {consolidatedApis.length} services and {detailedStats.totalEndpoints} endpoints
+            {coreApiAnalysis.hasDuplicates ? (
+              <span className="text-red-600 font-medium">
+                ⚠️ CRITICAL: {coreApiAnalysis.coreApis.length} duplicate core APIs detected - causing data inconsistency
+              </span>
+            ) : (
+              `Consolidated API management with ${consolidatedApis.length} services and ${detailedStats.totalEndpoints} endpoints`
+            )}
           </p>
         </div>
         <div className="flex items-center gap-4">
@@ -451,6 +545,9 @@ export const ApiServicesModule: React.FC = () => {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-8">
+          <TabsTrigger value="validation" className={coreApiAnalysis.hasDuplicates ? "text-red-600 font-bold" : ""}>
+            Validation {coreApiAnalysis.hasDuplicates && "⚠️"}
+          </TabsTrigger>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="internal">Internal ({internalApis.length})</TabsTrigger>
           <TabsTrigger value="consuming">Consuming ({consumingApis.length})</TabsTrigger>
@@ -460,6 +557,10 @@ export const ApiServicesModule: React.FC = () => {
           <TabsTrigger value="keys">API Keys</TabsTrigger>
           <TabsTrigger value="testing">Testing</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="validation" className="mt-4">
+          <ValidationContent />
+        </TabsContent>
 
         <TabsContent value="overview" className="mt-4">
           <OverviewContent />

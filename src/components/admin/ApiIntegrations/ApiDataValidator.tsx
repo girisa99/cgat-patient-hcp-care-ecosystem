@@ -5,11 +5,11 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useApiServices } from '@/hooks/useApiServices';
 import { useApiServiceDetails } from '@/hooks/useApiServiceDetails';
-import { CheckCircle, AlertCircle, XCircle, Database, Shield, FileText } from 'lucide-react';
+import { CheckCircle, AlertCircle, XCircle, Database, Shield, FileText, AlertTriangle } from 'lucide-react';
 
 export const ApiDataValidator: React.FC = () => {
   const { apiServices, meta } = useApiServices();
-  const { apiEndpoints, getDetailedApiStats, consolidateApiServices } = useApiServiceDetails();
+  const { apiEndpoints, getDetailedApiStats, consolidateApiServices, analyzeCoreApis } = useApiServiceDetails();
 
   // Validate and consolidate data
   const consolidatedApis = React.useMemo(() => {
@@ -20,55 +20,36 @@ export const ApiDataValidator: React.FC = () => {
     return getDetailedApiStats(consolidatedApis);
   }, [consolidatedApis, getDetailedApiStats]);
 
-  // Identify duplicates and inconsistencies
-  const duplicateAnalysis = React.useMemo(() => {
-    const duplicates: Record<string, any[]> = {};
-    const coreApis: any[] = [];
-    
-    consolidatedApis.forEach(api => {
-      // Check for core healthcare APIs
-      if (api.name.toLowerCase().includes('core') || api.name.toLowerCase().includes('healthcare')) {
-        coreApis.push(api);
-      }
-      
-      // Group similar names
-      const normalizedName = api.name.toLowerCase().replace(/[^a-z0-9]/g, '');
-      if (!duplicates[normalizedName]) {
-        duplicates[normalizedName] = [];
-      }
-      duplicates[normalizedName].push(api);
-    });
-
-    return {
-      duplicateGroups: Object.entries(duplicates).filter(([_, group]) => group.length > 1),
-      coreApis,
-      totalOriginal: apiServices.length,
-      totalConsolidated: consolidatedApis.length
-    };
-  }, [consolidatedApis, apiServices]);
+  // Analyze core APIs for duplicates
+  const coreApiAnalysis = React.useMemo(() => {
+    return analyzeCoreApis(apiServices);
+  }, [apiServices, analyzeCoreApis]);
 
   // Data validation results
   const validationResults = React.useMemo(() => {
-    return {
+    const results = {
       totalEndpointsMatch: detailedStats.totalEndpoints === apiEndpoints.length,
       hasInternalApis: consolidatedApis.some(api => api.type === 'internal'),
-      hasDuplicateCoreApis: duplicateAnalysis.coreApis.length > 1,
+      hasDuplicateCoreApis: coreApiAnalysis.hasDuplicates,
       endpointDataIntegrity: apiEndpoints.every(ep => ep.external_api_id && ep.method && ep.external_path),
       schemaConsistency: detailedStats.totalSchemas > 0,
-      securityPolicyConsistency: detailedStats.totalSecurityPolicies > 0
+      securityPolicyConsistency: detailedStats.totalSecurityPolicies > 0,
+      coreApiConflict: coreApiAnalysis.duplicateGroups.length > 0
     };
-  }, [detailedStats, apiEndpoints, consolidatedApis, duplicateAnalysis]);
+    
+    console.log('🔍 Validation Results:', results);
+    return results;
+  }, [detailedStats, apiEndpoints, consolidatedApis, coreApiAnalysis]);
 
   useEffect(() => {
     console.log('🔍 API Data Validation Report:', {
       originalCount: apiServices.length,
       consolidatedCount: consolidatedApis.length,
       totalEndpoints: detailedStats.totalEndpoints,
-      duplicateGroups: duplicateAnalysis.duplicateGroups,
-      coreApis: duplicateAnalysis.coreApis,
+      coreApiAnalysis,
       validationResults
     });
-  }, [apiServices, consolidatedApis, detailedStats, duplicateAnalysis, validationResults]);
+  }, [apiServices, consolidatedApis, detailedStats, coreApiAnalysis, validationResults]);
 
   return (
     <div className="space-y-4">
@@ -80,6 +61,16 @@ export const ApiDataValidator: React.FC = () => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Critical Issues Alert */}
+          {validationResults.coreApiConflict && (
+            <Alert className="border-red-200 bg-red-50">
+              <AlertTriangle className="h-4 w-4 text-red-500" />
+              <AlertDescription className="text-red-800">
+                <strong>Critical Issue Detected:</strong> Duplicate core healthcare APIs found. This causes data inconsistency and endpoint count mismatches.
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Validation Status */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="flex items-center gap-2">
@@ -92,7 +83,7 @@ export const ApiDataValidator: React.FC = () => {
             <div className="flex items-center gap-2">
               {!validationResults.hasDuplicateCoreApis ? 
                 <CheckCircle className="h-4 w-4 text-green-500" /> : 
-                <AlertCircle className="h-4 w-4 text-yellow-500" />
+                <AlertCircle className="h-4 w-4 text-red-500" />
               }
               <span className="text-sm">No Duplicate Core APIs</span>
             </div>
@@ -108,11 +99,11 @@ export const ApiDataValidator: React.FC = () => {
           {/* Data Summary */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="text-center p-3 bg-blue-50 rounded-lg">
-              <p className="text-2xl font-bold text-blue-600">{duplicateAnalysis.totalOriginal}</p>
+              <p className="text-2xl font-bold text-blue-600">{apiServices.length}</p>
               <p className="text-sm text-muted-foreground">Original APIs</p>
             </div>
             <div className="text-center p-3 bg-green-50 rounded-lg">
-              <p className="text-2xl font-bold text-green-600">{duplicateAnalysis.totalConsolidated}</p>
+              <p className="text-2xl font-bold text-green-600">{consolidatedApis.length}</p>
               <p className="text-sm text-muted-foreground">Consolidated APIs</p>
             </div>
             <div className="text-center p-3 bg-purple-50 rounded-lg">
@@ -120,45 +111,57 @@ export const ApiDataValidator: React.FC = () => {
               <p className="text-sm text-muted-foreground">Total Endpoints</p>
             </div>
             <div className="text-center p-3 bg-orange-50 rounded-lg">
-              <p className="text-2xl font-bold text-orange-600">{duplicateAnalysis.coreApis.length}</p>
+              <p className="text-2xl font-bold text-orange-600">{coreApiAnalysis.coreApis.length}</p>
               <p className="text-sm text-muted-foreground">Core APIs</p>
             </div>
           </div>
 
-          {/* Core APIs Analysis */}
-          {duplicateAnalysis.coreApis.length > 0 && (
+          {/* Core API Conflict Analysis */}
+          {coreApiAnalysis.hasDuplicates && (
             <div>
-              <h4 className="font-medium mb-2">Core Healthcare APIs Found:</h4>
+              <h4 className="font-medium mb-2 text-red-700">⚠️ Duplicate Core Healthcare APIs Detected:</h4>
               <div className="space-y-2">
-                {duplicateAnalysis.coreApis.map((api) => (
-                  <div key={api.id} className="flex items-center justify-between p-3 border rounded-lg">
+                {coreApiAnalysis.coreApis.map((api) => (
+                  <div key={api.id} className="flex items-center justify-between p-3 border-2 border-red-200 rounded-lg bg-red-50">
                     <div>
-                      <span className="font-medium">{api.name}</span>
+                      <span className="font-medium text-red-800">{api.name}</span>
                       <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="outline" className="text-xs">{api.type}</Badge>
-                        <Badge variant="outline" className="text-xs">{api.direction}</Badge>
-                        <span className="text-xs text-muted-foreground">ID: {api.id.slice(0, 8)}...</span>
+                        <Badge variant="outline" className="text-xs border-red-300">{api.type}</Badge>
+                        <Badge variant="outline" className="text-xs border-red-300">{api.direction}</Badge>
+                        <span className="text-xs text-red-600">ID: {api.id.slice(0, 8)}...</span>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 text-sm">
-                      <Database className="h-3 w-3" />
-                      <span>{api.endpoints_count || 0} endpoints</span>
+                      <Database className="h-3 w-3 text-red-600" />
+                      <span className="text-red-700">{api.endpoints_count || 0} endpoints</span>
                     </div>
                   </div>
                 ))}
               </div>
+              
+              {/* Recommendations */}
+              <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <h5 className="font-medium text-yellow-800 mb-2">🔧 Recommended Actions:</h5>
+                <ul className="list-disc list-inside space-y-1 text-sm text-yellow-700">
+                  {coreApiAnalysis.recommendations.map((rec, index) => (
+                    <li key={index}>{rec}</li>
+                  ))}
+                  <li>Choose one API as the single source of truth for all healthcare operations</li>
+                  <li>Migrate users, patients, facilities, modules, and dashboard integrations to the chosen API</li>
+                </ul>
+              </div>
             </div>
           )}
 
-          {/* Recommendations */}
-          {validationResults.hasDuplicateCoreApis && (
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                Multiple core healthcare APIs detected. Consider consolidating to a single source of truth for better data consistency.
-              </AlertDescription>
-            </Alert>
-          )}
+          {/* Root Cause Analysis */}
+          <Alert className="border-orange-200 bg-orange-50">
+            <AlertCircle className="h-4 w-4 text-orange-600" />
+            <AlertDescription className="text-orange-800">
+              <strong>Root Cause Analysis:</strong> The endpoint count mismatch (showing 116 total but only 9 in internal) 
+              is likely caused by duplicate core healthcare APIs. These duplicates fragment the endpoint data across 
+              multiple API entries, making accurate counts impossible.
+            </AlertDescription>
+          </Alert>
         </CardContent>
       </Card>
     </div>
