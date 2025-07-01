@@ -1,36 +1,38 @@
 
-import { useState, useEffect, createContext, useContext } from 'react';
+import { useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { Database } from '@/integrations/supabase/types';
 
-interface AuthContextType {
-  user: User | null;
-  session: Session | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  profile: any;
-  userRoles: string[];
-  signOut: () => Promise<void>;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export const useAuthContext = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuthContext must be used within an AuthProvider');
-  }
-  return context;
+export type Profile = {
+  id: string;
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  phone?: string;
+  department?: string;
+  role?: Database['public']['Enums']['user_role'];
+  facility_id?: string;
+  created_at?: string;
+  updated_at?: string;
 };
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+type UserRole = Database['public']['Enums']['user_role'];
+
+interface AuthResult {
+  success: boolean;
+  error?: string;
+  user?: User;
+}
+
+export const useCleanAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [userRoles, setUserRoles] = useState<string[]>([]);
 
-  const fetchProfile = async (userId: string) => {
+  const fetchProfile = async (userId: string): Promise<Profile | null> => {
     try {
       console.log('👤 Fetching profile for user:', userId);
       
@@ -46,14 +48,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       console.log('✅ Profile fetched successfully:', data);
-      return data;
+      return data as Profile;
     } catch (error) {
       console.error('❌ Profile fetch error:', error);
       return null;
     }
   };
 
-  const fetchUserRoles = async (userId: string) => {
+  const fetchUserRoles = async (userId: string): Promise<string[]> => {
     try {
       console.log('🔐 Fetching roles for user:', userId);
       
@@ -80,16 +82,72 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      console.error('❌ Sign out error:', error);
-    } else {
-      console.log('✅ Signed out successfully');
+  const signIn = async (email: string, password: string): Promise<AuthResult> => {
+    try {
+      console.log('🔄 Attempting sign in...');
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        console.error('❌ Sign in error:', error);
+        return { success: false, error: error.message };
+      }
+
+      console.log('✅ Sign in successful');
+      return { success: true, user: data.user };
+    } catch (error: any) {
+      console.error('❌ Sign in error:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  const signUp = async (email: string, password: string, role: UserRole): Promise<AuthResult> => {
+    try {
+      console.log('🔄 Attempting sign up...');
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            role: role
+          }
+        }
+      });
+
+      if (error) {
+        console.error('❌ Sign up error:', error);
+        return { success: false, error: error.message };
+      }
+
+      console.log('✅ Sign up successful');
+      return { success: true, user: data.user };
+    } catch (error: any) {
+      console.error('❌ Sign up error:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  const signOut = async (): Promise<AuthResult> => {
+    try {
+      console.log('🔄 Attempting sign out...');
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error('❌ Sign out error:', error);
+        return { success: false, error: error.message };
+      }
+
+      console.log('✅ Sign out successful');
       setUser(null);
       setSession(null);
       setProfile(null);
       setUserRoles([]);
+      return { success: true };
+    } catch (error: any) {
+      console.error('❌ Sign out error:', error);
+      return { success: false, error: error.message };
     }
   };
 
@@ -105,14 +163,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(session.user);
           setSession(session);
           
-          // Fetch profile and roles
-          const [profileData, rolesData] = await Promise.all([
-            fetchProfile(session.user.id),
-            fetchUserRoles(session.user.id)
-          ]);
-          
-          setProfile(profileData);
-          setUserRoles(rolesData);
+          setTimeout(async () => {
+            const [profileData, rolesData] = await Promise.all([
+              fetchProfile(session.user.id),
+              fetchUserRoles(session.user.id)
+            ]);
+            
+            setProfile(profileData);
+            setUserRoles(rolesData);
+          }, 0);
         } else {
           console.log('ℹ️ No user session found');
         }
@@ -134,14 +193,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(session.user);
           setSession(session);
           
-          // Fetch profile and roles
-          const [profileData, rolesData] = await Promise.all([
-            fetchProfile(session.user.id),
-            fetchUserRoles(session.user.id)
-          ]);
-          
-          setProfile(profileData);
-          setUserRoles(rolesData);
+          setTimeout(async () => {
+            const [profileData, rolesData] = await Promise.all([
+              fetchProfile(session.user.id),
+              fetchUserRoles(session.user.id)
+            ]);
+            
+            setProfile(profileData);
+            setUserRoles(rolesData);
+          }, 0);
         } else {
           console.log('ℹ️ No user session');
           setUser(null);
@@ -157,19 +217,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
-  const value = {
+  return {
     user,
     session,
     isAuthenticated: !!user,
     isLoading,
     profile,
     userRoles,
+    signIn,
+    signUp,
     signOut,
   };
-
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
 };

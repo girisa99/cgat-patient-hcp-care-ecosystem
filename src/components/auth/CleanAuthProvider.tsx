@@ -1,8 +1,7 @@
 
 import React, { createContext, useContext, ReactNode } from 'react';
-import { useCleanAuth } from '@/hooks/useCleanAuth';
+import { useCleanAuth, Profile } from '@/hooks/useCleanAuth';
 import type { User, Session } from '@supabase/supabase-js';
-import type { Profile } from '@/hooks/useCleanAuth';
 import { Database } from '@/integrations/supabase/types';
 
 type UserRole = Database['public']['Enums']['user_role'];
