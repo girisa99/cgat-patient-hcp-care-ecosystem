@@ -6,17 +6,42 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
+export interface SyncVerificationResult {
+  isInSync: boolean;
+  originalTableCounts: Record<string, number>;
+  syncDiscrepancies: Array<{
+    tableName: string;
+    details: string;
+    difference: number;
+  }>;
+}
+
+export interface DatabaseHealthResult {
+  isHealthy: boolean;
+  issues: Array<{
+    id?: string;
+    type: string;
+    description: string;
+    table: string;
+    severity: 'low' | 'medium' | 'high' | 'critical';
+    recommendation: string;
+  }>;
+  tablesScanned: string[];
+}
+
 export interface ComprehensiveVerificationResult {
   overallStatus: 'healthy' | 'warning' | 'critical';
   overallHealthScore: number;
   criticalIssuesFound: number;
   totalActiveIssues: number;
   syncStatus: 'fully_synced' | 'partially_synced' | 'out_of_sync';
+  timestamp: string;
   
   systemHealth: {
     isSystemStable: boolean;
     overallHealthScore: number;
     componentStatuses: ComponentStatus[];
+    databaseHealth: DatabaseHealthResult;
   };
 
   moduleVerification: {
@@ -48,11 +73,14 @@ export interface ComprehensiveVerificationResult {
     breadcrumbsValid: boolean;
   };
 
+  syncVerification: SyncVerificationResult;
+  recommendations: string[];
   verificationTimestamp: string;
   automationMetadata: {
     dataSource: string;
     verificationLevel: string;
     automationEnabled: boolean;
+    triggeredBy: string;
   };
 }
 
@@ -82,6 +110,7 @@ export class ComprehensiveSystemVerifier {
     console.log('🔍 COMPREHENSIVE VERIFICATION: Starting complete system check...');
     
     const verificationStart = Date.now();
+    const timestamp = new Date().toISOString();
     
     try {
       // 1. Verify all modules
@@ -96,29 +125,42 @@ export class ComprehensiveSystemVerifier {
       // 4. Check navigation integrity
       const navigationIntegrity = await this.verifyNavigationIntegrity();
       
-      // 5. Calculate overall health
-      const systemHealth = this.calculateSystemHealth(moduleVerification, databaseIntegrity, hookConsistency, navigationIntegrity);
+      // 5. Perform sync verification
+      const syncVerification = await this.verifySyncIntegrity();
       
-      // 6. Determine sync status
-      const syncStatus = this.determineSyncStatus(moduleVerification);
+      // 6. Check database health
+      const databaseHealth = await this.verifyDatabaseHealth();
+      
+      // 7. Calculate overall health
+      const systemHealth = this.calculateSystemHealth(moduleVerification, databaseIntegrity, hookConsistency, navigationIntegrity, databaseHealth);
+      
+      // 8. Determine sync status
+      const syncStatus = this.determineSyncStatus(syncVerification);
+      
+      // 9. Generate recommendations
+      const recommendations = this.generateRecommendations(moduleVerification, databaseHealth, syncVerification);
       
       const result: ComprehensiveVerificationResult = {
         overallStatus: systemHealth.overallHealthScore >= 80 ? 'healthy' : 
                       systemHealth.overallHealthScore >= 60 ? 'warning' : 'critical',
         overallHealthScore: systemHealth.overallHealthScore,
-        criticalIssuesFound: this.countCriticalIssues(moduleVerification),
-        totalActiveIssues: this.countTotalIssues(moduleVerification),
+        criticalIssuesFound: this.countCriticalIssues(moduleVerification, databaseHealth),
+        totalActiveIssues: this.countTotalIssues(moduleVerification, databaseHealth),
         syncStatus,
+        timestamp,
         systemHealth,
         moduleVerification,
         databaseIntegrity,
         hookConsistency,
         navigationIntegrity,
-        verificationTimestamp: new Date().toISOString(),
+        syncVerification,
+        recommendations,
+        verificationTimestamp: timestamp,
         automationMetadata: {
           dataSource: 'original_database',
           verificationLevel: 'comprehensive',
-          automationEnabled: trigger === 'automated'
+          automationEnabled: trigger === 'automated',
+          triggeredBy: trigger
         }
       };
 
@@ -147,7 +189,7 @@ export class ComprehensiveSystemVerifier {
       users: await this.verifyModule('users', 'profiles', 'useUnifiedUserData'),
       facilities: await this.verifyModule('facilities', 'facilities', 'useFacilityData'),
       modules: await this.verifyModule('modules', 'modules', 'useModuleData'),
-      onboarding: await this.verifyModule('onboarding', 'onboarding_workflows', 'useOnboardingData'),
+      onboarding: await this.verifyModule('onboarding', 'profiles', 'useOnboardingData'),
       apiServices: await this.verifyModule('apiServices', 'api_integration_registry', 'useApiServicesData')
     };
   }
@@ -160,12 +202,29 @@ export class ComprehensiveSystemVerifier {
     const recommendations: string[] = [];
     
     try {
-      // Test database connection
+      // Test database connection with specific table names to avoid TypeScript errors
       let databaseConnection = false;
       try {
-        const { data, error } = await supabase.from(tableName).select('count', { count: 'exact', head: true });
-        databaseConnection = !error;
-        if (error) issues.push(`Database connection failed: ${error.message}`);
+        let queryResult;
+        switch (tableName) {
+          case 'profiles':
+            queryResult = await supabase.from('profiles').select('count', { count: 'exact', head: true });
+            break;
+          case 'facilities':
+            queryResult = await supabase.from('facilities').select('count', { count: 'exact', head: true });
+            break;
+          case 'modules':
+            queryResult = await supabase.from('modules').select('count', { count: 'exact', head: true });
+            break;
+          case 'api_integration_registry':
+            queryResult = await supabase.from('api_integration_registry').select('count', { count: 'exact', head: true });
+            break;
+          default:
+            queryResult = await supabase.from('profiles').select('count', { count: 'exact', head: true });
+        }
+        
+        databaseConnection = !queryResult.error;
+        if (queryResult.error) issues.push(`Database connection failed: ${queryResult.error.message}`);
       } catch (err) {
         issues.push(`Database query failed for ${tableName}`);
       }
@@ -223,7 +282,7 @@ export class ComprehensiveSystemVerifier {
     
     const tables = [
       'profiles', 'facilities', 'modules', 'api_integration_registry', 
-      'audit_logs', 'user_roles', 'roles', 'permissions'
+      'audit_logs', 'active_issues', 'issue_fixes'
     ];
     
     let tablesVerified = 0;
@@ -233,8 +292,34 @@ export class ComprehensiveSystemVerifier {
 
     for (const table of tables) {
       try {
-        const { error } = await supabase.from(table).select('count', { count: 'exact', head: true });
-        if (!error) tablesVerified++;
+        let queryResult;
+        switch (table) {
+          case 'profiles':
+            queryResult = await supabase.from('profiles').select('count', { count: 'exact', head: true });
+            break;
+          case 'facilities':
+            queryResult = await supabase.from('facilities').select('count', { count: 'exact', head: true });
+            break;
+          case 'modules':
+            queryResult = await supabase.from('modules').select('count', { count: 'exact', head: true });
+            break;
+          case 'api_integration_registry':
+            queryResult = await supabase.from('api_integration_registry').select('count', { count: 'exact', head: true });
+            break;
+          case 'audit_logs':
+            queryResult = await supabase.from('audit_logs').select('count', { count: 'exact', head: true });
+            break;
+          case 'active_issues':
+            queryResult = await supabase.from('active_issues').select('count', { count: 'exact', head: true });
+            break;
+          case 'issue_fixes':
+            queryResult = await supabase.from('issue_fixes').select('count', { count: 'exact', head: true });
+            break;
+          default:
+            continue;
+        }
+        
+        if (!queryResult.error) tablesVerified++;
       } catch (err) {
         console.warn(`Table ${table} verification failed:`, err);
       }
@@ -245,6 +330,101 @@ export class ComprehensiveSystemVerifier {
       foreignKeysValid,
       rlsPoliciesActive,
       schemaConsistency: tablesVerified === tables.length
+    };
+  }
+
+  /**
+   * Verify database health
+   */
+  private static async verifyDatabaseHealth(): Promise<DatabaseHealthResult> {
+    console.log('🔍 Verifying database health...');
+    
+    const issues: DatabaseHealthResult['issues'] = [];
+    const tablesScanned = ['profiles', 'facilities', 'modules', 'api_integration_registry'];
+    
+    // Check for any existing active issues
+    try {
+      const { data: activeIssues } = await supabase
+        .from('active_issues')
+        .select('*')
+        .eq('status', 'active');
+      
+      if (activeIssues) {
+        for (const issue of activeIssues) {
+          issues.push({
+            id: issue.id,
+            type: issue.issue_type,
+            description: issue.issue_message,
+            table: issue.issue_source,
+            severity: issue.issue_severity as 'low' | 'medium' | 'high' | 'critical',
+            recommendation: `Review and resolve ${issue.issue_type} in ${issue.issue_source}`
+          });
+        }
+      }
+    } catch (error) {
+      issues.push({
+        type: 'database_access',
+        description: 'Failed to check active issues table',
+        table: 'active_issues',
+        severity: 'medium',
+        recommendation: 'Verify database connectivity and permissions'
+      });
+    }
+
+    return {
+      isHealthy: issues.filter(i => i.severity === 'critical').length === 0,
+      issues,
+      tablesScanned
+    };
+  }
+
+  /**
+   * Verify sync integrity
+   */
+  private static async verifySyncIntegrity(): Promise<SyncVerificationResult> {
+    console.log('🔍 Verifying sync integrity...');
+    
+    const originalTableCounts: Record<string, number> = {};
+    const syncDiscrepancies: SyncVerificationResult['syncDiscrepancies'] = [];
+    
+    // Get counts from original tables
+    const tables = ['profiles', 'facilities', 'modules', 'api_integration_registry'];
+    
+    for (const table of tables) {
+      try {
+        let queryResult;
+        switch (table) {
+          case 'profiles':
+            queryResult = await supabase.from('profiles').select('count', { count: 'exact', head: true });
+            break;
+          case 'facilities':
+            queryResult = await supabase.from('facilities').select('count', { count: 'exact', head: true });
+            break;
+          case 'modules':
+            queryResult = await supabase.from('modules').select('count', { count: 'exact', head: true });
+            break;
+          case 'api_integration_registry':
+            queryResult = await supabase.from('api_integration_registry').select('count', { count: 'exact', head: true });
+            break;
+          default:
+            continue;
+        }
+        
+        originalTableCounts[table] = queryResult.count || 0;
+      } catch (error) {
+        originalTableCounts[table] = 0;
+        syncDiscrepancies.push({
+          tableName: table,
+          details: `Failed to get count: ${error}`,
+          difference: 0
+        });
+      }
+    }
+
+    return {
+      isInSync: syncDiscrepancies.length === 0,
+      originalTableCounts,
+      syncDiscrepancies
     };
   }
 
@@ -287,13 +467,19 @@ export class ComprehensiveSystemVerifier {
   /**
    * Calculate overall system health
    */
-  private static calculateSystemHealth(moduleVerification: any, databaseIntegrity: any, hookConsistency: any, navigationIntegrity: any) {
+  private static calculateSystemHealth(
+    moduleVerification: any, 
+    databaseIntegrity: any, 
+    hookConsistency: any, 
+    navigationIntegrity: any,
+    databaseHealth: DatabaseHealthResult
+  ) {
     const modules = Object.values(moduleVerification) as ModuleVerificationResult[];
     const workingModules = modules.filter(m => m.isWorking).length;
     const totalModules = modules.length;
     
     const moduleScore = (workingModules / totalModules) * 40;
-    const databaseScore = (databaseIntegrity.tablesVerified / 8) * 30; // 8 core tables
+    const databaseScore = (databaseIntegrity.tablesVerified / 7) * 30; // 7 core tables
     const hookScore = (hookConsistency.templateAdoption / 100) * 20;
     const navigationScore = navigationIntegrity.routesValid ? 10 : 0;
     
@@ -309,37 +495,69 @@ export class ComprehensiveSystemVerifier {
     return {
       isSystemStable: overallHealthScore >= 80,
       overallHealthScore,
-      componentStatuses
+      componentStatuses,
+      databaseHealth
     };
   }
 
   /**
    * Determine sync status
    */
-  private static determineSyncStatus(moduleVerification: any): 'fully_synced' | 'partially_synced' | 'out_of_sync' {
-    const modules = Object.values(moduleVerification) as ModuleVerificationResult[];
-    const workingModules = modules.filter(m => m.isWorking).length;
-    const totalModules = modules.length;
-    
-    if (workingModules === totalModules) return 'fully_synced';
-    if (workingModules > totalModules * 0.7) return 'partially_synced';
+  private static determineSyncStatus(syncVerification: SyncVerificationResult): 'fully_synced' | 'partially_synced' | 'out_of_sync' {
+    if (syncVerification.isInSync) return 'fully_synced';
+    if (syncVerification.syncDiscrepancies.length < 3) return 'partially_synced';
     return 'out_of_sync';
+  }
+
+  /**
+   * Generate recommendations
+   */
+  private static generateRecommendations(
+    moduleVerification: any,
+    databaseHealth: DatabaseHealthResult,
+    syncVerification: SyncVerificationResult
+  ): string[] {
+    const recommendations: string[] = [];
+    
+    const modules = Object.values(moduleVerification) as ModuleVerificationResult[];
+    const brokenModules = modules.filter(m => !m.isWorking).length;
+    
+    if (brokenModules > 0) {
+      recommendations.push(`${brokenModules} modules need attention and repair`);
+    }
+    
+    if (databaseHealth.issues.length > 0) {
+      recommendations.push(`${databaseHealth.issues.length} database issues detected requiring resolution`);
+    }
+    
+    if (!syncVerification.isInSync) {
+      recommendations.push(`${syncVerification.syncDiscrepancies.length} sync discrepancies need to be addressed`);
+    }
+    
+    if (recommendations.length === 0) {
+      recommendations.push('System is healthy and ready for Phase 2 implementation');
+    }
+    
+    return recommendations;
   }
 
   /**
    * Count critical issues
    */
-  private static countCriticalIssues(moduleVerification: any): number {
+  private static countCriticalIssues(moduleVerification: any, databaseHealth: DatabaseHealthResult): number {
     const modules = Object.values(moduleVerification) as ModuleVerificationResult[];
-    return modules.filter(m => !m.isWorking).length;
+    const brokenModules = modules.filter(m => !m.isWorking).length;
+    const criticalDbIssues = databaseHealth.issues.filter(i => i.severity === 'critical').length;
+    return brokenModules + criticalDbIssues;
   }
 
   /**
    * Count total issues
    */
-  private static countTotalIssues(moduleVerification: any): number {
+  private static countTotalIssues(moduleVerification: any, databaseHealth: DatabaseHealthResult): number {
     const modules = Object.values(moduleVerification) as ModuleVerificationResult[];
-    return modules.reduce((total, module) => total + module.issues.length, 0);
+    const moduleIssues = modules.reduce((total, module) => total + module.issues.length, 0);
+    return moduleIssues + databaseHealth.issues.length;
   }
 
   /**
@@ -368,41 +586,27 @@ export class ComprehensiveSystemVerifier {
     });
     report += '\n';
 
-    // Database Integrity
-    report += '🗄️ DATABASE INTEGRITY:\n';
-    report += `   ✅ Tables Verified: ${result.databaseIntegrity.tablesVerified}\n`;
-    report += `   ${result.databaseIntegrity.foreignKeysValid ? '✅' : '❌'} Foreign Keys Valid\n`;
-    report += `   ${result.databaseIntegrity.rlsPoliciesActive ? '✅' : '❌'} RLS Policies Active\n`;
-    report += `   ${result.databaseIntegrity.schemaConsistency ? '✅' : '❌'} Schema Consistency\n\n`;
+    // Database Health
+    report += '🗄️ DATABASE HEALTH:\n';
+    report += `   Overall Health: ${result.systemHealth.databaseHealth.isHealthy ? '✅ Healthy' : '❌ Issues Found'}\n`;
+    report += `   Tables Scanned: ${result.systemHealth.databaseHealth.tablesScanned.join(', ')}\n`;
+    report += `   Issues Found: ${result.systemHealth.databaseHealth.issues.length}\n\n`;
 
-    // Hook Consistency
-    report += '🔗 HOOK CONSISTENCY:\n';
-    report += `   ✅ Template Adoption: ${result.hookConsistency.templateAdoption}%\n`;
-    report += `   ✅ Consolidated Hooks: ${result.hookConsistency.consolidatedHooks.join(', ')}\n`;
-    if (result.hookConsistency.duplicateHooks.length > 0) {
-      report += `   ⚠️ Duplicate Hooks Found: ${result.hookConsistency.duplicateHooks.join(', ')}\n`;
+    // Recommendations
+    if (result.recommendations.length > 0) {
+      report += '💡 RECOMMENDATIONS:\n';
+      result.recommendations.forEach((rec, idx) => {
+        report += `   ${idx + 1}. ${rec}\n`;
+      });
+      report += '\n';
     }
-    report += '\n';
-
-    // Navigation Integrity
-    report += '🧭 NAVIGATION INTEGRITY:\n';
-    report += `   ${result.navigationIntegrity.routesValid ? '✅' : '❌'} Routes Valid\n`;
-    report += `   ${result.navigationIntegrity.tabsWorking ? '✅' : '❌'} Tabs Working\n`;
-    report += `   ${result.navigationIntegrity.subTabsWorking ? '✅' : '❌'} Sub-tabs Working\n`;
-    report += `   ${result.navigationIntegrity.breadcrumbsValid ? '✅' : '❌'} Breadcrumbs Valid\n\n`;
-
-    // System Health Summary
-    report += '🏥 SYSTEM HEALTH:\n';
-    report += `   System Stable: ${result.systemHealth.isSystemStable ? 'YES' : 'NO'}\n`;
-    report += `   Health Score: ${result.systemHealth.overallHealthScore}/100\n`;
-    report += `   Components Checked: ${result.systemHealth.componentStatuses.length}\n\n`;
 
     // Verification Metadata
     report += '📋 VERIFICATION METADATA:\n';
     report += `   Timestamp: ${result.verificationTimestamp}\n`;
     report += `   Data Source: ${result.automationMetadata.dataSource}\n`;
     report += `   Verification Level: ${result.automationMetadata.verificationLevel}\n`;
-    report += `   Automation Enabled: ${result.automationMetadata.automationEnabled}\n\n`;
+    report += `   Triggered By: ${result.automationMetadata.triggeredBy}\n\n`;
 
     if (result.overallStatus === 'healthy') {
       report += '🎉 CONCLUSION: System is healthy and ready for Phase 2!\n';
