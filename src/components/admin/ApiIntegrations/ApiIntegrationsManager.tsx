@@ -1,7 +1,6 @@
 
 import React, { useState } from 'react';
-import { useApiIntegrations } from '@/hooks/useApiIntegrations';
-import { useEnhancedExternalApis } from '@/hooks/useEnhancedExternalApis';
+import { useApiIntegrations } from '@/hooks/useApiIntegrations.tsx'; // Use the .tsx version with external APIs
 import { usePublishedApiIntegration } from '@/hooks/usePublishedApiIntegration';
 import IntegrationDetailView from './IntegrationDetailView';
 import { LoadingState } from '../shared/LoadingState';
@@ -23,9 +22,8 @@ const ApiIntegrationsManager = () => {
     externalApis,
     downloadPostmanCollection,
     testEndpoint
-  } = useApiIntegrations();
+  } = useApiIntegrations(); // This should now include the external APIs
   
-  const { externalApis: publishedApis, isLoading: isLoadingPublished } = useEnhancedExternalApis();
   const { publishedApisForDevelopers } = usePublishedApiIntegration();
   
   const [activeTab, setActiveTab] = useState('overview');
@@ -37,7 +35,6 @@ const ApiIntegrationsManager = () => {
     integrations: integrations?.length || 0,
     internalApis: internalApis?.length || 0,
     externalApis: externalApis?.length || 0,
-    publishedApis: publishedApis?.length || 0,
     publishedForDevelopers: publishedApisForDevelopers?.length || 0,
     activeTab,
     isLoading,
@@ -49,7 +46,7 @@ const ApiIntegrationsManager = () => {
     totalIntegrations: integrations?.length || 0,
     internalApis: internalApis?.length || 0,
     externalApis: externalApis?.length || 0,
-    publishedApis: publishedApis?.length || 0,
+    publishedApis: publishedApisForDevelopers?.length || 0,
     developerApis: publishedApisForDevelopers?.length || 0,
     activeEndpoints: integrations?.reduce((sum, i) => sum + (i.endpoints?.length || 0), 0) || 0
   };
@@ -86,7 +83,7 @@ const ApiIntegrationsManager = () => {
     }
   };
 
-  if (isLoading || isLoadingPublished) {
+  if (isLoading) {
     return <LoadingState title="API Services" description="Loading comprehensive API management tools..." />;
   }
 
@@ -210,7 +207,7 @@ const ApiIntegrationsManager = () => {
         totalIntegrations={integrations?.length || 0}
         internalApis={internalApis?.length || 0}
         externalApis={externalApis?.length || 0}
-        publishedApis={publishedApis?.length || 0}
+        publishedApis={publishedApisForDevelopers?.length || 0}
       />
 
       {/* Main Tabs Interface */}
@@ -221,7 +218,7 @@ const ApiIntegrationsManager = () => {
         integrations={integrations || []}
         internalApis={internalApis || []}
         externalApis={externalApis || []}
-        publishedApis={publishedApis || []}
+        publishedApis={publishedApisForDevelopers || []}
         createDialogOpen={createDialogOpen}
         onCreateDialogChange={setCreateDialogOpen}
         onDownloadCollection={handleDownloadCollection}
