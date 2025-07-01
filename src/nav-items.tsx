@@ -13,7 +13,9 @@ import {
   Globe,
   FileText,
   Database,
-  CheckCircle2
+  CheckCircle2,
+  Import,
+  Cloud
 } from 'lucide-react';
 
 export interface NavItem {
@@ -73,6 +75,22 @@ export const navItems: NavItem[] = [
     items: []
   },
   {
+    title: "API Services",
+    url: "/api-services",
+    to: "/api-services",
+    icon: Globe,
+    isActive: false,
+    items: []
+  },
+  {
+    title: "Data Import",
+    url: "/data-import",
+    to: "/data-import",
+    icon: Import,
+    isActive: false,
+    items: []
+  },
+  {
     title: "Onboarding",
     url: "/onboarding",
     to: "/onboarding",
@@ -109,7 +127,7 @@ export const navItems: NavItem[] = [
         title: "API Integrations",
         url: "/admin/api-integrations",
         to: "/admin/api-integrations", 
-        icon: Globe
+        icon: Cloud
       },
       {
         title: "Data Import",

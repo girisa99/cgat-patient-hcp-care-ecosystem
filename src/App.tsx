@@ -21,9 +21,11 @@ import OptimizedApiIntegrationsManager from "@/components/admin/ApiIntegrations/
 import { DataImportModule } from "@/components/admin/DataImportModule";
 import { SystemStatusDashboard } from "@/components/admin/SystemStatusDashboard";
 import { UserManagementMain } from "@/components/admin/UserManagement/UserManagementMain";
-import PatientManagement from "@/components/admin/PatientManagement/PatientsList";
+import Patients from "@/pages/Patients";
 import AutoModuleManager from "@/components/admin/AutoModuleManager";
 import Reports from "@/pages/Reports";
+import ApiServices from "@/pages/ApiServices";
+import DataImport from "@/pages/DataImport";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -50,9 +52,11 @@ const App = () => {
                 <Route path="/dashboard" element={<UnifiedDashboard />} />
                 <Route path="/users" element={<Users />} />
                 <Route path="/user-management" element={<UsersPage />} />
-                <Route path="/patients" element={<PatientManagement />} />
+                <Route path="/patients" element={<Patients />} />
                 <Route path="/facilities" element={<FacilitiesManagement />} />
                 <Route path="/modules" element={<ModulesManagement />} />
+                <Route path="/api-services" element={<ApiServices />} />
+                <Route path="/data-import" element={<DataImport />} />
                 <Route path="/onboarding" element={<CollaborativeOnboardingView />} />
                 <Route path="/security" element={<SecurityDashboard />} />
                 <Route path="/reports" element={<Reports />} />
@@ -65,7 +69,7 @@ const App = () => {
                 <Route path="/admin/data-import" element={<DataImportModule />} />
                 <Route path="/admin/system-status" element={<SystemStatusDashboard />} />
                 <Route path="/admin/user-management" element={<UserManagementMain />} />
-                <Route path="/admin/patient-management" element={<PatientManagement />} />
+                <Route path="/admin/patient-management" element={<Patients />} />
                 <Route path="/admin/auto-module-manager" element={<AutoModuleManager />} />
                 <Route path="/admin/system-verification" element={<AdminVerificationTest />} />
                 
