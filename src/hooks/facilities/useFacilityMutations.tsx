@@ -71,7 +71,7 @@ export const useFacilityMutations = () => {
 
   return {
     createFacility: createFacilityMutation.mutate,
-    updateFacility: updateFacilityMutation.mutate,
+    updateFacility: (id: string, updates: any) => updateFacilityMutation.mutate({ id, updates }),
     isCreatingFacility: createFacilityMutation.isPending,
     isUpdatingFacility: updateFacilityMutation.isPending
   };

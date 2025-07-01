@@ -1,14 +1,14 @@
 
 import React from 'react';
 import UnifiedDashboardLayout from '@/components/layout/UnifiedDashboardLayout';
-import { FacilitiesManagement } from '@/components/facilities/FacilitiesManagement';
+import { UserManagementMain } from '@/components/admin/UserManagement/UserManagementMain';
 
-const FacilitiesPage: React.FC = () => {
+const AdminPage: React.FC = () => {
   return (
     <UnifiedDashboardLayout>
-      <FacilitiesManagement />
+      <UserManagementMain />
     </UnifiedDashboardLayout>
   );
 };
 
-export default FacilitiesPage;
+export default AdminPage;

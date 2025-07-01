@@ -1,13 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useFacilities } from '@/hooks/useFacilities';
-import { supabase } from '@/integrations/supabase/client';
+import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 
 interface EditUserDialogProps {
@@ -16,129 +15,75 @@ interface EditUserDialogProps {
   user: any;
 }
 
-const EditUserDialog: React.FC<EditUserDialogProps> = ({
-  open,
-  onOpenChange,
-  user
-}) => {
-  const { facilities, isLoading: facilitiesLoading } = useFacilities();
+const EditUserDialog: React.FC<EditUserDialogProps> = ({ open, onOpenChange, user }) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [isUpdating, setIsUpdating] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
     phone: '',
     department: '',
-    facility_id: ''
+    is_active: true
   });
 
   useEffect(() => {
-    if (user && open) {
-      console.log('📝 EditUserDialog received user data:', user);
-      console.log('🔍 User properties:', Object.keys(user));
-      
+    if (user) {
       setFormData({
         first_name: user.first_name || '',
         last_name: user.last_name || '',
         phone: user.phone || '',
         department: user.department || '',
-        facility_id: user.facility_id || ''
-      });
-      
-      console.log('✅ Form data initialized:', {
-        first_name: user.first_name || '',
-        last_name: user.last_name || '',
-        phone: user.phone || '',
-        department: user.department || '',
-        facility_id: user.facility_id || ''
+        is_active: user.is_active !== false
       });
     }
-  }, [user, open]);
+  }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!user?.id) {
-      console.error('❌ No user ID provided');
-      toast({
-        title: "Error",
-        description: "User ID is missing",
-        variant: "destructive",
-      });
-      return;
-    }
+    if (!user) return;
 
-    setIsUpdating(true);
-    
-    // Prepare the profile data, converting empty strings to null for UUID fields
-    const profileData = {
-      first_name: formData.first_name,
-      last_name: formData.last_name,
-      phone: formData.phone || null,
-      department: formData.department || null,
-      facility_id: formData.facility_id === '' || formData.facility_id === 'no-facility' ? null : formData.facility_id
-    };
-    
-    console.log('🔄 Updating user profile:', user.id, profileData);
-    
+    setIsLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('manage-user-profiles', {
-        body: {
-          action: 'update',
-          user_id: user.id,
-          profile_data: profileData
-        }
-      });
+      const { error } = await supabase
+        .from('profiles')
+        .update(formData)
+        .eq('id', user.id);
 
-      if (error) {
-        console.error('❌ Error from edge function:', error);
-        throw error;
-      }
-
-      console.log('✅ User profile updated successfully:', data);
+      if (error) throw error;
 
       toast({
         title: "User Updated",
-        description: "User profile has been updated successfully.",
+        description: "User information has been updated successfully.",
       });
 
-      // Invalidate both users and specific user queries
       queryClient.invalidateQueries({ queryKey: ['users'] });
-      queryClient.invalidateQueries({ queryKey: ['user', user.id] });
-      
       onOpenChange(false);
     } catch (error: any) {
-      console.error('❌ Failed to update user:', error);
+      console.error('Failed to update user:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to update user profile",
+        description: error.message || "Failed to update user",
         variant: "destructive",
       });
     } finally {
-      setIsUpdating(false);
+      setIsLoading(false);
     }
   };
 
-  const handleInputChange = (field: string, value: string) => {
-    console.log(`📝 Updating ${field} to:`, value);
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  if (!user) {
-    console.log('⚠️ No user provided to EditUserDialog');
-    return null;
-  }
-
-  console.log('🎨 Rendering EditUserDialog for user:', user.email, 'Open:', open);
+  if (!user) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Edit User: {user.email}</DialogTitle>
+          <DialogTitle>Edit User</DialogTitle>
+          <DialogDescription>
+            Update user information and account status.
+          </DialogDescription>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -146,74 +91,64 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
               <Input
                 id="first_name"
                 value={formData.first_name}
-                onChange={(e) => handleInputChange('first_name', e.target.value)}
-                placeholder="Enter first name"
+                onChange={(e) => setFormData(prev => ({ ...prev, first_name: e.target.value }))}
               />
             </div>
-            
             <div className="space-y-2">
               <Label htmlFor="last_name">Last Name</Label>
               <Input
                 id="last_name"
                 value={formData.last_name}
-                onChange={(e) => handleInputChange('last_name', e.target.value)}
-                placeholder="Enter last name"
+                onChange={(e) => setFormData(prev => ({ ...prev, last_name: e.target.value }))}
               />
             </div>
           </div>
-          
+
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              value={user.email}
+              disabled
+              className="bg-gray-100"
+            />
+            <p className="text-xs text-gray-500">Email cannot be changed</p>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="phone">Phone</Label>
             <Input
               id="phone"
               value={formData.phone}
-              onChange={(e) => handleInputChange('phone', e.target.value)}
-              placeholder="Enter phone number"
+              onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
             />
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="department">Department</Label>
             <Input
               id="department"
               value={formData.department}
-              onChange={(e) => handleInputChange('department', e.target.value)}
-              placeholder="Enter department"
+              onChange={(e) => setFormData(prev => ({ ...prev, department: e.target.value }))}
             />
           </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="facility">Facility</Label>
-            <Select
-              value={formData.facility_id || undefined}
-              onValueChange={(value) => handleInputChange('facility_id', value || '')}
-              disabled={facilitiesLoading}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={facilitiesLoading ? "Loading facilities..." : "Select a facility"} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="no-facility">No facility</SelectItem>
-                {facilities?.map((facility) => (
-                  <SelectItem key={facility.id} value={facility.id}>
-                    {facility.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="is_active"
+              checked={formData.is_active}
+              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_active: checked }))}
+            />
+            <Label htmlFor="is_active">Account Active</Label>
           </div>
-          
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={isUpdating}
-            >
+
+          <div className="flex justify-end gap-3">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isUpdating}>
-              {isUpdating ? 'Updating...' : 'Update User'}
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? 'Updating...' : 'Update User'}
             </Button>
           </div>
         </form>

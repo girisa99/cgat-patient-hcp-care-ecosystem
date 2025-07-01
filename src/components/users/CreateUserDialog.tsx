@@ -1,11 +1,11 @@
 
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useUsers } from '@/hooks/useUsers';
+import { useUserMutations } from '@/hooks/users/useUserMutations';
 import { useFacilities } from '@/hooks/useFacilities';
 import { Database } from '@/integrations/supabase/types';
 
@@ -16,29 +16,23 @@ interface CreateUserDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
-  open,
-  onOpenChange
-}) => {
-  const { createUser, isCreatingUser } = useUsers();
+const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onOpenChange }) => {
+  const { createUser, isCreatingUser } = useUserMutations();
   const { facilities } = useFacilities();
+  
   const [formData, setFormData] = useState({
     email: '',
     first_name: '',
     last_name: '',
     phone: '',
     department: '',
-    role: 'patientCaregiver' as UserRole,
+    role: 'user' as UserRole,
     facility_id: ''
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.email || !formData.first_name || !formData.role) {
-      return;
-    }
-
     try {
       await createUser({
         ...formData,
@@ -52,7 +46,7 @@ const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
         last_name: '',
         phone: '',
         department: '',
-        role: 'patientCaregiver' as UserRole,
+        role: 'user',
         facility_id: ''
       });
       
@@ -62,26 +56,20 @@ const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
     }
   };
 
-  const roles: { value: UserRole; label: string }[] = [
-    { value: 'superAdmin', label: 'Super Admin' },
-    { value: 'onboardingTeam', label: 'Onboarding Team' },
-    { value: 'caseManager', label: 'Case Manager' },
-    { value: 'patientCaregiver', label: 'Patient Caregiver' },
-    { value: 'healthcareProvider', label: 'Healthcare Provider' },
-    { value: 'nurse', label: 'Nurse' }
-  ];
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Create New User</DialogTitle>
+          <DialogDescription>
+            Add a new user to the system with appropriate role and facility access.
+          </DialogDescription>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="first_name">First Name *</Label>
+              <Label htmlFor="first_name">First Name</Label>
               <Input
                 id="first_name"
                 value={formData.first_name}
@@ -89,19 +77,19 @@ const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
                 required
               />
             </div>
-            
             <div className="space-y-2">
               <Label htmlFor="last_name">Last Name</Label>
               <Input
                 id="last_name"
                 value={formData.last_name}
                 onChange={(e) => setFormData(prev => ({ ...prev, last_name: e.target.value }))}
+                required
               />
             </div>
           </div>
-          
+
           <div className="space-y-2">
-            <Label htmlFor="email">Email *</Label>
+            <Label htmlFor="email">Email</Label>
             <Input
               id="email"
               type="email"
@@ -110,7 +98,7 @@ const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
               required
             />
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="phone">Phone</Label>
             <Input
@@ -119,7 +107,7 @@ const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
               onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
             />
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="department">Department</Label>
             <Input
@@ -128,37 +116,31 @@ const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
               onChange={(e) => setFormData(prev => ({ ...prev, department: e.target.value }))}
             />
           </div>
-          
+
           <div className="space-y-2">
-            <Label htmlFor="role">Role *</Label>
-            <Select
-              value={formData.role}
-              onValueChange={(value: UserRole) => setFormData(prev => ({ ...prev, role: value }))}
-            >
+            <Label htmlFor="role">Role</Label>
+            <Select value={formData.role} onValueChange={(value: UserRole) => setFormData(prev => ({ ...prev, role: value }))}>
               <SelectTrigger>
                 <SelectValue placeholder="Select a role" />
               </SelectTrigger>
               <SelectContent>
-                {roles.map((role) => (
-                  <SelectItem key={role.value} value={role.value}>
-                    {role.label}
-                  </SelectItem>
-                ))}
+                <SelectItem value="user">User</SelectItem>
+                <SelectItem value="moderator">Moderator</SelectItem>
+                <SelectItem value="superAdmin">Super Administrator</SelectItem>
+                <SelectItem value="patientCaregiver">Patient Caregiver</SelectItem>
               </SelectContent>
             </Select>
           </div>
-          
+
           <div className="space-y-2">
-            <Label htmlFor="facility">Facility</Label>
-            <Select
-              value={formData.facility_id}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, facility_id: value }))}
-            >
+            <Label htmlFor="facility">Facility (Optional)</Label>
+            <Select value={formData.facility_id} onValueChange={(value) => setFormData(prev => ({ ...prev, facility_id: value }))}>
               <SelectTrigger>
                 <SelectValue placeholder="Select a facility" />
               </SelectTrigger>
               <SelectContent>
-                {facilities?.map((facility) => (
+                <SelectItem value="">No facility</SelectItem>
+                {facilities.map((facility) => (
                   <SelectItem key={facility.id} value={facility.id}>
                     {facility.name}
                   </SelectItem>
@@ -166,14 +148,9 @@ const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
               </SelectContent>
             </Select>
           </div>
-          
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={isCreatingUser}
-            >
+
+          <div className="flex justify-end gap-3">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
             <Button type="submit" disabled={isCreatingUser}>

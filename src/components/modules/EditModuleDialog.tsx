@@ -1,20 +1,25 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { useModules } from '@/hooks/useModules';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 
-interface CreateModuleDialogProps {
+interface EditModuleDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  module: any;
 }
 
-const CreateModuleDialog: React.FC<CreateModuleDialogProps> = ({ open, onOpenChange }) => {
-  const { createModule, isCreating } = useModules();
+const EditModuleDialog: React.FC<EditModuleDialogProps> = ({ open, onOpenChange, module }) => {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [isLoading, setIsLoading] = useState(false);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -22,32 +27,57 @@ const CreateModuleDialog: React.FC<CreateModuleDialogProps> = ({ open, onOpenCha
     is_active: true
   });
 
+  useEffect(() => {
+    if (module) {
+      setFormData({
+        name: module.name || '',
+        description: module.description || '',
+        is_active: module.is_active !== false
+      });
+    }
+  }, [module]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    if (!module) return;
+
+    setIsLoading(true);
     try {
-      await createModule(formData);
-      
-      // Reset form
-      setFormData({
-        name: '',
-        description: '',
-        is_active: true
+      const { error } = await supabase
+        .from('modules')
+        .update(formData)
+        .eq('id', module.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Module Updated",
+        description: "Module information has been updated successfully.",
       });
-      
+
+      queryClient.invalidateQueries({ queryKey: ['modules'] });
       onOpenChange(false);
-    } catch (error) {
-      console.error('Failed to create module:', error);
+    } catch (error: any) {
+      console.error('Failed to update module:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update module",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
+
+  if (!module) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Create New Module</DialogTitle>
+          <DialogTitle>Edit Module</DialogTitle>
           <DialogDescription>
-            Add a new module to the system with specific functionality and permissions.
+            Update module information and settings.
           </DialogDescription>
         </DialogHeader>
 
@@ -58,7 +88,6 @@ const CreateModuleDialog: React.FC<CreateModuleDialogProps> = ({ open, onOpenCha
               id="name"
               value={formData.name}
               onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              placeholder="e.g., Patient Management, API Services"
               required
             />
           </div>
@@ -69,7 +98,6 @@ const CreateModuleDialog: React.FC<CreateModuleDialogProps> = ({ open, onOpenCha
               id="description"
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              placeholder="Describe what this module does and its functionality..."
               rows={3}
             />
           </div>
@@ -84,20 +112,19 @@ const CreateModuleDialog: React.FC<CreateModuleDialogProps> = ({ open, onOpenCha
           </div>
 
           <div className="text-sm text-gray-600">
-            <p><strong>Note:</strong> After creating the module, you can:</p>
-            <ul className="list-disc list-inside mt-1 space-y-1">
-              <li>Assign it to specific user roles</li>
-              <li>Configure access permissions</li>
-              <li>Set up module-specific settings</li>
-            </ul>
+            <p>Module ID: {module.id}</p>
+            <p>Created: {new Date(module.created_at).toLocaleString()}</p>
+            {module.updated_at !== module.created_at && (
+              <p>Last Updated: {new Date(module.updated_at).toLocaleString()}</p>
+            )}
           </div>
 
           <div className="flex justify-end gap-3">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isCreating}>
-              {isCreating ? 'Creating...' : 'Create Module'}
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? 'Updating...' : 'Update Module'}
             </Button>
           </div>
         </form>
@@ -106,4 +133,4 @@ const CreateModuleDialog: React.FC<CreateModuleDialogProps> = ({ open, onOpenCha
   );
 };
 
-export default CreateModuleDialog;
+export default EditModuleDialog;

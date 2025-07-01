@@ -1,10 +1,10 @@
 
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useUsers } from '@/hooks/useUsers';
+import { useUserMutations } from '@/hooks/users/useUserMutations';
 import { Database } from '@/integrations/supabase/types';
 
 type UserRole = Database['public']['Enums']['user_role'];
@@ -16,33 +16,22 @@ interface AssignRoleDialogProps {
   userName: string;
 }
 
-const AssignRoleDialog: React.FC<AssignRoleDialogProps> = ({
-  open,
-  onOpenChange,
-  userId,
-  userName
-}) => {
-  const { assignRole, isAssigningRole } = useUsers();
-  const [selectedRole, setSelectedRole] = useState<UserRole | ''>('');
-
-  const roles: { value: UserRole; label: string }[] = [
-    { value: 'superAdmin', label: 'Super Admin' },
-    { value: 'onboardingTeam', label: 'Onboarding Team' },
-    { value: 'caseManager', label: 'Case Manager' },
-    { value: 'patientCaregiver', label: 'Patient Caregiver' },
-    { value: 'healthcareProvider', label: 'Healthcare Provider' },
-    { value: 'nurse', label: 'Nurse' }
-  ];
+const AssignRoleDialog: React.FC<AssignRoleDialogProps> = ({ open, onOpenChange, userId, userName }) => {
+  const { assignRole, isAssigningRole } = useUserMutations();
+  const [selectedRole, setSelectedRole] = useState<UserRole>('user');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!userId || !selectedRole) return;
+    if (!userId) return;
 
     try {
-      await assignRole({ userId, roleName: selectedRole });
-      setSelectedRole('');
+      await assignRole({
+        userId,
+        roleName: selectedRole
+      });
+      
       onOpenChange(false);
+      setSelectedRole('user');
     } catch (error) {
       console.error('Failed to assign role:', error);
     }
@@ -50,44 +39,35 @@ const AssignRoleDialog: React.FC<AssignRoleDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[400px]">
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Assign Role to {userName}</DialogTitle>
+          <DialogTitle>Assign Role</DialogTitle>
+          <DialogDescription>
+            Assign a role to {userName}
+          </DialogDescription>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="role">Select Role</Label>
-            <Select
-              value={selectedRole}
-              onValueChange={(value: UserRole) => setSelectedRole(value)}
-            >
+            <Select value={selectedRole} onValueChange={(value: UserRole) => setSelectedRole(value)}>
               <SelectTrigger>
-                <SelectValue placeholder="Choose a role to assign" />
+                <SelectValue placeholder="Select a role" />
               </SelectTrigger>
               <SelectContent>
-                {roles.map((role) => (
-                  <SelectItem key={role.value} value={role.value}>
-                    {role.label}
-                  </SelectItem>
-                ))}
+                <SelectItem value="user">User</SelectItem>
+                <SelectItem value="moderator">Moderator</SelectItem>
+                <SelectItem value="superAdmin">Super Administrator</SelectItem>
+                <SelectItem value="patientCaregiver">Patient Caregiver</SelectItem>
               </SelectContent>
             </Select>
           </div>
-          
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={isAssigningRole}
-            >
+
+          <div className="flex justify-end gap-3">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button 
-              type="submit" 
-              disabled={isAssigningRole || !selectedRole}
-            >
+            <Button type="submit" disabled={isAssigningRole}>
               {isAssigningRole ? 'Assigning...' : 'Assign Role'}
             </Button>
           </div>

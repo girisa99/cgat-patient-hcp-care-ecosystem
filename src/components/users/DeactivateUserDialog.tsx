@@ -1,56 +1,87 @@
 
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertTriangle, UserX, Loader2 } from 'lucide-react';
-import { useUserDeactivation } from '@/hooks/mutations/useUserDeactivation';
+import { UserX, AlertTriangle } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface DeactivateUserDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  userId: string;
+  userId: string | null;
   userName: string;
   userEmail: string;
 }
 
-const DeactivateUserDialog: React.FC<DeactivateUserDialogProps> = ({
-  open,
-  onOpenChange,
-  userId,
-  userName,
-  userEmail
+const DeactivateUserDialog: React.FC<DeactivateUserDialogProps> = ({ 
+  open, 
+  onOpenChange, 
+  userId, 
+  userName, 
+  userEmail 
 }) => {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [reason, setReason] = useState('');
-  const [confirmText, setConfirmText] = useState('');
-  const { deactivateUser, isDeactivating } = useUserDeactivation();
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleDeactivateUser = () => {
-    if (confirmText.toLowerCase() !== 'deactivate') {
-      return;
+  const handleDeactivate = async () => {
+    if (!userId) return;
+
+    setIsLoading(true);
+    try {
+      // Update user profile to set as inactive
+      const { error } = await supabase
+        .from('profiles')
+        .update({ 
+          is_active: false,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      // Log the deactivation action
+      await supabase
+        .from('audit_logs')
+        .insert({
+          user_id: userId,
+          action: 'DEACTIVATE',
+          table_name: 'profiles',
+          record_id: userId,
+          new_values: { 
+            is_active: false, 
+            deactivation_reason: reason,
+            deactivated_by: (await supabase.auth.getUser()).data.user?.id
+          }
+        });
+
+      toast({
+        title: "User Deactivated",
+        description: `${userName} has been deactivated successfully`,
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      onOpenChange(false);
+      setReason('');
+    } catch (error: any) {
+      console.error('Failed to deactivate user:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to deactivate user",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
-
-    console.log('🔄 Deactivating user:', userId, userName, 'Reason:', reason);
-    deactivateUser({ userId, reason });
-    
-    // Close dialog and reset form
-    onOpenChange(false);
-    setReason('');
-    setConfirmText('');
   };
-
-  const handleClose = () => {
-    onOpenChange(false);
-    setReason('');
-    setConfirmText('');
-  };
-
-  const isConfirmValid = confirmText.toLowerCase() === 'deactivate';
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-red-600">
@@ -58,95 +89,56 @@ const DeactivateUserDialog: React.FC<DeactivateUserDialogProps> = ({
             Deactivate User Account
           </DialogTitle>
           <DialogDescription>
-            This action will permanently deactivate the user account and revoke all access permissions.
+            Deactivate the account for {userName} ({userEmail})
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="space-y-4">
-          {/* User Details */}
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="text-sm font-medium text-red-800">User to be deactivated:</p>
-                <p className="text-sm text-red-700">
-                  <strong>Name:</strong> {userName}
-                </p>
-                <p className="text-sm text-red-700">
-                  <strong>Email:</strong> {userEmail}
-                </p>
-              </div>
+          <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5" />
+            <div className="text-sm">
+              <p className="font-medium text-red-800">Warning: Account Deactivation</p>
+              <p className="text-red-700 mt-1">
+                This action will prevent the user from logging in and accessing any system resources. 
+                The account can be reactivated later if needed.
+              </p>
             </div>
           </div>
 
-          {/* Deactivation Reason */}
           <div className="space-y-2">
-            <Label htmlFor="deactivation-reason">Reason for Deactivation</Label>
+            <Label htmlFor="reason">Reason for Deactivation</Label>
             <Textarea
-              id="deactivation-reason"
-              placeholder="Please provide a reason for deactivating this user account..."
+              id="reason"
+              placeholder="Enter the reason for deactivating this user account..."
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               rows={3}
             />
           </div>
 
-          {/* Confirmation Input */}
-          <div className="space-y-2">
-            <Label htmlFor="confirm-text">
-              Type "DEACTIVATE" to confirm this action
-            </Label>
-            <input
-              id="confirm-text"
-              type="text"
-              value={confirmText}
-              onChange={(e) => setConfirmText(e.target.value)}
-              placeholder="Type DEACTIVATE here"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-            />
+          <div className="text-sm text-gray-600">
+            <p><strong>What happens when a user is deactivated:</strong></p>
+            <ul className="list-disc list-inside mt-2 space-y-1">
+              <li>User will be immediately logged out of all sessions</li>
+              <li>User cannot log in until account is reactivated</li>
+              <li>All assigned roles and permissions remain intact</li>
+              <li>User data and history are preserved</li>
+              <li>Account can be reactivated by an administrator</li>
+            </ul>
           </div>
+        </div>
 
-          {/* Warning Message */}
-          <Alert className="border-amber-200 bg-amber-50">
-            <AlertTriangle className="h-4 w-4 text-amber-600" />
-            <AlertDescription className="text-amber-800">
-              <strong>Important:</strong> Deactivating this user will:
-              <ul className="mt-2 space-y-1 text-sm">
-                <li>• Permanently delete the user account</li>
-                <li>• Remove all role assignments and permissions</li>
-                <li>• Log the deactivation for audit purposes</li>
-                <li>• This action cannot be undone</li>
-              </ul>
-            </AlertDescription>
-          </Alert>
-          
-          {/* Action Buttons */}
-          <div className="flex justify-end space-x-3 pt-4">
-            <Button
-              variant="outline"
-              onClick={handleClose}
-              disabled={isDeactivating}
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleDeactivateUser}
-              disabled={!isConfirmValid || !reason.trim() || isDeactivating}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              {isDeactivating ? (
-                <div className="flex items-center space-x-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Deactivating...</span>
-                </div>
-              ) : (
-                <>
-                  <UserX className="h-4 w-4 mr-2" />
-                  Deactivate User
-                </>
-              )}
-            </Button>
-          </div>
+        <div className="flex justify-end gap-3">
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleDeactivate} 
+            disabled={isLoading || !reason.trim()}
+            variant="destructive"
+          >
+            {isLoading ? 'Deactivating...' : 'Deactivate User'}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
