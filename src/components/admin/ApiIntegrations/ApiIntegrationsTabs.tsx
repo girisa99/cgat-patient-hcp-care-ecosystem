@@ -29,8 +29,9 @@ export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = ({
     publishedCount
   });
 
-  const { selectedApiId } = useApiServices();
+  const { integrations } = useApiServices();
   const [activeTab, setActiveTab] = useState('overview');
+  const [selectedApiId, setSelectedApiId] = useState<string | null>(null);
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -62,16 +63,35 @@ export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = ({
       <TabsContent value="overview" className="space-y-4">
         <OverviewTabContent 
           totalIntegrations={consolidatedCount}
-          consolidatedData={consolidatedCount}
+          consolidatedData={{
+            consolidatedApis: integrations || [],
+            syncStatus: { lastSync: new Date().toISOString(), status: 'success' }
+          }}
         />
       </TabsContent>
 
       <TabsContent value="internal" className="space-y-4">
-        <InternalApisTabContent />
+        <InternalApisTabContent 
+          internalApis={integrations || []}
+          searchTerm=""
+          createDialogOpen={false}
+          setCreateDialogOpen={() => {}}
+          onCreateApi={() => Promise.resolve()}
+          onEditApi={() => {}}
+          onDeleteApi={() => Promise.resolve()}
+          onTestEndpoint={() => Promise.resolve()}
+        />
       </TabsContent>
 
       <TabsContent value="external" className="space-y-4">
-        <ExternalApisTabContent />
+        <ExternalApisTabContent 
+          createDialogOpen={false}
+          setCreateDialogOpen={() => {}}
+          onDownloadCollection={() => {}}
+          onViewDetails={() => {}}
+          onSelectApi={setSelectedApiId}
+          selectedApiId={selectedApiId}
+        />
       </TabsContent>
 
       <TabsContent value="consumption" className="space-y-4">

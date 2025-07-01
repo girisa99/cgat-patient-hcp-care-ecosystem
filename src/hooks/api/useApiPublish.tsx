@@ -53,7 +53,22 @@ export const useApiPublish = (apiId: string) => {
         throw error;
       }
 
-      return data as ApiDetails;
+      // Transform the data to match ApiDetails interface
+      return {
+        id: data.id,
+        name: data.name || data.external_name || 'Unnamed API',
+        external_name: data.external_name,
+        external_description: data.external_description,
+        status: data.status,
+        visibility: data.visibility,
+        pricing_model: data.pricing_model,
+        category: data.category,
+        tags: data.tags || [],
+        documentation_url: data.documentation_url,
+        support_url: data.support_url,
+        marketplace_config: data.marketplace_config,
+        published_at: data.published_at
+      } as ApiDetails;
     },
     enabled: !!apiId,
   });

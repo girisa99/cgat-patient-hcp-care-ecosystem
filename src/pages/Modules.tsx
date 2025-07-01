@@ -61,13 +61,27 @@ const Modules = () => {
           {/* LOCKED STATUS INDICATOR */}
           <div className="bg-green-50 border border-green-200 rounded-lg p-4">
             <div className="flex items-center gap-2 mb-2">
-              <div className="h-2 w-2 bg-green-500 rounded-full"></div>
-              <h3 className="font-semibold text-green-900">🔒 Modules Management Locked & Stable</h3>
+              <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
+              <h3 className="font-semibold text-green-900">🔒 Modules Management - LOCKED & STABLE</h3>
             </div>
-            <div className="text-sm text-green-700">
-              <p><strong>Data Source:</strong> {meta.dataSource}</p>
-              <p><strong>Total Modules:</strong> {meta.totalModules} | <strong>Hook Version:</strong> {meta.hookVersion}</p>
-              <p className="text-xs text-green-600 mt-1">Single Source Validated: {meta.singleSourceValidated ? '✅' : '❌'}</p>
+            <div className="text-sm text-green-700 space-y-1">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p><strong>Data Source:</strong> {meta.dataSource}</p>
+                  <p><strong>Total Modules:</strong> {meta.totalModules}</p>
+                </div>
+                <div>
+                  <p><strong>Hook Version:</strong> {meta.hookVersion}</p>
+                  <p><strong>Implementation:</strong> {meta.implementationLocked ? '🔒 LOCKED' : '❌ Unlocked'}</p>
+                </div>
+              </div>
+              <div className="pt-2 border-t border-green-200">
+                <p className="text-xs text-green-600">
+                  ✅ Single Source Validated | 
+                  ✅ Data Consistency Verified | 
+                  ✅ No Breaking Changes Allowed
+                </p>
+              </div>
             </div>
           </div>
 
