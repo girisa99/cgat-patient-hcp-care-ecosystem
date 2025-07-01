@@ -8,6 +8,10 @@ export interface UserWithRoles {
   created_at: string;
   updated_at?: string;
   facility_id?: string | null;
+  // Add authentication-related properties from auth.users table
+  email_confirmed_at?: string | null;
+  last_sign_in_at?: string | null;
+  email_confirmed?: boolean;
   user_roles: {
     roles: {
       name: string;
