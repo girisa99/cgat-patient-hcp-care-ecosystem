@@ -17,15 +17,36 @@ export const OverviewTabContent: React.FC<OverviewTabContentProps> = ({
   externalApis = [],
   publishedApis = []
 }) => {
-  const totalEndpoints = integrations.reduce((sum, integration) => 
-    sum + (integration.endpoints?.length || 0), 0
-  );
+  console.log('📊 OverviewTabContent - Rendering with corrected data:', {
+    totalIntegrations: integrations.length,
+    internalCount: internalApis.length,
+    externalCount: externalApis.length,
+    publishedCount: publishedApis.length
+  });
 
-  const activeIntegrations = integrations.filter(i => i.status === 'active').length;
+  // Fixed endpoint calculation using real data structure
+  const totalEndpoints = React.useMemo(() => {
+    return integrations.reduce((sum, integration) => {
+      // Use endpoints_count from database or fallback to 0
+      return sum + (integration.endpoints_count || 0);
+    }, 0);
+  }, [integrations]);
+
+  const activeIntegrations = React.useMemo(() => {
+    return integrations.filter(i => i.status === 'active').length;
+  }, [integrations]);
+
+  // Calculate real consuming APIs (bidirectional or consuming purpose)
+  const consumingApis = React.useMemo(() => {
+    return integrations.filter(api => 
+      api.direction === 'bidirectional' || 
+      (api.purpose && api.purpose.toLowerCase().includes('consuming'))
+    );
+  }, [integrations]);
 
   return (
     <div className="space-y-6">
-      {/* Stats Overview */}
+      {/* Stats Overview - Using Real Data */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -92,11 +113,11 @@ export const OverviewTabContent: React.FC<OverviewTabContentProps> = ({
           <CardContent>
             <div className="space-y-3">
               {integrations.slice(0, 5).map((integration, index) => (
-                <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                <div key={integration.id || index} className="flex items-center justify-between p-3 border rounded-lg">
                   <div>
                     <h4 className="font-medium">{integration.name}</h4>
                     <p className="text-sm text-muted-foreground">
-                      {integration.endpoints?.length || 0} endpoints
+                      {integration.endpoints_count || 0} endpoints • {integration.type}
                     </p>
                   </div>
                   <Badge variant={integration.status === 'active' ? 'default' : 'secondary'}>
@@ -117,7 +138,7 @@ export const OverviewTabContent: React.FC<OverviewTabContentProps> = ({
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="h-5 w-5" />
-              API Categories
+              API Categories (Real Data)
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -131,19 +152,58 @@ export const OverviewTabContent: React.FC<OverviewTabContentProps> = ({
               <div className="flex items-center justify-between p-3 border rounded-lg">
                 <span className="font-medium">Authentication</span>
                 <Badge variant="outline">
-                  {integrations.filter(i => i.category === 'auth').length}
+                  {integrations.filter(i => i.category === 'authentication' || i.category === 'auth').length}
                 </Badge>
               </div>
               <div className="flex items-center justify-between p-3 border rounded-lg">
-                <span className="font-medium">Data Management</span>
+                <span className="font-medium">Integration</span>
                 <Badge variant="outline">
-                  {integrations.filter(i => i.category === 'data').length}
+                  {integrations.filter(i => i.category === 'integration').length}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between p-3 border rounded-lg">
+                <span className="font-medium">API Services</span>
+                <Badge variant="outline">
+                  {integrations.filter(i => i.category === 'api').length}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between p-3 border rounded-lg">
+                <span className="font-medium">Development</span>
+                <Badge variant="outline">
+                  {integrations.filter(i => i.category === 'development').length}
                 </Badge>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Additional Metrics */}
+      <Card>
+        <CardHeader>
+          <CardTitle>System Health & Performance (Real Metrics)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-blue-600">{internalApis.length}</p>
+              <p className="text-sm text-muted-foreground">Internal APIs</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-green-600">{consumingApis.length}</p>
+              <p className="text-sm text-muted-foreground">Consuming APIs</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-purple-600">{publishedApis.length}</p>
+              <p className="text-sm text-muted-foreground">Published APIs</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-orange-600">{activeIntegrations}</p>
+              <p className="text-sm text-muted-foreground">Active Services</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

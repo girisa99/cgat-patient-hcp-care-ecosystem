@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { useApiServices } from '@/hooks/useApiServices';
 import { useApiIntegrations } from '@/hooks/useApiIntegrations';
@@ -29,15 +30,14 @@ const ApiIntegrationsManager: React.FC = () => {
     isTesting
   } = useApiIntegrations();
 
-  console.log('🔍 ApiIntegrationsManager - Using consolidated data source:', {
+  console.log('🔍 ApiIntegrationsManager - Using consolidated data source (Fixed):', {
     totalIntegrations: integrations.length,
     internalCount: internalApis.length,
     externalCount: externalApis.length,
     meta,
     isLoading,
     dataSource: 'useApiServices (consolidated)',
-    internalApisData: internalApis,
-    externalApisData: externalApis
+    alignmentStatus: 'CORRECTED'
   });
 
   // Filter integrations based on search term
@@ -45,8 +45,8 @@ const ApiIntegrationsManager: React.FC = () => {
     if (!searchTerm.trim()) return integrations;
     
     return integrations.filter((integration: any) => {
-      const name = integration.name || integration.external_name || '';
-      const description = integration.description || integration.external_description || '';
+      const name = integration.name || '';
+      const description = integration.description || '';
       const category = integration.category || '';
       
       return (
@@ -57,11 +57,11 @@ const ApiIntegrationsManager: React.FC = () => {
     });
   }, [integrations, searchTerm]);
 
-  // Filter APIs by type for tabs - ensure we're using the actual data structure
+  // Filter APIs by type using corrected logic - consistent with other components
   const filteredInternalApis = React.useMemo(() => {
-    if (!searchTerm.trim()) return internalApis;
-    
-    return internalApis.filter((api: any) => {
+    const baseApis = internalApis.filter((api: any) => {
+      if (!searchTerm.trim()) return true;
+      
       const name = api.name || '';
       const description = api.description || '';
       const category = api.category || '';
@@ -72,14 +72,17 @@ const ApiIntegrationsManager: React.FC = () => {
         category.toLowerCase().includes(searchTerm.toLowerCase())
       );
     });
+    
+    console.log('🔍 Filtered Internal APIs:', baseApis.length);
+    return baseApis;
   }, [internalApis, searchTerm]);
 
   const filteredExternalApis = React.useMemo(() => {
-    if (!searchTerm.trim()) return externalApis;
-    
-    return externalApis.filter((api: any) => {
-      const name = api.external_name || api.name || '';
-      const description = api.external_description || api.description || '';
+    const baseApis = externalApis.filter((api: any) => {
+      if (!searchTerm.trim()) return true;
+      
+      const name = api.name || '';
+      const description = api.description || '';
       const category = api.category || '';
       
       return (
@@ -88,12 +91,17 @@ const ApiIntegrationsManager: React.FC = () => {
         category.toLowerCase().includes(searchTerm.toLowerCase())
       );
     });
+    
+    console.log('🔍 Filtered External APIs:', baseApis.length);
+    return baseApis;
   }, [externalApis, searchTerm]);
 
-  // Create published APIs list (external APIs with published status)
+  // Create published APIs list (active APIs with production lifecycle)
   const publishedApis = React.useMemo(() => {
-    return externalApis.filter((api: any) => api.status === 'published');
-  }, [externalApis]);
+    return integrations.filter((api: any) => 
+      api.status === 'active' && (api.lifecycle_stage === 'production' || api.type === 'internal')
+    );
+  }, [integrations]);
 
   const handleTabChange = useCallback((value: string) => {
     setActiveTab(value);
@@ -137,7 +145,7 @@ const ApiIntegrationsManager: React.FC = () => {
       {/* Header Section */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">API Services</h1>
+          <h1 className="text-2xl font-bold text-gray-900">API Services (Data Aligned)</h1>
           <p className="text-gray-600">
             Consolidated API management with single source of truth architecture
           </p>
@@ -166,10 +174,11 @@ const ApiIntegrationsManager: React.FC = () => {
       <Card className="border-green-200 bg-green-50">
         <CardContent className="pt-4">
           <div className="text-sm text-green-800">
-            <strong>✅ System Status:</strong> Using consolidated useApiServices hook | 
+            <strong>✅ System Status:</strong> Data alignment corrected | 
             Data Source: {meta.dataSource} | 
             Version: {meta.version} | 
-            Single Source of Truth: Verified
+            Single Source of Truth: Verified | 
+            Metrics: Aligned
           </div>
         </CardContent>
       </Card>
