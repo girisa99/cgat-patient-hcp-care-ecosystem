@@ -14,11 +14,17 @@ import {
 } from 'lucide-react';
 import { useConsolidatedUsers } from '@/hooks/useConsolidatedUsers';
 import { useUserManagementDialogs } from '@/hooks/useUserManagementDialogs';
+import { useUserDeactivation } from '@/hooks/mutations/useUserDeactivation';
 
-// Import existing components instead of creating new ones
+// Import existing components
 import UsersList from '@/components/users/UsersList';
 import BulkRoleAssignment from '@/components/users/BulkRoleAssignment';
 import { UserManagementDialogs } from './UserManagementDialogs';
+import ResendVerificationDialog from '@/components/users/ResendVerificationDialog';
+import ViewUserModulesDialog from '@/components/users/ViewUserModulesDialog';
+import DeactivateUserDialog from '@/components/users/DeactivateUserDialog';
+import PermissionManagementDialog from '@/components/users/PermissionManagementDialog';
+import AssignModuleDialog from '@/components/users/AssignModuleDialog';
 
 export const ConsolidatedUserManagement: React.FC = () => {
   const { 
@@ -31,6 +37,14 @@ export const ConsolidatedUserManagement: React.FC = () => {
   
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('users');
+  
+  // Additional dialog states for extended functionality
+  const [resendVerificationOpen, setResendVerificationOpen] = useState(false);
+  const [viewModulesOpen, setViewModulesOpen] = useState(false);
+  const [deactivateUserOpen, setDeactivateUserOpen] = useState(false);
+  const [permissionManagementOpen, setPermissionManagementOpen] = useState(false);
+  const [assignModuleOpen, setAssignModuleOpen] = useState(false);
+  const [selectedUserEmail, setSelectedUserEmail] = useState('');
 
   // Use existing dialog management hook
   const {
@@ -53,6 +67,8 @@ export const ConsolidatedUserManagement: React.FC = () => {
     resetSelection
   } = useUserManagementDialogs();
 
+  const { deactivateUser } = useUserDeactivation();
+
   const stats = getUserStats();
   const filteredUsers = searchUsers(searchQuery);
 
@@ -67,6 +83,37 @@ export const ConsolidatedUserManagement: React.FC = () => {
 
   const handleCreateUser = () => {
     setCreateUserOpen(true);
+  };
+
+  const handleManagePermissions = (userId: string, userName: string) => {
+    console.log('🔒 Managing permissions for user:', userId, userName);
+    setSelectedUserId(userId);
+    setPermissionManagementOpen(true);
+  };
+
+  const handleAssignModule = (userId: string, userName: string) => {
+    console.log('📦 Assigning module for user:', userId, userName);
+    setSelectedUserId(userId);
+    setAssignModuleOpen(true);
+  };
+
+  const handleResendVerification = (userEmail: string, userName: string) => {
+    console.log('📧 Resending verification for user:', userEmail, userName);
+    setSelectedUserEmail(userEmail);
+    setResendVerificationOpen(true);
+  };
+
+  const handleDeactivateUser = (userId: string, userName: string, userEmail: string) => {
+    console.log('🚫 Deactivating user:', userId, userName, userEmail);
+    setSelectedUserId(userId);
+    setSelectedUserEmail(userEmail);
+    setDeactivateUserOpen(true);
+  };
+
+  const handleViewModules = (userId: string, userName: string) => {
+    console.log('👁️ Viewing modules for user:', userId, userName);
+    setSelectedUserId(userId);
+    setViewModulesOpen(true);
   };
 
   // Get selected user name for dialog titles
@@ -179,44 +226,27 @@ export const ConsolidatedUserManagement: React.FC = () => {
             </TabsList>
             
             <TabsContent value="users" className="mt-6">
-              {/* Use existing UsersList component with all the existing functionality */}
               <UsersList
                 onEditUser={handleEditUser}
                 onAssignRole={handleAssignRole}
                 onRemoveRole={handleRemoveRole}
                 onAssignFacility={handleAssignFacility}
-                onManagePermissions={(userId, userName) => {
-                  console.log('Manage permissions for:', userId, userName);
-                  // TODO: Implement when needed
-                }}
-                onAssignModule={(userId, userName) => {
-                  console.log('Assign module for:', userId, userName);
-                  // TODO: Implement when needed
-                }}
-                onResendVerification={(userEmail, userName) => {
-                  console.log('Resend verification for:', userEmail, userName);
-                  // TODO: Implement when needed 
-                }}
-                onDeactivateUser={(userId, userName, userEmail) => {
-                  console.log('Deactivate user:', userId, userName, userEmail);
-                  // TODO: Implement when needed
-                }}
-                onViewModules={(userId, userName) => {
-                  console.log('View modules for:', userId, userName);
-                  // TODO: Implement when needed
-                }}
+                onManagePermissions={handleManagePermissions}
+                onAssignModule={handleAssignModule}
+                onResendVerification={handleResendVerification}
+                onDeactivateUser={handleDeactivateUser}
+                onViewModules={handleViewModules}
               />
             </TabsContent>
             
             <TabsContent value="bulk" className="mt-6">
-              {/* Use existing BulkRoleAssignment component */}
               <BulkRoleAssignment />
             </TabsContent>
           </Tabs>
         </CardContent>
       </Card>
 
-      {/* Use existing UserManagementDialogs component */}
+      {/* All Dialog Components */}
       <UserManagementDialogs
         createUserOpen={createUserOpen}
         setCreateUserOpen={setCreateUserOpen}
@@ -231,6 +261,42 @@ export const ConsolidatedUserManagement: React.FC = () => {
         selectedUserId={selectedUserId}
         selectedUser={selectedUser}
         selectedUserName={selectedUserName}
+      />
+
+      <ResendVerificationDialog
+        open={resendVerificationOpen}
+        onOpenChange={setResendVerificationOpen}
+        userEmail={selectedUserEmail}
+        userName={selectedUserName}
+      />
+
+      <ViewUserModulesDialog
+        open={viewModulesOpen}
+        onOpenChange={setViewModulesOpen}
+        userId={selectedUserId}
+        userName={selectedUserName}
+      />
+
+      <DeactivateUserDialog
+        open={deactivateUserOpen}
+        onOpenChange={setDeactivateUserOpen}
+        userId={selectedUserId}
+        userName={selectedUserName}
+        userEmail={selectedUserEmail}
+      />
+
+      <PermissionManagementDialog
+        open={permissionManagementOpen}
+        onOpenChange={setPermissionManagementOpen}
+        userId={selectedUserId}
+        userName={selectedUserName}
+      />
+
+      <AssignModuleDialog
+        open={assignModuleOpen}
+        onOpenChange={setAssignModuleOpen}
+        userId={selectedUserId}
+        userName={selectedUserName}
       />
     </div>
   );
