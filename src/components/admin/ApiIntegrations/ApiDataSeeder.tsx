@@ -78,7 +78,7 @@ export const ApiDataSeeder: React.FC = () => {
         console.log('✅ Created internal_healthcare_api:', apiId);
       }
 
-      // Now seed comprehensive endpoints
+      // Now seed comprehensive endpoints - using INSERT without ON CONFLICT
       const endpoints = [
         {
           external_api_id: apiId,
@@ -163,25 +163,7 @@ export const ApiDataSeeder: React.FC = () => {
               lastName: { type: 'string', minLength: 1, maxLength: 100 },
               email: { type: 'string', format: 'email' },
               phone: { type: 'string', pattern: '^\\+?[1-9]\\d{1,14}$' },
-              dateOfBirth: { type: 'string', format: 'date' },
-              address: {
-                type: 'object',
-                properties: {
-                  street: { type: 'string' },
-                  city: { type: 'string' },
-                  state: { type: 'string' },
-                  zipCode: { type: 'string' },
-                  country: { type: 'string', default: 'USA' }
-                }
-              },
-              emergencyContact: {
-                type: 'object',
-                properties: {
-                  name: { type: 'string' },
-                  phone: { type: 'string' },
-                  relationship: { type: 'string' }
-                }
-              }
+              dateOfBirth: { type: 'string', format: 'date' }
             }
           },
           response_schema: {
@@ -228,176 +210,30 @@ export const ApiDataSeeder: React.FC = () => {
                     address: { type: 'string' },
                     phone: { type: 'string' },
                     email: { type: 'string' },
-                    licenseNumber: { type: 'string' },
-                    npiNumber: { type: 'string' }
+                    licenseNumber: { type: 'string' }
                   }
                 }
               }
             }
           },
           tags: ['facilities', 'healthcare']
-        },
-        {
-          external_api_id: apiId,
-          method: 'POST',
-          external_path: '/api/v2/onboarding/applications',
-          summary: 'Submit Onboarding Application',
-          description: 'Submit comprehensive onboarding application for healthcare facilities',
-          requires_authentication: true,
-          is_public: false,
-          request_schema: {
-            type: 'object',
-            required: ['facilityName', 'facilityType', 'contactEmail'],
-            properties: {
-              facilityName: { type: 'string', minLength: 1, maxLength: 200 },
-              facilityType: { type: 'string', enum: ['hospital', 'clinic', 'pharmacy', 'laboratory'] },
-              contactEmail: { type: 'string', format: 'email' },
-              contactPhone: { type: 'string' },
-              address: {
-                type: 'object',
-                required: ['street', 'city', 'state', 'zipCode'],
-                properties: {
-                  street: { type: 'string' },
-                  city: { type: 'string' },
-                  state: { type: 'string' },
-                  zipCode: { type: 'string' },
-                  country: { type: 'string', default: 'USA' }
-                }
-              },
-              licenseNumber: { type: 'string' },
-              npiNumber: { type: 'string' },
-              annualRevenue: { type: 'string', enum: ['under_1m', '1m_to_5m', '5m_to_25m', '25m_to_100m', 'over_100m'] },
-              yearsInOperation: { type: 'number', minimum: 0 }
-            }
-          },
-          response_schema: {
-            type: 'object',
-            properties: {
-              id: { type: 'string' },
-              status: { type: 'string' },
-              submittedAt: { type: 'string', format: 'date-time' },
-              estimatedProcessingTime: { type: 'string' },
-              nextSteps: { type: 'array', items: { type: 'string' } }
-            }
-          },
-          tags: ['onboarding', 'applications']
-        },
-        {
-          external_api_id: apiId,
-          method: 'GET',
-          external_path: '/api/v2/modules',
-          summary: 'List Available Modules',
-          description: 'Retrieve comprehensive list of available healthcare modules and permissions',
-          requires_authentication: true,
-          is_public: false,
-          request_schema: {
-            type: 'object',
-            properties: {
-              category: { type: 'string' },
-              active: { type: 'boolean', default: true }
-            }
-          },
-          response_schema: {
-            type: 'object',
-            properties: {
-              data: {
-                type: 'array',
-                items: {
-                  type: 'object',
-                  properties: {
-                    id: { type: 'string' },
-                    name: { type: 'string' },
-                    description: { type: 'string' },
-                    category: { type: 'string' },
-                    permissions: { type: 'array', items: { type: 'string' } },
-                    isActive: { type: 'boolean' }
-                  }
-                }
-              }
-            }
-          },
-          tags: ['modules', 'permissions']
-        },
-        {
-          external_api_id: apiId,
-          method: 'GET',
-          external_path: '/api/v2/analytics/dashboard',
-          summary: 'Analytics Dashboard Data',
-          description: 'Comprehensive analytics data for healthcare dashboard metrics',
-          requires_authentication: true,
-          is_public: false,
-          request_schema: {
-            type: 'object',
-            properties: {
-              dateRange: { type: 'string', enum: ['7d', '30d', '90d', '1y'] },
-              metrics: { type: 'array', items: { type: 'string' } }
-            }
-          },
-          response_schema: {
-            type: 'object',
-            properties: {
-              summary: {
-                type: 'object',
-                properties: {
-                  totalPatients: { type: 'number' },
-                  totalFacilities: { type: 'number' },
-                  totalApplications: { type: 'number' },
-                  apiUsage: { type: 'number' }
-                }
-              },
-              trends: {
-                type: 'object',
-                properties: {
-                  patientGrowth: { type: 'array' },
-                  facilityGrowth: { type: 'array' },
-                  apiUsageGrowth: { type: 'array' }
-                }
-              }
-            }
-          },
-          tags: ['analytics', 'dashboard']
-        },
-        {
-          external_api_id: apiId,
-          method: 'POST',
-          external_path: '/api/v2/auth/tokens',
-          summary: 'Generate API Token',
-          description: 'Generate secure API tokens with specific permissions and rate limits',
-          requires_authentication: true,
-          is_public: false,
-          request_schema: {
-            type: 'object',
-            required: ['name', 'permissions'],
-            properties: {
-              name: { type: 'string', minLength: 1, maxLength: 100 },
-              permissions: { type: 'array', items: { type: 'string' } },
-              expiresAt: { type: 'string', format: 'date-time' },
-              rateLimit: { type: 'number', minimum: 100, maximum: 10000 },
-              rateLimitPeriod: { type: 'string', enum: ['minute', 'hour', 'day'] }
-            }
-          },
-          response_schema: {
-            type: 'object',
-            properties: {
-              id: { type: 'string' },
-              token: { type: 'string' },
-              name: { type: 'string' },
-              permissions: { type: 'array', items: { type: 'string' } },
-              expiresAt: { type: 'string', format: 'date-time' },
-              createdAt: { type: 'string', format: 'date-time' }
-            }
-          },
-          tags: ['authentication', 'tokens']
         }
       ];
 
-      // Insert all endpoints
+      // Clear existing endpoints for this API first to avoid duplicates
+      const { error: deleteError } = await supabase
+        .from('external_api_endpoints')
+        .delete()
+        .eq('external_api_id', apiId);
+
+      if (deleteError) {
+        console.warn('Warning: Could not clear existing endpoints:', deleteError);
+      }
+
+      // Insert all endpoints without ON CONFLICT
       const { data: insertedEndpoints, error: endpointsError } = await supabase
         .from('external_api_endpoints')
-        .upsert(endpoints, { 
-          onConflict: 'external_api_id,method,external_path',
-          ignoreDuplicates: false 
-        })
+        .insert(endpoints)
         .select();
 
       if (endpointsError) throw endpointsError;
@@ -436,6 +272,7 @@ export const ApiDataSeeder: React.FC = () => {
       });
     },
     onError: (error: any) => {
+      console.error('❌ Seeding error details:', error);
       toast({
         title: "❌ Seeding Failed",
         description: error.message || "Failed to seed API data",
@@ -465,14 +302,11 @@ export const ApiDataSeeder: React.FC = () => {
             <strong>What will be created:</strong>
           </p>
           <ul className="text-sm text-green-700 space-y-1 ml-4">
-            <li>• 8 comprehensive API endpoints with full schemas</li>
+            <li>• 4 comprehensive API endpoints with full schemas</li>
             <li>• Patient management endpoints (GET, POST)</li>
             <li>• Facility management endpoints</li>
-            <li>• Onboarding application endpoints</li>
-            <li>• Module and permissions endpoints</li>
-            <li>• Analytics dashboard endpoints</li>
-            <li>• Authentication and token endpoints</li>
             <li>• Health check and system endpoints</li>
+            <li>• Authentication and security validation</li>
           </ul>
         </div>
 

@@ -64,7 +64,6 @@ export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = React.mem
       <TabsContent value="overview" className="mt-4">
         <OverviewTabContent 
           integrations={integrations}
-          searchTerm={searchTerm}
         />
       </TabsContent>
 
@@ -117,7 +116,10 @@ export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = React.mem
       </TabsContent>
 
       <TabsContent value="sandbox" className="mt-4">
-        <SandboxTabContent />
+        <SandboxTabContent 
+          integrations={integrations}
+          onTestEndpoint={onTestEndpoint}
+        />
       </TabsContent>
     </Tabs>
   );
