@@ -18,7 +18,6 @@ export { useModuleValidation } from './useModuleValidation';
 export { useTypeSafeModuleTemplate as useModuleTemplate } from './useTypeSafeModuleTemplate';
 
 // ✅ FULLY CONSOLIDATED MODULE HOOKS (All using unified template)
-export { usePatients } from '../../hooks/usePatients';
 export { useUsers } from '../../hooks/useUsers';
 export { useFacilities } from '../../hooks/useFacilities';
 export { useModules } from '../../hooks/useModules';
