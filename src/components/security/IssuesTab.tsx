@@ -1,20 +1,20 @@
+
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Bug, CheckCircle, Shield, Database, Code, Zap, TrendingUp, TrendingDown, AlertCircle } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { Bug, CheckCircle, Shield, Database, Code } from 'lucide-react';
 import { VerificationSummary } from '@/utils/verification/AutomatedVerificationOrchestrator';
 import { useFixedIssuesTracker } from '@/hooks/useFixedIssuesTracker';
-import { CodeFix } from '@/utils/verification/ImprovedRealCodeFixHandler';
 import EnhancedIssueTopicGroup from './EnhancedIssueTopicGroup';
 import FixedIssuesTracker from './FixedIssuesTracker';
 import IssuesTabHeader from './IssuesTabHeader';
 import IssuesSummaryCard from './IssuesSummaryCard';
 import ScanInformationCard from './ScanInformationCard';
 import NoIssuesState from './NoIssuesState';
-import NoVerificationDataState from './NoVerificationDataState';
 import ConsolidatedMetricsDisplay from '@/components/verification/ConsolidatedMetricsDisplay';
-import { useIssuesDataProcessor, markIssueAsReallyFixed } from './IssuesDataProcessor';
+import { useIssuesDataProcessor } from './IssuesDataProcessor';
 import { Issue } from '@/types/issuesTypes';
+import IssueChangeTracking from './IssuesTab/IssueChangeTracking';
+import { useIssuesTabLogic } from './IssuesTab/useIssuesTabLogic';
 
 interface IssuesTabProps {
   verificationSummary?: VerificationSummary | null;
@@ -46,22 +46,14 @@ const IssuesTab: React.FC<IssuesTabProps> = ({
   onReRunVerification,
   isReRunning = false 
 }) => {
-  const { toast } = useToast();
   const { 
     fixedIssues, 
-    activeIssues, 
     moveToFixed, 
     updateActiveIssues, 
     getTotalFixedCount 
   } = useFixedIssuesTracker();
 
-  const [realFixedIssues, setRealFixedIssues] = React.useState<Array<{
-    issue: Issue;
-    fix: CodeFix;
-    timestamp: string;
-  }>>([]);
-  
-  const [lastScanTime, setLastScanTime] = React.useState(new Date());
+  const { realFixedIssues, lastScanTime, handleRealIssueFixed } = useIssuesTabLogic();
 
   // Enhanced processing with manual trigger only - use converted fixed issues
   const convertedFixedIssues = convertFixedIssuesToIssues(fixedIssues);
@@ -74,9 +66,7 @@ const IssuesTab: React.FC<IssuesTabProps> = ({
     newIssues,
     resolvedIssues,
     reappearedIssues,
-    backendFixedIssues,
-    totalRealFixesApplied,
-    autoDetectedBackendFixes
+    totalRealFixesApplied
   } = useIssuesDataProcessor(verificationSummary, convertedFixedIssues);
 
   // Create sync data for consolidated metrics
@@ -89,7 +79,7 @@ const IssuesTab: React.FC<IssuesTabProps> = ({
     highCount: highIssues.length,
     mediumCount: mediumIssues.length,
     securityIssuesCount: issuesByTopic['Security Issues']?.length || 0,
-    backendFixedCount: 0, // Disabled automatic backend detection
+    backendFixedCount: 0,
     realFixesApplied: totalRealFixesApplied,
     lastUpdateTime: lastScanTime
   };
@@ -109,77 +99,23 @@ const IssuesTab: React.FC<IssuesTabProps> = ({
     'System Issues': Bug
   };
 
-  // Manual fix application only
-  const handleRealIssueFixed = (issue: Issue, fix: CodeFix) => {
-    console.log('🔧 Manual fix applied:', { 
-      issue: issue.type, 
-      fix: fix.description 
-    });
-    
-    // Add to real fixed issues
-    setRealFixedIssues(prev => [...prev, {
-      issue,
-      fix,
-      timestamp: new Date().toISOString()
-    }]);
-
-    // Move to fixed tracker
+  // Enhanced fix handler
+  const enhancedFixHandler = (issue: Issue, fix: any) => {
+    handleRealIssueFixed(issue, fix);
     moveToFixed([issue], 'manual');
-    
-    // Mark as really fixed using the utility function
-    markIssueAsReallyFixed(issue);
-    
-    // Trigger metrics update
-    setLastScanTime(new Date());
-    
-    toast({
-      title: "🛡️ Manual Fix Applied",
-      description: `${fix.description} - Fix recorded successfully`,
-      variant: "default",
-    });
   };
 
   return (
     <div className="space-y-6">
       <IssuesTabHeader onReRunVerification={onReRunVerification} isReRunning={isReRunning} />
 
-      {/* Consolidated Metrics Display */}
       <ConsolidatedMetricsDisplay syncData={syncData} />
 
-      {/* Issue Change Tracking */}
-      {(newIssues.length > 0 || resolvedIssues.length > 0 || reappearedIssues.length > 0) && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {newIssues.length > 0 && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <TrendingUp className="h-5 w-5 text-red-600" />
-                <h3 className="font-medium text-red-900">New Issues</h3>
-              </div>
-              <p className="text-2xl font-bold text-red-800">{newIssues.length}</p>
-            </div>
-          )}
-          
-          {resolvedIssues.length > 0 && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <TrendingDown className="h-5 w-5 text-green-600" />
-                <h3 className="font-medium text-green-900">Resolved</h3>
-              </div>
-              <p className="text-2xl font-bold text-green-800">{resolvedIssues.length}</p>
-            </div>
-          )}
-          
-          {reappearedIssues.length > 0 && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <AlertCircle className="h-5 w-5 text-yellow-600" />
-                <h3 className="font-medium text-yellow-900">Reappeared</h3>
-              </div>
-              <p className="text-2xl font-bold text-yellow-800">{reappearedIssues.length}</p>
-            </div>
-          )}
-        </div>
-      )}
+      <IssueChangeTracking 
+        newIssues={newIssues}
+        resolvedIssues={resolvedIssues}
+        reappearedIssues={reappearedIssues}
+      />
 
       <Tabs defaultValue="active" className="space-y-6">
         <TabsList className="grid w-full grid-cols-2">
@@ -210,7 +146,7 @@ const IssuesTab: React.FC<IssuesTabProps> = ({
                 topic={topic}
                 issues={issues}
                 icon={topicIcons[topic as keyof typeof topicIcons]}
-                onIssueFixed={handleRealIssueFixed}
+                onIssueFixed={enhancedFixHandler}
               />
             );
           })}
@@ -229,8 +165,6 @@ const IssuesTab: React.FC<IssuesTabProps> = ({
             fixedIssues={fixedIssues} 
             totalFixesApplied={syncData.totalFixedCount}
           />
-
-          {/* Show detailed implementation status in Fixed tab */}
           <ConsolidatedMetricsDisplay syncData={syncData} showDetailed={true} />
         </TabsContent>
       </Tabs>

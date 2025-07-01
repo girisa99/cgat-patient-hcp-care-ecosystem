@@ -1,11 +1,9 @@
 
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Bug, CheckCircle, Shield, Database, Code, Zap } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { Bug, CheckCircle, Shield, Database, Code } from 'lucide-react';
 import { VerificationSummary } from '@/utils/verification/AutomatedVerificationOrchestrator';
 import { useFixedIssuesTracker } from '@/hooks/useFixedIssuesTracker';
-import { CodeFix } from '@/utils/verification/ImprovedRealCodeFixHandler';
 import { Issue } from '@/types/issuesTypes';
 import EnhancedIssueTopicGroup from './EnhancedIssueTopicGroup';
 import FixedIssuesTracker from './FixedIssuesTracker';
@@ -15,6 +13,9 @@ import ScanInformationCard from './ScanInformationCard';
 import NoIssuesState from './NoIssuesState';
 import NoVerificationDataState from './NoVerificationDataState';
 import { useIssuesDataProcessor } from './IssuesDataProcessor';
+import EnhancedIssuesTabHeader from './EnhancedIssuesTab/EnhancedIssuesTabHeader';
+import RealFixesSection from './EnhancedIssuesTab/RealFixesSection';
+import { useRealFixedIssues } from './EnhancedIssuesTab/useRealFixedIssues';
 
 interface EnhancedIssuesTabProps {
   verificationSummary?: VerificationSummary | null;
@@ -46,21 +47,14 @@ const EnhancedIssuesTab: React.FC<EnhancedIssuesTabProps> = ({
   onReRunVerification,
   isReRunning = false 
 }) => {
-  const { toast } = useToast();
   const { 
     fixedIssues, 
-    activeIssues, 
     moveToFixed, 
     updateActiveIssues, 
     getTotalFixedCount 
   } = useFixedIssuesTracker();
 
-  // Track real fixes separately
-  const [realFixedIssues, setRealFixedIssues] = React.useState<Array<{
-    issue: Issue;
-    fix: CodeFix;
-    timestamp: string;
-  }>>([]);
+  const { realFixedIssues, handleRealIssueFixed, realFixedCount } = useRealFixedIssues();
 
   // Process issues data using the custom hook with converted fixed issues
   const convertedFixedIssues = convertFixedIssuesToIssues(fixedIssues);
@@ -86,25 +80,10 @@ const EnhancedIssuesTab: React.FC<EnhancedIssuesTabProps> = ({
     'System Issues': Bug
   };
 
-  // Handle real fix application
-  const handleRealIssueFixed = (issue: Issue, fix: CodeFix) => {
-    console.log('🔧 Real fix applied:', { issue: issue.type, fix: fix.description });
-    
-    // Add to real fixed issues
-    setRealFixedIssues(prev => [...prev, {
-      issue,
-      fix,
-      timestamp: new Date().toISOString()
-    }]);
-
-    // Also move to the general fixed issues tracker
+  // Enhanced fix handler that also uses the fixed issues tracker
+  const enhancedFixHandler = (issue: Issue, fix: any) => {
+    handleRealIssueFixed(issue, fix);
     moveToFixed([issue], 'automatic');
-    
-    toast({
-      title: "🎯 Real Fix Applied",
-      description: `${fix.description} - This should resolve the issue permanently`,
-      variant: "default",
-    });
   };
 
   if (!verificationSummary) {
@@ -112,28 +91,13 @@ const EnhancedIssuesTab: React.FC<EnhancedIssuesTabProps> = ({
   }
 
   const totalFixedCount = getTotalFixedCount();
-  const realFixedCount = realFixedIssues.length;
   const totalActiveIssues = displayIssues.length - totalFixedCount;
 
   return (
     <div className="space-y-6">
       <IssuesTabHeader onReRunVerification={onReRunVerification} isReRunning={isReRunning} />
-
-      {/* Enhanced Status Banner */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <div className="flex items-center gap-2 mb-2">
-          <Zap className="h-5 w-5 text-blue-600" />
-          <h3 className="font-medium text-blue-900">Enhanced Real Fix System Active</h3>
-        </div>
-        <p className="text-sm text-blue-700">
-          This system applies real code and database fixes. When you click "Fix", actual changes are made to resolve issues permanently.
-        </p>
-        {realFixedCount > 0 && (
-          <p className="text-sm text-blue-700 font-medium mt-1">
-            ✅ {realFixedCount} real fixes have been applied to your codebase
-          </p>
-        )}
-      </div>
+      
+      <EnhancedIssuesTabHeader realFixedCount={realFixedCount} />
 
       <Tabs defaultValue="active" className="space-y-6">
         <TabsList className="grid w-full grid-cols-2">
@@ -155,7 +119,6 @@ const EnhancedIssuesTab: React.FC<EnhancedIssuesTabProps> = ({
             fixedCount={totalFixedCount}
           />
 
-          {/* Enhanced Issues by Topic with Real Fix Buttons */}
           {Object.entries(issuesByTopic).map(([topic, issues]) => {
             if (issues.length === 0) return null;
             
@@ -165,12 +128,11 @@ const EnhancedIssuesTab: React.FC<EnhancedIssuesTabProps> = ({
                 topic={topic}
                 issues={issues}
                 icon={topicIcons[topic as keyof typeof topicIcons]}
-                onIssueFixed={handleRealIssueFixed}
+                onIssueFixed={enhancedFixHandler}
               />
             );
           })}
 
-          {/* No Active Issues State */}
           {totalActiveIssues === 0 && (
             <NoIssuesState
               fixedCount={totalFixedCount}
@@ -185,29 +147,7 @@ const EnhancedIssuesTab: React.FC<EnhancedIssuesTabProps> = ({
             fixedIssues={fixedIssues} 
             totalFixesApplied={totalFixedCount}
           />
-
-          {/* Real Fixes Section */}
-          {realFixedCount > 0 && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-              <h3 className="font-medium text-green-900 mb-3 flex items-center gap-2">
-                <Zap className="h-4 w-4" />
-                Real Code Fixes Applied ({realFixedCount})
-              </h3>
-              <div className="space-y-2">
-                {realFixedIssues.map((item, index) => (
-                  <div key={index} className="flex items-center justify-between p-2 bg-white rounded border">
-                    <div>
-                      <span className="font-medium text-sm">{item.issue.type}</span>
-                      <p className="text-xs text-gray-600">{item.fix.description}</p>
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      {new Date(item.timestamp).toLocaleString()}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          <RealFixesSection realFixedIssues={realFixedIssues} />
         </TabsContent>
       </Tabs>
 
