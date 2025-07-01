@@ -8,11 +8,19 @@ import HealthcareAuthLayoutWithLogo from '@/components/auth/HealthcareAuthLayout
 import AuthDiagnostic from '@/components/auth/AuthDiagnostic';
 
 const Index = () => {
-  const { user, loading, isAuthenticated, userRoles, initialized } = useAuthContext();
+  const { user, isLoading, isAuthenticated, userRoles, initialized } = useAuthContext();
   const { performRouting } = useSimpleRouting({ userRoles, isAuthenticated });
   const [hasAttemptedRouting, setHasAttemptedRouting] = useState(false);
   const [showDiagnostic, setShowDiagnostic] = useState(false);
   const [routingTimeout, setRoutingTimeout] = useState<NodeJS.Timeout | null>(null);
+
+  console.log('🏠 Index: Auth state:', { 
+    isAuthenticated, 
+    isLoading, 
+    initialized, 
+    userRoles: userRoles?.length || 0,
+    hasUser: !!user 
+  });
 
   useEffect(() => {
     // Clear any existing timeout
@@ -21,29 +29,29 @@ const Index = () => {
     }
 
     // Only attempt routing once we have complete auth data
-    if (!initialized || loading) {
-      console.log('⏳ Waiting for auth initialization...');
+    if (!initialized || isLoading) {
+      console.log('⏳ Index: Waiting for auth initialization...');
       return;
     }
 
     if (!isAuthenticated) {
-      console.log('👤 No authentication, showing login form');
+      console.log('👤 Index: No authentication, showing login form');
       setHasAttemptedRouting(true);
       return;
     }
 
-    // If authenticated, attempt routing regardless of role status
+    // If authenticated, attempt routing
     if (isAuthenticated && !hasAttemptedRouting) {
-      console.log('🚀 User authenticated, attempting routing...');
-      console.log('📊 Current user roles:', userRoles);
+      console.log('🚀 Index: User authenticated, attempting routing...');
+      console.log('📊 Index: Current user roles:', userRoles);
       
       setHasAttemptedRouting(true);
       
       // Set a timeout to perform routing, allowing time for roles to load
       const timeout = setTimeout(() => {
-        console.log('🚀 Performing routing with roles:', userRoles);
+        console.log('🚀 Index: Performing routing with roles:', userRoles);
         performRouting();
-      }, 500); // Give roles time to load
+      }, 500);
       
       setRoutingTimeout(timeout);
     }
@@ -53,10 +61,10 @@ const Index = () => {
         clearTimeout(routingTimeout);
       }
     };
-  }, [initialized, loading, isAuthenticated, userRoles, hasAttemptedRouting, performRouting]);
+  }, [initialized, isLoading, isAuthenticated, userRoles, hasAttemptedRouting, performRouting, routingTimeout]);
 
   // Show loading while initializing
-  if (!initialized || loading) {
+  if (!initialized || isLoading) {
     return (
       <HealthcareAuthLayoutWithLogo>
         <div className="text-center">
@@ -79,7 +87,7 @@ const Index = () => {
     );
   }
 
-  // If authenticated but still on index after routing attempt, show a manual option
+  // If authenticated but still on index after routing attempt, show manual navigation
   if (isAuthenticated && hasAttemptedRouting) {
     return (
       <HealthcareAuthLayoutWithLogo>
@@ -90,7 +98,7 @@ const Index = () => {
               You are successfully logged in as {user?.email}
             </p>
             <p className="text-sm text-green-600 mb-4">
-              Roles: {userRoles.length > 0 ? userRoles.join(', ') : 'Loading...'}
+              Roles: {userRoles && userRoles.length > 0 ? userRoles.join(', ') : 'Loading...'}
             </p>
             <div className="space-y-2">
               <button
@@ -149,7 +157,7 @@ const Index = () => {
     );
   }
 
-  // Show comprehensive login form for unauthenticated users
+  // Show login form for unauthenticated users
   return (
     <HealthcareAuthLayoutWithLogo>
       <div className="space-y-4">
@@ -164,7 +172,7 @@ const Index = () => {
         </div>
       </div>
     </HealthcareAuthLayoutWithLogo>
-  );
+    );
 };
 
 export default Index;

@@ -6,7 +6,8 @@ import { CleanAuthProvider } from '@/components/auth/CleanAuthProvider';
 import { Toaster } from '@/components/ui/toaster';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
-// Import pages
+// Import pages - all using consolidated hooks
+import Index from '@/pages/Index';
 import LoginPage from '@/pages/LoginPage';
 import DashboardPage from '@/pages/DashboardPage';
 import UsersPage from '@/pages/UsersPage';
@@ -27,16 +28,20 @@ const queryClient = new QueryClient({
 });
 
 function App() {
-  console.log('🚀 App rendering...');
+  console.log('🚀 App: Rendering with consolidated single source architecture...');
 
   return (
     <QueryClientProvider client={queryClient}>
       <CleanAuthProvider>
         <Router>
           <Routes>
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            {/* Main index route */}
+            <Route path="/" element={<Index />} />
             
+            {/* Auth routes */}
+            <Route path="/login" element={<LoginPage />} />
+            
+            {/* Protected application routes */}
             <Route
               path="/dashboard"
               element={
