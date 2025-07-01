@@ -4,29 +4,29 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { useModules } from '@/hooks/useModules';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-interface CreateModuleDialogProps {
+interface CreateOnboardingDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-const CreateModuleDialog: React.FC<CreateModuleDialogProps> = ({ open, onOpenChange }) => {
-  const { createModule } = useModules();
+const CreateOnboardingDialog: React.FC<CreateOnboardingDialogProps> = ({ open, onOpenChange }) => {
   const [formData, setFormData] = useState({
     name: '',
-    description: ''
+    email: '',
+    status: 'pending'
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    createModule(formData);
+    console.log('Creating onboarding workflow:', formData);
     onOpenChange(false);
     // Reset form
     setFormData({
       name: '',
-      description: ''
+      email: '',
+      status: 'pending'
     });
   };
 
@@ -34,12 +34,12 @@ const CreateModuleDialog: React.FC<CreateModuleDialogProps> = ({ open, onOpenCha
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Create New Module</DialogTitle>
+          <DialogTitle>Create Onboarding Workflow</DialogTitle>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="name">Module Name</Label>
+            <Label htmlFor="name">Workflow Name</Label>
             <Input
               id="name"
               value={formData.name}
@@ -49,18 +49,32 @@ const CreateModuleDialog: React.FC<CreateModuleDialogProps> = ({ open, onOpenCha
           </div>
           
           <div>
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              rows={3}
+            <Label htmlFor="email">Contact Email</Label>
+            <Input
+              id="email"
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             />
+          </div>
+          
+          <div>
+            <Label htmlFor="status">Status</Label>
+            <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="in_progress">In Progress</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           
           <div className="flex gap-2">
             <Button type="submit" className="flex-1">
-              Create Module
+              Create Workflow
             </Button>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
@@ -72,4 +86,4 @@ const CreateModuleDialog: React.FC<CreateModuleDialogProps> = ({ open, onOpenCha
   );
 };
 
-export default CreateModuleDialog;
+export default CreateOnboardingDialog;

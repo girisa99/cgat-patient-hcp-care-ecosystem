@@ -1,78 +1,66 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { PageContainer } from '@/components/layout/PageContainer';
-import { useConsolidatedPatients } from '@/hooks/patients/useConsolidatedPatients';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { AdminStatsGrid, StatCard } from '@/components/layout/AdminStatsGrid';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { UserPlus, Users, Building2, Activity, AlertTriangle } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Plus, Users, Activity, UserCheck, Calendar, Search, Filter, Download } from 'lucide-react';
+import PatientsList from '@/components/patients/PatientsList';
+import CreatePatientDialog from '@/components/patients/CreatePatientDialog';
+import EditPatientDialog from '@/components/patients/EditPatientDialog';
+import { usePatients } from '@/hooks/usePatients';
 
-const Patients: React.FC = () => {
-  const { patients, isLoading, error, getPatientStats, refetch } = useConsolidatedPatients();
-  const stats = getPatientStats();
+const Patients = () => {
+  const { patients, isLoading, meta } = usePatients();
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState<any>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  console.log('🏥 Patients page - Using consolidated data:', { 
-    patients: patients?.length, 
-    isLoading, 
-    error: error?.message,
-    dataSource: 'existing unified architecture'
-  });
+  const handleCreatePatient = () => {
+    setCreateDialogOpen(true);
+  };
 
-  if (isLoading) {
-    return (
-      <MainLayout>
-        <PageContainer title="Patients" subtitle="Loading patient data from existing system...">
-          <div className="flex items-center justify-center p-8">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p>Loading patients...</p>
-            </div>
-          </div>
-        </PageContainer>
-      </MainLayout>
-    );
-  }
+  const handleEditPatient = (patient: any) => {
+    setSelectedPatient(patient);
+    setEditDialogOpen(true);
+  };
 
-  if (error) {
-    return (
-      <MainLayout>
-        <PageContainer title="Patients" subtitle="Error loading patient data">
-          <Card>
-            <CardContent className="p-6">
-              <div className="text-center">
-                <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-red-600 mb-2">Error Loading Patients</h3>
-                <p className="text-red-600 mb-4">Error: {error.message}</p>
-                <p className="text-sm text-gray-500 mb-4">
-                  This usually indicates a database connection issue or missing user roles data.
-                </p>
-                <div className="space-x-2">
-                  <Button onClick={() => refetch()} variant="outline">
-                    Try Again
-                  </Button>
-                  <Button onClick={() => window.location.href = '/users'} variant="outline">
-                    Check Users Page
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </PageContainer>
-      </MainLayout>
-    );
-  }
+  // Filter patients based on search
+  const filteredPatients = patients.filter(patient => 
+    patient.first_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    patient.last_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    patient.email?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Calculate stats
+  const stats = {
+    total: patients.length,
+    active: patients.filter(p => p.created_at).length,
+    withFacilities: patients.filter(p => p.facilities).length,
+    recentlyAdded: patients.filter(p => {
+      const createdDate = new Date(p.created_at || '');
+      const weekAgo = new Date();
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      return createdDate > weekAgo;
+    }).length
+  };
+
+  const headerActions = (
+    <Button onClick={handleCreatePatient}>
+      <Plus className="h-4 w-4 mr-2" />
+      Add Patient
+    </Button>
+  );
 
   return (
     <MainLayout>
       <PageContainer
-        title="Patients"
-        subtitle="Patient data from existing unified architecture"
-        headerActions={
-          <Button>
-            <UserPlus className="h-4 w-4 mr-2" />
-            Add Patient
-          </Button>
-        }
+        title="Patients Management"
+        subtitle={`Manage patient records and information (${patients.length} patients from ${meta.dataSource})`}
+        headerActions={headerActions}
       >
         <div className="space-y-6">
           {/* Data Source Indicator */}
@@ -80,122 +68,93 @@ const Patients: React.FC = () => {
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
               <span className="text-sm text-green-800 font-medium">
-                Using Existing Consolidated Data Architecture
+                Real Database: {meta.dataSource}
               </span>
+            </div>
+            <div className="mt-2 text-xs text-green-700">
+              Found: {patients.length} patients with patientCaregiver role
             </div>
           </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Patients</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.total}</div>
-                <p className="text-xs text-muted-foreground">
-                  From existing system
-                </p>
-              </CardContent>
-            </Card>
+          {/* Stats Grid */}
+          <AdminStatsGrid columns={4}>
+            <StatCard
+              title="Total Patients"
+              value={stats.total}
+              icon={Users}
+              description="All registered patients"
+            />
+            <StatCard
+              title="Active Patients"
+              value={stats.active}
+              icon={Activity}
+              description="Currently active"
+            />
+            <StatCard
+              title="With Facilities"
+              value={stats.withFacilities}
+              icon={UserCheck}
+              description="Assigned to facilities"
+            />
+            <StatCard
+              title="Recently Added"
+              value={stats.recentlyAdded}
+              icon={Calendar}
+              description="Added this week"
+            />
+          </AdminStatsGrid>
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">With Facilities</CardTitle>
-                <Building2 className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.withFacilities}</div>
-                <p className="text-xs text-muted-foreground">
-                  Assigned to facilities
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Recently Added</CardTitle>
-                <Activity className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.recentlyAdded}</div>
-                <p className="text-xs text-muted-foreground">
-                  In the last 7 days
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Active Records</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.active}</div>
-                <p className="text-xs text-muted-foreground">
-                  Currently active
-                </p>
-              </CardContent>
-            </Card>
+          {/* Search and Filters */}
+          <div className="flex items-center gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search patients by name or email..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Button variant="outline">
+              <Filter className="h-4 w-4 mr-2" />
+              Filters
+            </Button>
+            <Button variant="outline">
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </Button>
           </div>
 
           {/* Patients List */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Patient Records ({patients.length} total)</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {patients && patients.length > 0 ? (
-                <div className="space-y-4">
-                  {patients.map((patient) => (
-                    <div key={patient.id} className="border-b pb-4 last:border-b-0">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="font-medium">
-                            {patient.first_name} {patient.last_name}
-                          </h3>
-                          <p className="text-sm text-gray-600">{patient.email}</p>
-                          {patient.phone && (
-                            <p className="text-sm text-gray-600">{patient.phone}</p>
-                          )}
-                          {patient.facilities && (
-                            <p className="text-sm text-blue-600">
-                              Facility: {patient.facilities.name}
-                            </p>
-                          )}
-                          <div className="text-xs text-gray-500 mt-1">
-                            Roles: {patient.user_roles?.map(ur => ur.roles?.name).join(', ') || 'No roles'}
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button variant="outline" size="sm">
-                            View
-                          </Button>
-                          <Button variant="outline" size="sm">
-                            Edit
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+          <Card className="shadow-sm">
+            <CardContent className="p-6">
+              {isLoading ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">Loading patients...</p>
                 </div>
               ) : (
-                <div className="text-center py-8">
-                  <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500 mb-4">No patients found in existing system</p>
-                  <p className="text-sm text-gray-400 mb-4">
-                    Data comes from existing profiles table with patientCaregiver role
-                  </p>
-                  <Button>
-                    <UserPlus className="h-4 w-4 mr-2" />
-                    Add First Patient
-                  </Button>
-                </div>
+                <PatientsList 
+                  patients={filteredPatients}
+                  onEditPatient={handleEditPatient}
+                />
               )}
             </CardContent>
           </Card>
         </div>
+
+        {/* Dialogs */}
+        <CreatePatientDialog 
+          open={createDialogOpen}
+          onOpenChange={setCreateDialogOpen}
+        />
+
+        {selectedPatient && (
+          <EditPatientDialog
+            patient={selectedPatient}
+            open={editDialogOpen}
+            onOpenChange={setEditDialogOpen}
+          />
+        )}
       </PageContainer>
     </MainLayout>
   );

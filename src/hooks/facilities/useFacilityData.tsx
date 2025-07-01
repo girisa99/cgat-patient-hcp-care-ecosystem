@@ -1,16 +1,13 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import type { ExtendedFacility } from '@/types/database';
+import type { Facility } from '@/types/database';
 
-/**
- * Focused hook for facility data fetching
- */
 export const useFacilityData = () => {
   return useQuery({
     queryKey: ['facilities'],
-    queryFn: async (): Promise<ExtendedFacility[]> => {
-      console.log('🔍 Fetching facilities data via template...');
+    queryFn: async (): Promise<Facility[]> => {
+      console.log('🔍 Fetching facilities from database...');
       
       const { data, error } = await supabase
         .from('facilities')
@@ -22,15 +19,10 @@ export const useFacilityData = () => {
         throw error;
       }
 
-      console.log('✅ Facilities data fetched:', data?.length || 0);
+      console.log('✅ Facilities fetched successfully:', data?.length || 0);
       return data || [];
     },
     retry: 2,
-    staleTime: 30000,
-    meta: {
-      description: 'Fetches facility data from facilities table',
-      dataSource: 'facilities table (direct)',
-      requiresAuth: true
-    }
+    staleTime: 60000
   });
 };
