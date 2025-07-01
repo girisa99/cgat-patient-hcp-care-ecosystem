@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -11,19 +12,20 @@ import {
   UserPlus,
   Shield,
   X,
-  Code
+  Code,
+  Activity
 } from 'lucide-react';
 
 const navigation = [
-  { name: 'Dashboard', href: '/', icon: Home },
-  { name: 'Patients', href: '/patients', icon: Users },
-  { name: 'Onboarding', href: '/onboarding', icon: UserPlus },
+  { name: 'Dashboard', href: '/dashboard', icon: Home },
+  { name: 'Admin Verification', href: '/admin/verification', icon: Shield },
   { name: 'API Services', href: '/api-services', icon: Code },
   { name: 'Data Import', href: '/data-import', icon: Upload },
-  { name: 'Facilities', href: '/facilities', icon: Building2 },
+  { name: 'Patients', href: '/patients', icon: Users },
   { name: 'Users', href: '/users', icon: Users },
+  { name: 'Facilities', href: '/facilities', icon: Building2 },
+  { name: 'Onboarding', href: '/onboarding', icon: UserPlus },
   { name: 'Modules', href: '/modules', icon: Database },
-  { name: 'Security', href: '/security', icon: Shield },
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
@@ -97,5 +99,4 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   );
 };
 
-// Add default export
 export default Sidebar;
