@@ -56,7 +56,7 @@ export const getModuleComponentStats = (
 };
 
 export const validateComponent = (component: ComponentServiceInfo): boolean => {
-  return !!(component.name && component.type && component.path);
+  return !!(component.name && component.type && (component.path || component.filePath));
 };
 
 export const cleanupOrphanedComponents = (registry: ModuleRegistry): number => {
