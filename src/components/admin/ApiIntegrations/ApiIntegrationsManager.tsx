@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { useApiServices } from '@/hooks/useApiServices';
 import { useApiIntegrations } from '@/hooks/useApiIntegrations';
@@ -36,7 +35,9 @@ const ApiIntegrationsManager: React.FC = () => {
     externalCount: externalApis.length,
     meta,
     isLoading,
-    dataSource: 'useApiServices (consolidated)'
+    dataSource: 'useApiServices (consolidated)',
+    internalApisData: internalApis,
+    externalApisData: externalApis
   });
 
   // Filter integrations based on search term
@@ -56,7 +57,7 @@ const ApiIntegrationsManager: React.FC = () => {
     });
   }, [integrations, searchTerm]);
 
-  // Filter APIs by type for tabs
+  // Filter APIs by type for tabs - ensure we're using the actual data structure
   const filteredInternalApis = React.useMemo(() => {
     if (!searchTerm.trim()) return internalApis;
     

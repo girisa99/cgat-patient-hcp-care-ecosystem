@@ -17,12 +17,30 @@ import {
   FileText,
   Settings,
   Database,
-  Shield
+  Shield,
+  Globe,
+  Code,
+  Zap
 } from 'lucide-react';
-import { ApiIntegration } from '@/utils/api/ApiIntegrationTypes';
+
+interface ApiService {
+  id: string;
+  name: string;
+  description?: string;
+  type: string;
+  category: string;
+  base_url?: string;
+  version: string;
+  status: string;
+  direction: string;
+  purpose: string;
+  endpoints_count?: number;
+  created_at: string;
+  updated_at: string;
+}
 
 interface InternalApiEndpointsListProps {
-  apis: ApiIntegration[];
+  apis: ApiService[];
   searchTerm: string;
   onDownloadCollection: (integrationId: string) => void;
   onViewDetails: (integrationId: string) => void;
@@ -30,45 +48,57 @@ interface InternalApiEndpointsListProps {
   onCopyUrl: (url: string) => void;
 }
 
-const getTopicIcon = (topic: string) => {
-  switch (topic.toLowerCase()) {
-    case 'users':
-    case 'user':
-      return <Users className="h-4 w-4" />;
-    case 'patients':
-    case 'patient':
-      return <UserPlus className="h-4 w-4" />;
-    case 'facilities':
-    case 'facility':
-      return <Building className="h-4 w-4" />;
-    case 'auth':
-    case 'authentication':
+const getServiceIcon = (category: string, type: string) => {
+  switch (category.toLowerCase()) {
+    case 'healthcare':
       return <Shield className="h-4 w-4" />;
-    case 'audit':
-      return <FileText className="h-4 w-4" />;
-    case 'modules':
-    case 'module':
-      return <Database className="h-4 w-4" />;
+    case 'user':
+    case 'users':
+      return <Users className="h-4 w-4" />;
+    case 'patient':
+    case 'patients':
+      return <UserPlus className="h-4 w-4" />;
+    case 'facility':
+    case 'facilities':
+      return <Building className="h-4 w-4" />;
+    case 'authentication':
+    case 'auth':
+      return <Shield className="h-4 w-4" />;
+    case 'integration':
+      return <Globe className="h-4 w-4" />;
+    case 'development':
+      return <Code className="h-4 w-4" />;
+    case 'api':
+      return <Zap className="h-4 w-4" />;
     default:
-      return <Settings className="h-4 w-4" />;
+      return <Server className="h-4 w-4" />;
   }
 };
 
-const organizeEndpointsByTopic = (api: ApiIntegration) => {
-  const topics: Record<string, any[]> = {};
-  
-  api.endpoints.forEach(endpoint => {
-    // Extract topic from URL path
-    const pathParts = endpoint.url.split('/').filter(p => p);
-    const topic = pathParts[1] || pathParts[0] || 'general';
-    
-    if (!topics[topic]) {
-      topics[topic] = [];
-    }
-    topics[topic].push(endpoint);
-  });
-  
-  return topics;
+const getDirectionBadge = (direction: string) => {
+  switch (direction) {
+    case 'inbound':
+      return <Badge variant="outline" className="text-blue-600 border-blue-200">Inbound</Badge>;
+    case 'outbound':
+      return <Badge variant="outline" className="text-green-600 border-green-200">Outbound</Badge>;
+    case 'bidirectional':
+      return <Badge variant="outline" className="text-purple-600 border-purple-200">Bidirectional</Badge>;
+    default:
+      return <Badge variant="outline" className="text-gray-600 border-gray-200">{direction}</Badge>;
+  }
+};
+
+const getStatusBadge = (status: string) => {
+  switch (status) {
+    case 'active':
+      return <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">Active</Badge>;
+    case 'inactive':
+      return <Badge variant="secondary" className="bg-gray-100 text-gray-800 border-gray-200">Inactive</Badge>;
+    case 'deprecated':
+      return <Badge variant="outline" className="bg-red-100 text-red-800 border-red-200">Deprecated</Badge>;
+    default:
+      return <Badge variant="outline">{status}</Badge>;
+  }
 };
 
 export const InternalApiEndpointsList: React.FC<InternalApiEndpointsListProps> = ({
@@ -79,25 +109,13 @@ export const InternalApiEndpointsList: React.FC<InternalApiEndpointsListProps> =
   onViewDocumentation,
   onCopyUrl
 }) => {
-  const [expandedTopics, setExpandedTopics] = React.useState<Record<string, boolean>>({});
+  const [expandedApis, setExpandedApis] = React.useState<Record<string, boolean>>({});
 
-  const toggleTopic = (apiId: string, topic: string) => {
-    const key = `${apiId}-${topic}`;
-    setExpandedTopics(prev => ({
+  const toggleApi = (apiId: string) => {
+    setExpandedApis(prev => ({
       ...prev,
-      [key]: !prev[key]
+      [apiId]: !prev[apiId]
     }));
-  };
-
-  const getMethodColor = (method: string) => {
-    switch (method) {
-      case 'GET': return 'bg-green-100 text-green-800 border-green-200';
-      case 'POST': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'PUT': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'DELETE': return 'bg-red-100 text-red-800 border-red-200';
-      case 'PATCH': return 'bg-purple-100 text-purple-800 border-purple-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
   };
 
   if (apis.length === 0) {
@@ -117,7 +135,8 @@ export const InternalApiEndpointsList: React.FC<InternalApiEndpointsListProps> =
   return (
     <div className="space-y-4">
       {apis.map((api) => {
-        const topicGroups = organizeEndpointsByTopic(api);
+        const isExpanded = expandedApis[api.id];
+        const serviceIcon = getServiceIcon(api.category, api.type);
         
         return (
           <Card key={api.id} className="border-l-4 border-l-blue-500">
@@ -125,37 +144,46 @@ export const InternalApiEndpointsList: React.FC<InternalApiEndpointsListProps> =
               <div className="flex justify-between items-start">
                 <div className="flex-1">
                   <CardTitle className="flex items-center gap-2 mb-2">
-                    <Server className="h-5 w-5 text-blue-500" />
+                    {serviceIcon}
                     {api.name}
                     <Badge variant="outline">Internal</Badge>
                     <Badge variant="secondary">v{api.version}</Badge>
+                    {getStatusBadge(api.status)}
                   </CardTitle>
                   <p className="text-sm text-muted-foreground mb-3">
-                    {api.description}
+                    {api.description || 'No description provided'}
                   </p>
-                  <div className="flex items-center gap-4 text-sm">
+                  <div className="flex items-center gap-4 text-sm mb-2">
                     <span className="flex items-center gap-1">
                       <Database className="h-3 w-3" />
-                      {api.endpoints.length} endpoints
+                      Type: {api.type}
                     </span>
                     <span className="flex items-center gap-1">
                       <FileText className="h-3 w-3" />
-                      {Object.keys(api.schemas).length} schemas
+                      Category: {api.category}
                     </span>
                     <span className="flex items-center gap-1">
-                      <Shield className="h-3 w-3" />
-                      {api.rlsPolicies.length} RLS policies
+                      <Settings className="h-3 w-3" />
+                      Purpose: {api.purpose}
                     </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {getDirectionBadge(api.direction)}
+                    {api.endpoints_count && (
+                      <Badge variant="outline" className="text-xs">
+                        {api.endpoints_count} endpoints
+                      </Badge>
+                    )}
                   </div>
                 </div>
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => onCopyUrl(api.baseUrl)}
+                    onClick={() => onCopyUrl(api.base_url || `${window.location.origin}/api/v1/${api.id}`)}
                   >
                     <Copy className="h-3 w-3 mr-1" />
-                    Base URL
+                    URL
                   </Button>
                   <Button
                     variant="outline"
@@ -177,68 +205,65 @@ export const InternalApiEndpointsList: React.FC<InternalApiEndpointsListProps> =
               </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {Object.entries(topicGroups).map(([topic, endpoints]) => {
-                  const isExpanded = expandedTopics[`${api.id}-${topic}`];
-                  
-                  return (
-                    <Collapsible key={topic} open={isExpanded} onOpenChange={() => toggleTopic(api.id, topic)}>
-                      <CollapsibleTrigger asChild>
-                        <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg cursor-pointer hover:bg-muted/70 transition-colors">
-                          <div className="flex items-center gap-2">
-                            {getTopicIcon(topic)}
-                            <span className="font-medium capitalize">{topic}</span>
-                            <Badge variant="outline" className="text-xs">
-                              {endpoints.length} endpoint{endpoints.length !== 1 ? 's' : ''}
-                            </Badge>
-                          </div>
-                          {isExpanded ? 
-                            <ChevronDown className="h-4 w-4" /> : 
-                            <ChevronRight className="h-4 w-4" />
-                          }
+              <Collapsible open={isExpanded} onOpenChange={() => toggleApi(api.id)}>
+                <CollapsibleTrigger asChild>
+                  <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg cursor-pointer hover:bg-muted/70 transition-colors">
+                    <div className="flex items-center gap-2">
+                      <Settings className="h-4 w-4" />
+                      <span className="font-medium">API Configuration</span>
+                    </div>
+                    {isExpanded ? 
+                      <ChevronDown className="h-4 w-4" /> : 
+                      <ChevronRight className="h-4 w-4" />
+                    }
+                  </div>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="mt-2 p-4 border rounded-lg bg-background">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <h4 className="font-medium text-sm mb-2">Service Information</h4>
+                        <div className="space-y-1 text-sm">
+                          <div><strong>ID:</strong> <code className="text-xs bg-muted px-1 py-0.5 rounded">{api.id}</code></div>
+                          <div><strong>Type:</strong> {api.type}</div>
+                          <div><strong>Direction:</strong> {api.direction}</div>
+                          <div><strong>Category:</strong> {api.category}</div>
                         </div>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent>
-                        <div className="mt-2 space-y-2">
-                          {endpoints.map((endpoint, idx) => (
-                            <div key={idx} className="flex items-center justify-between p-3 border rounded-lg bg-background">
-                              <div className="flex items-center gap-3 flex-1">
-                                <Badge className={`${getMethodColor(endpoint.method)} border font-mono text-xs`}>
-                                  {endpoint.method}
-                                </Badge>
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2">
-                                    <code className="text-sm bg-muted px-2 py-1 rounded font-mono">
-                                      {endpoint.url}
-                                    </code>
-                                    {!endpoint.isPublic && (
-                                      <Badge variant="secondary" className="text-xs">
-                                        Auth Required
-                                      </Badge>
-                                    )}
-                                  </div>
-                                  <p className="text-sm text-muted-foreground mt-1">
-                                    {endpoint.description}
-                                  </p>
-                                </div>
-                              </div>
-                              <div className="flex gap-2">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => onCopyUrl(endpoint.fullUrl || `${api.baseUrl}${endpoint.url}`)}
-                                >
-                                  <Copy className="h-3 w-3" />
-                                </Button>
-                              </div>
-                            </div>
-                          ))}
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-sm mb-2">Technical Details</h4>
+                        <div className="space-y-1 text-sm">
+                          <div><strong>Base URL:</strong> {api.base_url ? (
+                            <code className="text-xs bg-muted px-1 py-0.5 rounded break-all">{api.base_url}</code>
+                          ) : (
+                            <span className="text-muted-foreground">Not configured</span>
+                          )}</div>
+                          <div><strong>Version:</strong> {api.version}</div>
+                          <div><strong>Status:</strong> {api.status}</div>
+                          {api.endpoints_count && (
+                            <div><strong>Endpoints:</strong> {api.endpoints_count}</div>
+                          )}
                         </div>
-                      </CollapsibleContent>
-                    </Collapsible>
-                  );
-                })}
-              </div>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-4 pt-4 border-t">
+                      <h4 className="font-medium text-sm mb-2">Purpose & Usage</h4>
+                      <p className="text-sm text-muted-foreground">
+                        {api.purpose || 'General API service for internal healthcare operations'}
+                      </p>
+                    </div>
+                    
+                    <div className="mt-4 pt-4 border-t">
+                      <h4 className="font-medium text-sm mb-2">Timestamps</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                        <div><strong>Created:</strong> {new Date(api.created_at).toLocaleDateString()}</div>
+                        <div><strong>Updated:</strong> {new Date(api.updated_at).toLocaleDateString()}</div>
+                      </div>
+                    </div>
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
             </CardContent>
           </Card>
         );
