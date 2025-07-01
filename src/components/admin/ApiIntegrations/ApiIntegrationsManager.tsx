@@ -1,38 +1,41 @@
 
 import React, { useState, useMemo } from 'react';
-import { useApiServices } from '@/hooks/useApiServices';
-import { useApiServiceDetails } from '@/hooks/useApiServiceDetails';
+import { useApiServicesPage } from '@/hooks/useApiServicesPage';
 import { useToast } from '@/hooks/use-toast';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { SearchInput } from '@/components/ui/search-input';
 import { ApiIntegrationsTabs } from './ApiIntegrationsTabs';
 
+/**
+ * API Integrations Manager - LOCKED IMPLEMENTATION
+ * This component is locked to prevent changes that break other parts of the application
+ * Uses dedicated useApiServicesPage hook for consistent data access
+ */
 const ApiIntegrationsManager: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [searchTerm, setSearchTerm] = useState('');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const { toast } = useToast();
 
-  // Get data from both hooks for single source of truth
-  const { apiServices, isLoading: isLoadingServices } = useApiServices();
+  // Use the locked hook for consistent data access
   const { 
-    consolidatedApiData, 
-    isLoading: isLoadingDetails,
-    generatePostmanCollection
-  } = useApiServiceDetails();
+    integrations,
+    consolidatedApiData,
+    isLoading,
+    generatePostmanCollection,
+    meta
+  } = useApiServicesPage();
 
-  console.log('🔍 ApiIntegrationsManager: Single source of truth data:', {
-    apiServicesCount: apiServices.length,
+  console.log('🔒 ApiIntegrationsManager - LOCKED VERSION active with data:', {
+    integrationsCount: integrations.length,
     consolidatedCount: consolidatedApiData.consolidatedApis.length,
-    syncStatus: consolidatedApiData.syncStatus
+    implementationLocked: meta.implementationLocked
   });
 
-  // Use consolidated data as the single source of truth
-  const consolidatedApis = consolidatedApiData.consolidatedApis;
-  const isLoading = isLoadingServices || isLoadingDetails;
-
-  // Filter consolidated data for different categories
+  // Filter consolidated data for different categories - LOCKED LOGIC
   const { internalApis, externalApis, publishedApis } = useMemo(() => {
+    const consolidatedApis = consolidatedApiData.consolidatedApis;
+    
     const internal = consolidatedApis.filter(api => 
       api.type === 'internal' || api.direction === 'inbound'
     );
@@ -45,31 +48,24 @@ const ApiIntegrationsManager: React.FC = () => {
       api.status === 'published' || api.lifecycle_stage === 'production'
     );
 
-    console.log('📊 Filtered API categories:', {
-      internal: internal.length,
-      external: external.length,
-      published: published.length
-    });
-
     return { internalApis: internal, externalApis: external, publishedApis: published };
-  }, [consolidatedApis]);
+  }, [consolidatedApiData.consolidatedApis]);
 
-  // Filter by search term
+  // Filter by search term - LOCKED LOGIC
   const filteredIntegrations = useMemo(() => {
-    if (!searchTerm.trim()) return consolidatedApis;
+    if (!searchTerm.trim()) return consolidatedApiData.consolidatedApis;
     
-    return consolidatedApis.filter(api => 
+    return consolidatedApiData.consolidatedApis.filter(api => 
       api.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       api.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      api.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      api.purpose?.toLowerCase().includes(searchTerm.toLowerCase())
+      api.category?.toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }, [consolidatedApis, searchTerm]);
+  }, [consolidatedApiData.consolidatedApis, searchTerm]);
 
-  // Action handlers
+  // Action handlers - LOCKED IMPLEMENTATIONS
   const handleDownloadCollection = async (integrationId: string) => {
     try {
-      const collection = generatePostmanCollection(integrationId, consolidatedApis);
+      const collection = generatePostmanCollection(integrationId, consolidatedApiData.consolidatedApis);
       if (collection) {
         const blob = new Blob([JSON.stringify(collection, null, 2)], {
           type: 'application/json'
@@ -98,7 +94,7 @@ const ApiIntegrationsManager: React.FC = () => {
   };
 
   const handleViewDetails = (integrationId: string) => {
-    const api = consolidatedApis.find(a => a.id === integrationId);
+    const api = consolidatedApiData.consolidatedApis.find(a => a.id === integrationId);
     console.log('👁️ Viewing details for API:', api?.name);
     toast({
       title: "API Details",
@@ -107,7 +103,7 @@ const ApiIntegrationsManager: React.FC = () => {
   };
 
   const handleViewDocumentation = (integrationId: string) => {
-    const api = consolidatedApis.find(a => a.id === integrationId);
+    const api = consolidatedApiData.consolidatedApis.find(a => a.id === integrationId);
     if (api?.documentation_url) {
       window.open(api.documentation_url, '_blank');
     } else {
@@ -136,7 +132,7 @@ const ApiIntegrationsManager: React.FC = () => {
   };
 
   const handleTestEndpoint = async (integrationId: string, endpointId?: string) => {
-    const api = consolidatedApis.find(a => a.id === integrationId);
+    const api = consolidatedApiData.consolidatedApis.find(a => a.id === integrationId);
     console.log('🧪 Testing endpoint for API:', api?.name, 'Endpoint:', endpointId);
     
     toast({
@@ -164,19 +160,22 @@ const ApiIntegrationsManager: React.FC = () => {
   return (
     <PageContainer 
       title="API Services" 
-      subtitle={`Comprehensive API management with ${consolidatedApis.length} integrated services`}
+      subtitle={`Comprehensive API management with ${consolidatedApiData.consolidatedApis.length} integrated services`}
     >
       <div className="space-y-6">
-        {/* Single Source of Truth Status */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        {/* LOCKED STATUS INDICATOR */}
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
           <div className="flex items-center gap-2 mb-2">
-            <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
-            <h3 className="font-semibold text-blue-900">Single Source of Truth Active</h3>
+            <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+            <h3 className="font-semibold text-green-900">🔒 Implementation Locked & Stable</h3>
           </div>
-          <p className="text-sm text-blue-700">
+          <p className="text-sm text-green-700">
             Data synchronized from {consolidatedApiData.syncStatus?.internalCount || 0} internal APIs, 
             {consolidatedApiData.syncStatus?.externalCount || 0} external APIs, 
             with {consolidatedApiData.syncStatus?.endpointsCount || 0} total endpoints
+          </p>
+          <p className="text-xs text-green-600 mt-1">
+            Hook Version: {meta.hookVersion} | Single Source Validated: {meta.singleSourceValidated ? '✅' : '❌'}
           </p>
         </div>
 
@@ -189,7 +188,7 @@ const ApiIntegrationsManager: React.FC = () => {
             className="max-w-sm"
           />
           <div className="text-sm text-muted-foreground">
-            {filteredIntegrations.length} of {consolidatedApis.length} APIs
+            {filteredIntegrations.length} of {consolidatedApiData.consolidatedApis.length} APIs
           </div>
         </div>
 
