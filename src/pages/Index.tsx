@@ -2,19 +2,17 @@
 import React from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { PageContainer } from '@/components/layout/PageContainer';
-import { ValidationDashboard } from '@/components/validation/ValidationDashboard';
+import UnifiedDashboard from '@/components/dashboard/UnifiedDashboard';
 
-const Index = () => {
-  console.log('🏠 Dashboard: Loading single source validation system');
-
+const Index: React.FC = () => {
   return (
     <MainLayout>
       <PageContainer
-        title="Healthcare Admin Dashboard"
-        subtitle="Single source of truth validation and system overview"
+        title="Healthcare Management Dashboard"
+        subtitle="Unified system overview with consolidated data sources"
         fluid
       >
-        <ValidationDashboard />
+        <UnifiedDashboard />
       </PageContainer>
     </MainLayout>
   );

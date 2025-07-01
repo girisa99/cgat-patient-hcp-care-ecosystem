@@ -2,32 +2,8 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { 
-  Home, 
-  Users, 
-  Building2, 
-  Settings, 
-  Database,
-  Upload,
-  UserPlus,
-  Shield,
-  X,
-  Code,
-  Activity
-} from 'lucide-react';
-
-const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: Home },
-  { name: 'Admin Verification', href: '/admin/verification', icon: Shield },
-  { name: 'API Services', href: '/api-services', icon: Code },
-  { name: 'Data Import', href: '/data-import', icon: Upload },
-  { name: 'Patients', href: '/patients', icon: Users },
-  { name: 'Users', href: '/users', icon: Users },
-  { name: 'Facilities', href: '/facilities', icon: Building2 },
-  { name: 'Onboarding', href: '/onboarding', icon: UserPlus },
-  { name: 'Modules', href: '/modules', icon: Database },
-  { name: 'Settings', href: '/settings', icon: Settings },
-];
+import { X } from 'lucide-react';
+import { navItems } from '@/nav-items';
 
 interface SidebarProps {
   isOpen?: boolean;
@@ -66,14 +42,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             )}
           </div>
           <nav className="mt-5 flex-1 space-y-1 px-2">
-            {navigation.map((item) => {
-              const Icon = item.icon;
-              const isActive = location.pathname === item.href;
+            {navItems.map((item) => {
+              const isActive = location.pathname === item.to;
               
               return (
                 <Link
-                  key={item.name}
-                  to={item.href}
+                  key={item.title}
+                  to={item.to}
                   onClick={onClose}
                   className={cn(
                     'group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors',
@@ -82,13 +57,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                       : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                   )}
                 >
-                  <Icon
-                    className={cn(
-                      'mr-3 h-5 w-5 flex-shrink-0',
-                      isActive ? 'text-blue-500' : 'text-gray-400 group-hover:text-gray-500'
-                    )}
-                  />
-                  {item.name}
+                  <span className={cn(
+                    'mr-3 flex-shrink-0',
+                    isActive ? 'text-blue-500' : 'text-gray-400 group-hover:text-gray-500'
+                  )}>
+                    {item.icon}
+                  </span>
+                  {item.title}
                 </Link>
               );
             })}
