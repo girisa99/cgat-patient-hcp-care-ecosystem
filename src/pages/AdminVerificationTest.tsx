@@ -1,197 +1,250 @@
 
-/**
- * Real System Verification Dashboard
- * Uses comprehensive verification including database health and sync checks
- * Integrated with 30-minute automation cycle
- */
-
 import React from 'react';
-import MainLayout from '@/components/layout/MainLayout';
-import { PageContainer } from '@/components/layout/PageContainer';
-import { useComprehensiveVerification } from '@/hooks/useComprehensiveVerification';
-import ComprehensiveVerificationHeader from '@/components/verification/ComprehensiveVerificationHeader';
-import VerificationMetricsGrid from '@/components/verification/VerificationMetricsGrid';
-import DatabaseSyncResults from '@/components/verification/DatabaseSyncResults';
-import DatabaseIssuesDisplay from '@/components/verification/DatabaseIssuesDisplay';
-import SystemRecommendations from '@/components/verification/SystemRecommendations';
-import SystemStatusSummary from '@/components/verification/SystemStatusSummary';
-import SystemStatusOverview from '@/components/verification/SystemStatusOverview';
-import ComprehensiveSystemStatusDisplay from '@/components/verification/ComprehensiveSystemStatusDisplay';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, CheckCircle, Bot, PlayCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Activity, CheckCircle, AlertTriangle, Shield, Database, Code } from 'lucide-react';
+import { useComprehensiveVerification } from '@/hooks/useComprehensiveVerification';
+import SystemStatusSummary from '@/components/verification/SystemStatusSummary';
+import VerificationMetricsGrid from '@/components/verification/VerificationMetricsGrid';
+import DatabaseIssuesDisplay from '@/components/verification/DatabaseIssuesDisplay';
+import DatabaseSyncResults from '@/components/verification/DatabaseSyncResults';
 
-const AdminVerificationTest = () => {
+const AdminVerificationTest: React.FC = () => {
   const {
     verificationResult,
-    automationStatus,
+    hasResults,
     isVerifying,
     error,
     runComprehensiveVerification,
     triggerAutomationCycle,
     downloadComprehensiveReport,
-    healthScore,
-    criticalIssues,
-    totalIssues,
-    syncStatus,
-    basedOnOriginalDB
+    clearError
   } = useComprehensiveVerification();
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'healthy': return "text-green-800 bg-green-50 border-green-200";
-      case 'warning': return "text-yellow-800 bg-yellow-50 border-yellow-200";
-      case 'critical': return "text-red-800 bg-red-50 border-red-200";
-      default: return "text-gray-800 bg-gray-50 border-gray-200";
-    }
-  };
 
   const getSyncStatusColor = (status: string) => {
     switch (status) {
-      case 'in_sync': return "text-green-800 bg-green-50 border-green-200";
-      case 'partial_sync': return "text-yellow-800 bg-yellow-50 border-yellow-200";
-      case 'out_of_sync': return "text-red-800 bg-red-50 border-red-200";
-      default: return "text-gray-800 bg-gray-50 border-gray-200";
+      case 'synced':
+        return 'bg-green-50 border-green-200 text-green-800';
+      case 'pending_sync':
+        return 'bg-yellow-50 border-yellow-200 text-yellow-800';
+      case 'sync_failed':
+        return 'bg-red-50 border-red-200 text-red-800';
+      default:
+        return 'bg-gray-50 border-gray-200 text-gray-800';
     }
   };
 
   return (
-    <MainLayout>
-      <PageContainer
-        title="Comprehensive System Verification"
-        subtitle="Complete system health check with 30-minute automation cycle"
-      >
-        <div className="space-y-6">
-          {/* Comprehensive System Status - NEW: Includes all modules */}
-          <ComprehensiveSystemStatusDisplay />
-
-          {/* System Status Overview - Real-time component status */}
-          <SystemStatusOverview />
-
-          {/* Automation Integration Status */}
-          <Alert className="bg-blue-50 border-blue-200">
-            <Bot className="h-4 w-4" />
-            <AlertDescription>
-              <div className="flex items-center justify-between">
-                <div>
-                  <strong>🤖 30-MINUTE AUTOMATION CYCLE STATUS:</strong><br />
-                  {automationStatus ? (
-                    <>
-                      ✅ All verification components integrated<br />
-                      ✅ Results calculated from original database only<br />
-                      ✅ Findings synced to database tables for display<br />
-                      ✅ Health score based on original database data<br />
-                      ✅ User Management, Facilities, Modules, API Integrations monitored<br />
-                      {automationStatus.lastExecution && (
-                        <>Last execution: {new Date(automationStatus.lastExecution).toLocaleString()}</>
-                      )}
-                    </>
-                  ) : (
-                    'Loading automation status...'
-                  )}
-                </div>
-                <Button 
-                  onClick={triggerAutomationCycle} 
-                  disabled={isVerifying}
-                  variant="outline"
-                  size="sm"
-                >
-                  <PlayCircle className="h-4 w-4 mr-2" />
-                  Test Automation
-                </Button>
-              </div>
-            </AlertDescription>
-          </Alert>
-
-          {/* Data Source Confirmation */}
-          {verificationResult && (
-            <Alert className="bg-green-50 border-green-200">
-              <CheckCircle className="h-4 w-4" />
-              <AlertDescription>
-                <strong>✅ DATA SOURCE VERIFICATION:</strong><br />
-                📊 Health Score ({healthScore}/100): Based on ORIGINAL DATABASE<br />
-                🗄️ All calculations use original database data, not sync tables<br />
-                🔄 Results displayed from sync tables for consistency<br />
-                ⏰ Last verification: {new Date(verificationResult.timestamp).toLocaleString()}<br />
-                🤖 Triggered by: {verificationResult.automationMetadata.triggeredBy.toUpperCase()}<br />
-                🏥 All core modules (Users, Facilities, Modules, APIs) verified
-              </AlertDescription>
-            </Alert>
+    <div className="container mx-auto px-4 py-8 space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">System Verification Dashboard</h1>
+          <p className="text-gray-600 mt-2">
+            Comprehensive system validation with single source of truth compliance
+          </p>
+        </div>
+        
+        <div className="flex space-x-3">
+          <Button
+            onClick={runComprehensiveVerification}
+            disabled={isVerifying}
+            variant="outline"
+            className="flex items-center"
+          >
+            <Activity className="h-4 w-4 mr-2" />
+            {isVerifying ? 'Running...' : 'Run Verification'}
+          </Button>
+          
+          <Button
+            onClick={triggerAutomationCycle}
+            disabled={isVerifying}
+            className="flex items-center"
+          >
+            <CheckCircle className="h-4 w-4 mr-2" />
+            {isVerifying ? 'Processing...' : 'Run Automation'}
+          </Button>
+          
+          {hasResults && (
+            <Button
+              onClick={downloadComprehensiveReport}
+              variant="secondary"
+              className="flex items-center"
+            >
+              Download Report
+            </Button>
           )}
+        </div>
+      </div>
 
-          {/* Header with automation controls */}
-          <ComprehensiveVerificationHeader
+      {error && (
+        <Card className="bg-red-50 border-red-200">
+          <CardHeader>
+            <CardTitle className="text-red-800 flex items-center">
+              <AlertTriangle className="h-5 w-5 mr-2" />
+              Verification Error
+            </CardTitle>
+            <CardDescription className="text-red-700">
+              {error}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={clearError} variant="outline" size="sm">
+              Clear Error
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      <SystemStatusSummary verificationResult={verificationResult} error={error} />
+
+      {hasResults && verificationResult && (
+        <>
+          <VerificationMetricsGrid 
             verificationResult={verificationResult}
-            isVerifying={isVerifying}
-            onRunVerification={runComprehensiveVerification}
-            onDownloadReport={downloadComprehensiveReport}
-            getStatusColor={getStatusColor}
             getSyncStatusColor={getSyncStatusColor}
           />
 
-          {/* Error Alert */}
-          {error && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                {error}
-              </AlertDescription>
-            </Alert>
-          )}
+          <Tabs defaultValue="overview" className="space-y-4">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="single-source">Single Source</TabsTrigger>
+              <TabsTrigger value="database">Database</TabsTrigger>
+              <TabsTrigger value="sync">Sync Status</TabsTrigger>
+            </TabsList>
 
-          {/* Verification Results - Show when available */}
-          {verificationResult && (
-            <>
-              <VerificationMetricsGrid
-                verificationResult={verificationResult}
-                getSyncStatusColor={getSyncStatusColor}
-              />
+            <TabsContent value="overview" className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium flex items-center">
+                      <Shield className="h-4 w-4 mr-2 text-green-600" />
+                      Single Source Compliance
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-green-700">
+                      {verificationResult.singleSourceCompliance.complianceScore}%
+                    </div>
+                    <div className="text-xs text-green-600">
+                      {verificationResult.singleSourceCompliance.systemsVerified.length} systems verified
+                    </div>
+                  </CardContent>
+                </Card>
 
-              <DatabaseSyncResults
-                verificationResult={verificationResult}
-                getSyncStatusColor={getSyncStatusColor}
-              />
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium flex items-center">
+                      <Database className="h-4 w-4 mr-2 text-blue-600" />
+                      Database Health
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-blue-700">
+                      {verificationResult.systemHealth.databaseHealth.score}/100
+                    </div>
+                    <div className="text-xs text-blue-600">
+                      System health score
+                    </div>
+                  </CardContent>
+                </Card>
 
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium flex items-center">
+                      <Code className="h-4 w-4 mr-2 text-purple-600" />
+                      Verification Info
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-1">
+                      <div className="text-xs text-gray-600">
+                        Source: {verificationResult.automationMetadata.dataSource}
+                      </div>
+                      <div className="text-xs text-gray-600">
+                        Method: {verificationResult.automationMetadata.verificationMethod}
+                      </div>
+                      <div className="text-xs text-gray-600">
+                        Last run: {new Date(verificationResult.automationMetadata.timestamp).toLocaleString()}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="single-source" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Shield className="h-5 w-5 mr-2 text-green-600" />
+                    Single Source of Truth Compliance
+                  </CardTitle>
+                  <CardDescription>
+                    Verification that all systems use consolidated data sources
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                      <h4 className="font-medium text-green-900 mb-2">Verified Systems</h4>
+                      <div className="space-y-1">
+                        {verificationResult.singleSourceCompliance.systemsVerified.map((system, index) => (
+                          <div key={index} className="text-sm text-green-700 flex items-center">
+                            <CheckCircle className="h-3 w-3 mr-2" />
+                            {system}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <h4 className="font-medium text-blue-900 mb-2">Recommendations</h4>
+                      <div className="space-y-1">
+                        {verificationResult.singleSourceCompliance.recommendations.map((rec, index) => (
+                          <div key={index} className="text-sm text-blue-700">
+                            {rec}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="database" className="space-y-4">
               <DatabaseIssuesDisplay verificationResult={verificationResult} />
+            </TabsContent>
 
-              <SystemRecommendations verificationResult={verificationResult} />
-            </>
-          )}
+            <TabsContent value="sync" className="space-y-4">
+              <DatabaseSyncResults 
+                verificationResult={verificationResult}
+                getSyncStatusColor={getSyncStatusColor}
+              />
+            </TabsContent>
+          </Tabs>
+        </>
+      )}
 
-          {/* Status Summary - Always visible */}
-          <SystemStatusSummary verificationResult={verificationResult} error={error} />
-
-          {/* Initial state message */}
-          {!verificationResult && !isVerifying && !error && (
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                Welcome to the Comprehensive System Verification Dashboard with 30-minute automation. 
-                Click "Run Complete Verification" or "Test Automation" to start system health checks.
-                All calculations are based on the original database, with results synced to display tables.
-                This system now monitors ALL core modules including User Management, Facilities, Modules, and API Integrations.
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {/* Automation Assurance */}
-          <Alert className="bg-purple-50 border-purple-200">
-            <Bot className="h-4 w-4" />
-            <AlertDescription>
-              <strong>🔒 COMPREHENSIVE SYSTEM INTEGRITY ASSURANCE:</strong><br />
-              • Health scores calculated ONLY from original database data<br />
-              • 30-minute automation covers ALL verification components AND all core modules<br />
-              • User Management, Facilities, Modules, API Integrations all monitored<br />
-              • No components missed in automated scans<br />
-              • Results consistency between manual and automated runs<br />
-              • Database sync maintains display accuracy without affecting calculations<br />
-              • Full traceability of data sources and calculation methods<br />
-              • Real-time status monitoring for immediate issue detection
-            </AlertDescription>
-          </Alert>
-        </div>
-      </PageContainer>
-    </MainLayout>
+      {!hasResults && !isVerifying && !error && (
+        <Card className="text-center p-8">
+          <CardContent>
+            <Activity className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              No Verification Results
+            </h3>
+            <p className="text-gray-600 mb-4">
+              Run a comprehensive verification to see system health and compliance status
+            </p>
+            <Button onClick={runComprehensiveVerification} className="mx-auto">
+              Start Verification
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 };
 

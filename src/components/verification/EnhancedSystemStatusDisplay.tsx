@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Activity, AlertTriangle, CheckCircle, TrendingUp } from 'lucide-react';
 import { useHealthMonitor } from '@/hooks/useHealthMonitor';
 import { errorManager } from '@/utils/error/ErrorManager';
-import { queryOptimizer } from '@/utils/performance/QueryOptimizer';
+import { QueryOptimizer } from '@/utils/performance/QueryOptimizer';
 
 const EnhancedSystemStatusDisplay: React.FC = () => {
   const { health } = useHealthMonitor({ autoRefresh: true });
@@ -14,7 +14,7 @@ const EnhancedSystemStatusDisplay: React.FC = () => {
   const errorStats = errorManager.getErrorStats();
   
   // Get performance statistics
-  const performanceStats = queryOptimizer.getPerformanceStats();
+  const performanceStats = QueryOptimizer.getPerformanceStats();
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

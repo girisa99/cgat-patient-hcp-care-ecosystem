@@ -77,7 +77,7 @@ export class ComprehensiveAutomationCoordinator {
       let finalResult = verificationResult;
       if (fixesApplied > 0) {
         console.log('🔍 Step 3: Post-fix verification...');
-        finalResult = await ComprehensiveSystemVerifier.performComprehensiveVerification('post-fix');
+        finalResult = await ComprehensiveSystemVerifier.performComprehensiveVerification('automated');
       }
 
       const executionTime = Date.now() - startTime;
@@ -197,7 +197,6 @@ export class ComprehensiveAutomationCoordinator {
   private async createErrorResult(error: any): Promise<ComprehensiveVerificationResult> {
     return {
       verificationTimestamp: new Date().toISOString(),
-      triggeredBy: 'automation-error',
       overallHealthScore: 0,
       criticalIssuesFound: 1,
       totalActiveIssues: 1,
@@ -208,9 +207,14 @@ export class ComprehensiveAutomationCoordinator {
           issues: [`Automation error: ${error.message}`],
           recommendations: ['Review automation logs', 'Check system configuration']
         },
-        isStable: false
+        isSystemStable: false,
+        performanceMetrics: {
+          responseTime: 0,
+          errorRate: 100,
+          uptime: 0
+        }
       },
-      syncStatus: 'error',
+      syncStatus: 'sync_failed',
       syncVerification: {
         isFullySynced: false,
         pendingChanges: [],
@@ -218,9 +222,11 @@ export class ComprehensiveAutomationCoordinator {
         syncErrors: [`Automation error: ${error.message}`]
       },
       singleSourceCompliance: {
-        complianceScore: 0,
+        isCompliant: false,
         violations: [`Automation system error: ${error.message}`],
-        recommendations: ['Review automation configuration']
+        complianceScore: 0,
+        recommendations: ['Review automation configuration'],
+        systemsVerified: []
       },
       automationMetadata: {
         dataSource: 'original_database',
@@ -240,6 +246,14 @@ export class ComprehensiveAutomationCoordinator {
       config: this.config,
       nextScheduledRun: this.calculateNextRun()
     };
+  }
+
+  /**
+   * Static method to get automation status (for compatibility)
+   */
+  static getAutomationStatus() {
+    const instance = ComprehensiveAutomationCoordinator.getInstance();
+    return instance.getStatus();
   }
 
   /**

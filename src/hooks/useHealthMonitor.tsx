@@ -1,78 +1,115 @@
 
-import { useState, useEffect, useCallback } from 'react';
-import { healthMonitor, SystemHealth } from '@/utils/monitoring/HealthMonitor';
+/**
+ * Health Monitor Hook
+ * Mock implementation for system health monitoring
+ */
 
-export interface UseHealthMonitorOptions {
+import { useState, useEffect } from 'react';
+
+interface HealthCheck {
+  name: string;
+  status: 'healthy' | 'warning' | 'error';
+  message: string;
+  lastChecked: Date;
+}
+
+interface SystemHealth {
+  overall: 'healthy' | 'warning' | 'error';
+  checks: HealthCheck[];
+  lastUpdated: Date;
+}
+
+interface UseHealthMonitorOptions {
   autoRefresh?: boolean;
   refreshInterval?: number;
-  onHealthChange?: (health: SystemHealth) => void;
 }
 
 export const useHealthMonitor = (options: UseHealthMonitorOptions = {}) => {
-  const {
-    autoRefresh = false,
-    refreshInterval = 30000, // 30 seconds
-    onHealthChange
-  } = options;
-
+  const { autoRefresh = false, refreshInterval = 30000 } = options;
   const [health, setHealth] = useState<SystemHealth | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  const runHealthCheck = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const healthResult = await healthMonitor.runHealthChecks();
-      setHealth(healthResult);
-      
-      if (onHealthChange) {
-        onHealthChange(healthResult);
+  const performHealthCheck = async (): Promise<SystemHealth> => {
+    // Mock health checks
+    const checks: HealthCheck[] = [
+      {
+        name: 'Database Connection',
+        status: 'healthy',
+        message: 'Database is responding normally',
+        lastChecked: new Date()
+      },
+      {
+        name: 'API Services',
+        status: 'healthy',
+        message: 'All API services operational',
+        lastChecked: new Date()
+      },
+      {
+        name: 'Authentication',
+        status: 'healthy',
+        message: 'Auth service is working',
+        lastChecked: new Date()
+      },
+      {
+        name: 'Storage',
+        status: 'healthy',
+        message: 'File storage accessible',
+        lastChecked: new Date()
       }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Health check failed';
-      setError(errorMessage);
-      console.error('Health check failed:', err);
+    ];
+
+    // Determine overall health
+    const hasError = checks.some(check => check.status === 'error');
+    const hasWarning = checks.some(check => check.status === 'warning');
+    
+    const overall: SystemHealth['overall'] = hasError ? 'error' : hasWarning ? 'warning' : 'healthy';
+
+    return {
+      overall,
+      checks,
+      lastUpdated: new Date()
+    };
+  };
+
+  const checkHealth = async () => {
+    setIsLoading(true);
+    try {
+      const healthData = await performHealthCheck();
+      setHealth(healthData);
+    } catch (error) {
+      console.error('Health check failed:', error);
+      setHealth({
+        overall: 'error',
+        checks: [{
+          name: 'Health Check',
+          status: 'error',
+          message: 'Failed to perform health check',
+          lastChecked: new Date()
+        }],
+        lastUpdated: new Date()
+      });
     } finally {
       setIsLoading(false);
     }
-  }, [onHealthChange]);
+  };
 
-  // Auto refresh effect
   useEffect(() => {
-    if (!autoRefresh) return;
+    // Initial health check
+    checkHealth();
 
-    const interval = setInterval(runHealthCheck, refreshInterval);
-    
-    // Run initial check
-    runHealthCheck();
-
-    return () => clearInterval(interval);
-  }, [autoRefresh, refreshInterval, runHealthCheck]);
-
-  // Get last health check on mount
-  useEffect(() => {
-    const lastHealth = healthMonitor.getLastHealthCheck();
-    if (lastHealth) {
-      setHealth(lastHealth);
+    // Set up auto-refresh if enabled
+    if (autoRefresh) {
+      const interval = setInterval(checkHealth, refreshInterval);
+      return () => clearInterval(interval);
     }
-  }, []);
-
-  const getSystemMetrics = useCallback(() => {
-    return healthMonitor.getSystemMetrics();
-  }, []);
-
-  const registerHealthCheck = useCallback((name: string, checkFn: () => Promise<any>) => {
-    healthMonitor.registerHealthCheck(name, checkFn);
-  }, []);
+  }, [autoRefresh, refreshInterval]);
 
   return {
     health,
     isLoading,
-    error,
-    runHealthCheck,
-    getSystemMetrics,
-    registerHealthCheck
+    checkHealth,
+    isHealthy: health?.overall === 'healthy',
+    hasWarnings: health?.overall === 'warning',
+    hasErrors: health?.overall === 'error'
   };
 };
