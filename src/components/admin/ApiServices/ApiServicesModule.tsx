@@ -29,7 +29,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-// Use consolidated hooks with real synchronized data
+// Use consolidated hooks with real synchronized data - SINGLE SOURCE
 import { useApiServices } from '@/hooks/useApiServices';
 import { useApiServiceDetails } from '@/hooks/useApiServiceDetails';
 
@@ -46,14 +46,14 @@ import { ApiDataSeeder } from '@/components/admin/ApiIntegrations/ApiDataSeeder'
 import { OverviewTabContent } from '@/components/admin/ApiIntegrations/tabs/OverviewTabContent';
 
 export const ApiServicesModule: React.FC = () => {
-  console.log('🚀 ApiServicesModule: Fully Synchronized Implementation');
+  console.log('🚀 ApiServicesModule: Single Source of Truth - No Duplication');
   
   const [activeTab, setActiveTab] = useState('overview');
   const [searchTerm, setSearchTerm] = useState('');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const { toast } = useToast();
 
-  // Use consolidated hooks with full synchronization
+  // Single source hooks - no duplication
   const { 
     apiServices,
     isLoading: isLoadingServices, 
@@ -74,18 +74,18 @@ export const ApiServicesModule: React.FC = () => {
   const isLoading = isLoadingServices || isLoadingDetails;
   const error = servicesError;
 
-  // Use consolidated data with full sync information
+  // Single source consolidated data - NO DUPLICATION
   const consolidatedApis = consolidatedApiData?.consolidatedApis || [];
   const syncStatus = consolidatedApiData?.syncStatus;
 
-  console.log('📊 ApiServicesModule: Synchronized Data Summary:', {
-    totalOriginalServices: apiServices?.length || 0,
-    totalConsolidatedApis: consolidatedApis.length,
+  console.log('📊 Single Source Summary:', {
+    originalServices: apiServices?.length || 0,
+    consolidatedApis: consolidatedApis.length,
     syncStatus,
     isLoading
   });
 
-  // Get comprehensive metrics from consolidated data
+  // Single source metrics calculation
   const detailedStats = React.useMemo(() => {
     if (!consolidatedApiData || consolidatedApis.length === 0) {
       return {
@@ -97,11 +97,6 @@ export const ApiServicesModule: React.FC = () => {
         totalDocs: 0,
         totalPublicEndpoints: 0,
         totalSecuredEndpoints: 0,
-        apiBreakdown: {},
-        categoryBreakdown: {},
-        typeBreakdown: {},
-        statusBreakdown: {},
-        securityBreakdown: {},
         realTimeMetrics: {
           activeApis: 0,
           productionApis: 0,
@@ -120,7 +115,7 @@ export const ApiServicesModule: React.FC = () => {
   // Check if we need to show the seeder
   const needsSeeding = detailedStats.totalEndpoints === 0 && consolidatedApis.length > 0;
 
-  // Filter consolidated APIs by type and direction
+  // Filter consolidated APIs by type and direction - SINGLE SOURCE
   const internalApis = consolidatedApis.filter(api => 
     api.direction === 'inbound' || api.type === 'internal' || api.direction === 'bidirectional'
   );
@@ -137,7 +132,7 @@ export const ApiServicesModule: React.FC = () => {
     api.status === 'active' && (api.lifecycle_stage === 'production' || api.type === 'internal')
   );
 
-  console.log('📈 Synchronized API Categories:', {
+  console.log('📈 Single Source Categories:', {
     internal: internalApis.length,
     external: externalApis.length,
     consuming: consumingApis.length,
@@ -146,8 +141,9 @@ export const ApiServicesModule: React.FC = () => {
     needsSeeding
   });
 
+  // Action handlers - operating on single source
   const handleDownloadCollection = React.useCallback((integrationId: string) => {
-    console.log('📥 Generating real Postman collection for:', integrationId);
+    console.log('📥 Single Source: Generating collection for:', integrationId);
     const collection = generatePostmanCollection(integrationId, consolidatedApis);
     
     if (collection) {
@@ -163,14 +159,14 @@ export const ApiServicesModule: React.FC = () => {
         URL.revokeObjectURL(url);
         
         toast({
-          title: "✅ Collection Downloaded",
-          description: `Real Postman collection with ${collection.item.length} endpoints downloaded successfully.`,
+          title: "✅ Collection Generated",
+          description: `Single source collection with ${collection.item.length} endpoints downloaded.`,
         });
       } catch (error) {
-        console.error('❌ Error downloading collection:', error);
+        console.error('❌ Error generating collection:', error);
         toast({
-          title: "❌ Download Failed",
-          description: "Failed to generate collection. Please try again.",
+          title: "❌ Generation Failed",
+          description: "Failed to generate collection from single source.",
           variant: "destructive",
         });
       }
@@ -178,31 +174,30 @@ export const ApiServicesModule: React.FC = () => {
   }, [consolidatedApis, generatePostmanCollection, toast]);
 
   const handleViewDetails = React.useCallback((integrationId: string) => {
-    console.log('👁️ View real details for:', integrationId);
+    console.log('👁️ Single Source: View details for:', integrationId);
     const integration = consolidatedApis.find(api => api.id === integrationId);
     if (integration) {
-      const stats = detailedStats.apiBreakdown[integrationId];
-      console.log('Real Integration details:', { integration, stats });
+      console.log('Single Source Integration:', integration);
       toast({
-        title: "Real Integration Details",
-        description: `${integration.name}: ${integration.endpoints_count || 0} endpoints, ${Math.round(integration.schemaCompleteness || 0)}% schema coverage`,
+        title: "Single Source Details",
+        description: `${integration.name}: ${integration.endpoints_count || 0} endpoints from single source`,
       });
     }
-  }, [consolidatedApis, detailedStats, toast]);
+  }, [consolidatedApis, toast]);
 
   const handleViewDocumentation = React.useCallback((integrationId: string) => {
-    console.log('📚 View real documentation for:', integrationId);
+    console.log('📚 Single Source: View documentation for:', integrationId);
     const integration = consolidatedApis.find(api => api.id === integrationId);
     if (integration?.documentation_url) {
       window.open(integration.documentation_url, '_blank');
       toast({
-        title: "📚 Real Documentation Opened",
-        description: `Opening live documentation for ${integration.name}`,
+        title: "📚 Documentation Opened",
+        description: `Opening documentation from single source for ${integration.name}`,
       });
     } else {
       toast({
-        title: "📚 No Documentation Available",
-        description: `No documentation URL configured for this API`,
+        title: "📚 No Documentation",
+        description: `No documentation URL in single source for this API`,
         variant: "destructive",
       });
     }
@@ -212,22 +207,21 @@ export const ApiServicesModule: React.FC = () => {
     const integration = consolidatedApis.find(api => api.id === integrationId);
     const url = integration?.base_url || `${window.location.origin}/api/v1/${integrationId}`;
     navigator.clipboard.writeText(url);
-    console.log('📋 Real URL copied:', url);
+    console.log('📋 Single Source: URL copied:', url);
     toast({
-      title: "📋 Real URL Copied",
-      description: "Live API endpoint URL copied to clipboard.",
+      title: "📋 URL Copied",
+      description: "Single source API endpoint URL copied to clipboard.",
     });
   }, [consolidatedApis, toast]);
 
   const handleTestEndpoint = React.useCallback(async (integrationId: string, endpointId?: string): Promise<void> => {
     try {
-      console.log('🧪 Testing real endpoint:', { integrationId, endpointId });
+      console.log('🧪 Single Source: Testing endpoint:', { integrationId, endpointId });
       const integration = consolidatedApis.find(api => api.id === integrationId);
       
       if (integration) {
         const testUrl = integration.base_url || `${window.location.origin}/api/v1/${integrationId}`;
         
-        // Test with real endpoint
         const response = await fetch(testUrl, { 
           method: 'GET',
           headers: {
@@ -235,19 +229,19 @@ export const ApiServicesModule: React.FC = () => {
           }
         });
         
-        console.log('✅ Real endpoint test result:', response.status, response.statusText);
+        console.log('✅ Single Source: Test result:', response.status, response.statusText);
         
         toast({
-          title: "🧪 Real Endpoint Test Complete",
-          description: `${integration.name}: ${response.status} ${response.statusText} | ${integration.endpoints_count || 0} endpoints available`,
+          title: "🧪 Single Source Test Complete",
+          description: `${integration.name}: ${response.status} ${response.statusText} | ${integration.endpoints_count || 0} endpoints`,
           variant: response.ok ? "default" : "destructive"
         });
       }
     } catch (error) {
-      console.error('❌ Error testing real endpoint:', error);
+      console.error('❌ Single Source: Test failed:', error);
       toast({
-        title: "❌ Real Endpoint Test Failed",
-        description: "Failed to test live endpoint. Please check connectivity.",
+        title: "❌ Single Source Test Failed",
+        description: "Failed to test endpoint from single source.",
         variant: "destructive",
       });
       throw error;
@@ -255,16 +249,16 @@ export const ApiServicesModule: React.FC = () => {
   }, [consolidatedApis, toast]);
 
   const handleCreateNew = React.useCallback(() => {
-    console.log('➕ Creating new API service...');
+    console.log('➕ Single Source: Creating new API...');
     setCreateDialogOpen(true);
     toast({
-      title: "➕ Create New API",
-      description: "Opening API creation dialog for single source of truth...",
+      title: "➕ Add to Single Source",
+      description: "Creating new API in single source registry...",
     });
   }, [toast]);
 
-  // Real-time overview stats component with synchronized data
-  const RealTimeOverviewStats = () => (
+  // Real-time overview stats component with single source data
+  const SingleSourceOverviewStats = () => (
     <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6">
       <Card className="border-l-4 border-l-blue-500">
         <CardContent className="p-4">
@@ -284,7 +278,7 @@ export const ApiServicesModule: React.FC = () => {
             <Activity className="h-6 w-6 text-green-500" />
             <div>
               <p className="text-2xl font-bold">{detailedStats.totalEndpoints}</p>
-              <p className="text-sm text-muted-foreground">Synced Endpoints</p>
+              <p className="text-sm text-muted-foreground">Total Endpoints</p>
             </div>
           </div>
         </CardContent>
@@ -296,7 +290,7 @@ export const ApiServicesModule: React.FC = () => {
             <Database className="h-6 w-6 text-purple-500" />
             <div>
               <p className="text-2xl font-bold">{detailedStats.totalSchemas}</p>
-              <p className="text-sm text-muted-foreground">Real Schemas</p>
+              <p className="text-sm text-muted-foreground">Schemas</p>
             </div>
           </div>
         </CardContent>
@@ -342,12 +336,11 @@ export const ApiServicesModule: React.FC = () => {
 
   const OverviewContent = () => (
     <div className="space-y-6">
-      {/* Show seeder if needed */}
       {needsSeeding && (
         <ApiDataSeeder />
       )}
       
-      <RealTimeOverviewStats />
+      <SingleSourceOverviewStats />
       
       <OverviewTabContent 
         integrations={consolidatedApis}
@@ -361,7 +354,7 @@ export const ApiServicesModule: React.FC = () => {
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
           <RefreshCw className="h-12 w-12 text-muted-foreground mx-auto mb-4 animate-spin" />
-          <p className="text-muted-foreground">Synchronizing API data from internal and external sources...</p>
+          <p className="text-muted-foreground">Loading single source API data...</p>
         </div>
       </div>
     );
@@ -372,9 +365,9 @@ export const ApiServicesModule: React.FC = () => {
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
           <Database className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <p className="text-red-600">Error loading synchronized API data: {(error as Error).message}</p>
+          <p className="text-red-600">Error loading single source data: {(error as Error).message}</p>
           <Button onClick={() => window.location.reload()} className="mt-4">
-            Retry Synchronization
+            Retry Single Source Load
           </Button>
         </div>
       </div>
@@ -385,14 +378,14 @@ export const ApiServicesModule: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Healthcare API Services Platform</h1>
+          <h1 className="text-2xl font-bold">Single Source API Services Platform</h1>
           <p className="text-muted-foreground">
             {syncStatus && typeof syncStatus === 'object' ? (
               <span className={syncStatus.syncedCount === syncStatus.internalCount ? "text-green-600 font-medium" : "text-yellow-600 font-medium"}>
-                {syncStatus.syncedCount === syncStatus.internalCount ? '✅' : '⚠️'} Sync Status: {syncStatus.syncedCount}/{syncStatus.internalCount} APIs synchronized • {detailedStats.totalEndpoints} endpoints • {Math.round(detailedStats.realTimeMetrics.schemaCompleteness)}% schema coverage
+                {syncStatus.syncedCount === syncStatus.internalCount ? '✅' : '⚠️'} Single Source: {syncStatus.syncedCount}/{syncStatus.internalCount} APIs • {detailedStats.totalEndpoints} endpoints • {Math.round(detailedStats.realTimeMetrics.schemaCompleteness)}% coverage
               </span>
             ) : (
-              <span>Loading synchronization status...</span>
+              <span>Loading single source status...</span>
             )}
           </p>
         </div>
@@ -400,7 +393,7 @@ export const ApiServicesModule: React.FC = () => {
           <div className="relative w-72">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input
-              placeholder="Search synchronized APIs and services..."
+              placeholder="Search single source APIs..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -411,7 +404,7 @@ export const ApiServicesModule: React.FC = () => {
             disabled={isCreatingApiService}
           >
             <Plus className="h-4 w-4 mr-2" />
-            New API
+            Add API
           </Button>
         </div>
       </div>
