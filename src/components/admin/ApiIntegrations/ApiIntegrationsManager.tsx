@@ -1,6 +1,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { useApiServices } from '@/hooks/useApiServices';
+import { useApiIntegrations } from '@/hooks/useApiIntegrations';
 import { SearchInput } from '@/components/ui/search-input';
 import { ApiIntegrationsTabs } from './ApiIntegrationsTabs';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
@@ -12,18 +13,22 @@ const ApiIntegrationsManager: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
-  // Using consolidated useApiServices hook - single source of truth
+  // Using consolidated useApiServices hook as primary source
   const {
     apiServices: integrations,
     internalApis,
     externalApis,
     isLoading,
+    meta
+  } = useApiServices();
+
+  // Get additional functionality from useApiIntegrations (which delegates to useApiServices)
+  const {
     downloadPostmanCollection,
     testEndpoint,
     isDownloading,
-    isTesting,
-    meta
-  } = useApiServices();
+    isTesting
+  } = useApiIntegrations();
 
   console.log('🔍 ApiIntegrationsManager - Using consolidated data source:', {
     totalIntegrations: integrations.length,
@@ -138,11 +143,11 @@ const ApiIntegrationsManager: React.FC = () => {
         </div>
         
         <div className="flex items-center gap-2 text-sm text-gray-500">
-          <span>Total APIs: {meta.totalIntegrations}</span>
+          <span>Total APIs: {meta.totalServices}</span>
           <span>•</span>
-          <span>Internal: {meta.internalCount}</span>
+          <span>Internal: {internalApis.length}</span>
           <span>•</span>
-          <span>External: {meta.externalCount}</span>
+          <span>External: {externalApis.length}</span>
         </div>
       </div>
 
