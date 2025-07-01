@@ -4,7 +4,7 @@ import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-interface Profile {
+export interface Profile {
   id: string;
   first_name: string;
   last_name: string;
@@ -13,6 +13,7 @@ interface Profile {
   facility_id?: string;
   created_at: string;
   updated_at?: string;
+  email_confirmed_at?: string;
 }
 
 interface UserRole {
@@ -63,17 +64,23 @@ export const useCleanAuth = () => {
     try {
       console.log('🔐 Fetching roles for user:', userId);
       
-      // Use the security definer function to avoid recursion
-      const { data, error } = await supabase.rpc('get_user_role_safe', {
-        check_user_id: userId
-      });
+      // Query user_roles table with join to get role names
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select(`
+          roles (
+            name,
+            description
+          )
+        `)
+        .eq('user_id', userId);
 
       if (error) {
         console.error('❌ Roles fetch error:', error);
         return [];
       }
 
-      const roles = data ? [data] : [];
+      const roles = data?.map((item: any) => item.roles?.name).filter(Boolean) || [];
       console.log('✅ Roles fetched successfully:', roles);
       return roles;
     } catch (error) {
@@ -161,6 +168,41 @@ export const useCleanAuth = () => {
     };
   }, [loadUserData]);
 
+  const signIn = async (email: string, password: string) => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+
+      return { success: true, user: data.user };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  };
+
+  const signUp = async (email: string, password: string, role: string) => {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            role: role,
+          },
+        },
+      });
+
+      if (error) throw error;
+
+      return { success: true, user: data.user };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  };
+
   const signOut = async () => {
     try {
       setIsLoading(true);
@@ -173,15 +215,15 @@ export const useCleanAuth = () => {
       const { error } = await supabase.auth.signOut({ scope: 'global' });
       if (error) throw error;
       
-      // Force reload to ensure clean state
-      window.location.href = '/auth';
-    } catch (error) {
+      return { success: true };
+    } catch (error: any) {
       console.error('❌ Error signing out:', error);
       toast({
         title: "Error",
         description: "Failed to sign out",
         variant: "destructive",
       });
+      return { success: false, error: error.message };
     } finally {
       setIsLoading(false);
     }
@@ -194,6 +236,8 @@ export const useCleanAuth = () => {
     userRoles,
     isLoading,
     isAuthenticated,
+    signIn,
+    signUp,
     signOut,
     refreshUserData: () => user && loadUserData(user)
   };

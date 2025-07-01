@@ -22,7 +22,7 @@ export const validateDataSources = (): DataSourceValidation[] => {
       recommendations: [
         'All user data fetched from auth.users via manage-user-profiles edge function',
         'Profile data uses security definer functions to avoid RLS recursion',
-        'Role checking uses get_user_role_safe function'
+        'Role checking uses direct user_roles table queries'
       ]
     },
     {

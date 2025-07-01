@@ -4,14 +4,14 @@
  * Validates all aspects of the application for consistency and single source of truth
  */
 
-import { validateDataSources, checkForDuplicateHooks, validateComponentIntegation } from './dataSourceValidator';
+import { validateDataSources, checkForDuplicateHooks, validateComponentIntegration } from './dataSourceValidator';
 
 export interface BuildValidationReport {
   timestamp: string;
   overall_status: 'healthy' | 'warning' | 'error';
   data_sources: ReturnType<typeof validateDataSources>;
   duplicate_check: ReturnType<typeof checkForDuplicateHooks>;
-  component_integration: ReturnType<typeof validateComponentIntegation>;
+  component_integration: ReturnType<typeof validateComponentIntegration>;
   api_services_alignment: {
     status: 'aligned' | 'misaligned';
     issues: string[];
@@ -28,7 +28,7 @@ export interface BuildValidationReport {
 export const generateBuildValidationReport = (): BuildValidationReport => {
   const dataSources = validateDataSources();
   const duplicateCheck = checkForDuplicateHooks();
-  const componentIntegration = validateComponentIntegation();
+  const componentIntegration = validateComponentIntegration();
 
   const report: BuildValidationReport = {
     timestamp: new Date().toISOString(),

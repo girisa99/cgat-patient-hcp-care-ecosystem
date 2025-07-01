@@ -16,7 +16,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   initialized: boolean;
   signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string; user?: User }>;
-  signUp: (email: string, password: string, role: UserRole) => Promise<{ success: boolean; error?: string; user?: User }>;
+  signUp: (email: string, password: string, role: string) => Promise<{ success: boolean; error?: string; user?: User }>;
   signOut: () => Promise<{ success: boolean; error?: string }>;
 }
 
