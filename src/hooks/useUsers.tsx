@@ -2,6 +2,7 @@
 import { useTypeSafeModuleTemplate } from '@/templates/hooks/useTypeSafeModuleTemplate';
 import { useUserMutations } from './users/useUserMutations';
 import { useUnifiedUserData } from './useUnifiedUserData';
+import type { ExtendedProfile } from '@/types/database';
 
 /**
  * Users Hook - Now using Universal Template with backward compatibility
@@ -23,9 +24,10 @@ export const useUsers = () => {
   const { allUsers, isLoading, error, refetch } = useUnifiedUserData();
   const { createUser, assignRole, assignFacility, isCreatingUser, isAssigningRole, isAssigningFacility } = useUserMutations();
 
-  // Ensure users have the expected structure with safe defaults
-  const users = (allUsers || []).map(user => ({
+  // Ensure users have the expected structure with safe defaults and proper typing
+  const users: ExtendedProfile[] = (allUsers || []).map(user => ({
     ...user,
+    is_active: user.is_active ?? true, // Add default value for is_active
     user_roles: user.user_roles || [],
     facilities: user.facilities || null
   }));
@@ -34,7 +36,7 @@ export const useUsers = () => {
   const searchUsers = (query: string) => {
     if (!query.trim()) return users;
     
-    return users.filter((user: any) => 
+    return users.filter((user: ExtendedProfile) => 
       user.first_name?.toLowerCase().includes(query.toLowerCase()) ||
       user.last_name?.toLowerCase().includes(query.toLowerCase()) ||
       user.email?.toLowerCase().includes(query.toLowerCase())
@@ -43,7 +45,7 @@ export const useUsers = () => {
 
   // User-specific statistics
   const getUserStats = () => {
-    const roleDistribution = users.reduce((acc: any, user: any) => {
+    const roleDistribution = users.reduce((acc: any, user: ExtendedProfile) => {
       const roles = user.user_roles || [];
       roles.forEach((userRole: any) => {
         const roleName = userRole.roles?.name || 'unknown';
@@ -90,7 +92,7 @@ export const useUsers = () => {
     // Metadata
     meta: {
       userCount: users.length,
-      roleDistribution: users.reduce((acc: any, user: any) => {
+      roleDistribution: users.reduce((acc: any, user: ExtendedProfile) => {
         const roles = user.user_roles || [];
         roles.forEach((userRole: any) => {
           const roleName = userRole.roles?.name || 'unknown';

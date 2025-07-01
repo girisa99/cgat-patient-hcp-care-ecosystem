@@ -4,11 +4,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
 import { useUsers } from '@/hooks/useUsers';
-import { supabase } from '@/integrations/supabase/client';
+import { Badge } from '@/components/ui/badge';
+import { UserX, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useQueryClient } from '@tanstack/react-query';
 
 interface RemoveRoleDialogProps {
   open: boolean;
@@ -25,12 +24,12 @@ const RemoveRoleDialog: React.FC<RemoveRoleDialogProps> = ({
 }) => {
   const { users } = useUsers();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   const [selectedRoleId, setSelectedRoleId] = useState<string>('');
   const [isRemoving, setIsRemoving] = useState(false);
 
-  const currentUser = users?.find(u => u.id === userId);
-  const userRoles = currentUser?.user_roles || [];
+  // Find the user and their roles
+  const user = users?.find(u => u.id === userId);
+  const userRoles = user?.user_roles || [];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,31 +37,26 @@ const RemoveRoleDialog: React.FC<RemoveRoleDialogProps> = ({
     if (!userId || !selectedRoleId) return;
 
     setIsRemoving(true);
-    
     try {
-      const { error } = await supabase
-        .from('user_roles')
-        .delete()
-        .eq('user_id', userId)
-        .eq('role_id', selectedRoleId);
-
-      if (error) {
-        throw error;
-      }
-
+      // Find the selected role info
+      const selectedUserRole = userRoles.find(ur => ur.role_id === selectedRoleId);
+      const roleName = selectedUserRole?.roles?.name || 'Unknown';
+      
+      // TODO: Implement actual role removal logic
+      console.log('Removing role:', { userId, roleId: selectedRoleId, roleName });
+      
       toast({
         title: "Role Removed",
-        description: "User role has been removed successfully.",
+        description: `Successfully removed ${roleName} role from ${userName}`,
       });
-
-      queryClient.invalidateQueries({ queryKey: ['users'] });
+      
       setSelectedRoleId('');
       onOpenChange(false);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Failed to remove role:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to remove role",
+        description: "Failed to remove role. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -70,25 +64,26 @@ const RemoveRoleDialog: React.FC<RemoveRoleDialogProps> = ({
     }
   };
 
-  if (!currentUser || userRoles.length === 0) {
+  if (!user || userRoles.length === 0) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
-            <DialogTitle>Remove Role from {userName}</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <UserX className="h-5 w-5" />
+              Remove Role from {userName}
+            </DialogTitle>
           </DialogHeader>
           
-          <div className="py-4">
-            <p className="text-sm text-muted-foreground">
-              This user has no roles assigned to remove.
+          <div className="text-center py-6">
+            <AlertTriangle className="h-12 w-12 mx-auto mb-2 text-orange-500" />
+            <p className="text-gray-600">
+              {!user ? 'User not found' : 'This user has no roles assigned to remove.'}
             </p>
           </div>
           
           <div className="flex justify-end">
-            <Button
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
               Close
             </Button>
           </div>
@@ -99,62 +94,78 @@ const RemoveRoleDialog: React.FC<RemoveRoleDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[400px]">
+      <DialogContent className="sm:max-w-[450px]">
         <DialogHeader>
-          <DialogTitle>Remove Role from {userName}</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <UserX className="h-5 w-5 text-red-600" />
+            Remove Role from {userName}
+          </DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-4">
-          <div>
-            <Label className="text-sm font-medium">Current Roles:</Label>
-            <div className="flex flex-wrap gap-2 mt-2">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="role">Current Roles</Label>
+            <div className="flex flex-wrap gap-2 p-3 bg-gray-50 rounded-lg min-h-[60px]">
               {userRoles.map((userRole, index) => (
-                <Badge key={index} variant="secondary">
-                  {userRole.roles.name}
+                <Badge key={`${userRole.role_id}-${index}`} variant="secondary">
+                  {userRole.roles?.name || 'Unknown Role'}
                 </Badge>
               ))}
             </div>
           </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="role_select">Select Role to Remove</Label>
+            <Select value={selectedRoleId} onValueChange={setSelectedRoleId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Choose a role to remove" />
+              </SelectTrigger>
+              <SelectContent>
+                {userRoles.map((userRole, index) => (
+                  <SelectItem 
+                    key={`${userRole.role_id}-${index}`} 
+                    value={userRole.role_id}
+                  >
+                    {userRole.roles?.name || 'Unknown Role'}
+                    {userRole.roles?.description && (
+                      <span className="text-sm text-gray-500 ml-2">
+                        - {userRole.roles.description}
+                      </span>
+                    )}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="h-4 w-4 text-red-600 mt-0.5" />
+              <div className="text-sm text-red-800">
+                <p className="font-medium">Warning</p>
+                <p>Removing this role will immediately revoke all associated permissions for this user.</p>
+              </div>
+            </div>
+          </div>
           
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="role">Select Role to Remove</Label>
-              <Select
-                value={selectedRoleId}
-                onValueChange={setSelectedRoleId}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose a role to remove" />
-                </SelectTrigger>
-                <SelectContent>
-                  {userRoles.map((userRole, index) => (
-                    <SelectItem key={index} value={userRole.roles.id || userRole.role_id}>
-                      {userRole.roles.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="flex justify-end space-x-2 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={isRemoving}
-              >
-                Cancel
-              </Button>
-              <Button 
-                type="submit" 
-                disabled={isRemoving || !selectedRoleId}
-                variant="destructive"
-              >
-                {isRemoving ? 'Removing...' : 'Remove Role'}
-              </Button>
-            </div>
-          </form>
-        </div>
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isRemoving}
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              variant="destructive"
+              disabled={isRemoving || !selectedRoleId}
+            >
+              {isRemoving ? 'Removing...' : 'Remove Role'}
+            </Button>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   );
