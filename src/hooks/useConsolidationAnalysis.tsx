@@ -33,12 +33,27 @@ export const useConsolidationAnalysis = () => {
     try {
       console.log('🔍 Running comprehensive consolidation analysis...');
       const analysisReport = await performComprehensiveConsolidation();
-      setReport(analysisReport);
+      
+      // Ensure proper typing for the report
+      const typedReport: ConsolidationReport = {
+        timestamp: analysisReport.timestamp,
+        codebaseAnalysis: analysisReport.codebaseAnalysis,
+        deadCodeAnalysis: analysisReport.deadCodeAnalysis,
+        singleSourceValidation: analysisReport.singleSourceValidation,
+        summary: {
+          totalViolations: Number(analysisReport.summary.totalViolations),
+          compliantSystems: Number(analysisReport.summary.compliantSystems),
+          deadCodeItems: Number(analysisReport.summary.deadCodeItems),
+          duplicatesFound: Number(analysisReport.summary.duplicatesFound)
+        }
+      };
+      
+      setReport(typedReport);
       
       console.log('✅ Analysis complete:', {
-        compliantSystems: analysisReport.summary.compliantSystems,
-        violations: analysisReport.summary.totalViolations,
-        duplicatesFound: analysisReport.summary.duplicatesFound
+        compliantSystems: typedReport.summary.compliantSystems,
+        violations: typedReport.summary.totalViolations,
+        duplicatesFound: typedReport.summary.duplicatesFound
       });
       
     } catch (err) {
