@@ -1,3 +1,4 @@
+
 export interface ApiEndpoint {
   id: string;
   name: string;
@@ -46,7 +47,7 @@ export interface ApiIntegration {
   description: string; // Make this required consistently
   type: 'internal' | 'external';
   version: string;
-  baseUrl: string;
+  baseUrl?: string; // Make this optional to match the hook data
   status: 'active' | 'inactive' | 'draft' | 'deprecated';
   endpoints: ApiEndpoint[];
   schemas: Record<string, any>;

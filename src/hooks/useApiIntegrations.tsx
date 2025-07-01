@@ -9,7 +9,7 @@ interface ApiIntegration {
   type: 'internal' | 'external';
   status: 'active' | 'inactive' | 'draft' | 'deprecated';
   description: string; // Make required
-  baseUrl?: string;
+  baseUrl?: string; // Make optional to match actual data
   version: string;
   endpoints: any[];
   schemas: Record<string, any>;
@@ -361,16 +361,17 @@ export const useApiIntegrations = () => {
       
       const { data, error } = await supabase
         .from('api_integration_registry')
-        .insert([{
+        .insert({
           name: integration.name || '',
           description: integration.description || '',
           type: integration.type || 'external',
           category: integration.category || 'integration',
+          purpose: integration.category || 'integration', // Add the required purpose field
           version: integration.version || '1.0.0',
           base_url: integration.baseUrl || '',
           status: integration.status || 'active',
           direction: integration.direction || 'outbound'
-        }])
+        })
         .select()
         .single();
 
