@@ -72,7 +72,16 @@ export const useConsolidatedUsers = () => {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error creating user:', error);
+        throw new Error(`User creation failed: ${error.message}`);
+      }
+
+      if (!data?.success) {
+        console.error('❌ User creation failed:', data?.error);
+        throw new Error(data?.error || 'User creation failed');
+      }
+
       return data;
     },
     onSuccess: () => {
@@ -83,40 +92,48 @@ export const useConsolidatedUsers = () => {
       });
     },
     onError: (error: any) => {
+      console.error('❌ Create user error:', error);
       toast({
-        title: "Error",
+        title: "User Creation Failed",
         description: error.message || "Failed to create user",
         variant: "destructive",
       });
     }
   });
 
-  // Role assignment mutation - Updated with better error handling
+  // Role assignment mutation - Simplified with better error handling
   const assignRoleMutation = useMutation({
     mutationFn: async ({ userId, roleName }: { userId: string; roleName: UserRole }) => {
       console.log('🔄 Assigning role via onboarding-workflow:', roleName, 'to user:', userId);
       
-      const { data, error } = await supabase.functions.invoke('onboarding-workflow', {
-        body: {
-          action: 'assign_role',
-          user_id: userId,
-          role_name: roleName
+      try {
+        const { data, error } = await supabase.functions.invoke('onboarding-workflow', {
+          body: {
+            action: 'assign_role',
+            user_id: userId,
+            role_name: roleName
+          }
+        });
+
+        if (error) {
+          console.error('❌ Edge function invoke error:', error);
+          throw new Error(`Network error: ${error.message}`);
         }
-      });
 
-      if (error) {
-        console.error('❌ Edge function error:', error);
-        throw new Error(`Failed to assign role: ${error.message}`);
+        if (!data || !data.success) {
+          console.error('❌ Role assignment failed:', data?.error || 'Unknown error');
+          throw new Error(data?.error || 'Role assignment failed');
+        }
+
+        console.log('✅ Role assigned successfully:', data.message);
+        return data;
+      } catch (error: any) {
+        console.error('❌ Role assignment exception:', error);
+        throw error;
       }
-
-      if (!data?.success) {
-        console.error('❌ Role assignment failed:', data?.error);
-        throw new Error(data?.error || 'Failed to assign role');
-      }
-
-      return data;
     },
-    onSuccess: (data, variables) => {
+    onSuccess: (data) => {
+      console.log('🔄 Invalidating cache after role assignment...');
       queryClient.invalidateQueries({ queryKey: ['consolidated-users'] });
       toast({
         title: "Role Assigned",
@@ -127,38 +144,45 @@ export const useConsolidatedUsers = () => {
       console.error('❌ Role assignment error:', error);
       toast({
         title: "Role Assignment Failed",
-        description: error.message || "Failed to assign role",
+        description: error.message || "Failed to assign role. Please try again.",
         variant: "destructive",
       });
     }
   });
 
-  // Role removal mutation - Updated with better error handling
+  // Role removal mutation - Simplified with better error handling
   const removeRoleMutation = useMutation({
     mutationFn: async ({ userId, roleName }: { userId: string; roleName: UserRole }) => {
       console.log('🔄 Removing role via onboarding-workflow:', roleName, 'from user:', userId);
       
-      const { data, error } = await supabase.functions.invoke('onboarding-workflow', {
-        body: {
-          action: 'remove_role',
-          user_id: userId,
-          role_name: roleName
+      try {
+        const { data, error } = await supabase.functions.invoke('onboarding-workflow', {
+          body: {
+            action: 'remove_role',
+            user_id: userId,
+            role_name: roleName
+          }
+        });
+
+        if (error) {
+          console.error('❌ Edge function invoke error:', error);
+          throw new Error(`Network error: ${error.message}`);
         }
-      });
 
-      if (error) {
-        console.error('❌ Edge function error:', error);
-        throw new Error(`Failed to remove role: ${error.message}`);
+        if (!data || !data.success) {
+          console.error('❌ Role removal failed:', data?.error || 'Unknown error');
+          throw new Error(data?.error || 'Role removal failed');
+        }
+
+        console.log('✅ Role removed successfully:', data.message);
+        return data;
+      } catch (error: any) {
+        console.error('❌ Role removal exception:', error);
+        throw error;
       }
-
-      if (!data?.success) {
-        console.error('❌ Role removal failed:', data?.error);
-        throw new Error(data?.error || 'Failed to remove role');
-      }
-
-      return data;
     },
-    onSuccess: (data, variables) => {
+    onSuccess: (data) => {
+      console.log('🔄 Invalidating cache after role removal...');
       queryClient.invalidateQueries({ queryKey: ['consolidated-users'] });
       toast({
         title: "Role Removed",
@@ -169,23 +193,31 @@ export const useConsolidatedUsers = () => {
       console.error('❌ Role removal error:', error);
       toast({
         title: "Role Removal Failed",
-        description: error.message || "Failed to remove role",
+        description: error.message || "Failed to remove role. Please try again.",
         variant: "destructive",
       });
     }
   });
 
-  // Facility assignment mutation
+  // Facility assignment mutation - Direct database update, no RLS issues
   const assignFacilityMutation = useMutation({
     mutationFn: async ({ userId, facilityId }: { userId: string; facilityId: string }) => {
+      console.log('🔄 Assigning facility:', facilityId, 'to user:', userId);
+      
       const { data, error } = await supabase
         .from('profiles')
         .update({ facility_id: facilityId })
         .eq('id', userId);
-      if (error) throw error;
+        
+      if (error) {
+        console.error('❌ Facility assignment error:', error);
+        throw error;
+      }
+      
       return data;
     },
     onSuccess: () => {
+      console.log('🔄 Invalidating cache after facility assignment...');
       queryClient.invalidateQueries({ queryKey: ['consolidated-users'] });
       toast({
         title: "Facility Assigned",
@@ -193,8 +225,9 @@ export const useConsolidatedUsers = () => {
       });
     },
     onError: (error: any) => {
+      console.error('❌ Facility assignment error:', error);
       toast({
-        title: "Error",
+        title: "Facility Assignment Failed",
         description: error.message || "Failed to assign facility",
         variant: "destructive",
       });
@@ -252,7 +285,7 @@ export const useConsolidatedUsers = () => {
     // Refetch
     refetch: usersQuery.refetch,
     
-    // Mutations
+    // Mutations - Simplified interface
     createUser: createUserMutation.mutate,
     assignRole: assignRoleMutation.mutate,
     removeRole: removeRoleMutation.mutate,
