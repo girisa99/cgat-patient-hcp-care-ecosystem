@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -392,7 +391,6 @@ export const ApiServicesModule: React.FC = () => {
         <TabsContent value="testing" className="mt-4">
           <TestingTabContent
             integrations={apiServices}
-            onClose={() => {}}
             onTestEndpoint={handleTestEndpoint}
           />
         </TabsContent>
