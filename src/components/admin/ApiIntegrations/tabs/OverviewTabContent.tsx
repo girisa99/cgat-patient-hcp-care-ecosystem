@@ -268,7 +268,7 @@ export const OverviewTabContent: React.FC<OverviewTabContentProps> = ({
               ).map(([category, count]) => (
                 <div key={category} className="flex items-center justify-between p-3 border rounded-lg">
                   <span className="font-medium capitalize">{category}</span>
-                  <Badge variant="outline">{count}</Badge>
+                  <Badge variant="outline">{String(count)}</Badge>
                 </div>
               ))}
             </div>

@@ -55,10 +55,10 @@ export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = React.mem
     publishedCount: publishedApis.length
   });
 
-  // Use consolidated data to derive filtered lists for each tab
+  // Use consolidated data to derive filtered lists for each tab type
   const consolidatedApis = consolidatedData?.consolidatedApis || integrations;
   
-  // Filter consolidated data for each tab type
+  // Filter consolidated data for each tab type - ensuring single source of truth
   const consolidatedInternalApis = consolidatedApis.filter(api => 
     api.type === 'internal' || api.direction === 'inbound'
   );
@@ -70,6 +70,15 @@ export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = React.mem
   const consolidatedPublishedApis = consolidatedApis.filter(api => 
     api.status === 'published' || api.lifecycle_stage === 'production'
   );
+
+  // Log the filtered counts to verify single source of truth
+  console.log('📊 Single Source of Truth Metrics:', {
+    totalApis: consolidatedApis.length,
+    internalApis: consolidatedInternalApis.length,
+    externalApis: consolidatedExternalApis.length,
+    publishedApis: consolidatedPublishedApis.length,
+    syncStatus: consolidatedData?.syncStatus
+  });
 
   return (
     <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
@@ -86,7 +95,7 @@ export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = React.mem
 
       <TabsContent value="overview" className="mt-4">
         <OverviewTabContent 
-          integrations={integrations}
+          integrations={consolidatedApis}
           consolidatedData={consolidatedData}
         />
       </TabsContent>
