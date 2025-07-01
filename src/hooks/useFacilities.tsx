@@ -1,45 +1,30 @@
 
-import { useFacilityData } from './facilities/useFacilityData';
-import { useFacilityMutations } from './facilities/useFacilityMutations';
-import { useMemo } from 'react';
+import { useState, useEffect } from 'react';
+
+// Simple facilities data that matches the structure used in components
+const facilitiesData = [
+  { id: '1', name: 'Main Hospital', facility_type: 'Hospital' },
+  { id: '2', name: 'Community Clinic', facility_type: 'Clinic' },
+  { id: '3', name: 'Treatment Center', facility_type: 'Treatment Center' }
+];
 
 export const useFacilities = () => {
-  const { data: facilities, isLoading, error, refetch } = useFacilityData();
-  const facilityMutations = useFacilityMutations();
+  const [facilities, setFacilities] = useState(facilitiesData);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  // Calculate facility statistics
-  const getFacilityStats = useMemo(() => {
-    return () => {
-      if (!facilities) {
-        return {
-          total: 0,
-          active: 0,
-          inactive: 0,
-          typeBreakdown: {}
-        };
-      }
-
-      const stats = {
-        total: facilities.length,
-        active: facilities.filter(f => f.is_active).length,
-        inactive: facilities.filter(f => !f.is_active).length,
-        typeBreakdown: facilities.reduce((acc, facility) => {
-          const type = facility.facility_type || 'unknown';
-          acc[type] = (acc[type] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>)
-      };
-
-      return stats;
-    };
-  }, [facilities]);
+  // Since we're using static data, we can just return it immediately
+  useEffect(() => {
+    setIsLoading(false);
+  }, []);
 
   return {
-    facilities: facilities || [],
+    facilities,
     isLoading,
     error,
-    refetch,
-    getFacilityStats,
-    ...facilityMutations
+    refetch: () => {
+      // For static data, refetch does nothing but maintains API consistency
+      setRoles(facilitiesData);
+    }
   };
 };
