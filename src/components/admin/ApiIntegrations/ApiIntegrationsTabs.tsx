@@ -46,37 +46,30 @@ export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = React.mem
   onCopyUrl,
   onTestEndpoint
 }) => {
-  const handleValueChange = React.useCallback((value: string) => {
-    onTabChange(value);
-  }, [onTabChange]);
+  console.log('🔍 ApiIntegrationsTabs: Rendering with single source of truth data');
 
   return (
-    <Tabs value={activeTab} onValueChange={handleValueChange} className="w-full">
-      <TabsList className="grid w-full grid-cols-11 gap-1">
-        <TabsTrigger value="overview" className="text-xs">Overview</TabsTrigger>
-        <TabsTrigger value="internal" className="text-xs">Internal ({internalApis?.length || 0})</TabsTrigger>
-        <TabsTrigger value="external" className="text-xs">External ({externalApis?.length || 0})</TabsTrigger>
-        <TabsTrigger value="published" className="text-xs">Published ({publishedApis?.length || 0})</TabsTrigger>
-        <TabsTrigger value="developer" className="text-xs">Developer</TabsTrigger>
-        <TabsTrigger value="sandbox" className="text-xs">Sandbox</TabsTrigger>
-        <TabsTrigger value="postman" className="text-xs">Postman</TabsTrigger>
-        <TabsTrigger value="publishing" className="text-xs">Publishing</TabsTrigger>
-        <TabsTrigger value="consumption" className="text-xs">Analytics</TabsTrigger>
-        <TabsTrigger value="keys" className="text-xs">API Keys</TabsTrigger>
-        <TabsTrigger value="testing" className="text-xs">Testing</TabsTrigger>
+    <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
+      <TabsList className="grid w-full grid-cols-8">
+        <TabsTrigger value="overview">Overview</TabsTrigger>
+        <TabsTrigger value="internal">Internal ({internalApis.length})</TabsTrigger>
+        <TabsTrigger value="external">External ({externalApis.length})</TabsTrigger>
+        <TabsTrigger value="published">Published ({publishedApis.length})</TabsTrigger>
+        <TabsTrigger value="developer">Developer</TabsTrigger>
+        <TabsTrigger value="keys">API Keys</TabsTrigger>
+        <TabsTrigger value="testing">Testing</TabsTrigger>
+        <TabsTrigger value="sandbox">Sandbox</TabsTrigger>
       </TabsList>
 
-      <TabsContent value="overview">
+      <TabsContent value="overview" className="mt-4">
         <OverviewTabContent 
           integrations={integrations}
-          internalApis={internalApis}
-          externalApis={externalApis}
-          publishedApis={publishedApis}
+          searchTerm={searchTerm}
         />
       </TabsContent>
 
-      <TabsContent value="internal">
-        <InternalApisTabContent 
+      <TabsContent value="internal" className="mt-4">
+        <InternalApisTabContent
           internalApis={internalApis}
           searchTerm={searchTerm}
           createDialogOpen={createDialogOpen}
@@ -88,8 +81,8 @@ export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = React.mem
         />
       </TabsContent>
 
-      <TabsContent value="external">
-        <ExternalApisTabContent 
+      <TabsContent value="external" className="mt-4">
+        <ExternalApisTabContent
           externalApis={externalApis}
           searchTerm={searchTerm}
           createDialogOpen={createDialogOpen}
@@ -101,54 +94,33 @@ export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = React.mem
         />
       </TabsContent>
 
-      <TabsContent value="published">
+      <TabsContent value="published" className="mt-4">
         <PublishedApisTabContent 
           publishedApis={publishedApis}
           searchTerm={searchTerm}
         />
       </TabsContent>
 
-      <TabsContent value="developer">
+      <TabsContent value="developer" className="mt-4">
         <DeveloperTabContent />
       </TabsContent>
 
-      <TabsContent value="sandbox">
-        <SandboxTabContent 
-          integrations={integrations}
-          onTestEndpoint={onTestEndpoint}
-        />
-      </TabsContent>
-
-      <TabsContent value="postman">
-        <PostmanTabContent 
-          integrations={integrations}
-          onDownloadCollection={onDownloadCollection}
-        />
-      </TabsContent>
-
-      <TabsContent value="publishing">
-        <PublishingWorkflowTabContent 
-          internalApis={internalApis}
-          externalApis={externalApis}
-        />
-      </TabsContent>
-
-      <TabsContent value="consumption">
-        <ConsumptionTabContent 
-          publishedApis={publishedApis}
-        />
-      </TabsContent>
-
-      <TabsContent value="keys">
+      <TabsContent value="keys" className="mt-4">
         <ApiKeysTabContent />
       </TabsContent>
 
-      <TabsContent value="testing">
-        <TestingTabContent 
+      <TabsContent value="testing" className="mt-4">
+        <TestingTabContent
           integrations={integrations}
           onTestEndpoint={onTestEndpoint}
         />
+      </TabsContent>
+
+      <TabsContent value="sandbox" className="mt-4">
+        <SandboxTabContent />
       </TabsContent>
     </Tabs>
   );
 });
+
+ApiIntegrationsTabs.displayName = 'ApiIntegrationsTabs';

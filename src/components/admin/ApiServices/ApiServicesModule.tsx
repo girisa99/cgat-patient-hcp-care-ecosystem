@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,7 +23,8 @@ import {
   CheckCircle,
   Activity,
   Target,
-  TrendingUp
+  TrendingUp,
+  Zap
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -42,13 +42,11 @@ import { TestingTabContent } from '@/components/admin/ApiIntegrations/tabs/Testi
 import { OnboardingIntegrationTabContent } from '@/components/admin/ApiIntegrations/tabs/OnboardingIntegrationTabContent';
 import AutoIntegrationBanner from '../ApiIntegrations/AutoIntegrationBanner';
 
-// Import the consolidated components
-import { ApiDataValidator } from '@/components/admin/ApiIntegrations/ApiDataValidator';
-import { ApiDuplicateAnalyzer } from '@/components/admin/ApiIntegrations/ApiDuplicateAnalyzer';
-import { ApiConsolidationAction } from '@/components/admin/ApiIntegrations/ApiConsolidationAction';
+// Import the seeder component
+import { ApiDataSeeder } from '@/components/admin/ApiIntegrations/ApiDataSeeder';
 
 export const ApiServicesModule: React.FC = () => {
-  console.log('🚀 ApiServicesModule: Single Source of Truth Implementation (Real Data)');
+  console.log('🚀 ApiServicesModule: Single Source of Truth Implementation (Real Data with Seeder)');
   
   const [activeTab, setActiveTab] = useState('overview');
   const [searchTerm, setSearchTerm] = useState('');
@@ -91,9 +89,12 @@ export const ApiServicesModule: React.FC = () => {
     return analyzeCoreApis(apiServices);
   }, [apiServices, analyzeCoreApis]);
 
+  // Check if we need to show the seeder (no endpoints available)
+  const needsSeeding = detailedStats.totalEndpoints === 0 && coreApiAnalysis.singleSourceOfTruth && consolidatedApis.length > 0;
+
   // Real data filtering with consolidated APIs
   const internalApis = consolidatedApis.filter(api => 
-    api.direction === 'inbound' || api.type === 'internal'
+    api.direction === 'inbound' || api.type === 'internal' || api.direction === 'bidirectional'
   );
   
   const externalApis = consolidatedApis.filter(api => 
@@ -108,7 +109,7 @@ export const ApiServicesModule: React.FC = () => {
     api.status === 'active' && (api.lifecycle_stage === 'production' || api.type === 'internal')
   );
 
-  console.log('📊 ApiServicesModule: Real Data Metrics Summary:', {
+  console.log('📊 ApiServicesModule: Real Data Metrics Summary (with Seeder Check):', {
     totalOriginalApis: apiServices?.length || 0,
     totalConsolidatedApis: consolidatedApis.length,
     totalEndpoints: detailedStats.totalEndpoints,
@@ -119,10 +120,10 @@ export const ApiServicesModule: React.FC = () => {
     external: externalApis.length,
     consuming: consumingApis.length,
     publishing: publishingApis.length,
+    needsSeeding,
     realTimeMetrics: detailedStats.realTimeMetrics
   });
 
-  // Functional handlers with real data
   const handleDownloadCollection = React.useCallback((integrationId: string) => {
     console.log('📥 Generating real Postman collection for:', integrationId);
     const collection = generatePostmanCollection(integrationId, consolidatedApis);
@@ -241,14 +242,6 @@ export const ApiServicesModule: React.FC = () => {
     });
   }, [toast]);
 
-  const handleConsolidationComplete = React.useCallback(() => {
-    console.log('🎉 Single source of truth consolidation complete!');
-    toast({
-      title: "✅ Single Source of Truth Established",
-      description: "API consolidation completed successfully. All metrics updated.",
-    });
-  }, [toast]);
-
   // Real-time overview stats component
   const RealTimeOverviewStats = () => (
     <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6">
@@ -347,6 +340,11 @@ export const ApiServicesModule: React.FC = () => {
           </p>
         </CardContent>
       </Card>
+
+      {/* Show seeder if needed */}
+      {needsSeeding && (
+        <ApiDataSeeder />
+      )}
       
       <RealTimeOverviewStats />
       
@@ -418,7 +416,7 @@ export const ApiServicesModule: React.FC = () => {
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
           <Database className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <p className="text-red-600">Error loading real API data: {error.message}</p>
+          <p className="text-red-600">Error loading real API data: {(error as Error).message}</p>
           <Button onClick={() => window.location.reload()} className="mt-4">
             Retry
           </Button>

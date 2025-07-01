@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -48,7 +49,7 @@ export const ApiKeysTabContent: React.FC = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch real API keys data
+  // Fetch real API keys data with proper error handling
   const { data: apiKeys, isLoading, error } = useQuery({
     queryKey: ['api-keys'],
     queryFn: async () => {
@@ -70,7 +71,7 @@ export const ApiKeysTabContent: React.FC = () => {
     staleTime: 30000
   });
 
-  // Create API key mutation with fixed user_id assignment
+  // Create API key mutation with proper error handling
   const createApiKeyMutation = useMutation({
     mutationFn: async (keyData: {
       name: string;
@@ -98,7 +99,7 @@ export const ApiKeysTabContent: React.FC = () => {
         .from('api_keys')
         .insert({
           ...keyData,
-          user_id: user.user.id, // Fix: Add required user_id field
+          user_id: user.user.id,
           key_hash: hashHex,
           key_prefix: data.split('_')[0] + '_' + data.split('_')[1] + '_'
         })
@@ -153,21 +154,21 @@ export const ApiKeysTabContent: React.FC = () => {
     }
   });
 
-  // Filter API keys based on search
+  // Filter API keys based on search with proper null safety
   const filteredApiKeys = (apiKeys || []).filter((key: ApiKey) =>
-    key.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    key.type.toLowerCase().includes(searchTerm.toLowerCase())
+    key?.name?.toLowerCase()?.includes(searchTerm.toLowerCase()) ||
+    key?.type?.toLowerCase()?.includes(searchTerm.toLowerCase())
   );
 
-  // Calculate real metrics
+  // Calculate real metrics with null safety
   const keyMetrics = React.useMemo(() => {
     const keys = apiKeys || [];
     return {
       total: keys.length,
-      active: keys.filter(k => k.status === 'active').length,
-      expired: keys.filter(k => k.expires_at && new Date(k.expires_at) < new Date()).length,
-      totalUsage: keys.reduce((sum, k) => sum + k.usage_count, 0),
-      averageUsage: keys.length > 0 ? Math.round(keys.reduce((sum, k) => sum + k.usage_count, 0) / keys.length) : 0
+      active: keys.filter(k => k?.status === 'active').length,
+      expired: keys.filter(k => k?.expires_at && new Date(k.expires_at) < new Date()).length,
+      totalUsage: keys.reduce((sum, k) => sum + (k?.usage_count || 0), 0),
+      averageUsage: keys.length > 0 ? Math.round(keys.reduce((sum, k) => sum + (k?.usage_count || 0), 0) / keys.length) : 0
     };
   }, [apiKeys]);
 
@@ -216,7 +217,7 @@ export const ApiKeysTabContent: React.FC = () => {
       <Alert className="border-red-500 bg-red-50">
         <AlertTriangle className="h-4 w-4 text-red-600" />
         <AlertDescription className="text-red-800">
-          Error loading API keys: {error.message}
+          Error loading API keys: {(error as Error).message}
         </AlertDescription>
       </Alert>
     );
@@ -224,7 +225,7 @@ export const ApiKeysTabContent: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Real API Keys Metrics */}
+      {/* Real API Keys Metrics with Null Safety */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <Card className="border-l-4 border-l-blue-500">
           <CardContent className="p-4">
@@ -356,7 +357,7 @@ export const ApiKeysTabContent: React.FC = () => {
         </Dialog>
       </div>
 
-      {/* API Keys List */}
+      {/* API Keys List with Null Safety */}
       <div className="space-y-4">
         {filteredApiKeys.length === 0 ? (
           <Card>
@@ -379,19 +380,19 @@ export const ApiKeysTabContent: React.FC = () => {
           </Card>
         ) : (
           filteredApiKeys.map((key: ApiKey) => {
-            const isExpired = key.expires_at && new Date(key.expires_at) < new Date();
+            const isExpired = key?.expires_at && new Date(key.expires_at) < new Date();
             
             return (
-              <Card key={key.id} className={`border-l-4 ${isExpired ? 'border-l-red-500' : key.status === 'active' ? 'border-l-green-500' : 'border-l-gray-300'}`}>
+              <Card key={key.id} className={`border-l-4 ${isExpired ? 'border-l-red-500' : key?.status === 'active' ? 'border-l-green-500' : 'border-l-gray-300'}`}>
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle className="flex items-center gap-2">
                       <Key className="h-5 w-5" />
-                      {key.name}
-                      <Badge variant={key.status === 'active' ? 'default' : 'secondary'}>
-                        {key.status}
+                      {key?.name || 'Unnamed Key'}
+                      <Badge variant={key?.status === 'active' ? 'default' : 'secondary'}>
+                        {key?.status || 'unknown'}
                       </Badge>
-                      <Badge variant="outline">{key.type}</Badge>
+                      <Badge variant="outline">{key?.type || 'unknown'}</Badge>
                       {isExpired && (
                         <Badge variant="destructive">Expired</Badge>
                       )}
@@ -410,20 +411,20 @@ export const ApiKeysTabContent: React.FC = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {/* Key Details */}
+                    {/* Key Details with Null Safety */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div>
                         <Label className="text-sm font-medium">Usage Count</Label>
-                        <p className="text-sm">{key.usage_count.toLocaleString()}</p>
+                        <p className="text-sm">{(key?.usage_count || 0).toLocaleString()}</p>
                       </div>
                       <div>
                         <Label className="text-sm font-medium">Rate Limit</Label>
-                        <p className="text-sm">{key.rate_limit_requests}/{key.rate_limit_period}</p>
+                        <p className="text-sm">{key?.rate_limit_requests || 0}/{key?.rate_limit_period || 'hour'}</p>
                       </div>
                       <div>
                         <Label className="text-sm font-medium">Last Used</Label>
                         <p className="text-sm">
-                          {key.last_used 
+                          {key?.last_used 
                             ? new Date(key.last_used).toLocaleDateString()
                             : 'Never'
                           }
@@ -432,7 +433,7 @@ export const ApiKeysTabContent: React.FC = () => {
                       <div>
                         <Label className="text-sm font-medium">Expires</Label>
                         <p className="text-sm">
-                          {key.expires_at 
+                          {key?.expires_at 
                             ? new Date(key.expires_at).toLocaleDateString()
                             : 'Never'
                           }
@@ -446,7 +447,7 @@ export const ApiKeysTabContent: React.FC = () => {
                       <div className="flex items-center gap-2 mt-1">
                         <Input
                           type={showKeyValue[key.id] ? 'text' : 'password'}
-                          value={showKeyValue[key.id] ? `${key.key_prefix}${'*'.repeat(24)}` : '●'.repeat(32)}
+                          value={showKeyValue[key.id] ? `${key?.key_prefix || ''}${'*'.repeat(24)}` : '●'.repeat(32)}
                           readOnly
                           className="font-mono text-xs"
                         />
@@ -460,20 +461,20 @@ export const ApiKeysTabContent: React.FC = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => copyToClipboard(`${key.key_prefix}${'*'.repeat(24)}`, 'API Key')}
+                          onClick={() => copyToClipboard(`${key?.key_prefix || ''}${'*'.repeat(24)}`, 'API Key')}
                         >
                           <Copy className="h-4 w-4" />
                         </Button>
                       </div>
                     </div>
 
-                    {/* Permissions & Modules */}
+                    {/* Permissions & Modules with Null Safety */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <Label className="text-sm font-medium">Permissions</Label>
                         <div className="flex flex-wrap gap-1 mt-1">
-                          {key.permissions.length > 0 ? (
-                            key.permissions.map(permission => (
+                          {(key?.permissions || []).length > 0 ? (
+                            (key.permissions || []).map(permission => (
                               <Badge key={permission} variant="outline" className="text-xs">
                                 {permission}
                               </Badge>
@@ -486,8 +487,8 @@ export const ApiKeysTabContent: React.FC = () => {
                       <div>
                         <Label className="text-sm font-medium">Modules</Label>
                         <div className="flex flex-wrap gap-1 mt-1">
-                          {key.modules.length > 0 ? (
-                            key.modules.map(module => (
+                          {(key?.modules || []).length > 0 ? (
+                            (key.modules || []).map(module => (
                               <Badge key={module} variant="outline" className="text-xs">
                                 {module}
                               </Badge>
