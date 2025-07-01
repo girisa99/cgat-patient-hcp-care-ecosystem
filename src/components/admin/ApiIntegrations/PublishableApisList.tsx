@@ -21,7 +21,7 @@ const PublishableApisList: React.FC<PublishableApisListProps> = ({
 
   // Filter APIs that can be published (internal APIs)
   const publishableApis = apis.filter(api => {
-    if (api.source === 'internal') {
+    if ((api as any).integrationType === 'internal') {
       const apiData = api as any;
       return apiData.direction === 'outbound' || apiData.direction === 'bidirectional';
     }

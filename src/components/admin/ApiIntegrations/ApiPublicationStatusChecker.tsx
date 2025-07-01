@@ -116,7 +116,7 @@ const ApiPublicationStatusChecker = () => {
               {integrations.map((api) => {
                 const apiData = api as any;
                 const displayName = apiData.name || 'API Service';
-                const endpointCount = api.source === 'external' 
+                const endpointCount = (api as any).integrationType === 'external' 
                   ? apiData.external_api_endpoints?.length || 0 
                   : apiData.endpoints_count || 0;
                 return (
@@ -221,7 +221,7 @@ const ApiPublicationStatusChecker = () => {
             <p>Select an API above to check its publication status</p>
           </div>
         )}
-      </CardContent>
+      </div>
     </Card>
   );
 };

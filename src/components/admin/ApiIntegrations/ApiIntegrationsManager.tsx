@@ -47,7 +47,7 @@ const ApiIntegrationsManager = () => {
     publishedApis: publishedApisForDevelopers?.length || 0,
     developerApis: publishedApisForDevelopers?.length || 0,
     activeEndpoints: integrations?.reduce((sum, i) => {
-      const endpointCount = i.source === 'external' 
+      const endpointCount = (i as any).integrationType === 'external' 
         ? (i as any).external_api_endpoints?.length || 0 
         : (i as any).endpoints_count || 0;
       return sum + endpointCount;
@@ -65,7 +65,7 @@ const ApiIntegrationsManager = () => {
     if (integration) {
       const integrationWithDescription = {
         ...integration,
-        description: integration.source === 'external' 
+        description: (integration as any).integrationType === 'external' 
           ? (integration as any).external_description || 'No description provided'
           : (integration as any).description || 'No description provided'
       };

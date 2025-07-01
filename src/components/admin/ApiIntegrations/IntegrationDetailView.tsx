@@ -36,23 +36,23 @@ const IntegrationDetailView: React.FC<IntegrationDetailViewProps> = ({
   }
 
   // Handle different data structures from our single source of truth
-  const displayName = integration.source === 'external' 
+  const displayName = (integration as any).integrationType === 'external' 
     ? (integration as any).external_name 
     : (integration as any).name;
     
-  const displayDescription = integration.source === 'external'
+  const displayDescription = (integration as any).integrationType === 'external'
     ? (integration as any).external_description
     : (integration as any).description;
 
-  const endpointsCount = integration.source === 'external'
+  const endpointsCount = (integration as any).integrationType === 'external'
     ? (integration as any).external_api_endpoints?.length || 0
     : (integration as any).endpoints_count || 0;
 
-  const rlsPoliciesCount = integration.source === 'external'
+  const rlsPoliciesCount = (integration as any).integrationType === 'external'
     ? 0
     : (integration as any).rls_policies_count || 0;
 
-  const mappingsCount = integration.source === 'external'
+  const mappingsCount = (integration as any).integrationType === 'external'
     ? 0
     : (integration as any).data_mappings_count || 0;
 
@@ -116,7 +116,7 @@ const IntegrationDetailView: React.FC<IntegrationDetailViewProps> = ({
             <div>
               <label className="text-sm font-medium">Type</label>
               <Badge variant="outline" className="ml-2 capitalize">
-                {integration.source === 'external' ? 'external' : (integration as any).type}
+                {(integration as any).integrationType === 'external' ? 'external' : (integration as any).type}
               </Badge>
             </div>
             <div>
@@ -153,7 +153,7 @@ const IntegrationDetailView: React.FC<IntegrationDetailViewProps> = ({
         </CardContent>
       </Card>
 
-      {integration.source === 'external' && (integration as any).external_api_endpoints && (integration as any).external_api_endpoints.length > 0 && (
+      {(integration as any).integrationType === 'external' && (integration as any).external_api_endpoints && (integration as any).external_api_endpoints.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle>API Endpoints</CardTitle>
