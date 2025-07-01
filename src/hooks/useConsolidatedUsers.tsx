@@ -91,7 +91,7 @@ export const useConsolidatedUsers = () => {
     }
   });
 
-  // Role assignment mutation - Updated to use onboarding-workflow
+  // Role assignment mutation - Updated with better error handling
   const assignRoleMutation = useMutation({
     mutationFn: async ({ userId, roleName }: { userId: string; roleName: UserRole }) => {
       console.log('🔄 Assigning role via onboarding-workflow:', roleName, 'to user:', userId);
@@ -116,24 +116,24 @@ export const useConsolidatedUsers = () => {
 
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['consolidated-users'] });
       toast({
         title: "Role Assigned",
-        description: "Role has been assigned successfully.",
+        description: data?.message || "Role has been assigned successfully.",
       });
     },
     onError: (error: any) => {
       console.error('❌ Role assignment error:', error);
       toast({
-        title: "Error",
+        title: "Role Assignment Failed",
         description: error.message || "Failed to assign role",
         variant: "destructive",
       });
     }
   });
 
-  // Role removal mutation - Updated to use onboarding-workflow
+  // Role removal mutation - Updated with better error handling
   const removeRoleMutation = useMutation({
     mutationFn: async ({ userId, roleName }: { userId: string; roleName: UserRole }) => {
       console.log('🔄 Removing role via onboarding-workflow:', roleName, 'from user:', userId);
@@ -158,17 +158,17 @@ export const useConsolidatedUsers = () => {
 
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['consolidated-users'] });
       toast({
         title: "Role Removed",
-        description: "Role has been removed successfully.",
+        description: data?.message || "Role has been removed successfully.",
       });
     },
     onError: (error: any) => {
       console.error('❌ Role removal error:', error);
       toast({
-        title: "Error",
+        title: "Role Removal Failed",
         description: error.message || "Failed to remove role",
         variant: "destructive",
       });

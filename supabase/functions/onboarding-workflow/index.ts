@@ -47,10 +47,27 @@ serve(async (req) => {
       
       console.log('👤 [ONBOARDING-WORKFLOW] Assigning role:', role_name, 'to user:', user_id)
 
-      // Check if user has permission to assign roles
-      const { data: hasPermission } = await supabase.rpc('is_admin_user', {
+      // Use the security definer function to check admin status safely
+      const { data: hasPermission, error: permissionError } = await supabase.rpc('is_admin_user', {
         check_user_id: user.id
       })
+
+      if (permissionError) {
+        console.error('❌ [ONBOARDING-WORKFLOW] Error checking permissions:', permissionError)
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'Error checking user permissions' 
+          }),
+          { 
+            status: 500,
+            headers: { 
+              ...corsHeaders, 
+              'Content-Type': 'application/json' 
+            } 
+          }
+        )
+      }
 
       if (!hasPermission) {
         console.error('❌ [ONBOARDING-WORKFLOW] User lacks permission to assign roles')
@@ -69,7 +86,7 @@ serve(async (req) => {
         )
       }
 
-      // Get the role ID
+      // Get the role ID using service role client to bypass RLS
       const { data: role, error: roleError } = await supabase
         .from('roles')
         .select('id')
@@ -93,7 +110,7 @@ serve(async (req) => {
         )
       }
 
-      // Check if user already has this role
+      // Check if user already has this role using service role client
       const { data: existingRole, error: checkError } = await supabase
         .from('user_roles')
         .select('id')
@@ -134,7 +151,7 @@ serve(async (req) => {
         )
       }
 
-      // Assign the role
+      // Assign the role using service role client to bypass RLS restrictions
       const { error: assignError } = await supabase
         .from('user_roles')
         .insert({
@@ -179,10 +196,27 @@ serve(async (req) => {
       
       console.log('➖ [ONBOARDING-WORKFLOW] Removing role:', role_name, 'from user:', user_id)
 
-      // Check if user has permission to remove roles
-      const { data: hasPermission } = await supabase.rpc('is_admin_user', {
+      // Use the security definer function to check admin status safely
+      const { data: hasPermission, error: permissionError } = await supabase.rpc('is_admin_user', {
         check_user_id: user.id
       })
+
+      if (permissionError) {
+        console.error('❌ [ONBOARDING-WORKFLOW] Error checking permissions:', permissionError)
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'Error checking user permissions' 
+          }),
+          { 
+            status: 500,
+            headers: { 
+              ...corsHeaders, 
+              'Content-Type': 'application/json' 
+            } 
+          }
+        )
+      }
 
       if (!hasPermission) {
         console.error('❌ [ONBOARDING-WORKFLOW] User lacks permission to remove roles')
@@ -201,7 +235,7 @@ serve(async (req) => {
         )
       }
 
-      // Get the role ID
+      // Get the role ID using service role client
       const { data: role, error: roleError } = await supabase
         .from('roles')
         .select('id')
@@ -225,7 +259,7 @@ serve(async (req) => {
         )
       }
 
-      // Remove the role
+      // Remove the role using service role client
       const { error: removeError } = await supabase
         .from('user_roles')
         .delete()
@@ -269,7 +303,7 @@ serve(async (req) => {
       
       console.log('🆕 [ONBOARDING-WORKFLOW] Creating new user:', user_data)
 
-      // Create user in auth system
+      // Create user in auth system using service role
       const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
         email: user_data.email,
         password: Math.random().toString(36).substring(2, 15), // Generate temporary password
@@ -298,7 +332,7 @@ serve(async (req) => {
         )
       }
 
-      // Create profile
+      // Create profile using service role client
       const { error: profileError } = await supabase
         .from('profiles')
         .insert({
