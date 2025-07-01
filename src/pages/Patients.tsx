@@ -5,16 +5,16 @@ import { PageContainer } from '@/components/layout/PageContainer';
 import { useConsolidatedPatients } from '@/hooks/patients/useConsolidatedPatients';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { UserPlus, Users, Building2, Activity } from 'lucide-react';
+import { UserPlus, Users, Building2, Activity, AlertTriangle } from 'lucide-react';
 
 const Patients: React.FC = () => {
-  const { patients, isLoading, error, getPatientStats } = useConsolidatedPatients();
+  const { patients, isLoading, error, getPatientStats, refetch } = useConsolidatedPatients();
   const stats = getPatientStats();
 
   console.log('🏥 Patients page - Using consolidated data:', { 
     patients: patients?.length, 
     isLoading, 
-    error,
+    error: error?.message,
     dataSource: 'existing unified architecture'
   });
 
@@ -39,11 +39,21 @@ const Patients: React.FC = () => {
         <PageContainer title="Patients" subtitle="Error loading patient data">
           <Card>
             <CardContent className="p-6">
-              <div className="text-center text-red-600">
-                <p>Error loading patients: {error.message}</p>
-                <Button onClick={() => window.location.reload()} className="mt-4">
-                  Retry
-                </Button>
+              <div className="text-center">
+                <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-red-600 mb-2">Error Loading Patients</h3>
+                <p className="text-red-600 mb-4">Error: {error.message}</p>
+                <p className="text-sm text-gray-500 mb-4">
+                  This usually indicates a database connection issue or missing user roles data.
+                </p>
+                <div className="space-x-2">
+                  <Button onClick={() => refetch()} variant="outline">
+                    Try Again
+                  </Button>
+                  <Button onClick={() => window.location.href = '/users'} variant="outline">
+                    Check Users Page
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>

@@ -13,6 +13,12 @@ export const useConsolidatedPatients = () => {
   // Filter for patient users using existing helper
   const patients = getPatientUsers(allUsers || []);
 
+  console.log('🏥 Consolidated patients:', {
+    totalUsers: allUsers?.length || 0,
+    patientUsers: patients.length,
+    dataSource: 'unified user data'
+  });
+
   const searchPatients = (query: string): UserWithRoles[] => {
     if (!query.trim()) return patients;
     
