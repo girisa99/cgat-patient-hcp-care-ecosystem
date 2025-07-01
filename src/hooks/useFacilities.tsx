@@ -1,55 +1,83 @@
 
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import type { ExtendedFacility } from '@/types/database';
-import { useToast } from '@/hooks/use-toast';
+import { useTypeSafeModuleTemplate } from '@/templates/hooks/useTypeSafeModuleTemplate';
+import { useFacilityData } from './facilities/useFacilityData';
+import { useFacilityMutations } from './facilities/useFacilityMutations';
 
+/**
+ * Fully Consolidated Facilities Hook - Using Universal Template
+ */
 export const useFacilities = () => {
-  const { toast } = useToast();
-  
-  const {
-    data: facilities,
-    isLoading,
-    error,
-    refetch
-  } = useQuery({
-    queryKey: ['facilities'],
-    queryFn: async (): Promise<ExtendedFacility[]> => {
-      const { data, error } = await supabase
-        .from('facilities')
-        .select('*');
-
-      if (error) throw error;
-      return data || [];
-    },
-    retry: 1,
-    staleTime: 30000
-  });
-
-  const createFacility = async (data: any) => {
-    console.log('Creating facility:', data);
-    toast({
-      title: "Facility Created",
-      description: "Facility has been created successfully",
-    });
+  const config = {
+    tableName: 'facilities' as const,
+    moduleName: 'Facilities',
+    requiredFields: ['name', 'facility_type'],
+    customValidation: (data: any) => {
+      return !!(data.name && data.facility_type);
+    }
   };
 
-  const updateFacility = async (data: any) => {
-    console.log('Updating facility:', data);
-    toast({
-      title: "Facility Updated",
-      description: "Facility has been updated successfully",
-    });
+  const templateResult = useTypeSafeModuleTemplate(config);
+  const { data: facilities, isLoading, error, refetch } = useFacilityData();
+  const mutations = useFacilityMutations();
+
+  // Facility-specific search
+  const searchFacilities = (query: string) => {
+    if (!query.trim()) return facilities || [];
+    
+    return (facilities || []).filter((facility: any) => 
+      facility.name?.toLowerCase().includes(query.toLowerCase()) ||
+      facility.facility_type?.toLowerCase().includes(query.toLowerCase()) ||
+      facility.address?.toLowerCase().includes(query.toLowerCase())
+    );
+  };
+
+  // Facility statistics
+  const getFacilityStats = () => {
+    const allFacilities = facilities || [];
+    const active = allFacilities.filter(f => f.is_active !== false).length;
+    const inactive = allFacilities.length - active;
+    
+    const typeBreakdown = allFacilities.reduce((acc: any, facility: any) => {
+      const type = facility.facility_type || 'Unknown';
+      acc[type] = (acc[type] || 0) + 1;
+      return acc;
+    }, {});
+
+    return {
+      total: allFacilities.length,
+      active,
+      inactive,
+      typeBreakdown
+    };
   };
 
   return {
+    // Core data (backward compatible)
     facilities: facilities || [],
     isLoading,
     error,
     refetch,
-    createFacility,
-    updateFacility,
-    isCreatingFacility: false,
-    isUpdatingFacility: false
+    
+    // Mutations (backward compatible)
+    createFacility: mutations.createFacility,
+    updateFacility: mutations.updateFacility,
+    isCreatingFacility: mutations.isCreatingFacility,
+    isUpdatingFacility: mutations.isUpdatingFacility,
+    
+    // Enhanced functionality
+    searchFacilities,
+    getFacilityStats,
+    
+    // Universal template access
+    template: templateResult,
+    
+    // Comprehensive metadata
+    meta: {
+      ...templateResult.meta,
+      facilityCount: facilities?.length || 0,
+      dataSource: 'facilities table (direct)',
+      consolidationStatus: 'FULLY_CONSOLIDATED',
+      templateVersion: '2.0'
+    }
   };
 };

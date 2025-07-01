@@ -1,8 +1,10 @@
 
 import { useTypeSafeModuleTemplate } from '@/templates/hooks/useTypeSafeModuleTemplate';
+import { usePatientValidation } from './patients/usePatientValidation';
+import { usePatientStats } from './patients/usePatientStats';
 
 /**
- * Patients Hook - Now using Universal Template
+ * Fully Consolidated Patients Hook - Using Universal Template
  * 
  * This hook now uses the unified template system while maintaining
  * complete backward compatibility with existing code.
@@ -14,16 +16,22 @@ export const usePatients = () => {
     requiredFields: ['first_name', 'email', 'role'],
     customValidation: (data: any) => {
       // Ensure this is a patient record
-      return data.role === 'patient' || data.role === 'patientCaregiver';
+      return data.role === 'patient' || data.role === 'patientCaregiver' ||
+             data.user_roles?.some((ur: any) => 
+               ur.roles?.name === 'patientCaregiver' || ur.roles?.name === 'patient'
+             );
     }
   };
 
   const templateResult = useTypeSafeModuleTemplate(config);
+  const { validatePatientData, validatePatientRole } = usePatientValidation();
 
-  // Patient-specific filtering
+  // Patient-specific filtering - only show users with patient roles
   const patients = templateResult.items.filter((item: any) => 
-    item.role === 'patient' || item.role === 'patientCaregiver'
+    validatePatientRole(item.user_roles || [])
   );
+
+  const { getPatientStatistics } = usePatientStats(patients);
 
   // Patient-specific search
   const searchPatients = (query: string) => {
@@ -32,22 +40,18 @@ export const usePatients = () => {
     return patients.filter((patient: any) => 
       patient.first_name?.toLowerCase().includes(query.toLowerCase()) ||
       patient.last_name?.toLowerCase().includes(query.toLowerCase()) ||
-      patient.email?.toLowerCase().includes(query.toLowerCase())
+      patient.email?.toLowerCase().includes(query.toLowerCase()) ||
+      patient.phone?.includes(query)
     );
   };
 
-  // Patient-specific statistics
-  const getPatientStats = () => {
-    const stats = templateResult.getStatistics();
-    const caregivers = patients.filter((p: any) => p.role === 'patientCaregiver').length;
-    const directPatients = patients.filter((p: any) => p.role === 'patient').length;
-    
-    return {
-      ...stats,
-      total: patients.length,
-      caregivers,
-      directPatients
-    };
+  // Enhanced patient creation with validation
+  const createPatient = async (data: any) => {
+    const validation = validatePatientData(data);
+    if (!validation.isValid) {
+      throw new Error(`Patient validation failed: ${validation.errors.join(', ')}`);
+    }
+    return templateResult.createItem(data);
   };
 
   return {
@@ -58,7 +62,7 @@ export const usePatients = () => {
     refetch: templateResult.refetch,
     
     // Mutations (backward compatible)
-    createPatient: templateResult.createItem,
+    createPatient,
     updatePatient: templateResult.updateItem,
     deletePatient: templateResult.deleteItem,
     isCreating: templateResult.isCreating,
@@ -67,19 +71,27 @@ export const usePatients = () => {
     
     // Enhanced functionality
     searchPatients,
-    getPatientStats,
+    getPatientStats: getPatientStatistics,
+    validatePatientData,
     
     // Universal template access
     template: templateResult,
     
-    // Metadata
+    // Comprehensive metadata
     meta: {
       ...templateResult.meta,
       patientCount: patients.length,
+      dataSource: 'auth.users via manage-user-profiles edge function',
       patientTypes: {
-        caregivers: patients.filter((p: any) => p.role === 'patientCaregiver').length,
-        direct: patients.filter((p: any) => p.role === 'patient').length
-      }
+        caregivers: patients.filter((p: any) => 
+          p.user_roles?.some((ur: any) => ur.roles?.name === 'patientCaregiver')
+        ).length,
+        direct: patients.filter((p: any) => 
+          p.user_roles?.some((ur: any) => ur.roles?.name === 'patient')
+        ).length
+      },
+      consolidationStatus: 'FULLY_CONSOLIDATED',
+      templateVersion: '2.0'
     }
   };
 };
