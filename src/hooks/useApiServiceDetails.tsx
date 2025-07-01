@@ -36,6 +36,9 @@ interface ApiService {
   publicEndpointsCount?: number;
   schemaCompleteness?: number;
   documentationCoverage?: number;
+  isSynced?: boolean;
+  syncedAt?: string;
+  isExternalOnly?: boolean;
 }
 
 interface ApiEndpoint {

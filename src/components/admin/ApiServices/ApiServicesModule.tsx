@@ -25,7 +25,7 @@ import {
   Target,
   TrendingUp,
   Zap,
-  Sync
+  RefreshCw
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -329,7 +329,7 @@ export const ApiServicesModule: React.FC = () => {
       <Card className="border-l-4 border-l-indigo-500">
         <CardContent className="p-4">
           <div className="flex items-center gap-2">
-            <Sync className="h-6 w-6 text-indigo-500" />
+            <RefreshCw className="h-6 w-6 text-indigo-500" />
             <div>
               <p className="text-2xl font-bold">{consolidatedApis.filter(api => api.isSynced).length}</p>
               <p className="text-sm text-muted-foreground">Synchronized</p>
@@ -360,7 +360,7 @@ export const ApiServicesModule: React.FC = () => {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
-          <Sync className="h-12 w-12 text-muted-foreground mx-auto mb-4 animate-spin" />
+          <RefreshCw className="h-12 w-12 text-muted-foreground mx-auto mb-4 animate-spin" />
           <p className="text-muted-foreground">Synchronizing API data from internal and external sources...</p>
         </div>
       </div>
@@ -387,7 +387,7 @@ export const ApiServicesModule: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold">Healthcare API Services Platform</h1>
           <p className="text-muted-foreground">
-            {syncStatus ? (
+            {syncStatus && typeof syncStatus === 'object' ? (
               <span className={syncStatus.syncedCount === syncStatus.internalCount ? "text-green-600 font-medium" : "text-yellow-600 font-medium"}>
                 {syncStatus.syncedCount === syncStatus.internalCount ? '✅' : '⚠️'} Sync Status: {syncStatus.syncedCount}/{syncStatus.internalCount} APIs synchronized • {detailedStats.totalEndpoints} endpoints • {Math.round(detailedStats.realTimeMetrics.schemaCompleteness)}% schema coverage
               </span>
@@ -464,7 +464,7 @@ export const ApiServicesModule: React.FC = () => {
 
         <TabsContent value="publishing" className="mt-4">
           <PublishedApisTabContent 
-            publishedApis={publishingApis}
+            consolidatedApis={publishingApis}
             searchTerm={searchTerm}
           />
         </TabsContent>
@@ -483,7 +483,7 @@ export const ApiServicesModule: React.FC = () => {
 
         <TabsContent value="testing" className="mt-4">
           <TestingTabContent
-            integrations={consolidatedApis}
+            consolidatedApis={consolidatedApis}
             onTestEndpoint={handleTestEndpoint}
           />
         </TabsContent>

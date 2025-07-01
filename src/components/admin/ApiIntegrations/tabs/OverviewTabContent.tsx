@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Activity, Database, Globe, Users, Code, Shield, Sync, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Activity, Database, Globe, Users, Code, Shield, RefreshCw, CheckCircle, AlertTriangle } from 'lucide-react';
 
 interface OverviewTabContentProps {
   integrations?: any[];
@@ -77,7 +77,7 @@ export const OverviewTabContent: React.FC<OverviewTabContentProps> = ({
   return (
     <div className="space-y-6">
       {/* Sync Status Banner */}
-      {syncStatus && (
+      {syncStatus && typeof syncStatus === 'object' && (
         <Card className={`border-l-4 ${syncStatus.syncedCount === syncStatus.internalCount ? 'border-l-green-500 bg-green-50' : 'border-l-yellow-500 bg-yellow-50'}`}>
           <CardContent className="pt-4">
             <div className="flex items-center gap-2 mb-2">
@@ -165,7 +165,7 @@ export const OverviewTabContent: React.FC<OverviewTabContentProps> = ({
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Sync className="h-5 w-5" />
+              <RefreshCw className="h-5 w-5" />
               Recent APIs (Synchronized Data)
             </CardTitle>
           </CardHeader>
