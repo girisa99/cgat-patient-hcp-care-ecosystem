@@ -3,6 +3,9 @@ import { useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { Database } from '@/integrations/supabase/types';
+
+type UserRole = Database['public']['Enums']['user_role'];
 
 export interface Profile {
   id: string;
@@ -203,6 +206,43 @@ export const useCleanAuth = () => {
     }
   };
 
+  const signUp = async (email: string, password: string, role: UserRole): Promise<{ success: boolean; error?: string; user?: User }> => {
+    try {
+      console.log('📝 Attempting sign up with:', email, 'role:', role);
+      const { data, error } = await supabase.auth.signUp({
+        email: email.trim().toLowerCase(),
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            firstName: '',
+            lastName: '',
+            role: role
+          }
+        }
+      });
+
+      if (error) {
+        console.error('❌ Sign up error:', error);
+        return { success: false, error: error.message };
+      }
+
+      if (data.user) {
+        console.log('✅ Sign up successful:', data.user.email);
+        toast({
+          title: "Success",
+          description: "Account created successfully! Please check your email to verify your account.",
+        });
+        return { success: true, user: data.user };
+      }
+
+      return { success: false, error: 'No user returned' };
+    } catch (err: any) {
+      console.error('💥 Sign up exception:', err);
+      return { success: false, error: err.message };
+    }
+  };
+
   const signOut = async (): Promise<{ success: boolean; error?: string }> => {
     try {
       console.log('🚪 Signing out...');
@@ -243,6 +283,7 @@ export const useCleanAuth = () => {
     isLoading,
     isAuthenticated,
     signIn,
+    signUp,
     signOut
   };
 };

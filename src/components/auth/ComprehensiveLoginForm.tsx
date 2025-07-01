@@ -24,7 +24,7 @@ const ComprehensiveLoginForm = () => {
   const [authError, setAuthError] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSendingResetEmail, setIsSendingResetEmail] = useState(false);
-  const { user, signOut } = useAuthContext();
+  const { user, signOut, signIn, signUp } = useAuthContext();
   const { toast } = useToast();
   const navigate = useNavigate();
   const { performRouting } = useIntelligentRouting();
@@ -60,28 +60,13 @@ const ComprehensiveLoginForm = () => {
         }
         
         console.log('📝 Starting signup process...');
-        const { data, error } = await supabase.auth.signUp({
-          email: email.trim().toLowerCase(),
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/`,
-            data: {
-              firstName: '',
-              lastName: '',
-              role: selectedRole
-            }
-          }
-        });
+        const result = await signUp(email, password, selectedRole as UserRole);
 
-        if (error) {
-          console.error('❌ Sign up error:', error);
-          setAuthError(error.message);
-        } else if (data.user) {
-          console.log('✅ Sign up successful:', data.user.email);
-          toast({
-            title: "Account Created",
-            description: "Please check your email to verify your account before signing in.",
-          });
+        if (result.error) {
+          console.error('❌ Sign up error:', result.error);
+          setAuthError(result.error);
+        } else if (result.user) {
+          console.log('✅ Sign up successful:', result.user.email);
           setIsSignUp(false);
           setEmail('');
           setPassword('');
@@ -89,24 +74,21 @@ const ComprehensiveLoginForm = () => {
         }
       } else {
         console.log('🔑 Starting signin process...');
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email: email.trim().toLowerCase(),
-          password,
-        });
+        const result = await signIn(email, password);
 
-        if (error) {
-          console.error('❌ Sign in error:', error);
-          let errorMessage = error.message;
+        if (result.error) {
+          console.error('❌ Sign in error:', result.error);
+          let errorMessage = result.error;
           
-          if (error.message.includes('Invalid login credentials')) {
+          if (result.error.includes('Invalid login credentials')) {
             errorMessage = 'Invalid email or password. Please check your credentials and try again.';
-          } else if (error.message.includes('Email not confirmed')) {
+          } else if (result.error.includes('Email not confirmed')) {
             errorMessage = 'Please verify your email address before signing in. Check your inbox for the verification email.';
           }
           
           setAuthError(errorMessage);
-        } else if (data.user) {
-          console.log('✅ Sign in successful:', data.user.email);
+        } else if (result.user) {
+          console.log('✅ Sign in successful:', result.user.email);
           toast({
             title: "Welcome Back!",
             description: "Successfully signed in to GENIE portal.",
