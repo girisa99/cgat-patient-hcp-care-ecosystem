@@ -2,6 +2,9 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { Database } from '@/integrations/supabase/types';
+
+type FacilityType = Database['public']['Enums']['facility_type'];
 
 export const useFacilityMutations = () => {
   const { toast } = useToast();
@@ -10,7 +13,7 @@ export const useFacilityMutations = () => {
   const createFacilityMutation = useMutation({
     mutationFn: async (facilityData: {
       name: string;
-      facility_type: string;
+      facility_type: FacilityType;
       address?: string;
       phone?: string;
       email?: string;
