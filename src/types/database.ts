@@ -18,6 +18,13 @@ export interface ExtendedProfile extends Profile {
     };
   }>;
   facilities?: Facility | null;
+  // Add missing properties
+  avatar_url?: string | null;
+  department?: string | null;
+  has_mfa_enabled?: boolean;
+  is_email_verified?: boolean;
+  last_login?: string | null;
+  timezone?: string | null;
 }
 
 export interface ExtendedModule extends Module {
