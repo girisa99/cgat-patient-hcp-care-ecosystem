@@ -1,178 +1,23 @@
 
-import { useEffect, useState } from 'react';
-import { useAuthContext } from '@/components/auth/CleanAuthProvider';
-import { useSimpleRouting } from '@/hooks/useSimpleRouting';
-import LoadingSpinner from '@/components/ui/LoadingSpinner';
-import ComprehensiveLoginForm from '@/components/auth/ComprehensiveLoginForm';
-import HealthcareAuthLayoutWithLogo from '@/components/auth/HealthcareAuthLayoutWithLogo';
-import AuthDiagnostic from '@/components/auth/AuthDiagnostic';
+import React from 'react';
+import MainLayout from '@/components/layout/MainLayout';
+import { PageContainer } from '@/components/layout/PageContainer';
+import { ValidationDashboard } from '@/components/validation/ValidationDashboard';
 
 const Index = () => {
-  const { user, isLoading, isAuthenticated, userRoles, initialized } = useAuthContext();
-  const { performRouting } = useSimpleRouting({ userRoles, isAuthenticated });
-  const [hasAttemptedRouting, setHasAttemptedRouting] = useState(false);
-  const [showDiagnostic, setShowDiagnostic] = useState(false);
-  const [routingTimeout, setRoutingTimeout] = useState<NodeJS.Timeout | null>(null);
+  console.log('🏠 Dashboard: Loading single source validation system');
 
-  console.log('🏠 Index: Auth state:', { 
-    isAuthenticated, 
-    isLoading, 
-    initialized, 
-    userRoles: userRoles?.length || 0,
-    hasUser: !!user 
-  });
-
-  useEffect(() => {
-    // Clear any existing timeout
-    if (routingTimeout) {
-      clearTimeout(routingTimeout);
-    }
-
-    // Only attempt routing once we have complete auth data
-    if (!initialized || isLoading) {
-      console.log('⏳ Index: Waiting for auth initialization...');
-      return;
-    }
-
-    if (!isAuthenticated) {
-      console.log('👤 Index: No authentication, showing login form');
-      setHasAttemptedRouting(true);
-      return;
-    }
-
-    // If authenticated, attempt routing
-    if (isAuthenticated && !hasAttemptedRouting) {
-      console.log('🚀 Index: User authenticated, attempting routing...');
-      console.log('📊 Index: Current user roles:', userRoles);
-      
-      setHasAttemptedRouting(true);
-      
-      // Set a timeout to perform routing, allowing time for roles to load
-      const timeout = setTimeout(() => {
-        console.log('🚀 Index: Performing routing with roles:', userRoles);
-        performRouting();
-      }, 500);
-      
-      setRoutingTimeout(timeout);
-    }
-
-    return () => {
-      if (routingTimeout) {
-        clearTimeout(routingTimeout);
-      }
-    };
-  }, [initialized, isLoading, isAuthenticated, userRoles, hasAttemptedRouting, performRouting, routingTimeout]);
-
-  // Show loading while initializing
-  if (!initialized || isLoading) {
-    return (
-      <HealthcareAuthLayoutWithLogo>
-        <div className="text-center">
-          <LoadingSpinner size="lg" />
-          <p className="mt-4 text-gray-600">Initializing GENIE Platform...</p>
-        </div>
-      </HealthcareAuthLayoutWithLogo>
-    );
-  }
-
-  // Show routing message for authenticated users
-  if (isAuthenticated && !hasAttemptedRouting) {
-    return (
-      <HealthcareAuthLayoutWithLogo>
-        <div className="text-center">
-          <LoadingSpinner size="lg" />
-          <p className="mt-4 text-gray-600">Preparing your dashboard...</p>
-        </div>
-      </HealthcareAuthLayoutWithLogo>
-    );
-  }
-
-  // If authenticated but still on index after routing attempt, show manual navigation
-  if (isAuthenticated && hasAttemptedRouting) {
-    return (
-      <HealthcareAuthLayoutWithLogo>
-        <div className="text-center">
-          <div className="bg-green-50 border border-green-200 rounded-lg p-6 max-w-md">
-            <h3 className="text-lg font-semibold text-green-800 mb-2">Welcome Back!</h3>
-            <p className="text-green-700 mb-4">
-              You are successfully logged in as {user?.email}
-            </p>
-            <p className="text-sm text-green-600 mb-4">
-              Roles: {userRoles && userRoles.length > 0 ? userRoles.join(', ') : 'Loading...'}
-            </p>
-            <div className="space-y-2">
-              <button
-                onClick={() => window.location.href = '/dashboard'}
-                className="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
-              >
-                Go to Dashboard
-              </button>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={() => window.location.href = '/users'}
-                  className="bg-gray-600 text-white px-3 py-2 rounded hover:bg-gray-700 transition-colors text-sm"
-                >
-                  Users
-                </button>
-                <button
-                  onClick={() => window.location.href = '/patients'}
-                  className="bg-gray-600 text-white px-3 py-2 rounded hover:bg-gray-700 transition-colors text-sm"
-                >
-                  Patients
-                </button>
-                <button
-                  onClick={() => window.location.href = '/facilities'}
-                  className="bg-gray-600 text-white px-3 py-2 rounded hover:bg-gray-700 transition-colors text-sm"
-                >
-                  Facilities
-                </button>
-                <button
-                  onClick={() => window.location.href = '/modules'}
-                  className="bg-gray-600 text-white px-3 py-2 rounded hover:bg-gray-700 transition-colors text-sm"
-                >
-                  Modules
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </HealthcareAuthLayoutWithLogo>
-    );
-  }
-
-  // Show diagnostic tool if enabled
-  if (showDiagnostic) {
-    return (
-      <HealthcareAuthLayoutWithLogo>
-        <div className="space-y-4">
-          <button
-            onClick={() => setShowDiagnostic(false)}
-            className="mb-4 text-blue-600 hover:text-blue-800 underline"
-          >
-            ← Back to Login
-          </button>
-          <AuthDiagnostic />
-        </div>
-      </HealthcareAuthLayoutWithLogo>
-    );
-  }
-
-  // Show login form for unauthenticated users
   return (
-    <HealthcareAuthLayoutWithLogo>
-      <div className="space-y-4">
-        <ComprehensiveLoginForm />
-        <div className="text-center">
-          <button
-            onClick={() => setShowDiagnostic(true)}
-            className="text-sm text-blue-600 hover:text-blue-800 underline"
-          >
-            Having login issues? Run diagnostics
-          </button>
-        </div>
-      </div>
-    </HealthcareAuthLayoutWithLogo>
-    );
+    <MainLayout>
+      <PageContainer
+        title="Healthcare Admin Dashboard"
+        subtitle="Single source of truth validation and system overview"
+        fluid
+      >
+        <ValidationDashboard />
+      </PageContainer>
+    </MainLayout>
+  );
 };
 
 export default Index;
