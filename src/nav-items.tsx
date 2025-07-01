@@ -1,62 +1,103 @@
-
-import { Home, Users, Building2, Shield, Zap, UserCheck, Upload } from "lucide-react";
-import { NavItem } from './types/navigation';
+import { HomeIcon, UsersIcon, BuildingOfficeIcon, Cog6ToothIcon, ShieldCheckIcon, DocumentTextIcon, ChartBarIcon, UserGroupIcon, ClipboardDocumentListIcon, BookOpenIcon, ServerIcon, WrenchScrewdriverIcon, BeakerIcon, CpuChipIcon, EyeIcon, BugAntIcon, HeartIcon } from "@heroicons/react/24/outline";
 import Index from "./pages/Index";
-import UsersPage from "./pages/Users";
+import Users from "./pages/Users";
 import Facilities from "./pages/Facilities";
+import Settings from "./pages/Settings";
+import SecurityPage from "./pages/SecurityPage";
+import AdminPage from "./pages/AdminPage";
 import Modules from "./pages/Modules";
-import ApiServices from "./pages/ApiServices";
-import Patients from "./pages/Patients";
-import ComprehensiveValidation from "./pages/ComprehensiveValidation";
-import DataImport from "./pages/DataImport";
+import Onboarding from "./pages/Onboarding";
+import ServicesPage from "./pages/ServicesPage";
+import TherapiesPage from "./pages/TherapiesPage";
+import ReportsPage from "./pages/ReportsPage";
+import DocumentsPage from "./pages/DocumentsPage";
+import ApiIntegrations from "./pages/ApiIntegrations";
+import SystemVerificationPage from "./pages/SystemVerificationPage";
+import HealthMonitoring from "./pages/HealthMonitoring";
 
-export const navItems: NavItem[] = [
+export const navItems = [
   {
-    title: "Dashboard",
+    title: "Home",
     to: "/",
-    icon: <Home className="h-4 w-4" />,
+    icon: <HomeIcon className="h-4 w-4" />,
     page: <Index />,
   },
   {
     title: "Users",
-    to: "/users", 
-    icon: <Users className="h-4 w-4" />,
-    page: <UsersPage />,
-  },
-  {
-    title: "Patients",
-    to: "/patients",
-    icon: <UserCheck className="h-4 w-4" />,
-    page: <Patients />,
+    to: "/users",
+    icon: <UsersIcon className="h-4 w-4" />,
+    page: <Users />,
   },
   {
     title: "Facilities",
     to: "/facilities",
-    icon: <Building2 className="h-4 w-4" />,
+    icon: <BuildingOfficeIcon className="h-4 w-4" />,
     page: <Facilities />,
   },
   {
-    title: "Data Import",
-    to: "/data-import",
-    icon: <Upload className="h-4 w-4" />,
-    page: <DataImport />,
-  },
-  {
-    title: "Modules", 
+    title: "Modules",
     to: "/modules",
-    icon: <Shield className="h-4 w-4" />,
+    icon: <ClipboardDocumentListIcon className="h-4 w-4" />,
     page: <Modules />,
   },
   {
-    title: "API Services",
-    to: "/api-services",
-    icon: <Zap className="h-4 w-4" />,
-    page: <ApiServices />,
+    title: "Onboarding",
+    to: "/onboarding",
+    icon: <BookOpenIcon className="h-4 w-4" />,
+    page: <Onboarding />,
   },
   {
-    title: "Comprehensive Validation",
-    to: "/comprehensive-validation", 
-    icon: <Shield className="h-4 w-4" />,
-    page: <ComprehensiveValidation />,
-  }
+    title: "Services",
+    to: "/services",
+    icon: <ServerIcon className="h-4 w-4" />,
+    page: <ServicesPage />,
+  },
+  {
+    title: "Therapies",
+    to: "/therapies",
+    icon: <WrenchScrewdriverIcon className="h-4 w-4" />,
+    page: <TherapiesPage />,
+  },
+  {
+    title: "API Integrations",
+    to: "/api-integrations",
+    icon: <BeakerIcon className="h-4 w-4" />,
+    page: <ApiIntegrations />,
+  },
+  {
+    title: "Reports",
+    to: "/reports",
+    icon: <ChartBarIcon className="h-4 w-4" />,
+    page: <ReportsPage />,
+  },
+  {
+    title: "Documents",
+    to: "/documents",
+    icon: <DocumentTextIcon className="h-4 w-4" />,
+    page: <DocumentsPage />,
+  },
+  {
+    title: "Admin",
+    to: "/admin",
+    icon: <Cog6ToothIcon className="h-4 w-4" />,
+    page: <AdminPage />,
+  },
+  {
+    title: "Security",
+    to: "/security",
+    icon: <ShieldCheckIcon className="h-4 w-4" />,
+    page: <SecurityPage />,
+  },
+  {
+    title: "System Verification",
+    to: "/system-verification",
+    icon: <EyeIcon className="h-4 w-4" />,
+    page: <SystemVerificationPage />,
+  },
+  {
+    title: "Health Monitoring",
+    to: "/health-monitoring",
+    icon: <HeartIcon className="h-4 w-4" />,
+    page: <HealthMonitoring />,
+  },
 ];
