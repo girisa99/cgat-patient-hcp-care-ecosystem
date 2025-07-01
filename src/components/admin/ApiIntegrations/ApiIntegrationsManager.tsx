@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { useApiIntegrations } from '@/hooks/useApiIntegrations.tsx'; // Use the .tsx version with external APIs
+import { useApiIntegrations } from '@/hooks/useApiIntegrations.tsx';
 import { usePublishedApiIntegration } from '@/hooks/usePublishedApiIntegration';
 import IntegrationDetailView from './IntegrationDetailView';
 import { LoadingState } from '../shared/LoadingState';
@@ -21,9 +22,9 @@ const ApiIntegrationsManager = () => {
     externalApis,
     downloadPostmanCollection,
     testEndpoint
-  } = useApiIntegrations(); // This should now include the external APIs
+  } = useApiIntegrations();
   
-  const { publishedApisForDevelopers } = usePublishedApiIntegration();
+  const { publishedApisForDevelopers, isLoading: isLoadingPublished } = usePublishedApiIntegration();
   
   const [activeTab, setActiveTab] = useState('overview');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -59,7 +60,6 @@ const ApiIntegrationsManager = () => {
   const handleViewDetails = (integrationId: string) => {
     const integration = integrations?.find(i => i.id === integrationId);
     if (integration) {
-      // Ensure the integration has a description before setting state
       const integrationWithDescription = {
         ...integration,
         description: integration.description || 'No description provided'
@@ -70,7 +70,6 @@ const ApiIntegrationsManager = () => {
 
   const handleViewDocumentation = (integrationId: string) => {
     console.log('Opening documentation for integration:', integrationId);
-    // Implementation would open documentation in new tab
   };
 
   const handleCopyUrl = (url: string) => {
