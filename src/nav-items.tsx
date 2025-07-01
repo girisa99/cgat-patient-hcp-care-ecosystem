@@ -1,7 +1,7 @@
 
-import { Home, Users, Building2, Shield, Zap, FileText, UserCheck } from "lucide-react";
+import { Home, Users, Building2, Shield, Zap, UserCheck } from "lucide-react";
 import Index from "./pages/Index";
-import Users from "./pages/Users";
+import UsersPage from "./pages/Users";
 import Facilities from "./pages/Facilities";
 import Modules from "./pages/Modules";
 import ApiServices from "./pages/ApiServices";
@@ -18,7 +18,7 @@ export const navItems = [
     title: "Users",
     to: "/users", 
     icon: <Users className="h-4 w-4" />,
-    page: <Users />,
+    page: <UsersPage />,
   },
   {
     title: "Patients",
