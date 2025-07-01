@@ -91,9 +91,11 @@ export const useConsolidatedUsers = () => {
     }
   });
 
-  // Role assignment mutation
+  // Role assignment mutation - Updated to use onboarding-workflow
   const assignRoleMutation = useMutation({
     mutationFn: async ({ userId, roleName }: { userId: string; roleName: UserRole }) => {
+      console.log('🔄 Assigning role via onboarding-workflow:', roleName, 'to user:', userId);
+      
       const { data, error } = await supabase.functions.invoke('onboarding-workflow', {
         body: {
           action: 'assign_role',
@@ -101,7 +103,17 @@ export const useConsolidatedUsers = () => {
           role_name: roleName
         }
       });
-      if (error) throw error;
+
+      if (error) {
+        console.error('❌ Edge function error:', error);
+        throw new Error(`Failed to assign role: ${error.message}`);
+      }
+
+      if (!data?.success) {
+        console.error('❌ Role assignment failed:', data?.error);
+        throw new Error(data?.error || 'Failed to assign role');
+      }
+
       return data;
     },
     onSuccess: () => {
@@ -112,9 +124,52 @@ export const useConsolidatedUsers = () => {
       });
     },
     onError: (error: any) => {
+      console.error('❌ Role assignment error:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to assign role",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Role removal mutation - Updated to use onboarding-workflow
+  const removeRoleMutation = useMutation({
+    mutationFn: async ({ userId, roleName }: { userId: string; roleName: UserRole }) => {
+      console.log('🔄 Removing role via onboarding-workflow:', roleName, 'from user:', userId);
+      
+      const { data, error } = await supabase.functions.invoke('onboarding-workflow', {
+        body: {
+          action: 'remove_role',
+          user_id: userId,
+          role_name: roleName
+        }
+      });
+
+      if (error) {
+        console.error('❌ Edge function error:', error);
+        throw new Error(`Failed to remove role: ${error.message}`);
+      }
+
+      if (!data?.success) {
+        console.error('❌ Role removal failed:', data?.error);
+        throw new Error(data?.error || 'Failed to remove role');
+      }
+
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['consolidated-users'] });
+      toast({
+        title: "Role Removed",
+        description: "Role has been removed successfully.",
+      });
+    },
+    onError: (error: any) => {
+      console.error('❌ Role removal error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to remove role",
         variant: "destructive",
       });
     }
@@ -200,11 +255,13 @@ export const useConsolidatedUsers = () => {
     // Mutations
     createUser: createUserMutation.mutate,
     assignRole: assignRoleMutation.mutate,
+    removeRole: removeRoleMutation.mutate,
     assignFacility: assignFacilityMutation.mutate,
     
     // Mutation states
     isCreatingUser: createUserMutation.isPending,
     isAssigningRole: assignRoleMutation.isPending,
+    isRemovingRole: removeRoleMutation.isPending,
     isAssigningFacility: assignFacilityMutation.isPending,
     
     // Utilities

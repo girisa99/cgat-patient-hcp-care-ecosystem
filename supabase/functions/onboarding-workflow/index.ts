@@ -1,237 +1,387 @@
 
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.2';
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-interface OnboardingRequest {
-  action: 'start_facility_onboarding' | 'complete_user_setup' | 'grant_facility_access' | 'get_onboarding_status';
-  facility_data?: {
-    name: string;
-    facility_type: 'treatmentFacility' | 'referralFacility' | 'prescriberFacility';
-    address?: string;
-    phone?: string;
-    email?: string;
-    license_number?: string;
-  };
-  user_data?: {
-    email: string;
-    first_name: string;
-    last_name: string;
-    phone?: string;
-    department?: string;
-    role: string;
-    facility_id?: string;
-  };
-  access_data?: {
-    user_id: string;
-    facility_id: string;
-    access_level: 'read' | 'write' | 'admin';
-    expires_at?: string;
-  };
 }
 
-const handler = async (req: Request): Promise<Response> => {
+serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
-
-    // Verify authentication
-    const authHeader = req.headers.get('Authorization')?.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader);
+    console.log('🔄 [ONBOARDING-WORKFLOW] Processing request...')
     
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders },
-      });
+    // Create Supabase client with service role for admin operations
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    
+    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+
+    // Get user from JWT token
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      throw new Error('No authorization header')
     }
 
-    // Check if user has onboarding permissions
-    const { data: hasPermission } = await supabase.rpc('has_role', {
-      user_id: user.id,
-      role_name: 'onboardingTeam'
-    });
+    const token = authHeader.replace('Bearer ', '')
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token)
 
-    if (!hasPermission) {
-      const { data: hasSuperAdminRole } = await supabase.rpc('has_role', {
-        user_id: user.id,
-        role_name: 'superAdmin'
-      });
+    if (userError || !user) {
+      throw new Error('Invalid token or user not found')
+    }
+
+    console.log('✅ [ONBOARDING-WORKFLOW] User authenticated:', user.email)
+
+    const body = await req.json()
+    const { action } = body
+
+    console.log('📝 [ONBOARDING-WORKFLOW] Action requested:', action)
+
+    if (action === 'assign_role') {
+      const { user_id, role_name } = body
       
-      if (!hasSuperAdminRole) {
-        return new Response(JSON.stringify({ error: 'Insufficient permissions for onboarding operations' }), {
-          status: 403,
-          headers: { 'Content-Type': 'application/json', ...corsHeaders },
-        });
+      console.log('👤 [ONBOARDING-WORKFLOW] Assigning role:', role_name, 'to user:', user_id)
+
+      // Check if user has permission to assign roles
+      const { data: hasPermission } = await supabase.rpc('is_admin_user', {
+        check_user_id: user.id
+      })
+
+      if (!hasPermission) {
+        console.error('❌ [ONBOARDING-WORKFLOW] User lacks permission to assign roles')
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'Insufficient permissions to assign roles' 
+          }),
+          { 
+            status: 403,
+            headers: { 
+              ...corsHeaders, 
+              'Content-Type': 'application/json' 
+            } 
+          }
+        )
       }
+
+      // Get the role ID
+      const { data: role, error: roleError } = await supabase
+        .from('roles')
+        .select('id')
+        .eq('name', role_name)
+        .single()
+
+      if (roleError || !role) {
+        console.error('❌ [ONBOARDING-WORKFLOW] Role not found:', role_name, roleError)
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: `Role '${role_name}' not found` 
+          }),
+          { 
+            status: 404,
+            headers: { 
+              ...corsHeaders, 
+              'Content-Type': 'application/json' 
+            } 
+          }
+        )
+      }
+
+      // Check if user already has this role
+      const { data: existingRole, error: checkError } = await supabase
+        .from('user_roles')
+        .select('id')
+        .eq('user_id', user_id)
+        .eq('role_id', role.id)
+        .maybeSingle()
+
+      if (checkError) {
+        console.error('❌ [ONBOARDING-WORKFLOW] Error checking existing role:', checkError)
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'Error checking existing role assignment' 
+          }),
+          { 
+            status: 500,
+            headers: { 
+              ...corsHeaders, 
+              'Content-Type': 'application/json' 
+            } 
+          }
+        )
+      }
+
+      if (existingRole) {
+        console.log('ℹ️ [ONBOARDING-WORKFLOW] User already has this role assigned')
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            message: 'User already has this role assigned'
+          }),
+          { 
+            headers: { 
+              ...corsHeaders, 
+              'Content-Type': 'application/json' 
+            } 
+          }
+        )
+      }
+
+      // Assign the role
+      const { error: assignError } = await supabase
+        .from('user_roles')
+        .insert({
+          user_id: user_id,
+          role_id: role.id
+        })
+
+      if (assignError) {
+        console.error('❌ [ONBOARDING-WORKFLOW] Error assigning role:', assignError)
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: assignError.message 
+          }),
+          { 
+            status: 500,
+            headers: { 
+              ...corsHeaders, 
+              'Content-Type': 'application/json' 
+            } 
+          }
+        )
+      }
+
+      console.log('✅ [ONBOARDING-WORKFLOW] Role assigned successfully')
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: `Role '${role_name}' assigned successfully`
+        }),
+        { 
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json' 
+          } 
+        }
+      )
     }
 
-    const { action, facility_data, user_data, access_data }: OnboardingRequest = await req.json();
+    if (action === 'remove_role') {
+      const { user_id, role_name } = body
+      
+      console.log('➖ [ONBOARDING-WORKFLOW] Removing role:', role_name, 'from user:', user_id)
 
-    let result;
-    switch (action) {
-      case 'start_facility_onboarding':
-        if (!facility_data) {
-          return new Response(JSON.stringify({ error: 'Facility data is required' }), {
-            status: 400,
-            headers: { 'Content-Type': 'application/json', ...corsHeaders },
-          });
-        }
+      // Check if user has permission to remove roles
+      const { data: hasPermission } = await supabase.rpc('is_admin_user', {
+        check_user_id: user.id
+      })
 
-        // Create facility
-        const facilityResult = await supabase
-          .from('facilities')
-          .insert({
-            ...facility_data,
-            is_active: true
-          })
-          .select()
-          .single();
-
-        if (facilityResult.error) {
-          throw facilityResult.error;
-        }
-
-        result = { facility: facilityResult.data };
-        break;
-
-      case 'complete_user_setup':
-        if (!user_data) {
-          return new Response(JSON.stringify({ error: 'User data is required' }), {
-            status: 400,
-            headers: { 'Content-Type': 'application/json', ...corsHeaders },
-          });
-        }
-
-        // Create user account
-        const { data: newUser, error: createUserError } = await supabase.auth.admin.createUser({
-          email: user_data.email,
-          password: Math.random().toString(36).slice(-12), // Temporary password
-          email_confirm: true,
-          user_metadata: {
-            firstName: user_data.first_name,
-            lastName: user_data.last_name,
+      if (!hasPermission) {
+        console.error('❌ [ONBOARDING-WORKFLOW] User lacks permission to remove roles')
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'Insufficient permissions to remove roles' 
+          }),
+          { 
+            status: 403,
+            headers: { 
+              ...corsHeaders, 
+              'Content-Type': 'application/json' 
+            } 
           }
-        });
+        )
+      }
 
-        if (createUserError) {
-          throw createUserError;
+      // Get the role ID
+      const { data: role, error: roleError } = await supabase
+        .from('roles')
+        .select('id')
+        .eq('name', role_name)
+        .single()
+
+      if (roleError || !role) {
+        console.error('❌ [ONBOARDING-WORKFLOW] Role not found:', role_name, roleError)
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: `Role '${role_name}' not found` 
+          }),
+          { 
+            status: 404,
+            headers: { 
+              ...corsHeaders, 
+              'Content-Type': 'application/json' 
+            } 
+          }
+        )
+      }
+
+      // Remove the role
+      const { error: removeError } = await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', user_id)
+        .eq('role_id', role.id)
+
+      if (removeError) {
+        console.error('❌ [ONBOARDING-WORKFLOW] Error removing role:', removeError)
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: removeError.message 
+          }),
+          { 
+            status: 500,
+            headers: { 
+              ...corsHeaders, 
+              'Content-Type': 'application/json' 
+            } 
+          }
+        )
+      }
+
+      console.log('✅ [ONBOARDING-WORKFLOW] Role removed successfully')
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: `Role '${role_name}' removed successfully`
+        }),
+        { 
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json' 
+          } 
         }
+      )
+    }
 
-        // Update profile
-        const profileResult = await supabase
-          .from('profiles')
-          .update({
-            first_name: user_data.first_name,
-            last_name: user_data.last_name,
-            phone: user_data.phone,
-            department: user_data.department,
-            facility_id: user_data.facility_id,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', newUser.user.id);
+    if (action === 'complete_user_setup') {
+      const { user_data } = body
+      
+      console.log('🆕 [ONBOARDING-WORKFLOW] Creating new user:', user_data)
 
-        if (profileResult.error) {
-          throw profileResult.error;
+      // Create user in auth system
+      const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
+        email: user_data.email,
+        password: Math.random().toString(36).substring(2, 15), // Generate temporary password
+        email_confirm: false,
+        user_metadata: {
+          first_name: user_data.first_name,
+          last_name: user_data.last_name,
+          role: user_data.role
         }
+      })
 
-        // Assign role
-        const { data: role } = await supabase
+      if (createError || !newUser.user) {
+        console.error('❌ [ONBOARDING-WORKFLOW] Error creating user:', createError)
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: createError?.message || 'Failed to create user' 
+          }),
+          { 
+            status: 500,
+            headers: { 
+              ...corsHeaders, 
+              'Content-Type': 'application/json' 
+            } 
+          }
+        )
+      }
+
+      // Create profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          id: newUser.user.id,
+          email: user_data.email,
+          first_name: user_data.first_name,
+          last_name: user_data.last_name,
+          phone: user_data.phone,
+          department: user_data.department,
+          facility_id: user_data.facility_id
+        })
+
+      if (profileError) {
+        console.error('❌ [ONBOARDING-WORKFLOW] Error creating profile:', profileError)
+        // Don't fail completely, profile might be created by trigger
+      }
+
+      // Assign role if provided
+      if (user_data.role) {
+        const { data: role, error: roleError } = await supabase
           .from('roles')
           .select('id')
           .eq('name', user_data.role)
-          .single();
+          .single()
 
-        if (role) {
-          await supabase
+        if (role && !roleError) {
+          const { error: assignError } = await supabase
             .from('user_roles')
             .insert({
               user_id: newUser.user.id,
-              role_id: role.id,
-              assigned_by: user.id
-            });
+              role_id: role.id
+            })
+
+          if (assignError) {
+            console.error('❌ [ONBOARDING-WORKFLOW] Error assigning initial role:', assignError)
+          }
         }
+      }
 
-        result = { user: newUser.user, profile_updated: true, role_assigned: !!role };
-        break;
-
-      case 'grant_facility_access':
-        if (!access_data) {
-          return new Response(JSON.stringify({ error: 'Access data is required' }), {
-            status: 400,
-            headers: { 'Content-Type': 'application/json', ...corsHeaders },
-          });
+      console.log('✅ [ONBOARDING-WORKFLOW] User created successfully')
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          user: newUser.user,
+          message: 'User created successfully'
+        }),
+        { 
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json' 
+          } 
         }
-
-        result = await supabase
-          .from('user_facility_access')
-          .insert({
-            user_id: access_data.user_id,
-            facility_id: access_data.facility_id,
-            access_level: access_data.access_level,
-            granted_by: user.id,
-            expires_at: access_data.expires_at,
-            is_active: true
-          })
-          .select();
-        break;
-
-      case 'get_onboarding_status':
-        // Get recent onboarding activities
-        const facilitiesResult = await supabase
-          .from('facilities')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(10);
-
-        const usersResult = await supabase
-          .from('profiles')
-          .select(`
-            *,
-            user_roles (
-              roles (
-                name
-              )
-            )
-          `)
-          .order('created_at', { ascending: false })
-          .limit(10);
-
-        result = {
-          recent_facilities: facilitiesResult.data || [],
-          recent_users: usersResult.data || []
-        };
-        break;
-
-      default:
-        return new Response(JSON.stringify({ error: 'Invalid action' }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json', ...corsHeaders },
-        });
+      )
     }
 
-    return new Response(JSON.stringify({ success: true, data: result }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json', ...corsHeaders },
-    });
+    return new Response(
+      JSON.stringify({ 
+        success: false, 
+        error: `Invalid action: ${action}` 
+      }),
+      { 
+        status: 400,
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json' 
+        } 
+      }
+    )
 
   } catch (error) {
-    console.error('Error in onboarding-workflow:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json', ...corsHeaders },
-    });
+    console.error('❌ [ONBOARDING-WORKFLOW] Error:', error)
+    return new Response(
+      JSON.stringify({ 
+        success: false, 
+        error: error.message 
+      }),
+      { 
+        status: 500,
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json' 
+        } 
+      }
+    )
   }
-};
-
-serve(handler);
+})
