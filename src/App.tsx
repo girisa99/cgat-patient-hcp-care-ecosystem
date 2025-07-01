@@ -3,147 +3,53 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { CleanAuthProvider } from "@/components/auth/CleanAuthProvider";
-import ProtectedRoute from "@/components/auth/ProtectedRoute";
-import LoginForm from "@/components/auth/LoginForm";
-import Dashboard from "@/pages/Dashboard";
-import Users from "@/pages/Users";
-import Facilities from "@/pages/Facilities";
-import Modules from "@/pages/Modules";
-import AdminPage from "@/pages/AdminPage";
-import Patients from "@/pages/Patients";
-import Onboarding from "@/pages/Onboarding";
-import ApiServices from "@/pages/ApiServices";
-import DataImport from "@/pages/DataImport";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { SessionContextProvider } from '@supabase/auth-helpers-react';
+import { supabase } from "@/integrations/supabase/client";
+import Index from "./pages/Index";
+import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
+import Patients from "./pages/Patients";
+import Users from "./pages/Users";
+import Facilities from "./pages/Facilities";
+import Modules from "./pages/Modules";
+import Onboarding from "./pages/Onboarding";
+import ApiServices from "./pages/ApiServices";
+import ApiIntegrations from "./pages/ApiIntegrations";
+import AdminVerification from "./pages/AdminVerification";
 
-const queryClient = new QueryClient();
-
-// Placeholder components for remaining pages
-const SecurityPage = () => (
-  <div className="p-6">
-    <h1 className="text-2xl font-bold mb-4">Security</h1>
-    <p>Security management page - Coming soon</p>
-  </div>
-);
-
-const SettingsPage = () => (
-  <div className="p-6">
-    <h1 className="text-2xl font-bold mb-4">Settings</h1>
-    <p>Settings page - Coming soon</p>
-  </div>
-);
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      retry: 1,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <CleanAuthProvider>
+    <SessionContextProvider supabaseClient={supabase}>
       <TooltipProvider>
         <Toaster />
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/login" element={<LoginForm />} />
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/patients"
-              element={
-                <ProtectedRoute>
-                  <Patients />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/onboarding"
-              element={
-                <ProtectedRoute>
-                  <Onboarding />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/api-services"
-              element={
-                <ProtectedRoute>
-                  <ApiServices />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/data-import"
-              element={
-                <ProtectedRoute>
-                  <DataImport />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/users"
-              element={
-                <ProtectedRoute>
-                  <Users />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/facilities"
-              element={
-                <ProtectedRoute>
-                  <Facilities />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/modules"
-              element={
-                <ProtectedRoute>
-                  <Modules />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/security"
-              element={
-                <ProtectedRoute>
-                  <SecurityPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/settings"
-              element={
-                <ProtectedRoute>
-                  <SettingsPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute>
-                  <AdminPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="/" element={<Index />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/patients" element={<Patients />} />
+            <Route path="/users" element={<Users />} />
+            <Route path="/facilities" element={<Facilities />} />
+            <Route path="/modules" element={<Modules />} />
+            <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/api-services" element={<ApiServices />} />
+            <Route path="/api-integrations" element={<ApiIntegrations />} />
+            <Route path="/admin/verification" element={<AdminVerification />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
-    </CleanAuthProvider>
+    </SessionContextProvider>
   </QueryClientProvider>
 );
 
