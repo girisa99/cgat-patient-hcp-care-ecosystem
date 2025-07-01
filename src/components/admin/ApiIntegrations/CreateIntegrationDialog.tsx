@@ -1,159 +1,65 @@
 
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useApiIntegrations } from '@/hooks/useApiIntegrations';
-import { ApiEndpoint } from '@/utils/api/ApiIntegrationTypes';
+import { Textarea } from '@/components/ui/textarea';
+import { Plus } from 'lucide-react';
+import { useApiServices } from '@/hooks/useApiServices';
 
 interface CreateIntegrationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export const CreateIntegrationDialog: React.FC<CreateIntegrationDialogProps> = ({
+const CreateIntegrationDialog: React.FC<CreateIntegrationDialogProps> = ({
   open,
   onOpenChange
 }) => {
-  const { registerIntegration, isRegistering } = useApiIntegrations();
+  const { createApiService, isCreatingApiService } = useApiServices();
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    baseUrl: '',
-    version: '1.0.0',
-    category: 'integration' as 'healthcare' | 'auth' | 'data' | 'integration' | 'utility',
-    status: 'active' as 'active' | 'inactive' | 'deprecated'
+    category: '',
+    type: 'internal',
+    direction: 'inbound',
+    purpose: '',
+    base_url: ''
   });
-  const [endpoints, setEndpoints] = useState<Partial<ApiEndpoint>[]>([
-    {
-      name: '',
-      method: 'GET',
-      url: '',
-      headers: {},
-      isPublic: false
-    }
-  ]);
 
-  const handleSubmit = () => {
-    const integration = {
-      ...formData,
-      type: 'external' as const,
-      endpoints: endpoints.map(endpoint => ({
-        ...endpoint,
-        id: `endpoint_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        description: endpoint.description || endpoint.name || '',
-        headers: endpoint.headers || {},
-        isPublic: endpoint.isPublic || false
-      })) as ApiEndpoint[],
-      schemas: {},
-      mappings: [],
-      rlsPolicies: []
-    };
-
-    registerIntegration(integration);
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    createApiService(formData);
     onOpenChange(false);
-    
-    // Reset form
     setFormData({
       name: '',
       description: '',
-      baseUrl: '',
-      version: '1.0.0',
-      category: 'integration',
-      status: 'active'
+      category: '',
+      type: 'internal',
+      direction: 'inbound',
+      purpose: '',
+      base_url: ''
     });
-    setEndpoints([{
-      name: '',
-      method: 'GET',
-      url: '',
-      headers: {},
-      isPublic: false
-    }]);
-  };
-
-  const addEndpoint = () => {
-    setEndpoints([...endpoints, {
-      name: '',
-      method: 'GET',
-      url: '',
-      headers: {},
-      isPublic: false
-    }]);
-  };
-
-  const updateEndpoint = (index: number, field: string, value: any) => {
-    const updated = [...endpoints];
-    updated[index] = { ...updated[index], [field]: value };
-    setEndpoints(updated);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Create API Integration</DialogTitle>
+          <DialogTitle>Create New API Integration</DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-6">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="name">Integration Name</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
-                placeholder="e.g., Stripe API"
-              />
-            </div>
-            <div>
-              <Label htmlFor="version">Version</Label>
-              <Input
-                id="version"
-                value={formData.version}
-                onChange={(e) => setFormData({...formData, version: e.target.value})}
-                placeholder="1.0.0"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="category">Category</Label>
-              <Select
-                value={formData.category}
-                onValueChange={(value) => setFormData({...formData, category: value as any})}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="healthcare">Healthcare</SelectItem>
-                  <SelectItem value="auth">Authentication</SelectItem>
-                  <SelectItem value="data">Data</SelectItem>
-                  <SelectItem value="integration">Integration</SelectItem>
-                  <SelectItem value="utility">Utility</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="status">Status</Label>
-              <Select
-                value={formData.status}
-                onValueChange={(value) => setFormData({...formData, status: value as any})}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                  <SelectItem value="deprecated">Deprecated</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="name">Name</Label>
+            <Input
+              id="name"
+              value={formData.name}
+              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              required
+            />
           </div>
 
           <div>
@@ -161,83 +67,84 @@ export const CreateIntegrationDialog: React.FC<CreateIntegrationDialogProps> = (
             <Textarea
               id="description"
               value={formData.description}
-              onChange={(e) => setFormData({...formData, description: e.target.value})}
-              placeholder="Brief description of the API integration"
+              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
             />
           </div>
 
           <div>
-            <Label htmlFor="baseUrl">Base URL</Label>
+            <Label htmlFor="category">Category</Label>
+            <Select value={formData.category} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="healthcare">Healthcare</SelectItem>
+                <SelectItem value="finance">Finance</SelectItem>
+                <SelectItem value="analytics">Analytics</SelectItem>
+                <SelectItem value="integration">Integration</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="type">Type</Label>
+            <Select value={formData.type} onValueChange={(value) => setFormData(prev => ({ ...prev, type: value }))}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="internal">Internal</SelectItem>
+                <SelectItem value="external">External</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="direction">Direction</Label>
+            <Select value={formData.direction} onValueChange={(value) => setFormData(prev => ({ ...prev, direction: value }))}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="inbound">Inbound</SelectItem>
+                <SelectItem value="outbound">Outbound</SelectItem>
+                <SelectItem value="bidirectional">Bidirectional</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="purpose">Purpose</Label>
             <Input
-              id="baseUrl"
-              value={formData.baseUrl}
-              onChange={(e) => setFormData({...formData, baseUrl: e.target.value})}
-              placeholder="https://api.example.com/v1"
+              id="purpose"
+              value={formData.purpose}
+              onChange={(e) => setFormData(prev => ({ ...prev, purpose: e.target.value }))}
+              placeholder="What is this API used for?"
             />
           </div>
 
           <div>
-            <div className="flex justify-between items-center mb-4">
-              <Label>API Endpoints</Label>
-              <Button variant="outline" size="sm" onClick={addEndpoint}>
-                Add Endpoint
-              </Button>
-            </div>
-            
-            <div className="space-y-4">
-              {endpoints.map((endpoint, index) => (
-                <div key={index} className="border rounded p-4 space-y-3">
-                  <div className="grid grid-cols-3 gap-3">
-                    <div>
-                      <Label>Name</Label>
-                      <Input
-                        value={endpoint.name || ''}
-                        onChange={(e) => updateEndpoint(index, 'name', e.target.value)}
-                        placeholder="Get Users"
-                      />
-                    </div>
-                    <div>
-                      <Label>Method</Label>
-                      <Select
-                        value={endpoint.method}
-                        onValueChange={(value) => updateEndpoint(index, 'method', value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="GET">GET</SelectItem>
-                          <SelectItem value="POST">POST</SelectItem>
-                          <SelectItem value="PUT">PUT</SelectItem>
-                          <SelectItem value="DELETE">DELETE</SelectItem>
-                          <SelectItem value="PATCH">PATCH</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label>URL Path</Label>
-                      <Input
-                        value={endpoint.url || ''}
-                        onChange={(e) => updateEndpoint(index, 'url', e.target.value)}
-                        placeholder="/users"
-                      />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <Label htmlFor="base_url">Base URL (Optional)</Label>
+            <Input
+              id="base_url"
+              value={formData.base_url}
+              onChange={(e) => setFormData(prev => ({ ...prev, base_url: e.target.value }))}
+              placeholder="https://api.example.com"
+            />
           </div>
 
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSubmit} disabled={isRegistering}>
-              {isRegistering ? 'Creating...' : 'Create Integration'}
+            <Button type="submit" disabled={isCreatingApiService}>
+              {isCreatingApiService ? 'Creating...' : 'Create Integration'}
             </Button>
           </div>
-        </div>
+        </form>
       </DialogContent>
     </Dialog>
   );
 };
+
+export default CreateIntegrationDialog;

@@ -68,92 +68,72 @@ export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = React.mem
         <TabsTrigger value="testing" className="text-xs">Testing</TabsTrigger>
       </TabsList>
 
-      <TabsContent value="overview" className="mt-6">
+      <TabsContent value="overview">
         <OverviewTabContent 
           integrations={integrations}
-          internalApis={internalApis}
-          externalApis={externalApis}
-          publishedApis={publishedApis}
-        />
-      </TabsContent>
-
-      <TabsContent value="internal" className="mt-6">
-        <InternalApisTabContent
-          internalApis={internalApis}
           searchTerm={searchTerm}
-          createDialogOpen={createDialogOpen}
-          setCreateDialogOpen={onCreateDialogChange}
-          onDownloadCollection={onDownloadCollection}
           onViewDetails={onViewDetails}
-          onViewDocumentation={onViewDocumentation}
-          onCopyUrl={onCopyUrl}
         />
       </TabsContent>
 
-      <TabsContent value="external" className="mt-6">
-        <ExternalApisTabContent
-          externalApis={externalApis}
+      <TabsContent value="internal">
+        <InternalApisTabContent 
+          apis={internalApis}
           searchTerm={searchTerm}
-          createDialogOpen={createDialogOpen}
-          setCreateDialogOpen={onCreateDialogChange}
-          onDownloadCollection={onDownloadCollection}
           onViewDetails={onViewDetails}
-          onViewDocumentation={onViewDocumentation}
-          onCopyUrl={onCopyUrl}
+          onDownloadCollection={onDownloadCollection}
         />
       </TabsContent>
 
-      <TabsContent value="published" className="mt-6">
+      <TabsContent value="external">
+        <ExternalApisTabContent 
+          apis={externalApis}
+          searchTerm={searchTerm}
+          onViewDetails={onViewDetails}
+        />
+      </TabsContent>
+
+      <TabsContent value="published">
         <PublishedApisTabContent 
-          publishedApis={publishedApis}
+          apis={publishedApis}
           searchTerm={searchTerm}
+          onViewDetails={onViewDetails}
         />
       </TabsContent>
 
-      <TabsContent value="developer" className="mt-6">
+      <TabsContent value="developer">
         <DeveloperTabContent />
       </TabsContent>
 
-      <TabsContent value="sandbox" className="mt-6">
-        <SandboxTabContent
-          integrations={integrations}
-          onTestEndpoint={onTestEndpoint}
-        />
+      <TabsContent value="sandbox">
+        <SandboxTabContent />
       </TabsContent>
 
-      <TabsContent value="postman" className="mt-6">
-        <PostmanTabContent
+      <TabsContent value="postman">
+        <PostmanTabContent 
           integrations={integrations}
           onDownloadCollection={onDownloadCollection}
         />
       </TabsContent>
 
-      <TabsContent value="publishing" className="mt-6">
-        <PublishingWorkflowTabContent
-          internalApis={internalApis}
-          externalApis={externalApis}
-        />
+      <TabsContent value="publishing">
+        <PublishingWorkflowTabContent />
       </TabsContent>
 
-      <TabsContent value="consumption" className="mt-6">
-        <ConsumptionTabContent
-          publishedApis={publishedApis}
-        />
+      <TabsContent value="consumption">
+        <ConsumptionTabContent />
       </TabsContent>
 
-      <TabsContent value="keys" className="mt-6">
+      <TabsContent value="keys">
         <ApiKeysTabContent />
       </TabsContent>
 
-      <TabsContent value="testing" className="mt-6">
-        <TestingTabContent
+      <TabsContent value="testing">
+        <TestingTabContent 
           integrations={integrations}
-          onClose={onClose}
           onTestEndpoint={onTestEndpoint}
         />
       </TabsContent>
     </Tabs>
   );
 });
-
-ApiIntegrationsTabs.displayName = 'ApiIntegrationsTabs';
