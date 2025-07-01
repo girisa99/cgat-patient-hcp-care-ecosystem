@@ -23,5 +23,6 @@ export type {
 // Export main hook
 export { useRealtime } from '../../hooks/useRealtime';
 
-// Initialize global realtime manager
+// Initialize and export global realtime manager
+import { realtimeManager } from './RealtimeManager';
 export const globalRealtimeManager = realtimeManager;

@@ -24,7 +24,7 @@ const RemoveRoleDialog: React.FC<RemoveRoleDialogProps> = ({
 }) => {
   const { users } = useUsers();
   const { toast } = useToast();
-  const [selectedRoleId, setSelectedRoleId] = useState<string>('');
+  const [selectedRoleName, setSelectedRoleName] = useState<string>('');
   const [isRemoving, setIsRemoving] = useState(false);
 
   // Find the user and their roles
@@ -34,23 +34,23 @@ const RemoveRoleDialog: React.FC<RemoveRoleDialogProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!userId || !selectedRoleId) return;
+    if (!userId || !selectedRoleName) return;
 
     setIsRemoving(true);
     try {
       // Find the selected role info
-      const selectedUserRole = userRoles.find(ur => ur.role_id === selectedRoleId);
+      const selectedUserRole = userRoles.find(ur => ur.roles?.name === selectedRoleName);
       const roleName = selectedUserRole?.roles?.name || 'Unknown';
       
       // TODO: Implement actual role removal logic
-      console.log('Removing role:', { userId, roleId: selectedRoleId, roleName });
+      console.log('Removing role:', { userId, roleName });
       
       toast({
         title: "Role Removed",
         description: `Successfully removed ${roleName} role from ${userName}`,
       });
       
-      setSelectedRoleId('');
+      setSelectedRoleName('');
       onOpenChange(false);
     } catch (error) {
       console.error('Failed to remove role:', error);
@@ -107,7 +107,7 @@ const RemoveRoleDialog: React.FC<RemoveRoleDialogProps> = ({
             <Label htmlFor="role">Current Roles</Label>
             <div className="flex flex-wrap gap-2 p-3 bg-gray-50 rounded-lg min-h-[60px]">
               {userRoles.map((userRole, index) => (
-                <Badge key={`${userRole.role_id}-${index}`} variant="secondary">
+                <Badge key={`${userRole.roles?.name}-${index}`} variant="secondary">
                   {userRole.roles?.name || 'Unknown Role'}
                 </Badge>
               ))}
@@ -116,15 +116,15 @@ const RemoveRoleDialog: React.FC<RemoveRoleDialogProps> = ({
 
           <div className="space-y-2">
             <Label htmlFor="role_select">Select Role to Remove</Label>
-            <Select value={selectedRoleId} onValueChange={setSelectedRoleId}>
+            <Select value={selectedRoleName} onValueChange={setSelectedRoleName}>
               <SelectTrigger>
                 <SelectValue placeholder="Choose a role to remove" />
               </SelectTrigger>
               <SelectContent>
                 {userRoles.map((userRole, index) => (
                   <SelectItem 
-                    key={`${userRole.role_id}-${index}`} 
-                    value={userRole.role_id}
+                    key={`${userRole.roles?.name}-${index}`} 
+                    value={userRole.roles?.name || ''}
                   >
                     {userRole.roles?.name || 'Unknown Role'}
                     {userRole.roles?.description && (
@@ -160,7 +160,7 @@ const RemoveRoleDialog: React.FC<RemoveRoleDialogProps> = ({
             <Button 
               type="submit" 
               variant="destructive"
-              disabled={isRemoving || !selectedRoleId}
+              disabled={isRemoving || !selectedRoleName}
             >
               {isRemoving ? 'Removing...' : 'Remove Role'}
             </Button>
