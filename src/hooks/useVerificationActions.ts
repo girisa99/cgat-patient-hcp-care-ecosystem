@@ -1,12 +1,13 @@
 
 /**
- * Verification Actions Hook
- * Handles manual verification and automation triggers
+ * Unified Verification Actions Hook
+ * Single source of truth for all verification actions
  */
 
 import { useState, useCallback } from 'react';
 import { ComprehensiveSystemVerifier } from '@/utils/verification/ComprehensiveSystemVerifier';
-import { ComprehensiveAutomationCoordinator } from '@/utils/verification/ComprehensiveAutomationCoordinator';
+import { automatedVerification, AutomatedVerificationConfig } from '@/utils/verification/AutomatedVerificationOrchestrator';
+import { ValidationRequest } from '@/utils/verification/SimplifiedValidator';
 import { useToast } from './use-toast';
 
 export const useVerificationActions = () => {
@@ -31,7 +32,7 @@ export const useVerificationActions = () => {
       
       toast({
         title: "🔍 Comprehensive Verification Started",
-        description: "Running complete system validation based on original database...",
+        description: "Running complete system validation including single source compliance...",
         variant: "default",
       });
 
@@ -64,7 +65,7 @@ export const useVerificationActions = () => {
   }, [isVerifying, toast]);
 
   /**
-   * Trigger full automation cycle manually
+   * Trigger automation cycle manually
    */
   const triggerAutomationCycle = useCallback(async () => {
     if (isVerifying) {
@@ -79,21 +80,22 @@ export const useVerificationActions = () => {
       console.log('🤖 Triggering manual automation cycle...');
       
       toast({
-        title: "🤖 30-Minute Automation Cycle Started",
-        description: "Running complete automation cycle with database sync...",
+        title: "🤖 Automation Cycle Started",
+        description: "Running complete automation cycle with single source validation...",
         variant: "default",
       });
 
-      const result = await ComprehensiveAutomationCoordinator.triggerManualExecution();
+      // Run comprehensive verification as part of automation
+      const result = await ComprehensiveSystemVerifier.performComprehensiveVerification('automated');
 
       toast({
         title: "🤖 Automation Cycle Complete",
-        description: `Health Score: ${result.healthScoreCalculation.score}/100 - Results synced to database`,
-        variant: result.automationStatus.allComponentsExecuted ? "default" : "destructive",
+        description: `Health Score: ${result.overallHealthScore}/100 - Single Source Compliance: ${result.singleSourceCompliance.complianceScore}%`,
+        variant: result.criticalIssuesFound > 0 ? "destructive" : "default",
       });
 
       console.log('✅ Automation cycle completed successfully');
-      return result;
+      return { comprehensiveResults: result };
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
@@ -112,11 +114,52 @@ export const useVerificationActions = () => {
     }
   }, [isVerifying, toast]);
 
+  /**
+   * Verify before creation (unified approach)
+   */
+  const verifyBeforeCreation = useCallback(async (request: ValidationRequest) => {
+    console.log('🔍 AUTOMATIC VERIFICATION TRIGGERED for:', request);
+    
+    try {
+      const canProceed = await automatedVerification.verifyBeforeCreation(request);
+      
+      if (!canProceed) {
+        console.log('🚫 CREATION AUTOMATICALLY BLOCKED by verification system');
+      } else {
+        console.log('✅ CREATION AUTOMATICALLY APPROVED by verification system');
+      }
+      
+      return canProceed;
+    } catch (error) {
+      console.error('❌ AUTOMATIC VERIFICATION ERROR:', error);
+      toast({
+        title: "❌ Verification Error",
+        description: "Automatic verification encountered an error but creation is allowed.",
+        variant: "destructive",
+      });
+      return true;
+    }
+  }, [toast]);
+
+  /**
+   * Update automation configuration
+   */
+  const updateConfig = useCallback((newConfig: Partial<AutomatedVerificationConfig>) => {
+    automatedVerification.updateConfig(newConfig);
+    toast({
+      title: "⚙️ Configuration Updated",
+      description: "Automatic verification settings have been updated.",
+      variant: "default",
+    });
+  }, [toast]);
+
   return {
     isVerifying,
     error,
     runComprehensiveVerification,
     triggerAutomationCycle,
+    verifyBeforeCreation,
+    updateConfig,
     clearError: () => setError(null)
   };
 };

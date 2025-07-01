@@ -1,7 +1,7 @@
 
 /**
- * Comprehensive Verification Hook (Refactored)
- * Main coordinator hook that uses smaller, focused hooks
+ * Comprehensive Verification Hook (Single Source of Truth)
+ * Main coordinator hook that consolidates all verification functionality
  */
 
 import { useVerificationResults } from './useVerificationResults';
@@ -13,7 +13,7 @@ import { useToast } from './use-toast';
 export const useComprehensiveVerification = () => {
   const { toast } = useToast();
   
-  // Use smaller, focused hooks
+  // Use single source focused hooks
   const verificationResults = useVerificationResults();
   const automationStatus = useAutomationStatus();
   const verificationActions = useVerificationActions();
@@ -42,7 +42,7 @@ export const useComprehensiveVerification = () => {
   };
 
   return {
-    // Results from verification results hook
+    // Single source results
     verificationResult: verificationResults.verificationResult,
     hasResults: verificationResults.hasResults,
     healthScore: verificationResults.healthScore,
@@ -53,19 +53,21 @@ export const useComprehensiveVerification = () => {
     lastVerification: verificationResults.lastVerification,
     basedOnOriginalDB: verificationResults.basedOnOriginalDB,
 
-    // Status from automation status hook
+    // Single source status
     automationStatus: automationStatus.automationStatus,
 
-    // State from verification actions hook
+    // Single source actions
     isVerifying: verificationActions.isVerifying,
     error: verificationActions.error,
 
-    // Enhanced actions
+    // Consolidated actions
     runComprehensiveVerification,
     triggerAutomationCycle,
     downloadComprehensiveReport,
+    verifyBeforeCreation: verificationActions.verifyBeforeCreation,
+    updateConfig: verificationActions.updateConfig,
 
-    // Additional utilities
+    // Utilities
     clearError: verificationActions.clearError
   };
 };
