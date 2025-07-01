@@ -1,4 +1,3 @@
-
 export interface ApiEndpoint {
   id: string;
   name: string;
@@ -44,7 +43,7 @@ export interface ApiDataMapping {
 export interface ApiIntegration {
   id: string;
   name: string;
-  description: string;
+  description: string; // Make this required consistently
   type: 'internal' | 'external';
   version: string;
   baseUrl: string;
@@ -54,6 +53,7 @@ export interface ApiIntegration {
   rlsPolicies: ApiRlsPolicy[];
   mappings: ApiDataMapping[];
   category?: string;
+  direction?: 'inbound' | 'outbound';
   externalDocumentation?: string | {
     swaggerUrl?: string;
     apiReference?: string;
@@ -63,6 +63,14 @@ export interface ApiIntegration {
   updatedAt?: string;
   contact?: Record<string, any>;
   sla?: Record<string, any>;
+  documentation?: {
+    specificationUrl?: string;
+    fieldMappings?: any[];
+    generatedSchemas?: any[];
+    databaseTables?: string[];
+    rlsPolicies?: any[];
+    endpoints?: any[];
+  };
 }
 
 // Additional types that were missing

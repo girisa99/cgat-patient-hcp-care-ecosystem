@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useApiIntegrations } from '@/hooks/useApiIntegrations.tsx'; // Use the .tsx version with external APIs
 import { usePublishedApiIntegration } from '@/hooks/usePublishedApiIntegration';
@@ -60,7 +59,12 @@ const ApiIntegrationsManager = () => {
   const handleViewDetails = (integrationId: string) => {
     const integration = integrations?.find(i => i.id === integrationId);
     if (integration) {
-      setSelectedIntegration(integration);
+      // Ensure the integration has a description before setting state
+      const integrationWithDescription = {
+        ...integration,
+        description: integration.description || 'No description provided'
+      };
+      setSelectedIntegration(integrationWithDescription);
     }
   };
 
