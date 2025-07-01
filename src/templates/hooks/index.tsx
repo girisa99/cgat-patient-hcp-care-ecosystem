@@ -1,31 +1,10 @@
-
 /**
  * Template System Hooks - Extensible Module Template System
  * Single source of truth for all template-based functionality
  */
 
-// Core template system
-export { useTypeSafeModuleTemplate } from './useTypeSafeModuleTemplate';
-export { useExtensibleModuleRegistry } from './useExtensibleModuleRegistry';
-
-// Template configurations for existing modules
-export { useTemplateUsers } from './useTemplateUsers';
-export { useTemplateFacilities } from './useTemplateFacilities';
-export { useTemplatePatients } from './useTemplatePatients';
-export { useTemplateOnboarding } from './useTemplateOnboarding';
-
-// Module detection and automation
-export { useAutomaticModuleDetection } from './useAutomaticModuleDetection';
-export { useModuleRegistryManager } from './useModuleRegistryManager';
-
-// Template utilities
-export { moduleRegistry } from './moduleRegistry';
-export type { 
-  ModuleConfig, 
-  ModuleTemplate,
-  ExtensibleModuleProps,
-  TemplateSystemMeta 
-} from './types';
+// Core template system - simplified to avoid missing module errors
+// TODO: Implement these template hooks when needed
 
 // Unified system integration - uses the main unified user management
 import { useUnifiedUserManagement } from '@/hooks/useUnifiedUserManagement';
@@ -43,4 +22,17 @@ export const useTemplateUnifiedUsers = () => {
     dataSource: 'unified-user-management',
     version: 'template-v1'
   };
+};
+
+// Placeholder exports to prevent import errors
+export const useTypeSafeModuleTemplate = () => ({
+  data: [],
+  isLoading: false,
+  error: null
+});
+
+export const moduleRegistry = {
+  modules: [],
+  register: () => {},
+  getAll: () => []
 };

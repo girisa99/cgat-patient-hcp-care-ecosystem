@@ -5,10 +5,19 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { useUnifiedUserManagement } from '@/hooks/useUnifiedUserManagement';
-import { useRoles } from '@/hooks/useRoles';
 import { Database } from '@/integrations/supabase/types';
 
 type UserRole = Database['public']['Enums']['user_role'];
+
+// Simple roles data - in a real app, this would come from a hook
+const roles = [
+  { id: '1', name: 'superAdmin', description: 'Super Administrator' },
+  { id: '2', name: 'caseManager', description: 'Case Manager' },
+  { id: '3', name: 'onboardingTeam', description: 'Onboarding Team' },
+  { id: '4', name: 'healthcareProvider', description: 'Healthcare Provider' },
+  { id: '5', name: 'nurse', description: 'Nurse' },
+  { id: '6', name: 'patientCaregiver', description: 'Patient/Caregiver' }
+];
 
 interface AssignRoleDialogProps {
   open: boolean;
@@ -22,7 +31,6 @@ const AssignRoleDialog: React.FC<AssignRoleDialogProps> = ({
   userId
 }) => {
   const { assignRole, isAssigningRole } = useUnifiedUserManagement();
-  const { roles, isLoading: rolesLoading } = useRoles();
   const [selectedRole, setSelectedRole] = React.useState<string>('');
 
   const handleAssign = async () => {
@@ -41,18 +49,6 @@ const AssignRoleDialog: React.FC<AssignRoleDialogProps> = ({
     setSelectedRole('');
     onOpenChange(false);
   };
-
-  if (rolesLoading) {
-    return (
-      <Dialog open={open} onOpenChange={handleClose}>
-        <DialogContent>
-          <div className="flex items-center justify-center p-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>

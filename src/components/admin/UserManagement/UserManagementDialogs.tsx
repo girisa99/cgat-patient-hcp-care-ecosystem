@@ -34,8 +34,7 @@ export const UserManagementDialogs: React.FC<UserManagementDialogsProps> = ({
   assignFacilityOpen,
   setAssignFacilityOpen,
   selectedUserId,
-  selectedUser,
-  selectedUserName
+  selectedUser
 }) => {
   return (
     <>
@@ -54,21 +53,18 @@ export const UserManagementDialogs: React.FC<UserManagementDialogsProps> = ({
         open={assignRoleOpen}
         onOpenChange={setAssignRoleOpen}
         userId={selectedUserId}
-        userName={selectedUserName}
       />
 
       <RemoveRoleDialog
         open={removeRoleOpen}
         onOpenChange={setRemoveRoleOpen}
         userId={selectedUserId}
-        userName={selectedUserName}
       />
 
       <AssignFacilityDialog
         open={assignFacilityOpen}
         onOpenChange={setAssignFacilityOpen}
         userId={selectedUserId}
-        userName={selectedUserName}
       />
     </>
   );

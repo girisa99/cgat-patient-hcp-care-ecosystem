@@ -2,13 +2,11 @@
 import React from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { PageContainer } from '@/components/layout/PageContainer';
-import { UnifiedDashboard } from '@/components/dashboard/UnifiedDashboard';
+import UnifiedDashboard from '@/components/dashboard/UnifiedDashboard';
 import { useUnifiedUserManagement } from '@/hooks/useUnifiedUserManagement';
-import { useAuth } from '@/integrations/supabase/auth';
 import { Card, CardContent } from '@/components/ui/card';
 
 const Dashboard = () => {
-  const { user } = useAuth();
   const { users, isLoading, error, meta } = useUnifiedUserManagement();
 
   if (isLoading) {
@@ -44,7 +42,7 @@ const Dashboard = () => {
     <MainLayout>
       <PageContainer
         title="Dashboard"
-        subtitle={`Welcome back${user?.email ? `, ${user.email}` : ''}! Here's your system overview.`}
+        subtitle={`Welcome back! Here's your system overview.`}
         fluid
       >
         <UnifiedDashboard />

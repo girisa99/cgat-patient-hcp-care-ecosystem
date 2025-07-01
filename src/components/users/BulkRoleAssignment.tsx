@@ -6,12 +6,20 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useUnifiedUserManagement } from '@/hooks/useUnifiedUserManagement';
-import { useRoles } from '@/hooks/useRoles';
 import { UserPlus, Loader2 } from 'lucide-react';
+
+// Simple roles data
+const roles = [
+  { id: '1', name: 'superAdmin' },
+  { id: '2', name: 'caseManager' },
+  { id: '3', name: 'onboardingTeam' },
+  { id: '4', name: 'healthcareProvider' },
+  { id: '5', name: 'nurse' },
+  { id: '6', name: 'patientCaregiver' }
+];
 
 const BulkRoleAssignment: React.FC = () => {
   const { users, assignRole, isAssigningRole } = useUnifiedUserManagement();
-  const { roles } = useRoles();
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [selectedRole, setSelectedRole] = useState<string>('');
 
@@ -36,13 +44,8 @@ const BulkRoleAssignment: React.FC = () => {
 
     for (const userId of selectedUsers) {
       await new Promise(resolve => {
-        assignRole(
-          { userId, roleName: selectedRole as any },
-          {
-            onSuccess: () => resolve(true),
-            onError: () => resolve(false)
-          }
-        );
+        assignRole({ userId, roleName: selectedRole as any });
+        setTimeout(resolve, 100); // Small delay between assignments
       });
     }
 

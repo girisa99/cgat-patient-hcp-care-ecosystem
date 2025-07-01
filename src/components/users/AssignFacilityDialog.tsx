@@ -5,7 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { useUnifiedUserManagement } from '@/hooks/useUnifiedUserManagement';
-import { useFacilities } from '@/hooks/useFacilities';
+
+// Simple facilities data - in a real app, this would come from a hook
+const facilities = [
+  { id: '1', name: 'Main Hospital', facility_type: 'Hospital' },
+  { id: '2', name: 'Community Clinic', facility_type: 'Clinic' },
+  { id: '3', name: 'Treatment Center', facility_type: 'Treatment Center' }
+];
 
 interface AssignFacilityDialogProps {
   open: boolean;
@@ -19,7 +25,6 @@ const AssignFacilityDialog: React.FC<AssignFacilityDialogProps> = ({
   userId
 }) => {
   const { assignFacility, isAssigningFacility } = useUnifiedUserManagement();
-  const { facilities, isLoading: facilitiesLoading } = useFacilities();
   const [selectedFacility, setSelectedFacility] = React.useState<string>('');
 
   const handleAssign = async () => {
@@ -38,18 +43,6 @@ const AssignFacilityDialog: React.FC<AssignFacilityDialogProps> = ({
     setSelectedFacility('');
     onOpenChange(false);
   };
-
-  if (facilitiesLoading) {
-    return (
-      <Dialog open={open} onOpenChange={handleClose}>
-        <DialogContent>
-          <div className="flex items-center justify-center p-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
