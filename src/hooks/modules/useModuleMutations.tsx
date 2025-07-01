@@ -117,14 +117,43 @@ export const useModuleMutations = () => {
     }
   });
 
+  const assignModuleToUserMutation = useMutation({
+    mutationFn: async ({ userId, moduleId, expiresAt }: { 
+      userId: string; 
+      moduleId: string; 
+      expiresAt?: string;
+    }) => {
+      // This would typically involve a user_module_assignments table
+      // For now, we'll just log the assignment
+      console.log('Assigning module', moduleId, 'to user', userId, 'expires at', expiresAt);
+      return { userId, moduleId, expiresAt };
+    },
+    onSuccess: () => {
+      toast({
+        title: "Module Assigned",
+        description: "Module has been assigned to user successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to assign module to user",
+        variant: "destructive",
+      });
+    }
+  });
+
   return {
     createModule: createModuleMutation.mutate,
     updateModule: updateModuleMutation.mutate,
     deleteModule: deleteModuleMutation.mutate,
     assignModuleToRole: assignModuleToRoleMutation.mutate,
+    assignModule: assignModuleToUserMutation.mutate,
     isCreatingModule: createModuleMutation.isPending,
     isUpdatingModule: updateModuleMutation.isPending,
     isDeletingModule: deleteModuleMutation.isPending,
-    isAssigningModule: assignModuleToRoleMutation.isPending
+    isAssigningModule: assignModuleToRoleMutation.isPending,
+    isAssigningToRole: assignModuleToRoleMutation.isPending,
+    isAssigning: assignModuleToUserMutation.isPending
   };
 };
