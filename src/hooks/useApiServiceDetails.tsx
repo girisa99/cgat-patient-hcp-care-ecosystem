@@ -76,17 +76,60 @@ interface ConsolidatedMetrics {
 }
 
 /**
- * Enhanced hook for comprehensive API service details with real data
- * SINGLE SOURCE OF TRUTH: internal_healthcare_api
+ * Enhanced hook for comprehensive API service details with real data synchronization
  */
 export const useApiServiceDetails = () => {
   const { toast } = useToast();
 
-  // Fetch API endpoints with comprehensive data
-  const { data: apiEndpoints, isLoading: isLoadingEndpoints } = useQuery({
-    queryKey: ['api-endpoints-consolidated'],
+  // Fetch API services from integration registry (internal APIs)
+  const { data: internalApiServices, isLoading: isLoadingInternal } = useQuery({
+    queryKey: ['internal-api-services'],
     queryFn: async () => {
-      console.log('🔍 Fetching consolidated API endpoints from single source of truth...');
+      console.log('🔍 Fetching internal API services from integration registry...');
+      
+      const { data, error } = await supabase
+        .from('api_integration_registry')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('❌ Error fetching internal API services:', error);
+        throw error;
+      }
+
+      console.log('✅ Internal API services fetched:', data?.length || 0);
+      return data || [];
+    },
+    staleTime: 30000,
+  });
+
+  // Fetch external API registry (published/external APIs)
+  const { data: externalApiRegistry, isLoading: isLoadingExternal } = useQuery({
+    queryKey: ['external-api-registry'],
+    queryFn: async () => {
+      console.log('🔍 Fetching external API registry...');
+      
+      const { data, error } = await supabase
+        .from('external_api_registry')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('❌ Error fetching external API registry:', error);
+        throw error;
+      }
+
+      console.log('✅ External API registry fetched:', data?.length || 0);
+      return data || [];
+    },
+    staleTime: 30000,
+  });
+
+  // Fetch API endpoints from external registry
+  const { data: apiEndpoints, isLoading: isLoadingEndpoints } = useQuery({
+    queryKey: ['api-endpoints-all'],
+    queryFn: async () => {
+      console.log('🔍 Fetching all API endpoints...');
       
       const { data, error } = await supabase
         .from('external_api_endpoints')
@@ -98,158 +141,206 @@ export const useApiServiceDetails = () => {
         throw error;
       }
 
-      console.log('✅ Single source of truth API endpoints fetched:', data?.length || 0);
+      console.log('✅ API endpoints fetched:', data?.length || 0);
       return data || [];
     },
     staleTime: 30000,
-    meta: {
-      description: 'Real API endpoints from single source of truth',
-      dataSource: 'external_api_endpoints table'
-    }
   });
 
-  // Fetch API registrations for cross-reference
-  const { data: apiRegistrations, isLoading: isLoadingRegistrations } = useQuery({
-    queryKey: ['api-registrations-consolidated'],
+  // Sync and consolidate all API data from both internal and external sources
+  const { data: consolidatedApiData, isLoading: isLoadingConsolidation } = useQuery({
+    queryKey: ['consolidated-api-data', internalApiServices, externalApiRegistry, apiEndpoints],
     queryFn: async () => {
-      console.log('🔍 Fetching API registrations from single source of truth...');
+      console.log('🔄 Starting comprehensive API data consolidation...');
       
-      const { data, error } = await supabase
-        .from('api_integration_registry')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('❌ Error fetching API registrations:', error);
-        throw error;
+      if (!internalApiServices || !externalApiRegistry || !apiEndpoints) {
+        console.log('⚠️ Missing data for consolidation');
+        return { consolidatedApis: [], syncStatus: 'incomplete' };
       }
 
-      console.log('✅ Single source of truth API registrations fetched:', data?.length || 0);
-      console.log('🎯 Verifying internal_healthcare_api as single source of truth:', 
-        data?.find(api => api.name === 'internal_healthcare_api') ? 'VERIFIED ✅' : 'NOT FOUND ❌'
-      );
-      
-      return data || [];
+      // Create consolidated API list with sync status
+      const consolidatedApis: ApiService[] = [];
+      const syncStatus = {
+        internalCount: internalApiServices.length,
+        externalCount: externalApiRegistry.length,
+        endpointsCount: apiEndpoints.length,
+        syncedCount: 0,
+        unsyncedCount: 0
+      };
+
+      // Process internal APIs first
+      internalApiServices.forEach(internalApi => {
+        // Check if this internal API has been published externally
+        const externalMatch = externalApiRegistry.find(ext => 
+          ext.internal_api_id === internalApi.id || 
+          ext.external_name === internalApi.name
+        );
+
+        // Get endpoints for this API (from external registry)
+        const apiEndpointsForThisApi = apiEndpoints.filter(endpoint => 
+          endpoint.external_api_id === (externalMatch?.id || internalApi.id)
+        );
+
+        // Calculate enhanced metrics
+        const hasSchemas = apiEndpointsForThisApi.some(e => e.request_schema || e.response_schema);
+        const securedEndpoints = apiEndpointsForThisApi.filter(e => e.requires_authentication);
+        const publicEndpoints = apiEndpointsForThisApi.filter(e => e.is_public);
+
+        const consolidatedApi: ApiService = {
+          ...internalApi,
+          // Override with external data if available
+          ...(externalMatch && {
+            external_name: externalMatch.external_name,
+            external_description: externalMatch.external_description,
+            status: externalMatch.status,
+            published_at: externalMatch.published_at
+          }),
+          // Real endpoint metrics
+          endpoints_count: apiEndpointsForThisApi.length,
+          actualEndpoints: apiEndpointsForThisApi,
+          hasSchemas,
+          securedEndpointsCount: securedEndpoints.length,
+          publicEndpointsCount: publicEndpoints.length,
+          schemaCompleteness: apiEndpointsForThisApi.length > 0 ? 
+            (apiEndpointsForThisApi.filter(e => e.request_schema || e.response_schema).length / apiEndpointsForThisApi.length) * 100 : 0,
+          documentationCoverage: internalApi.documentation_url ? 100 : 0,
+          // Sync status
+          isSynced: !!externalMatch,
+          syncedAt: externalMatch?.updated_at
+        };
+
+        consolidatedApis.push(consolidatedApi);
+        
+        if (externalMatch) {
+          syncStatus.syncedCount++;
+        } else {
+          syncStatus.unsyncedCount++;
+        }
+
+        console.log(`📊 Consolidated API: ${internalApi.name}`, {
+          hasExternalMatch: !!externalMatch,
+          endpointsCount: apiEndpointsForThisApi.length,
+          schemaCompleteness: Math.round(consolidatedApi.schemaCompleteness || 0)
+        });
+      });
+
+      // Add any external APIs that don't have internal matches
+      externalApiRegistry.forEach(externalApi => {
+        const hasInternalMatch = internalApiServices.some(internal => 
+          internal.id === externalApi.internal_api_id || 
+          internal.name === externalApi.external_name
+        );
+
+        if (!hasInternalMatch) {
+          const apiEndpointsForThisApi = apiEndpoints.filter(endpoint => 
+            endpoint.external_api_id === externalApi.id
+          );
+
+          const consolidatedApi: ApiService = {
+            id: externalApi.id,
+            name: externalApi.external_name,
+            description: externalApi.external_description,
+            type: 'external',
+            category: externalApi.category || 'external',
+            direction: 'outbound',
+            purpose: 'consuming',
+            status: externalApi.status,
+            base_url: externalApi.base_url,
+            version: externalApi.version,
+            lifecycle_stage: 'production',
+            documentation_url: externalApi.documentation_url,
+            created_at: externalApi.created_at,
+            updated_at: externalApi.updated_at,
+            created_by: externalApi.created_by,
+            endpoints_count: apiEndpointsForThisApi.length,
+            actualEndpoints: apiEndpointsForThisApi,
+            hasSchemas: apiEndpointsForThisApi.some(e => e.request_schema || e.response_schema),
+            securedEndpointsCount: apiEndpointsForThisApi.filter(e => e.requires_authentication).length,
+            publicEndpointsCount: apiEndpointsForThisApi.filter(e => e.is_public).length,
+            schemaCompleteness: apiEndpointsForThisApi.length > 0 ? 
+              (apiEndpointsForThisApi.filter(e => e.request_schema || e.response_schema).length / apiEndpointsForThisApi.length) * 100 : 0,
+            documentationCoverage: externalApi.documentation_url ? 100 : 0,
+            isSynced: false, // External-only
+            isExternalOnly: true
+          };
+
+          consolidatedApis.push(consolidatedApi);
+        }
+      });
+
+      console.log('✅ API data consolidation complete:', {
+        totalConsolidated: consolidatedApis.length,
+        totalEndpoints: consolidatedApis.reduce((sum, api) => sum + (api.endpoints_count || 0), 0),
+        syncStatus
+      });
+
+      return { consolidatedApis, syncStatus };
     },
+    enabled: !!(internalApiServices && externalApiRegistry && apiEndpoints),
     staleTime: 30000,
-    meta: {
-      description: 'Real API registrations from single source of truth',
-      dataSource: 'api_integration_registry table'
-    }
   });
 
-  // Enhanced metrics calculation with proper data merging
-  const getDetailedApiStats = (apiServices: ApiService[]): ConsolidatedMetrics => {
-    const services = Array.isArray(apiServices) ? apiServices : [];
-    const endpoints = Array.isArray(apiEndpoints) ? apiEndpoints : [];
-    const registrations = Array.isArray(apiRegistrations) ? apiRegistrations : [];
+  // Enhanced metrics calculation with proper data consolidation
+  const getDetailedApiStats = (consolidatedData: { consolidatedApis: ApiService[] }) => {
+    const { consolidatedApis } = consolidatedData;
     
-    console.log('📊 Calculating enhanced consolidated stats from single source of truth:', {
-      servicesCount: services.length,
-      endpointsCount: endpoints.length,
-      registrationsCount: registrations.length,
-      singleSourceOfTruth: services.find(s => s.name === 'internal_healthcare_api') ? 'VERIFIED ✅' : 'MISSING ❌'
+    console.log('📊 Calculating detailed stats from consolidated data:', {
+      apisCount: consolidatedApis.length,
+      totalEndpoints: consolidatedApis.reduce((sum, api) => sum + (api.endpoints_count || 0), 0)
     });
     
-    // Calculate real metrics from actual endpoint data
-    const totalEndpoints = endpoints.length;
-    const totalSchemas = endpoints.filter(e => e.request_schema || e.response_schema).length;
-    const totalSecuredEndpoints = endpoints.filter(e => e.requires_authentication).length;
-    const totalPublicEndpoints = endpoints.filter(e => e.is_public).length;
+    // Calculate real metrics from consolidated data
+    const totalEndpoints = consolidatedApis.reduce((sum, api) => sum + (api.endpoints_count || 0), 0);
+    const totalSchemas = consolidatedApis.reduce((sum, api) => 
+      sum + (api.actualEndpoints?.filter(e => e.request_schema || e.response_schema).length || 0), 0);
+    const totalSecuredEndpoints = consolidatedApis.reduce((sum, api) => sum + (api.securedEndpointsCount || 0), 0);
+    const totalPublicEndpoints = consolidatedApis.reduce((sum, api) => sum + (api.publicEndpointsCount || 0), 0);
+    const totalMappings = consolidatedApis.reduce((sum, api) => sum + (api.data_mappings_count || 0), 0);
+    const totalSecurityPolicies = consolidatedApis.reduce((sum, api) => sum + (api.rls_policies_count || 0), 0);
     
-    // Calculate from registrations table
-    const totalMappings = registrations.reduce((sum, reg) => sum + (reg.data_mappings_count || 0), 0);
-    const totalSecurityPolicies = registrations.reduce((sum, reg) => sum + (reg.rls_policies_count || 0), 0);
-    
-    console.log('📈 Raw calculated metrics:', {
-      totalEndpoints,
-      totalSchemas,
-      totalSecuredEndpoints,
-      totalPublicEndpoints,
-      totalMappings,
-      totalSecurityPolicies
-    });
-    
-    // Category breakdown from real data
-    const categoryBreakdown = services.reduce((acc, service) => {
-      const category = service.category || 'uncategorized';
+    // Category breakdown
+    const categoryBreakdown = consolidatedApis.reduce((acc, api) => {
+      const category = api.category || 'uncategorized';
       acc[category] = (acc[category] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
 
-    // Type breakdown from real data
-    const typeBreakdown = services.reduce((acc, service) => {
-      const type = service.type || 'unknown';
+    // Type breakdown
+    const typeBreakdown = consolidatedApis.reduce((acc, api) => {
+      const type = api.type || 'unknown';
       acc[type] = (acc[type] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
 
-    // Status breakdown from real data
-    const statusBreakdown = services.reduce((acc, service) => {
-      const status = service.status || 'unknown';
+    // Status breakdown
+    const statusBreakdown = consolidatedApis.reduce((acc, api) => {
+      const status = api.status || 'unknown';
       acc[status] = (acc[status] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
 
-    // Security breakdown from real data
+    // Security breakdown
     const securityBreakdown = {
       'secured': totalSecuredEndpoints,
       'public': totalPublicEndpoints,
-      'mixed': services.filter(s => {
-        const serviceEndpoints = endpoints.filter(e => e.external_api_id === s.id);
-        const secured = serviceEndpoints.filter(e => e.requires_authentication).length;
-        const public_eps = serviceEndpoints.filter(e => e.is_public).length;
-        return secured > 0 && public_eps > 0;
-      }).length
+      'mixed': consolidatedApis.filter(api => 
+        (api.securedEndpointsCount || 0) > 0 && (api.publicEndpointsCount || 0) > 0
+      ).length
     };
 
-    // Documentation coverage from real data
-    const servicesWithDocs = services.filter(s => s.documentation_url).length;
-    const documentationCoverage = services.length > 0 ? (servicesWithDocs / services.length) * 100 : 0;
+    // Documentation coverage
+    const servicesWithDocs = consolidatedApis.filter(api => api.documentation_url).length;
+    const documentationCoverage = consolidatedApis.length > 0 ? (servicesWithDocs / consolidatedApis.length) * 100 : 0;
 
-    // Enhanced API breakdown with real service data
-    const apiBreakdown: Record<string, any> = {};
-    services.forEach(service => {
-      const serviceEndpoints = endpoints.filter(endpoint => 
-        endpoint.external_api_id === service.id
-      );
-      
-      const actualEndpointsCount = serviceEndpoints.length;
-      const schemasCount = serviceEndpoints.filter(e => e.request_schema || e.response_schema).length;
-      const securityCount = serviceEndpoints.filter(e => e.requires_authentication).length;
-      const publicEndpoints = serviceEndpoints.filter(e => e.is_public).length;
-      const schemaCompleteness = actualEndpointsCount > 0 ? (schemasCount / actualEndpointsCount) * 100 : 0;
-      
-      apiBreakdown[service.id] = {
-        ...service,
-        endpoints: serviceEndpoints,
-        endpointCount: actualEndpointsCount,
-        hasDocumentation: !!service.documentation_url,
-        hasSchemas: schemasCount > 0,
-        securityCount,
-        publicEndpoints,
-        schemaCompleteness,
-        isSingleSourceOfTruth: service.name === 'internal_healthcare_api'
-      };
-
-      console.log(`🔍 API breakdown for ${service.name}:`, {
-        originalEndpointsCount: service.endpoints_count,
-        actualEndpointsCount,
-        schemasCount,
-        securityCount,
-        schemaCompleteness: Math.round(schemaCompleteness)
-      });
-    });
-
-    // Real-time metrics calculations
-    const activeApis = services.filter(s => s.status === 'active').length;
-    const productionApis = services.filter(s => s.lifecycle_stage === 'production').length;
-    const deprecatedApis = services.filter(s => s.status === 'deprecated').length;
-    const averageEndpointsPerApi = services.length > 0 ? totalEndpoints / services.length : 0;
+    // Real-time metrics
+    const activeApis = consolidatedApis.filter(api => api.status === 'active').length;
+    const productionApis = consolidatedApis.filter(api => api.lifecycle_stage === 'production').length;
+    const deprecatedApis = consolidatedApis.filter(api => api.status === 'deprecated').length;
+    const averageEndpointsPerApi = consolidatedApis.length > 0 ? totalEndpoints / consolidatedApis.length : 0;
     const schemaCompleteness = totalEndpoints > 0 ? (totalSchemas / totalEndpoints) * 100 : 0;
     const securityCompliance = totalEndpoints > 0 ? (totalSecuredEndpoints / totalEndpoints) * 100 : 0;
 
-    const consolidatedMetrics: ConsolidatedMetrics = {
+    const metrics: ConsolidatedMetrics = {
       totalEndpoints,
       totalSchemas,
       totalMappings,
@@ -258,7 +349,19 @@ export const useApiServiceDetails = () => {
       totalDocs: servicesWithDocs,
       totalPublicEndpoints,
       totalSecuredEndpoints,
-      apiBreakdown,
+      apiBreakdown: consolidatedApis.reduce((acc, api) => {
+        acc[api.id] = {
+          ...api,
+          endpoints: api.actualEndpoints || [],
+          endpointCount: api.endpoints_count || 0,
+          hasDocumentation: !!api.documentation_url,
+          hasSchemas: api.hasSchemas || false,
+          securityCount: api.securedEndpointsCount || 0,
+          publicEndpoints: api.publicEndpointsCount || 0,
+          schemaCompleteness: api.schemaCompleteness || 0
+        };
+        return acc;
+      }, {} as Record<string, any>),
       categoryBreakdown,
       typeBreakdown,
       statusBreakdown,
@@ -274,127 +377,25 @@ export const useApiServiceDetails = () => {
       }
     };
 
-    console.log('📊 Final consolidated metrics from single source of truth:', {
-      ...consolidatedMetrics,
-      singleSourceOfTruthValidated: !!services.find(s => s.name === 'internal_healthcare_api')
+    console.log('📈 Final calculated metrics:', {
+      totalEndpoints: metrics.totalEndpoints,
+      totalSchemas: metrics.totalSchemas,
+      activeApis: metrics.realTimeMetrics.activeApis,
+      schemaCompleteness: metrics.realTimeMetrics.schemaCompleteness
     });
     
-    return consolidatedMetrics;
+    return metrics;
   };
 
-  // Enhanced consolidation with single source of truth validation
-  const consolidateApiServices = (apiServices: ApiService[]) => {
-    console.log('🔧 Consolidating API services with single source of truth validation...');
-    
-    const services = Array.isArray(apiServices) ? apiServices : [];
-    
-    if (services.length === 0) {
-      console.log('⚠️ No services to consolidate');
-      return [];
-    }
-    
-    // Prioritize internal_healthcare_api as single source of truth
-    const internalHealthcareApi = services.find(s => s.name === 'internal_healthcare_api');
-    const coreHealthcareApi = services.find(s => s.name === 'core_healthcare_api');
-    
-    let consolidated = [...services];
-    
-    // If both exist, remove core_healthcare_api (duplicate)
-    if (internalHealthcareApi && coreHealthcareApi) {
-      console.log('🎯 Single source of truth: Removing core_healthcare_api duplicate');
-      consolidated = services.filter(s => s.name !== 'core_healthcare_api');
-    }
-    
-    // Additional deduplication by name similarity
-    const grouped = consolidated.reduce((acc, service) => {
-      const key = service.name.toLowerCase().replace(/[^a-z0-9]/g, '');
-      if (!acc[key]) {
-        acc[key] = [];
-      }
-      acc[key].push(service);
-      return acc;
-    }, {} as Record<string, ApiService[]>);
+  // Generate Postman collection with real consolidated data
+  const generatePostmanCollection = (apiId: string, consolidatedApis: ApiService[]) => {
+    const api = consolidatedApis.find(s => s.id === apiId);
+    if (!api || !api.actualEndpoints) return null;
 
-    // Keep the most complete version of each service
-    const finalConsolidated = Object.values(grouped).map(group => {
-      if (group.length === 1) return group[0];
-      
-      // Prefer internal_healthcare_api as single source of truth
-      const singleSourceOfTruth = group.find(api => api.name === 'internal_healthcare_api');
-      if (singleSourceOfTruth) {
-        console.log('✅ Prioritizing single source of truth:', singleSourceOfTruth.name);
-        return singleSourceOfTruth;
-      }
-      
-      // Prefer services with more data/newer dates
-      return group.reduce((best, current) => {
-        const bestScore = (best.endpoints_count || 0) + (best.documentation_url ? 1 : 0) + 
-                         (best.status === 'active' ? 1 : 0);
-        const currentScore = (current.endpoints_count || 0) + (current.documentation_url ? 1 : 0) + 
-                           (current.status === 'active' ? 1 : 0);
-        
-        if (currentScore > bestScore) return current;
-        if (currentScore === bestScore && new Date(current.updated_at) > new Date(best.updated_at)) {
-          return current;
-        }
-        return best;
-      });
-    });
-
-    console.log(`📊 Consolidated ${services.length} APIs down to ${finalConsolidated.length} (Single Source of Truth)`);
-    console.log('🎯 Single source of truth status:', 
-      finalConsolidated.find(api => api.name === 'internal_healthcare_api') ? 'ESTABLISHED ✅' : 'MISSING ❌'
-    );
-    
-    return finalConsolidated;
-  };
-
-  // Enhanced core API analysis
-  const analyzeCoreApis = (apiServices: ApiService[]) => {
-    const services = Array.isArray(apiServices) ? apiServices : [];
-    
-    const coreApis = services.filter(api => 
-      api.name.toLowerCase().includes('core') || 
-      api.name.toLowerCase().includes('healthcare') ||
-      api.name.toLowerCase().includes('internal_healthcare') ||
-      api.name === 'core_healthcare_api' ||
-      api.name === 'internal_healthcare_api'
-    );
-
-    const analysis = {
-      coreApis,
-      hasDuplicates: coreApis.length > 1,
-      singleSourceOfTruth: coreApis.find(api => api.name === 'internal_healthcare_api'),
-      duplicateToRemove: coreApis.find(api => api.name === 'core_healthcare_api'),
-      isConsolidated: coreApis.length === 1 && coreApis[0]?.name === 'internal_healthcare_api',
-      duplicateGroups: [] as any[],
-      recommendations: [] as string[]
-    };
-
-    if (analysis.hasDuplicates && !analysis.isConsolidated) {
-      analysis.recommendations.push(
-        'Consolidate to internal_healthcare_api as single source of truth',
-        'Remove core_healthcare_api duplicate',
-        'Migrate all endpoints to internal_healthcare_api',
-        'Update all references to use single API'
-      );
-    }
-
-    console.log('🔍 Enhanced Core API Analysis (Single Source of Truth):', analysis);
-    return analysis;
-  };
-
-  // Generate Postman collection with real data
-  const generatePostmanCollection = (apiId: string, apiServices: ApiService[]) => {
-    const api = apiServices.find(s => s.id === apiId);
-    if (!api) return null;
-
-    const apiEndpointsForApi = apiEndpoints?.filter(e => e.external_api_id === apiId) || [];
-    
     const collection = {
       info: {
-        name: `${api.name} - Healthcare API Collection (Single Source of Truth)`,
-        description: api.description || 'Healthcare API endpoints collection from single source of truth',
+        name: `${api.name} - Healthcare API Collection`,
+        description: api.description || 'Healthcare API endpoints collection',
         schema: 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json',
         version: api.version || '1.0.0'
       },
@@ -403,62 +404,56 @@ export const useApiServiceDetails = () => {
           key: 'baseUrl',
           value: api.base_url || `{{protocol}}://{{host}}/api/v1/${api.id}`,
           type: 'string'
-        },
-        {
-          key: 'apiKey',
-          value: '{{API_KEY}}',
-          type: 'string'
         }
       ],
-      item: apiEndpointsForApi.map(endpoint => ({
+      item: api.actualEndpoints.map(endpoint => ({
         name: endpoint.summary || `${endpoint.method.toUpperCase()} ${endpoint.external_path}`,
         request: {
           method: endpoint.method.toUpperCase(),
           header: [
-            {
-              key: 'Content-Type',
-              value: 'application/json'
-            },
-            ...(endpoint.requires_authentication ? [{
-              key: 'Authorization',
-              value: 'Bearer {{apiKey}}'
-            }] : [])
+            { key: 'Content-Type', value: 'application/json' },
+            ...(endpoint.requires_authentication ? [{ key: 'Authorization', value: 'Bearer {{apiKey}}' }] : [])
           ],
           url: {
             raw: `{{baseUrl}}${endpoint.external_path}`,
             host: ['{{baseUrl}}'],
             path: endpoint.external_path.split('/').filter(p => p)
-          },
-          description: endpoint.summary || ''
-        },
-        response: []
+          }
+        }
       }))
     };
 
-    console.log('📥 Generated Postman collection for single source of truth API:', {
+    console.log('📥 Generated Postman collection:', {
       apiName: api.name,
-      endpointCount: apiEndpointsForApi.length,
-      isSingleSourceOfTruth: api.name === 'internal_healthcare_api'
+      endpointCount: api.actualEndpoints.length
     });
 
     return collection;
   };
 
+  const isLoading = isLoadingInternal || isLoadingExternal || isLoadingEndpoints || isLoadingConsolidation;
+
   return {
-    apiEndpoints: (apiEndpoints as ApiEndpoint[]) || [],
-    apiRegistrations: (apiRegistrations as any[]) || [],
-    isLoadingEndpoints,
-    isLoadingRegistrations,
+    // Raw data
+    internalApiServices: internalApiServices || [],
+    externalApiRegistry: externalApiRegistry || [],
+    apiEndpoints: apiEndpoints || [],
+    
+    // Consolidated data
+    consolidatedApiData: consolidatedApiData || { consolidatedApis: [], syncStatus: null },
+    
+    // State
+    isLoading,
+    
+    // Utilities
     getDetailedApiStats,
-    consolidateApiServices,
-    analyzeCoreApis,
     generatePostmanCollection,
-    // Meta information for validation
+    
+    // Meta information
     meta: {
-      singleSourceOfTruth: 'internal_healthcare_api',
-      dataValidated: true,
-      realDataOnly: true,
-      noMockData: true
+      dataSource: 'Fully synchronized internal + external data',
+      lastSync: new Date().toISOString(),
+      version: 'consolidated-sync-v3'
     }
   };
 };

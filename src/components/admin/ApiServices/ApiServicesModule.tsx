@@ -24,11 +24,12 @@ import {
   Activity,
   Target,
   TrendingUp,
-  Zap
+  Zap,
+  Sync
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-// Use consolidated hooks with real data
+// Use consolidated hooks with real synchronized data
 import { useApiServices } from '@/hooks/useApiServices';
 import { useApiServiceDetails } from '@/hooks/useApiServiceDetails';
 
@@ -41,23 +42,22 @@ import { ApiKeysTabContent } from '@/components/admin/ApiIntegrations/tabs/ApiKe
 import { TestingTabContent } from '@/components/admin/ApiIntegrations/tabs/TestingTabContent';
 import { OnboardingIntegrationTabContent } from '@/components/admin/ApiIntegrations/tabs/OnboardingIntegrationTabContent';
 import AutoIntegrationBanner from '../ApiIntegrations/AutoIntegrationBanner';
-
-// Import the seeder component
 import { ApiDataSeeder } from '@/components/admin/ApiIntegrations/ApiDataSeeder';
+import { OverviewTabContent } from '@/components/admin/ApiIntegrations/tabs/OverviewTabContent';
 
 export const ApiServicesModule: React.FC = () => {
-  console.log('🚀 ApiServicesModule: Single Source of Truth Implementation (Real Data with Seeder)');
+  console.log('🚀 ApiServicesModule: Fully Synchronized Implementation');
   
   const [activeTab, setActiveTab] = useState('overview');
   const [searchTerm, setSearchTerm] = useState('');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const { toast } = useToast();
 
-  // Use consolidated hooks with real data
+  // Use consolidated hooks with full synchronization
   const { 
     apiServices,
-    isLoading, 
-    error, 
+    isLoading: isLoadingServices, 
+    error: servicesError, 
     createApiService,
     updateApiService,
     deleteApiService,
@@ -65,113 +65,68 @@ export const ApiServicesModule: React.FC = () => {
   } = useApiServices();
 
   const { 
-    apiEndpoints,
-    apiRegistrations,
+    consolidatedApiData,
     getDetailedApiStats,
-    consolidateApiServices,
-    analyzeCoreApis,
-    generatePostmanCollection
+    generatePostmanCollection,
+    isLoading: isLoadingDetails
   } = useApiServiceDetails();
 
-  // Wait for both API services and endpoints to load
-  const isDataLoading = isLoading || !apiServices || !apiEndpoints;
+  const isLoading = isLoadingServices || isLoadingDetails;
+  const error = servicesError;
 
-  // Enhanced consolidation - merge API services with their endpoint data
-  const consolidatedApis = React.useMemo(() => {
-    if (!apiServices || !apiEndpoints) {
-      console.log('⚠️ Missing data for consolidation:', { apiServices: !!apiServices, apiEndpoints: !!apiEndpoints });
-      return [];
+  // Use consolidated data with full sync information
+  const consolidatedApis = consolidatedApiData?.consolidatedApis || [];
+  const syncStatus = consolidatedApiData?.syncStatus;
+
+  console.log('📊 ApiServicesModule: Synchronized Data Summary:', {
+    totalOriginalServices: apiServices?.length || 0,
+    totalConsolidatedApis: consolidatedApis.length,
+    syncStatus,
+    isLoading
+  });
+
+  // Get comprehensive metrics from consolidated data
+  const detailedStats = React.useMemo(() => {
+    if (!consolidatedApiData || consolidatedApis.length === 0) {
+      return {
+        totalEndpoints: 0,
+        totalSchemas: 0,
+        totalSecurityPolicies: 0,
+        totalMappings: 0,
+        totalModules: 0,
+        totalDocs: 0,
+        totalPublicEndpoints: 0,
+        totalSecuredEndpoints: 0,
+        apiBreakdown: {},
+        categoryBreakdown: {},
+        typeBreakdown: {},
+        statusBreakdown: {},
+        securityBreakdown: {},
+        realTimeMetrics: {
+          activeApis: 0,
+          productionApis: 0,
+          deprecatedApis: 0,
+          averageEndpointsPerApi: 0,
+          schemaCompleteness: 0,
+          documentationCoverage: 0,
+          securityCompliance: 0
+        }
+      };
     }
 
-    console.log('📊 Starting enhanced consolidation with real endpoint data:', {
-      totalApiServices: apiServices.length,
-      totalEndpoints: apiEndpoints.length
-    });
+    return getDetailedApiStats(consolidatedApiData);
+  }, [consolidatedApiData, getDetailedApiStats]);
 
-    // Merge API services with their endpoint counts and data
-    const consolidated = apiServices.map(api => {
-      const apiEndpointsForThisApi = apiEndpoints.filter(endpoint => endpoint.external_api_id === api.id);
-      const hasSchemas = apiEndpointsForThisApi.some(e => e.request_schema || e.response_schema);
-      const securedEndpoints = apiEndpointsForThisApi.filter(e => e.requires_authentication);
-      
-      const enhancedApi = {
-        ...api,
-        // Real endpoint count from database
-        endpoints_count: apiEndpointsForThisApi.length,
-        // Calculate real metrics
-        actualEndpoints: apiEndpointsForThisApi,
-        hasSchemas,
-        securedEndpointsCount: securedEndpoints.length,
-        publicEndpointsCount: apiEndpointsForThisApi.filter(e => e.is_public).length,
-        schemaCompleteness: apiEndpointsForThisApi.length > 0 ? 
-          (apiEndpointsForThisApi.filter(e => e.request_schema || e.response_schema).length / apiEndpointsForThisApi.length) * 100 : 0,
-        documentationCoverage: api.documentation_url ? 100 : 0
-      };
-
-      console.log(`📋 Enhanced API: ${api.name}`, {
-        originalEndpointsCount: api.endpoints_count,
-        actualEndpointsCount: apiEndpointsForThisApi.length,
-        hasSchemas,
-        securedCount: securedEndpoints.length,
-        schemaCompleteness: enhancedApi.schemaCompleteness
-      });
-
-      return enhancedApi;
-    });
-
-    console.log('✅ Consolidation complete:', {
-      totalConsolidated: consolidated.length,
-      totalRealEndpoints: consolidated.reduce((sum, api) => sum + (api.actualEndpoints?.length || 0), 0)
-    });
-
-    return consolidated;
-  }, [apiServices, apiEndpoints]);
-
-  // Get comprehensive detailed stats with real merged data
-  const detailedStats = React.useMemo(() => {
-    if (!consolidatedApis.length) return {
-      totalEndpoints: 0,
-      totalSchemas: 0,
-      totalSecurityPolicies: 0,
-      totalMappings: 0,
-      totalModules: 0,
-      totalDocs: 0,
-      totalPublicEndpoints: 0,
-      totalSecuredEndpoints: 0,
-      apiBreakdown: {},
-      categoryBreakdown: {},
-      typeBreakdown: {},
-      statusBreakdown: {},
-      securityBreakdown: {},
-      realTimeMetrics: {
-        activeApis: 0,
-        productionApis: 0,
-        deprecatedApis: 0,
-        averageEndpointsPerApi: 0,
-        schemaCompleteness: 0,
-        documentationCoverage: 0,
-        securityCompliance: 0
-      }
-    };
-
-    return getDetailedApiStats(consolidatedApis);
-  }, [consolidatedApis, getDetailedApiStats]);
-
-  // Analyze core API status - Single Source of Truth validation
-  const coreApiAnalysis = React.useMemo(() => {
-    return analyzeCoreApis(consolidatedApis);
-  }, [consolidatedApis, analyzeCoreApis]);
-
-  // Check if we need to show the seeder (no endpoints available)
+  // Check if we need to show the seeder
   const needsSeeding = detailedStats.totalEndpoints === 0 && consolidatedApis.length > 0;
 
-  // Real data filtering with enhanced consolidated APIs
+  // Filter consolidated APIs by type and direction
   const internalApis = consolidatedApis.filter(api => 
     api.direction === 'inbound' || api.type === 'internal' || api.direction === 'bidirectional'
   );
   
   const externalApis = consolidatedApis.filter(api => 
-    api.direction === 'outbound' || api.type === 'external'
+    api.direction === 'outbound' || api.type === 'external' || api.isExternalOnly
   );
   
   const consumingApis = consolidatedApis.filter(api => 
@@ -182,19 +137,13 @@ export const ApiServicesModule: React.FC = () => {
     api.status === 'active' && (api.lifecycle_stage === 'production' || api.type === 'internal')
   );
 
-  console.log('📊 ApiServicesModule: Enhanced Real Data Metrics Summary:', {
-    totalOriginalApis: apiServices?.length || 0,
-    totalConsolidatedApis: consolidatedApis.length,
-    totalRealEndpoints: detailedStats.totalEndpoints,
-    totalRealSchemas: detailedStats.totalSchemas,
-    totalSecurityPolicies: detailedStats.totalSecurityPolicies,
-    singleSourceOfTruth: coreApiAnalysis.isConsolidated,
+  console.log('📈 Synchronized API Categories:', {
     internal: internalApis.length,
     external: externalApis.length,
     consuming: consumingApis.length,
     publishing: publishingApis.length,
-    needsSeeding,
-    realTimeMetrics: detailedStats.realTimeMetrics
+    totalSynced: consolidatedApis.filter(api => api.isSynced).length,
+    needsSeeding
   });
 
   const handleDownloadCollection = React.useCallback((integrationId: string) => {
@@ -314,7 +263,7 @@ export const ApiServicesModule: React.FC = () => {
     });
   }, [toast]);
 
-  // Real-time overview stats component with enhanced data
+  // Real-time overview stats component with synchronized data
   const RealTimeOverviewStats = () => (
     <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6">
       <Card className="border-l-4 border-l-blue-500">
@@ -335,7 +284,7 @@ export const ApiServicesModule: React.FC = () => {
             <Activity className="h-6 w-6 text-green-500" />
             <div>
               <p className="text-2xl font-bold">{detailedStats.totalEndpoints}</p>
-              <p className="text-sm text-muted-foreground">Live Endpoints</p>
+              <p className="text-sm text-muted-foreground">Synced Endpoints</p>
             </div>
           </div>
         </CardContent>
@@ -380,10 +329,10 @@ export const ApiServicesModule: React.FC = () => {
       <Card className="border-l-4 border-l-indigo-500">
         <CardContent className="p-4">
           <div className="flex items-center gap-2">
-            <TrendingUp className="h-6 w-6 text-indigo-500" />
+            <Sync className="h-6 w-6 text-indigo-500" />
             <div>
-              <p className="text-2xl font-bold">{Math.round(detailedStats.realTimeMetrics.documentationCoverage)}%</p>
-              <p className="text-sm text-muted-foreground">Documentation</p>
+              <p className="text-2xl font-bold">{consolidatedApis.filter(api => api.isSynced).length}</p>
+              <p className="text-sm text-muted-foreground">Synchronized</p>
             </div>
           </div>
         </CardContent>
@@ -393,26 +342,6 @@ export const ApiServicesModule: React.FC = () => {
 
   const OverviewContent = () => (
     <div className="space-y-6">
-      {/* Single Source of Truth Status */}
-      <Card className={`border-l-4 ${coreApiAnalysis.isConsolidated ? 'border-l-green-500 bg-green-50' : 'border-l-red-500 bg-red-50'}`}>
-        <CardContent className="pt-4">
-          <div className="flex items-center gap-2 mb-2">
-            {coreApiAnalysis.isConsolidated ? (
-              <CheckCircle className="h-5 w-5 text-green-600" />
-            ) : (
-              <AlertCircle className="h-5 w-5 text-red-600" />
-            )}
-            <h3 className="font-semibold">Single Source of Truth Status</h3>
-          </div>
-          <p className={`text-sm ${coreApiAnalysis.isConsolidated ? 'text-green-800' : 'text-red-800'}`}>
-            {coreApiAnalysis.isConsolidated 
-              ? '✅ Consolidated: internal_healthcare_api is the single source of truth'
-              : `⚠️ ${coreApiAnalysis.coreApis.length} core APIs found - consolidation needed`
-            }
-          </p>
-        </CardContent>
-      </Card>
-
       {/* Show seeder if needed */}
       {needsSeeding && (
         <ApiDataSeeder />
@@ -420,64 +349,19 @@ export const ApiServicesModule: React.FC = () => {
       
       <RealTimeOverviewStats />
       
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Code className="h-5 w-5" />
-              Real-time API Metrics
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 border rounded-lg">
-                <span>Production APIs</span>
-                <Badge variant="default">{detailedStats.realTimeMetrics.productionApis}</Badge>
-              </div>
-              <div className="flex items-center justify-between p-3 border rounded-lg">
-                <span>Avg Endpoints/API</span>
-                <Badge variant="outline">{detailedStats.realTimeMetrics.averageEndpointsPerApi}</Badge>
-              </div>
-              <div className="flex items-center justify-between p-3 border rounded-lg">
-                <span>Security Compliance</span>
-                <Badge variant="secondary">{Math.round(detailedStats.realTimeMetrics.securityCompliance)}%</Badge>
-              </div>
-              <div className="flex items-center justify-between p-3 border rounded-lg">
-                <span>Total Mappings</span>
-                <Badge variant="outline">{detailedStats.totalMappings}</Badge>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Database className="h-5 w-5" />
-              Category Distribution (Real Data)
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {Object.entries(detailedStats.categoryBreakdown).map(([category, count]) => (
-                <div key={category} className="flex items-center justify-between p-3 border rounded-lg">
-                  <span className="font-medium capitalize">{category}</span>
-                  <Badge variant="outline">{count}</Badge>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <OverviewTabContent 
+        integrations={consolidatedApis}
+        consolidatedData={consolidatedApiData}
+      />
     </div>
   );
 
-  if (isDataLoading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
-          <Database className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading real API data from single source of truth...</p>
+          <Sync className="h-12 w-12 text-muted-foreground mx-auto mb-4 animate-spin" />
+          <p className="text-muted-foreground">Synchronizing API data from internal and external sources...</p>
         </div>
       </div>
     );
@@ -488,9 +372,9 @@ export const ApiServicesModule: React.FC = () => {
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
           <Database className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <p className="text-red-600">Error loading real API data: {(error as Error).message}</p>
+          <p className="text-red-600">Error loading synchronized API data: {(error as Error).message}</p>
           <Button onClick={() => window.location.reload()} className="mt-4">
-            Retry
+            Retry Synchronization
           </Button>
         </div>
       </div>
@@ -503,14 +387,12 @@ export const ApiServicesModule: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold">Healthcare API Services Platform</h1>
           <p className="text-muted-foreground">
-            {coreApiAnalysis.isConsolidated ? (
-              <span className="text-green-600 font-medium">
-                ✅ Single Source of Truth: {consolidatedApis.length} APIs, {detailedStats.totalEndpoints} endpoints, {Math.round(detailedStats.realTimeMetrics.schemaCompleteness)}% schema coverage
+            {syncStatus ? (
+              <span className={syncStatus.syncedCount === syncStatus.internalCount ? "text-green-600 font-medium" : "text-yellow-600 font-medium"}>
+                {syncStatus.syncedCount === syncStatus.internalCount ? '✅' : '⚠️'} Sync Status: {syncStatus.syncedCount}/{syncStatus.internalCount} APIs synchronized • {detailedStats.totalEndpoints} endpoints • {Math.round(detailedStats.realTimeMetrics.schemaCompleteness)}% schema coverage
               </span>
             ) : (
-              <span className="text-red-600 font-medium">
-                ⚠️ {coreApiAnalysis.coreApis.length} core APIs detected - consolidation required
-              </span>
+              <span>Loading synchronization status...</span>
             )}
           </p>
         </div>
@@ -518,14 +400,14 @@ export const ApiServicesModule: React.FC = () => {
           <div className="relative w-72">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input
-              placeholder="Search real APIs and healthcare services..."
+              placeholder="Search synchronized APIs and services..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
             />
           </div>
           <Button 
-            onClick={handleCreateNew}
+            onClick={() => setCreateDialogOpen(true)}
             disabled={isCreatingApiService}
           >
             <Plus className="h-4 w-4 mr-2" />

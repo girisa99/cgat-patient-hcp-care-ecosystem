@@ -2,83 +2,110 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Activity, Database, Globe, Users, Code, Shield } from 'lucide-react';
+import { Activity, Database, Globe, Users, Code, Shield, Sync, CheckCircle, AlertTriangle } from 'lucide-react';
 
 interface OverviewTabContentProps {
   integrations?: any[];
-  internalApis?: any[];
-  externalApis?: any[];
-  publishedApis?: any[];
+  consolidatedData?: {
+    consolidatedApis: any[];
+    syncStatus: any;
+  };
 }
 
 export const OverviewTabContent: React.FC<OverviewTabContentProps> = ({
   integrations = [],
-  internalApis = [],
-  externalApis = [],
-  publishedApis = []
+  consolidatedData
 }) => {
-  console.log('📊 OverviewTabContent - Rendering with enhanced consolidated data:', {
+  console.log('📊 OverviewTabContent - Rendering with consolidated sync data:', {
     totalIntegrations: integrations.length,
-    internalCount: internalApis.length,
-    externalCount: externalApis.length,
-    publishedCount: publishedApis.length
+    consolidatedData: consolidatedData?.consolidatedApis?.length || 0,
+    syncStatus: consolidatedData?.syncStatus
   });
 
-  // Enhanced endpoint calculation using real data structure with actualEndpoints
+  const consolidatedApis = consolidatedData?.consolidatedApis || integrations;
+  const syncStatus = consolidatedData?.syncStatus;
+
+  // Enhanced metrics from consolidated data
   const totalEndpoints = React.useMemo(() => {
-    return integrations.reduce((sum, integration) => {
-      // Use actualEndpoints length if available (from enhanced consolidation), otherwise fallback to endpoints_count
-      const endpointCount = integration.actualEndpoints?.length || integration.endpoints_count || 0;
-      console.log(`📋 ${integration.name}: ${endpointCount} endpoints (${integration.actualEndpoints ? 'actual' : 'database'})`);
+    return consolidatedApis.reduce((sum, api) => {
+      const endpointCount = api.actualEndpoints?.length || api.endpoints_count || 0;
       return sum + endpointCount;
     }, 0);
-  }, [integrations]);
+  }, [consolidatedApis]);
 
-  // Enhanced schema calculation
   const totalSchemas = React.useMemo(() => {
-    return integrations.reduce((sum, integration) => {
-      if (integration.actualEndpoints) {
-        // Use real endpoint data to count schemas
-        const schemaCount = integration.actualEndpoints.filter((endpoint: any) => 
+    return consolidatedApis.reduce((sum, api) => {
+      if (api.actualEndpoints) {
+        const schemaCount = api.actualEndpoints.filter((endpoint: any) => 
           endpoint.request_schema || endpoint.response_schema
         ).length;
         return sum + schemaCount;
       }
-      // Fallback: estimate based on endpoints_count (assume 80% have schemas)
-      return sum + Math.round((integration.endpoints_count || 0) * 0.8);
+      return sum + Math.round((api.endpoints_count || 0) * 0.8);
     }, 0);
-  }, [integrations]);
+  }, [consolidatedApis]);
 
-  // Enhanced security policies calculation
   const totalSecurityPolicies = React.useMemo(() => {
-    return integrations.reduce((sum, integration) => {
-      return sum + (integration.rls_policies_count || 0);
+    return consolidatedApis.reduce((sum, api) => {
+      return sum + (api.rls_policies_count || 0);
     }, 0);
-  }, [integrations]);
+  }, [consolidatedApis]);
 
   const activeIntegrations = React.useMemo(() => {
-    return integrations.filter(i => i.status === 'active').length;
-  }, [integrations]);
+    return consolidatedApis.filter(i => i.status === 'active').length;
+  }, [consolidatedApis]);
 
-  // Calculate real consuming APIs (bidirectional or consuming purpose)
-  const consumingApis = React.useMemo(() => {
-    return integrations.filter(api => 
-      api.direction === 'bidirectional' || 
-      (api.purpose && api.purpose.toLowerCase().includes('consuming'))
-    );
-  }, [integrations]);
+  const syncedApis = React.useMemo(() => {
+    return consolidatedApis.filter(api => api.isSynced).length;
+  }, [consolidatedApis]);
+
+  const schemaCompleteness = React.useMemo(() => {
+    if (totalEndpoints === 0) return 0;
+    return Math.round((totalSchemas / totalEndpoints) * 100);
+  }, [totalSchemas, totalEndpoints]);
 
   console.log('📈 Enhanced Overview Stats:', {
     totalEndpoints,
     totalSchemas,
     totalSecurityPolicies,
     activeIntegrations,
-    consumingApisCount: consumingApis.length
+    syncedApis,
+    schemaCompleteness,
+    syncStatus
   });
 
   return (
     <div className="space-y-6">
-      {/* Enhanced Stats Overview - Using Real Consolidated Data */}
+      {/* Sync Status Banner */}
+      {syncStatus && (
+        <Card className={`border-l-4 ${syncStatus.syncedCount === syncStatus.internalCount ? 'border-l-green-500 bg-green-50' : 'border-l-yellow-500 bg-yellow-50'}`}>
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-2 mb-2">
+              {syncStatus.syncedCount === syncStatus.internalCount ? (
+                <CheckCircle className="h-5 w-5 text-green-600" />
+              ) : (
+                <AlertTriangle className="h-5 w-5 text-yellow-600" />
+              )}
+              <h3 className="font-semibold">API Synchronization Status</h3>
+            </div>
+            <div className="flex items-center gap-4 text-sm">
+              <span className="text-gray-700">
+                <strong>{syncStatus.syncedCount}</strong> of <strong>{syncStatus.internalCount}</strong> internal APIs synced to external
+              </span>
+              <Badge variant="outline">
+                {syncStatus.endpointsCount} total endpoints
+              </Badge>
+              {syncStatus.unsyncedCount > 0 && (
+                <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+                  {syncStatus.unsyncedCount} unsynced
+                </Badge>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Enhanced Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -86,9 +113,9 @@ export const OverviewTabContent: React.FC<OverviewTabContentProps> = ({
             <Database className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{integrations.length}</div>
+            <div className="text-2xl font-bold">{consolidatedApis.length}</div>
             <p className="text-xs text-muted-foreground">
-              {activeIntegrations} active
+              {activeIntegrations} active • {syncedApis} synced
             </p>
           </CardContent>
         </Card>
@@ -101,20 +128,20 @@ export const OverviewTabContent: React.FC<OverviewTabContentProps> = ({
           <CardContent>
             <div className="text-2xl font-bold">{totalEndpoints}</div>
             <p className="text-xs text-muted-foreground">
-              Real database endpoints
+              Synchronized endpoints
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Real Schemas</CardTitle>
+            <CardTitle className="text-sm font-medium">Schema Coverage</CardTitle>
             <Shield className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalSchemas}</div>
+            <div className="text-2xl font-bold">{schemaCompleteness}%</div>
             <p className="text-xs text-muted-foreground">
-              Request/Response schemas
+              {totalSchemas} schemas defined
             </p>
           </CardContent>
         </Card>
@@ -133,45 +160,50 @@ export const OverviewTabContent: React.FC<OverviewTabContentProps> = ({
         </Card>
       </div>
 
-      {/* Enhanced Integration Details */}
+      {/* API Details Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Code className="h-5 w-5" />
-              Recent Integrations (Enhanced Data)
+              <Sync className="h-5 w-5" />
+              Recent APIs (Synchronized Data)
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {integrations.slice(0, 5).map((integration, index) => {
-                const endpointCount = integration.actualEndpoints?.length || integration.endpoints_count || 0;
-                const schemaCompleteness = integration.schemaCompleteness || 0;
+              {consolidatedApis.slice(0, 5).map((api, index) => {
+                const endpointCount = api.actualEndpoints?.length || api.endpoints_count || 0;
+                const schemaCompleteness = api.schemaCompleteness || 0;
                 
                 return (
-                  <div key={integration.id || index} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div key={api.id || index} className="flex items-center justify-between p-3 border rounded-lg">
                     <div>
-                      <h4 className="font-medium">{integration.name}</h4>
+                      <h4 className="font-medium">{api.name}</h4>
                       <p className="text-sm text-muted-foreground">
-                        {endpointCount} endpoints • {integration.type} • {Math.round(schemaCompleteness)}% schemas
+                        {endpointCount} endpoints • {api.type} • {Math.round(schemaCompleteness)}% schemas
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant={integration.status === 'active' ? 'default' : 'secondary'}>
-                        {integration.status}
+                      <Badge variant={api.status === 'active' ? 'default' : 'secondary'}>
+                        {api.status}
                       </Badge>
-                      {integration.name === 'internal_healthcare_api' && (
+                      {api.isSynced && (
                         <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                          Single Source
+                          Synced
+                        </Badge>
+                      )}
+                      {api.isExternalOnly && (
+                        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                          External
                         </Badge>
                       )}
                     </div>
                   </div>
                 );
               })}
-              {integrations.length === 0 && (
+              {consolidatedApis.length === 0 && (
                 <p className="text-muted-foreground text-center py-4">
-                  No integrations found
+                  No APIs found
                 </p>
               )}
             </div>
@@ -182,63 +214,45 @@ export const OverviewTabContent: React.FC<OverviewTabContentProps> = ({
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="h-5 w-5" />
-              API Categories (Enhanced Real Data)
+              API Categories (Consolidated)
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 border rounded-lg">
-                <span className="font-medium">Healthcare</span>
-                <Badge variant="outline">
-                  {integrations.filter(i => i.category === 'healthcare').length}
-                </Badge>
-              </div>
-              <div className="flex items-center justify-between p-3 border rounded-lg">
-                <span className="font-medium">Authentication</span>
-                <Badge variant="outline">
-                  {integrations.filter(i => i.category === 'authentication' || i.category === 'auth').length}
-                </Badge>
-              </div>
-              <div className="flex items-center justify-between p-3 border rounded-lg">
-                <span className="font-medium">Integration</span>
-                <Badge variant="outline">
-                  {integrations.filter(i => i.category === 'integration').length}
-                </Badge>
-              </div>
-              <div className="flex items-center justify-between p-3 border rounded-lg">
-                <span className="font-medium">API Services</span>
-                <Badge variant="outline">
-                  {integrations.filter(i => i.category === 'api').length}
-                </Badge>
-              </div>
-              <div className="flex items-center justify-between p-3 border rounded-lg">
-                <span className="font-medium">Development</span>
-                <Badge variant="outline">
-                  {integrations.filter(i => i.category === 'development').length}
-                </Badge>
-              </div>
+              {Object.entries(
+                consolidatedApis.reduce((acc, api) => {
+                  const category = api.category || 'uncategorized';
+                  acc[category] = (acc[category] || 0) + 1;
+                  return acc;
+                }, {} as Record<string, number>)
+              ).map(([category, count]) => (
+                <div key={category} className="flex items-center justify-between p-3 border rounded-lg">
+                  <span className="font-medium capitalize">{category}</span>
+                  <Badge variant="outline">{count}</Badge>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Enhanced Additional Metrics */}
+      {/* System Health Metrics */}
       <Card>
         <CardHeader>
-          <CardTitle>System Health & Performance (Enhanced Real Metrics)</CardTitle>
+          <CardTitle>Synchronized System Metrics</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="text-center">
-              <p className="text-2xl font-bold text-blue-600">{internalApis.length}</p>
+              <p className="text-2xl font-bold text-blue-600">{consolidatedApis.filter(api => api.type === 'internal' || api.direction === 'inbound').length}</p>
               <p className="text-sm text-muted-foreground">Internal APIs</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-green-600">{consumingApis.length}</p>
-              <p className="text-sm text-muted-foreground">Consuming APIs</p>
+              <p className="text-2xl font-bold text-green-600">{consolidatedApis.filter(api => api.type === 'external' || api.direction === 'outbound').length}</p>
+              <p className="text-sm text-muted-foreground">External APIs</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-purple-600">{publishedApis.length}</p>
+              <p className="text-2xl font-bold text-purple-600">{consolidatedApis.filter(api => api.status === 'published').length}</p>
               <p className="text-sm text-muted-foreground">Published APIs</p>
             </div>
             <div className="text-center">
