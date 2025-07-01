@@ -18,7 +18,7 @@ interface AssignRoleDialogProps {
 
 const AssignRoleDialog: React.FC<AssignRoleDialogProps> = ({ open, onOpenChange, userId, userName }) => {
   const { assignRole, isAssigningRole } = useUserMutations();
-  const [selectedRole, setSelectedRole] = useState<UserRole>('user');
+  const [selectedRole, setSelectedRole] = useState<UserRole>('onboardingTeam');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,7 +31,7 @@ const AssignRoleDialog: React.FC<AssignRoleDialogProps> = ({ open, onOpenChange,
       });
       
       onOpenChange(false);
-      setSelectedRole('user');
+      setSelectedRole('onboardingTeam');
     } catch (error) {
       console.error('Failed to assign role:', error);
     }
@@ -55,10 +55,15 @@ const AssignRoleDialog: React.FC<AssignRoleDialogProps> = ({ open, onOpenChange,
                 <SelectValue placeholder="Select a role" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="user">User</SelectItem>
-                <SelectItem value="moderator">Moderator</SelectItem>
+                <SelectItem value="onboardingTeam">Onboarding Team</SelectItem>
                 <SelectItem value="superAdmin">Super Administrator</SelectItem>
+                <SelectItem value="healthcareProvider">Healthcare Provider</SelectItem>
+                <SelectItem value="nurse">Nurse</SelectItem>
+                <SelectItem value="caseManager">Case Manager</SelectItem>
                 <SelectItem value="patientCaregiver">Patient Caregiver</SelectItem>
+                <SelectItem value="financeTeam">Finance Team</SelectItem>
+                <SelectItem value="contractTeam">Contract Team</SelectItem>
+                <SelectItem value="workflowManager">Workflow Manager</SelectItem>
               </SelectContent>
             </Select>
           </div>

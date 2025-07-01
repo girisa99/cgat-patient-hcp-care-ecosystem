@@ -15,20 +15,16 @@ const Facilities = () => {
   const { facilities, isLoading } = useFacilities();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [selectedFacilityId, setSelectedFacilityId] = useState<string | null>(null);
+  const [selectedFacility, setSelectedFacility] = useState<any>(null);
 
   const handleCreateFacility = () => {
     setCreateDialogOpen(true);
   };
 
-  const handleEditFacility = (facilityId: string) => {
-    setSelectedFacilityId(facilityId);
+  const handleEditFacility = (facility: any) => {
+    setSelectedFacility(facility);
     setEditDialogOpen(true);
   };
-
-  const selectedFacility = selectedFacilityId 
-    ? facilities?.find(f => f.id === selectedFacilityId) 
-    : null;
 
   // Calculate stats
   const totalFacilities = facilities?.length || 0;
@@ -83,7 +79,7 @@ const Facilities = () => {
           <Card className="shadow-sm">
             <CardContent className="p-6">
               <FacilitiesList 
-                onCreateFacility={handleCreateFacility}
+                facilities={facilities || []}
                 onEditFacility={handleEditFacility}
               />
             </CardContent>

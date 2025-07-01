@@ -26,7 +26,7 @@ const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onOpenChange 
     last_name: '',
     phone: '',
     department: '',
-    role: 'user' as UserRole,
+    role: 'onboardingTeam' as UserRole,
     facility_id: ''
   });
 
@@ -46,7 +46,7 @@ const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onOpenChange 
         last_name: '',
         phone: '',
         department: '',
-        role: 'user',
+        role: 'onboardingTeam',
         facility_id: ''
       });
       
@@ -124,10 +124,15 @@ const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onOpenChange 
                 <SelectValue placeholder="Select a role" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="user">User</SelectItem>
-                <SelectItem value="moderator">Moderator</SelectItem>
+                <SelectItem value="onboardingTeam">Onboarding Team</SelectItem>
                 <SelectItem value="superAdmin">Super Administrator</SelectItem>
+                <SelectItem value="healthcareProvider">Healthcare Provider</SelectItem>
+                <SelectItem value="nurse">Nurse</SelectItem>
+                <SelectItem value="caseManager">Case Manager</SelectItem>
                 <SelectItem value="patientCaregiver">Patient Caregiver</SelectItem>
+                <SelectItem value="financeTeam">Finance Team</SelectItem>
+                <SelectItem value="contractTeam">Contract Team</SelectItem>
+                <SelectItem value="workflowManager">Workflow Manager</SelectItem>
               </SelectContent>
             </Select>
           </div>

@@ -133,7 +133,7 @@ export const FacilitiesManagement: React.FC = () => {
           <div className="flex flex-wrap gap-2">
             {Object.entries(stats.typeBreakdown).map(([type, count]) => (
               <Badge key={type} variant="outline" className="text-sm">
-                {type}: {count}
+                {type}: {count as number}
               </Badge>
             ))}
           </div>
