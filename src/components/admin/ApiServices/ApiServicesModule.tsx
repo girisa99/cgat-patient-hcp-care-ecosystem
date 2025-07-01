@@ -73,26 +73,99 @@ export const ApiServicesModule: React.FC = () => {
     generatePostmanCollection
   } = useApiServiceDetails();
 
-  // Consolidate APIs to remove duplicates - Single Source of Truth
-  const consolidatedApis = React.useMemo(() => {
-    if (!apiServices) return [];
-    return consolidateApiServices(apiServices);
-  }, [apiServices, consolidateApiServices]);
+  // Wait for both API services and endpoints to load
+  const isDataLoading = isLoading || !apiServices || !apiEndpoints;
 
-  // Get comprehensive detailed stats with real data
+  // Enhanced consolidation - merge API services with their endpoint data
+  const consolidatedApis = React.useMemo(() => {
+    if (!apiServices || !apiEndpoints) {
+      console.log('⚠️ Missing data for consolidation:', { apiServices: !!apiServices, apiEndpoints: !!apiEndpoints });
+      return [];
+    }
+
+    console.log('📊 Starting enhanced consolidation with real endpoint data:', {
+      totalApiServices: apiServices.length,
+      totalEndpoints: apiEndpoints.length
+    });
+
+    // Merge API services with their endpoint counts and data
+    const consolidated = apiServices.map(api => {
+      const apiEndpointsForThisApi = apiEndpoints.filter(endpoint => endpoint.external_api_id === api.id);
+      const hasSchemas = apiEndpointsForThisApi.some(e => e.request_schema || e.response_schema);
+      const securedEndpoints = apiEndpointsForThisApi.filter(e => e.requires_authentication);
+      
+      const enhancedApi = {
+        ...api,
+        // Real endpoint count from database
+        endpoints_count: apiEndpointsForThisApi.length,
+        // Calculate real metrics
+        actualEndpoints: apiEndpointsForThisApi,
+        hasSchemas,
+        securedEndpointsCount: securedEndpoints.length,
+        publicEndpointsCount: apiEndpointsForThisApi.filter(e => e.is_public).length,
+        schemaCompleteness: apiEndpointsForThisApi.length > 0 ? 
+          (apiEndpointsForThisApi.filter(e => e.request_schema || e.response_schema).length / apiEndpointsForThisApi.length) * 100 : 0,
+        documentationCoverage: api.documentation_url ? 100 : 0
+      };
+
+      console.log(`📋 Enhanced API: ${api.name}`, {
+        originalEndpointsCount: api.endpoints_count,
+        actualEndpointsCount: apiEndpointsForThisApi.length,
+        hasSchemas,
+        securedCount: securedEndpoints.length,
+        schemaCompleteness: enhancedApi.schemaCompleteness
+      });
+
+      return enhancedApi;
+    });
+
+    console.log('✅ Consolidation complete:', {
+      totalConsolidated: consolidated.length,
+      totalRealEndpoints: consolidated.reduce((sum, api) => sum + (api.actualEndpoints?.length || 0), 0)
+    });
+
+    return consolidated;
+  }, [apiServices, apiEndpoints]);
+
+  // Get comprehensive detailed stats with real merged data
   const detailedStats = React.useMemo(() => {
+    if (!consolidatedApis.length) return {
+      totalEndpoints: 0,
+      totalSchemas: 0,
+      totalSecurityPolicies: 0,
+      totalMappings: 0,
+      totalModules: 0,
+      totalDocs: 0,
+      totalPublicEndpoints: 0,
+      totalSecuredEndpoints: 0,
+      apiBreakdown: {},
+      categoryBreakdown: {},
+      typeBreakdown: {},
+      statusBreakdown: {},
+      securityBreakdown: {},
+      realTimeMetrics: {
+        activeApis: 0,
+        productionApis: 0,
+        deprecatedApis: 0,
+        averageEndpointsPerApi: 0,
+        schemaCompleteness: 0,
+        documentationCoverage: 0,
+        securityCompliance: 0
+      }
+    };
+
     return getDetailedApiStats(consolidatedApis);
   }, [consolidatedApis, getDetailedApiStats]);
 
   // Analyze core API status - Single Source of Truth validation
   const coreApiAnalysis = React.useMemo(() => {
-    return analyzeCoreApis(apiServices);
-  }, [apiServices, analyzeCoreApis]);
+    return analyzeCoreApis(consolidatedApis);
+  }, [consolidatedApis, analyzeCoreApis]);
 
   // Check if we need to show the seeder (no endpoints available)
-  const needsSeeding = detailedStats.totalEndpoints === 0 && coreApiAnalysis.singleSourceOfTruth && consolidatedApis.length > 0;
+  const needsSeeding = detailedStats.totalEndpoints === 0 && consolidatedApis.length > 0;
 
-  // Real data filtering with consolidated APIs
+  // Real data filtering with enhanced consolidated APIs
   const internalApis = consolidatedApis.filter(api => 
     api.direction === 'inbound' || api.type === 'internal' || api.direction === 'bidirectional'
   );
@@ -109,11 +182,11 @@ export const ApiServicesModule: React.FC = () => {
     api.status === 'active' && (api.lifecycle_stage === 'production' || api.type === 'internal')
   );
 
-  console.log('📊 ApiServicesModule: Real Data Metrics Summary (with Seeder Check):', {
+  console.log('📊 ApiServicesModule: Enhanced Real Data Metrics Summary:', {
     totalOriginalApis: apiServices?.length || 0,
     totalConsolidatedApis: consolidatedApis.length,
-    totalEndpoints: detailedStats.totalEndpoints,
-    totalSchemas: detailedStats.totalSchemas,
+    totalRealEndpoints: detailedStats.totalEndpoints,
+    totalRealSchemas: detailedStats.totalSchemas,
     totalSecurityPolicies: detailedStats.totalSecurityPolicies,
     singleSourceOfTruth: coreApiAnalysis.isConsolidated,
     internal: internalApis.length,
@@ -163,7 +236,7 @@ export const ApiServicesModule: React.FC = () => {
       console.log('Real Integration details:', { integration, stats });
       toast({
         title: "Real Integration Details",
-        description: `${integration.name}: ${stats?.endpointCount || 0} endpoints, ${stats?.schemaCompleteness || 0}% schema coverage`,
+        description: `${integration.name}: ${integration.endpoints_count || 0} endpoints, ${Math.round(integration.schemaCompleteness || 0)}% schema coverage`,
       });
     }
   }, [consolidatedApis, detailedStats, toast]);
@@ -213,12 +286,11 @@ export const ApiServicesModule: React.FC = () => {
           }
         });
         
-        const stats = detailedStats.apiBreakdown[integrationId];
         console.log('✅ Real endpoint test result:', response.status, response.statusText);
         
         toast({
           title: "🧪 Real Endpoint Test Complete",
-          description: `${integration.name}: ${response.status} ${response.statusText} | ${stats?.endpointCount || 0} endpoints available`,
+          description: `${integration.name}: ${response.status} ${response.statusText} | ${integration.endpoints_count || 0} endpoints available`,
           variant: response.ok ? "default" : "destructive"
         });
       }
@@ -231,7 +303,7 @@ export const ApiServicesModule: React.FC = () => {
       });
       throw error;
     }
-  }, [consolidatedApis, detailedStats, toast]);
+  }, [consolidatedApis, toast]);
 
   const handleCreateNew = React.useCallback(() => {
     console.log('➕ Creating new API service...');
@@ -242,7 +314,7 @@ export const ApiServicesModule: React.FC = () => {
     });
   }, [toast]);
 
-  // Real-time overview stats component
+  // Real-time overview stats component with enhanced data
   const RealTimeOverviewStats = () => (
     <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6">
       <Card className="border-l-4 border-l-blue-500">
@@ -400,7 +472,7 @@ export const ApiServicesModule: React.FC = () => {
     </div>
   );
 
-  if (isLoading) {
+  if (isDataLoading) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">

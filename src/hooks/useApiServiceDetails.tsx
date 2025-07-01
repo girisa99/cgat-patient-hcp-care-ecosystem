@@ -29,6 +29,13 @@ interface ApiService {
   webhook_config?: any;
   created_by?: string;
   last_modified_by?: string;
+  // Enhanced fields from consolidation
+  actualEndpoints?: ApiEndpoint[];
+  hasSchemas?: boolean;
+  securedEndpointsCount?: number;
+  publicEndpointsCount?: number;
+  schemaCompleteness?: number;
+  documentationCoverage?: number;
 }
 
 interface ApiEndpoint {
@@ -131,32 +138,37 @@ export const useApiServiceDetails = () => {
     }
   });
 
-  // Generate comprehensive consolidated metrics with real data
+  // Enhanced metrics calculation with proper data merging
   const getDetailedApiStats = (apiServices: ApiService[]): ConsolidatedMetrics => {
     const services = Array.isArray(apiServices) ? apiServices : [];
     const endpoints = Array.isArray(apiEndpoints) ? apiEndpoints : [];
     const registrations = Array.isArray(apiRegistrations) ? apiRegistrations : [];
     
-    console.log('📊 Calculating comprehensive consolidated stats from single source of truth:', {
+    console.log('📊 Calculating enhanced consolidated stats from single source of truth:', {
       servicesCount: services.length,
       endpointsCount: endpoints.length,
       registrationsCount: registrations.length,
       singleSourceOfTruth: services.find(s => s.name === 'internal_healthcare_api') ? 'VERIFIED ✅' : 'MISSING ❌'
     });
     
-    // Validate single source of truth
-    const internalHealthcareApi = services.find(s => s.name === 'internal_healthcare_api');
-    if (!internalHealthcareApi) {
-      console.warn('⚠️  Single source of truth (internal_healthcare_api) not found in services');
-    } else {
-      console.log('✅ Single source of truth validated:', internalHealthcareApi);
-    }
-    
-    // Calculate real metrics from single source
+    // Calculate real metrics from actual endpoint data
     const totalEndpoints = endpoints.length;
     const totalSchemas = endpoints.filter(e => e.request_schema || e.response_schema).length;
     const totalSecuredEndpoints = endpoints.filter(e => e.requires_authentication).length;
     const totalPublicEndpoints = endpoints.filter(e => e.is_public).length;
+    
+    // Calculate from registrations table
+    const totalMappings = registrations.reduce((sum, reg) => sum + (reg.data_mappings_count || 0), 0);
+    const totalSecurityPolicies = registrations.reduce((sum, reg) => sum + (reg.rls_policies_count || 0), 0);
+    
+    console.log('📈 Raw calculated metrics:', {
+      totalEndpoints,
+      totalSchemas,
+      totalSecuredEndpoints,
+      totalPublicEndpoints,
+      totalMappings,
+      totalSecurityPolicies
+    });
     
     // Category breakdown from real data
     const categoryBreakdown = services.reduce((acc, service) => {
@@ -195,25 +207,38 @@ export const useApiServiceDetails = () => {
     const servicesWithDocs = services.filter(s => s.documentation_url).length;
     const documentationCoverage = services.length > 0 ? (servicesWithDocs / services.length) * 100 : 0;
 
-    // API breakdown with real service data
+    // Enhanced API breakdown with real service data
     const apiBreakdown: Record<string, any> = {};
     services.forEach(service => {
       const serviceEndpoints = endpoints.filter(endpoint => 
         endpoint.external_api_id === service.id
       );
       
+      const actualEndpointsCount = serviceEndpoints.length;
+      const schemasCount = serviceEndpoints.filter(e => e.request_schema || e.response_schema).length;
+      const securityCount = serviceEndpoints.filter(e => e.requires_authentication).length;
+      const publicEndpoints = serviceEndpoints.filter(e => e.is_public).length;
+      const schemaCompleteness = actualEndpointsCount > 0 ? (schemasCount / actualEndpointsCount) * 100 : 0;
+      
       apiBreakdown[service.id] = {
         ...service,
         endpoints: serviceEndpoints,
-        endpointCount: serviceEndpoints.length,
+        endpointCount: actualEndpointsCount,
         hasDocumentation: !!service.documentation_url,
-        hasSchemas: serviceEndpoints.some(e => e.request_schema || e.response_schema),
-        securityCount: serviceEndpoints.filter(e => e.requires_authentication).length,
-        publicEndpoints: serviceEndpoints.filter(e => e.is_public).length,
-        schemaCompleteness: serviceEndpoints.length > 0 ? 
-          (serviceEndpoints.filter(e => e.request_schema || e.response_schema).length / serviceEndpoints.length) * 100 : 0,
+        hasSchemas: schemasCount > 0,
+        securityCount,
+        publicEndpoints,
+        schemaCompleteness,
         isSingleSourceOfTruth: service.name === 'internal_healthcare_api'
       };
+
+      console.log(`🔍 API breakdown for ${service.name}:`, {
+        originalEndpointsCount: service.endpoints_count,
+        actualEndpointsCount,
+        schemasCount,
+        securityCount,
+        schemaCompleteness: Math.round(schemaCompleteness)
+      });
     });
 
     // Real-time metrics calculations
@@ -227,8 +252,8 @@ export const useApiServiceDetails = () => {
     const consolidatedMetrics: ConsolidatedMetrics = {
       totalEndpoints,
       totalSchemas,
-      totalMappings: registrations.reduce((sum, reg) => sum + (reg.data_mappings_count || 0), 0),
-      totalSecurityPolicies: registrations.reduce((sum, reg) => sum + (reg.rls_policies_count || 0), 0),
+      totalMappings,
+      totalSecurityPolicies,
       totalModules: categoryBreakdown['healthcare'] || 0,
       totalDocs: servicesWithDocs,
       totalPublicEndpoints,
@@ -249,9 +274,9 @@ export const useApiServiceDetails = () => {
       }
     };
 
-    console.log('📊 Single source of truth comprehensive metrics:', {
+    console.log('📊 Final consolidated metrics from single source of truth:', {
       ...consolidatedMetrics,
-      singleSourceOfTruthValidated: !!internalHealthcareApi
+      singleSourceOfTruthValidated: !!services.find(s => s.name === 'internal_healthcare_api')
     });
     
     return consolidatedMetrics;
