@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,6 +27,30 @@ const CoreFunctionalityVerification = () => {
   const unifiedUserData = useUnifiedUserData();
   const facilitiesHook = useFacilities();
   const modulesHook = useModules();
+
+  // Add detailed logging
+  console.log('🔍 CoreFunctionalityVerification - Hook States:', {
+    users: {
+      count: usersHook.users?.length || 0,
+      isLoading: usersHook.isLoading,
+      error: usersHook.error?.message
+    },
+    unifiedData: {
+      totalUsers: unifiedUserData.meta?.totalUsers || 0,
+      isLoading: unifiedUserData.isLoading,
+      error: unifiedUserData.error?.message
+    },
+    facilities: {
+      count: facilitiesHook.facilities?.length || 0,
+      isLoading: facilitiesHook.isLoading,
+      error: facilitiesHook.error?.message
+    },
+    modules: {
+      count: modulesHook.modules?.length || 0,
+      isLoading: modulesHook.isLoading,
+      error: modulesHook.error?.message
+    }
+  });
 
   const runVerification = async () => {
     setIsVerifying(true);
@@ -65,7 +90,7 @@ const CoreFunctionalityVerification = () => {
         }
       });
 
-      // Test Modules functionality - using correct property names
+      // Test Modules functionality
       results.push({
         name: 'Modules Hook',
         status: modulesHook.error ? 'error' : modulesHook.isLoading ? 'loading' : 'success',
@@ -75,8 +100,10 @@ const CoreFunctionalityVerification = () => {
         }
       });
 
+      console.log('✅ Verification results:', results);
       setVerificationResults(results);
     } catch (error: any) {
+      console.error('❌ Verification error:', error);
       results.push({
         name: 'Verification Process',
         status: 'error',
@@ -157,6 +184,11 @@ const CoreFunctionalityVerification = () => {
                 <p className="text-xs text-muted-foreground">
                   Total users in system
                 </p>
+                {usersHook.error && (
+                  <p className="text-xs text-red-600 mt-1">
+                    Error: {usersHook.error.message}
+                  </p>
+                )}
               </CardContent>
             </Card>
 
@@ -172,6 +204,11 @@ const CoreFunctionalityVerification = () => {
                 <p className="text-xs text-muted-foreground">
                   Healthcare facilities
                 </p>
+                {facilitiesHook.error && (
+                  <p className="text-xs text-red-600 mt-1">
+                    Error: {facilitiesHook.error.message}
+                  </p>
+                )}
               </CardContent>
             </Card>
 
@@ -187,6 +224,11 @@ const CoreFunctionalityVerification = () => {
                 <p className="text-xs text-muted-foreground">
                   Registered patients
                 </p>
+                {unifiedUserData.error && (
+                  <p className="text-xs text-red-600 mt-1">
+                    Error: {unifiedUserData.error.message}
+                  </p>
+                )}
               </CardContent>
             </Card>
 
@@ -202,6 +244,11 @@ const CoreFunctionalityVerification = () => {
                 <p className="text-xs text-muted-foreground">
                   System modules
                 </p>
+                {modulesHook.error && (
+                  <p className="text-xs text-red-600 mt-1">
+                    Error: {modulesHook.error.message}
+                  </p>
+                )}
               </CardContent>
             </Card>
           </div>

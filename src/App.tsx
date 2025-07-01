@@ -12,38 +12,14 @@ import Users from "@/pages/Users";
 import Facilities from "@/pages/Facilities";
 import Modules from "@/pages/Modules";
 import AdminPage from "@/pages/AdminPage";
+import Patients from "@/pages/Patients";
+import Onboarding from "@/pages/Onboarding";
+import ApiServices from "@/pages/ApiServices";
+import DataImport from "@/pages/DataImport";
 
 const queryClient = new QueryClient();
 
-// Placeholder components for missing pages
-const PatientsPage = () => (
-  <div className="p-6">
-    <h1 className="text-2xl font-bold mb-4">Patients</h1>
-    <p>Patients management page - Coming soon</p>
-  </div>
-);
-
-const OnboardingPage = () => (
-  <div className="p-6">
-    <h1 className="text-2xl font-bold mb-4">Onboarding</h1>
-    <p>Onboarding management page - Coming soon</p>
-  </div>
-);
-
-const ApiServicesPage = () => (
-  <div className="p-6">
-    <h1 className="text-2xl font-bold mb-4">API Services</h1>
-    <p>API Services management page - Coming soon</p>
-  </div>
-);
-
-const DataImportPage = () => (
-  <div className="p-6">
-    <h1 className="text-2xl font-bold mb-4">Data Import</h1>
-    <p>Data Import management page - Coming soon</p>
-  </div>
-);
-
+// Placeholder components for remaining pages
 const SecurityPage = () => (
   <div className="p-6">
     <h1 className="text-2xl font-bold mb-4">Security</h1>
@@ -87,7 +63,7 @@ const App = () => (
               path="/patients"
               element={
                 <ProtectedRoute>
-                  <PatientsPage />
+                  <Patients />
                 </ProtectedRoute>
               }
             />
@@ -95,7 +71,7 @@ const App = () => (
               path="/onboarding"
               element={
                 <ProtectedRoute>
-                  <OnboardingPage />
+                  <Onboarding />
                 </ProtectedRoute>
               }
             />
@@ -103,7 +79,7 @@ const App = () => (
               path="/api-services"
               element={
                 <ProtectedRoute>
-                  <ApiServicesPage />
+                  <ApiServices />
                 </ProtectedRoute>
               }
             />
@@ -111,7 +87,7 @@ const App = () => (
               path="/data-import"
               element={
                 <ProtectedRoute>
-                  <DataImportPage />
+                  <DataImport />
                 </ProtectedRoute>
               }
             />

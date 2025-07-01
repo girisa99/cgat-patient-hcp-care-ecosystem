@@ -3,57 +3,83 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-/**
- * Focused hook for patient mutation operations
- */
 export const usePatientMutations = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const deactivatePatientMutation = useMutation({
-    mutationFn: async (patientId: string) => {
-      console.log('🔄 Deactivating patient with audit logging:', patientId);
+  const createPatientMutation = useMutation({
+    mutationFn: async (patientData: {
+      email: string;
+      first_name: string;
+      last_name: string;
+      phone?: string;
+      facility_id?: string;
+    }) => {
+      console.log('🔄 Creating new patient:', patientData);
       
-      const { error } = await supabase
-        .from('audit_logs')
-        .insert({
-          action: 'PATIENT_DEACTIVATED',
-          table_name: 'auth.users',
-          record_id: patientId,
-          new_values: { 
-            status: 'deactivated',
-            deactivated_at: new Date().toISOString(),
-            reason: 'Manual deactivation via admin interface'
+      const { data, error } = await supabase.functions.invoke('onboarding-workflow', {
+        body: {
+          action: 'complete_user_setup',
+          user_data: {
+            ...patientData,
+            role: 'patientCaregiver'
           }
-        });
+        }
+      });
 
-      if (error) {
-        throw new Error(`Failed to log patient deactivation: ${error.message}`);
-      }
-
-      return { success: true, patientId };
+      if (error) throw error;
+      return data;
     },
-    onSuccess: (data) => {
-      // Invalidate both patients and users cache
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['patients'] });
-      queryClient.invalidateQueries({ queryKey: ['users'] });
-      
+      queryClient.invalidateQueries({ queryKey: ['unified-users'] });
       toast({
-        title: "Patient Deactivated",
-        description: "Patient has been deactivated successfully.",
+        title: "Patient Created",
+        description: "New patient has been created successfully.",
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Deactivation Failed",
-        description: error.message || "Failed to deactivate patient. Please try again.",
+        title: "Error",
+        description: error.message || "Failed to create patient",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const updatePatientMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: any }) => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['patients'] });
+      queryClient.invalidateQueries({ queryKey: ['unified-users'] });
+      toast({
+        title: "Patient Updated",
+        description: "Patient information has been updated successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update patient",
         variant: "destructive",
       });
     }
   });
 
   return {
-    deactivatePatient: deactivatePatientMutation.mutate,
-    isDeactivating: deactivatePatientMutation.isPending
+    createPatient: createPatientMutation.mutate,
+    updatePatient: updatePatientMutation.mutate,
+    isCreating: createPatientMutation.isPending,
+    isUpdating: updatePatientMutation.isPending
   };
 };
