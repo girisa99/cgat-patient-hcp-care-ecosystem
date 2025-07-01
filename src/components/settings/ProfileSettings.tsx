@@ -124,13 +124,13 @@ const ProfileSettings = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="department" className="flex items-center gap-2">
+              <Label htmlFor="facility" className="flex items-center gap-2">
                 <Building className="h-4 w-4" />
-                Department
+                Facility
               </Label>
               <Input
-                id="department"
-                value={profile?.department || 'Not specified'}
+                id="facility"
+                value={profile?.facility_id ? 'Assigned' : 'Not assigned'}
                 readOnly
                 className="bg-muted"
               />
