@@ -141,10 +141,10 @@ const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onOpenChange 
             <Label htmlFor="facility">Facility (Optional)</Label>
             <Select value={formData.facility_id} onValueChange={(value) => setFormData(prev => ({ ...prev, facility_id: value }))}>
               <SelectTrigger>
-                <SelectValue placeholder="Select a facility" />
+                <SelectValue placeholder="Select a facility (optional)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No facility</SelectItem>
+                <SelectItem value="none">No facility</SelectItem>
                 {facilities.map((facility) => (
                   <SelectItem key={facility.id} value={facility.id}>
                     {facility.name}
