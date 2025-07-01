@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { useDashboard } from '@/hooks/useDashboard';
 import { useModules } from '@/hooks/useModules';
 import { useIntelligentRouting } from '@/hooks/useIntelligentRouting';
+import { PageLoader } from '@/components/ui/PageLoader';
 import { 
   Users, 
   Building, 
@@ -21,9 +22,19 @@ import {
 
 const UnifiedDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { dashboardData, profile, userRoles, meta } = useDashboard();
+  const { dashboardData, profile, userRoles, meta, loading } = useDashboard();
   const { userModules } = useModules();
   const { moduleProgress } = useIntelligentRouting();
+
+  console.log('📊 UnifiedDashboard rendering with data:', {
+    loading,
+    dashboardData: !!dashboardData,
+    userRoles: userRoles?.length || 0
+  });
+
+  if (loading) {
+    return <PageLoader message="Loading dashboard..." />;
+  }
 
   const quickActions = [
     {
@@ -54,7 +65,7 @@ const UnifiedDashboard: React.FC = () => {
       title: 'API Services',
       description: `Monitor ${dashboardData?.totalApiServices || 0} API integrations`,
       icon: Zap,
-      path: '/api-services',
+      path: '/admin/api-services',
       color: 'bg-orange-500',
       count: dashboardData?.totalApiServices || 0
     }
@@ -95,37 +106,41 @@ const UnifiedDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Welcome Header - Real Data */}
+      {/* Welcome Header */}
       <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6 border">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
-              {dashboardData?.welcomeMessage || 'Welcome back!'}
+              {dashboardData?.welcomeMessage || 'Welcome to Healthcare Portal!'}
             </h1>
             <p className="text-gray-600 mt-1">
               {dashboardData?.summary || 'Healthcare Management Dashboard'}
             </p>
             <div className="flex gap-2 mt-3">
-              {userRoles.map(role => (
-                <Badge key={role} variant="secondary">
-                  {role}
-                </Badge>
-              ))}
+              {userRoles && userRoles.length > 0 ? (
+                userRoles.map(role => (
+                  <Badge key={role} variant="secondary">
+                    {role}
+                  </Badge>
+                ))
+              ) : (
+                <Badge variant="outline">User</Badge>
+              )}
               <Badge variant="outline" className="bg-green-50 text-green-700">
-                Single Source Data
+                System Active
               </Badge>
             </div>
           </div>
           <div className="text-right">
             <div className="text-sm text-gray-500">System Status</div>
             <Badge variant="default" className="bg-green-500">
-              {dashboardData?.systemHealth === 'healthy' ? 'All Systems Operational' : 'Warning'}
+              {dashboardData?.systemHealth === 'healthy' ? 'Operational' : 'Warning'}
             </Badge>
           </div>
         </div>
       </div>
 
-      {/* System Metrics - Real Data */}
+      {/* System Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {systemMetrics.map((metric, index) => {
           const Icon = metric.icon;
@@ -150,7 +165,7 @@ const UnifiedDashboard: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Quick Actions - Real Data */}
+        {/* Quick Actions */}
         <Card>
           <CardHeader>
             <CardTitle>Quick Actions</CardTitle>
@@ -214,7 +229,7 @@ const UnifiedDashboard: React.FC = () => {
                   variant="outline" 
                   size="sm" 
                   className="w-full"
-                  onClick={() => navigate('/settings')}
+                  onClick={() => navigate('/security')}
                 >
                   View All Activity
                 </Button>
@@ -229,7 +244,7 @@ const UnifiedDashboard: React.FC = () => {
         </Card>
       </div>
 
-      {/* Data Source Verification */}
+      {/* System Architecture Status */}
       <Card>
         <CardHeader>
           <CardTitle>System Architecture Status</CardTitle>
@@ -239,7 +254,7 @@ const UnifiedDashboard: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {Object.entries(meta.dataSources).map(([system, source]) => (
+            {meta?.dataSources && Object.entries(meta.dataSources).map(([system, source]) => (
               <div key={system} className="p-3 bg-green-50 border border-green-200 rounded">
                 <div className="font-medium text-green-800 capitalize">{system}</div>
                 <div className="text-xs text-green-600 mt-1">{source}</div>
@@ -254,7 +269,7 @@ const UnifiedDashboard: React.FC = () => {
               ✅ Single Source of Truth Verified
             </div>
             <div className="text-xs text-blue-600 mt-1">
-              All systems using consolidated data sources • Version: {meta.version}
+              All systems using consolidated data sources • Version: {meta?.version || 'v1'}
             </div>
           </div>
         </CardContent>

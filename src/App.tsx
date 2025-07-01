@@ -23,51 +23,61 @@ import { SystemStatusDashboard } from "@/components/admin/SystemStatusDashboard"
 import { UserManagementMain } from "@/components/admin/UserManagement/UserManagementMain";
 import PatientManagement from "@/components/admin/PatientManagement/PatientsList";
 import AutoModuleManager from "@/components/admin/AutoModuleManager";
-import { SystemVerificationDashboard } from "@/components/admin/SystemVerification/SystemVerificationDashboard";
 import Reports from "@/pages/Reports";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <CleanAuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <MainLayout>
-            <Routes>
-              <Route path="/" element={<UnifiedDashboard />} />
-              <Route path="/dashboard" element={<UnifiedDashboard />} />
-              <Route path="/users" element={<Users />} />
-              <Route path="/user-management" element={<UsersPage />} />
-              <Route path="/patients" element={<UnifiedDashboard />} />
-              <Route path="/facilities" element={<FacilitiesManagement />} />
-              <Route path="/modules" element={<ModulesManagement />} />
-              <Route path="/onboarding" element={<CollaborativeOnboardingView />} />
-              <Route path="/security" element={<SecurityDashboard />} />
-              <Route path="/reports" element={<Reports />} />
-              
-              {/* Admin Routes */}
-              <Route path="/admin/system-analysis" element={<SystemAnalysisDashboard />} />
-              <Route path="/admin/system-assessment" element={<SystemAssessmentDashboard />} />
-              <Route path="/admin/api-services" element={<ApiServicesModule />} />
-              <Route path="/admin/api-integrations" element={<OptimizedApiIntegrationsManager />} />
-              <Route path="/admin/data-import" element={<DataImportModule />} />
-              <Route path="/admin/system-status" element={<SystemStatusDashboard />} />
-              <Route path="/admin/user-management" element={<UserManagementMain />} />
-              <Route path="/admin/patient-management" element={<PatientManagement />} />
-              <Route path="/admin/auto-module-manager" element={<AutoModuleManager />} />
-              <Route path="/admin/system-verification" element={<AdminVerificationTest />} />
-              
-              {/* Fallback for other admin routes */}
-              <Route path="/admin/*" element={<UnifiedDashboard />} />
-            </Routes>
-          </MainLayout>
-        </BrowserRouter>
-      </TooltipProvider>
-    </CleanAuthProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  console.log('🚀 App component rendering...');
+  
+  return (
+    <QueryClientProvider client={queryClient}>
+      <CleanAuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <MainLayout>
+              <Routes>
+                <Route path="/" element={<UnifiedDashboard />} />
+                <Route path="/dashboard" element={<UnifiedDashboard />} />
+                <Route path="/users" element={<Users />} />
+                <Route path="/user-management" element={<UsersPage />} />
+                <Route path="/patients" element={<PatientManagement />} />
+                <Route path="/facilities" element={<FacilitiesManagement />} />
+                <Route path="/modules" element={<ModulesManagement />} />
+                <Route path="/onboarding" element={<CollaborativeOnboardingView />} />
+                <Route path="/security" element={<SecurityDashboard />} />
+                <Route path="/reports" element={<Reports />} />
+                
+                {/* Admin Routes */}
+                <Route path="/admin/system-analysis" element={<SystemAnalysisDashboard />} />
+                <Route path="/admin/system-assessment" element={<SystemAssessmentDashboard />} />
+                <Route path="/admin/api-services" element={<ApiServicesModule />} />
+                <Route path="/admin/api-integrations" element={<OptimizedApiIntegrationsManager />} />
+                <Route path="/admin/data-import" element={<DataImportModule />} />
+                <Route path="/admin/system-status" element={<SystemStatusDashboard />} />
+                <Route path="/admin/user-management" element={<UserManagementMain />} />
+                <Route path="/admin/patient-management" element={<PatientManagement />} />
+                <Route path="/admin/auto-module-manager" element={<AutoModuleManager />} />
+                <Route path="/admin/system-verification" element={<AdminVerificationTest />} />
+                
+                {/* Fallback for other admin routes */}
+                <Route path="/admin/*" element={<UnifiedDashboard />} />
+              </Routes>
+            </MainLayout>
+          </BrowserRouter>
+        </TooltipProvider>
+      </CleanAuthProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;

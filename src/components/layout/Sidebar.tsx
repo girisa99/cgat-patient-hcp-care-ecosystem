@@ -13,6 +13,8 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const location = useLocation();
 
+  console.log('🔧 Sidebar rendering with navItems:', navItems?.length || 0);
+
   return (
     <>
       {/* Mobile backdrop */}
@@ -26,8 +28,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       {/* Sidebar */}
       <div className={cn(
         "flex h-full w-64 flex-col bg-white border-r border-gray-200 transition-transform duration-300 ease-in-out",
-        "md:translate-x-0 fixed left-0 top-0 z-50",
-        isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+        isOpen !== undefined && (
+          isOpen 
+            ? "fixed left-0 top-0 z-50 translate-x-0 md:translate-x-0" 
+            : "fixed left-0 top-0 z-50 -translate-x-full md:translate-x-0"
+        )
       )}>
         <div className="flex flex-1 flex-col overflow-y-auto pt-5 pb-4">
           <div className="flex flex-shrink-0 items-center justify-between px-4">
@@ -42,32 +47,38 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             )}
           </div>
           <nav className="mt-5 flex-1 space-y-1 px-2">
-            {navItems.map((item) => {
-              const isActive = location.pathname === item.to;
-              const IconComponent = item.icon;
-              
-              return (
-                <Link
-                  key={item.title}
-                  to={item.to}
-                  onClick={onClose}
-                  className={cn(
-                    'group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors',
-                    isActive
-                      ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                  )}
-                >
-                  <span className={cn(
-                    'mr-3 flex-shrink-0',
-                    isActive ? 'text-blue-500' : 'text-gray-400 group-hover:text-gray-500'
-                  )}>
-                    <IconComponent className="h-5 w-5" />
-                  </span>
-                  {item.title}
-                </Link>
-              );
-            })}
+            {navItems && navItems.length > 0 ? (
+              navItems.map((item) => {
+                const isActive = location.pathname === item.to;
+                const IconComponent = item.icon;
+                
+                return (
+                  <Link
+                    key={item.title}
+                    to={item.to}
+                    onClick={onClose}
+                    className={cn(
+                      'group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors',
+                      isActive
+                        ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700'
+                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                    )}
+                  >
+                    <span className={cn(
+                      'mr-3 flex-shrink-0',
+                      isActive ? 'text-blue-500' : 'text-gray-400 group-hover:text-gray-500'
+                    )}>
+                      <IconComponent className="h-5 w-5" />
+                    </span>
+                    {item.title}
+                  </Link>
+                );
+              })
+            ) : (
+              <div className="px-2 py-4 text-sm text-gray-500">
+                Loading navigation...
+              </div>
+            )}
           </nav>
         </div>
       </div>
