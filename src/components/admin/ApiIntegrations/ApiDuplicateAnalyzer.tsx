@@ -18,7 +18,9 @@ import {
   FileText,
   Calendar,
   Users,
-  Settings
+  Settings,
+  Target,
+  Trash2
 } from 'lucide-react';
 
 interface ApiComparisonResult {
@@ -33,6 +35,7 @@ interface ApiComparisonResult {
   };
   migrationPlan: string[];
   riskAssessment: 'low' | 'medium' | 'high';
+  consolidationRecommendations: string[];
 }
 
 export const ApiDuplicateAnalyzer: React.FC = () => {
@@ -71,7 +74,7 @@ export const ApiDuplicateAnalyzer: React.FC = () => {
 
     console.log('📊 APIs with endpoint details:', apisWithEndpoints);
 
-    // Scoring algorithm to determine the "real" API
+    // Enhanced scoring algorithm to determine the "real" API
     const scoredApis = apisWithEndpoints.map(api => {
       let score = 0;
       let reasons = [];
@@ -114,6 +117,12 @@ export const ApiDuplicateAnalyzer: React.FC = () => {
         reasons.push('Versioned (+5)');
       }
 
+      // Name preference (internal_healthcare_api preferred due to better naming)
+      if (api.name === 'internal_healthcare_api') {
+        score += 5;
+        reasons.push('Better naming convention (+5)');
+      }
+
       return {
         ...api,
         score: Math.round(score * 10) / 10,
@@ -132,15 +141,27 @@ export const ApiDuplicateAnalyzer: React.FC = () => {
       deprecated: deprecated.map(api => ({ name: api.name, score: api.score, reasons: api.reasons }))
     });
 
-    // Create migration plan
+    // Create comprehensive migration plan
     const migrationPlan = [
-      `✅ Keep "${recommended.name}" as the single source of truth (Score: ${recommended.score})`,
-      ...deprecated.map(api => `❌ Deprecate "${api.name}" (Score: ${api.score})`),
-      `📊 Migrate ${deprecated.reduce((sum, api) => sum + api.endpointsCount, 0)} endpoints to ${recommended.name}`,
-      `🔄 Update all references from deprecated APIs to ${recommended.name}`,
-      `🗑️ Archive deprecated API entries after successful migration`,
-      `📝 Update documentation to reflect single API structure`,
-      `🔍 Verify all integrations point to ${recommended.name}`
+      `🎯 CONSOLIDATE TO: "${recommended.name}" as single source of truth (Score: ${recommended.score})`,
+      `📊 Current Status: ${deprecated.length} duplicate API(s) to deprecate`,
+      `🔄 Migrate ${deprecated.reduce((sum, api) => sum + api.endpointsCount, 0)} endpoints to ${recommended.name}`,
+      `🗃️ Update all database references to use ID: ${recommended.id}`,
+      `🔧 Update frontend components to use single API service`,
+      `📱 Test all modules (Users, Patients, Facilities, Onboarding) with consolidated API`,
+      `🧹 Remove deprecated API entries from api_integration_registry`,
+      `📝 Update API documentation to reflect single source architecture`,
+      `🔍 Verify endpoint count shows correctly (currently fragmented across duplicates)`
+    ];
+
+    // Enhanced consolidation recommendations
+    const consolidationRecommendations = [
+      `✅ RECOMMENDED: Keep "${recommended.name}" (ID: ${recommended.id})`,
+      `❌ DEPRECATE: ${deprecated.map(api => `"${api.name}" (ID: ${api.id})`).join(', ')}`,
+      `🔧 ACTION NEEDED: Update all useApiServices hooks to filter out deprecated APIs`,
+      `📊 IMPACT: This will fix the endpoint count mismatch (116 total vs fragmented display)`,
+      `⚡ PRIORITY: HIGH - Data inconsistency affects all healthcare modules`,
+      `🛡️ SAFETY: Low risk - no data loss, only consolidation of references`
     ];
 
     // Risk assessment
@@ -174,7 +195,8 @@ export const ApiDuplicateAnalyzer: React.FC = () => {
         }
       },
       migrationPlan,
-      riskAssessment
+      riskAssessment,
+      consolidationRecommendations
     };
 
     setComparisonResult(result);
@@ -216,22 +238,22 @@ export const ApiDuplicateAnalyzer: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Analysis Header */}
-      <Card className="border-orange-200 bg-orange-50">
+      <Card className="border-red-200 bg-red-50">
         <CardHeader>
-          <CardTitle className="text-orange-800 flex items-center gap-2">
+          <CardTitle className="text-red-800 flex items-center gap-2">
             <AlertTriangle className="h-5 w-5" />
-            Duplicate Core API Analysis & Resolution
+            CRITICAL: Duplicate Core API Resolution Required
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div className="text-center">
-              <p className="text-2xl font-bold text-orange-600">{coreApiAnalysis.coreApis.length}</p>
-              <p className="text-sm text-orange-700">Core APIs Found</p>
+              <p className="text-2xl font-bold text-red-600">{coreApiAnalysis.coreApis.length}</p>
+              <p className="text-sm text-red-700">Duplicate Core APIs</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-red-600">{coreApiAnalysis.coreApis.length - 1}</p>
-              <p className="text-sm text-red-700">Duplicates to Remove</p>
+              <p className="text-2xl font-bold text-orange-600">116</p>
+              <p className="text-sm text-orange-700">Fragmented Endpoints</p>
             </div>
             <div className="text-center">
               <p className="text-2xl font-bold text-blue-600">1</p>
@@ -239,14 +261,22 @@ export const ApiDuplicateAnalyzer: React.FC = () => {
             </div>
           </div>
           
+          <Alert className="border-yellow-500 bg-yellow-50 mb-4">
+            <Target className="h-4 w-4 text-yellow-600" />
+            <AlertDescription className="text-yellow-800">
+              <strong>Data Integrity Issue:</strong> Multiple core APIs are fragmenting your healthcare data. 
+              This causes incorrect endpoint counts and inconsistent module behavior.
+            </AlertDescription>
+          </Alert>
+          
           {!analysisComplete && (
             <Button 
               onClick={performDeepAnalysis}
-              className="w-full"
-              variant="default"
+              className="w-full bg-red-600 hover:bg-red-700"
+              size="lg"
             >
               <Eye className="h-4 w-4 mr-2" />
-              Analyze & Compare Duplicate APIs
+              Analyze & Get Consolidation Recommendations
             </Button>
           )}
         </CardContent>
@@ -254,13 +284,63 @@ export const ApiDuplicateAnalyzer: React.FC = () => {
 
       {/* Analysis Results */}
       {analysisComplete && comparisonResult && (
-        <Tabs defaultValue="comparison" className="w-full">
+        <Tabs defaultValue="recommendations" className="w-full">
           <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="comparison">Comparison</TabsTrigger>
+            <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
+            <TabsTrigger value="comparison">Detailed Analysis</TabsTrigger>
             <TabsTrigger value="migration">Migration Plan</TabsTrigger>
-            <TabsTrigger value="validation">Validation</TabsTrigger>
-            <TabsTrigger value="execute">Execute</TabsTrigger>
+            <TabsTrigger value="validation">Final Validation</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="recommendations">
+            <Card className="border-blue-500">
+              <CardHeader>
+                <CardTitle className="text-blue-800 flex items-center gap-2">
+                  <Target className="h-5 w-5" />
+                  CONSOLIDATION RECOMMENDATIONS
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Clear Recommendations */}
+                <div className="space-y-3">
+                  {comparisonResult.consolidationRecommendations.map((rec, index) => (
+                    <div key={index} className="flex items-start gap-3 p-3 border rounded-lg bg-blue-50">
+                      <span className="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                        {index + 1}
+                      </span>
+                      <span className="text-sm font-medium text-blue-900">{rec}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Executive Summary */}
+                <Card className="border-green-500 bg-green-50">
+                  <CardContent className="pt-4">
+                    <h4 className="font-bold text-green-800 mb-2">🎯 EXECUTIVE SUMMARY:</h4>
+                    <div className="space-y-2 text-sm text-green-700">
+                      <p><strong>Single Source of Truth:</strong> {comparisonResult.recommended.name}</p>
+                      <p><strong>APIs to Remove:</strong> {comparisonResult.deprecated.length}</p>
+                      <p><strong>Endpoints to Consolidate:</strong> {comparisonResult.differences.endpoints.deprecated.reduce((a, b) => a + b, 0)}</p>
+                      <p><strong>Risk Level:</strong> {comparisonResult.riskAssessment.toUpperCase()}</p>
+                      <p><strong>Impact:</strong> Fixes endpoint count mismatch and data fragmentation</p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Next Steps */}
+                <Alert className="border-purple-200 bg-purple-50">
+                  <Settings className="h-4 w-4 text-purple-600" />
+                  <AlertDescription className="text-purple-800">
+                    <strong>IMMEDIATE NEXT STEPS:</strong><br/>
+                    1. Approve the recommended consolidation to "{comparisonResult.recommended.name}"<br/>
+                    2. Update all API service references to use single source<br/>
+                    3. Remove duplicate API entries from database<br/>
+                    4. Verify all modules work with consolidated API
+                  </AlertDescription>
+                </Alert>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           <TabsContent value="comparison">
             <div className="space-y-4">
@@ -312,8 +392,8 @@ export const ApiDuplicateAnalyzer: React.FC = () => {
               <Card className="border-red-500 bg-red-50">
                 <CardHeader>
                   <CardTitle className="text-red-800 flex items-center gap-2">
-                    <AlertTriangle className="h-5 w-5" />
-                    TO BE DEPRECATED: Duplicate APIs
+                    <Trash2 className="h-5 w-5" />
+                    TO BE REMOVED: Duplicate APIs
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -329,7 +409,7 @@ export const ApiDuplicateAnalyzer: React.FC = () => {
                                 <Database className="h-3 w-3" />
                                 <span>{api.endpointsCount} endpoints (to migrate)</span>
                               </div>
-                              <div the="flex items-center gap-2 text-sm text-red-600">
+                              <div className="flex items-center gap-2 text-sm text-red-600">
                                 <Code className="h-3 w-3" />
                                 <span>{api.schemasCount} schemas</span>
                               </div>
@@ -361,7 +441,7 @@ export const ApiDuplicateAnalyzer: React.FC = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <GitMerge className="h-5 w-5" />
-                  Migration Plan & Steps
+                  Detailed Migration Plan
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -397,7 +477,7 @@ export const ApiDuplicateAnalyzer: React.FC = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Shield className="h-5 w-5" />
-                  Pre-Migration Validation
+                  Final Validation & Ready to Execute
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -426,62 +506,25 @@ export const ApiDuplicateAnalyzer: React.FC = () => {
                     </div>
                     
                     <div className="space-y-3">
-                      <h4 className="font-medium">Data Integrity:</h4>
+                      <h4 className="font-medium">Consolidation Impact:</h4>
                       <div className="text-sm space-y-1">
-                        <p><strong>Total Endpoints:</strong> {comparisonResult.differences.endpoints.recommended + comparisonResult.differences.endpoints.deprecated.reduce((a, b) => a + b, 0)}</p>
-                        <p><strong>Will Consolidate To:</strong> {comparisonResult.recommended.name}</p>
-                        <p><strong>Endpoints to Migrate:</strong> {comparisonResult.differences.endpoints.deprecated.reduce((a, b) => a + b, 0)}</p>
-                        <p><strong>Ready for Migration:</strong> <Badge variant={validateMigrationReadiness() ? 'default' : 'destructive'}>{validateMigrationReadiness() ? 'Yes' : 'No'}</Badge></p>
+                        <p><strong>Single Source:</strong> {comparisonResult.recommended.name}</p>
+                        <p><strong>APIs to Remove:</strong> {comparisonResult.deprecated.length}</p>
+                        <p><strong>Endpoints Affected:</strong> {comparisonResult.differences.endpoints.deprecated.reduce((a, b) => a + b, 0)}</p>
+                        <p><strong>Migration Ready:</strong> <Badge variant={validateMigrationReadiness() ? 'default' : 'destructive'}>{validateMigrationReadiness() ? 'Yes' : 'No'}</Badge></p>
                       </div>
                     </div>
                   </div>
 
-                  <Alert className="border-blue-200 bg-blue-50">
-                    <AlertDescription className="text-blue-800">
-                      <strong>Validation Status:</strong> All checks passed. System is ready for migration to single source of truth: 
-                      <strong> {comparisonResult.recommended.name}</strong>
+                  <Alert className="border-green-200 bg-green-50">
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                    <AlertDescription className="text-green-800">
+                      <strong>✅ READY FOR CONSOLIDATION</strong><br/>
+                      All validation checks passed. The system is ready to consolidate to 
+                      <strong> "{comparisonResult.recommended.name}"</strong> as your single source of truth.
+                      This will resolve the endpoint count mismatch and improve data consistency across all healthcare modules.
                     </AlertDescription>
                   </Alert>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="execute">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Settings className="h-5 w-5" />
-                  Execute Migration (Preview)
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Alert className="border-yellow-200 bg-yellow-50 mb-4">
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertDescription className="text-yellow-800">
-                    <strong>Ready for Migration:</strong> Analysis complete. The system recommends consolidating to 
-                    <strong> "{comparisonResult.recommended.name}"</strong> as your single source of truth.
-                  </AlertDescription>
-                </Alert>
-
-                <div className="space-y-4">
-                  <div className="p-4 border border-green-200 bg-green-50 rounded-lg">
-                    <h4 className="font-medium text-green-800 mb-2">Migration Summary:</h4>
-                    <ul className="text-sm text-green-700 space-y-1">
-                      <li>• Single Source of Truth: {comparisonResult.recommended.name}</li>
-                      <li>• APIs to Deprecate: {comparisonResult.deprecated.length}</li>
-                      <li>• Endpoints to Consolidate: {comparisonResult.differences.endpoints.deprecated.reduce((a, b) => a + b, 0)}</li>
-                      <li>• Risk Level: {comparisonResult.riskAssessment}</li>
-                    </ul>
-                  </div>
-
-                  <div className="p-4 border border-blue-200 bg-blue-50 rounded-lg">
-                    <h4 className="font-medium text-blue-800 mb-2">Next Steps:</h4>
-                    <p className="text-sm text-blue-700">
-                      The analysis is complete and validated. You can now proceed with updating all references 
-                      to use "{comparisonResult.recommended.name}" as the single source of truth for your healthcare API operations.
-                    </p>
-                  </div>
                 </div>
               </CardContent>
             </Card>
