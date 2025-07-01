@@ -15,12 +15,14 @@ interface RemoveRoleDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   userId: string | null;
+  userName?: string;
 }
 
 const RemoveRoleDialog: React.FC<RemoveRoleDialogProps> = ({
   open,
   onOpenChange,
-  userId
+  userId,
+  userName
 }) => {
   const { users, removeRole, isRemovingRole } = useUnifiedUserManagement();
   const [selectedRole, setSelectedRole] = React.useState<string>('');
@@ -51,7 +53,7 @@ const RemoveRoleDialog: React.FC<RemoveRoleDialogProps> = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-orange-600" />
-            Remove Role
+            Remove Role{userName ? ` from ${userName}` : ''}
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4">

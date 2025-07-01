@@ -23,12 +23,14 @@ interface AssignRoleDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   userId: string | null;
+  userName?: string;
 }
 
 const AssignRoleDialog: React.FC<AssignRoleDialogProps> = ({
   open,
   onOpenChange,
-  userId
+  userId,
+  userName
 }) => {
   const { assignRole, isAssigningRole } = useUnifiedUserManagement();
   const [selectedRole, setSelectedRole] = React.useState<string>('');
@@ -54,7 +56,9 @@ const AssignRoleDialog: React.FC<AssignRoleDialogProps> = ({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Assign Role</DialogTitle>
+          <DialogTitle>
+            Assign Role{userName ? ` to ${userName}` : ''}
+          </DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div>
