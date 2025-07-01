@@ -21,6 +21,7 @@ import {
   Key
 } from 'lucide-react';
 
+// Fix: Complete ApiService interface based on real data structure
 interface ApiService {
   id: string;
   name: string;
@@ -32,10 +33,20 @@ interface ApiService {
   status: string;
   direction: string;
   purpose: string;
+  lifecycle_stage: string; // Fix: Add required lifecycle_stage property
   endpoints_count?: number;
   documentation_url?: string;
   created_at: string;
   updated_at: string;
+  rls_policies_count?: number;
+  data_mappings_count?: number;
+  contact_info?: any;
+  sla_requirements?: any;
+  security_requirements?: any;
+  rate_limits?: any;
+  webhook_config?: any;
+  created_by?: string;
+  last_modified_by?: string;
 }
 
 interface InternalApiEndpointsListProps {
@@ -65,7 +76,7 @@ export const InternalApiEndpointsList: React.FC<InternalApiEndpointsListProps> =
     }));
   };
 
-  // Get detailed stats for all APIs
+  // Get detailed stats for all APIs using real data
   const detailedStats = getDetailedApiStats(apis);
 
   if (apis.length === 0) {
@@ -103,6 +114,9 @@ export const InternalApiEndpointsList: React.FC<InternalApiEndpointsListProps> =
                     <Badge variant={api.status === 'active' ? 'default' : 'secondary'}>
                       {api.status}
                     </Badge>
+                    <Badge variant="outline" className="text-xs">
+                      {api.lifecycle_stage}
+                    </Badge>
                   </CardTitle>
                   <p className="text-sm text-muted-foreground mb-3">
                     {api.description || 'No description provided'}
@@ -122,6 +136,10 @@ export const InternalApiEndpointsList: React.FC<InternalApiEndpointsListProps> =
                       <Shield className="h-3 w-3" />
                       {apiEndpointsForThisApi.filter(e => e.requires_authentication).length} secured
                     </span>
+                    <span className="flex items-center gap-1">
+                      <Key className="h-3 w-3" />
+                      {api.rls_policies_count || 0} RLS policies
+                    </span>
                     {api.documentation_url && (
                       <span className="flex items-center gap-1">
                         <FileText className="h-3 w-3" />
@@ -136,6 +154,9 @@ export const InternalApiEndpointsList: React.FC<InternalApiEndpointsListProps> =
                     </Badge>
                     <Badge variant="outline" className="text-xs">
                       {api.category}
+                    </Badge>
+                    <Badge variant="outline" className="text-xs">
+                      {api.purpose}
                     </Badge>
                   </div>
                 </div>
@@ -193,6 +214,8 @@ export const InternalApiEndpointsList: React.FC<InternalApiEndpointsListProps> =
                           <div><strong>Type:</strong> {api.type}</div>
                           <div><strong>Direction:</strong> {api.direction}</div>
                           <div><strong>Category:</strong> {api.category}</div>
+                          <div><strong>Purpose:</strong> {api.purpose}</div>
+                          <div><strong>Lifecycle:</strong> {api.lifecycle_stage}</div>
                         </div>
                       </div>
                       <div>
@@ -205,6 +228,8 @@ export const InternalApiEndpointsList: React.FC<InternalApiEndpointsListProps> =
                           )}</div>
                           <div><strong>Version:</strong> {api.version}</div>
                           <div><strong>Status:</strong> {api.status}</div>
+                          <div><strong>RLS Policies:</strong> {api.rls_policies_count || 0}</div>
+                          <div><strong>Data Mappings:</strong> {api.data_mappings_count || 0}</div>
                           <div><strong>Documentation:</strong> {api.documentation_url ? (
                             <a href={api.documentation_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
                               Available

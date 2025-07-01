@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -39,6 +38,7 @@ interface ApiKey {
   last_used: string | null;
   expires_at: string | null;
   created_at: string;
+  user_id: string;
 }
 
 export const ApiKeysTabContent: React.FC = () => {
@@ -70,7 +70,7 @@ export const ApiKeysTabContent: React.FC = () => {
     staleTime: 30000
   });
 
-  // Create API key mutation
+  // Create API key mutation with fixed user_id assignment
   const createApiKeyMutation = useMutation({
     mutationFn: async (keyData: {
       name: string;
@@ -81,6 +81,9 @@ export const ApiKeysTabContent: React.FC = () => {
       rate_limit_period: string;
       expires_at?: string;
     }) => {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) throw new Error('User not authenticated');
+
       const { data, error } = await supabase.rpc('generate_api_key', {
         key_type: keyData.type
       });
@@ -95,6 +98,7 @@ export const ApiKeysTabContent: React.FC = () => {
         .from('api_keys')
         .insert({
           ...keyData,
+          user_id: user.user.id, // Fix: Add required user_id field
           key_hash: hashHex,
           key_prefix: data.split('_')[0] + '_' + data.split('_')[1] + '_'
         })
