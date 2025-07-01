@@ -13,7 +13,7 @@ import EditFacilityDialog from '@/components/facilities/EditFacilityDialog';
 import { useFacilities } from '@/hooks/useFacilities';
 
 const Facilities = () => {
-  const { facilities, isLoading, getFacilityStats } = useFacilities();
+  const { facilities, isLoading, error, getFacilityStats, searchFacilities } = useFacilities();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedFacility, setSelectedFacility] = useState<any>(null);
@@ -28,15 +28,15 @@ const Facilities = () => {
     setEditDialogOpen(true);
   };
 
-  // Get stats from the hook
+  // Get stats from the hook (real data)
   const stats = getFacilityStats();
   
-  // Filter facilities based on search
-  const filteredFacilities = facilities.filter(facility => 
-    facility.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    facility.facility_type?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    facility.address?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Filter facilities using the hook's search function
+  const filteredFacilities = searchFacilities(searchQuery);
+
+  if (error) {
+    console.error('❌ Error loading facilities:', error);
+  }
 
   const headerActions = (
     <Button onClick={handleCreateFacility}>
@@ -53,7 +53,7 @@ const Facilities = () => {
         headerActions={headerActions}
       >
         <div className="space-y-6">
-          {/* Stats Grid */}
+          {/* Stats Grid - Real Data */}
           <AdminStatsGrid columns={4}>
             <StatCard
               title="Total Facilities"
@@ -102,12 +102,16 @@ const Facilities = () => {
             </Button>
           </div>
 
-          {/* Facilities List */}
+          {/* Facilities List - Real Data */}
           <Card className="shadow-sm">
             <CardContent className="p-6">
               {isLoading ? (
                 <div className="text-center py-8">
-                  <p className="text-gray-500">Loading facilities...</p>
+                  <p className="text-gray-500">Loading facilities from database...</p>
+                </div>
+              ) : error ? (
+                <div className="text-center py-8">
+                  <p className="text-red-500">Error loading facilities: {error.message}</p>
                 </div>
               ) : (
                 <FacilitiesList 
@@ -117,6 +121,11 @@ const Facilities = () => {
               )}
             </CardContent>
           </Card>
+
+          {/* Data Source Indicator */}
+          <div className="text-xs text-gray-500 text-center">
+            Data Source: Real database via facilities table • {facilities.length} facilities loaded
+          </div>
         </div>
 
         {/* Dialogs */}

@@ -20,7 +20,7 @@ import CreateFacilityDialog from './CreateFacilityDialog';
 import EditFacilityDialog from './EditFacilityDialog';
 
 export const FacilitiesManagement: React.FC = () => {
-  const { facilities, isLoading, getFacilityStats } = useFacilities();
+  const { facilities, isLoading, error, getFacilityStats, searchFacilities } = useFacilities();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFacility, setSelectedFacility] = useState<any>(null);
   
@@ -29,16 +29,16 @@ export const FacilitiesManagement: React.FC = () => {
   const [editFacilityOpen, setEditFacilityOpen] = useState(false);
 
   const stats = getFacilityStats();
-  const filteredFacilities = facilities.filter(facility => 
-    facility.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    facility.facility_type?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    facility.address?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredFacilities = searchFacilities(searchQuery);
 
   const handleEditFacility = (facility: any) => {
     setSelectedFacility(facility);
     setEditFacilityOpen(true);
   };
+
+  if (error) {
+    console.error('❌ Error in FacilitiesManagement:', error);
+  }
 
   return (
     <div className="space-y-6">
@@ -54,7 +54,7 @@ export const FacilitiesManagement: React.FC = () => {
         </Button>
       </div>
 
-      {/* Stats */}
+      {/* Stats - Real Data */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -124,7 +124,7 @@ export const FacilitiesManagement: React.FC = () => {
         </Button>
       </div>
 
-      {/* Facility Type Breakdown */}
+      {/* Facility Type Breakdown - Real Data */}
       <Card>
         <CardHeader>
           <CardTitle>Facility Types</CardTitle>
@@ -140,11 +140,17 @@ export const FacilitiesManagement: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Facilities List */}
+      {/* Facilities List - Real Data */}
       {isLoading ? (
         <Card>
           <CardContent className="p-8 text-center">
-            <p className="text-gray-500">Loading facilities...</p>
+            <p className="text-gray-500">Loading facilities from database...</p>
+          </CardContent>
+        </Card>
+      ) : error ? (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <p className="text-red-500">Error loading facilities: {error.message}</p>
           </CardContent>
         </Card>
       ) : (
@@ -153,6 +159,11 @@ export const FacilitiesManagement: React.FC = () => {
           onEditFacility={handleEditFacility}
         />
       )}
+
+      {/* Data Source Indicator */}
+      <div className="text-xs text-gray-500 text-center">
+        Real Database Connection • {facilities.length} facilities loaded from facilities table
+      </div>
 
       {/* Dialogs */}
       <CreateFacilityDialog

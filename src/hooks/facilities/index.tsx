@@ -1,47 +1,12 @@
 
 /**
- * Facilities Hook - Now uses consolidated approach
- * Following the unified user management pattern
+ * Facilities Hook Index - Consolidated single source of truth
+ * All facilities functionality should go through this unified interface
  */
-import { useFacilityData } from './useFacilityData';
-import { useFacilityMutations } from './useFacilityMutations';
 
-export const useFacilities = () => {
-  const { data: facilities, isLoading, error, refetch } = useFacilityData();
-  const mutations = useFacilityMutations();
-
-  // Calculate facility statistics similar to user stats
-  const getFacilityStats = () => {
-    const stats = {
-      total: facilities?.length || 0,
-      active: facilities?.filter(f => f.is_active !== false).length || 0,
-      inactive: facilities?.filter(f => f.is_active === false).length || 0,
-      typeBreakdown: facilities?.reduce((acc, facility) => {
-        const type = facility.facility_type || 'unknown';
-        acc[type] = (acc[type] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>) || {}
-    };
-    return stats;
-  };
-
-  return {
-    facilities: facilities || [],
-    isLoading,
-    error,
-    refetch,
-    getFacilityStats,
-    ...mutations,
-    // Meta information for consistency with unified system
-    meta: {
-      totalFacilities: facilities?.length || 0,
-      dataSource: 'facilities table via direct query',
-      lastFetch: new Date().toISOString(),
-      version: 'consolidated-v1'
-    }
-  };
-};
-
-// Re-export individual hooks for direct use
+export { useFacilities } from '../useFacilities';
 export { useFacilityData } from './useFacilityData';
 export { useFacilityMutations } from './useFacilityMutations';
+
+// This ensures all facilities imports use the same consolidated approach
+// No more duplicate hooks or mock data

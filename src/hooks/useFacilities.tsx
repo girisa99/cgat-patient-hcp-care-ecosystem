@@ -1,93 +1,58 @@
 
-import { useState, useEffect } from 'react';
-
-// Enhanced facilities data that matches the structure used in components
-const facilitiesData = [
-  { 
-    id: '1', 
-    name: 'Main Hospital', 
-    facility_type: 'Hospital',
-    address: '123 Healthcare Ave, Medical City, MC 12345',
-    phone: '(555) 123-4567',
-    email: 'info@mainhospital.com',
-    is_active: true
-  },
-  { 
-    id: '2', 
-    name: 'Community Clinic', 
-    facility_type: 'Clinic',
-    address: '456 Community Blvd, Health Town, HT 67890',
-    phone: '(555) 234-5678',
-    email: 'contact@communityclinic.com',
-    is_active: true
-  },
-  { 
-    id: '3', 
-    name: 'Treatment Center', 
-    facility_type: 'Treatment Center',
-    address: '789 Wellness St, Care City, CC 13579',
-    phone: '(555) 345-6789',
-    email: 'info@treatmentcenter.com',
-    is_active: true
-  }
-];
+/**
+ * Main Facilities Hook - Uses consolidated approach with real database data
+ * Following the unified user management pattern - NO MOCK DATA
+ */
+import { useFacilityData } from './facilities/useFacilityData';
+import { useFacilityMutations } from './facilities/useFacilityMutations';
 
 export const useFacilities = () => {
-  const [facilities, setFacilities] = useState(facilitiesData);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const { data: facilities, isLoading, error, refetch } = useFacilityData();
+  const mutations = useFacilityMutations();
 
-  // Since we're using static data, we can just return it immediately
-  useEffect(() => {
-    setIsLoading(false);
-  }, []);
-
-  // Calculate facility statistics
+  // Calculate facility statistics from real data
   const getFacilityStats = () => {
     const stats = {
-      total: facilities.length,
-      active: facilities.filter(f => f.is_active).length,
-      inactive: facilities.filter(f => !f.is_active).length,
-      typeBreakdown: facilities.reduce((acc, facility) => {
+      total: facilities?.length || 0,
+      active: facilities?.filter(f => f.is_active !== false).length || 0,
+      inactive: facilities?.filter(f => f.is_active === false).length || 0,
+      typeBreakdown: facilities?.reduce((acc, facility) => {
         const type = facility.facility_type || 'unknown';
         acc[type] = (acc[type] || 0) + 1;
         return acc;
-      }, {} as Record<string, number>)
+      }, {} as Record<string, number>) || {}
     };
     return stats;
   };
 
-  // Mock create facility function
-  const createFacility = (facilityData: any) => {
-    console.log('Creating facility:', facilityData);
-    const newFacility = {
-      id: String(Date.now()),
-      ...facilityData,
-      is_active: true
-    };
-    setFacilities(prev => [...prev, newFacility]);
-  };
-
-  // Mock update facility function
-  const updateFacility = ({ id, updates }: { id: string; updates: any }) => {
-    console.log('Updating facility:', id, updates);
-    setFacilities(prev => 
-      prev.map(facility => 
-        facility.id === id ? { ...facility, ...updates } : facility
-      )
+  const searchFacilities = (query: string) => {
+    if (!query.trim()) return facilities || [];
+    
+    return (facilities || []).filter((facility: any) => 
+      facility.name?.toLowerCase().includes(query.toLowerCase()) ||
+      facility.facility_type?.toLowerCase().includes(query.toLowerCase()) ||
+      facility.address?.toLowerCase().includes(query.toLowerCase())
     );
   };
 
   return {
-    facilities,
+    facilities: facilities || [],
     isLoading,
     error,
-    refetch: () => {
-      // For static data, refetch does nothing but maintains API consistency
-      setFacilities(facilitiesData);
-    },
+    refetch,
     getFacilityStats,
-    createFacility,
-    updateFacility
+    searchFacilities,
+    ...mutations,
+    // Meta information for consistency with unified system
+    meta: {
+      totalFacilities: facilities?.length || 0,
+      dataSource: 'facilities table via direct query',
+      lastFetch: new Date().toISOString(),
+      version: 'consolidated-v1'
+    }
   };
 };
+
+// Re-export individual hooks for direct use
+export { useFacilityData } from './facilities/useFacilityData';
+export { useFacilityMutations } from './facilities/useFacilityMutations';
