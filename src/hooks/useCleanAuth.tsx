@@ -51,11 +51,13 @@ export const useCleanAuth = () => {
           setSession(session);
           setIsAuthenticated(true);
           
-          // Fetch profile and roles
-          await Promise.all([
-            fetchProfile(session.user.id),
-            fetchUserRoles(session.user.id)
-          ]);
+          // Use setTimeout to defer profile/role fetching and prevent blocking
+          setTimeout(() => {
+            if (mounted) {
+              fetchProfile(session.user.id);
+              fetchUserRoles(session.user.id);
+            }
+          }, 0);
         } else {
           console.log('ℹ️ No active session found');
         }
@@ -136,10 +138,14 @@ export const useCleanAuth = () => {
           setUser(session.user);
           setSession(session);
           setIsAuthenticated(true);
-          await Promise.all([
-            fetchProfile(session.user.id),
-            fetchUserRoles(session.user.id)
-          ]);
+          
+          // Use setTimeout to defer data fetching
+          setTimeout(() => {
+            if (mounted) {
+              fetchProfile(session.user.id);
+              fetchUserRoles(session.user.id);
+            }
+          }, 0);
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
           setSession(null);

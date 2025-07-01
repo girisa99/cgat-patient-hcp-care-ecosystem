@@ -17,9 +17,18 @@ import Onboarding from "./pages/Onboarding";
 import ApiIntegrations from "./pages/ApiIntegrations";
 import AuditLog from "./pages/AuditLog";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      staleTime: 1000 * 60 * 5, // 5 minutes
+    },
+  },
+});
 
 function App() {
+  console.log('🚀 App rendering...');
+  
   return (
     <QueryClientProvider client={queryClient}>
       <CleanAuthProvider>
