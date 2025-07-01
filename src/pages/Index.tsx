@@ -3,8 +3,8 @@ import { useEffect, useState } from 'react';
 import { useAuthContext } from '@/components/auth/CleanAuthProvider';
 import { useSimpleRouting } from '@/hooks/useSimpleRouting';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
-import CleanLoginForm from '@/components/auth/CleanLoginForm';
-import HealthcareAuthLayout from '@/components/auth/HealthcareAuthLayout';
+import ComprehensiveLoginForm from '@/components/auth/ComprehensiveLoginForm';
+import HealthcareAuthLayoutWithLogo from '@/components/auth/HealthcareAuthLayoutWithLogo';
 import AuthDiagnostic from '@/components/auth/AuthDiagnostic';
 
 const Index = () => {
@@ -58,31 +58,31 @@ const Index = () => {
   // Show loading while initializing
   if (!initialized || loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <HealthcareAuthLayoutWithLogo>
         <div className="text-center">
           <LoadingSpinner size="lg" />
-          <p className="mt-4 text-gray-600">Initializing GENIE...</p>
+          <p className="mt-4 text-gray-600">Initializing GENIE Platform...</p>
         </div>
-      </div>
+      </HealthcareAuthLayoutWithLogo>
     );
   }
 
   // Show routing message for authenticated users
   if (isAuthenticated && !hasAttemptedRouting) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <HealthcareAuthLayoutWithLogo>
         <div className="text-center">
           <LoadingSpinner size="lg" />
           <p className="mt-4 text-gray-600">Preparing your dashboard...</p>
         </div>
-      </div>
+      </HealthcareAuthLayoutWithLogo>
     );
   }
 
   // If authenticated but still on index after routing attempt, show a manual option
   if (isAuthenticated && hasAttemptedRouting) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <HealthcareAuthLayoutWithLogo>
         <div className="text-center">
           <div className="bg-green-50 border border-green-200 rounded-lg p-6 max-w-md">
             <h3 className="text-lg font-semibold text-green-800 mb-2">Welcome Back!</h3>
@@ -99,23 +99,43 @@ const Index = () => {
               >
                 Go to Dashboard
               </button>
-              <button
-                onClick={() => window.location.href = '/users'}
-                className="w-full bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 transition-colors"
-              >
-                Go to Users
-              </button>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => window.location.href = '/users'}
+                  className="bg-gray-600 text-white px-3 py-2 rounded hover:bg-gray-700 transition-colors text-sm"
+                >
+                  Users
+                </button>
+                <button
+                  onClick={() => window.location.href = '/patients'}
+                  className="bg-gray-600 text-white px-3 py-2 rounded hover:bg-gray-700 transition-colors text-sm"
+                >
+                  Patients
+                </button>
+                <button
+                  onClick={() => window.location.href = '/facilities'}
+                  className="bg-gray-600 text-white px-3 py-2 rounded hover:bg-gray-700 transition-colors text-sm"
+                >
+                  Facilities
+                </button>
+                <button
+                  onClick={() => window.location.href = '/modules'}
+                  className="bg-gray-600 text-white px-3 py-2 rounded hover:bg-gray-700 transition-colors text-sm"
+                >
+                  Modules
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </HealthcareAuthLayoutWithLogo>
     );
   }
 
   // Show diagnostic tool if enabled
   if (showDiagnostic) {
     return (
-      <HealthcareAuthLayout>
+      <HealthcareAuthLayoutWithLogo>
         <div className="space-y-4">
           <button
             onClick={() => setShowDiagnostic(false)}
@@ -125,15 +145,15 @@ const Index = () => {
           </button>
           <AuthDiagnostic />
         </div>
-      </HealthcareAuthLayout>
+      </HealthcareAuthLayoutWithLogo>
     );
   }
 
-  // Show login form for unauthenticated users
+  // Show comprehensive login form for unauthenticated users
   return (
-    <HealthcareAuthLayout>
+    <HealthcareAuthLayoutWithLogo>
       <div className="space-y-4">
-        <CleanLoginForm />
+        <ComprehensiveLoginForm />
         <div className="text-center">
           <button
             onClick={() => setShowDiagnostic(true)}
@@ -143,7 +163,7 @@ const Index = () => {
           </button>
         </div>
       </div>
-    </HealthcareAuthLayout>
+    </HealthcareAuthLayoutWithLogo>
   );
 };
 
