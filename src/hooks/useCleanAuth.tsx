@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { User } from '@supabase/supabase-js';
+import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -19,6 +19,7 @@ export interface Profile {
 
 export const useCleanAuth = () => {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [userRoles, setUserRoles] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -46,6 +47,7 @@ export const useCleanAuth = () => {
         if (session?.user && mounted) {
           console.log('✅ User session found:', session.user.id);
           setUser(session.user);
+          setSession(session);
           setIsAuthenticated(true);
           
           // Fetch profile and roles
@@ -131,6 +133,7 @@ export const useCleanAuth = () => {
 
         if (event === 'SIGNED_IN' && session?.user) {
           setUser(session.user);
+          setSession(session);
           setIsAuthenticated(true);
           await Promise.all([
             fetchProfile(session.user.id),
@@ -138,6 +141,7 @@ export const useCleanAuth = () => {
           ]);
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
+          setSession(null);
           setProfile(null);
           setUserRoles([]);
           setIsAuthenticated(false);
@@ -153,6 +157,35 @@ export const useCleanAuth = () => {
       subscription.unsubscribe();
     };
   }, [toast]);
+
+  const signIn = async (email: string, password: string): Promise<{ success: boolean; error?: string; user?: User }> => {
+    try {
+      console.log('🔑 Attempting sign in with:', email);
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password,
+      });
+
+      if (error) {
+        console.error('❌ Sign in error:', error);
+        return { success: false, error: error.message };
+      }
+
+      if (data.user) {
+        console.log('✅ Sign in successful:', data.user.email);
+        toast({
+          title: "Success",
+          description: "Successfully signed in!",
+        });
+        return { success: true, user: data.user };
+      }
+
+      return { success: false, error: 'No user returned' };
+    } catch (err: any) {
+      console.error('💥 Sign in exception:', err);
+      return { success: false, error: err.message };
+    }
+  };
 
   const signOut = async () => {
     try {
@@ -186,10 +219,12 @@ export const useCleanAuth = () => {
 
   return {
     user,
+    session,
     profile,
     userRoles,
     isLoading,
     isAuthenticated,
+    signIn,
     signOut
   };
 };

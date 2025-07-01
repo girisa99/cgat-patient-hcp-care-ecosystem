@@ -1,12 +1,9 @@
 
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Database } from '@/integrations/supabase/types';
-
-type UserRole = Database['public']['Enums']['user_role'];
 
 interface SimpleRoutingProps {
-  userRoles: UserRole[];
+  userRoles: string[];
   isAuthenticated: boolean;
 }
 

@@ -1,15 +1,19 @@
 
 import React, { createContext, useContext, ReactNode } from 'react';
 import { useCleanAuth } from '@/hooks/useCleanAuth';
-import type { User } from '@supabase/supabase-js';
+import type { User, Session } from '@supabase/supabase-js';
 import type { Profile } from '@/hooks/useCleanAuth';
 
 interface AuthContextType {
   user: User | null;
   profile: Profile | null;
   userRoles: string[];
+  session: Session | null;
   isLoading: boolean;
+  loading: boolean; // alias for compatibility
   isAuthenticated: boolean;
+  initialized: boolean;
+  signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string; user?: User }>;
   signOut: () => Promise<void>;
 }
 
@@ -22,8 +26,14 @@ interface CleanAuthProviderProps {
 export const CleanAuthProvider: React.FC<CleanAuthProviderProps> = ({ children }) => {
   const auth = useCleanAuth();
 
+  const contextValue: AuthContextType = {
+    ...auth,
+    loading: auth.isLoading, // alias for compatibility  
+    initialized: !auth.isLoading // Consider initialized when not loading
+  };
+
   return (
-    <AuthContext.Provider value={auth}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
