@@ -14,7 +14,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   initialized: boolean;
   signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string; user?: User }>;
-  signOut: () => Promise<void>;
+  signOut: () => Promise<{ success: boolean; error?: string }>; // Fixed return type
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
