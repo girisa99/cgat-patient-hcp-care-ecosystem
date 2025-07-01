@@ -58,7 +58,7 @@ const HealthcareAuthLayoutWithLogo: React.FC<HealthcareAuthLayoutWithLogoProps> 
         <div className="absolute top-40 left-1/2 transform -translate-x-1/2 w-80 h-80 bg-pink-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         @keyframes blob {
           0% {
             transform: translate(0px, 0px) scale(1);

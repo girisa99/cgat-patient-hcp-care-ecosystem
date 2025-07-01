@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { HealthcareButton } from '@/components/ui/healthcare-button';
 import { HealthcareInput } from '@/components/ui/healthcare-input';
@@ -242,7 +241,7 @@ const ComprehensiveLoginForm = () => {
             <div className="border-t pt-3">
               <HealthcareButton 
                 onClick={handleSignOut}
-                variant="destructive"
+                variant="danger"
                 className="w-full" 
                 disabled={isLoading}
                 size="sm"
