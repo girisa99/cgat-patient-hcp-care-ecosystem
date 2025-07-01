@@ -1,4 +1,3 @@
-
 import { Home, Users, Building2, Shield, Zap, UserCheck } from "lucide-react";
 import Index from "./pages/Index";
 import UsersPage from "./pages/Users";
@@ -6,8 +5,9 @@ import Facilities from "./pages/Facilities";
 import Modules from "./pages/Modules";
 import ApiServices from "./pages/ApiServices";
 import Patients from "./pages/Patients";
+import ComprehensiveValidation from "./pages/ComprehensiveValidation";
 
-export const navItems = [
+export const navItems: NavItem[] = [
   {
     title: "Dashboard",
     to: "/",
@@ -43,5 +43,11 @@ export const navItems = [
     to: "/api-services",
     icon: <Zap className="h-4 w-4" />,
     page: <ApiServices />,
+  },
+  {
+    title: "Comprehensive Validation",
+    to: "/comprehensive-validation", 
+    icon: "settings",
+    page: <ComprehensiveValidation />,
   }
 ];
