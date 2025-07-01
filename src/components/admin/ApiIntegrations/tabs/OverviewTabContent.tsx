@@ -16,7 +16,7 @@ export const OverviewTabContent: React.FC<OverviewTabContentProps> = ({
   integrations = [],
   consolidatedData
 }) => {
-  console.log('📊 OverviewTabContent - Rendering with fixed consolidated sync data:', {
+  console.log('📊 OverviewTabContent - Rendering with consolidated data:', {
     totalIntegrations: integrations.length,
     consolidatedData: consolidatedData?.consolidatedApis?.length || 0,
     syncStatus: consolidatedData?.syncStatus
@@ -25,7 +25,7 @@ export const OverviewTabContent: React.FC<OverviewTabContentProps> = ({
   const consolidatedApis = consolidatedData?.consolidatedApis || integrations;
   const syncStatus = consolidatedData?.syncStatus;
 
-  // Enhanced metrics from consolidated data with proper handling
+  // Enhanced metrics from consolidated data
   const totalEndpoints = React.useMemo(() => {
     return consolidatedApis.reduce((sum, api) => {
       const endpointCount = api.actualEndpoints?.length || api.endpoints_count || 0;
@@ -41,7 +41,6 @@ export const OverviewTabContent: React.FC<OverviewTabContentProps> = ({
         ).length;
         return sum + schemaCount;
       }
-      // Fallback calculation for APIs without actualEndpoints
       return sum + Math.round((api.endpoints_count || 0) * 0.8);
     }, 0);
   }, [consolidatedApis]);
@@ -106,7 +105,7 @@ export const OverviewTabContent: React.FC<OverviewTabContentProps> = ({
   const syncDisplay = getSyncStatusDisplay();
   const IconComponent = syncDisplay.icon;
 
-  console.log('📈 Fixed Overview Stats:', {
+  console.log('📈 Overview Stats:', {
     totalEndpoints,
     totalSchemas,
     totalSecurityPolicies,

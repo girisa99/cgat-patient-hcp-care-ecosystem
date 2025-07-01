@@ -18,6 +18,10 @@ interface ApiIntegrationsTabsProps {
   internalApis: any[];
   externalApis: any[];
   publishedApis: any[];
+  consolidatedData?: {
+    consolidatedApis: any[];
+    syncStatus: any;
+  };
   createDialogOpen: boolean;
   onCreateDialogChange: (open: boolean) => void;
   onDownloadCollection: (id: string) => void;
@@ -35,6 +39,7 @@ export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = React.mem
   internalApis,
   externalApis,
   publishedApis,
+  consolidatedData,
   createDialogOpen,
   onCreateDialogChange,
   onDownloadCollection,
@@ -43,15 +48,36 @@ export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = React.mem
   onCopyUrl,
   onTestEndpoint
 }) => {
-  console.log('🔍 ApiIntegrationsTabs: Rendering with consolidated data');
+  console.log('🔍 ApiIntegrationsTabs: Rendering with consolidated data:', {
+    consolidatedData: consolidatedData?.consolidatedApis?.length || 0,
+    internalCount: internalApis.length,
+    externalCount: externalApis.length,
+    publishedCount: publishedApis.length
+  });
+
+  // Use consolidated data to derive filtered lists for each tab
+  const consolidatedApis = consolidatedData?.consolidatedApis || integrations;
+  
+  // Filter consolidated data for each tab type
+  const consolidatedInternalApis = consolidatedApis.filter(api => 
+    api.type === 'internal' || api.direction === 'inbound'
+  );
+  
+  const consolidatedExternalApis = consolidatedApis.filter(api => 
+    api.type === 'external' || api.direction === 'outbound' || api.direction === 'bidirectional'
+  );
+  
+  const consolidatedPublishedApis = consolidatedApis.filter(api => 
+    api.status === 'published' || api.lifecycle_stage === 'production'
+  );
 
   return (
     <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
       <TabsList className="grid w-full grid-cols-8">
         <TabsTrigger value="overview">Overview</TabsTrigger>
-        <TabsTrigger value="internal">Internal ({internalApis.length})</TabsTrigger>
-        <TabsTrigger value="external">External ({externalApis.length})</TabsTrigger>
-        <TabsTrigger value="published">Published ({publishedApis.length})</TabsTrigger>
+        <TabsTrigger value="internal">Internal ({consolidatedInternalApis.length})</TabsTrigger>
+        <TabsTrigger value="external">External ({consolidatedExternalApis.length})</TabsTrigger>
+        <TabsTrigger value="published">Published ({consolidatedPublishedApis.length})</TabsTrigger>
         <TabsTrigger value="developer">Developer</TabsTrigger>
         <TabsTrigger value="keys">API Keys</TabsTrigger>
         <TabsTrigger value="testing">Testing</TabsTrigger>
@@ -61,12 +87,13 @@ export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = React.mem
       <TabsContent value="overview" className="mt-4">
         <OverviewTabContent 
           integrations={integrations}
+          consolidatedData={consolidatedData}
         />
       </TabsContent>
 
       <TabsContent value="internal" className="mt-4">
         <InternalApisTabContent
-          internalApis={internalApis}
+          internalApis={consolidatedInternalApis}
           searchTerm={searchTerm}
           createDialogOpen={createDialogOpen}
           setCreateDialogOpen={onCreateDialogChange}
@@ -79,7 +106,7 @@ export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = React.mem
 
       <TabsContent value="external" className="mt-4">
         <ExternalApisTabContent
-          externalApis={externalApis}
+          externalApis={consolidatedExternalApis}
           searchTerm={searchTerm}
           createDialogOpen={createDialogOpen}
           setCreateDialogOpen={onCreateDialogChange}
@@ -92,7 +119,7 @@ export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = React.mem
 
       <TabsContent value="published" className="mt-4">
         <PublishedApisTabContent 
-          consolidatedApis={publishedApis}
+          consolidatedApis={consolidatedPublishedApis}
           searchTerm={searchTerm}
         />
       </TabsContent>
@@ -107,14 +134,14 @@ export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = React.mem
 
       <TabsContent value="testing" className="mt-4">
         <TestingTabContent
-          consolidatedApis={integrations}
+          consolidatedApis={consolidatedApis}
           onTestEndpoint={onTestEndpoint}
         />
       </TabsContent>
 
       <TabsContent value="sandbox" className="mt-4">
         <SandboxTabContent 
-          integrations={integrations}
+          integrations={consolidatedApis}
           onTestEndpoint={onTestEndpoint}
         />
       </TabsContent>
