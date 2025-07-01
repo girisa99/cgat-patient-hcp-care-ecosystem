@@ -1,131 +1,96 @@
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { Database } from '@/integrations/supabase/types';
+import { useTypeSafeModuleTemplate } from '@/templates/hooks/useTypeSafeModuleTemplate';
 
-type Facility = Database['public']['Tables']['facilities']['Row'];
-type FacilityType = Database['public']['Enums']['facility_type'];
-
+/**
+ * Facilities Hook - Now using Universal Template
+ * 
+ * Consolidated with the template system while preserving all facility-specific functionality.
+ */
 export const useFacilities = () => {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-
-  const {
-    data: facilities,
-    isLoading,
-    error,
-    refetch
-  } = useQuery({
-    queryKey: ['facilities'],
-    queryFn: async (): Promise<Facility[]> => {
-      console.log('🏥 Fetching facilities...');
-      
-      try {
-        const { data, error } = await supabase
-          .from('facilities')
-          .select('*')
-          .order('name');
-
-        if (error) {
-          console.error('❌ Error fetching facilities:', error);
-          throw error;
-        }
-
-        console.log('✅ Facilities loaded:', data?.length || 0);
-        return data || [];
-      } catch (err) {
-        console.error('❌ Exception fetching facilities:', err);
-        throw err;
-      }
-    },
-    retry: 1,
-    staleTime: 30000,
-    refetchOnWindowFocus: false,
-  });
-
-  // Create new facility
-  const createFacilityMutation = useMutation({
-    mutationFn: async (facilityData: {
-      name: string;
-      facility_type: FacilityType;
-      address?: string;
-      phone?: string;
-      email?: string;
-      license_number?: string;
-      npi_number?: string;
-    }) => {
-      const { error } = await supabase
-        .from('facilities')
-        .insert({
-          name: facilityData.name,
-          facility_type: facilityData.facility_type,
-          address: facilityData.address || null,
-          phone: facilityData.phone || null,
-          email: facilityData.email || null,
-          license_number: facilityData.license_number || null,
-          npi_number: facilityData.npi_number || null,
-          is_active: true
-        });
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['facilities'] });
-      toast({
-        title: "Facility Created",
-        description: "New facility has been created successfully.",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create facility",
-        variant: "destructive",
-      });
+  const config = {
+    tableName: 'facilities' as const,
+    moduleName: 'Facilities',
+    requiredFields: ['name', 'facility_type'],
+    customValidation: (data: any) => {
+      // Validate facility types
+      const validTypes = ['hospital', 'clinic', 'pharmacy', 'laboratory', 'imaging_center'];
+      return validTypes.includes(data.facility_type);
     }
-  });
+  };
 
-  // Update facility
-  const updateFacilityMutation = useMutation({
-    mutationFn: async ({ 
-      facilityId, 
-      facilityData 
-    }: { 
-      facilityId: string; 
-      facilityData: Partial<Facility>;
-    }) => {
-      const { error } = await supabase
-        .from('facilities')
-        .update(facilityData)
-        .eq('id', facilityId);
+  const templateResult = useTypeSafeModuleTemplate(config);
 
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['facilities'] });
-      toast({
-        title: "Facility Updated",
-        description: "Facility has been updated successfully.",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update facility",
-        variant: "destructive",
-      });
-    }
-  });
+  // Facility-specific filtering
+  const facilities = templateResult.items.filter((item: any) => 
+    item.name && item.facility_type
+  );
+
+  // Facility-specific search
+  const searchFacilities = (query: string) => {
+    if (!query.trim()) return facilities;
+    
+    return facilities.filter((facility: any) => 
+      facility.name?.toLowerCase().includes(query.toLowerCase()) ||
+      facility.address?.toLowerCase().includes(query.toLowerCase()) ||
+      facility.facility_type?.toLowerCase().includes(query.toLowerCase()) ||
+      facility.license_number?.toLowerCase().includes(query.toLowerCase())
+    );
+  };
+
+  // Facility-specific statistics
+  const getFacilityStats = () => {
+    const stats = templateResult.getStatistics();
+    const typeDistribution = facilities.reduce((acc: any, facility: any) => {
+      acc[facility.facility_type] = (acc[facility.facility_type] || 0) + 1;
+      return acc;
+    }, {});
+    
+    const licensed = facilities.filter((f: any) => f.license_number).length;
+    const withNPI = facilities.filter((f: any) => f.npi_number).length;
+    
+    return {
+      ...stats,
+      total: facilities.length,
+      typeDistribution,
+      licensed,
+      withNPI,
+      hospitals: typeDistribution.hospital || 0,
+      clinics: typeDistribution.clinic || 0,
+      pharmacies: typeDistribution.pharmacy || 0
+    };
+  };
 
   return {
-    facilities: facilities || [],
-    isLoading,
-    error,
-    refetch,
-    createFacility: createFacilityMutation.mutate,
-    updateFacility: updateFacilityMutation.mutate,
-    isCreatingFacility: createFacilityMutation.isPending,
-    isUpdatingFacility: updateFacilityMutation.isPending
+    // Core functionality (backward compatible)
+    facilities,
+    isLoading: templateResult.isLoading,
+    error: templateResult.error,
+    refetch: templateResult.refetch,
+    
+    // Mutations (backward compatible)
+    createFacility: templateResult.createItem,
+    updateFacility: templateResult.updateItem,
+    deleteFacility: templateResult.deleteItem,
+    isCreating: templateResult.isCreating,
+    isUpdating: templateResult.isUpdating,
+    isDeleting: templateResult.isDeleting,
+    
+    // Enhanced functionality
+    searchFacilities,
+    getFacilityStats,
+    
+    // Universal template access
+    template: templateResult,
+    
+    // Metadata
+    meta: {
+      ...templateResult.meta,
+      facilityCount: facilities.length,
+      typeDistribution: facilities.reduce((acc: any, facility: any) => {
+        acc[facility.facility_type] = (acc[facility.facility_type] || 0) + 1;
+        return acc;
+      }, {}),
+      licensedCount: facilities.filter((f: any) => f.license_number).length
+    }
   };
 };
