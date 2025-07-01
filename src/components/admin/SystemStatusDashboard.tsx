@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -166,8 +165,8 @@ export const SystemStatusDashboard: React.FC = () => {
 
   const checkDatabaseTables = async () => {
     try {
-      // Check key tables
-      const tables = [
+      // Check key tables with proper type definitions
+      const tablesToCheck = [
         'api_integration_registry',
         'external_api_registry', 
         'active_issues',
@@ -175,24 +174,25 @@ export const SystemStatusDashboard: React.FC = () => {
         'profiles',
         'facilities',
         'modules'
-      ];
+      ] as const;
 
       const tableStatus = [];
-      for (const table of tables) {
+      for (const tableName of tablesToCheck) {
         try {
+          // Use type assertion to satisfy TypeScript
           const { data, error, count } = await supabase
-            .from(table)
+            .from(tableName as any)
             .select('*', { count: 'exact', head: true });
           
           tableStatus.push({
-            name: table,
+            name: tableName,
             status: error ? 'error' : 'active',
             rowCount: count || 0,
             error: error?.message
           });
         } catch (err) {
           tableStatus.push({
-            name: table,
+            name: tableName,
             status: 'error',
             rowCount: 0,
             error: 'Table access failed'

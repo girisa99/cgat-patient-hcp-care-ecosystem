@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useApiIntegrations } from '@/hooks/useApiIntegrations.tsx';
 import { usePublishedApiIntegration } from '@/hooks/usePublishedApiIntegration';
@@ -233,37 +234,6 @@ const ApiIntegrationsManager = () => {
       />
     </div>
   );
-
-  function handleDownloadCollection(integrationId: string) {
-    if (downloadPostmanCollection) {
-      downloadPostmanCollection(integrationId);
-    }
-  }
-
-  function handleViewDetails(integrationId: string) {
-    const integration = integrations?.find(i => i.id === integrationId);
-    if (integration) {
-      const integrationWithDescription = {
-        ...integration,
-        description: integration.description || 'No description provided'
-      };
-      setSelectedIntegration(integrationWithDescription);
-    }
-  }
-
-  function handleViewDocumentation(integrationId: string) {
-    console.log('Opening documentation for integration:', integrationId);
-  }
-
-  function handleCopyUrl(url: string) {
-    navigator.clipboard.writeText(url);
-  }
-
-  function handleTestEndpoint(integrationId: string, endpointId: string) {
-    if (testEndpoint) {
-      testEndpoint(integrationId, endpointId);
-    }
-  }
 };
 
 export default ApiIntegrationsManager;
