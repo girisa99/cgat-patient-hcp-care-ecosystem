@@ -10,20 +10,21 @@ import UnifiedDashboard from "@/components/dashboard/UnifiedDashboard";
 import Users from "@/pages/Users";
 import UsersPage from "@/pages/UsersPage";
 import AdminVerificationTest from "@/pages/AdminVerificationTest";
-import { SecurityDashboard } from "@/components/security/SecurityDashboard";
+import SecurityDashboard from "@/components/security/SecurityDashboard";
 import { ModulesManagement } from "@/components/modules/ModulesManagement";
 import { FacilitiesManagement } from "@/components/facilities/FacilitiesManagement";
 import { CollaborativeOnboardingView } from "@/components/onboarding/CollaborativeOnboardingView";
 import { SystemAnalysisDashboard } from "@/components/admin/SystemAnalysisDashboard";
-import { SystemAssessmentDashboard } from "@/components/admin/SystemAssessment/SystemAssessmentDashboard";
+import SystemAssessmentDashboard from "@/components/admin/SystemAssessment/SystemAssessmentDashboard";
 import { ApiServicesModule } from "@/components/admin/ApiServices/ApiServicesModule";
-import { OptimizedApiIntegrationsManager } from "@/components/admin/ApiIntegrations/OptimizedApiIntegrationsManager";
+import OptimizedApiIntegrationsManager from "@/components/admin/ApiIntegrations/OptimizedApiIntegrationsManager";
 import { DataImportModule } from "@/components/admin/DataImportModule";
 import { SystemStatusDashboard } from "@/components/admin/SystemStatusDashboard";
 import { UserManagementMain } from "@/components/admin/UserManagement/UserManagementMain";
-import { PatientManagement } from "@/components/admin/PatientManagement/PatientsList";
-import { AutoModuleManager } from "@/components/admin/AutoModuleManager";
+import PatientManagement from "@/components/admin/PatientManagement/PatientsList";
+import AutoModuleManager from "@/components/admin/AutoModuleManager";
 import { SystemVerificationDashboard } from "@/components/admin/SystemVerification/SystemVerificationDashboard";
+import Reports from "@/pages/Reports";
 
 const queryClient = new QueryClient();
 
@@ -45,7 +46,7 @@ const App = () => (
               <Route path="/modules" element={<ModulesManagement />} />
               <Route path="/onboarding" element={<CollaborativeOnboardingView />} />
               <Route path="/security" element={<SecurityDashboard />} />
-              <Route path="/reports" element={<UnifiedDashboard />} />
+              <Route path="/reports" element={<Reports />} />
               
               {/* Admin Routes */}
               <Route path="/admin/system-analysis" element={<SystemAnalysisDashboard />} />
