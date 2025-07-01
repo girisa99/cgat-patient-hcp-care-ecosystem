@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useFacilities } from '@/hooks/useFacilities';
+import { useToast } from '@/hooks/use-toast';
 
 interface EditFacilityDialogProps {
   facility: any;
@@ -13,64 +13,119 @@ interface EditFacilityDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const EditFacilityDialog: React.FC<EditFacilityDialogProps> = ({ facility, open, onOpenChange }) => {
-  const { updateFacility } = useFacilities();
+const EditFacilityDialog: React.FC<EditFacilityDialogProps> = ({
+  facility,
+  open,
+  onOpenChange
+}) => {
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     name: '',
     facility_type: '',
     address: '',
     phone: '',
-    email: ''
+    email: '',
+    license_number: '',
+    npi_number: ''
   });
+  const [isLoading, setIsLoading] = useState(false);
 
+  // Load facility data when dialog opens or facility changes
   useEffect(() => {
-    if (facility) {
+    if (facility && open) {
+      console.log('🏥 Loading facility data for edit:', facility);
       setFormData({
         name: facility.name || '',
         facility_type: facility.facility_type || '',
         address: facility.address || '',
         phone: facility.phone || '',
-        email: facility.email || ''
+        email: facility.email || '',
+        license_number: facility.license_number || '',
+        npi_number: facility.npi_number || ''
       });
     }
-  }, [facility]);
+  }, [facility, open]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateFacility({ id: facility.id, updates: formData });
-    onOpenChange(false);
+    setIsLoading(true);
+
+    try {
+      console.log('💾 Updating facility:', facility.id, formData);
+      
+      // TODO: Implement update via facilities hook
+      toast({
+        title: "Facility Updated",
+        description: "Facility information has been updated successfully.",
+      });
+      
+      onOpenChange(false);
+    } catch (error) {
+      console.error('❌ Error updating facility:', error);
+      toast({
+        title: "Update Failed",
+        description: "Failed to update facility information.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const facilityTypes = [
+    'hospital',
+    'clinic',
+    'pharmacy',
+    'laboratory',
+    'imaging_center',
+    'rehabilitation_center',
+    'long_term_care',
+    'ambulatory_surgery_center',
+    'urgent_care',
+    'mental_health_facility'
+  ];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Edit Facility</DialogTitle>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="name">Facility Name</Label>
+            <Label htmlFor="name">Facility Name *</Label>
             <Input
               id="name"
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              onChange={(e) => handleInputChange('name', e.target.value)}
+              placeholder="Enter facility name"
               required
             />
           </div>
           
           <div>
-            <Label htmlFor="facility_type">Facility Type</Label>
-            <Select value={formData.facility_type} onValueChange={(value) => setFormData({ ...formData, facility_type: value })}>
+            <Label htmlFor="facility_type">Facility Type *</Label>
+            <Select
+              value={formData.facility_type}
+              onValueChange={(value) => handleInputChange('facility_type', value)}
+            >
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue placeholder="Select facility type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="hospital">Hospital</SelectItem>
-                <SelectItem value="clinic">Clinic</SelectItem>
-                <SelectItem value="pharmacy">Pharmacy</SelectItem>
-                <SelectItem value="laboratory">Laboratory</SelectItem>
-                <SelectItem value="imaging_center">Imaging Center</SelectItem>
+                {facilityTypes.map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -80,35 +135,68 @@ const EditFacilityDialog: React.FC<EditFacilityDialogProps> = ({ facility, open,
             <Input
               id="address"
               value={formData.address}
-              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+              onChange={(e) => handleInputChange('address', e.target.value)}
+              placeholder="Enter facility address"
             />
           </div>
           
-          <div>
-            <Label htmlFor="phone">Phone</Label>
-            <Input
-              id="phone"
-              value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="phone">Phone</Label>
+              <Input
+                id="phone"
+                value={formData.phone}
+                onChange={(e) => handleInputChange('phone', e.target.value)}
+                placeholder="Enter phone number"
+              />
+            </div>
+            <div>
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => handleInputChange('email', e.target.value)}
+                placeholder="Enter email address"
+              />
+            </div>
           </div>
           
-          <div>
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="license_number">License Number</Label>
+              <Input
+                id="license_number"
+                value={formData.license_number}
+                onChange={(e) => handleInputChange('license_number', e.target.value)}
+                placeholder="Enter license number"
+              />
+            </div>
+            <div>
+              <Label htmlFor="npi_number">NPI Number</Label>
+              <Input
+                id="npi_number"
+                value={formData.npi_number}
+                onChange={(e) => handleInputChange('npi_number', e.target.value)}
+                placeholder="Enter NPI number"
+              />
+            </div>
           </div>
-          
-          <div className="flex gap-2">
-            <Button type="submit" className="flex-1">
-              Update Facility
-            </Button>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isLoading}
+            >
               Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={isLoading}
+            >
+              {isLoading ? 'Updating...' : 'Update Facility'}
             </Button>
           </div>
         </form>

@@ -2,17 +2,19 @@
 import React from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { PageContainer } from '@/components/layout/PageContainer';
-import ApiIntegrationsManager from '@/components/admin/ApiIntegrations/ApiIntegrationsManager';
+import { ApiServicesModule } from '@/components/admin/ApiServices/ApiServicesModule';
 
 const ApiServices: React.FC = () => {
+  console.log('🚀 ApiServicesPage: Using consolidated real data architecture');
+
   return (
     <MainLayout>
       <PageContainer
         title="API Services"
-        subtitle="Comprehensive API management, development tools, and integration workflows"
+        subtitle="Consolidated API integration management system"
         fluid
       >
-        <ApiIntegrationsManager />
+        <ApiServicesModule />
       </PageContainer>
     </MainLayout>
   );

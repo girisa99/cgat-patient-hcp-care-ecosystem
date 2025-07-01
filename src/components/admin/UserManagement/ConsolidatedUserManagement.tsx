@@ -8,7 +8,8 @@ import {
   Search, 
   Filter,
   Download,
-  Users
+  Users,
+  Shield
 } from 'lucide-react';
 import { useUnifiedUserManagement } from '@/hooks/useUnifiedUserManagement';
 import { useUserManagementDialogs } from '@/hooks/useUserManagementDialogs';
@@ -23,6 +24,7 @@ import ViewUserModulesDialog from '@/components/users/ViewUserModulesDialog';
 import DeactivateUserDialog from '@/components/users/DeactivateUserDialog';
 import PermissionManagementDialog from '@/components/users/PermissionManagementDialog';
 import AssignModuleDialog from '@/components/users/AssignModuleDialog';
+import CreateRoleDialog from '@/components/users/CreateRoleDialog';
 
 export const ConsolidatedUserManagement: React.FC = () => {
   const { 
@@ -42,6 +44,7 @@ export const ConsolidatedUserManagement: React.FC = () => {
   const [deactivateUserOpen, setDeactivateUserOpen] = useState(false);
   const [permissionManagementOpen, setPermissionManagementOpen] = useState(false);
   const [assignModuleOpen, setAssignModuleOpen] = useState(false);
+  const [createRoleOpen, setCreateRoleOpen] = useState(false);
   const [selectedUserEmail, setSelectedUserEmail] = useState('');
 
   // Use existing dialog management hook
@@ -82,6 +85,10 @@ export const ConsolidatedUserManagement: React.FC = () => {
 
   const handleCreateUser = () => {
     setCreateUserOpen(true);
+  };
+
+  const handleCreateRole = () => {
+    setCreateRoleOpen(true);
   };
 
   const handleManagePermissions = (userId: string, userName: string) => {
@@ -154,10 +161,16 @@ export const ConsolidatedUserManagement: React.FC = () => {
               <CardTitle className="text-xl">User Management</CardTitle>
               <p className="text-gray-600 mt-1">Unified system for managing users, roles, and permissions</p>
             </div>
-            <Button onClick={handleCreateUser}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add User
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button onClick={handleCreateRole} variant="outline">
+                <Shield className="h-4 w-4 mr-2" />
+                Create Role
+              </Button>
+              <Button onClick={handleCreateUser}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add User
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -214,6 +227,11 @@ export const ConsolidatedUserManagement: React.FC = () => {
         selectedUserId={selectedUserId}
         selectedUser={selectedUser}
         selectedUserName={selectedUserName}
+      />
+
+      <CreateRoleDialog
+        open={createRoleOpen}
+        onOpenChange={setCreateRoleOpen}
       />
 
       <ResendVerificationDialog

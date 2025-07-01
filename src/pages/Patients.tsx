@@ -10,32 +10,46 @@ import { Plus, Users, Activity, UserCheck, Calendar, Search, Filter, Download } 
 import PatientsList from '@/components/patients/PatientsList';
 import CreatePatientDialog from '@/components/patients/CreatePatientDialog';
 import EditPatientDialog from '@/components/patients/EditPatientDialog';
-import { usePatients } from '@/hooks/usePatients';
+import { useUnifiedUserManagement } from '@/hooks/useUnifiedUserManagement';
 
 const Patients = () => {
-  const { patients, isLoading, meta } = usePatients();
+  const { users, isLoading, getPatients, searchUsers, meta } = useUnifiedUserManagement();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Get patients from unified user management
+  const patients = getPatients();
+  
+  // Filter patients based on search
+  const filteredPatients = searchUsers(searchQuery).filter(user => 
+    user.user_roles.some(userRole => userRole.roles.name === 'patientCaregiver')
+  );
 
   const handleCreatePatient = () => {
     setCreateDialogOpen(true);
   };
 
   const handleEditPatient = (patient: any) => {
+    console.log('✏️ Opening edit dialog for patient:', patient.id);
     setSelectedPatient(patient);
     setEditDialogOpen(true);
   };
 
-  // Filter patients based on search
-  const filteredPatients = patients.filter(patient => 
-    patient.first_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    patient.last_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    patient.email?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const handleViewPatient = (patient: any) => {
+    console.log('👁️ Viewing patient details:', patient.id);
+    // For now, just open edit dialog to view details
+    setSelectedPatient(patient);
+    setEditDialogOpen(true);
+  };
 
-  // Calculate stats
+  const handleDeactivatePatient = (patient: any) => {
+    console.log('🚫 Deactivating patient:', patient.id);
+    // TODO: Implement deactivation logic using unified user management
+  };
+
+  // Calculate stats from real data
   const stats = {
     total: patients.length,
     active: patients.filter(p => p.created_at).length,
@@ -59,7 +73,7 @@ const Patients = () => {
     <MainLayout>
       <PageContainer
         title="Patients Management"
-        subtitle={`Manage patient records and information (${patients.length} patients from ${meta.dataSource})`}
+        subtitle={`Manage patient records (${patients.length} patients from ${meta.dataSource})`}
         headerActions={headerActions}
       >
         <div className="space-y-6">
@@ -128,18 +142,21 @@ const Patients = () => {
           {/* Patients List */}
           <Card className="shadow-sm">
             <CardContent className="p-6">
-              {isLoading ? (
-                <div className="text-center py-8">
-                  <p className="text-gray-500">Loading patients...</p>
-                </div>
-              ) : (
-                <PatientsList 
-                  patients={filteredPatients}
-                  onEditPatient={handleEditPatient}
-                />
-              )}
+              <PatientsList 
+                patients={filteredPatients}
+                onEditPatient={handleEditPatient}
+                onView={handleViewPatient}
+                onEdit={handleEditPatient}
+                onDeactivate={handleDeactivatePatient}
+                isLoading={isLoading}
+              />
             </CardContent>
           </Card>
+
+          {/* Data Source Debug */}
+          <div className="text-xs text-gray-500 text-center">
+            Data Source: {meta.dataSource} • {patients.length} patients loaded via unified system
+          </div>
         </div>
 
         {/* Dialogs */}
