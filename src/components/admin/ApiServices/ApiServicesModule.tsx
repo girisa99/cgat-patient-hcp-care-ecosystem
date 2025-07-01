@@ -35,8 +35,11 @@ import { TestingTabContent } from '@/components/admin/ApiIntegrations/tabs/Testi
 import { OnboardingIntegrationTabContent } from '@/components/admin/ApiIntegrations/tabs/OnboardingIntegrationTabContent';
 import AutoIntegrationBanner from '../ApiIntegrations/AutoIntegrationBanner';
 
+// Import the new validator component
+import { ApiDataValidator } from '@/components/admin/ApiIntegrations/ApiDataValidator';
+
 export const ApiServicesModule: React.FC = () => {
-  console.log('🚀 ApiServicesModule: Using consolidated real data with detailed stats');
+  console.log('🚀 ApiServicesModule: Using consolidated real data with validation');
   
   const [activeTab, setActiveTab] = useState('overview');
   const [searchTerm, setSearchTerm] = useState('');
@@ -320,6 +323,9 @@ export const ApiServicesModule: React.FC = () => {
 
   const OverviewContent = () => (
     <div className="space-y-6">
+      {/* Add Data Validator at the top */}
+      <ApiDataValidator />
+      
       <OverviewStats />
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

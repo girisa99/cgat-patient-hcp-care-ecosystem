@@ -86,7 +86,6 @@ export const InternalApiEndpointsList: React.FC<InternalApiEndpointsListProps> =
     <div className="space-y-4">
       {apis.map((api) => {
         const isExpanded = expandedApis[api.id];
-        const apiDetail = detailedStats.apiBreakdown[api.id];
         const apiEndpointsForThisApi = apiEndpoints.filter(endpoint => 
           endpoint.external_api_id === api.id
         );
@@ -231,7 +230,7 @@ export const InternalApiEndpointsList: React.FC<InternalApiEndpointsListProps> =
                                   </Badge>
                                   <code className="text-sm">{endpoint.external_path}</code>
                                   {endpoint.requires_authentication && (
-                                    <Shield className="h-3 w-3 text-orange-500" title="Requires Authentication" />
+                                    <Shield className="h-3 w-3 text-orange-500" />
                                   )}
                                   {endpoint.is_public && (
                                     <Badge variant="outline" className="text-xs text-green-600">Public</Badge>

@@ -1,3 +1,4 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -32,8 +33,12 @@ export const useApiServiceDetails = () => {
 
   // Generate consolidated API service stats with real data
   const getDetailedApiStats = (apiServices: any[]) => {
+    // Ensure apiServices is an array
+    const services = Array.isArray(apiServices) ? apiServices : [];
+    const endpoints = Array.isArray(apiEndpoints) ? apiEndpoints : [];
+    
     const stats = {
-      totalEndpoints: apiEndpoints?.length || 0,
+      totalEndpoints: endpoints.length,
       totalSchemas: 0,
       totalMappings: 0,
       totalSecurityPolicies: 0,
@@ -43,10 +48,12 @@ export const useApiServiceDetails = () => {
     };
 
     // Calculate detailed stats for each API service
-    apiServices.forEach(service => {
-      const serviceEndpoints = apiEndpoints?.filter(endpoint => 
+    services.forEach(service => {
+      if (!service || !service.id) return;
+      
+      const serviceEndpoints = endpoints.filter(endpoint => 
         endpoint.external_api_id === service.id
-      ) || [];
+      );
       
       stats.apiBreakdown[service.id] = {
         ...service,
@@ -67,12 +74,17 @@ export const useApiServiceDetails = () => {
     return stats;
   };
 
-  // Clean up duplicate APIs
+  // Clean up duplicate APIs and consolidate to single source of truth
   const consolidateApiServices = (apiServices: any[]) => {
     console.log('🔧 Consolidating API services to remove duplicates...');
     
+    // Ensure we have an array
+    const services = Array.isArray(apiServices) ? apiServices : [];
+    
     // Group by similar names to identify duplicates
-    const grouped = apiServices.reduce((acc, service) => {
+    const grouped = services.reduce((acc, service) => {
+      if (!service || !service.name) return acc;
+      
       const key = service.name.toLowerCase().replace(/[^a-z0-9]/g, '');
       if (!acc[key]) {
         acc[key] = [];
@@ -98,7 +110,17 @@ export const useApiServiceDetails = () => {
       });
     });
 
-    console.log(`📊 Consolidated ${apiServices.length} APIs down to ${consolidated.length}`);
+    console.log(`📊 Consolidated ${services.length} APIs down to ${consolidated.length}`);
+    
+    // Log any duplicates found for verification
+    const duplicates = Object.entries(grouped).filter(([_, group]) => group.length > 1);
+    if (duplicates.length > 0) {
+      console.log('🔍 Found duplicate APIs:', duplicates.map(([key, group]) => ({
+        key,
+        apis: group.map(api => ({ id: api.id, name: api.name }))
+      })));
+    }
+    
     return consolidated;
   };
 
