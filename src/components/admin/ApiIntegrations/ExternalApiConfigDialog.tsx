@@ -10,21 +10,24 @@ interface ExternalApiConfigDialogProps {
   api: any;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onClose?: () => void;
 }
 
 const ExternalApiConfigDialog: React.FC<ExternalApiConfigDialogProps> = ({
   api,
   open,
-  onOpenChange
+  onOpenChange,
+  onClose
 }) => {
   if (!api) return null;
 
   const handleClose = () => {
     onOpenChange(false);
+    onClose?.();
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onValueChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">

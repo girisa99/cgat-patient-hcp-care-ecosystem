@@ -78,20 +78,22 @@ export const useApiIntegrations = () => {
   // Download Postman collection mutation
   const downloadPostmanCollectionMutation = useMutation({
     mutationFn: async (integrationId: string) => {
-      // Find the integration
-      const integration = [...(internalApiServices || []), ...(externalApiRegistry || [])]
-        .find(api => api.id === integrationId);
+      // Find the integration from both internal and external sources
+      const internalIntegration = internalApiServices?.find(api => api.id === integrationId);
+      const externalIntegration = externalApiRegistry?.find(api => api.id === integrationId);
+      const integration = internalIntegration || externalIntegration;
       
       if (!integration) {
         throw new Error('API integration not found');
       }
 
-      // Safely get the name based on the integration source
-      const integrationName = integration.source === 'external' 
+      // Determine integration type and get the appropriate name
+      const isExternal = externalIntegration !== undefined;
+      const integrationName = isExternal 
         ? (integration as any).external_name || (integration as any).name
         : (integration as any).name || 'API Service';
 
-      const integrationDescription = integration.source === 'external'
+      const integrationDescription = isExternal
         ? (integration as any).external_description || 'API Collection'
         : (integration as any).description || 'API Collection';
 
@@ -162,8 +164,9 @@ export const useApiIntegrations = () => {
   // Test endpoint mutation
   const testEndpointMutation = useMutation({
     mutationFn: async ({ integrationId, endpointId }: { integrationId: string; endpointId?: string }) => {
-      const integration = [...(internalApiServices || []), ...(externalApiRegistry || [])]
-        .find(api => api.id === integrationId);
+      const internalIntegration = internalApiServices?.find(api => api.id === integrationId);
+      const externalIntegration = externalApiRegistry?.find(api => api.id === integrationId);
+      const integration = internalIntegration || externalIntegration;
       
       if (!integration) {
         throw new Error('API integration not found');
@@ -210,10 +213,10 @@ export const useApiIntegrations = () => {
     }
   });
 
-  // Combine all integrations
+  // Combine all integrations with proper type handling
   const allIntegrations = [
-    ...(internalApiServices || []).map(api => ({ ...api, source: 'internal' })),
-    ...(externalApiRegistry || []).map(api => ({ ...api, source: 'external' }))
+    ...(internalApiServices || []).map(api => ({ ...api, integrationType: 'internal' })),
+    ...(externalApiRegistry || []).map(api => ({ ...api, integrationType: 'external' }))
   ];
 
   return {

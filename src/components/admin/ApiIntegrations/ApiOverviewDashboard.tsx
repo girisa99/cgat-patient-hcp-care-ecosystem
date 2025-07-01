@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -42,12 +41,12 @@ const ApiOverviewDashboard = () => {
   const [selectedApiForAnalytics, setSelectedApiForAnalytics] = useState<any>(null);
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
 
-  // Separate APIs by type and source
+  // Separate APIs by type using integrationType property
   const consumedApis = integrations?.filter(api => 
-    api.source === 'internal' && (api as any).type === 'external'
+    (api as any).integrationType === 'internal' && (api as any).type === 'external'
   ) || [];
   const internalApis = integrations?.filter(api => 
-    api.source === 'internal' && (api as any).type === 'internal'
+    (api as any).integrationType === 'internal' && (api as any).type === 'internal'
   ) || [];
   const publishedInternalApis = externalApis || [];
 
@@ -532,27 +531,26 @@ const ApiOverviewDashboard = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Config Dialog */}
-      {showConfigDialog && selectedApiForConfig && (
-        <ExternalApiConfigDialog
-          api={selectedApiForConfig}
-          onClose={() => {
-            setShowConfigDialog(false);
-            setSelectedApiForConfig(null);
-          }}
-        />
-      )}
+      {/* Dialog components with corrected prop handling */}
+      <ExternalApiConfigDialog
+        api={selectedApiForConfig}
+        open={showConfigDialog}
+        onOpenChange={setShowConfigDialog}
+        onClose={() => {
+          setShowConfigDialog(false);
+          setSelectedApiForConfig(null);
+        }}
+      />
 
-      {/* Analytics Dialog */}
-      {showAnalyticsDialog && selectedApiForAnalytics && (
-        <ExternalApiAnalyticsDialog
-          api={selectedApiForAnalytics}
-          onClose={() => {
-            setShowAnalyticsDialog(false);
-            setSelectedApiForAnalytics(null);
-          }}
-        />
-      )}
+      <ExternalApiAnalyticsDialog
+        api={selectedApiForAnalytics}
+        open={showAnalyticsDialog}
+        onOpenChange={setShowAnalyticsDialog}
+        onClose={() => {
+          setShowAnalyticsDialog(false);
+          setSelectedApiForAnalytics(null);
+        }}
+      />
     </div>
   );
 };
