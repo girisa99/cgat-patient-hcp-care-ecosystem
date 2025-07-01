@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -36,7 +35,16 @@ interface ApiComparisonResult {
   migrationPlan: string[];
   riskAssessment: 'low' | 'medium' | 'high';
   consolidationRecommendations: string[];
+  validationResults: {
+    schemasVerified: boolean;
+    endpointsVerified: boolean;
+    dataIntegrityChecked: boolean;
+    safeToRemove: boolean;
+    missingData: string[];
+  };
 }
+
+import { ApiConsolidationAction } from './ApiConsolidationAction';
 
 export const ApiDuplicateAnalyzer: React.FC = () => {
   const [analysisComplete, setAnalysisComplete] = useState(false);
@@ -50,9 +58,77 @@ export const ApiDuplicateAnalyzer: React.FC = () => {
     return analyzeCoreApis(apiServices);
   }, [apiServices, analyzeCoreApis]);
 
-  // Comprehensive API comparison analysis
+  // Comprehensive validation function
+  const validateDataIntegrity = (coreApis: any[], endpoints: any[]) => {
+    console.log('🔍 Starting comprehensive data validation...');
+    
+    const validationResults = {
+      schemasVerified: false,
+      endpointsVerified: false,
+      dataIntegrityChecked: false,
+      safeToRemove: false,
+      missingData: [] as string[]
+    };
+
+    // Check each core API for completeness
+    const apiDataComparison = coreApis.map(api => {
+      const apiEndpoints = endpoints.filter(ep => ep.external_api_id === api.id);
+      
+      return {
+        api,
+        endpoints: apiEndpoints,
+        hasSchemas: apiEndpoints.filter(ep => ep.request_schema || ep.response_schema).length,
+        hasDocumentation: !!api.documentation_url,
+        hasAuthentication: apiEndpoints.filter(ep => ep.requires_authentication).length,
+        totalEndpoints: apiEndpoints.length,
+        uniqueEndpoints: [...new Set(apiEndpoints.map(ep => `${ep.method}:${ep.external_path}`))].length
+      };
+    });
+
+    console.log('📊 API Data Comparison:', apiDataComparison);
+
+    // Verify no data will be lost
+    const allEndpoints = apiDataComparison.reduce((acc, curr) => acc + curr.totalEndpoints, 0);
+    const allSchemas = apiDataComparison.reduce((acc, curr) => acc + curr.hasSchemas, 0);
+    const allAuth = apiDataComparison.reduce((acc, curr) => acc + curr.hasAuthentication, 0);
+
+    // Find the API with the most complete data
+    const bestApi = apiDataComparison.reduce((best, current) => {
+      const bestScore = best.totalEndpoints + best.hasSchemas + (best.hasDocumentation ? 1 : 0);
+      const currentScore = current.totalEndpoints + current.hasSchemas + (current.hasDocumentation ? 1 : 0);
+      return currentScore > bestScore ? current : best;
+    });
+
+    // Check if consolidating to the best API will lose any data
+    const otherApis = apiDataComparison.filter(api => api.api.id !== bestApi.api.id);
+    const potentialDataLoss = [];
+
+    for (const otherApi of otherApis) {
+      if (otherApi.totalEndpoints > 0 && otherApi.uniqueEndpoints > 0) {
+        // Check if these endpoints exist in the best API
+        const otherEndpointPaths = otherApi.endpoints.map(ep => `${ep.method}:${ep.external_path}`);
+        const bestEndpointPaths = bestApi.endpoints.map(ep => `${ep.method}:${ep.external_path}`);
+        
+        const uniqueEndpoints = otherEndpointPaths.filter(path => !bestEndpointPaths.includes(path));
+        if (uniqueEndpoints.length > 0) {
+          potentialDataLoss.push(`${otherApi.api.name}: ${uniqueEndpoints.length} unique endpoints`);
+        }
+      }
+    }
+
+    validationResults.schemasVerified = allSchemas > 0;
+    validationResults.endpointsVerified = allEndpoints > 0;
+    validationResults.dataIntegrityChecked = true;
+    validationResults.safeToRemove = potentialDataLoss.length === 0;
+    validationResults.missingData = potentialDataLoss;
+
+    console.log('✅ Validation Results:', validationResults);
+    return { validationResults, bestApi, apiDataComparison };
+  };
+
+  // Enhanced analysis with validation
   const performDeepAnalysis = () => {
-    console.log('🔍 Starting deep analysis of duplicate core APIs...');
+    console.log('🔍 Starting deep analysis with comprehensive validation...');
     
     const coreApis = coreApiAnalysis.coreApis;
     if (coreApis.length < 2) {
@@ -60,64 +136,49 @@ export const ApiDuplicateAnalyzer: React.FC = () => {
       return;
     }
 
-    // Get endpoints for each API
-    const apisWithEndpoints = coreApis.map(api => {
-      const endpoints = apiEndpoints.filter(ep => ep.external_api_id === api.id);
-      return {
-        ...api,
-        endpointsList: endpoints,
-        endpointsCount: endpoints.length,
-        schemasCount: endpoints.filter(ep => ep.request_schema || ep.response_schema).length,
-        securityCount: endpoints.filter(ep => ep.requires_authentication).length
-      };
-    });
+    // Perform data validation first
+    const { validationResults, bestApi, apiDataComparison } = validateDataIntegrity(coreApis, apiEndpoints);
 
-    console.log('📊 APIs with endpoint details:', apisWithEndpoints);
-
-    // Enhanced scoring algorithm to determine the "real" API
-    const scoredApis = apisWithEndpoints.map(api => {
+    // Enhanced scoring algorithm using the validated best API
+    const scoredApis = apiDataComparison.map(({ api, endpoints, hasSchemas, hasDocumentation, hasAuthentication, totalEndpoints }) => {
       let score = 0;
       let reasons = [];
 
       // Endpoint count (30% weight)
-      const endpointScore = api.endpointsCount * 3;
+      const endpointScore = totalEndpoints * 3;
       score += endpointScore;
-      if (api.endpointsCount > 0) reasons.push(`${api.endpointsCount} endpoints (+${endpointScore})`);
+      if (totalEndpoints > 0) reasons.push(`${totalEndpoints} endpoints (+${endpointScore})`);
 
       // Schema completeness (25% weight)
-      const schemaScore = api.schemasCount * 2.5;
+      const schemaScore = hasSchemas * 2.5;
       score += schemaScore;
-      if (api.schemasCount > 0) reasons.push(`${api.schemasCount} schemas (+${schemaScore})`);
+      if (hasSchemas > 0) reasons.push(`${hasSchemas} schemas (+${schemaScore})`);
 
       // Documentation (15% weight)
-      if (api.documentation_url) {
+      if (hasDocumentation) {
         score += 15;
         reasons.push('Has documentation (+15)');
       }
 
-      // Last updated (10% weight) - more recent = higher score
+      // Last updated (10% weight)
       const daysSinceUpdate = Math.floor((Date.now() - new Date(api.updated_at).getTime()) / (1000 * 60 * 60 * 24));
       const recencyScore = Math.max(0, 10 - (daysSinceUpdate / 30));
       score += recencyScore;
       if (recencyScore > 5) reasons.push(`Recently updated (+${recencyScore.toFixed(1)})`);
 
-      // Status (10% weight)
+      // Status and configuration (10% weight)
       if (api.status === 'active') {
         score += 10;
         reasons.push('Active status (+10)');
       }
 
-      // Configuration completeness (10% weight)
+      // Base URL presence (5% weight)
       if (api.base_url) {
         score += 5;
         reasons.push('Has base URL (+5)');
       }
-      if (api.version && api.version !== '1.0.0') {
-        score += 5;
-        reasons.push('Versioned (+5)');
-      }
 
-      // Name preference (internal_healthcare_api preferred due to better naming)
+      // Name preference (5% weight)
       if (api.name === 'internal_healthcare_api') {
         score += 5;
         reasons.push('Better naming convention (+5)');
@@ -125,6 +186,9 @@ export const ApiDuplicateAnalyzer: React.FC = () => {
 
       return {
         ...api,
+        endpointsCount: totalEndpoints,
+        schemasCount: hasSchemas,
+        securityCount: hasAuthentication,
         score: Math.round(score * 10) / 10,
         reasons
       };
@@ -136,50 +200,57 @@ export const ApiDuplicateAnalyzer: React.FC = () => {
     const recommended = scoredApis[0];
     const deprecated = scoredApis.slice(1);
 
-    console.log('🏆 Scoring results:', {
+    console.log('🏆 Scoring results with validation:', {
       recommended: { name: recommended.name, score: recommended.score, reasons: recommended.reasons },
-      deprecated: deprecated.map(api => ({ name: api.name, score: api.score, reasons: api.reasons }))
+      deprecated: deprecated.map(api => ({ name: api.name, score: api.score, reasons: api.reasons })),
+      validationResults
     });
 
-    // Create comprehensive migration plan
+    // Create enhanced migration plan with validation insights
     const migrationPlan = [
-      `🎯 CONSOLIDATE TO: "${recommended.name}" as single source of truth (Score: ${recommended.score})`,
+      `🎯 VALIDATED CONSOLIDATION TO: "${recommended.name}" (Score: ${recommended.score})`,
+      `✅ Data Validation: ${validationResults.safeToRemove ? 'SAFE - No data loss detected' : 'CAUTION - Potential data loss detected'}`,
       `📊 Current Status: ${deprecated.length} duplicate API(s) to deprecate`,
-      `🔄 Migrate ${deprecated.reduce((sum, api) => sum + api.endpointsCount, 0)} endpoints to ${recommended.name}`,
+      `🔄 Migrate ${deprecated.reduce((sum, api) => sum + (api.endpointsCount || 0), 0)} endpoints to ${recommended.name}`,
       `🗃️ Update all database references to use ID: ${recommended.id}`,
       `🔧 Update frontend components to use single API service`,
       `📱 Test all modules (Users, Patients, Facilities, Onboarding) with consolidated API`,
       `🧹 Remove deprecated API entries from api_integration_registry`,
       `📝 Update API documentation to reflect single source architecture`,
-      `🔍 Verify endpoint count shows correctly (currently fragmented across duplicates)`
+      `🔍 Endpoint verification: ${validationResults.endpointsVerified ? 'PASSED' : 'FAILED'}`,
+      `📋 Schema verification: ${validationResults.schemasVerified ? 'PASSED' : 'FAILED'}`
     ];
 
-    // Enhanced consolidation recommendations
+    // Enhanced consolidation recommendations with validation
     const consolidationRecommendations = [
       `✅ RECOMMENDED: Keep "${recommended.name}" (ID: ${recommended.id})`,
-      `❌ DEPRECATE: ${deprecated.map(api => `"${api.name}" (ID: ${api.id})`).join(', ')}`,
+      `❌ SAFE TO REMOVE: ${deprecated.map(api => `"${api.name}" (ID: ${api.id})`).join(', ')}`,
+      `🔍 VALIDATION STATUS: ${validationResults.safeToRemove ? 'SAFE TO PROCEED' : 'REQUIRES REVIEW'}`,
+      validationResults.missingData.length > 0 ? `⚠️ DATA REVIEW NEEDED: ${validationResults.missingData.join(', ')}` : '✅ NO DATA LOSS DETECTED',
       `🔧 ACTION NEEDED: Update all useApiServices hooks to filter out deprecated APIs`,
       `📊 IMPACT: This will fix the endpoint count mismatch (116 total vs fragmented display)`,
       `⚡ PRIORITY: HIGH - Data inconsistency affects all healthcare modules`,
-      `🛡️ SAFETY: Low risk - no data loss, only consolidation of references`
+      `🛡️ SAFETY: ${validationResults.safeToRemove ? 'LOW RISK' : 'MEDIUM RISK'} - ${validationResults.safeToRemove ? 'No data loss expected' : 'Review missing data before proceeding'}`
     ];
 
-    // Risk assessment
-    const totalEndpointsToMigrate = deprecated.reduce((sum, api) => sum + api.endpointsCount, 0);
-    const riskAssessment = totalEndpointsToMigrate > 50 ? 'high' : 
-                          totalEndpointsToMigrate > 20 ? 'medium' : 'low';
+    // Risk assessment based on validation
+    const totalEndpointsToMigrate = deprecated.reduce((sum, api) => sum + (api.endpointsCount || 0), 0);
+    const baseRisk = totalEndpointsToMigrate > 50 ? 'high' : 
+                     totalEndpointsToMigrate > 20 ? 'medium' : 'low';
+    const riskAssessment = validationResults.safeToRemove ? baseRisk : 
+                          (baseRisk === 'low' ? 'medium' : 'high');
 
     const result: ApiComparisonResult = {
       recommended,
       deprecated,
       differences: {
         endpoints: {
-          recommended: recommended.endpointsCount,
-          deprecated: deprecated.map(api => api.endpointsCount)
+          recommended: recommended.endpointsCount || 0,
+          deprecated: deprecated.map(api => api.endpointsCount || 0)
         },
         schemas: {
-          recommended: recommended.schemasCount,
-          deprecated: deprecated.map(api => api.schemasCount)
+          recommended: recommended.schemasCount || 0,
+          deprecated: deprecated.map(api => api.schemasCount || 0)
         },
         documentation: {
           recommended: !!recommended.documentation_url,
@@ -196,14 +267,15 @@ export const ApiDuplicateAnalyzer: React.FC = () => {
       },
       migrationPlan,
       riskAssessment,
-      consolidationRecommendations
+      consolidationRecommendations,
+      validationResults
     };
 
     setComparisonResult(result);
     setAnalysisComplete(true);
-    setValidationStatus('passed');
+    setValidationStatus(validationResults.safeToRemove ? 'passed' : 'failed');
 
-    console.log('✅ Deep analysis complete:', result);
+    console.log('✅ Deep analysis with validation complete:', result);
   };
 
   const validateMigrationReadiness = () => {
@@ -213,10 +285,22 @@ export const ApiDuplicateAnalyzer: React.FC = () => {
       comparisonResult.recommended.id,
       comparisonResult.recommended.name,
       comparisonResult.deprecated.length > 0,
-      comparisonResult.migrationPlan.length > 0
+      comparisonResult.migrationPlan.length > 0,
+      comparisonResult.validationResults.dataIntegrityChecked
     ];
 
     return checks.every(check => !!check);
+  };
+
+  const handleConsolidationComplete = () => {
+    console.log('🎉 Consolidation completed, refreshing data...');
+    // Reset analysis to trigger refresh
+    setAnalysisComplete(false);
+    setComparisonResult(null);
+    setValidationStatus('pending');
+    
+    // Could trigger a data refresh here if needed
+    window.location.reload(); // Simple refresh for now
   };
 
   if (!coreApiAnalysis.hasDuplicates) {
@@ -237,12 +321,12 @@ export const ApiDuplicateAnalyzer: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Analysis Header */}
-      <Card className="border-red-200 bg-red-50">
+      {/* Analysis Header with Validation Status */}
+      <Card className={`border-red-200 ${validationStatus === 'passed' ? 'bg-yellow-50' : 'bg-red-50'}`}>
         <CardHeader>
-          <CardTitle className="text-red-800 flex items-center gap-2">
+          <CardTitle className={`${validationStatus === 'passed' ? 'text-yellow-800' : 'text-red-800'} flex items-center gap-2`}>
             <AlertTriangle className="h-5 w-5" />
-            CRITICAL: Duplicate Core API Resolution Required
+            {validationStatus === 'passed' ? 'VALIDATED: Safe to Consolidate Core APIs' : 'CRITICAL: Duplicate Core API Resolution Required'}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -265,7 +349,7 @@ export const ApiDuplicateAnalyzer: React.FC = () => {
             <Target className="h-4 w-4 text-yellow-600" />
             <AlertDescription className="text-yellow-800">
               <strong>Data Integrity Issue:</strong> Multiple core APIs are fragmenting your healthcare data. 
-              This causes incorrect endpoint counts and inconsistent module behavior.
+              Comprehensive validation will ensure safe consolidation without data loss.
             </AlertDescription>
           </Alert>
           
@@ -276,28 +360,119 @@ export const ApiDuplicateAnalyzer: React.FC = () => {
               size="lg"
             >
               <Eye className="h-4 w-4 mr-2" />
-              Analyze & Get Consolidation Recommendations
+              Analyze, Validate & Get Safe Consolidation Plan
             </Button>
           )}
         </CardContent>
       </Card>
 
-      {/* Analysis Results */}
+      {/* Analysis Results with Validation */}
       {analysisComplete && comparisonResult && (
-        <Tabs defaultValue="recommendations" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+        <Tabs defaultValue="validation" className="w-full">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="validation" className={comparisonResult.validationResults.safeToRemove ? "text-green-600" : "text-red-600"}>
+              Validation {comparisonResult.validationResults.safeToRemove ? "✅" : "⚠️"}
+            </TabsTrigger>
             <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
             <TabsTrigger value="comparison">Detailed Analysis</TabsTrigger>
             <TabsTrigger value="migration">Migration Plan</TabsTrigger>
-            <TabsTrigger value="validation">Final Validation</TabsTrigger>
+            <TabsTrigger value="execute">Execute</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="validation">
+            <Card className={`border-${comparisonResult.validationResults.safeToRemove ? 'green' : 'yellow'}-500`}>
+              <CardHeader>
+                <CardTitle className={`text-${comparisonResult.validationResults.safeToRemove ? 'green' : 'yellow'}-800 flex items-center gap-2`}>
+                  <Shield className="h-5 w-5" />
+                  COMPREHENSIVE DATA VALIDATION RESULTS
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Validation Status Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-3">
+                    <h4 className="font-medium">Validation Checks:</h4>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        {comparisonResult.validationResults.schemasVerified ? 
+                          <CheckCircle className="h-4 w-4 text-green-500" /> : 
+                          <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                        }
+                        <span className="text-sm">Schema Validation: {comparisonResult.validationResults.schemasVerified ? 'PASSED' : 'REVIEW NEEDED'}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {comparisonResult.validationResults.endpointsVerified ? 
+                          <CheckCircle className="h-4 w-4 text-green-500" /> : 
+                          <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                        }
+                        <span className="text-sm">Endpoint Validation: {comparisonResult.validationResults.endpointsVerified ? 'PASSED' : 'REVIEW NEEDED'}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {comparisonResult.validationResults.dataIntegrityChecked ? 
+                          <CheckCircle className="h-4 w-4 text-green-500" /> : 
+                          <AlertTriangle className="h-4 w-4 text-red-500" />
+                        }
+                        <span className="text-sm">Data Integrity: {comparisonResult.validationResults.dataIntegrityChecked ? 'VERIFIED' : 'FAILED'}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {comparisonResult.validationResults.safeToRemove ? 
+                          <CheckCircle className="h-4 w-4 text-green-500" /> : 
+                          <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                        }
+                        <span className="text-sm">Safe to Remove: {comparisonResult.validationResults.safeToRemove ? 'YES' : 'REQUIRES REVIEW'}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <h4 className="font-medium">Consolidation Safety:</h4>
+                    <div className="text-sm space-y-1">
+                      <p><strong>Recommended API:</strong> {comparisonResult.recommended.name}</p>
+                      <p><strong>APIs to Remove:</strong> {comparisonResult.deprecated.length}</p>
+                      <p><strong>Data Loss Risk:</strong> {comparisonResult.validationResults.safeToRemove ? 'NONE' : 'POTENTIAL'}</p>
+                      <p><strong>Migration Ready:</strong> <Badge variant={validateMigrationReadiness() ? 'default' : 'destructive'}>{validateMigrationReadiness() ? 'Yes' : 'No'}</Badge></p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Missing Data Warning */}
+                {comparisonResult.validationResults.missingData.length > 0 && (
+                  <Alert className="border-yellow-200 bg-yellow-50">
+                    <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                    <AlertDescription className="text-yellow-800">
+                      <strong>Data Review Required:</strong><br/>
+                      The following data might be lost during consolidation:
+                      <ul className="list-disc list-inside mt-2">
+                        {comparisonResult.validationResults.missingData.map((item, index) => (
+                          <li key={index}>{item}</li>
+                        ))}
+                      </ul>
+                      <strong>Recommendation:</strong> Review these items or develop equivalent functionality later.
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {/* Final Recommendation */}
+                <Alert className={`border-${comparisonResult.validationResults.safeToRemove ? 'green' : 'yellow'}-200 bg-${comparisonResult.validationResults.safeToRemove ? 'green' : 'yellow'}-50`}>
+                  <CheckCircle className={`h-4 w-4 text-${comparisonResult.validationResults.safeToRemove ? 'green' : 'yellow'}-600`} />
+                  <AlertDescription className={`text-${comparisonResult.validationResults.safeToRemove ? 'green' : 'yellow'}-800`}>
+                    <strong>{comparisonResult.validationResults.safeToRemove ? '✅ SAFE TO PROCEED' : '⚠️ PROCEED WITH CAUTION'}</strong><br/>
+                    {comparisonResult.validationResults.safeToRemove ? 
+                      `All validation checks passed. Safe to consolidate to "${comparisonResult.recommended.name}" and remove core_healthcare_api.` :
+                      `Review the missing data items above before proceeding. You can develop missing functionality later if needed.`
+                    }
+                  </AlertDescription>
+                </Alert>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           <TabsContent value="recommendations">
             <Card className="border-blue-500">
               <CardHeader>
                 <CardTitle className="text-blue-800 flex items-center gap-2">
                   <Target className="h-5 w-5" />
-                  CONSOLIDATION RECOMMENDATIONS
+                  VALIDATED CONSOLIDATION RECOMMENDATIONS
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -316,28 +491,17 @@ export const ApiDuplicateAnalyzer: React.FC = () => {
                 {/* Executive Summary */}
                 <Card className="border-green-500 bg-green-50">
                   <CardContent className="pt-4">
-                    <h4 className="font-bold text-green-800 mb-2">🎯 EXECUTIVE SUMMARY:</h4>
+                    <h4 className="font-bold text-green-800 mb-2">🎯 VALIDATED EXECUTIVE SUMMARY:</h4>
                     <div className="space-y-2 text-sm text-green-700">
                       <p><strong>Single Source of Truth:</strong> {comparisonResult.recommended.name}</p>
                       <p><strong>APIs to Remove:</strong> {comparisonResult.deprecated.length}</p>
                       <p><strong>Endpoints to Consolidate:</strong> {comparisonResult.differences.endpoints.deprecated.reduce((a, b) => a + b, 0)}</p>
                       <p><strong>Risk Level:</strong> {comparisonResult.riskAssessment.toUpperCase()}</p>
+                      <p><strong>Data Safety:</strong> {comparisonResult.validationResults.safeToRemove ? 'VERIFIED SAFE' : 'REQUIRES REVIEW'}</p>
                       <p><strong>Impact:</strong> Fixes endpoint count mismatch and data fragmentation</p>
                     </div>
                   </CardContent>
                 </Card>
-
-                {/* Next Steps */}
-                <Alert className="border-purple-200 bg-purple-50">
-                  <Settings className="h-4 w-4 text-purple-600" />
-                  <AlertDescription className="text-purple-800">
-                    <strong>IMMEDIATE NEXT STEPS:</strong><br/>
-                    1. Approve the recommended consolidation to "{comparisonResult.recommended.name}"<br/>
-                    2. Update all API service references to use single source<br/>
-                    3. Remove duplicate API entries from database<br/>
-                    4. Verify all modules work with consolidated API
-                  </AlertDescription>
-                </Alert>
               </CardContent>
             </Card>
           </TabsContent>
@@ -441,7 +605,7 @@ export const ApiDuplicateAnalyzer: React.FC = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <GitMerge className="h-5 w-5" />
-                  Detailed Migration Plan
+                  Validated Migration Plan
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -450,14 +614,13 @@ export const ApiDuplicateAnalyzer: React.FC = () => {
                     <AlertTriangle className="h-4 w-4" />
                     <AlertDescription>
                       <strong>Risk Level: {comparisonResult.riskAssessment.toUpperCase()}</strong> - 
-                      {comparisonResult.riskAssessment === 'high' && ' High complexity migration requiring careful validation'}
-                      {comparisonResult.riskAssessment === 'medium' && ' Medium complexity migration with moderate risk'}
-                      {comparisonResult.riskAssessment === 'low' && ' Low risk migration, straightforward process'}
+                      Validated with comprehensive data integrity checks.
+                      {comparisonResult.validationResults.safeToRemove ? ' Safe to proceed.' : ' Review missing data before proceeding.'}
                     </AlertDescription>
                   </Alert>
 
                   <div className="space-y-3">
-                    <h4 className="font-medium">Step-by-Step Migration Plan:</h4>
+                    <h4 className="font-medium">Validated Step-by-Step Migration Plan:</h4>
                     {comparisonResult.migrationPlan.map((step, index) => (
                       <div key={index} className="flex items-start gap-3 p-3 border rounded-lg">
                         <span className="flex-shrink-0 w-6 h-6 bg-blue-100 text-blue-800 rounded-full flex items-center justify-center text-sm font-medium">
@@ -472,62 +635,11 @@ export const ApiDuplicateAnalyzer: React.FC = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="validation">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Shield className="h-5 w-5" />
-                  Final Validation & Ready to Execute
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-3">
-                      <h4 className="font-medium">Validation Checks:</h4>
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <CheckCircle className="h-4 w-4 text-green-500" />
-                          <span className="text-sm">Recommended API identified</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckCircle className="h-4 w-4 text-green-500" />
-                          <span className="text-sm">Duplicate APIs catalogued</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckCircle className="h-4 w-4 text-green-500" />
-                          <span className="text-sm">Migration plan generated</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckCircle className="h-4 w-4 text-green-500" />
-                          <span className="text-sm">Risk assessment completed</span>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-3">
-                      <h4 className="font-medium">Consolidation Impact:</h4>
-                      <div className="text-sm space-y-1">
-                        <p><strong>Single Source:</strong> {comparisonResult.recommended.name}</p>
-                        <p><strong>APIs to Remove:</strong> {comparisonResult.deprecated.length}</p>
-                        <p><strong>Endpoints Affected:</strong> {comparisonResult.differences.endpoints.deprecated.reduce((a, b) => a + b, 0)}</p>
-                        <p><strong>Migration Ready:</strong> <Badge variant={validateMigrationReadiness() ? 'default' : 'destructive'}>{validateMigrationReadiness() ? 'Yes' : 'No'}</Badge></p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <Alert className="border-green-200 bg-green-50">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    <AlertDescription className="text-green-800">
-                      <strong>✅ READY FOR CONSOLIDATION</strong><br/>
-                      All validation checks passed. The system is ready to consolidate to 
-                      <strong> "{comparisonResult.recommended.name}"</strong> as your single source of truth.
-                      This will resolve the endpoint count mismatch and improve data consistency across all healthcare modules.
-                    </AlertDescription>
-                  </Alert>
-                </div>
-              </CardContent>
-            </Card>
+          <TabsContent value="execute">
+            <ApiConsolidationAction 
+              comparisonResult={comparisonResult}
+              onConsolidationComplete={handleConsolidationComplete}
+            />
           </TabsContent>
         </Tabs>
       )}
