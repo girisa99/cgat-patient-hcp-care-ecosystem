@@ -9,9 +9,6 @@ import { DeveloperTabContent } from './tabs/DeveloperTabContent';
 import { ApiKeysTabContent } from './tabs/ApiKeysTabContent';
 import { TestingTabContent } from './tabs/TestingTabContent';
 import { SandboxTabContent } from './tabs/SandboxTabContent';
-import { PostmanTabContent } from './tabs/PostmanTabContent';
-import { ConsumptionTabContent } from './tabs/ConsumptionTabContent';
-import { PublishingWorkflowTabContent } from './tabs/PublishingWorkflowTabContent';
 
 interface ApiIntegrationsTabsProps {
   activeTab: string;
@@ -46,7 +43,7 @@ export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = React.mem
   onCopyUrl,
   onTestEndpoint
 }) => {
-  console.log('🔍 ApiIntegrationsTabs: Rendering with single source of truth data');
+  console.log('🔍 ApiIntegrationsTabs: Rendering with consolidated data');
 
   return (
     <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
@@ -95,7 +92,7 @@ export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = React.mem
 
       <TabsContent value="published" className="mt-4">
         <PublishedApisTabContent 
-          publishedApis={publishedApis}
+          consolidatedApis={publishedApis}
           searchTerm={searchTerm}
         />
       </TabsContent>
@@ -110,7 +107,7 @@ export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = React.mem
 
       <TabsContent value="testing" className="mt-4">
         <TestingTabContent
-          integrations={integrations}
+          consolidatedApis={integrations}
           onTestEndpoint={onTestEndpoint}
         />
       </TabsContent>

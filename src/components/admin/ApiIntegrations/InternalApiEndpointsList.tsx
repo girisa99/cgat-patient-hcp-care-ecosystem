@@ -21,7 +21,6 @@ import {
   Key
 } from 'lucide-react';
 
-// Fix: Complete ApiService interface based on real data structure
 interface ApiService {
   id: string;
   name: string;
@@ -33,7 +32,7 @@ interface ApiService {
   status: string;
   direction: string;
   purpose: string;
-  lifecycle_stage: string; // Fix: Add required lifecycle_stage property
+  lifecycle_stage: string;
   endpoints_count?: number;
   documentation_url?: string;
   created_at: string;
@@ -76,8 +75,10 @@ export const InternalApiEndpointsList: React.FC<InternalApiEndpointsListProps> =
     }));
   };
 
-  // Get detailed stats for all APIs using real data
-  const detailedStats = getDetailedApiStats(apis);
+  // Get detailed stats for all APIs using real consolidated data
+  const detailedStats = React.useMemo(() => {
+    return getDetailedApiStats({ consolidatedApis: apis });
+  }, [apis, getDetailedApiStats]);
 
   if (apis.length === 0) {
     return (
