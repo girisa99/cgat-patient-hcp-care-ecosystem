@@ -41,9 +41,9 @@ export class ApiDocumentationGenerator {
     const baseUrl = apiDetails.base_url || `${window.location.origin}/api/v1`;
     
     return {
-      title: apiDetails.name || apiDetails.external_name || 'API Documentation',
+      title: apiDetails.name || 'API Documentation',
       version: apiDetails.version || '1.0.0',
-      description: apiDetails.description || apiDetails.external_description || 'API documentation',
+      description: apiDetails.description || 'API documentation',
       baseUrl,
       authentication: {
         type: 'Bearer Token',
@@ -87,7 +87,7 @@ export class ApiDocumentationGenerator {
   private static formatEndpoint(endpoint: any, baseUrl: string): ApiEndpointDoc {
     return {
       method: endpoint.method || 'GET',
-      path: endpoint.path || endpoint.external_path || '/',
+      path: endpoint.path || '/',
       summary: endpoint.summary || 'API Endpoint',
       description: endpoint.description,
       parameters: endpoint.parameters || [],
@@ -100,7 +100,7 @@ export class ApiDocumentationGenerator {
    */
   private static generateExamples(endpoint: any, baseUrl: string) {
     const method = endpoint.method || 'GET';
-    const path = endpoint.path || endpoint.external_path || '/';
+    const path = endpoint.path || '/';
     const fullUrl = `${baseUrl}${path}`;
 
     return {
@@ -169,7 +169,7 @@ print(data)`;
   /**
    * Generate HTML documentation
    */
-  private static generateHtmlDocumentation(doc: ApiDocumentation): string {
+  static generateHtmlDocumentation(doc: ApiDocumentation): string {
     return `
 <!DOCTYPE html>
 <html>

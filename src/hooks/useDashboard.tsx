@@ -15,7 +15,7 @@ export const useDashboard = () => {
   const { users, meta: userMeta } = useUnifiedUserManagement();
   const { facilities, getFacilityStats } = useFacilities();
   const { modules, getModuleStats } = useModules();
-  const { apiServices, getApiServiceStats } = useApiServices();
+  const { apiServices } = useApiServices();
 
   const dashboardData = {
     // Real metrics from consolidated sources
@@ -32,7 +32,6 @@ export const useDashboard = () => {
     },
     facilityStats: getFacilityStats(),
     moduleStats: getModuleStats(),
-    apiServiceStats: getApiServiceStats(),
     
     // System health based on real data
     systemHealth: facilities.length > 0 && modules.length > 0 ? 'healthy' : 'warning',

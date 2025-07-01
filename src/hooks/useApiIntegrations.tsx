@@ -17,8 +17,7 @@ export const useApiIntegrations = () => {
     apiServices, 
     internalApis, 
     externalApis,
-    isLoading,
-    meta
+    isLoading
   } = useApiServices();
 
   console.log('🔍 useApiIntegrations - Delegating to consolidated useApiServices hook');
@@ -55,17 +54,13 @@ export const useApiIntegrations = () => {
         throw new Error('API integration not found');
       }
 
-      // Determine integration type and get the appropriate name
-      const integrationName = (integration as any).external_name || (integration as any).name;
-      const integrationDescription = (integration as any).external_description || (integration as any).description || 'API Collection';
-
       // Generate Postman collection
       const collection = {
         info: {
-          name: integrationName,
-          description: integrationDescription,
+          name: integration.name,
+          description: integration.description || 'API Collection',
           schema: 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json',
-          version: (integration as any).version || '1.0.0'
+          version: integration.version || '1.0.0'
         },
         item: apiEndpoints
           ?.filter(endpoint => endpoint.external_api_id === integrationId)
@@ -84,7 +79,7 @@ export const useApiIntegrations = () => {
                 }] : [])
               ],
               url: {
-                raw: `${(integration as any).base_url || '{{base_url}}'}${endpoint.external_path}`,
+                raw: `${integration.base_url || '{{base_url}}'}${endpoint.external_path}`,
                 host: ['{{base_url}}'],
                 path: endpoint.external_path?.split('/').filter(Boolean) || []
               },
@@ -132,7 +127,7 @@ export const useApiIntegrations = () => {
         throw new Error('API integration not found');
       }
 
-      let testUrl = (integration as any).base_url || `${window.location.origin}/api/v1/${integrationId}`;
+      let testUrl = integration.base_url || `${window.location.origin}/api/v1/${integrationId}`;
       
       if (endpointId) {
         const endpoint = apiEndpoints?.find(ep => ep.id === endpointId);
@@ -192,7 +187,6 @@ export const useApiIntegrations = () => {
     
     // Meta - Enhanced with single source validation
     meta: {
-      ...meta,
       endpointsCount: apiEndpoints?.length || 0,
       singleSourceValidated: true,
       consolidatedHook: 'useApiServices',

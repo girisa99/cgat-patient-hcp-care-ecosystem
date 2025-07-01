@@ -1,103 +1,134 @@
-import { HomeIcon, UsersIcon, BuildingOfficeIcon, Cog6ToothIcon, ShieldCheckIcon, DocumentTextIcon, ChartBarIcon, UserGroupIcon, ClipboardDocumentListIcon, BookOpenIcon, ServerIcon, WrenchScrewdriverIcon, BeakerIcon, CpuChipIcon, EyeIcon, BugAntIcon, HeartIcon } from "@heroicons/react/24/outline";
-import Index from "./pages/Index";
-import Users from "./pages/Users";
-import Facilities from "./pages/Facilities";
-import Settings from "./pages/Settings";
-import SecurityPage from "./pages/SecurityPage";
-import AdminPage from "./pages/AdminPage";
-import Modules from "./pages/Modules";
-import Onboarding from "./pages/Onboarding";
-import ServicesPage from "./pages/ServicesPage";
-import TherapiesPage from "./pages/TherapiesPage";
-import ReportsPage from "./pages/ReportsPage";
-import DocumentsPage from "./pages/DocumentsPage";
-import ApiIntegrations from "./pages/ApiIntegrations";
-import SystemVerificationPage from "./pages/SystemVerificationPage";
-import HealthMonitoring from "./pages/HealthMonitoring";
+
+import { 
+  Home, 
+  Users, 
+  Building2, 
+  Package, 
+  UserPlus, 
+  Settings, 
+  Shield, 
+  Activity,
+  BarChart3,
+  Search,
+  Globe,
+  FileText,
+  Database,
+  CheckCircle2
+} from 'lucide-react';
 
 export const navItems = [
   {
-    title: "Home",
-    to: "/",
-    icon: <HomeIcon className="h-4 w-4" />,
-    page: <Index />,
+    title: "Dashboard",
+    url: "/",
+    icon: Home,
+    isActive: false,
+    items: []
   },
   {
-    title: "Users",
-    to: "/users",
-    icon: <UsersIcon className="h-4 w-4" />,
-    page: <Users />,
+    title: "User Management",
+    url: "/users",
+    icon: Users,
+    isActive: false,
+    items: []
+  },
+  {
+    title: "Patients",
+    url: "/patients", 
+    icon: Users,
+    isActive: false,
+    items: []
   },
   {
     title: "Facilities",
-    to: "/facilities",
-    icon: <BuildingOfficeIcon className="h-4 w-4" />,
-    page: <Facilities />,
+    url: "/facilities",
+    icon: Building2,
+    isActive: false,
+    items: []
   },
   {
     title: "Modules",
-    to: "/modules",
-    icon: <ClipboardDocumentListIcon className="h-4 w-4" />,
-    page: <Modules />,
+    url: "/modules",
+    icon: Package,
+    isActive: false,
+    items: []
   },
   {
     title: "Onboarding",
-    to: "/onboarding",
-    icon: <BookOpenIcon className="h-4 w-4" />,
-    page: <Onboarding />,
-  },
-  {
-    title: "Services",
-    to: "/services",
-    icon: <ServerIcon className="h-4 w-4" />,
-    page: <ServicesPage />,
-  },
-  {
-    title: "Therapies",
-    to: "/therapies",
-    icon: <WrenchScrewdriverIcon className="h-4 w-4" />,
-    page: <TherapiesPage />,
-  },
-  {
-    title: "API Integrations",
-    to: "/api-integrations",
-    icon: <BeakerIcon className="h-4 w-4" />,
-    page: <ApiIntegrations />,
-  },
-  {
-    title: "Reports",
-    to: "/reports",
-    icon: <ChartBarIcon className="h-4 w-4" />,
-    page: <ReportsPage />,
-  },
-  {
-    title: "Documents",
-    to: "/documents",
-    icon: <DocumentTextIcon className="h-4 w-4" />,
-    page: <DocumentsPage />,
+    url: "/onboarding",
+    icon: UserPlus,
+    isActive: false,
+    items: []
   },
   {
     title: "Admin",
-    to: "/admin",
-    icon: <Cog6ToothIcon className="h-4 w-4" />,
-    page: <AdminPage />,
+    url: "#",
+    icon: Settings,
+    isActive: false,
+    items: [
+      {
+        title: "System Analysis",
+        url: "/admin/system-analysis",
+        icon: BarChart3
+      },
+      {
+        title: "System Assessment", 
+        url: "/admin/system-assessment",
+        icon: Search
+      },
+      {
+        title: "API Services",
+        url: "/admin/api-services",
+        icon: Globe
+      },
+      {
+        title: "API Integrations",
+        url: "/admin/api-integrations", 
+        icon: Globe
+      },
+      {
+        title: "Data Import",
+        url: "/admin/data-import",
+        icon: Database
+      },
+      {
+        title: "System Status",
+        url: "/admin/system-status",
+        icon: Activity
+      },
+      {
+        title: "User Management",
+        url: "/admin/user-management",
+        icon: Users
+      },
+      {
+        title: "Patient Management",
+        url: "/admin/patient-management", 
+        icon: Users
+      },
+      {
+        title: "Auto Module Manager",
+        url: "/admin/auto-module-manager",
+        icon: Package
+      },
+      {
+        title: "System Verification",
+        url: "/admin/system-verification",
+        icon: CheckCircle2
+      }
+    ]
   },
   {
     title: "Security",
-    to: "/security",
-    icon: <ShieldCheckIcon className="h-4 w-4" />,
-    page: <SecurityPage />,
+    url: "/security",
+    icon: Shield,
+    isActive: false,
+    items: []
   },
   {
-    title: "System Verification",
-    to: "/system-verification",
-    icon: <EyeIcon className="h-4 w-4" />,
-    page: <SystemVerificationPage />,
-  },
-  {
-    title: "Health Monitoring",
-    to: "/health-monitoring",
-    icon: <HeartIcon className="h-4 w-4" />,
-    page: <HealthMonitoring />,
-  },
+    title: "Reports",
+    url: "/reports", 
+    icon: FileText,
+    isActive: false,
+    items: []
+  }
 ];
