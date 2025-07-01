@@ -1,3 +1,4 @@
+
 import { useOptimizedQuery } from './useOptimizedQuery';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -97,7 +98,13 @@ export const useApiServices = () => {
     }
   });
 
+  // Provide backward compatibility with expected property names
+  const apiServices = integrations || [];
+  const internalApis = apiServices.filter(api => api.type === 'internal');
+  const externalApis = apiServices.filter(api => api.type === 'external');
+
   return {
+    // New consolidated properties
     integrations,
     isLoading,
     error,
@@ -105,6 +112,13 @@ export const useApiServices = () => {
     createIntegration: createMutation.mutate,
     updateIntegration: updateMutation.mutate,
     isCreating: createMutation.isPending,
-    isUpdating: updateMutation.isPending
+    isUpdating: updateMutation.isPending,
+    
+    // Backward compatibility properties
+    apiServices,
+    internalApis,
+    externalApis,
+    createApiService: createMutation.mutate,
+    isCreatingApiService: createMutation.isPending
   };
 };
