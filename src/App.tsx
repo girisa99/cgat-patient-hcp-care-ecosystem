@@ -3,57 +3,80 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { CleanAuthProvider } from "@/components/auth/CleanAuthProvider";
-import Index from "./pages/Index";
-import Dashboard from "./pages/Dashboard";
-import OnboardingDashboard from "./pages/OnboardingDashboard";
-import PatientsPage from "./pages/PatientsPage";
-import UsersPage from "./pages/UsersPage";
-import FacilitiesPage from "./pages/FacilitiesPage";
-import ModulesPage from "./pages/ModulesPage";
-import SecurityPage from "./pages/SecurityPage";
-import ReportsPage from "./pages/ReportsPage";
-import DocumentsPage from "./pages/DocumentsPage";
-import SettingsPage from "./pages/SettingsPage";
-import TherapiesPage from "./pages/TherapiesPage";
-import ServicesPage from "./pages/ServicesPage";
-import DataImport from "./pages/DataImport";
-import ApiIntegrations from "./pages/ApiIntegrations";
-import ApiServicesPage from "./pages/ApiServicesPage";
-import SystemVerificationPage from "./pages/SystemVerificationPage";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider } from "@/components/auth/CleanAuthProvider";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import LoginForm from "@/components/auth/LoginForm";
+import Dashboard from "@/pages/Dashboard";
+import Users from "@/pages/Users";
+import Facilities from "@/pages/Facilities";
+import Modules from "@/pages/Modules";
+import AdminPage from "@/pages/AdminPage";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <CleanAuthProvider>
+    <AuthProvider>
       <TooltipProvider>
         <Toaster />
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/onboarding" element={<OnboardingDashboard />} />
-            <Route path="/patients" element={<PatientsPage />} />
-            <Route path="/therapies" element={<TherapiesPage />} />
-            <Route path="/services" element={<ServicesPage />} />
-            <Route path="/api-services" element={<ApiServicesPage />} />
-            <Route path="/data-import" element={<DataImport />} />
-            <Route path="/api-integrations" element={<ApiIntegrations />} />
-            <Route path="/users" element={<UsersPage />} />
-            <Route path="/facilities" element={<FacilitiesPage />} />
-            <Route path="/modules" element={<ModulesPage />} />
-            <Route path="/security" element={<SecurityPage />} />
-            <Route path="/reports" element={<ReportsPage />} />
-            <Route path="/documents" element={<DocumentsPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="/system-verification" element={<SystemVerificationPage />} />
+            <Route path="/login" element={<LoginForm />} />
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/users"
+              element={
+                <ProtectedRoute>
+                  <Users />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/facilities"
+              element={
+                <ProtectedRoute>
+                  <Facilities />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/modules"
+              element={
+                <ProtectedRoute>
+                  <Modules />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute>
+                  <AdminPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
-    </CleanAuthProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 

@@ -5,17 +5,19 @@ import { PageContainer } from '@/components/layout/PageContainer';
 import { AdminStatsGrid, StatCard } from '@/components/layout/AdminStatsGrid';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Building2, CheckCircle, AlertCircle, Settings } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Plus, Building2, CheckCircle, AlertCircle, Settings, Search, Filter, Download } from 'lucide-react';
 import FacilitiesList from '@/components/facilities/FacilitiesList';
 import CreateFacilityDialog from '@/components/facilities/CreateFacilityDialog';
 import EditFacilityDialog from '@/components/facilities/EditFacilityDialog';
 import { useFacilities } from '@/hooks/useFacilities';
 
 const Facilities = () => {
-  const { facilities, isLoading } = useFacilities();
+  const { facilities, isLoading, getFacilityStats } = useFacilities();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedFacility, setSelectedFacility] = useState<any>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const handleCreateFacility = () => {
     setCreateDialogOpen(true);
@@ -26,11 +28,15 @@ const Facilities = () => {
     setEditDialogOpen(true);
   };
 
-  // Calculate stats
-  const totalFacilities = facilities?.length || 0;
-  const activeFacilities = facilities?.filter(f => f.is_active).length || 0;
-  const inactiveFacilities = totalFacilities - activeFacilities;
-  const treatmentFacilities = facilities?.filter(f => f.facility_type === 'treatmentFacility').length || 0;
+  // Get stats from the hook
+  const stats = getFacilityStats();
+  
+  // Filter facilities based on search
+  const filteredFacilities = facilities.filter(facility => 
+    facility.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    facility.facility_type?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    facility.address?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const headerActions = (
     <Button onClick={handleCreateFacility}>
@@ -51,37 +57,64 @@ const Facilities = () => {
           <AdminStatsGrid columns={4}>
             <StatCard
               title="Total Facilities"
-              value={totalFacilities}
+              value={stats.total}
               icon={Building2}
               description="All registered facilities"
             />
             <StatCard
               title="Active Facilities"
-              value={activeFacilities}
+              value={stats.active}
               icon={CheckCircle}
               description="Currently active facilities"
             />
             <StatCard
               title="Inactive Facilities"
-              value={inactiveFacilities}
+              value={stats.inactive}
               icon={AlertCircle}
               description="Inactive facilities"
             />
             <StatCard
-              title="Treatment Centers"
-              value={treatmentFacilities}
+              title="Facility Types"
+              value={Object.keys(stats.typeBreakdown).length}
               icon={Settings}
-              description="Treatment facility type"
+              description="Different facility types"
             />
           </AdminStatsGrid>
+
+          {/* Search and Filters */}
+          <div className="flex items-center gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search facilities by name, type, or address..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Button variant="outline">
+              <Filter className="h-4 w-4 mr-2" />
+              Filters
+            </Button>
+            <Button variant="outline">
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </Button>
+          </div>
 
           {/* Facilities List */}
           <Card className="shadow-sm">
             <CardContent className="p-6">
-              <FacilitiesList 
-                facilities={facilities || []}
-                onEditFacility={handleEditFacility}
-              />
+              {isLoading ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">Loading facilities...</p>
+                </div>
+              ) : (
+                <FacilitiesList 
+                  facilities={filteredFacilities}
+                  onEditFacility={handleEditFacility}
+                />
+              )}
             </CardContent>
           </Card>
         </div>

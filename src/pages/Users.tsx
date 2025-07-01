@@ -1,384 +1,185 @@
+
 import React, { useState } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { PageContainer } from '@/components/layout/PageContainer';
+import { AdminStatsGrid, StatCard } from '@/components/layout/AdminStatsGrid';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, AlertCircle } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Plus, Users as UsersIcon, Shield, Activity, Settings, Search, Filter, Download, Upload } from 'lucide-react';
+import UsersList from '@/components/users/UsersList';
+import CreateUserDialog from '@/components/users/CreateUserDialog';
+import AssignRoleDialog from '@/components/users/AssignRoleDialog';
 import { useUsers } from '@/hooks/useUsers';
-import { useAuthContext } from '@/components/auth/CleanAuthProvider';
-import LoadingSpinner from '@/components/ui/LoadingSpinner';
-import { useToast } from '@/hooks/use-toast';
-import { useAdminRealtime } from '@/hooks/useAdminRealtime';
-
-// Import the new compact component
-import CompactUserManagement from '@/components/users/CompactUserManagement';
-
-// Import consolidated components
-import {
-  CreateUserDialog,
-  EditUserDialog,
-  AssignRoleDialog,
-  RemoveRoleDialog,
-  AssignFacilityDialog,
-  PermissionManagementDialog
-} from '@/components/users';
-
-// Import the enhanced dialog instead
-import EnhancedResendVerificationDialog from '@/components/users/EnhancedResendVerificationDialog';
-import DeactivateUserDialog from '@/components/users/DeactivateUserDialog';
-import AssignModuleDialog from '@/components/users/AssignModuleDialog';
-import UserModuleAccessDialog from '@/components/users/UserModuleAccessDialog';
 
 const Users = () => {
-  const { toast } = useToast();
-  const { isAuthenticated, loading: authLoading, userRoles, initialized } = useAuthContext();
-  
-  // Enable real-time updates for user management area
-  useAdminRealtime({
-    enableNotifications: true,
-    areas: ['userManagement', 'rbac', 'facility']
-  });
-
-  const { 
-    users, 
-    isLoading, 
-    error,
-    refetch,
-    createUser, 
-    assignRole, 
-    assignFacility
-  } = useUsers();
-
-  const [createUserOpen, setCreateUserOpen] = useState(false);
-  const [editUserOpen, setEditUserOpen] = useState(false);
-  const [assignRoleOpen, setAssignRoleOpen] = useState(false);
-  const [removeRoleOpen, setRemoveRoleOpen] = useState(false);
-  const [assignFacilityOpen, setAssignFacilityOpen] = useState(false);
-  const [permissionManagementOpen, setPermissionManagementOpen] = useState(false);
-  const [resendVerificationOpen, setResendVerificationOpen] = useState(false);
-  const [deactivateUserOpen, setDeactivateUserOpen] = useState(false);
-  const [assignModuleOpen, setAssignModuleOpen] = useState(false);
-  const [viewModulesOpen, setViewModulesOpen] = useState(false);
+  const { users, isLoading, getUserStats } = useUsers();
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-  const [selectedUser, setSelectedUser] = useState<any>(null);
-  const [selectedUserName, setSelectedUserName] = useState<string>('');
-  const [selectedUserEmail, setSelectedUserEmail] = useState<string>('');
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [selectedUserName, setSelectedUserName] = useState('');
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showAssignRoleDialog, setShowAssignRoleDialog] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  // Wait for auth initialization before proceeding
-  if (!initialized || authLoading) {
-    return (
-      <MainLayout>
-        <PageContainer
-          title="Users Management"
-          subtitle="Initializing authentication..."
-        >
-          <div className="flex justify-center items-center min-h-[400px]">
-            <LoadingSpinner size="lg" />
-          </div>
-        </PageContainer>
-      </MainLayout>
-    );
-  }
+  const stats = getUserStats();
 
-  // Show authentication required message
-  if (!isAuthenticated) {
-    return (
-      <MainLayout>
-        <PageContainer
-          title="Users Management"
-          subtitle="Authentication Required"
-        >
-          <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
-            <AlertCircle className="h-16 w-16 text-orange-500" />
-            <div className="text-center">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Authentication Required</h3>
-              <p className="text-gray-600 mb-4">
-                You need to sign in to access the Users Management module.
-              </p>
-              <p className="text-sm text-gray-500">
-                Please use the login form to authenticate with your credentials.
-              </p>
-              <Button 
-                onClick={() => window.location.href = '/'} 
-                className="mt-4"
-              >
-                Go to Login
-              </Button>
-            </div>
-          </div>
-        </PageContainer>
-      </MainLayout>
-    );
-  }
+  // Filter users based on search
+  const filteredUsers = users.filter(user => 
+    user.first_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.last_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.email?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
-  // Check if user has permission to access users management
-  const hasUserManagementAccess = userRoles.includes('superAdmin') || userRoles.includes('onboardingTeam');
-  
-  if (!hasUserManagementAccess) {
-    return (
-      <MainLayout>
-        <PageContainer
-          title="Users Management"
-          subtitle="Access Denied"
-        >
-          <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
-            <AlertCircle className="h-16 w-16 text-red-500" />
-            <div className="text-center">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Access Restricted</h3>
-              <p className="text-gray-600 mb-4">
-                You need administrator or onboarding team permissions to access this module.
-              </p>
-              <p className="text-sm text-gray-500">
-                Current roles: {userRoles.join(', ') || 'None'}
-              </p>
-            </div>
-          </div>
-        </PageContainer>
-      </MainLayout>
-    );
-  }
-
-  const handleCreateUser = () => {
-    setCreateUserOpen(true);
+  const handleAssignRole = (userId: string) => {
+    setSelectedUserId(userId);
+    const user = users.find(u => u.id === userId);
+    setSelectedUserName(`${user?.first_name || ''} ${user?.last_name || ''}`.trim() || user?.email || '');
+    setShowAssignRoleDialog(true);
   };
 
   const handleEditUser = (user: any) => {
-    console.log('📝 Users.tsx - handleEditUser called with:', user);
-    console.log('🔍 User object keys:', Object.keys(user));
-    console.log('📧 User email:', user.email);
-    console.log('👤 User name:', user.first_name, user.last_name);
-    
-    setSelectedUser(user);
-    setEditUserOpen(true);
-    
-    console.log('✅ EditUserDialog state updated - selectedUser set, dialog should open');
-  };
-
-  const handleAssignRole = (userId: string) => {
-    const user = users?.find(u => u.id === userId);
-    const userName = user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email : 'User';
-    setSelectedUserId(userId);
-    setSelectedUserName(userName);
-    setAssignRoleOpen(true);
+    console.log('Edit user:', user);
+    // Handle edit user functionality
   };
 
   const handleRemoveRole = (userId: string) => {
-    const user = users?.find(u => u.id === userId);
-    const userName = user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email : 'User';
-    setSelectedUserId(userId);
-    setSelectedUserName(userName);
-    setRemoveRoleOpen(true);
+    console.log('Remove role for user:', userId);
+    // Handle remove role functionality
   };
 
   const handleAssignFacility = (userId: string) => {
-    const user = users?.find(u => u.id === userId);
-    const userName = user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email : 'User';
-    setSelectedUserId(userId);
-    setSelectedUserName(userName);
-    setAssignFacilityOpen(true);
+    console.log('Assign facility to user:', userId);
+    // Handle assign facility functionality
   };
 
   const handleManagePermissions = (userId: string, userName: string) => {
-    console.log('🔒 Opening permission management for user:', userId, userName);
-    setSelectedUserId(userId);
-    setSelectedUserName(userName);
-    setPermissionManagementOpen(true);
+    console.log('Manage permissions for user:', userId, userName);
+    // Handle manage permissions functionality
   };
 
   const handleAssignModule = (userId: string, userName: string) => {
-    console.log('📦 Opening module assignment for user:', userId, userName);
-    setSelectedUserId(userId);
-    setSelectedUserName(userName);
-    setAssignModuleOpen(true);
+    console.log('Assign module to user:', userId, userName);
+    // Handle assign module functionality
   };
 
   const handleViewModules = (userId: string, userName: string) => {
-    console.log('👁️ Opening module access view for user:', userId, userName);
-    setSelectedUserId(userId);
-    setSelectedUserName(userName);
-    setViewModulesOpen(true);
+    console.log('View modules for user:', userId, userName);
+    // Handle view modules functionality
   };
 
   const handleResendVerification = (userEmail: string, userName: string) => {
-    console.log('📧 Opening resend verification dialog for:', userName, userEmail);
-    setSelectedUserEmail(userEmail);
-    setSelectedUserName(userName);
-    setResendVerificationOpen(true);
+    console.log('Resend verification for user:', userEmail, userName);
+    // Handle resend verification functionality
   };
 
   const handleDeactivateUser = (userId: string, userName: string, userEmail: string) => {
-    console.log('🚫 Opening deactivate user dialog for:', userId, userName, userEmail);
-    setSelectedUserId(userId);
-    setSelectedUserName(userName);
-    setSelectedUserEmail(userEmail);
-    setDeactivateUserOpen(true);
-  };
-
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    try {
-      await refetch();
-      toast({
-        title: "Data Refreshed",
-        description: "User data has been refreshed successfully.",
-      });
-    } catch (error) {
-      toast({
-        title: "Refresh Failed",
-        description: "Failed to refresh user data. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsRefreshing(false);
-    }
+    console.log('Deactivate user:', userId, userName, userEmail);
+    // Handle deactivate user functionality
   };
 
   const headerActions = (
-    <Button 
-      variant="outline" 
-      onClick={handleRefresh}
-      disabled={isRefreshing}
-    >
-      <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-      Refresh
-    </Button>
+    <div className="flex items-center gap-2">
+      <Button variant="outline">
+        <Upload className="h-4 w-4 mr-2" />
+        Bulk Actions
+      </Button>
+      <Button onClick={() => setShowCreateDialog(true)}>
+        <Plus className="h-4 w-4 mr-2" />
+        Add User
+      </Button>
+    </div>
   );
-
-  // Calculate stats from users array
-  const stats = {
-    totalUsers: users?.length || 0,
-    usersWithRoles: users?.filter(u => u.user_roles && u.user_roles.length > 0).length || 0,
-    activeUsers: users?.length || 0,
-    usersWithFacilities: users?.filter(u => u.facilities).length || 0
-  };
-
-  // Show loading state
-  if (isLoading) {
-    return (
-      <MainLayout>
-        <PageContainer
-          title="Users Management"
-          subtitle="Loading user data..."
-        >
-          <div className="flex justify-center items-center min-h-[400px]">
-            <LoadingSpinner size="lg" />
-          </div>
-        </PageContainer>
-      </MainLayout>
-    );
-  }
-
-  // Show error state
-  if (error) {
-    return (
-      <MainLayout>
-        <PageContainer
-          title="Users Management"
-          subtitle="Error loading user data"
-        >
-          <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
-            <AlertCircle className="h-16 w-16 text-red-500" />
-            <div className="text-center">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Failed to Load Users</h3>
-              <p className="text-red-600 mb-4">{error.message}</p>
-              <Button onClick={handleRefresh} variant="outline">
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Try Again
-              </Button>
-            </div>
-          </div>
-        </PageContainer>
-      </MainLayout>
-    );
-  }
 
   return (
     <MainLayout>
       <PageContainer
-        title="Users Management"
-        subtitle="Manage system users with streamlined interface and bulk operations"
+        title="User Management"
+        subtitle="Manage users, roles, permissions, and access"
         headerActions={headerActions}
       >
-        <CompactUserManagement
-          stats={stats}
-          onCreateUser={handleCreateUser}
-          onAssignRole={handleAssignRole}
-          onRemoveRole={handleRemoveRole}
-          onAssignFacility={handleAssignFacility}
-          onEditUser={handleEditUser}
-          onManagePermissions={handleManagePermissions}
-          onAssignModule={handleAssignModule}
-          onResendVerification={handleResendVerification}
-          onDeactivateUser={handleDeactivateUser}
-          onViewModules={handleViewModules}
-        />
+        <div className="space-y-6">
+          {/* Stats Grid */}
+          <AdminStatsGrid columns={4}>
+            <StatCard
+              title="Total Users"
+              value={stats.total}
+              icon={UsersIcon}
+              description={`${stats.active} active, ${stats.inactive} inactive`}
+            />
+            <StatCard
+              title="Administrators"
+              value={stats.admins}
+              icon={Shield}
+              description="Super admins & moderators"
+            />
+            <StatCard
+              title="Regular Users"
+              value={stats.regularUsers}
+              icon={Activity}
+              description="Standard user accounts"
+            />
+            <StatCard
+              title="Moderators"
+              value={stats.moderators}
+              icon={Settings}
+              description="Content moderators"
+            />
+          </AdminStatsGrid>
+
+          {/* Search and Filters */}
+          <div className="flex items-center gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search users by name or email..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Button variant="outline">
+              <Filter className="h-4 w-4 mr-2" />
+              Filters
+            </Button>
+            <Button variant="outline">
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </Button>
+          </div>
+
+          {/* Users List */}
+          <Card className="shadow-sm">
+            <CardContent className="p-6">
+              {isLoading ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">Loading users...</p>
+                </div>
+              ) : (
+                <UsersList
+                  onEditUser={handleEditUser}
+                  onAssignRole={handleAssignRole}
+                  onRemoveRole={handleRemoveRole}
+                  onAssignFacility={handleAssignFacility}
+                  onManagePermissions={handleManagePermissions}
+                  onAssignModule={handleAssignModule}
+                  onViewModules={handleViewModules}
+                  onResendVerification={handleResendVerification}
+                  onDeactivateUser={handleDeactivateUser}
+                />
+              )}
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Dialogs */}
         <CreateUserDialog
-          open={createUserOpen}
-          onOpenChange={setCreateUserOpen}
-        />
-
-        <EditUserDialog
-          open={editUserOpen}
-          onOpenChange={setEditUserOpen}
-          user={selectedUser}
+          open={showCreateDialog}
+          onOpenChange={setShowCreateDialog}
         />
 
         <AssignRoleDialog
-          open={assignRoleOpen}
-          onOpenChange={setAssignRoleOpen}
+          open={showAssignRoleDialog}
+          onOpenChange={setShowAssignRoleDialog}
           userId={selectedUserId}
-          userName={selectedUserName}
-        />
-
-        <RemoveRoleDialog
-          open={removeRoleOpen}
-          onOpenChange={setRemoveRoleOpen}
-          userId={selectedUserId}
-          userName={selectedUserName}
-        />
-
-        <AssignFacilityDialog
-          open={assignFacilityOpen}
-          onOpenChange={setAssignFacilityOpen}
-          userId={selectedUserId}
-          userName={selectedUserName}
-        />
-
-        <PermissionManagementDialog
-          open={permissionManagementOpen}
-          onOpenChange={setPermissionManagementOpen}
-          userId={selectedUserId}
-          userName={selectedUserName}
-        />
-
-        <AssignModuleDialog
-          open={assignModuleOpen}
-          onOpenChange={setAssignModuleOpen}
-          userId={selectedUserId || ''}
-          userName={selectedUserName}
-        />
-
-        <EnhancedResendVerificationDialog
-          open={resendVerificationOpen}
-          onOpenChange={setResendVerificationOpen}
-          userEmail={selectedUserEmail}
-          userName={selectedUserName}
-        />
-
-        <DeactivateUserDialog
-          open={deactivateUserOpen}
-          onOpenChange={setDeactivateUserOpen}
-          userId={selectedUserId || ''}
-          userName={selectedUserName}
-          userEmail={selectedUserEmail}
-        />
-
-        <UserModuleAccessDialog
-          open={viewModulesOpen}
-          onOpenChange={setViewModulesOpen}
-          userId={selectedUserId || ''}
           userName={selectedUserName}
         />
       </PageContainer>
