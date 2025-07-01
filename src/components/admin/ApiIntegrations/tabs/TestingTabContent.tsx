@@ -22,15 +22,21 @@ export const TestingTabContent: React.FC<TestingTabContentProps> = ({
 
   const currentIntegration = integrations.find(i => i.id === selectedIntegration);
   
-  // Handle different integration types - use consistent property names
-  const endpoints = currentIntegration?.integrationType === 'external' 
-    ? currentIntegration?.external_api_endpoints || []
-    : currentIntegration?.endpoints || [];
+  // Handle different integration types with proper type safety
+  const endpoints = React.useMemo(() => {
+    if (!currentIntegration) return [];
+    
+    if (currentIntegration.integrationType === 'external') {
+      return currentIntegration.external_api_endpoints || [];
+    }
+    
+    return currentIntegration.endpoints || [];
+  }, [currentIntegration]);
     
   const currentEndpoint = endpoints.find((e: any) => e.id === selectedEndpoint);
 
   const handleTest = async () => {
-    if (!selectedIntegration || !selectedEndpoint) return;
+    if (!selectedIntegration || !selectedEndpoint || !currentIntegration || !currentEndpoint) return;
     
     setIsLoading(true);
     try {
@@ -38,22 +44,29 @@ export const TestingTabContent: React.FC<TestingTabContentProps> = ({
         await onTestEndpoint(selectedIntegration, selectedEndpoint);
       }
       
-      // Add a successful result since the function returns void
-      setTestResults(prev => [{
+      // Add successful result
+      const newResult = {
         timestamp: new Date().toISOString(),
-        integration: currentIntegration?.name || currentIntegration?.external_name,
-        endpoint: currentEndpoint?.name || currentEndpoint?.summary,
-        method: currentEndpoint?.method,
+        integration: currentIntegration.name || currentIntegration.external_name || 'Unknown',
+        endpoint: currentEndpoint.name || currentEndpoint.summary || 'Unknown Endpoint',
+        method: currentEndpoint.method || 'GET',
         result: { success: true, message: 'Test completed successfully' }
-      }, ...prev.slice(0, 9)]);
+      };
+      
+      setTestResults(prev => [newResult, ...prev.slice(0, 9)]);
     } catch (error) {
-      setTestResults(prev => [{
+      const errorResult = {
         timestamp: new Date().toISOString(),
-        integration: currentIntegration?.name || currentIntegration?.external_name,
-        endpoint: currentEndpoint?.name || currentEndpoint?.summary,
-        method: currentEndpoint?.method,
-        result: { success: false, error: error instanceof Error ? error.message : 'Test failed' }
-      }, ...prev.slice(0, 9)]);
+        integration: currentIntegration.name || currentIntegration.external_name || 'Unknown',
+        endpoint: currentEndpoint.name || currentEndpoint.summary || 'Unknown Endpoint',
+        method: currentEndpoint.method || 'GET',
+        result: { 
+          success: false, 
+          error: error instanceof Error ? error.message : 'Test failed' 
+        }
+      };
+      
+      setTestResults(prev => [errorResult, ...prev.slice(0, 9)]);
     } finally {
       setIsLoading(false);
     }
@@ -76,7 +89,7 @@ export const TestingTabContent: React.FC<TestingTabContentProps> = ({
                 <SelectContent>
                   {integrations.map((integration) => (
                     <SelectItem key={integration.id} value={integration.id}>
-                      {integration.name || integration.external_name}
+                      {integration.name || integration.external_name || 'Unnamed Integration'}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -88,15 +101,15 @@ export const TestingTabContent: React.FC<TestingTabContentProps> = ({
               <Select 
                 value={selectedEndpoint} 
                 onValueChange={setSelectedEndpoint}
-                disabled={!selectedIntegration}
+                disabled={!selectedIntegration || endpoints.length === 0}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Choose an endpoint" />
                 </SelectTrigger>
                 <SelectContent>
                   {endpoints.map((endpoint: any) => (
-                    <SelectItem key={endpoint.id} value={endpoint.id}>
-                      {endpoint.method} {endpoint.name || endpoint.summary}
+                    <SelectItem key={endpoint.id || Math.random()} value={endpoint.id || ''}>
+                      {endpoint.method || 'GET'} {endpoint.name || endpoint.summary || 'Unnamed Endpoint'}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -107,13 +120,13 @@ export const TestingTabContent: React.FC<TestingTabContentProps> = ({
           {currentEndpoint && (
             <div className="p-4 border rounded-lg bg-muted/50">
               <div className="flex items-center gap-2 mb-2">
-                <Badge variant="outline">{currentEndpoint.method}</Badge>
+                <Badge variant="outline">{currentEndpoint.method || 'GET'}</Badge>
                 <span className="font-mono text-sm">
-                  {currentEndpoint.url || currentEndpoint.external_path}
+                  {currentEndpoint.url || currentEndpoint.external_path || '/unknown'}
                 </span>
               </div>
               <p className="text-sm text-muted-foreground">
-                {currentEndpoint.description}
+                {currentEndpoint.description || 'No description available'}
               </p>
             </div>
           )}
