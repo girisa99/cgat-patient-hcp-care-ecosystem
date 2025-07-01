@@ -3,18 +3,18 @@ import React from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { UserManagementMain } from '@/components/admin/UserManagement/UserManagementMain';
-import { useUnifiedUserManagement } from '@/hooks/useUnifiedUserManagement';
+import { useUserManagementPage } from '@/hooks/useUserManagementPage';
 import { Card, CardContent } from '@/components/ui/card';
 
+/**
+ * Users Page - LOCKED IMPLEMENTATION
+ * Uses dedicated useUserManagementPage hook for consistent data access
+ * DO NOT MODIFY - This page is locked for stability
+ */
 const Users: React.FC = () => {
-  const { users, isLoading, error, meta } = useUnifiedUserManagement();
+  const { users, isLoading, error, meta } = useUserManagementPage();
 
-  console.log('👥 Users page data:', { 
-    users: users?.length, 
-    isLoading, 
-    error: error?.message,
-    meta: meta
-  });
+  console.log('🔒 Users Page - LOCKED VERSION active with hook version:', meta.hookVersion);
 
   if (isLoading) {
     return (
@@ -52,7 +52,7 @@ const Users: React.FC = () => {
                   Source: {meta.dataSource}
                 </p>
                 <p className="text-sm text-yellow-700">
-                  Version: {meta.version} - Unified user management system
+                  Version: {meta.hookVersion} - Locked user management system
                 </p>
               </div>
             </CardContent>
@@ -69,6 +69,20 @@ const Users: React.FC = () => {
         subtitle={`Unified user management system (${users?.length || 0} users)`}
         fluid
       >
+        {/* LOCKED STATUS INDICATOR */}
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+            <h3 className="font-semibold text-green-900">🔒 User Management Locked & Stable</h3>
+          </div>
+          <p className="text-sm text-green-700">
+            Data from {meta.dataSource} | Total: {meta.totalUsers} | Patients: {meta.patientCount} | Staff: {meta.staffCount} | Admins: {meta.adminCount}
+          </p>
+          <p className="text-xs text-green-600 mt-1">
+            Hook Version: {meta.hookVersion} | Single Source Validated: {meta.singleSourceValidated ? '✅' : '❌'}
+          </p>
+        </div>
+
         <UserManagementMain />
       </PageContainer>
     </MainLayout>

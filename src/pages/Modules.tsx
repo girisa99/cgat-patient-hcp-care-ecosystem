@@ -11,23 +11,27 @@ import ModulesList from '@/components/modules/ModulesList';
 import CreateModuleDialog from '@/components/modules/CreateModuleDialog';
 import EditModuleDialog from '@/components/modules/EditModuleDialog';
 import AssignModuleToRoleDialog from '@/components/modules/AssignModuleToRoleDialog';
-import { useModules } from '@/hooks/useModules';
+import { useModulesPage } from '@/hooks/useModulesPage';
 
+/**
+ * Modules Page - LOCKED IMPLEMENTATION
+ * Uses dedicated useModulesPage hook for consistent data access
+ * DO NOT MODIFY - This page is locked for stability
+ */
 const Modules = () => {
-  const { modules, isLoading, getModuleStats } = useModules();
+  const { modules, isLoading, getModuleStats, searchModules, meta } = useModulesPage();
   const [selectedModule, setSelectedModule] = useState<any>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showAssignToRoleDialog, setShowAssignToRoleDialog] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
+  console.log('🔒 Modules Page - LOCKED VERSION active with hook version:', meta.hookVersion);
+
   const stats = getModuleStats();
 
-  // Filter modules based on search
-  const filteredModules = modules.filter(module => 
-    module.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    module.description?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Filter modules based on search using locked hook
+  const filteredModules = searchModules(searchQuery);
 
   const handleEditModule = (module: any) => {
     setSelectedModule(module);
@@ -54,6 +58,19 @@ const Modules = () => {
         headerActions={headerActions}
       >
         <div className="space-y-6">
+          {/* LOCKED STATUS INDICATOR */}
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+              <h3 className="font-semibold text-green-900">🔒 Modules Management Locked & Stable</h3>
+            </div>
+            <div className="text-sm text-green-700">
+              <p><strong>Data Source:</strong> {meta.dataSource}</p>
+              <p><strong>Total Modules:</strong> {meta.totalModules} | <strong>Hook Version:</strong> {meta.hookVersion}</p>
+              <p className="text-xs text-green-600 mt-1">Single Source Validated: {meta.singleSourceValidated ? '✅' : '❌'}</p>
+            </div>
+          </div>
+
           {/* Stats Grid */}
           <AdminStatsGrid columns={4}>
             <StatCard

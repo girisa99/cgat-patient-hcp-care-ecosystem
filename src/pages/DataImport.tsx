@@ -6,11 +6,16 @@ import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Import, FileText, Database, Upload, Users, Building2, Globe, Code } from 'lucide-react';
-import { useConsolidatedDataImport } from '@/hooks/useConsolidatedDataImport';
+import { useDataImportPage } from '@/hooks/useDataImportPage';
 import { JsonImportTab } from '@/components/admin/DataImport/JsonImportTab';
 import { CsvImportTab } from '@/components/admin/DataImport/CsvImportTab';
 import { ApiEndpointsTab } from '@/components/admin/DataImport/ApiEndpointsTab';
 
+/**
+ * Data Import Page - LOCKED IMPLEMENTATION
+ * Uses dedicated useDataImportPage hook for consistent data access
+ * DO NOT MODIFY - This page is locked for stability
+ */
 const DataImport: React.FC = () => {
   const { 
     importUsers, 
@@ -20,9 +25,9 @@ const DataImport: React.FC = () => {
     isImporting, 
     importProgress,
     meta 
-  } = useConsolidatedDataImport();
+  } = useDataImportPage();
 
-  console.log('📊 Data Import page loaded with consolidated system:', meta.version);
+  console.log('🔒 Data Import Page - LOCKED VERSION active with hook version:', meta.hookVersion);
 
   return (
     <div className="space-y-6">
@@ -32,6 +37,23 @@ const DataImport: React.FC = () => {
         <p className="text-gray-600 mt-2">
           Import and manage data using multiple formats and methods
         </p>
+      </div>
+
+      {/* LOCKED STATUS INDICATOR */}
+      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+        <div className="flex items-center gap-2 mb-2">
+          <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+          <h3 className="font-semibold text-green-900">🔒 Data Import System Locked & Stable</h3>
+        </div>
+        <div className="text-sm text-green-700">
+          <p><strong>Data Source:</strong> {meta.dataSource}</p>
+          <p><strong>Version:</strong> {meta.version} | <strong>Hook Version:</strong> {meta.hookVersion}</p>
+          <p><strong>Supported Types:</strong> {meta.supportedTypes.join(', ')}</p>
+          <p className="text-xs text-green-600 mt-1">
+            Uses Consolidated Hooks: {meta.usesConsolidatedHooks ? 'Yes' : 'No'} | 
+            Single Source Validated: {meta.singleSourceValidated ? '✅' : '❌'}
+          </p>
+        </div>
       </div>
 
       {/* System Info */}

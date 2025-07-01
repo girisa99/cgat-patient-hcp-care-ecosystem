@@ -11,12 +11,19 @@ import { PatientsList } from '@/components/admin/PatientManagement/PatientsList'
 import { PatientViewDialog } from '@/components/admin/PatientManagement/PatientViewDialog';
 import { PatientEditDialog } from '@/components/admin/PatientManagement/PatientEditDialog';
 import CreatePatientDialog from '@/components/patients/CreatePatientDialog';
-import { useUnifiedUserManagement } from '@/hooks/useUnifiedUserManagement';
+import { usePatientsPage } from '@/hooks/usePatientsPage';
 import { useToast } from '@/hooks/use-toast';
 
+/**
+ * Patients Page - LOCKED IMPLEMENTATION
+ * Uses dedicated usePatientsPage hook for consistent data access
+ * DO NOT MODIFY - This page is locked for stability
+ */
 const Patients = () => {
-  const { users, isLoading, getPatients, searchUsers, meta } = useUnifiedUserManagement();
+  const { patients, isLoading, getPatientStats, searchPatients, meta } = usePatientsPage();
   const { toast } = useToast();
+  
+  console.log('🔒 Patients Page - LOCKED VERSION active with hook version:', meta.hookVersion);
   
   // Dialog states
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -25,13 +32,8 @@ const Patients = () => {
   const [selectedPatient, setSelectedPatient] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Get patients from unified user management
-  const patients = getPatients();
-  
-  // Filter patients based on search
-  const filteredPatients = searchUsers(searchQuery).filter(user => 
-    user.user_roles.some(userRole => userRole.roles.name === 'patientCaregiver')
-  );
+  // Filter patients based on search using locked hook
+  const filteredPatients = searchPatients(searchQuery);
 
   const handleCreatePatient = () => {
     console.log('🆕 Opening create patient dialog');
@@ -71,7 +73,6 @@ const Patients = () => {
   const handleDeactivatePatient = (patientId: string, patientName: string) => {
     console.log('🚫 Patients page: Deactivating patient:', patientId, patientName);
     
-    // Show confirmation toast for now - in a real app this would open a confirmation dialog
     toast({
       title: "Deactivate Patient",
       description: `Are you sure you want to deactivate ${patientName}? This feature will be implemented in the next update.`,
@@ -88,18 +89,8 @@ const Patients = () => {
     setSelectedPatient(null);
   };
 
-  // Calculate stats from real data
-  const stats = {
-    total: patients.length,
-    active: patients.filter(p => p.created_at).length,
-    withFacilities: patients.filter(p => p.facilities).length,
-    recentlyAdded: patients.filter(p => {
-      const createdDate = new Date(p.created_at || '');
-      const weekAgo = new Date();
-      weekAgo.setDate(weekAgo.getDate() - 7);
-      return createdDate > weekAgo;
-    }).length
-  };
+  // Calculate stats from locked hook
+  const stats = getPatientStats();
 
   const headerActions = (
     <Button onClick={handleCreatePatient}>
@@ -116,16 +107,16 @@ const Patients = () => {
         headerActions={headerActions}
       >
         <div className="space-y-6">
-          {/* Data Source Indicator */}
+          {/* LOCKED STATUS INDICATOR */}
           <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span className="text-sm text-green-800 font-medium">
-                Real Database: {meta.dataSource}
-              </span>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+              <h3 className="font-semibold text-green-900">🔒 Patients Management Locked & Stable</h3>
             </div>
-            <div className="mt-2 text-xs text-green-700">
-              Found: {patients.length} patients with patientCaregiver role
+            <div className="text-sm text-green-700">
+              <p><strong>Data Source:</strong> {meta.dataSource}</p>
+              <p><strong>Total Patients:</strong> {meta.totalPatients} | <strong>Hook Version:</strong> {meta.hookVersion}</p>
+              <p className="text-xs text-green-600 mt-1">Single Source Validated: {meta.singleSourceValidated ? '✅' : '❌'}</p>
             </div>
           </div>
 
@@ -190,11 +181,6 @@ const Patients = () => {
               />
             </CardContent>
           </Card>
-
-          {/* Data Source Debug */}
-          <div className="text-xs text-gray-500 text-center">
-            Data Source: {meta.dataSource} • {patients.length} patients loaded via unified system
-          </div>
         </div>
 
         {/* Dialogs */}

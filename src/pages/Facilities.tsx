@@ -10,14 +10,21 @@ import { Plus, Building2, CheckCircle, AlertCircle, Settings, Search, Filter, Do
 import FacilitiesList from '@/components/facilities/FacilitiesList';
 import CreateFacilityDialog from '@/components/facilities/CreateFacilityDialog';
 import EditFacilityDialog from '@/components/facilities/EditFacilityDialog';
-import { useFacilities } from '@/hooks/useFacilities';
+import { useFacilitiesPage } from '@/hooks/useFacilitiesPage';
 
+/**
+ * Facilities Page - LOCKED IMPLEMENTATION
+ * Uses dedicated useFacilitiesPage hook for consistent data access
+ * DO NOT MODIFY - This page is locked for stability
+ */
 const Facilities = () => {
-  const { facilities, isLoading, error, getFacilityStats, searchFacilities } = useFacilities();
+  const { facilities, isLoading, error, getFacilityStats, searchFacilities, meta } = useFacilitiesPage();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedFacility, setSelectedFacility] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
+
+  console.log('🔒 Facilities Page - LOCKED VERSION active with hook version:', meta.hookVersion);
 
   const handleCreateFacility = () => {
     setCreateDialogOpen(true);
@@ -28,10 +35,10 @@ const Facilities = () => {
     setEditDialogOpen(true);
   };
 
-  // Get stats from the hook (real data)
+  // Get stats from the locked hook
   const stats = getFacilityStats();
   
-  // Filter facilities using the hook's search function
+  // Filter facilities using the locked hook's search function
   const filteredFacilities = searchFacilities(searchQuery);
 
   if (error) {
@@ -53,6 +60,19 @@ const Facilities = () => {
         headerActions={headerActions}
       >
         <div className="space-y-6">
+          {/* LOCKED STATUS INDICATOR */}
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+              <h3 className="font-semibold text-green-900">🔒 Facilities Management Locked & Stable</h3>
+            </div>
+            <div className="text-sm text-green-700">
+              <p><strong>Data Source:</strong> {meta.dataSource}</p>
+              <p><strong>Total Facilities:</strong> {meta.totalFacilities} | <strong>Hook Version:</strong> {meta.hookVersion}</p>
+              <p className="text-xs text-green-600 mt-1">Single Source Validated: {meta.singleSourceValidated ? '✅' : '❌'}</p>
+            </div>
+          </div>
+
           {/* Stats Grid - Real Data */}
           <AdminStatsGrid columns={4}>
             <StatCard
@@ -121,11 +141,6 @@ const Facilities = () => {
               )}
             </CardContent>
           </Card>
-
-          {/* Data Source Indicator */}
-          <div className="text-xs text-gray-500 text-center">
-            Data Source: Real database via facilities table • {facilities.length} facilities loaded
-          </div>
         </div>
 
         {/* Dialogs */}
