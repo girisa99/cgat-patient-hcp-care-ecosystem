@@ -56,7 +56,7 @@ export const useVerificationResults = () => {
     totalIssues: verificationResult?.totalActiveIssues || 0,
     isSystemStable: verificationResult?.systemHealth.isSystemStable || false,
     syncStatus: verificationResult?.syncStatus || 'unknown',
-    lastVerification: verificationResult?.timestamp || null,
-    basedOnOriginalDB: verificationResult?.automationMetadata.dataSource === 'original_database'
+    lastVerification: verificationResult?.verificationTimestamp || null,
+    basedOnOriginalDB: verificationResult?.automationMetadata?.dataSource === 'original_database' || false
   };
 };
