@@ -1,4 +1,3 @@
-
 /**
  * User Data Management Utilities
  * 
@@ -9,6 +8,7 @@
  */
 
 import { Database } from '@/integrations/supabase/types';
+import type { UserWithRoles } from '@/types/userManagement';
 
 type UserRole = Database['public']['Enums']['user_role'];
 
@@ -20,27 +20,6 @@ export const USER_ROLES = {
   PATIENT_CAREGIVER: 'patientCaregiver' as const,
   ONBOARDING_TEAM: 'onboardingTeam' as const,
 } as const;
-
-export interface UserWithRoles {
-  id: string;
-  email: string;
-  first_name: string;
-  last_name: string;
-  phone?: string;
-  created_at: string;
-  facility_id?: string;
-  facilities?: {
-    id: string;
-    name: string;
-    facility_type: string;
-  } | null;
-  user_roles: {
-    roles: {
-      name: UserRole;
-      description: string | null;
-    };
-  }[];
-}
 
 /**
  * Validates that a user object has the correct role

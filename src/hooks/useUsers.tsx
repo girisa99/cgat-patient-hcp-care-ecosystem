@@ -22,10 +22,10 @@ export const useUsers = () => {
   const users: ExtendedProfile[] = (allUsers || []).map((user: UserWithRoles) => ({
     id: user.id,
     email: user.email,
-    first_name: user.first_name || null,
-    last_name: user.last_name || null,
+    first_name: user.first_name,
+    last_name: user.last_name,
     phone: user.phone || null,
-    created_at: user.created_at || new Date().toISOString(),
+    created_at: user.created_at,
     updated_at: user.updated_at || new Date().toISOString(),
     facility_id: user.facility_id || null,
     is_active: true, // Default to active

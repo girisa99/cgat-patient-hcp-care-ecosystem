@@ -1,9 +1,10 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { Database } from '@/integrations/supabase/types';
 
 export interface ModuleConfig {
-  tableName: string;
+  tableName: keyof Database['public']['Tables']; // Use proper table name type
   moduleName: string;
   requiredFields: string[];
   customValidation?: (data: any) => boolean;
@@ -15,7 +16,7 @@ export const useTypeSafeModuleTemplate = (config: ModuleConfig) => {
     queryFn: async () => {
       console.log('🔍 Validating module template for:', config.moduleName);
       
-      // Fetch actual data from the table
+      // Fetch actual data from the table with proper typing
       const { data, error } = await supabase
         .from(config.tableName)
         .select('*')

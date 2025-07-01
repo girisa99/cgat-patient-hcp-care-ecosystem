@@ -34,7 +34,31 @@ export const useUnifiedUserData = () => {
       }
 
       console.log('✅ Unified user data fetched:', data?.length || 0);
-      return data || [];
+      
+      // Transform and validate the data to match UserWithRoles interface
+      const transformedData: UserWithRoles[] = (data || []).map(user => ({
+        id: user.id,
+        email: user.email || '',
+        first_name: user.first_name || '',
+        last_name: user.last_name || '',
+        phone: user.phone,
+        created_at: user.created_at || new Date().toISOString(),
+        updated_at: user.updated_at,
+        facility_id: user.facility_id,
+        user_roles: Array.isArray(user.user_roles) ? user.user_roles.map((ur: any) => ({
+          roles: {
+            name: ur.roles?.name || '',
+            description: ur.roles?.description || null
+          }
+        })) : [],
+        facilities: user.facilities ? {
+          id: user.facilities.id,
+          name: user.facilities.name,
+          facility_type: user.facilities.facility_type
+        } : null
+      }));
+
+      return transformedData;
     },
     retry: 2,
     staleTime: 30000,
