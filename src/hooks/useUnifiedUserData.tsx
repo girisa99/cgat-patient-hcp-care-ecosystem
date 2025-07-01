@@ -2,9 +2,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { UserWithRoles } from '@/types/userManagement';
+import { userHasRole, getPatientUsers, getHealthcareStaff, getAdminUsers } from '@/utils/userDataHelpers';
 
 export const useUnifiedUserData = () => {
-  return useQuery({
+  const query = useQuery({
     queryKey: ['unified-users'],
     queryFn: async (): Promise<UserWithRoles[]> => {
       console.log('🔍 Fetching unified user data...');
@@ -43,4 +44,53 @@ export const useUnifiedUserData = () => {
       requiresAuth: true
     }
   });
+
+  const users = query.data || [];
+  
+  return {
+    ...query,
+    allUsers: users,
+    meta: {
+      totalUsers: users.length,
+      patientCount: getPatientUsers(users).length,
+      staffCount: getHealthcareStaff(users).length,
+      adminCount: getAdminUsers(users).length,
+      dataSource: 'profiles table with joins',
+      lastFetched: new Date().toISOString()
+    }
+  };
+};
+
+// Specialized hooks that filter the unified data
+export const usePatientData = () => {
+  const { allUsers, isLoading, error, refetch } = useUnifiedUserData();
+  
+  return {
+    patients: getPatientUsers(allUsers || []),
+    isLoading,
+    error,
+    refetch
+  };
+};
+
+export const useHealthcareStaffData = () => {
+  const { allUsers, isLoading, error, refetch } = useUnifiedUserData();
+  
+  return {
+    staff: getHealthcareStaff(allUsers || []),
+    isLoading,
+    error,
+    refetch
+  };
+};
+
+export const useAdminUserData = () => {
+  const { allUsers, isLoading, error, refetch } = useUnifiedUserData();
+  
+  return {
+    admins: getAdminUsers(allUsers || []),
+    isLoading,
+    error,
+    refetch
+  };
 };

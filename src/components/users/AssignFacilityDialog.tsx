@@ -18,7 +18,6 @@ const AssignFacilityDialog: React.FC<AssignFacilityDialogProps> = ({ open, onOpe
   const { assignFacility, isAssigningFacility } = useUserMutations();
   const { facilities } = useFacilities();
   const [selectedFacilityId, setSelectedFacilityId] = useState<string>('');
-  const [accessLevel, setAccessLevel] = useState<'read' | 'write' | 'admin'>('read');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,13 +26,11 @@ const AssignFacilityDialog: React.FC<AssignFacilityDialogProps> = ({ open, onOpe
     try {
       await assignFacility({
         userId,
-        facilityId: selectedFacilityId,
-        accessLevel
+        facilityId: selectedFacilityId
       });
       
       onOpenChange(false);
       setSelectedFacilityId('');
-      setAccessLevel('read');
     } catch (error) {
       console.error('Failed to assign facility:', error);
     }
@@ -62,20 +59,6 @@ const AssignFacilityDialog: React.FC<AssignFacilityDialogProps> = ({ open, onOpe
                     {facility.name} - {facility.facility_type}
                   </SelectItem>
                 ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="access_level">Access Level</Label>
-            <Select value={accessLevel} onValueChange={(value: 'read' | 'write' | 'admin') => setAccessLevel(value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select access level" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="read">Read Only</SelectItem>
-                <SelectItem value="write">Read & Write</SelectItem>
-                <SelectItem value="admin">Administrator</SelectItem>
               </SelectContent>
             </Select>
           </div>

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -48,10 +47,10 @@ const CoreFunctionalityVerification = () => {
         name: 'Unified User Data',
         status: unifiedUserData.error ? 'error' : unifiedUserData.isLoading ? 'loading' : 'success',
         data: {
-          totalUsers: unifiedUserData.meta.totalUsers,
-          patients: unifiedUserData.meta.patientCount,
-          staff: unifiedUserData.meta.staffCount,
-          admins: unifiedUserData.meta.adminCount,
+          totalUsers: unifiedUserData.meta?.totalUsers || 0,
+          patients: unifiedUserData.meta?.patientCount || 0,
+          staff: unifiedUserData.meta?.staffCount || 0,
+          admins: unifiedUserData.meta?.adminCount || 0,
           error: unifiedUserData.error?.message
         }
       });
@@ -183,7 +182,7 @@ const CoreFunctionalityVerification = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {unifiedUserData.meta.patientCount || 0}
+                  {unifiedUserData.meta?.patientCount || 0}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Registered patients

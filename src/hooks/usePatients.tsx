@@ -1,97 +1,72 @@
 
 import { useTypeSafeModuleTemplate } from '@/templates/hooks/useTypeSafeModuleTemplate';
-import { usePatientValidation } from './patients/usePatientValidation';
-import { usePatientStats } from './patients/usePatientStats';
+import { usePatientData } from './useUnifiedUserData';
+import type { UserWithRoles } from '@/types/userManagement';
 
-/**
- * Fully Consolidated Patients Hook - Using Universal Template
- * 
- * This hook now uses the unified template system while maintaining
- * complete backward compatibility with existing code.
- */
 export const usePatients = () => {
   const config = {
     tableName: 'profiles' as const,
     moduleName: 'Patients',
-    requiredFields: ['first_name', 'email', 'role'],
+    requiredFields: ['email', 'first_name'],
     customValidation: (data: any) => {
-      // Ensure this is a patient record
-      return data.role === 'patient' || data.role === 'patientCaregiver' ||
-             data.user_roles?.some((ur: any) => 
-               ur.roles?.name === 'patientCaregiver' || ur.roles?.name === 'patient'
-             );
+      return data.user_roles?.some((userRole: any) => 
+        userRole.roles?.name === 'patientCaregiver'
+      );
     }
   };
 
-  const templateResult = useTypeSafeModuleTemplate(config);
-  const { validatePatientData, validatePatientRole } = usePatientValidation();
+  const template = useTypeSafeModuleTemplate(config);
+  const { patients, isLoading: patientsLoading, error: patientsError } = usePatientData();
 
-  // Patient-specific filtering - only show users with patient roles
-  const patients = templateResult.items.filter((item: any) => 
-    validatePatientRole(item.user_roles || [])
-  );
+  // Override template data with actual patient data
+  const templateWithPatients = {
+    ...template,
+    items: patients,
+    isLoading: patientsLoading || template.isLoading,
+    error: patientsError || template.error
+  };
 
-  const { getPatientStatistics } = usePatientStats(patients);
-
-  // Patient-specific search
-  const searchPatients = (query: string) => {
+  const searchPatients = (query: string): UserWithRoles[] => {
     if (!query.trim()) return patients;
     
-    return patients.filter((patient: any) => 
+    return patients.filter((patient: UserWithRoles) => 
       patient.first_name?.toLowerCase().includes(query.toLowerCase()) ||
       patient.last_name?.toLowerCase().includes(query.toLowerCase()) ||
-      patient.email?.toLowerCase().includes(query.toLowerCase()) ||
-      patient.phone?.includes(query)
+      patient.email?.toLowerCase().includes(query.toLowerCase())
     );
   };
 
-  // Enhanced patient creation with validation
-  const createPatient = async (data: any) => {
-    const validation = validatePatientData(data);
-    if (!validation.isValid) {
-      throw new Error(`Patient validation failed: ${validation.errors.join(', ')}`);
-    }
-    return templateResult.createItem(data);
+  const getPatientStats = () => {
+    return {
+      total: patients.length,
+      active: patients.filter(p => p.created_at).length,
+      withFacilities: patients.filter(p => p.facilities).length,
+      recentlyAdded: patients.filter(p => {
+        const createdDate = new Date(p.created_at || '');
+        const weekAgo = new Date();
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        return createdDate > weekAgo;
+      }).length
+    };
   };
 
   return {
-    // Core functionality (backward compatible)
     patients,
-    isLoading: templateResult.isLoading,
-    error: templateResult.error,
-    refetch: templateResult.refetch,
-    
-    // Mutations (backward compatible)
-    createPatient,
-    updatePatient: templateResult.updateItem,
-    deletePatient: templateResult.deleteItem,
-    isCreating: templateResult.isCreating,
-    isUpdating: templateResult.isUpdating,
-    isDeleting: templateResult.isDeleting,
-    
-    // Enhanced functionality
+    isLoading: templateWithPatients.isLoading,
+    error: templateWithPatients.error,
+    refetch: template.refetch,
+    createItem: template.createItem,
+    updateItem: template.updateItem,
+    deleteItem: template.deleteItem,
+    isCreating: template.isCreating,
+    isUpdating: template.isUpdating,
+    isDeleting: template.isDeleting,
     searchPatients,
-    getPatientStats: getPatientStatistics,
-    validatePatientData,
-    
-    // Universal template access
-    template: templateResult,
-    
-    // Comprehensive metadata
+    getPatientStats,
     meta: {
-      ...templateResult.meta,
       patientCount: patients.length,
-      dataSource: 'auth.users via manage-user-profiles edge function',
-      patientTypes: {
-        caregivers: patients.filter((p: any) => 
-          p.user_roles?.some((ur: any) => ur.roles?.name === 'patientCaregiver')
-        ).length,
-        direct: patients.filter((p: any) => 
-          p.user_roles?.some((ur: any) => ur.roles?.name === 'patient')
-        ).length
-      },
-      consolidationStatus: 'FULLY_CONSOLIDATED',
-      templateVersion: '2.0'
+      templateVersion: template.meta.templateVersion,
+      dataSource: 'unified patient data'
     }
   };
 };
