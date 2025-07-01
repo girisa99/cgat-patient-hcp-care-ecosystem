@@ -3,340 +3,163 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Server, 
-  Database, 
-  Shield, 
-  Globe, 
-  Code,
-  FileText,
-  Eye,
-  Rocket,
-  CheckCircle,
-  ExternalLink,
-  ArrowUpCircle
-} from 'lucide-react';
-import { useApiIntegrations } from '@/hooks/useApiIntegrations';
-import { useExternalApis } from '@/hooks/useExternalApis';
-import ApiIntegrationDirectionIndicator from './ApiIntegrationDirectionIndicator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ArrowUpCircle, Globe, Settings, CheckCircle, Database, Shield } from 'lucide-react';
 
 interface PublishableApisListProps {
-  onPublishApi: (apiId: string, apiName: string) => void;
+  apis: any[];
+  onPublishApi: (apiId: string, config: any) => void;
+  isPublishing: boolean;
 }
 
-const PublishableApisList: React.FC<PublishableApisListProps> = ({ onPublishApi }) => {
-  const { integrations } = useApiIntegrations();
-  const { externalApis } = useExternalApis();
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+const PublishableApisList: React.FC<PublishableApisListProps> = ({
+  apis,
+  onPublishApi,
+  isPublishing
+}) => {
+  const [selectedApiId, setSelectedApiId] = useState<string>('');
 
-  const internalApis = integrations?.filter(api => api.type === 'internal') || [];
-  
-  // Filter out already published APIs
-  const unpublishedApis = internalApis.filter(api => 
-    !externalApis.some(extApi => extApi.internal_api_id === api.id)
-  );
-
-  const getApisByCategory = (category: string) => {
-    if (category === 'all') return unpublishedApis;
-    return unpublishedApis.filter(api => api.category === category);
-  };
-
-  const categories = ['all', ...new Set(unpublishedApis.map(api => api.category))];
-
-  // More lenient readiness scoring logic
-  const getReadinessScore = (api: any) => {
-    let score = 0;
-    
-    // Endpoints check (30 points)
-    if (api.endpoints && api.endpoints.length > 0) {
-      score += 30;
+  // Filter APIs that can be published (internal APIs)
+  const publishableApis = apis.filter(api => {
+    if (api.source === 'internal') {
+      const apiData = api as any;
+      return apiData.direction === 'outbound' || apiData.direction === 'bidirectional';
     }
-    
-    // RLS Policies check (25 points) 
-    if (api.rlsPolicies && api.rlsPolicies.length > 0) {
-      score += 25;
-    }
-    
-    // Data mappings check (25 points)
-    if (api.mappings && api.mappings.length > 0) {
-      score += 25;
-    }
-    
-    // Description check (20 points) - reduced requirement to 10 characters
-    if (api.description && api.description.length > 10) {
-      score += 20;
-    }
-    
-    return score;
-  };
+    return false;
+  });
 
-  const getReadinessColor = (score: number) => {
-    if (score >= 70) return 'text-green-600 bg-green-50 border-green-200';
-    if (score >= 30) return 'text-yellow-600 bg-yellow-50 border-yellow-200';
-    return 'text-red-600 bg-red-50 border-red-200';
-  };
+  const selectedApi = publishableApis.find(api => api.id === selectedApiId);
 
-  const getReadinessText = (score: number) => {
-    if (score >= 70) return 'Ready to Publish';
-    if (score >= 30) return 'Needs Review';
-    return 'Incomplete';
-  };
+  const handlePublish = () => {
+    if (!selectedApi) return;
+    
+    const apiData = selectedApi as any;
+    const publishConfig = {
+      external_name: apiData.name,
+      external_description: apiData.description || 'No description provided',
+      version: '1.0.0',
+      category: apiData.category || 'general',
+      visibility: 'private' as const,
+      pricing_model: 'free' as const,
+      status: 'draft' as const,
+      base_url: apiData.base_url,
+      rate_limits: { requests: 1000, period: 'hour' },
+      authentication_methods: ['api_key'],
+      supported_formats: ['json'],
+      tags: []
+    };
 
-  // Calculate statistics with updated thresholds
-  const readyToPublish = unpublishedApis.filter(api => getReadinessScore(api) >= 70).length;
-  const needsReview = unpublishedApis.filter(api => {
-    const score = getReadinessScore(api);
-    return score >= 30 && score < 70;
-  }).length;
+    onPublishApi(selectedApi.id, publishConfig);
+  };
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-xl font-semibold flex items-center gap-2">
-            <ArrowUpCircle className="h-5 w-5 text-blue-500" />
-            Available APIs for External Publishing
-          </h3>
-          <p className="text-muted-foreground">
-            {unpublishedApis.length} internal APIs ready for external publishing
-          </p>
-        </div>
+      <div>
+        <h3 className="text-lg font-semibold flex items-center gap-2">
+          <ArrowUpCircle className="h-5 w-5 text-blue-500" />
+          Publish Internal APIs
+        </h3>
+        <p className="text-sm text-muted-foreground mt-1">
+          Make your internal APIs available for external consumption
+        </p>
       </div>
 
-      {/* Category Filter */}
-      <Tabs value={selectedCategory} onValueChange={setSelectedCategory}>
-        <TabsList className="grid w-full grid-cols-6">
-          {categories.slice(0, 6).map((category) => (
-            <TabsTrigger key={category} value={category} className="capitalize">
-              {category === 'all' ? 'All APIs' : category}
-              {category !== 'all' && (
-                <Badge variant="secondary" className="ml-1">
-                  {getApisByCategory(category).length}
-                </Badge>
-              )}
-            </TabsTrigger>
-          ))}
-        </TabsList>
+      <Card>
+        <CardHeader>
+          <CardTitle>Select API to Publish</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Select value={selectedApiId} onValueChange={setSelectedApiId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Choose an internal API to publish" />
+              </SelectTrigger>
+              <SelectContent>
+                {publishableApis.map((api) => {
+                  const apiData = api as any;
+                  const displayName = apiData.name || 'API Service';
+                  const endpointCount = apiData.endpoints_count || 0;
+                  return (
+                    <SelectItem key={api.id} value={api.id}>
+                      {displayName} - {endpointCount} endpoints
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </div>
 
-        <TabsContent value={selectedCategory} className="space-y-4">
-          {getApisByCategory(selectedCategory).length === 0 ? (
-            <Card>
-              <CardContent className="p-8 text-center">
-                <Server className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h4 className="text-lg font-medium mb-2">No APIs Available</h4>
-                <p className="text-muted-foreground">
-                  {selectedCategory === 'all' 
-                    ? 'All your internal APIs have already been published or there are no APIs registered yet.'
-                    : `No APIs available in the ${selectedCategory} category.`
-                  }
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid gap-4">
-              {getApisByCategory(selectedCategory).map((api) => {
-                const readinessScore = getReadinessScore(api);
-                return (
-                  <Card key={api.id} className="overflow-hidden border-l-4 border-l-blue-500">
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between">
-                        <div className="space-y-3 flex-1">
-                          <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-2">
-                              <Server className="h-5 w-5 text-blue-500" />
-                              <h4 className="text-lg font-semibold">{api.name}</h4>
-                            </div>
-                            <ApiIntegrationDirectionIndicator type="internal" />
-                            <Badge variant="outline" className="capitalize">
-                              {api.category}
-                            </Badge>
-                            <Badge 
-                              className={`${getReadinessColor(readinessScore)} border`}
-                            >
-                              {getReadinessText(readinessScore)} ({readinessScore}%)
-                            </Badge>
-                          </div>
-                          
-                          <p className="text-sm text-muted-foreground">
-                            {api.description || 'No description available'}
-                          </p>
-                          
-                          {/* API Statistics */}
-                          <div className="flex items-center gap-6 text-sm">
-                            <div className="flex items-center gap-1">
-                              <Code className="h-4 w-4 text-blue-500" />
-                              <span className="font-medium">{api.endpoints?.length || 0}</span>
-                              <span className="text-muted-foreground">endpoints</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Shield className="h-4 w-4 text-green-500" />
-                              <span className="font-medium">{api.rlsPolicies?.length || 0}</span>
-                              <span className="text-muted-foreground">policies</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Database className="h-4 w-4 text-purple-500" />
-                              <span className="font-medium">{api.mappings?.length || 0}</span>
-                              <span className="text-muted-foreground">mappings</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <FileText className="h-4 w-4 text-orange-500" />
-                              <span className="font-medium">v{api.version}</span>
-                            </div>
-                          </div>
+          {selectedApi && (
+            <div className="bg-blue-50 p-4 rounded-lg space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-semibold">{(selectedApi as any).name}</h4>
+                  <p className="text-sm text-muted-foreground">
+                    {(selectedApi as any).description || 'No description provided'}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline">{(selectedApi as any).direction}</Badge>
+                  <Badge variant="secondary">{(selectedApi as any).category}</Badge>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-3 gap-4 text-sm">
+                <div className="flex items-center gap-2">
+                  <Database className="h-4 w-4" />
+                  <span>{(selectedApi as any).endpoints_count || 0} endpoints</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Shield className="h-4 w-4" />
+                  <span>{(selectedApi as any).rls_policies_count || 0} policies</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Globe className="h-4 w-4" />
+                  <span>{(selectedApi as any).data_mappings_count || 0} mappings</span>
+                </div>
+              </div>
 
-                          {/* Key Endpoints Preview */}
-                          {api.endpoints && api.endpoints.length > 0 && (
-                            <div className="mt-3">
-                              <h5 className="text-sm font-medium mb-2">Key Endpoints:</h5>
-                              <div className="flex flex-wrap gap-2">
-                                {api.endpoints.slice(0, 3).map((endpoint: any, idx: number) => (
-                                  <Badge key={idx} variant="secondary" className="text-xs">
-                                    {endpoint.method} {endpoint.url}
-                                  </Badge>
-                                ))}
-                                {api.endpoints.length > 3 && (
-                                  <Badge variant="outline" className="text-xs">
-                                    +{api.endpoints.length - 3} more
-                                  </Badge>
-                                )}
-                              </div>
-                            </div>
-                          )}
+              <div className="bg-white p-3 rounded border">
+                <h5 className="font-medium mb-2">Publication Preview</h5>
+                <div className="text-sm space-y-1">
+                  <p><strong>Name:</strong> {(selectedApi as any).name}</p>
+                  <p><strong>Version:</strong> 1.0.0</p>
+                  <p><strong>Visibility:</strong> Private</p>
+                  <p><strong>Pricing:</strong> Free</p>
+                </div>
+              </div>
 
-                          {/* Base URL */}
-                          {api.baseUrl && (
-                            <div className="flex items-center gap-2 text-sm">
-                              <ExternalLink className="h-3 w-3" />
-                              <code className="bg-muted px-2 py-1 rounded text-xs">
-                                {api.baseUrl}
-                              </code>
-                            </div>
-                          )}
-                        </div>
-                        
-                        <div className="flex flex-col gap-2 ml-4">
-                          <Button
-                            onClick={() => onPublishApi(api.id, api.name)}
-                            disabled={readinessScore < 30}
-                            className="min-w-[120px]"
-                          >
-                            <ArrowUpCircle className="h-4 w-4 mr-2" />
-                            Publish Externally
-                          </Button>
-                          
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => window.open(`/api-integrations?view=${api.id}`, '_blank')}
-                          >
-                            <Eye className="h-4 w-4 mr-1" />
-                            Preview
-                          </Button>
-                        </div>
-                      </div>
-                      
-                      {/* Readiness Checklist for incomplete APIs */}
-                      {readinessScore < 70 && (
-                        <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                          <h5 className="text-sm font-medium mb-2 flex items-center gap-2">
-                            <CheckCircle className="h-4 w-4" />
-                            Publishing Readiness Checklist:
-                          </h5>
-                          <div className="space-y-1 text-sm">
-                            {(!api.endpoints || api.endpoints.length === 0) && (
-                              <div className="flex items-center gap-2 text-amber-700">
-                                <span>•</span>
-                                <span>Add at least one endpoint (30 points)</span>
-                              </div>
-                            )}
-                            {(!api.rlsPolicies || api.rlsPolicies.length === 0) && (
-                              <div className="flex items-center gap-2 text-amber-700">
-                                <span>•</span>
-                                <span>Configure security policies (25 points)</span>
-                              </div>
-                            )}
-                            {(!api.mappings || api.mappings.length === 0) && (
-                              <div className="flex items-center gap-2 text-amber-700">
-                                <span>•</span>
-                                <span>Define data mappings (25 points)</span>
-                              </div>
-                            )}
-                            {(!api.description || api.description.length <= 10) && (
-                              <div className="flex items-center gap-2 text-amber-700">
-                                <span>•</span>
-                                <span>Add description (10+ chars) (20 points)</span>
-                              </div>
-                            )}
-                          </div>
-                          <div className="mt-2 text-xs text-amber-600">
-                            Score: {readinessScore}/100 (Need 30+ to review, 70+ to publish)
-                          </div>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                );
-              })}
+              <div className="flex justify-end">
+                <Button 
+                  onClick={handlePublish} 
+                  disabled={isPublishing}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  {isPublishing ? (
+                    <>
+                      <Settings className="h-4 w-4 mr-2 animate-spin" />
+                      Publishing...
+                    </>
+                  ) : (
+                    <>
+                      <Globe className="h-4 w-4 mr-2" />
+                      Publish Externally
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           )}
-        </TabsContent>
-      </Tabs>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-green-500" />
-              <div>
-                <p className="text-2xl font-bold">{readyToPublish}</p>
-                <p className="text-sm text-muted-foreground">Ready to Publish</p>
-              </div>
+          {publishableApis.length === 0 && (
+            <div className="text-center py-8 text-muted-foreground">
+              <ArrowUpCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>No publishable APIs found</p>
+              <p className="text-sm">Create APIs with outbound or bidirectional direction to publish them externally.</p>
             </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Eye className="h-4 w-4 text-yellow-500" />
-              <div>
-                <p className="text-2xl font-bold">{needsReview}</p>
-                <p className="text-sm text-muted-foreground">Need Review</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Code className="h-4 w-4 text-blue-500" />
-              <div>
-                <p className="text-2xl font-bold">
-                  {unpublishedApis.reduce((acc, api) => acc + (api.endpoints?.length || 0), 0)}
-                </p>
-                <p className="text-sm text-muted-foreground">Total Endpoints</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Shield className="h-4 w-4 text-purple-500" />
-              <div>
-                <p className="text-2xl font-bold">
-                  {unpublishedApis.reduce((acc, api) => acc + (api.rlsPolicies?.length || 0), 0)}
-                </p>
-                <p className="text-sm text-muted-foreground">Security Policies</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };

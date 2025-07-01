@@ -71,23 +71,26 @@ export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = React.mem
       <TabsContent value="overview">
         <OverviewTabContent 
           integrations={integrations}
-          searchTerm={searchTerm}
           onViewDetails={onViewDetails}
         />
       </TabsContent>
 
       <TabsContent value="internal">
         <InternalApisTabContent 
-          apis={internalApis}
+          internalApis={internalApis}
           searchTerm={searchTerm}
-          onViewDetails={onViewDetails}
+          createDialogOpen={createDialogOpen}
+          setCreateDialogOpen={onCreateDialogChange}
           onDownloadCollection={onDownloadCollection}
+          onViewDetails={onViewDetails}
+          onViewDocumentation={onViewDocumentation}
+          onCopyUrl={onCopyUrl}
         />
       </TabsContent>
 
       <TabsContent value="external">
         <ExternalApisTabContent 
-          apis={externalApis}
+          externalApis={externalApis}
           searchTerm={searchTerm}
           onViewDetails={onViewDetails}
         />
@@ -95,7 +98,7 @@ export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = React.mem
 
       <TabsContent value="published">
         <PublishedApisTabContent 
-          apis={publishedApis}
+          publishedApis={publishedApis}
           searchTerm={searchTerm}
           onViewDetails={onViewDetails}
         />
@@ -106,7 +109,10 @@ export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = React.mem
       </TabsContent>
 
       <TabsContent value="sandbox">
-        <SandboxTabContent />
+        <SandboxTabContent 
+          integrations={integrations}
+          onTestEndpoint={onTestEndpoint}
+        />
       </TabsContent>
 
       <TabsContent value="postman">
@@ -117,11 +123,16 @@ export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = React.mem
       </TabsContent>
 
       <TabsContent value="publishing">
-        <PublishingWorkflowTabContent />
+        <PublishingWorkflowTabContent 
+          internalApis={internalApis}
+          externalApis={externalApis}
+        />
       </TabsContent>
 
       <TabsContent value="consumption">
-        <ConsumptionTabContent />
+        <ConsumptionTabContent 
+          publishedApis={publishedApis}
+        />
       </TabsContent>
 
       <TabsContent value="keys">
@@ -132,6 +143,7 @@ export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = React.mem
         <TestingTabContent 
           integrations={integrations}
           onTestEndpoint={onTestEndpoint}
+          onClose={onClose}
         />
       </TabsContent>
     </Tabs>

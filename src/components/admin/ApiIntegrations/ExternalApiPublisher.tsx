@@ -35,7 +35,9 @@ const ExternalApiPublisher = () => {
       rate_limits: { requests: 1000, period: 'hour' },
       authentication_methods: ['api_key'],
       supported_formats: ['json'],
-      tags: []
+      tags: [],
+      analytics_config: {},
+      marketplace_config: {}
     };
 
     publishApi({ internalApiId: selectedApi.id, config: publishConfig });
