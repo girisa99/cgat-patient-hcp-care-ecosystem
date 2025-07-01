@@ -200,6 +200,7 @@ export class ComprehensiveAutomationCoordinator {
       overallHealthScore: 0,
       criticalIssuesFound: 1,
       totalActiveIssues: 1,
+      overallStatus: 'critical',
       systemHealth: {
         overallHealthScore: 0,
         databaseHealth: {
@@ -227,6 +228,27 @@ export class ComprehensiveAutomationCoordinator {
         complianceScore: 0,
         recommendations: ['Review automation configuration'],
         systemsVerified: []
+      },
+      componentAnalysis: {
+        totalComponents: 0,
+        healthyComponents: 0,
+        componentsWithIssues: 1,
+        criticalComponents: []
+      },
+      moduleVerification: {
+        totalModules: 0,
+        verifiedModules: 0,
+        moduleIssues: [`Automation error: ${error.message}`]
+      },
+      databaseIntegrity: {
+        score: 0,
+        issues: [`Automation error: ${error.message}`],
+        recommendations: ['Review database configuration']
+      },
+      securityAssessment: {
+        score: 0,
+        vulnerabilities: [`Automation security error: ${error.message}`],
+        recommendations: ['Review security configuration']
       },
       automationMetadata: {
         dataSource: 'original_database',
