@@ -1,17 +1,20 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import type { Module } from '@/types/database';
 
+/**
+ * Core hook for fetching module data - Following unified pattern
+ */
 export const useModuleData = () => {
   return useQuery({
-    queryKey: ['modules'],
-    queryFn: async (): Promise<Module[]> => {
+    queryKey: ['modules', 'active'],
+    queryFn: async () => {
       console.log('🔍 Fetching modules from database...');
       
       const { data, error } = await supabase
         .from('modules')
         .select('*')
+        .eq('is_active', true)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -23,6 +26,11 @@ export const useModuleData = () => {
       return data || [];
     },
     retry: 2,
-    staleTime: 60000
+    staleTime: 60000,
+    refetchOnWindowFocus: false,
+    meta: {
+      description: 'Fetches active modules from modules table',
+      dataSource: 'modules table'
+    }
   });
 };

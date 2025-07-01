@@ -1,63 +1,53 @@
 
-import { useTypeSafeModuleTemplate } from '@/templates/hooks/useTypeSafeModuleTemplate';
-import { useApiServicesData } from './apiServices/useApiServicesData';
+import { useApiServiceData } from './api/useApiServiceData';
+import { useApiServiceMutations } from './api/useApiServiceMutations';
 
 /**
- * Consolidated API Services Hook - Using Universal Template
+ * Main API Services Hook - Now uses consolidated approach
+ * Following the unified user management pattern
  */
 export const useApiServices = () => {
-  const config = {
-    tableName: 'api_integration_registry' as const,
-    moduleName: 'ApiServices',
-    requiredFields: ['name', 'type'],
-    customValidation: (data: any) => {
-      return !!(data.name && data.type);
-    }
+  const { data: apiServices, isLoading, error, refetch } = useApiServiceData();
+  const mutations = useApiServiceMutations();
+
+  const getApiServiceStats = () => {
+    const stats = {
+      total: apiServices?.length || 0,
+      active: apiServices?.filter(s => s.status === 'active').length || 0,
+      inactive: apiServices?.filter(s => s.status !== 'active').length || 0,
+      typeBreakdown: apiServices?.reduce((acc, service) => {
+        const type = service.type || 'unknown';
+        acc[type] = (acc[type] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>) || {}
+    };
+    return stats;
   };
 
-  const templateResult = useTypeSafeModuleTemplate(config);
-  const { data: apiServices, isLoading, error, refetch } = useApiServicesData();
-
-  // API Services statistics
-  const getApiStats = () => {
-    const services = apiServices || [];
-    const active = services.filter(s => s.status === 'active').length;
-    const inactive = services.length - active;
+  const searchApiServices = (query: string) => {
+    if (!query.trim()) return apiServices || [];
     
-    const typeBreakdown = services.reduce((acc: any, service: any) => {
-      const type = service.type || 'Unknown';
-      acc[type] = (acc[type] || 0) + 1;
-      return acc;
-    }, {});
-
-    return {
-      total: services.length,
-      active,
-      inactive,
-      typeBreakdown
-    };
+    return (apiServices || []).filter((service: any) => 
+      service.name?.toLowerCase().includes(query.toLowerCase()) ||
+      service.description?.toLowerCase().includes(query.toLowerCase()) ||
+      service.category?.toLowerCase().includes(query.toLowerCase())
+    );
   };
 
   return {
-    // Core data
     apiServices: apiServices || [],
     isLoading,
     error,
     refetch,
-    
-    // Enhanced functionality
-    getApiStats,
-    
-    // Template access
-    template: templateResult,
-    
-    // Metadata
+    getApiServiceStats,
+    searchApiServices,
+    ...mutations,
+    // Meta information consistent with unified system
     meta: {
-      ...templateResult.meta,
-      serviceCount: apiServices?.length || 0,
-      dataSource: 'api_integration_registry table',
-      consolidationStatus: 'CONSOLIDATED',
-      templateVersion: '2.0'
+      totalServices: apiServices?.length || 0,
+      dataSource: 'api_integration_registry table via direct query',
+      lastFetch: new Date().toISOString(),
+      version: 'consolidated-v1'
     }
   };
 };

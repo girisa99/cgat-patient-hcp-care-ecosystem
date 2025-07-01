@@ -14,11 +14,7 @@ export const useModuleMutations = () => {
     }) => {
       const { data, error } = await supabase
         .from('modules')
-        .insert({
-          name: moduleData.name,
-          description: moduleData.description || null,
-          is_active: true
-        })
+        .insert(moduleData)
         .select()
         .single();
 
@@ -69,91 +65,10 @@ export const useModuleMutations = () => {
     }
   });
 
-  const deleteModuleMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('modules')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-      return id;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['modules'] });
-      toast({
-        title: "Module Deleted",
-        description: "Module has been deleted successfully.",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to delete module",
-        variant: "destructive",
-      });
-    }
-  });
-
-  const assignModuleToRoleMutation = useMutation({
-    mutationFn: async ({ roleId, moduleId }: { roleId: string; moduleId: string }) => {
-      // This would typically involve a role_module_assignments table
-      // For now, we'll just log the assignment
-      console.log('Assigning module', moduleId, 'to role', roleId);
-      return { roleId, moduleId };
-    },
-    onSuccess: () => {
-      toast({
-        title: "Module Assigned",
-        description: "Module has been assigned to role successfully.",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to assign module to role",
-        variant: "destructive",
-      });
-    }
-  });
-
-  const assignModuleToUserMutation = useMutation({
-    mutationFn: async ({ userId, moduleId, expiresAt }: { 
-      userId: string; 
-      moduleId: string; 
-      expiresAt?: string;
-    }) => {
-      // This would typically involve a user_module_assignments table
-      // For now, we'll just log the assignment
-      console.log('Assigning module', moduleId, 'to user', userId, 'expires at', expiresAt);
-      return { userId, moduleId, expiresAt };
-    },
-    onSuccess: () => {
-      toast({
-        title: "Module Assigned",
-        description: "Module has been assigned to user successfully.",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to assign module to user",
-        variant: "destructive",
-      });
-    }
-  });
-
   return {
     createModule: createModuleMutation.mutate,
     updateModule: updateModuleMutation.mutate,
-    deleteModule: deleteModuleMutation.mutate,
-    assignModuleToRole: assignModuleToRoleMutation.mutate,
-    assignModule: assignModuleToUserMutation.mutate,
     isCreatingModule: createModuleMutation.isPending,
-    isUpdatingModule: updateModuleMutation.isPending,
-    isDeletingModule: deleteModuleMutation.isPending,
-    isAssigningModule: assignModuleToRoleMutation.isPending,
-    isAssigningToRole: assignModuleToRoleMutation.isPending,
-    isAssigning: assignModuleToUserMutation.isPending
+    isUpdatingModule: updateModuleMutation.isPending
   };
 };

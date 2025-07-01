@@ -1,54 +1,46 @@
 
 import { useModuleData } from './modules/useModuleData';
 import { useModuleMutations } from './modules/useModuleMutations';
-import { useModulePermissions } from './modules/useModulePermissions';
-import { useMemo } from 'react';
 
+/**
+ * Main Modules Hook - Now uses consolidated approach
+ * Following the unified user management pattern
+ */
 export const useModules = () => {
   const { data: modules, isLoading, error, refetch } = useModuleData();
-  const moduleMutations = useModuleMutations();
-  const { hasModuleAccess, userModules } = useModulePermissions();
+  const mutations = useModuleMutations();
 
-  // Mock user modules data for now - this would come from a real query
-  const userModulesFormatted = modules?.map(module => ({
-    module_id: module.id,
-    module_name: module.name,
-    module_description: module.description || 'No description available'
-  })) || [];
-
-  // Calculate module statistics
-  const getModuleStats = useMemo(() => {
-    return () => {
-      if (!modules) {
-        return {
-          total: 0,
-          active: 0,
-          inactive: 0,
-          userAccessible: 0
-        };
-      }
-
-      const stats = {
-        total: modules.length,
-        active: modules.filter(m => m.is_active).length,
-        inactive: modules.filter(m => !m.is_active).length,
-        userAccessible: modules.filter(m => m.is_active).length // For now, assume all active modules are user accessible
-      };
-
-      return stats;
+  const getModuleStats = () => {
+    return {
+      total: modules?.length || 0,
+      active: modules?.filter(m => m.is_active !== false).length || 0,
+      inactive: modules?.filter(m => m.is_active === false).length || 0
     };
-  }, [modules]);
+  };
+
+  const searchModules = (query: string) => {
+    if (!query.trim()) return modules || [];
+    
+    return (modules || []).filter((module: any) => 
+      module.name?.toLowerCase().includes(query.toLowerCase()) ||
+      module.description?.toLowerCase().includes(query.toLowerCase())
+    );
+  };
 
   return {
     modules: modules || [],
-    userModules: userModulesFormatted,
     isLoading,
-    isLoadingModules: isLoading,
-    isLoadingUserModules: isLoading,
     error,
     refetch,
     getModuleStats,
-    hasModuleAccess,
-    ...moduleMutations
+    searchModules,
+    ...mutations,
+    // Meta information consistent with unified system
+    meta: {
+      totalModules: modules?.length || 0,
+      dataSource: 'modules table via direct query',
+      lastFetch: new Date().toISOString(),
+      version: 'consolidated-v1'
+    }
   };
 };
