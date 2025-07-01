@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Search, Users, Filter } from 'lucide-react';
+import { Search, Users, Filter, CheckCircle, AlertCircle } from 'lucide-react';
 import { useConsolidatedUsers } from '@/hooks/useConsolidatedUsers';
 import UserActions from './UserActions';
 import UserRolesBadgeGroup from './UserRolesBadgeGroup';
@@ -80,75 +80,91 @@ const UsersList: React.FC<UsersListProps> = ({
             <TableHeader>
               <TableRow>
                 <TableHead>User</TableHead>
-                <TableHead>Email</TableHead>
+                <TableHead>Email Status</TableHead>
                 <TableHead>Roles</TableHead>
                 <TableHead>Facility</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>Account Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredUsers.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">
-                        {user.first_name || user.last_name 
-                          ? `${user.first_name || ''} ${user.last_name || ''}`.trim()
-                          : 'No name'
-                        }
+              {filteredUsers.map((user) => {
+                const isEmailVerified = Boolean(user.email_confirmed_at);
+                
+                return (
+                  <TableRow key={user.id}>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">
+                          {user.first_name || user.last_name 
+                            ? `${user.first_name || ''} ${user.last_name || ''}`.trim()
+                            : 'No name'
+                          }
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {user.email}
+                        </div>
+                        <div className="text-xs text-gray-400">
+                          ID: {user.id.slice(0, 8)}...
+                        </div>
                       </div>
-                      <div className="text-sm text-gray-500">
-                        ID: {user.id.slice(0, 8)}...
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        {isEmailVerified ? (
+                          <>
+                            <CheckCircle className="h-4 w-4 text-green-600" />
+                            <Badge variant="outline" className="text-xs text-green-600 border-green-300">
+                              Verified
+                            </Badge>
+                          </>
+                        ) : (
+                          <>
+                            <AlertCircle className="h-4 w-4 text-amber-600" />
+                            <Badge variant="outline" className="text-xs text-amber-600 border-amber-300">
+                              Unverified
+                            </Badge>
+                          </>
+                        )}
                       </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-col">
-                      <span>{user.email}</span>
-                      {!user.email_confirmed_at && (
-                        <Badge variant="outline" className="text-xs text-amber-600 border-amber-300 w-fit">
-                          Unverified
+                    </TableCell>
+                    <TableCell>
+                      <UserRolesBadgeGroup user={user} />
+                    </TableCell>
+                    <TableCell>
+                      {user.facilities ? (
+                        <Badge variant="outline" className="text-xs">
+                          {user.facilities.name}
                         </Badge>
+                      ) : (
+                        <span className="text-gray-400">No facility</span>
                       )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <UserRolesBadgeGroup user={user} />
-                  </TableCell>
-                  <TableCell>
-                    {user.facilities ? (
-                      <Badge variant="outline" className="text-xs">
-                        {user.facilities.name}
+                    </TableCell>
+                    <TableCell>
+                      <Badge 
+                        variant={isEmailVerified ? "default" : "secondary"}
+                        className={isEmailVerified ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}
+                      >
+                        {isEmailVerified ? 'Active' : 'Pending'}
                       </Badge>
-                    ) : (
-                      <span className="text-gray-400">No facility</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Badge 
-                      variant={user.email_confirmed_at ? "default" : "secondary"}
-                      className={user.email_confirmed_at ? "bg-green-100 text-green-800" : ""}
-                    >
-                      {user.email_confirmed_at ? 'Active' : 'Pending'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <UserActions
-                      user={user}
-                      onEditUser={onEditUser}
-                      onAssignRole={onAssignRole}
-                      onRemoveRole={onRemoveRole}
-                      onAssignFacility={onAssignFacility}
-                      onManagePermissions={onManagePermissions}
-                      onAssignModule={onAssignModule}
-                      onResendVerification={onResendVerification}
-                      onDeactivateUser={onDeactivateUser}
-                      onViewModules={onViewModules}
-                    />
-                  </TableCell>
-                </TableRow>
-              ))}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <UserActions
+                        user={user}
+                        onEditUser={onEditUser}
+                        onAssignRole={onAssignRole}
+                        onRemoveRole={onRemoveRole}
+                        onAssignFacility={onAssignFacility}
+                        onManagePermissions={onManagePermissions}
+                        onAssignModule={onAssignModule}
+                        onResendVerification={onResendVerification}
+                        onDeactivateUser={onDeactivateUser}
+                        onViewModules={onViewModules}
+                      />
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </div>
