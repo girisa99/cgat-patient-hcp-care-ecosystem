@@ -8,13 +8,11 @@ import { Play, AlertCircle, CheckCircle } from 'lucide-react';
 
 interface TestingTabContentProps {
   integrations: any[];
-  onClose: () => void;
   onTestEndpoint?: (integrationId: string, endpointId: string) => void;
 }
 
 export const TestingTabContent: React.FC<TestingTabContentProps> = ({
   integrations,
-  onClose,
   onTestEndpoint
 }) => {
   const [selectedIntegration, setSelectedIntegration] = useState<string>('');
@@ -118,9 +116,6 @@ export const TestingTabContent: React.FC<TestingTabContentProps> = ({
             >
               <Play className="h-4 w-4 mr-2" />
               {isLoading ? 'Testing...' : 'Test Endpoint'}
-            </Button>
-            <Button variant="outline" onClick={onClose}>
-              Close
             </Button>
           </div>
         </CardContent>
