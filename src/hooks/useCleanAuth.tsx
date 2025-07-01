@@ -9,6 +9,7 @@ export interface Profile {
   first_name?: string;
   last_name?: string;
   email?: string;
+  phone?: string;
   avatar_url?: string;
   department?: string;
   facility_id?: string;
@@ -187,7 +188,7 @@ export const useCleanAuth = () => {
     }
   };
 
-  const signOut = async () => {
+  const signOut = async (): Promise<{ success: boolean; error?: string }> => {
     try {
       console.log('🚪 Signing out...');
       const { error } = await supabase.auth.signOut();
@@ -199,7 +200,7 @@ export const useCleanAuth = () => {
           description: "Failed to sign out",
           variant: "destructive",
         });
-        return;
+        return { success: false, error: error.message };
       }
 
       console.log('✅ Signed out successfully');
@@ -207,13 +208,15 @@ export const useCleanAuth = () => {
         title: "Success",
         description: "Signed out successfully",
       });
-    } catch (error) {
+      return { success: true };
+    } catch (error: any) {
       console.error('❌ Sign out error:', error);
       toast({
         title: "Error",
         description: "Failed to sign out",
         variant: "destructive",
       });
+      return { success: false, error: error.message };
     }
   };
 
