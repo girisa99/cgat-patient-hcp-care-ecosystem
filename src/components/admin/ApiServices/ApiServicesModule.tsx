@@ -41,6 +41,7 @@ import AutoIntegrationBanner from '../ApiIntegrations/AutoIntegrationBanner';
 // Import the new components
 import { ApiDataValidator } from '@/components/admin/ApiIntegrations/ApiDataValidator';
 import { ApiDuplicateAnalyzer } from '@/components/admin/ApiIntegrations/ApiDuplicateAnalyzer';
+import { ApiConsolidationAction } from '@/components/admin/ApiIntegrations/ApiConsolidationAction';
 
 export const ApiServicesModule: React.FC = () => {
   console.log('🚀 ApiServicesModule: Using consolidated real data with validation');
@@ -251,6 +252,14 @@ export const ApiServicesModule: React.FC = () => {
     toast({
       title: "Create New API",
       description: "Opening API creation dialog...",
+    });
+  }, [toast]);
+
+  const handleConsolidationComplete = React.useCallback(() => {
+    console.log('🎉 Consolidation complete!');
+    toast({
+      title: "Consolidation Complete",
+      description: "API services have been consolidated successfully.",
     });
   }, [toast]);
 
@@ -473,7 +482,12 @@ export const ApiServicesModule: React.FC = () => {
         </Card>
       )}
       
-      {/* Add the new Duplicate Analyzer */}
+      {/* Direct Consolidation Action */}
+      <ApiConsolidationAction 
+        onConsolidationComplete={handleConsolidationComplete}
+      />
+      
+      {/* Add the Duplicate Analyzer */}
       <ApiDuplicateAnalyzer />
       
       {/* Add Data Validator */}
@@ -519,7 +533,7 @@ export const ApiServicesModule: React.FC = () => {
           <p className="text-muted-foreground">
             {coreApiAnalysis.hasDuplicates ? (
               <span className="text-red-600 font-medium">
-                ⚠️ CRITICAL: {coreApiAnalysis.coreApis.length} duplicate core APIs detected - causing data inconsistency
+                ⚠️ CRITICAL: {coreApiAnalysis.coreApis.length} duplicate core APIs detected - ready for consolidation
               </span>
             ) : (
               `Consolidated API management with ${consolidatedApis.length} services and ${detailedStats.totalEndpoints} endpoints`

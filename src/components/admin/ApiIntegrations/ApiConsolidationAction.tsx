@@ -6,10 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ApiConsolidationUtility } from '@/utils/api/ApiConsolidationUtility';
 import { useToast } from '@/hooks/use-toast';
-import { CheckCircle, AlertTriangle, Loader2, GitMerge } from 'lucide-react';
+import { CheckCircle, AlertTriangle, Loader2, GitMerge, Target } from 'lucide-react';
 
 interface ApiConsolidationActionProps {
-  comparisonResult: any;
+  comparisonResult?: any;
   onConsolidationComplete?: () => void;
 }
 
@@ -69,13 +69,55 @@ export const ApiConsolidationAction: React.FC<ApiConsolidationActionProps> = ({
     }
   };
 
+  const handleCoreHealthcareConsolidation = async () => {
+    setIsConsolidating(true);
+    
+    try {
+      console.log('🏥 Starting core healthcare API consolidation...');
+      
+      const result = await ApiConsolidationUtility.consolidateCoreHealthcareApis();
+      
+      setConsolidationResult({
+        ...result,
+        message: 'Core healthcare APIs consolidated successfully'
+      });
+      
+      if (result.errors.length === 0) {
+        toast({
+          title: "✅ Core APIs Consolidated",
+          description: `Removed core_healthcare_api and kept internal_healthcare_api as single source of truth. Migrated ${result.endpointsMigrated} endpoints.`,
+        });
+        
+        if (onConsolidationComplete) {
+          onConsolidationComplete();
+        }
+      } else {
+        toast({
+          title: "⚠️ Consolidation Issues",
+          description: `Consolidation completed with issues: ${result.errors.join(', ')}`,
+          variant: "destructive",
+        });
+      }
+      
+    } catch (error: any) {
+      console.error('❌ Core healthcare API consolidation failed:', error);
+      toast({
+        title: "❌ Consolidation Failed",
+        description: error.message || 'Failed to consolidate core healthcare APIs',
+        variant: "destructive",
+      });
+    } finally {
+      setIsConsolidating(false);
+    }
+  };
+
   if (consolidationResult) {
     return (
       <Card className="border-green-500 bg-green-50">
         <CardHeader>
           <CardTitle className="text-green-800 flex items-center gap-2">
             <CheckCircle className="h-5 w-5" />
-            Consolidation Complete
+            {consolidationResult.message || 'Consolidation Complete'}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -87,6 +129,39 @@ export const ApiConsolidationAction: React.FC<ApiConsolidationActionProps> = ({
             )}
           </div>
           <Badge className="mt-2" variant="default">Single Source of Truth Established</Badge>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // If no comparison result, show direct consolidation option
+  if (!comparisonResult) {
+    return (
+      <Card className="border-blue-500">
+        <CardHeader>
+          <CardTitle className="text-blue-800 flex items-center gap-2">
+            <Target className="h-5 w-5" />
+            Execute Core Healthcare API Consolidation
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Alert className="border-yellow-500 bg-yellow-50">
+            <AlertTriangle className="h-4 w-4 text-yellow-600" />
+            <AlertDescription className="text-yellow-800">
+              <strong>Action:</strong> This will remove <code>core_healthcare_api</code> and keep 
+              <code>internal_healthcare_api</code> as the single source of truth.
+            </AlertDescription>
+          </Alert>
+
+          <Button 
+            onClick={handleCoreHealthcareConsolidation}
+            disabled={isConsolidating}
+            className="w-full bg-blue-600 hover:bg-blue-700"
+            size="lg"
+          >
+            {isConsolidating && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+            🎯 Consolidate Core Healthcare APIs Now
+          </Button>
         </CardContent>
       </Card>
     );

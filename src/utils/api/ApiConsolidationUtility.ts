@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 interface ConsolidationPlan {
@@ -164,6 +165,58 @@ export class ApiConsolidationUtility {
 
     } catch (error) {
       console.error('❌ Consolidation error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Execute consolidation for core healthcare APIs specifically
+   */
+  static async consolidateCoreHealthcareApis() {
+    console.log('🏥 Starting core healthcare API consolidation...');
+
+    try {
+      // Get core healthcare APIs
+      const { data: apis, error: apisError } = await supabase
+        .from('api_integration_registry')
+        .select('*')
+        .or('name.ilike.%core_healthcare_api%,name.ilike.%internal_healthcare_api%');
+
+      if (apisError) throw apisError;
+
+      if (!apis || apis.length < 2) {
+        throw new Error('Could not find both core_healthcare_api and internal_healthcare_api');
+      }
+
+      // Find the specific APIs
+      const internalApi = apis.find(api => api.name === 'internal_healthcare_api');
+      const coreApi = apis.find(api => api.name === 'core_healthcare_api');
+
+      if (!internalApi) {
+        throw new Error('internal_healthcare_api not found');
+      }
+
+      if (!coreApi) {
+        throw new Error('core_healthcare_api not found');
+      }
+
+      console.log('🎯 Found APIs to consolidate:', {
+        keep: internalApi.name,
+        remove: coreApi.name
+      });
+
+      // Execute consolidation
+      const result = await this.consolidateToSingleSource(
+        internalApi.id, 
+        [coreApi.id], 
+        true // Force consolidation since this is intentional
+      );
+
+      console.log('✅ Core healthcare API consolidation complete:', result);
+      return result;
+
+    } catch (error) {
+      console.error('❌ Core healthcare API consolidation failed:', error);
       throw error;
     }
   }
