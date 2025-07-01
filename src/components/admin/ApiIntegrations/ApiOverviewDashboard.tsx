@@ -531,25 +531,17 @@ const ApiOverviewDashboard = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Dialog components with corrected prop handling */}
+      {/* Fixed dialog components - removed onClose props */}
       <ExternalApiConfigDialog
         api={selectedApiForConfig}
         open={showConfigDialog}
         onOpenChange={setShowConfigDialog}
-        onClose={() => {
-          setShowConfigDialog(false);
-          setSelectedApiForConfig(null);
-        }}
       />
 
       <ExternalApiAnalyticsDialog
         api={selectedApiForAnalytics}
         open={showAnalyticsDialog}
         onOpenChange={setShowAnalyticsDialog}
-        onClose={() => {
-          setShowAnalyticsDialog(false);
-          setSelectedApiForAnalytics(null);
-        }}
       />
     </div>
   );

@@ -28,7 +28,6 @@ interface ApiIntegrationsTabsProps {
   onViewDocumentation: (id: string) => void;
   onCopyUrl: (url: string) => void;
   onTestEndpoint: (integrationId: string, endpointId: string) => void;
-  onClose: () => void;
 }
 
 export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = React.memo(({
@@ -45,8 +44,7 @@ export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = React.mem
   onViewDetails,
   onViewDocumentation,
   onCopyUrl,
-  onTestEndpoint,
-  onClose
+  onTestEndpoint
 }) => {
   const handleValueChange = React.useCallback((value: string) => {
     onTabChange(value);
@@ -149,7 +147,6 @@ export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = React.mem
         <TestingTabContent 
           integrations={integrations}
           onTestEndpoint={onTestEndpoint}
-          onClose={onClose}
         />
       </TabsContent>
     </Tabs>
