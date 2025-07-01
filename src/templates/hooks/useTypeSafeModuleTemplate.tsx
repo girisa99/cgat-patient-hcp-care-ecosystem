@@ -84,7 +84,7 @@ export const useTypeSafeModuleTemplate = <T extends DatabaseTables>(
   const getStatistics = () => {
     const items = dataHook.items;
     const total = items.length;
-    const active = items.filter((item: any) => item.status === 'active').length;
+    const active = items.filter((item: any) => item.status === 'active' || item.is_active !== false).length;
     const inactive = total - active;
     
     return {

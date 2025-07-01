@@ -5,23 +5,23 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, Edit, UserPlus, Building, Shield, Mail, UserX } from 'lucide-react';
-import { UserWithRoles } from '@/types/userManagement';
+import { useUsers } from '@/hooks/useUsers';
 
 interface UsersListProps {
-  users: any[];
+  onCreateUser?: () => void;
   onEditUser: (user: any) => void;
   onAssignRole: (userId: string) => void;
   onRemoveRole?: (userId: string) => void;
   onAssignFacility: (userId: string) => void;
-  onManagePermissions: (userId: string, userName: string) => void;
-  onAssignModule: (userId: string, userName: string) => void;
+  onManagePermissions?: (userId: string, userName: string) => void;
+  onAssignModule?: (userId: string, userName: string) => void;
   onResendVerification?: (userEmail: string, userName: string) => void;
   onDeactivateUser?: (userId: string, userName: string, userEmail: string) => void;
   onViewModules?: (userId: string, userName: string) => void;
 }
 
 const UsersList: React.FC<UsersListProps> = ({
-  users,
+  onCreateUser,
   onEditUser,
   onAssignRole,
   onRemoveRole,
@@ -32,6 +32,18 @@ const UsersList: React.FC<UsersListProps> = ({
   onDeactivateUser,
   onViewModules
 }) => {
+  const { users, isLoading } = useUsers();
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="p-8 text-center">
+          <p className="text-gray-500">Loading users...</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (!users || users.length === 0) {
     return (
       <Card>
@@ -109,15 +121,19 @@ const UsersList: React.FC<UsersListProps> = ({
                       Assign Facility
                     </DropdownMenuItem>
                     
-                    <DropdownMenuItem onClick={() => onManagePermissions(user.id, userName)}>
-                      <Shield className="h-4 w-4 mr-2" />
-                      Manage Permissions
-                    </DropdownMenuItem>
+                    {onManagePermissions && (
+                      <DropdownMenuItem onClick={() => onManagePermissions(user.id, userName)}>
+                        <Shield className="h-4 w-4 mr-2" />
+                        Manage Permissions
+                      </DropdownMenuItem>
+                    )}
                     
-                    <DropdownMenuItem onClick={() => onAssignModule(user.id, userName)}>
-                      <Shield className="h-4 w-4 mr-2" />
-                      Assign Module
-                    </DropdownMenuItem>
+                    {onAssignModule && (
+                      <DropdownMenuItem onClick={() => onAssignModule(user.id, userName)}>
+                        <Shield className="h-4 w-4 mr-2" />
+                        Assign Module
+                      </DropdownMenuItem>
+                    )}
                     
                     {onViewModules && (
                       <DropdownMenuItem onClick={() => onViewModules(user.id, userName)}>

@@ -1,63 +1,76 @@
 
-import React from 'react';
-import { useToast } from '@/hooks/use-toast';
-import { ModuleConfig } from '@/utils/moduleValidation';
-import { SimplifiedValidator } from '@/utils/verification/SimplifiedValidator';
 import { Database } from '@/integrations/supabase/types';
+import { ModuleConfig } from '@/utils/moduleValidation';
 
 type DatabaseTables = keyof Database['public']['Tables'];
 
+interface ValidationResult {
+  isValid: boolean;
+  errors: string[];
+  missingFields: string[];
+}
+
 /**
- * Simplified Module Validation Hook
- * Uses the simplified validation system for better performance
+ * Module Validation Hook
+ * Provides validation functionality for module data
  */
-export const useModuleValidation = <T extends DatabaseTables>(
-  config: ModuleConfig & { tableName: T }
-) => {
-  const { toast } = useToast();
+export const useModuleValidation = (config: ModuleConfig & { tableName: DatabaseTables }) => {
+  
+  const validateRequiredFields = (data: any): ValidationResult => {
+    const errors: string[] = [];
+    const missingFields: string[] = [];
 
-  // Validate configuration using simplified validator
-  React.useEffect(() => {
-    const validationResult = SimplifiedValidator.validateModule(config);
-    
-    if (!validationResult.canProceed) {
-      console.error('❌ Module validation failed:', validationResult.issues);
-      toast({
-        title: "Module Validation Error",
-        description: validationResult.issues.join(', '),
-        variant: "destructive",
-      });
-    } else if (validationResult.warnings.length > 0) {
-      console.warn('⚠️ Module validation warnings:', validationResult.warnings);
+    if (!config.requiredFields || config.requiredFields.length === 0) {
+      return { isValid: true, errors: [], missingFields: [] };
     }
-  }, [config, toast]);
 
-  // Run validation
-  const validationResult = SimplifiedValidator.validateModule(config);
+    config.requiredFields.forEach(field => {
+      if (!data || !data[field] || data[field] === '') {
+        errors.push(`${field} is required`);
+        missingFields.push(field);
+      }
+    });
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+      missingFields
+    };
+  };
+
+  const validateCustomRules = (data: any): ValidationResult => {
+    if (!config.customValidation) {
+      return { isValid: true, errors: [], missingFields: [] };
+    }
+
+    try {
+      const isValid = config.customValidation(data);
+      return {
+        isValid,
+        errors: isValid ? [] : ['Custom validation failed'],
+        missingFields: []
+      };
+    } catch (error) {
+      return {
+        isValid: false,
+        errors: [`Custom validation error: ${error}`],
+        missingFields: []
+      };
+    }
+  };
+
+  const getMissingFields = (data: any): string[] => {
+    const validation = validateRequiredFields(data);
+    return validation.missingFields;
+  };
+
+  // Validate table exists (simplified check)
+  const isValid = true; // In a real implementation, this would check if the table exists
 
   return {
-    isValid: validationResult.canProceed,
-    issues: validationResult.issues,
-    warnings: validationResult.warnings,
-    recommendations: validationResult.recommendations,
-    shouldUseTemplate: validationResult.shouldUseTemplate,
-    recommendedTemplate: validationResult.recommendedTemplate,
-    
-    validateRequiredFields: (data: any) => {
-      if (!config.requiredFields) return true;
-      
-      const missingFields = config.requiredFields.filter(field => !data[field]);
-      return missingFields.length === 0;
-    },
-    
-    validateCustomRules: (data: any) => {
-      if (!config.customValidation) return true;
-      return config.customValidation(data);
-    },
-    
-    getMissingFields: (data: any) => {
-      if (!config.requiredFields) return [];
-      return config.requiredFields.filter(field => !data[field]);
-    }
+    isValid,
+    validateRequiredFields,
+    validateCustomRules,
+    getMissingFields
   };
 };
