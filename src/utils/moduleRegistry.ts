@@ -19,6 +19,8 @@ export interface ModuleConfig {
 export interface ComponentServiceInfo {
   name: string;
   type: 'component' | 'service' | 'hook';
+  path?: string;
+  filePath?: string;
   isProtected: boolean;
   lastModified: string;
   permissions?: string[];
