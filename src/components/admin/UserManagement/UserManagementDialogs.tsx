@@ -4,7 +4,7 @@ import CreateUserDialog from '@/components/users/CreateUserDialog';
 import EditUserDialog from '@/components/users/EditUserDialog';
 import AssignRoleDialog from '@/components/users/AssignRoleDialog';
 import RemoveRoleDialog from '@/components/users/RemoveRoleDialog';
-import AssignFacilityDialog from '@/components/users/AssignFacilityDialog';
+import { AssignFacilityDialog } from './AssignFacilityDialog';
 
 interface UserManagementDialogsProps {
   createUserOpen: boolean;
@@ -34,7 +34,8 @@ export const UserManagementDialogs: React.FC<UserManagementDialogsProps> = ({
   assignFacilityOpen,
   setAssignFacilityOpen,
   selectedUserId,
-  selectedUser
+  selectedUser,
+  selectedUserName
 }) => {
   return (
     <>
@@ -53,18 +54,21 @@ export const UserManagementDialogs: React.FC<UserManagementDialogsProps> = ({
         open={assignRoleOpen}
         onOpenChange={setAssignRoleOpen}
         userId={selectedUserId}
+        userName={selectedUserName}
       />
 
       <RemoveRoleDialog
         open={removeRoleOpen}
         onOpenChange={setRemoveRoleOpen}
         userId={selectedUserId}
+        userName={selectedUserName}
       />
 
       <AssignFacilityDialog
         open={assignFacilityOpen}
         onOpenChange={setAssignFacilityOpen}
         userId={selectedUserId}
+        userName={selectedUserName}
       />
     </>
   );

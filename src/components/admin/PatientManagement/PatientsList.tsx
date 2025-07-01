@@ -36,12 +36,10 @@ export const PatientsList: React.FC<PatientsListProps> = ({
   isOnline = true
 }) => {
   // Use hook data if no props provided (single source of truth)
-  const { users, isLoading: hookIsLoading } = useUnifiedUserManagement();
+  const { users, isLoading: hookIsLoading, getPatients } = useUnifiedUserManagement();
   
-  // Get patients from hook if not provided via props
-  const patients = propPatients || users.filter(user => 
-    user.user_roles?.some(userRole => userRole.roles?.name === 'patient' || userRole.roles?.name === 'patientCaregiver')
-  );
+  // Get patients from unified user management - single source of truth
+  const patients = propPatients || getPatients();
   
   const isLoading = propIsLoading !== undefined ? propIsLoading : hookIsLoading;
 
@@ -49,25 +47,31 @@ export const PatientsList: React.FC<PatientsListProps> = ({
   const safePatients = Array.isArray(patients) ? patients : [];
 
   const handleView = (patientId: string) => {
+    console.log('👁️ Viewing patient:', patientId);
     if (onView) {
       onView(patientId);
     } else {
-      console.log('View patient:', patientId);
+      // Default view action - could open a patient details modal/page
+      console.log('View patient details for:', patientId);
     }
   };
 
   const handleEdit = (patientId: string) => {
+    console.log('✏️ Editing patient:', patientId);
     if (onEdit) {
       onEdit(patientId);
     } else {
-      console.log('Edit patient:', patientId);
+      // Default edit action - could open an edit form
+      console.log('Edit patient details for:', patientId);
     }
   };
 
   const handleDeactivate = (patientId: string, patientName: string) => {
+    console.log('🚫 Deactivating patient:', patientId, patientName);
     if (onDeactivate) {
       onDeactivate(patientId, patientName);
     } else {
+      // Default deactivate action - could show confirmation dialog
       console.log('Deactivate patient:', patientId, patientName);
     }
   };

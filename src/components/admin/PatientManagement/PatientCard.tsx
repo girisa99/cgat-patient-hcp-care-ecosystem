@@ -24,6 +24,21 @@ export const PatientCard: React.FC<PatientCardProps> = ({
     ? `${patient.first_name} ${patient.last_name}`
     : patient.email || 'Unknown Patient';
 
+  const handleView = () => {
+    console.log('👁️ PatientCard: View button clicked for patient:', patient.id);
+    onView(patient.id);
+  };
+
+  const handleEdit = () => {
+    console.log('✏️ PatientCard: Edit button clicked for patient:', patient.id);
+    onEdit(patient.id);
+  };
+
+  const handleDeactivate = () => {
+    console.log('🚫 PatientCard: Deactivate button clicked for patient:', patient.id);
+    onDeactivate(patient.id, patientName);
+  };
+
   return (
     <Card>
       <CardContent className="p-4">
@@ -36,12 +51,15 @@ export const PatientCard: React.FC<PatientCardProps> = ({
                 {patient.phone && (
                   <p className="text-sm text-muted-foreground">{patient.phone}</p>
                 )}
+                {patient.facilities && (
+                  <p className="text-sm text-blue-600">{patient.facilities.name}</p>
+                )}
               </div>
             </div>
           </div>
           
           <div className="flex items-center gap-2">
-            <Badge variant="outline">
+            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
               Patient
             </Badge>
             
@@ -49,7 +67,9 @@ export const PatientCard: React.FC<PatientCardProps> = ({
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => onView(patient.id)}
+                onClick={handleView}
+                title="View Patient Details"
+                className="h-8 px-3"
               >
                 <Eye className="h-4 w-4" />
               </Button>
@@ -57,7 +77,9 @@ export const PatientCard: React.FC<PatientCardProps> = ({
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => onEdit(patient.id)}
+                onClick={handleEdit}
+                title="Edit Patient"
+                className="h-8 px-3"
               >
                 <Edit className="h-4 w-4" />
               </Button>
@@ -65,8 +87,10 @@ export const PatientCard: React.FC<PatientCardProps> = ({
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => onDeactivate(patient.id, patientName)}
+                onClick={handleDeactivate}
                 disabled={isDeactivating}
+                title="Deactivate Patient"
+                className="h-8 px-3 text-red-600 hover:bg-red-50 border-red-200"
               >
                 <UserX className="h-4 w-4" />
               </Button>
