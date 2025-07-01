@@ -6,19 +6,31 @@ export type Facility = Database['public']['Tables']['facilities']['Row'];
 export type Module = Database['public']['Tables']['modules']['Row'];
 export type Profile = Database['public']['Tables']['profiles']['Row'];
 
-// Extended types with proper structure
-export interface ExtendedProfile extends Profile {
+// Extended types with proper structure that includes all required Profile properties
+export interface ExtendedProfile {
+  // Core Profile properties (making them all optional to match actual data structure)
+  id: string;
+  email: string;
+  first_name?: string | null;
+  last_name?: string | null;
+  phone?: string | null;
+  created_at?: string;
+  updated_at?: string;
+  facility_id?: string | null;
+  
+  // Additional extended properties
   is_active?: boolean;
   user_roles: Array<{
     role_id: string;
     roles: {
       id: string;
       name: Database['public']['Enums']['user_role'];
-      description: string;
+      description: string | null;
     };
   }>;
   facilities?: Facility | null;
-  // Add missing properties
+  
+  // Optional extended properties
   avatar_url?: string | null;
   department?: string | null;
   has_mfa_enabled?: boolean;

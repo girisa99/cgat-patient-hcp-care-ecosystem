@@ -3,7 +3,7 @@
  * Component Scanner Utilities
  */
 
-import { ComponentServiceInfo } from '@/utils/moduleRegistry';
+import { ComponentServiceInfo } from '@/utils/moduleRegistry/types';
 
 export const scanForRealComponents = (moduleName: string): ComponentServiceInfo[] => {
   // Mock implementation - in real use this would scan the codebase
@@ -13,14 +13,16 @@ export const scanForRealComponents = (moduleName: string): ComponentServiceInfo[
       type: 'component',
       filePath: `src/components/${moduleName.toLowerCase()}/${moduleName}List.tsx`,
       isProtected: false,
-      permissions: ['read']
+      permissions: ['read'],
+      lastModified: new Date().toISOString()
     },
     {
       name: `Create${moduleName}Dialog`,
       type: 'component',
       filePath: `src/components/${moduleName.toLowerCase()}/Create${moduleName}Dialog.tsx`,
       isProtected: true,
-      permissions: ['create']
+      permissions: ['create'],
+      lastModified: new Date().toISOString()
     }
   ];
   
@@ -34,7 +36,8 @@ export const scanForRealHooks = (moduleName: string): ComponentServiceInfo[] => 
       type: 'hook',
       filePath: `src/hooks/use${moduleName}.tsx`,
       isProtected: false,
-      permissions: ['read']
+      permissions: ['read'],
+      lastModified: new Date().toISOString()
     }
   ];
   
@@ -48,7 +51,8 @@ export const scanForRealServices = (moduleName: string): ComponentServiceInfo[] 
       type: 'service',
       filePath: `src/services/${moduleName}Service.ts`,
       isProtected: true,
-      permissions: ['read', 'write']
+      permissions: ['read', 'write'],
+      lastModified: new Date().toISOString()
     }
   ];
   

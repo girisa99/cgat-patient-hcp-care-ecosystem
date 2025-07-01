@@ -38,3 +38,14 @@ export const detectNewModules = async (): Promise<AutoModuleConfig[]> => {
   
   return mockModules;
 };
+
+// Add the missing export
+export const scanDatabaseSchema = async () => {
+  console.log('🔍 Scanning database schema...');
+  // Mock implementation - would actually scan database
+  return {
+    tables: [],
+    columns: {},
+    relationships: []
+  };
+};

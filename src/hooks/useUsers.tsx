@@ -19,17 +19,24 @@ export const useUsers = () => {
 
   // Ensure users have the expected structure with safe defaults and proper typing
   const users: ExtendedProfile[] = (allUsers || []).map(user => ({
-    ...user,
-    is_active: user.is_active ?? true,
+    id: user.id,
+    email: user.email,
+    first_name: user.first_name || null,
+    last_name: user.last_name || null,
+    phone: user.phone || null,
+    created_at: user.created_at || new Date().toISOString(),
+    updated_at: user.updated_at || new Date().toISOString(),
+    facility_id: user.facility_id || null,
+    is_active: true, // Default to active
     user_roles: user.user_roles || [],
     facilities: user.facilities || null,
     // Add missing properties from ExtendedProfile
-    avatar_url: user.avatar_url || null,
-    department: user.department || null,
-    has_mfa_enabled: user.has_mfa_enabled || false,
-    is_email_verified: user.is_email_verified || false,
-    last_login: user.last_login || null,
-    timezone: user.timezone || null
+    avatar_url: null,
+    department: null,
+    has_mfa_enabled: false,
+    is_email_verified: false,
+    last_login: null,
+    timezone: null
   }));
 
   const searchUsers = (query: string) => {

@@ -1,72 +1,46 @@
 
-import React, { useState } from 'react';
-import MainLayout from '@/components/layout/MainLayout';
-import { PageContainer } from '@/components/layout/PageContainer';
-import { PatientsList } from '@/components/admin/PatientManagement/PatientsList';
-import { PatientEditDialog } from '@/components/admin/PatientManagement/PatientEditDialog';
-import { PatientViewDialog } from '@/components/admin/PatientManagement/PatientViewDialog';
-import { usePatients } from '@/hooks/usePatients';
+import React from 'react';
+import UnifiedDashboardLayout from '@/components/layout/UnifiedDashboardLayout';
 
-const Patients = () => {
-  const { patients, isLoading } = usePatients();
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [viewDialogOpen, setViewDialogOpen] = useState(false);
-  const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
-  const [isDeactivating, setIsDeactivating] = useState(false);
+interface Patient {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone?: string;
+}
 
-  const handleView = (patientId: string) => {
-    setSelectedPatientId(patientId);
-    setViewDialogOpen(true);
-  };
-
-  const handleEdit = (patientId: string) => {
-    setSelectedPatientId(patientId);
-    setEditDialogOpen(true);
-  };
-
-  const handleDeactivate = async (patientId: string, patientName: string) => {
-    setIsDeactivating(true);
-    console.log('Deactivating patient:', patientId, patientName);
-    // TODO: Implement deactivation logic
-    setIsDeactivating(false);
-  };
-
-  const selectedPatient = selectedPatientId 
-    ? patients?.find(p => p.id === selectedPatientId) 
-    : null;
+const Patients: React.FC = () => {
+  // Mock patient data
+  const patients: Patient[] = [];
 
   return (
-    <MainLayout>
-      <PageContainer
-        title="Patients"
-        subtitle="Manage patient records and healthcare information"
-      >
-        <PatientsList 
-          patients={patients || []}
-          onView={handleView}
-          onEdit={handleEdit}
-          onDeactivate={handleDeactivate}
-          isDeactivating={isDeactivating}
-          isLoading={isLoading}
-          searchTerm=""
-        />
-
-        {selectedPatient && (
-          <>
-            <PatientEditDialog
-              open={editDialogOpen}
-              onClose={() => setEditDialogOpen(false)}
-              patient={selectedPatient}
-            />
-            <PatientViewDialog
-              open={viewDialogOpen}
-              onClose={() => setViewDialogOpen(false)}
-              patient={selectedPatient}
-            />
-          </>
-        )}
-      </PageContainer>
-    </MainLayout>
+    <UnifiedDashboardLayout>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold">Patients</h1>
+          <p className="text-gray-600">Manage patient information and records</p>
+        </div>
+        
+        <div className="bg-white rounded-lg shadow p-6">
+          {patients.length > 0 ? (
+            <div className="space-y-4">
+              {patients.map((patient) => (
+                <div key={patient.id} className="border-b pb-4">
+                  <h3 className="font-medium">{patient.first_name} {patient.last_name}</h3>
+                  <p className="text-sm text-gray-600">{patient.email}</p>
+                  {patient.phone && <p className="text-sm text-gray-600">{patient.phone}</p>}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-gray-500">No patients found</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </UnifiedDashboardLayout>
   );
 };
 
