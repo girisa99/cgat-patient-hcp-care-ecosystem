@@ -26,6 +26,7 @@ export interface RegisteredModule extends ModuleConfig {
   components?: ComponentServiceInfo[];
   services?: ComponentServiceInfo[];
   hooks?: ComponentServiceInfo[];
+  optionalFields?: string[]; // Add the missing optionalFields property
 }
 
 export interface AutoRegistrationConfig {

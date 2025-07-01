@@ -1,17 +1,26 @@
 
 /**
- * Enhanced Real-time System Entry Point
- * Exports all real-time functionality with admin module support
+ * Realtime System - Main Export File
  */
 
-export { realtimeManager } from './RealtimeManager';
+// Export main classes
+export { RealtimeManager } from './RealtimeManager';
 export { RealtimeChannelManager } from './RealtimeChannelManager';
 export { RealtimeEventHandler } from './RealtimeEventHandler';
 export { RealtimeSubscriptionManager } from './RealtimeSubscriptionManager';
-export { realtimeModuleRegistry } from './RealtimeModuleRegistry';
-export type { RealtimeConfig, RealtimeEvent, RealtimeEventCallback } from './RealtimeTypes';
-export type { AdminModuleConfig } from './RealtimeModuleRegistry';
+export { RealtimeModuleRegistry } from './RealtimeModuleRegistry';
 
-// Enhanced hooks
-export { useRealtime, useAutoRealtime, useModuleRealtime } from '../../hooks/useRealtime';
-export { useAdminRealtime } from '../../hooks/useAdminRealtime';
+// Export types
+export type {
+  RealtimeEvent,
+  RealtimeSubscription,
+  RealtimeChannel,
+  RealtimeConfig,
+  RealtimeStatus
+} from './RealtimeTypes';
+
+// Export main hook (remove the non-existent ones)
+export { useRealtime } from '../../hooks/useRealtime';
+
+// Initialize global realtime manager
+export const globalRealtimeManager = RealtimeManager.getInstance();

@@ -21,9 +21,9 @@ export interface ExtendedProfile {
   // Additional extended properties
   is_active?: boolean;
   user_roles: Array<{
-    role_id: string;
+    role_id?: string; // Make optional to match actual data
     roles: {
-      id: string;
+      id?: string; // Make optional to match actual data
       name: Database['public']['Enums']['user_role'];
       description: string | null;
     };

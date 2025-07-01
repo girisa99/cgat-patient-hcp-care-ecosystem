@@ -25,10 +25,17 @@ export const useUsers = () => {
     last_name: user.last_name || null,
     phone: user.phone || null,
     created_at: user.created_at || new Date().toISOString(),
-    updated_at: user.updated_at || new Date().toISOString(),
+    updated_at: user.updated_at || new Date().toISOString(), // Add fallback for updated_at
     facility_id: user.facility_id || null,
     is_active: true, // Default to active
-    user_roles: user.user_roles || [],
+    user_roles: (user.user_roles || []).map(userRole => ({
+      role_id: userRole.role_id || '', // Add default role_id
+      roles: {
+        id: userRole.roles?.id || '', // Add default id
+        name: userRole.roles?.name || 'user' as any,
+        description: userRole.roles?.description || null
+      }
+    })),
     facilities: user.facilities || null,
     // Add missing properties from ExtendedProfile
     avatar_url: null,

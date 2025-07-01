@@ -28,6 +28,9 @@ export const useTypeSafeModuleTemplate = <T extends DatabaseTables>(
   const mutationsHook = useModuleMutations(config);
   const validationHook = useModuleValidation(config);
 
+  // Get data from the query result
+  const items = dataHook.data || [];
+
   // Enhanced validation with auto-correction
   const validateAndCorrect = (data: any) => {
     const validation = validationHook.validateRequiredFields(data);
@@ -70,10 +73,10 @@ export const useTypeSafeModuleTemplate = <T extends DatabaseTables>(
 
   // Enhanced search and filtering
   const searchItems = (query: string) => {
-    if (!query.trim()) return dataHook.items;
+    if (!query.trim()) return items;
     
     const searchFields = ['name', 'title', 'first_name', 'last_name', 'email'];
-    return dataHook.items.filter((item: any) => 
+    return items.filter((item: any) => 
       searchFields.some(field => 
         item[field]?.toLowerCase().includes(query.toLowerCase())
       )
@@ -82,7 +85,6 @@ export const useTypeSafeModuleTemplate = <T extends DatabaseTables>(
 
   // Statistics generator
   const getStatistics = () => {
-    const items = dataHook.items;
     const total = items.length;
     const active = items.filter((item: any) => item.status === 'active' || item.is_active !== false).length;
     const inactive = total - active;
@@ -102,7 +104,7 @@ export const useTypeSafeModuleTemplate = <T extends DatabaseTables>(
 
   return {
     // Core data access
-    items: dataHook.items,
+    items,
     isLoading: dataHook.isLoading,
     error: dataHook.error,
     refetch: dataHook.refetch,
@@ -133,10 +135,9 @@ export const useTypeSafeModuleTemplate = <T extends DatabaseTables>(
     
     // Comprehensive metadata
     meta: {
-      ...dataHook.meta,
       moduleName: config.moduleName,
       tableName: config.tableName,
-      totalItems: dataHook.items.length,
+      totalItems: items.length,
       validationStatus: {
         isTableValid: validationHook.isValid,
         hasRequiredFields: !!config.requiredFields?.length,
