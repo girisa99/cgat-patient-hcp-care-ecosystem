@@ -51,7 +51,7 @@ export const useCleanAuth = () => {
           setSession(session);
           setIsAuthenticated(true);
           
-          // Use setTimeout to defer profile/role fetching and prevent blocking
+          // Defer profile/role fetching to prevent blocking
           setTimeout(() => {
             if (mounted) {
               fetchProfile(session.user.id);
@@ -60,8 +60,14 @@ export const useCleanAuth = () => {
           }, 0);
         } else {
           console.log('ℹ️ No active session found');
+          if (mounted) {
+            setUser(null);
+            setSession(null);
+            setIsAuthenticated(false);
+          }
         }
 
+        // Always set loading to false after initial check
         if (mounted) {
           setIsLoading(false);
         }
@@ -139,7 +145,7 @@ export const useCleanAuth = () => {
           setSession(session);
           setIsAuthenticated(true);
           
-          // Use setTimeout to defer data fetching
+          // Defer data fetching
           setTimeout(() => {
             if (mounted) {
               fetchProfile(session.user.id);
@@ -153,6 +159,9 @@ export const useCleanAuth = () => {
           setUserRoles([]);
           setIsAuthenticated(false);
         }
+        
+        // Ensure loading is false after any auth state change
+        setIsLoading(false);
       }
     );
 
