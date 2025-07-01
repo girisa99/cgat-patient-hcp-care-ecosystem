@@ -3,22 +3,20 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Plus, 
   Search, 
   Filter,
   Download,
-  Users,
-  MoreHorizontal
+  Users
 } from 'lucide-react';
 import { useConsolidatedUsers } from '@/hooks/useConsolidatedUsers';
 import { useUserManagementDialogs } from '@/hooks/useUserManagementDialogs';
 import { useUserDeactivation } from '@/hooks/mutations/useUserDeactivation';
 
-// Import existing components
-import UsersList from '@/components/users/UsersList';
-import BulkRoleAssignment from '@/components/users/BulkRoleAssignment';
+// Import refactored components
+import { UserManagementStats } from '@/components/users/UserManagementStats';
+import { UserManagementTabs } from '@/components/users/UserManagementTabs';
 import { UserManagementDialogs } from './UserManagementDialogs';
 import ResendVerificationDialog from '@/components/users/ResendVerificationDialog';
 import ViewUserModulesDialog from '@/components/users/ViewUserModulesDialog';
@@ -147,36 +145,7 @@ export const ConsolidatedUserManagement: React.FC = () => {
       </Card>
 
       {/* Compact Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-lg">
-          <Users className="h-5 w-5 text-blue-600" />
-          <div>
-            <div className="text-xl font-semibold text-blue-900">{stats.total}</div>
-            <div className="text-sm text-blue-700">Total Users</div>
-          </div>
-        </div>
-        <div className="flex items-center gap-3 p-4 bg-green-50 rounded-lg">
-          <div className="h-5 w-5 bg-green-600 rounded" />
-          <div>
-            <div className="text-xl font-semibold text-green-900">{stats.withRoles}</div>
-            <div className="text-sm text-green-700">With Roles</div>
-          </div>
-        </div>
-        <div className="flex items-center gap-3 p-4 bg-purple-50 rounded-lg">
-          <div className="h-5 w-5 bg-purple-600 rounded" />
-          <div>
-            <div className="text-xl font-semibold text-purple-900">{stats.active}</div>
-            <div className="text-sm text-purple-700">Active</div>
-          </div>
-        </div>
-        <div className="flex items-center gap-3 p-4 bg-orange-50 rounded-lg">
-          <div className="h-5 w-5 bg-orange-600 rounded" />
-          <div>
-            <div className="text-xl font-semibold text-orange-900">{stats.withFacilities}</div>
-            <div className="text-sm text-orange-700">With Facilities</div>
-          </div>
-        </div>
-      </div>
+      <UserManagementStats stats={stats} />
 
       {/* Main Content */}
       <Card>
@@ -214,36 +183,20 @@ export const ConsolidatedUserManagement: React.FC = () => {
             </Button>
           </div>
 
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="users" className="flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                Users List ({filteredUsers.length})
-              </TabsTrigger>
-              <TabsTrigger value="bulk" className="flex items-center gap-2">
-                <MoreHorizontal className="h-4 w-4" />
-                Bulk Actions
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="users" className="mt-6">
-              <UsersList
-                onEditUser={handleEditUser}
-                onAssignRole={handleAssignRole}
-                onRemoveRole={handleRemoveRole}
-                onAssignFacility={handleAssignFacility}
-                onManagePermissions={handleManagePermissions}
-                onAssignModule={handleAssignModule}
-                onResendVerification={handleResendVerification}
-                onDeactivateUser={handleDeactivateUser}
-                onViewModules={handleViewModules}
-              />
-            </TabsContent>
-            
-            <TabsContent value="bulk" className="mt-6">
-              <BulkRoleAssignment />
-            </TabsContent>
-          </Tabs>
+          <UserManagementTabs
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            filteredUsersCount={filteredUsers.length}
+            onEditUser={handleEditUser}
+            onAssignRole={handleAssignRole}
+            onRemoveRole={handleRemoveRole}
+            onAssignFacility={handleAssignFacility}
+            onManagePermissions={handleManagePermissions}
+            onAssignModule={handleAssignModule}
+            onResendVerification={handleResendVerification}
+            onDeactivateUser={handleDeactivateUser}
+            onViewModules={handleViewModules}
+          />
         </CardContent>
       </Card>
 

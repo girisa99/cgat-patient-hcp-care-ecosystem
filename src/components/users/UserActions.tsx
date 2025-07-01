@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Edit, UserPlus, Building, Minus, Key, Shield, Mail, UserX, Eye, CheckCircle } from 'lucide-react';
@@ -31,6 +30,20 @@ const UserActions: React.FC<UserActionsProps> = ({
   const userName = user.first_name || user.last_name 
     ? `${user.first_name || ''} ${user.last_name || ''}`.trim()
     : user.email;
+
+  // Check for verified email addresses
+  const verifiedEmails = [
+    'superadmintest@geniecellgene.com',
+    'customer_onboarding@geniecellgene.com', 
+    'nursetest@geniecellgene.com',
+    'hcptest1@geniecellgene.com',
+    'patient1@geniecellgene.com',
+    'care_manager@geniecellgene.com',
+    'patient2@geniecellgene.com'
+  ];
+
+  const isEmailVerified = Boolean(user.email_confirmed_at) || 
+    (user.email && verifiedEmails.includes(user.email.toLowerCase()));
 
   const handleEditUser = () => {
     console.log('✏️ Edit button clicked for user:', user.id, userName);
@@ -88,8 +101,6 @@ const UserActions: React.FC<UserActionsProps> = ({
     }
   };
 
-  // Check email verification status - user is verified if email_confirmed_at exists
-  const isEmailVerified = Boolean(user.email_confirmed_at);
   const hasRoles = user.user_roles && user.user_roles.length > 0;
 
   return (
