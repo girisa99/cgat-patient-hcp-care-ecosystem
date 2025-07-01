@@ -2,7 +2,7 @@
 import React from 'react';
 import { Section } from '@/components/ui/layout/Section';
 import { InternalApiEndpointsList } from '../InternalApiEndpointsList';
-import { CreateIntegrationDialog } from '../CreateIntegrationDialog';
+import CreateIntegrationDialog from '../CreateIntegrationDialog';
 
 interface InternalApisTabContentProps {
   internalApis: any[];

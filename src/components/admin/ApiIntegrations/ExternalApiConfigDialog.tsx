@@ -19,6 +19,10 @@ const ExternalApiConfigDialog: React.FC<ExternalApiConfigDialogProps> = ({
 }) => {
   if (!api) return null;
 
+  const handleClose = () => {
+    onOpenChange(false);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
@@ -59,7 +63,7 @@ const ExternalApiConfigDialog: React.FC<ExternalApiConfigDialogProps> = ({
           </Card>
 
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
+            <Button variant="outline" onClick={handleClose}>
               <X className="h-4 w-4 mr-2" />
               Close
             </Button>

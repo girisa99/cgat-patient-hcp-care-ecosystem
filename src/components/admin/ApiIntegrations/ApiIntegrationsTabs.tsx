@@ -71,7 +71,9 @@ export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = React.mem
       <TabsContent value="overview">
         <OverviewTabContent 
           integrations={integrations}
-          onViewDetails={onViewDetails}
+          internalApis={internalApis}
+          externalApis={externalApis}
+          publishedApis={publishedApis}
         />
       </TabsContent>
 
@@ -92,7 +94,12 @@ export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = React.mem
         <ExternalApisTabContent 
           externalApis={externalApis}
           searchTerm={searchTerm}
+          createDialogOpen={createDialogOpen}
+          setCreateDialogOpen={onCreateDialogChange}
+          onDownloadCollection={onDownloadCollection}
           onViewDetails={onViewDetails}
+          onViewDocumentation={onViewDocumentation}
+          onCopyUrl={onCopyUrl}
         />
       </TabsContent>
 
@@ -100,7 +107,6 @@ export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = React.mem
         <PublishedApisTabContent 
           publishedApis={publishedApis}
           searchTerm={searchTerm}
-          onViewDetails={onViewDetails}
         />
       </TabsContent>
 

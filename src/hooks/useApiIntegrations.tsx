@@ -86,13 +86,22 @@ export const useApiIntegrations = () => {
         throw new Error('API integration not found');
       }
 
+      // Safely get the name based on the integration source
+      const integrationName = integration.source === 'external' 
+        ? (integration as any).external_name || (integration as any).name
+        : (integration as any).name || 'API Service';
+
+      const integrationDescription = integration.source === 'external'
+        ? (integration as any).external_description || 'API Collection'
+        : (integration as any).description || 'API Collection';
+
       // Generate Postman collection
       const collection = {
         info: {
-          name: integration.name || integration.external_name,
-          description: integration.description || integration.external_description || 'API Collection',
+          name: integrationName,
+          description: integrationDescription,
           schema: 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json',
-          version: integration.version || '1.0.0'
+          version: (integration as any).version || '1.0.0'
         },
         item: apiEndpoints
           ?.filter(endpoint => endpoint.external_api_id === integrationId)
@@ -111,7 +120,7 @@ export const useApiIntegrations = () => {
                 }] : [])
               ],
               url: {
-                raw: `${integration.base_url || '{{base_url}}'}${endpoint.external_path}`,
+                raw: `${(integration as any).base_url || '{{base_url}}'}${endpoint.external_path}`,
                 host: ['{{base_url}}'],
                 path: endpoint.external_path?.split('/').filter(Boolean) || []
               },
@@ -160,7 +169,7 @@ export const useApiIntegrations = () => {
         throw new Error('API integration not found');
       }
 
-      let testUrl = integration.base_url || `${window.location.origin}/api/v1/${integrationId}`;
+      let testUrl = (integration as any).base_url || `${window.location.origin}/api/v1/${integrationId}`;
       
       if (endpointId) {
         const endpoint = apiEndpoints?.find(ep => ep.id === endpointId);
