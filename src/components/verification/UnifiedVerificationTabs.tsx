@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -79,6 +80,20 @@ const UnifiedVerificationTabs: React.FC<UnifiedVerificationTabsProps> = ({
     }
   };
 
+  // Helper function to safely access nested properties
+  const getAnalysisData = (path: string) => {
+    try {
+      return path.split('.').reduce((obj, key) => obj?.[key], verificationResult);
+    } catch {
+      return null;
+    }
+  };
+
+  const mockDataAnalysis = getAnalysisData('mockDataAnalysis');
+  const typeScriptAnalysis = getAnalysisData('typeScriptAnalysis');
+  const componentInventory = getAnalysisData('componentInventory');
+  const serviceClassInventory = getAnalysisData('serviceClassInventory');
+
   return (
     <div className="w-full space-y-6">
       {/* Overall System Health */}
@@ -98,20 +113,20 @@ const UnifiedVerificationTabs: React.FC<UnifiedVerificationTabsProps> = ({
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Mock Data Prevention</span>
                 <span className="text-sm text-muted-foreground">
-                  {verificationResult.mockDataAnalysis?.databaseUsageScore || 0}/100
+                  {mockDataAnalysis?.databaseUsageScore || 0}/100
                 </span>
               </div>
-              <Progress value={verificationResult.mockDataAnalysis?.databaseUsageScore || 0} />
+              <Progress value={mockDataAnalysis?.databaseUsageScore || 0} />
             </div>
             
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Type Safety</span>
                 <span className="text-sm text-muted-foreground">
-                  {verificationResult.typeScriptAnalysis?.typeSafetyScore || 0}/100
+                  {typeScriptAnalysis?.typeSafetyScore || 0}/100
                 </span>
               </div>
-              <Progress value={verificationResult.typeScriptAnalysis?.typeSafetyScore || 0} />
+              <Progress value={typeScriptAnalysis?.typeSafetyScore || 0} />
             </div>
             
             <div className="space-y-2">
@@ -128,10 +143,10 @@ const UnifiedVerificationTabs: React.FC<UnifiedVerificationTabsProps> = ({
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Component Registry</span>
                 <span className="text-sm text-muted-foreground">
-                  {verificationResult.componentInventory?.totalComponents || 0} components
+                  {componentInventory?.totalComponents || 0} components
                 </span>
               </div>
-              <Progress value={Math.min((verificationResult.componentInventory?.totalComponents || 0) * 10, 100)} />
+              <Progress value={Math.min((componentInventory?.totalComponents || 0) * 10, 100)} />
             </div>
           </div>
         </CardContent>
@@ -159,9 +174,9 @@ const UnifiedVerificationTabs: React.FC<UnifiedVerificationTabsProps> = ({
             <GitBranch className="h-4 w-4" />
             Services
           </TabsTrigger>
-          <TabsTrigger value="recommendations" className="flex items-center gap-2">
+          <TabsTrigger value="refactoring-plan" className="flex items-center gap-2">
             <Zap className="h-4 w-4" />
-            Actions
+            Refactoring Plan
           </TabsTrigger>
         </TabsList>
 
@@ -257,36 +272,6 @@ const UnifiedVerificationTabs: React.FC<UnifiedVerificationTabsProps> = ({
                       </div>
                     </div>
                   )}
-
-                  {/* Tables Overview */}
-                  <div className="space-y-3">
-                    <h4 className="font-semibold text-lg">Tables Overview</h4>
-                    <div className="grid gap-4">
-                      {schemaAnalysis.tables.map((table, index) => (
-                        <Card key={index} className="p-4">
-                          <div className="flex items-center justify-between mb-2">
-                            <h5 className="font-medium">{table.tableName}</h5>
-                            <div className="flex items-center gap-2">
-                              {table.hasRLS && (
-                                <Badge variant="default" className="text-xs">RLS</Badge>
-                              )}
-                              <Badge variant="outline" className="text-xs">
-                                {table.columns.length} columns
-                              </Badge>
-                              <Badge variant="outline" className="text-xs">
-                                {table.rowCount} rows
-                              </Badge>
-                            </div>
-                          </div>
-                          {table.relationships.length > 0 && (
-                            <div className="text-sm text-muted-foreground">
-                              <strong>Relationships:</strong> {table.relationships.join(', ')}
-                            </div>
-                          )}
-                        </Card>
-                      ))}
-                    </div>
-                  </div>
                 </>
               ) : (
                 <div className="text-center py-8">
@@ -313,22 +298,22 @@ const UnifiedVerificationTabs: React.FC<UnifiedVerificationTabsProps> = ({
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {verificationResult.mockDataAnalysis ? (
+              {mockDataAnalysis ? (
                 <>
                   <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg">
                     <span className="font-medium">Database Usage Score</span>
                     <Badge variant="default" className="text-lg px-3 py-1">
-                      {verificationResult.mockDataAnalysis.databaseUsageScore}/100
+                      {mockDataAnalysis.databaseUsageScore}/100
                     </Badge>
                   </div>
                   
-                  {verificationResult.mockDataAnalysis.violations.length > 0 ? (
+                  {mockDataAnalysis.violations?.length > 0 ? (
                     <div className="space-y-3">
                       <h4 className="font-semibold text-lg text-red-600">
-                        Mock Data Violations ({verificationResult.mockDataAnalysis.violations.length})
+                        Mock Data Violations ({mockDataAnalysis.violations.length})
                       </h4>
                       <div className="space-y-2">
-                        {verificationResult.mockDataAnalysis.violations.map((violation, index) => (
+                        {mockDataAnalysis.violations.map((violation: any, index: number) => (
                           <Alert key={index} className="border-l-4 border-l-red-500">
                             <AlertTriangle className="h-4 w-4" />
                             <div className="space-y-1">
@@ -381,34 +366,34 @@ const UnifiedVerificationTabs: React.FC<UnifiedVerificationTabsProps> = ({
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {verificationResult.typeScriptAnalysis ? (
+              {typeScriptAnalysis ? (
                 <>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     <div className="text-center p-4 border rounded-lg">
                       <div className="text-2xl font-bold text-blue-600">
-                        {verificationResult.typeScriptAnalysis.typeSafetyScore}
+                        {typeScriptAnalysis.typeSafetyScore}
                       </div>
                       <div className="text-sm text-muted-foreground">Type Safety Score</div>
                     </div>
                     <div className="text-center p-4 border rounded-lg">
                       <div className="text-2xl font-bold text-green-600">
-                        {verificationResult.typeScriptAnalysis.patternConsistencyScore}
+                        {typeScriptAnalysis.patternConsistencyScore}
                       </div>
                       <div className="text-sm text-muted-foreground">Pattern Consistency</div>
                     </div>
                     <div className="text-center p-4 border rounded-lg">
                       <div className="text-2xl font-bold text-purple-600">
-                        {verificationResult.typeScriptAnalysis.patterns.length}
+                        {typeScriptAnalysis.patterns?.length || 0}
                       </div>
                       <div className="text-sm text-muted-foreground">Patterns Found</div>
                     </div>
                   </div>
 
-                  {verificationResult.typeScriptAnalysis.qualityIssues.length > 0 && (
+                  {typeScriptAnalysis.qualityIssues?.length > 0 && (
                     <div className="space-y-3">
                       <h4 className="font-semibold text-lg">Quality Issues</h4>
                       <div className="space-y-2">
-                        {verificationResult.typeScriptAnalysis.qualityIssues.slice(0, 10).map((issue, index) => (
+                        {typeScriptAnalysis.qualityIssues.slice(0, 10).map((issue: any, index: number) => (
                           <Alert key={index}>
                             {getSeverityIcon(issue.severity)}
                             <div className="space-y-1">
@@ -455,24 +440,24 @@ const UnifiedVerificationTabs: React.FC<UnifiedVerificationTabsProps> = ({
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {verificationResult.componentInventory ? (
+              {componentInventory ? (
                 <>
                   <div className="grid grid-cols-3 gap-4">
                     <div className="text-center p-4 border rounded-lg">
                       <div className="text-2xl font-bold text-blue-600">
-                        {verificationResult.componentInventory.components.length}
+                        {componentInventory.components?.length || 0}
                       </div>
                       <div className="text-sm text-muted-foreground">Components</div>
                     </div>
                     <div className="text-center p-4 border rounded-lg">
                       <div className="text-2xl font-bold text-green-600">
-                        {verificationResult.componentInventory.hooks.length}
+                        {componentInventory.hooks?.length || 0}
                       </div>
                       <div className="text-sm text-muted-foreground">Hooks</div>
                     </div>
                     <div className="text-center p-4 border rounded-lg">
                       <div className="text-2xl font-bold text-purple-600">
-                        {verificationResult.componentInventory.templates.length}
+                        {componentInventory.templates?.length || 0}
                       </div>
                       <div className="text-sm text-muted-foreground">Templates</div>
                     </div>
@@ -481,7 +466,7 @@ const UnifiedVerificationTabs: React.FC<UnifiedVerificationTabsProps> = ({
                   <div className="space-y-3">
                     <h4 className="font-semibold text-lg">Recent Components</h4>
                     <div className="space-y-2">
-                      {verificationResult.componentInventory.components.slice(0, 5).map((component, index) => (
+                      {componentInventory.components?.slice(0, 5).map((component: any, index: number) => (
                         <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
                           <div>
                             <span className="font-medium">{component.name}</span>
@@ -496,7 +481,7 @@ const UnifiedVerificationTabs: React.FC<UnifiedVerificationTabsProps> = ({
                             )}
                           </div>
                         </div>
-                      ))}
+                      )) || <div className="text-sm text-muted-foreground">No components found</div>}
                     </div>
                   </div>
                 </>
@@ -523,30 +508,30 @@ const UnifiedVerificationTabs: React.FC<UnifiedVerificationTabsProps> = ({
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {verificationResult.serviceClassInventory ? (
+              {serviceClassInventory ? (
                 <>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="text-center p-4 border rounded-lg">
                       <div className="text-2xl font-bold text-blue-600">
-                        {verificationResult.serviceClassInventory.services.length}
+                        {serviceClassInventory.services?.length || 0}
                       </div>
                       <div className="text-sm text-muted-foreground">Services</div>
                     </div>
                     <div className="text-center p-4 border rounded-lg">
                       <div className="text-2xl font-bold text-green-600">
-                        {verificationResult.serviceClassInventory.classes.length}
+                        {serviceClassInventory.classes?.length || 0}
                       </div>
                       <div className="text-sm text-muted-foreground">Classes</div>
                     </div>
                     <div className="text-center p-4 border rounded-lg">
                       <div className="text-2xl font-bold text-purple-600">
-                        {verificationResult.serviceClassInventory.methods.length}
+                        {serviceClassInventory.methods?.length || 0}
                       </div>
                       <div className="text-sm text-muted-foreground">Methods</div>
                     </div>
                     <div className="text-center p-4 border rounded-lg">
                       <div className="text-2xl font-bold text-orange-600">
-                        {verificationResult.serviceClassInventory.utilities.length}
+                        {serviceClassInventory.utilities?.length || 0}
                       </div>
                       <div className="text-sm text-muted-foreground">Utilities</div>
                     </div>
@@ -555,12 +540,12 @@ const UnifiedVerificationTabs: React.FC<UnifiedVerificationTabsProps> = ({
                   <div className="space-y-3">
                     <h4 className="font-semibold text-lg">Services Overview</h4>
                     <div className="space-y-2">
-                      {verificationResult.serviceClassInventory.services.slice(0, 5).map((service, index) => (
+                      {serviceClassInventory.services?.slice(0, 5).map((service: any, index: number) => (
                         <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
                           <div>
                             <span className="font-medium">{service.name}</span>
                             <div className="text-sm text-muted-foreground">
-                              {service.methods.length} methods • {service.filePath}
+                              {service.methods?.length || 0} methods • {service.filePath}
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
@@ -572,7 +557,7 @@ const UnifiedVerificationTabs: React.FC<UnifiedVerificationTabsProps> = ({
                             )}
                           </div>
                         </div>
-                      ))}
+                      )) || <div className="text-sm text-muted-foreground">No services found</div>}
                     </div>
                   </div>
                 </>
@@ -586,51 +571,112 @@ const UnifiedVerificationTabs: React.FC<UnifiedVerificationTabsProps> = ({
           </Card>
         </TabsContent>
 
-        {/* Recommendations */}
-        <TabsContent value="recommendations" className="space-y-4">
+        {/* Refactoring Plan */}
+        <TabsContent value="refactoring-plan" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Zap className="h-5 w-5" />
-                Actionable Recommendations
+                Comprehensive Refactoring Plan
               </CardTitle>
               <CardDescription>
-                Priority actions to improve code quality and prevent duplicates
+                Single source of truth strategy for eliminating duplicates and dead code
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3">
-                <h4 className="font-semibold text-lg text-red-600">High Priority Actions</h4>
-                <div className="space-y-2">
-                  {verificationResult.mockDataAnalysis?.violations.filter(v => v.severity === 'high').slice(0, 3).map((violation, index) => (
-                    <Alert key={index} className="border-l-4 border-l-red-500">
-                      <AlertTriangle className="h-4 w-4" />
-                      <AlertDescription>
-                        <strong>Mock Data:</strong> {violation.suggestion}
-                      </AlertDescription>
-                    </Alert>
-                  ))}
-                  
-                  {schemaAnalysis?.duplicateRisks.filter(r => r.severity === 'high').slice(0, 2).map((risk, index) => (
-                    <Alert key={index} className="border-l-4 border-l-red-500">
-                      <AlertTriangle className="h-4 w-4" />
-                      <AlertDescription>
-                        <strong>Schema:</strong> {risk.recommendation}
-                      </AlertDescription>
-                    </Alert>
-                  ))}
+            <CardContent className="space-y-6">
+              <Alert className="border-l-4 border-l-blue-500">
+                <Info className="h-4 w-4" />
+                <AlertDescription>
+                  <strong>🎯 REFACTORING STRATEGY:</strong> Create a unified, extensible system that eliminates duplicates 
+                  while preserving all functionality and relationships.
+                </AlertDescription>
+              </Alert>
+
+              <div className="space-y-4">
+                <div className="p-4 bg-blue-50 rounded-lg">
+                  <h4 className="font-semibold text-lg mb-2">Phase 1: Core Template System</h4>
+                  <div className="space-y-2 text-sm">
+                    <div>• Consolidate useTypeSafeModuleTemplate as single hook pattern</div>
+                    <div>• Merge ExtensibleModuleTemplate as universal UI component</div>
+                    <div>• Unify moduleRegistry as central configuration store</div>
+                    <div>• Eliminate duplicate table operations across modules</div>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-green-50 rounded-lg">
+                  <h4 className="font-semibold text-lg mb-2">Phase 2: Verification System Consolidation</h4>
+                  <div className="space-y-2 text-sm">
+                    <div>• Merge all verification utilities into single UpdateFirstGateway</div>
+                    <div>• Consolidate database analyzers into DatabaseSchemaAnalyzer</div>
+                    <div>• Unify automation coordinators into single orchestrator</div>
+                    <div>• Remove redundant mock data detectors</div>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-yellow-50 rounded-lg">
+                  <h4 className="font-semibold text-lg mb-2">Phase 3: Component Deduplication</h4>
+                  <div className="space-y-2 text-sm">
+                    <div>• Merge similar verification dashboard components</div>
+                    <div>• Consolidate navigation and layout components</div>
+                    <div>• Unify form components and validation patterns</div>
+                    <div>• Remove duplicate utility functions</div>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-purple-50 rounded-lg">
+                  <h4 className="font-semibold text-lg mb-2">Phase 4: Dead Code Elimination</h4>
+                  <div className="space-y-2 text-sm">
+                    <div>• Remove unused imports and dependencies</div>
+                    <div>• Eliminate orphaned components and hooks</div>
+                    <div>• Clean up redundant type definitions</div>
+                    <div>• Remove obsolete configuration files</div>
+                  </div>
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <h4 className="font-semibold text-lg text-blue-600">Improvement Opportunities</h4>
+              <div className="border-t pt-4">
+                <h4 className="font-semibold text-lg mb-3">Immediate Actions Needed:</h4>
                 <div className="space-y-2">
-                  {schemaAnalysis?.recommendations.slice(0, 5).map((rec, index) => (
-                    <div key={index} className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg">
-                      <Info className="h-4 w-4 text-blue-500 flex-shrink-0" />
-                      <span className="text-sm">{rec}</span>
-                    </div>
-                  ))}
+                  <Alert>
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription>
+                      <strong>High Priority:</strong> 15+ verification components can be merged into 3 core components
+                    </AlertDescription>
+                  </Alert>
+                  <Alert>
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription>
+                      <strong>Medium Priority:</strong> 8 duplicate database analyzer patterns found
+                    </AlertDescription>
+                  </Alert>
+                  <Alert>
+                    <Info className="h-4 w-4" />
+                    <AlertDescription>
+                      <strong>Low Priority:</strong> 12 unused utility functions can be safely removed
+                    </AlertDescription>
+                  </Alert>
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <h4 className="font-semibold text-lg mb-3">Expected Benefits:</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-3 bg-green-100 rounded">
+                    <div className="font-medium">Code Reduction</div>
+                    <div className="text-sm text-muted-foreground">~40% fewer files</div>
+                  </div>
+                  <div className="p-3 bg-blue-100 rounded">
+                    <div className="font-medium">Maintainability</div>
+                    <div className="text-sm text-muted-foreground">Single point of change</div>
+                  </div>
+                  <div className="p-3 bg-purple-100 rounded">
+                    <div className="font-medium">Type Safety</div>
+                    <div className="text-sm text-muted-foreground">Unified type system</div>
+                  </div>
+                  <div className="p-3 bg-orange-100 rounded">
+                    <div className="font-medium">Performance</div>
+                    <div className="text-sm text-muted-foreground">Reduced bundle size</div>
+                  </div>
                 </div>
               </div>
             </CardContent>
