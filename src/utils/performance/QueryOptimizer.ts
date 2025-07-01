@@ -1,257 +1,134 @@
+
 /**
- * Query Optimization and Caching System
+ * Query Optimizer
+ * Performance optimization utilities for database queries
  */
 
-interface CacheEntry<T> {
-  data: T;
-  timestamp: number;
-  ttl: number;
-  key: string;
+export interface QueryPerformanceMetrics {
+  executionTime: number;
+  rowsReturned: number;
+  cacheHit: boolean;
+  queryComplexity: 'low' | 'medium' | 'high';
+  optimizationSuggestions: string[];
 }
 
-interface QueryStats {
-  queryKey: string;
-  executionTime: number;
-  cacheHit: boolean;
-  timestamp: number;
+export interface OptimizedQuery {
+  sql: string;
+  parameters: any[];
+  cacheKey: string;
+  cacheTTL: number;
+  expectedPerformance: QueryPerformanceMetrics;
 }
 
 export class QueryOptimizer {
-  private static instance: QueryOptimizer;
-  private cache: Map<string, CacheEntry<any>> = new Map();
-  private queryStats: QueryStats[] = [];
-  private pendingQueries: Map<string, Promise<any>> = new Map();
-
-  static getInstance(): QueryOptimizer {
-    if (!QueryOptimizer.instance) {
-      QueryOptimizer.instance = new QueryOptimizer();
-    }
-    return QueryOptimizer.instance;
-  }
+  private static performanceCache = new Map<string, any>();
+  private static readonly CACHE_TTL = 300000; // 5 minutes
 
   /**
-   * Execute a query with caching and deduplication
+   * Optimize a query for better performance
    */
-  async executeQuery<T>(
-    queryKey: string,
-    queryFn: () => Promise<T>,
-    options: {
-      ttl?: number; // Time to live in milliseconds
-      staleWhileRevalidate?: boolean;
-      deduplicate?: boolean;
-    } = {}
-  ): Promise<T> {
-    const {
-      ttl = 300000, // 5 minutes default
-      staleWhileRevalidate = false,
-      deduplicate = true
-    } = options;
+  static optimizeQuery(
+    originalQuery: string, 
+    parameters: any[] = [],
+    context: string = 'general'
+  ): OptimizedQuery {
+    console.log('🔧 Optimizing query:', { originalQuery, context });
 
-    const startTime = performance.now();
-
-    // Check for existing pending query (deduplication)
-    if (deduplicate && this.pendingQueries.has(queryKey)) {
-      console.log(`🔄 Deduplicating query: ${queryKey}`);
-      const result = await this.pendingQueries.get(queryKey)!;
-      this.recordQueryStats(queryKey, performance.now() - startTime, true);
-      return result;
-    }
-
-    // Check cache first
-    const cachedEntry = this.cache.get(queryKey);
-    const now = Date.now();
-
-    if (cachedEntry && now - cachedEntry.timestamp < cachedEntry.ttl) {
-      console.log(`💾 Cache hit for: ${queryKey}`);
-      this.recordQueryStats(queryKey, performance.now() - startTime, true);
-      
-      // If stale-while-revalidate, trigger background refresh
-      if (staleWhileRevalidate && now - cachedEntry.timestamp > cachedEntry.ttl * 0.8) {
-        this.backgroundRefresh(queryKey, queryFn, ttl);
-      }
-      
-      return cachedEntry.data;
-    }
-
-    // Execute query
-    console.log(`🔃 Executing fresh query: ${queryKey}`);
-    const queryPromise = this.executeWithTimeout(queryFn, 30000); // 30s timeout
+    // Generate cache key
+    const cacheKey = this.generateCacheKey(originalQuery, parameters, context);
     
-    if (deduplicate) {
-      this.pendingQueries.set(queryKey, queryPromise);
+    // Check if we have a cached optimization
+    const cached = this.performanceCache.get(cacheKey);
+    if (cached && (Date.now() - cached.timestamp) < this.CACHE_TTL) {
+      console.log('📊 Using cached query optimization');
+      return cached.optimization;
     }
 
-    try {
-      const result = await queryPromise;
-      
-      // Cache the result
-      this.cache.set(queryKey, {
-        data: result,
-        timestamp: now,
-        ttl,
-        key: queryKey
-      });
-
-      this.recordQueryStats(queryKey, performance.now() - startTime, false);
-      return result;
-    } finally {
-      if (deduplicate) {
-        this.pendingQueries.delete(queryKey);
-      }
-    }
-  }
-
-  /**
-   * Execute query with timeout
-   */
-  private async executeWithTimeout<T>(queryFn: () => Promise<T>, timeoutMs: number): Promise<T> {
-    return Promise.race([
-      queryFn(),
-      new Promise<never>((_, reject) => 
-        setTimeout(() => reject(new Error(`Query timeout after ${timeoutMs}ms`)), timeoutMs)
-      )
-    ]);
-  }
-
-  /**
-   * Background refresh for stale-while-revalidate
-   */
-  private async backgroundRefresh<T>(queryKey: string, queryFn: () => Promise<T>, ttl: number): void {
-    try {
-      const result = await queryFn();
-      this.cache.set(queryKey, {
-        data: result,
-        timestamp: Date.now(),
-        ttl,
-        key: queryKey
-      });
-      console.log(`🔄 Background refresh completed for: ${queryKey}`);
-    } catch (error) {
-      console.warn(`Background refresh failed for ${queryKey}:`, error);
-    }
-  }
-
-  /**
-   * Record query statistics
-   */
-  private recordQueryStats(queryKey: string, executionTime: number, cacheHit: boolean): void {
-    this.queryStats.push({
-      queryKey,
-      executionTime,
-      cacheHit,
+    // Perform query optimization
+    const optimizedQuery = this.performOptimization(originalQuery, parameters, context);
+    
+    // Cache the result
+    this.performanceCache.set(cacheKey, {
+      optimization: optimizedQuery,
       timestamp: Date.now()
     });
 
-    // Keep only last 1000 stats
-    if (this.queryStats.length > 1000) {
-      this.queryStats = this.queryStats.slice(-1000);
-    }
+    return optimizedQuery;
   }
 
   /**
-   * Invalidate cache entries
+   * Generate a cache key for the query
    */
-  invalidateCache(pattern?: string | RegExp): number {
-    let invalidatedCount = 0;
-
-    if (!pattern) {
-      // Clear all cache
-      invalidatedCount = this.cache.size;
-      this.cache.clear();
-    } else if (typeof pattern === 'string') {
-      // Invalidate by exact key or prefix
-      for (const [key] of this.cache) {
-        if (key === pattern || key.startsWith(pattern)) {
-          this.cache.delete(key);
-          invalidatedCount++;
-        }
-      }
-    } else {
-      // Invalidate by regex pattern
-      for (const [key] of this.cache) {
-        if (pattern.test(key)) {
-          this.cache.delete(key);
-          invalidatedCount++;
-        }
-      }
-    }
-
-    console.log(`🗑️ Invalidated ${invalidatedCount} cache entries`);
-    return invalidatedCount;
+  private static generateCacheKey(query: string, parameters: any[], context: string): string {
+    const queryHash = btoa(query).substring(0, 16);
+    const paramHash = btoa(JSON.stringify(parameters)).substring(0, 8);
+    return `${context}_${queryHash}_${paramHash}`;
   }
 
   /**
-   * Clean expired cache entries
+   * Perform the actual query optimization
    */
-  cleanExpiredCache(): number {
-    const now = Date.now();
-    let cleanedCount = 0;
+  private static performOptimization(
+    query: string, 
+    parameters: any[], 
+    context: string
+  ): OptimizedQuery {
+    let optimizedSQL = query;
+    const suggestions: string[] = [];
 
-    for (const [key, entry] of this.cache) {
-      if (now - entry.timestamp > entry.ttl) {
-        this.cache.delete(key);
-        cleanedCount++;
-      }
+    // Add LIMIT if not present for large result sets
+    if (!query.toLowerCase().includes('limit') && !query.toLowerCase().includes('count(')) {
+      optimizedSQL += ' LIMIT 1000';
+      suggestions.push('Added LIMIT clause to prevent large result sets');
     }
 
-    console.log(`🧹 Cleaned ${cleanedCount} expired cache entries`);
-    return cleanedCount;
-  }
+    // Add indexes suggestion for WHERE clauses
+    if (query.toLowerCase().includes('where')) {
+      suggestions.push('Consider adding indexes on WHERE clause columns');
+    }
 
-  /**
-   * Get performance statistics
-   */
-  getPerformanceStats(): {
-    cacheStats: {
-      size: number;
-      hitRate: number;
-      avgExecutionTime: number;
-    };
-    queryStats: {
-      totalQueries: number;
-      slowQueries: QueryStats[];
-      frequentQueries: Array<{ queryKey: string; count: number }>;
-    };
-  } {
-    const recentStats = this.queryStats.filter(stat => 
-      Date.now() - stat.timestamp < 3600000 // Last hour
-    );
-
-    const cacheHits = recentStats.filter(stat => stat.cacheHit).length;
-    const totalQueries = recentStats.length;
-    const avgExecutionTime = recentStats.reduce((sum, stat) => sum + stat.executionTime, 0) / totalQueries || 0;
-
-    // Find slow queries (>1000ms)
-    const slowQueries = recentStats
-      .filter(stat => stat.executionTime > 1000)
-      .sort((a, b) => b.executionTime - a.executionTime)
-      .slice(0, 10);
-
-    // Find frequent queries
-    const queryFrequency = recentStats.reduce((acc, stat) => {
-      acc[stat.queryKey] = (acc[stat.queryKey] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    const frequentQueries = Object.entries(queryFrequency)
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, 10)
-      .map(([queryKey, count]) => ({ queryKey, count }));
+    // Determine query complexity
+    let complexity: 'low' | 'medium' | 'high' = 'low';
+    if (query.toLowerCase().includes('join')) complexity = 'medium';
+    if (query.toLowerCase().includes('subquery') || query.split('join').length > 3) {
+      complexity = 'high';
+    }
 
     return {
-      cacheStats: {
-        size: this.cache.size,
-        hitRate: totalQueries > 0 ? (cacheHits / totalQueries) * 100 : 0,
-        avgExecutionTime
-      },
-      queryStats: {
-        totalQueries,
-        slowQueries,
-        frequentQueries
+      sql: optimizedSQL,
+      parameters,
+      cacheKey: this.generateCacheKey(query, parameters, context),
+      cacheTTL: this.CACHE_TTL,
+      expectedPerformance: {
+        executionTime: complexity === 'high' ? 1000 : complexity === 'medium' ? 500 : 100,
+        rowsReturned: 0, // Will be filled after execution
+        cacheHit: false,
+        queryComplexity: complexity,
+        optimizationSuggestions: suggestions
       }
+    };
+  }
+
+  /**
+   * Clear the performance cache
+   */
+  static clearCache(): Promise<void> {
+    return new Promise((resolve) => {
+      this.performanceCache.clear();
+      console.log('🧹 Query optimizer cache cleared');
+      resolve();
+    });
+  }
+
+  /**
+   * Get cache statistics
+   */
+  static getCacheStats() {
+    return {
+      size: this.performanceCache.size,
+      entries: Array.from(this.performanceCache.keys())
     };
   }
 }
 
-// Global query optimizer instance
-export const queryOptimizer = QueryOptimizer.getInstance();
+export default QueryOptimizer;

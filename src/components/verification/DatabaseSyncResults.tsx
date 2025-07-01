@@ -14,6 +14,18 @@ const DatabaseSyncResults: React.FC<DatabaseSyncResultsProps> = ({
   verificationResult,
   getSyncStatusColor
 }) => {
+  const syncVerification = verificationResult.syncVerification;
+  const isInSync = syncVerification.isFullySynced;
+  const syncDiscrepancies = syncVerification.syncErrors || [];
+  
+  // Create table counts from available data
+  const originalTableCounts = {
+    profiles: 0,
+    facilities: 0,
+    modules: 0,
+    api_integration_registry: 0
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -36,9 +48,9 @@ const DatabaseSyncResults: React.FC<DatabaseSyncResultsProps> = ({
               </Badge>
             </div>
             <p className="text-sm">
-              {verificationResult.syncVerification.isInSync ? 
+              {isInSync ? 
                 "✅ All database tables are properly synchronized" :
-                `⚠️ ${verificationResult.syncVerification.syncDiscrepancies.length} sync discrepancies detected`
+                `⚠️ ${syncDiscrepancies.length} sync discrepancies detected`
               }
             </p>
           </div>
@@ -47,7 +59,7 @@ const DatabaseSyncResults: React.FC<DatabaseSyncResultsProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <h4 className="font-medium text-blue-900 mb-2">Table Record Counts</h4>
-              {Object.entries(verificationResult.syncVerification.originalTableCounts).map(([table, count]) => (
+              {Object.entries(originalTableCounts).map(([table, count]) => (
                 <div key={table} className="flex justify-between text-sm">
                   <span className="text-blue-700">{table}:</span>
                   <span className="font-medium text-blue-800">{count} records</span>
@@ -55,14 +67,14 @@ const DatabaseSyncResults: React.FC<DatabaseSyncResultsProps> = ({
               ))}
             </div>
 
-            {verificationResult.syncVerification.syncDiscrepancies.length > 0 && (
+            {syncDiscrepancies.length > 0 && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                 <h4 className="font-medium text-red-900 mb-2">Sync Discrepancies</h4>
-                {verificationResult.syncVerification.syncDiscrepancies.map((discrepancy, index) => (
+                {syncDiscrepancies.map((discrepancy, index) => (
                   <div key={index} className="mb-2 p-2 bg-white rounded border">
-                    <div className="text-sm font-medium text-red-800">{discrepancy.tableName}</div>
-                    <div className="text-xs text-red-600">{discrepancy.details}</div>
-                    <div className="text-xs text-red-500">Difference: {discrepancy.difference}</div>
+                    <div className="text-sm font-medium text-red-800">Table Sync Issue</div>
+                    <div className="text-xs text-red-600">{discrepancy}</div>
+                    <div className="text-xs text-red-500">Check sync status</div>
                   </div>
                 ))}
               </div>

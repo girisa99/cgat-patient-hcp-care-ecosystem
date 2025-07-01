@@ -29,6 +29,9 @@ const SystemStatusSummary: React.FC<SystemStatusSummaryProps> = ({
     );
   }
 
+  const dbHealth = verificationResult?.systemHealth?.databaseHealth;
+  const syncVerification = verificationResult?.syncVerification;
+
   return (
     <Card className="bg-green-50 border-green-200">
       <CardHeader>
@@ -46,12 +49,12 @@ const SystemStatusSummary: React.FC<SystemStatusSummaryProps> = ({
           ✅ All results synced to database tables
           <br />
           ✅ No mock data - All results from live database verification
-          {verificationResult && (
+          {verificationResult && dbHealth && (
             <>
               <br />
-              📊 Tables Verified: {verificationResult.systemHealth.databaseHealth.tablesScanned.join(', ')}
+              📊 Database health score: {dbHealth.score}/100
               <br />
-              🔄 Sync Tables Checked: {Object.keys(verificationResult.syncVerification.originalTableCounts).join(', ')}
+              🔄 Sync status: {syncVerification?.isFullySynced ? 'Synchronized' : 'Needs attention'}
             </>
           )}
         </CardDescription>

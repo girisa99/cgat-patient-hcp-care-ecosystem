@@ -13,6 +13,8 @@ const VerificationMetricsGrid: React.FC<VerificationMetricsGridProps> = ({
   verificationResult,
   getSyncStatusColor
 }) => {
+  const syncErrors = verificationResult.syncVerification.syncErrors || [];
+  
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
       <Card className="bg-red-50 border-red-200">
@@ -62,7 +64,7 @@ const VerificationMetricsGrid: React.FC<VerificationMetricsGridProps> = ({
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-0">
-          <div className="text-2xl font-bold">{verificationResult.syncVerification.syncDiscrepancies.length}</div>
+          <div className="text-2xl font-bold">{syncErrors.length}</div>
           <div className="text-xs">Sync discrepancies found</div>
         </CardContent>
       </Card>

@@ -44,6 +44,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           <nav className="mt-5 flex-1 space-y-1 px-2">
             {navItems.map((item) => {
               const isActive = location.pathname === item.to;
+              const IconComponent = item.icon;
               
               return (
                 <Link
@@ -61,7 +62,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     'mr-3 flex-shrink-0',
                     isActive ? 'text-blue-500' : 'text-gray-400 group-hover:text-gray-500'
                   )}>
-                    {item.icon}
+                    <IconComponent className="h-5 w-5" />
                   </span>
                   {item.title}
                 </Link>

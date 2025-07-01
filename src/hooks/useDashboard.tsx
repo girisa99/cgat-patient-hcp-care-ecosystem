@@ -17,6 +17,9 @@ export const useDashboard = () => {
   const { modules, getModuleStats } = useModules();
   const { apiServices } = useApiServices();
 
+  const facilityStats = getFacilityStats();
+  const moduleStats = getModuleStats();
+  
   const dashboardData = {
     // Real metrics from consolidated sources
     totalUsers: userMeta.totalUsers,
@@ -30,8 +33,12 @@ export const useDashboard = () => {
       staff: userMeta.staffCount,
       patients: userMeta.patientCount
     },
-    facilityStats: getFacilityStats(),
-    moduleStats: getModuleStats(),
+    facilityStats: facilityStats,
+    moduleStats: moduleStats,
+    apiServiceStats: {
+      active: apiServices.filter(api => api.status === 'active').length,
+      total: apiServices.length
+    },
     
     // System health based on real data
     systemHealth: facilities.length > 0 && modules.length > 0 ? 'healthy' : 'warning',
