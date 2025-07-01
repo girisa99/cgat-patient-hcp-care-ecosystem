@@ -230,26 +230,53 @@ export class ComprehensiveAutomationCoordinator {
         systemsVerified: []
       },
       componentAnalysis: {
-        totalComponents: 0,
-        healthyComponents: 0,
-        componentsWithIssues: 1,
-        criticalComponents: []
+        database: { overallScore: 0, issues: [`Automation error: ${error.message}`] },
+        modules: { healthScore: 0, issues: [`Automation error: ${error.message}`] },
+        typescript: { typeConsistencyScore: 0, issues: [`Automation error: ${error.message}`] },
+        deadCode: { cleanupPotential: 100, issues: [`Automation error: ${error.message}`] },
+        duplicates: { severityScore: 0, issues: [`Automation error: ${error.message}`] }
       },
       moduleVerification: {
-        totalModules: 0,
-        verifiedModules: 0,
-        moduleIssues: [`Automation error: ${error.message}`]
+        isWorking: false,
+        dataSource: 'original_database',
+        hookConsistency: {
+          score: 0,
+          issues: [`Automation error: ${error.message}`]
+        },
+        componentIntegrity: {
+          score: 0,
+          issues: [`Automation error: ${error.message}`]
+        },
+        databaseConnection: {
+          score: 0,
+          issues: [`Automation error: ${error.message}`]
+        }
       },
       databaseIntegrity: {
-        score: 0,
-        issues: [`Automation error: ${error.message}`],
-        recommendations: ['Review database configuration']
+        tablesConsistent: false,
+        rlsPoliciesValid: false,
+        foreignKeysValid: false,
+        indexesOptimized: false
       },
-      securityAssessment: {
+      hookConsistency: {
         score: 0,
-        vulnerabilities: [`Automation security error: ${error.message}`],
-        recommendations: ['Review security configuration']
+        duplicateHooks: [],
+        inconsistentPatterns: [`Automation error: ${error.message}`],
+        recommendations: ['Review automation configuration']
       },
+      navigationIntegrity: {
+        routesValid: false,
+        componentsLinked: false,
+        breadcrumbsWorking: false,
+        menuStructureValid: false
+      },
+      syncVerification: {
+        isFullySynced: false,
+        pendingChanges: [],
+        lastSyncTime: new Date().toISOString(),
+        syncErrors: [`Automation error: ${error.message}`]
+      },
+      recommendations: ['Review automation configuration', 'Check system logs'],
       automationMetadata: {
         dataSource: 'original_database',
         verificationMethod: 'comprehensive',
