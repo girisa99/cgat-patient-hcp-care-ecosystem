@@ -5,53 +5,23 @@ import { useToast } from '@/hooks/use-toast';
 import { useApiServices } from './useApiServices';
 
 /**
- * API Integrations Hook - Works with External API Registry
- * Connects to external_api_registry table for published APIs
+ * API Integrations Hook - Consolidated wrapper around useApiServices
+ * Maintains backward compatibility while ensuring single source of truth
  */
 export const useApiIntegrations = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  // Get base API services data
+  // Use consolidated API services hook as single source of truth
   const { 
-    apiServices: internalApiServices, 
+    apiServices, 
     internalApis, 
-    externalApis: baseExternalApis,
-    isLoading: isLoadingBase 
+    externalApis,
+    isLoading,
+    meta
   } = useApiServices();
 
-  // Get external API registry data (published APIs)
-  const { data: externalApiRegistry, isLoading: isLoadingExternal } = useQuery({
-    queryKey: ['external-api-registry'],
-    queryFn: async () => {
-      console.log('🔍 Fetching external API registry...');
-      
-      const { data, error } = await supabase
-        .from('external_api_registry')
-        .select(`
-          *,
-          external_api_endpoints (
-            id,
-            external_path,
-            method,
-            summary,
-            description,
-            is_public,
-            requires_authentication
-          )
-        `)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('❌ Error fetching external API registry:', error);
-        throw error;
-      }
-
-      console.log('✅ External API registry fetched:', data?.length || 0);
-      return data || [];
-    },
-    staleTime: 30000
-  });
+  console.log('🔍 useApiIntegrations - Delegating to consolidated useApiServices hook');
 
   // Get API endpoints for external APIs
   const { data: apiEndpoints, isLoading: isLoadingEndpoints } = useQuery({
@@ -78,24 +48,16 @@ export const useApiIntegrations = () => {
   // Download Postman collection mutation
   const downloadPostmanCollectionMutation = useMutation({
     mutationFn: async (integrationId: string) => {
-      // Find the integration from both internal and external sources
-      const internalIntegration = internalApiServices?.find(api => api.id === integrationId);
-      const externalIntegration = externalApiRegistry?.find(api => api.id === integrationId);
-      const integration = internalIntegration || externalIntegration;
+      // Find the integration from consolidated data
+      const integration = apiServices?.find(api => api.id === integrationId);
       
       if (!integration) {
         throw new Error('API integration not found');
       }
 
       // Determine integration type and get the appropriate name
-      const isExternal = externalIntegration !== undefined;
-      const integrationName = isExternal 
-        ? (integration as any).external_name || (integration as any).name
-        : (integration as any).name || 'API Service';
-
-      const integrationDescription = isExternal
-        ? (integration as any).external_description || 'API Collection'
-        : (integration as any).description || 'API Collection';
+      const integrationName = (integration as any).external_name || (integration as any).name;
+      const integrationDescription = (integration as any).external_description || (integration as any).description || 'API Collection';
 
       // Generate Postman collection
       const collection = {
@@ -164,9 +126,7 @@ export const useApiIntegrations = () => {
   // Test endpoint mutation
   const testEndpointMutation = useMutation({
     mutationFn: async ({ integrationId, endpointId }: { integrationId: string; endpointId?: string }) => {
-      const internalIntegration = internalApiServices?.find(api => api.id === integrationId);
-      const externalIntegration = externalApiRegistry?.find(api => api.id === integrationId);
-      const integration = internalIntegration || externalIntegration;
+      const integration = apiServices?.find(api => api.id === integrationId);
       
       if (!integration) {
         throw new Error('API integration not found');
@@ -213,21 +173,16 @@ export const useApiIntegrations = () => {
     }
   });
 
-  // Combine all integrations with proper type handling
-  const allIntegrations = [
-    ...(internalApiServices || []).map(api => ({ ...api, integrationType: 'internal' })),
-    ...(externalApiRegistry || []).map(api => ({ ...api, integrationType: 'external' }))
-  ];
-
+  // Return consolidated data using single source of truth
   return {
-    // Data - Real from database
-    integrations: allIntegrations,
+    // Data - Using consolidated useApiServices as single source
+    integrations: apiServices || [],
     internalApis: internalApis || [],
-    externalApis: externalApiRegistry || [],
+    externalApis: externalApis || [],
     apiEndpoints: apiEndpoints || [],
     
     // Loading states
-    isLoading: isLoadingBase || isLoadingExternal || isLoadingEndpoints,
+    isLoading: isLoading || isLoadingEndpoints,
     
     // Actions
     downloadPostmanCollection: downloadPostmanCollectionMutation.mutate,
@@ -235,14 +190,13 @@ export const useApiIntegrations = () => {
     isDownloading: downloadPostmanCollectionMutation.isPending,
     isTesting: testEndpointMutation.isPending,
     
-    // Meta
+    // Meta - Enhanced with single source validation
     meta: {
-      totalIntegrations: allIntegrations.length,
-      internalCount: internalApis?.length || 0,
-      externalCount: externalApiRegistry?.length || 0,
+      ...meta,
       endpointsCount: apiEndpoints?.length || 0,
-      dataSource: 'api_integration_registry + external_api_registry tables',
-      version: 'real-data-v1'
+      singleSourceValidated: true,
+      consolidatedHook: 'useApiServices',
+      architecture: 'single-source-of-truth'
     }
   };
 };

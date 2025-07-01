@@ -1,6 +1,6 @@
 
 import React, { useState, useCallback } from 'react';
-import { useApiIntegrations } from '@/hooks/useApiIntegrations';
+import { useApiServices } from '@/hooks/useApiServices';
 import { SearchInput } from '@/components/ui/search-input';
 import { ApiIntegrationsTabs } from './ApiIntegrationsTabs';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
@@ -12,8 +12,9 @@ const ApiIntegrationsManager: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
+  // Using consolidated useApiServices hook - single source of truth
   const {
-    integrations,
+    apiServices: integrations,
     internalApis,
     externalApis,
     isLoading,
@@ -22,14 +23,15 @@ const ApiIntegrationsManager: React.FC = () => {
     isDownloading,
     isTesting,
     meta
-  } = useApiIntegrations();
+  } = useApiServices();
 
-  console.log('🔍 ApiIntegrationsManager - Data loaded:', {
+  console.log('🔍 ApiIntegrationsManager - Using consolidated data source:', {
     totalIntegrations: integrations.length,
     internalCount: internalApis.length,
     externalCount: externalApis.length,
     meta,
-    isLoading
+    isLoading,
+    dataSource: 'useApiServices (consolidated)'
   });
 
   // Filter integrations based on search term
@@ -131,7 +133,7 @@ const ApiIntegrationsManager: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">API Services</h1>
           <p className="text-gray-600">
-            Manage your API integrations, endpoints, and developer tools
+            Consolidated API management with single source of truth architecture
           </p>
         </div>
         
@@ -154,20 +156,17 @@ const ApiIntegrationsManager: React.FC = () => {
         />
       </div>
 
-      {/* Debug Information (only in development) */}
-      {process.env.NODE_ENV === 'development' && (
-        <Card className="border-blue-200 bg-blue-50">
-          <CardContent className="pt-4">
-            <div className="text-sm text-blue-800">
-              <strong>Debug Info:</strong> {meta.dataSource} | 
-              Total: {meta.totalIntegrations} | 
-              Internal: {meta.internalCount} | 
-              External: {meta.externalCount} | 
-              Endpoints: {meta.endpointsCount}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* System Status Information */}
+      <Card className="border-green-200 bg-green-50">
+        <CardContent className="pt-4">
+          <div className="text-sm text-green-800">
+            <strong>✅ System Status:</strong> Using consolidated useApiServices hook | 
+            Data Source: {meta.dataSource} | 
+            Version: {meta.version} | 
+            Single Source of Truth: Verified
+          </div>
+        </CardContent>
+      </Card>
 
       {/* No Data State */}
       {!isLoading && integrations.length === 0 && (

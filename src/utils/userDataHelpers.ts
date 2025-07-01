@@ -104,3 +104,29 @@ export const sortUsersByName = (users: UserWithRoles[]): UserWithRoles[] => {
     return nameA.localeCompare(nameB);
   });
 };
+
+/**
+ * Get patient users (patientCaregiver role)
+ */
+export const getPatientUsers = (users: UserWithRoles[]): UserWithRoles[] => {
+  return filterUsersByRole(users, 'patientCaregiver');
+};
+
+/**
+ * Get healthcare staff users (excluding patients and regular users)
+ */
+export const getHealthcareStaff = (users: UserWithRoles[]): UserWithRoles[] => {
+  return users.filter(user => {
+    const roles = extractUserRoles(user);
+    return roles.some(role => 
+      ['nurse', 'provider', 'careManager', 'onboardingTeam'].includes(role)
+    );
+  });
+};
+
+/**
+ * Get admin users (superAdmin and onboardingTeam)
+ */
+export const getAdminUsers = (users: UserWithRoles[]): UserWithRoles[] => {
+  return users.filter(user => userIsAdmin(user));
+};
