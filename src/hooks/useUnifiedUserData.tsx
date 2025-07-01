@@ -8,75 +8,51 @@ export const useUnifiedUserData = () => {
   const query = useQuery({
     queryKey: ['unified-users'],
     queryFn: async (): Promise<UserWithRoles[]> => {
-      console.log('🔍 Fetching unified user data...');
+      console.log('🔍 Fetching unified user data via edge function...');
       
       try {
-        // First, get all profiles
-        const { data: profiles, error: profilesError } = await supabase
-          .from('profiles')
-          .select(`
-            *,
-            facilities (
-              id,
-              name,
-              facility_type
-            )
-          `)
-          .order('created_at', { ascending: false });
+        // Use the edge function to get all users from auth.users
+        const { data: response, error } = await supabase.functions.invoke('manage-user-profiles', {
+          body: { action: 'list' }
+        });
 
-        if (profilesError) {
-          console.error('❌ Error fetching profiles:', profilesError);
-          throw profilesError;
+        if (error) {
+          console.error('❌ Error from edge function:', error);
+          throw new Error(`Edge function error: ${error.message}`);
         }
 
-        // Then get user roles separately
-        const { data: userRoles, error: rolesError } = await supabase
-          .from('user_roles')
-          .select(`
-            user_id,
-            roles (
-              name,
-              description
-            )
-          `);
-
-        if (rolesError) {
-          console.error('❌ Error fetching user roles:', rolesError);
-          throw rolesError;
+        if (!response?.success) {
+          console.error('❌ Function returned error:', response?.error);
+          throw new Error(response?.error || 'Failed to fetch users from edge function');
         }
 
-        console.log('✅ Profiles fetched:', profiles?.length || 0);
-        console.log('✅ User roles fetched:', userRoles?.length || 0);
-        
-        // Transform and combine the data
-        const transformedData: UserWithRoles[] = (profiles || []).map(profile => {
-          // Find all roles for this user
-          const userRoleRecords = userRoles?.filter(ur => ur.user_id === profile.id) || [];
-          
+        const users = response.data || [];
+        console.log('✅ Users fetched from auth.users via edge function:', users.length);
+        console.log('📊 User data sample:', users.slice(0, 2)); // Log first 2 users for debugging
+
+        // Transform the data to match UserWithRoles interface
+        const transformedData: UserWithRoles[] = users.map((user: any) => {
           return {
-            id: profile.id,
-            email: profile.email || '',
-            first_name: profile.first_name || '',
-            last_name: profile.last_name || '',
-            phone: profile.phone,
-            created_at: profile.created_at || new Date().toISOString(),
-            updated_at: profile.updated_at,
-            facility_id: profile.facility_id,
-            user_roles: userRoleRecords.map((ur: any) => ({
-              roles: {
-                name: ur.roles?.name || '',
-                description: ur.roles?.description || null
-              }
-            })),
-            facilities: profile.facilities ? {
-              id: profile.facilities.id,
-              name: profile.facilities.name,
-              facility_type: profile.facilities.facility_type
-            } : null
+            id: user.id,
+            email: user.email || '',
+            first_name: user.first_name || '',
+            last_name: user.last_name || '',
+            phone: user.phone || '',
+            created_at: user.created_at || new Date().toISOString(),
+            updated_at: user.updated_at,
+            facility_id: user.facility_id,
+            user_roles: user.user_roles || [],
+            facilities: user.facilities || null
           };
         });
 
         console.log('✅ Unified user data processed:', transformedData.length);
+        console.log('📈 Users by type:', {
+          total: transformedData.length,
+          withRoles: transformedData.filter(u => u.user_roles && u.user_roles.length > 0).length,
+          withFacilities: transformedData.filter(u => u.facilities).length
+        });
+        
         return transformedData;
       } catch (error) {
         console.error('❌ Error in unified user data fetch:', error);
@@ -86,8 +62,8 @@ export const useUnifiedUserData = () => {
     retry: 2,
     staleTime: 30000,
     meta: {
-      description: 'Fetches unified user data with roles and facilities',
-      dataSource: 'profiles table with separate role queries',
+      description: 'Fetches unified user data from auth.users via edge function',
+      dataSource: 'auth.users table via manage-user-profiles edge function',
       requiresAuth: true
     }
   });
@@ -102,7 +78,7 @@ export const useUnifiedUserData = () => {
       patientCount: getPatientUsers(users).length,
       staffCount: getHealthcareStaff(users).length,
       adminCount: getAdminUsers(users).length,
-      dataSource: 'profiles table with separate role queries',
+      dataSource: 'auth.users table via edge function',
       lastFetched: new Date().toISOString()
     }
   };
