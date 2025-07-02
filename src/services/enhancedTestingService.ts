@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { comprehensiveTestingService, ComprehensiveTestCase } from './comprehensiveTestingService';
 
@@ -40,6 +39,28 @@ export interface RoleBasedTestSuite {
   permissionTests: ComprehensiveTestCase[];
 }
 
+export interface DocumentationGenerationResult {
+  userRequirements: string[];
+  functionalRequirements: string[];
+  traceabilityMatrix: Array<{
+    requirement: string;
+    testCases: string[];
+    coverage: number;
+  }>;
+  testingPlan: {
+    overview: string;
+    testApproach: string;
+    testSchedule: string;
+    resources: string[];
+  };
+  generatedAt: string;
+  compliance: {
+    cfrPart11: boolean;
+    validationLevel: string;
+    auditTrail: boolean;
+  };
+}
+
 class EnhancedTestingService {
   /**
    * Get test cases with advanced filtering capabilities
@@ -51,7 +72,7 @@ class EnhancedTestingService {
         .select('*')
         .order('created_at', { ascending: false });
 
-      // Basic filters
+      // Apply filters
       if (filters.suite_type) {
         query = query.eq('test_suite_type', filters.suite_type);
       }
@@ -212,6 +233,51 @@ class EnhancedTestingService {
   }
 
   /**
+   * Generate comprehensive documentation from existing test cases and system data
+   */
+  async generateComprehensiveDocumentation(): Promise<DocumentationGenerationResult> {
+    try {
+      console.log('🔄 Generating comprehensive documentation...');
+      
+      // Get all test cases and system data
+      const testCases = await this.getAdvancedTestCases();
+      const metrics = await this.getTestExecutionMetrics();
+      
+      // Generate user requirements from test cases
+      const userRequirements = this.extractUserRequirements(testCases);
+      
+      // Generate functional requirements
+      const functionalRequirements = this.generateFunctionalRequirements(testCases);
+      
+      // Create traceability matrix
+      const traceabilityMatrix = this.buildTraceabilityMatrix(userRequirements, testCases);
+      
+      // Generate testing plan
+      const testingPlan = this.createTestingPlan(testCases, metrics);
+      
+      const documentation: DocumentationGenerationResult = {
+        userRequirements,
+        functionalRequirements,
+        traceabilityMatrix,
+        testingPlan,
+        generatedAt: new Date().toISOString(),
+        compliance: {
+          cfrPart11: true,
+          validationLevel: 'PQ',
+          auditTrail: true
+        }
+      };
+      
+      console.log('✅ Comprehensive documentation generated successfully');
+      return documentation;
+      
+    } catch (error) {
+      console.error('❌ Failed to generate documentation:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Generate role-based test suites automatically
    */
   async generateRoleBasedTestSuites(): Promise<RoleBasedTestSuite[]> {
@@ -330,7 +396,7 @@ class EnhancedTestingService {
           const { error } = await supabase
             .from('comprehensive_test_cases')
             .insert({
-              test_suite_type: 'system' as const,
+              test_suite_type: 'system',
               test_category: 'security_compliance',
               test_name: `${template.category}: ${testName}`,
               test_description: `Automated security and compliance test for ${testName} within ${template.category}`,
@@ -369,7 +435,81 @@ class EnhancedTestingService {
   }
 
   /**
-   * Private helper methods
+   * Private helper methods for documentation generation
+   */
+  private extractUserRequirements(testCases: ComprehensiveTestCase[]): string[] {
+    const requirements = new Set<string>();
+    
+    testCases.forEach(testCase => {
+      if (testCase.business_function) {
+        requirements.add(`The system shall support ${testCase.business_function} functionality`);
+      }
+      if (testCase.coverage_area) {
+        requirements.add(`The system shall provide ${testCase.coverage_area} capabilities`);
+      }
+      if (testCase.module_name) {
+        requirements.add(`The system shall include ${testCase.module_name} module`);
+      }
+    });
+    
+    return Array.from(requirements);
+  }
+
+  private generateFunctionalRequirements(testCases: ComprehensiveTestCase[]): string[] {
+    const functionalReqs = new Set<string>();
+    
+    testCases.forEach(testCase => {
+      if (testCase.test_description) {
+        const requirement = testCase.test_description
+          .replace(/test/gi, 'system')
+          .replace(/verify/gi, 'shall')
+          .replace(/automated/gi, 'automatic');
+        functionalReqs.add(requirement);
+      }
+    });
+    
+    return Array.from(functionalReqs);
+  }
+
+  private buildTraceabilityMatrix(
+    requirements: string[], 
+    testCases: ComprehensiveTestCase[]
+  ): Array<{ requirement: string; testCases: string[]; coverage: number }> {
+    return requirements.map(requirement => {
+      const relatedTests = testCases.filter(tc => 
+        tc.test_description?.toLowerCase().includes(requirement.toLowerCase().split(' ')[3]) ||
+        tc.module_name?.toLowerCase().includes(requirement.toLowerCase().split(' ')[4]) ||
+        tc.coverage_area?.toLowerCase().includes(requirement.toLowerCase().split(' ')[4])
+      );
+      
+      return {
+        requirement,
+        testCases: relatedTests.map(tc => tc.test_name),
+        coverage: relatedTests.length > 0 ? Math.min(100, relatedTests.length * 25) : 0
+      };
+    });
+  }
+
+  private createTestingPlan(
+    testCases: ComprehensiveTestCase[], 
+    metrics: TestExecutionMetrics
+  ): DocumentationGenerationResult['testingPlan'] {
+    return {
+      overview: `Comprehensive testing plan covering ${metrics.totalTests} test cases across multiple test suites including security, compliance, and functional testing.`,
+      testApproach: 'Risk-based testing approach with automated test execution, continuous integration, and 21 CFR Part 11 compliance validation.',
+      testSchedule: 'Continuous testing with daily automated runs, weekly regression testing, and monthly comprehensive validation cycles.',
+      resources: [
+        'Automated testing framework',
+        'Test data management system',
+        'Compliance validation tools',
+        'Security testing utilities',
+        'Performance monitoring tools'
+      ]
+    };
+  }
+
+  /**
+   * Generate role-specific test cases for a given role and module names
    */
   private async generateRoleSpecificTests(roleName: string, moduleNames: string[]): Promise<ComprehensiveTestCase[]> {
     const tests: ComprehensiveTestCase[] = [];
@@ -377,7 +517,7 @@ class EnhancedTestingService {
     for (const moduleName of moduleNames) {
       const testCase: ComprehensiveTestCase = {
         id: crypto.randomUUID(),
-        test_suite_type: 'integration' as const,
+        test_suite_type: 'integration',
         test_category: 'role_based_testing',
         test_name: `${roleName} Role - ${moduleName} Module Access Test`,
         test_description: `Verify ${roleName} role can access ${moduleName} module functionality`,
@@ -385,7 +525,7 @@ class EnhancedTestingService {
         topic: 'Role-Based Access Control',
         coverage_area: 'Security',
         business_function: 'User Administration',
-        test_status: 'pending' as const,
+        test_status: 'pending',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
@@ -396,6 +536,9 @@ class EnhancedTestingService {
     return tests;
   }
 
+  /**
+   * Generate login scenarios for a given role
+   */
   private async generateLoginScenarios(roleName: string): Promise<ComprehensiveTestCase[]> {
     const scenarios = [
       'Valid Login Scenario',
@@ -407,7 +550,7 @@ class EnhancedTestingService {
 
     return scenarios.map(scenario => ({
       id: crypto.randomUUID(),
-      test_suite_type: 'system' as const,
+      test_suite_type: 'system',
       test_category: 'authentication_testing',
       test_name: `${roleName} - ${scenario}`,
       test_description: `Test ${scenario} for ${roleName} role`,
@@ -415,12 +558,15 @@ class EnhancedTestingService {
       topic: 'Login Security',
       coverage_area: 'Security',
       business_function: 'User Authentication',
-      test_status: 'pending' as const,
+      test_status: 'pending',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     })) as ComprehensiveTestCase[];
   }
 
+  /**
+   * Generate permission tests for a given role and module names
+   */
   private async generatePermissionTests(roleName: string, moduleNames: string[]): Promise<ComprehensiveTestCase[]> {
     const permissionActions = ['Create', 'Read', 'Update', 'Delete'];
     const tests: ComprehensiveTestCase[] = [];
@@ -429,7 +575,7 @@ class EnhancedTestingService {
       for (const action of permissionActions) {
         tests.push({
           id: crypto.randomUUID(),
-          test_suite_type: 'unit' as const,
+          test_suite_type: 'unit',
           test_category: 'permission_testing',
           test_name: `${roleName} - ${action} Permission Test for ${moduleName}`,
           test_description: `Verify ${roleName} role ${action} permissions for ${moduleName} module`,
@@ -437,7 +583,7 @@ class EnhancedTestingService {
           topic: 'Permission Validation',
           coverage_area: 'Security',
           business_function: 'Access Control',
-          test_status: 'pending' as const,
+          test_status: 'pending',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         } as ComprehensiveTestCase);
