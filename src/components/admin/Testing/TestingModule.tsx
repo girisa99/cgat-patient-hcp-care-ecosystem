@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { UnifiedTestingOverview } from './UnifiedTestingOverview';
 import { IntegrationTestingTab } from './tabs/IntegrationTestingTab';
@@ -12,6 +12,7 @@ import { useUnifiedTestingData } from '@/hooks/useUnifiedTestingData';
 import { useComprehensiveTesting } from '@/hooks/useComprehensiveTesting';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle, TestTube, Database, Wrench } from 'lucide-react';
+import { TestResult } from '@/services/testingService';
 
 export const TestingModule: React.FC = () => {
   const { 
@@ -29,6 +30,29 @@ export const TestingModule: React.FC = () => {
     isInitializing,
     error: comprehensiveError
   } = useComprehensiveTesting();
+
+  const [allTestResults, setAllTestResults] = useState<TestResult[]>([]);
+  const [isLoadingResults, setIsLoadingResults] = useState(false);
+
+  // Load all test results when component mounts or when getAllTestResults changes
+  useEffect(() => {
+    const loadAllTestResults = async () => {
+      if (!getAllTestResults) return;
+      
+      setIsLoadingResults(true);
+      try {
+        const results = await getAllTestResults();
+        setAllTestResults(Array.isArray(results) ? results : []);
+      } catch (error) {
+        console.error('Failed to load test results:', error);
+        setAllTestResults([]);
+      } finally {
+        setIsLoadingResults(false);
+      }
+    };
+
+    loadAllTestResults();
+  }, [getAllTestResults]);
   
   console.log('🧪 Testing Module - Unified Testing Suite (API + Comprehensive)');
 
@@ -147,8 +171,8 @@ export const TestingModule: React.FC = () => {
 
         <TabsContent value="results">
           <UnifiedTestResultsDisplay 
-            testResults={getAllTestResults ? getAllTestResults() : []} 
-            isLoading={apiTestingLoading || isInitializing}
+            testResults={allTestResults} 
+            isLoading={apiTestingLoading || isInitializing || isLoadingResults}
             title="All Test Results"
             showTrends={true}
           />
