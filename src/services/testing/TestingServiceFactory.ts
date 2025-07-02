@@ -154,6 +154,7 @@ class TestingServiceFactory {
       needBusinessLogic: testType.includes('comprehensive') || testType.includes('advanced')
     });
 
+    // Use the correct method based on the service type
     if (service === this.serviceRegistry.businessLayer) {
       return service.executeComprehensiveTestSuite({
         suiteType: testType,
@@ -168,9 +169,11 @@ class TestingServiceFactory {
     }
 
     if (service === this.serviceRegistry.enhanced) {
-      return service.executeTestSuite(testType);
+      // Enhanced service doesn't have executeTestSuite, use comprehensive service instead
+      return this.serviceRegistry.comprehensive.executeTestSuite(testType, this.configuration.batchSize);
     }
 
+    // Core service
     return service.executeTestSuite(testType);
   }
 
