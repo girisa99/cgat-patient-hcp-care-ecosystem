@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { comprehensiveTestingService, ComprehensiveTestCase } from './comprehensiveTestingService';
 
@@ -396,7 +397,7 @@ class EnhancedTestingService {
           const { error } = await supabase
             .from('comprehensive_test_cases')
             .insert({
-              test_suite_type: 'system',
+              test_suite_type: 'system' as const,
               test_category: 'security_compliance',
               test_name: `${template.category}: ${testName}`,
               test_description: `Automated security and compliance test for ${testName} within ${template.category}`,
@@ -517,7 +518,7 @@ class EnhancedTestingService {
     for (const moduleName of moduleNames) {
       const testCase: ComprehensiveTestCase = {
         id: crypto.randomUUID(),
-        test_suite_type: 'integration',
+        test_suite_type: 'integration' as const,
         test_category: 'role_based_testing',
         test_name: `${roleName} Role - ${moduleName} Module Access Test`,
         test_description: `Verify ${roleName} role can access ${moduleName} module functionality`,
@@ -550,7 +551,7 @@ class EnhancedTestingService {
 
     return scenarios.map(scenario => ({
       id: crypto.randomUUID(),
-      test_suite_type: 'system',
+      test_suite_type: 'system' as const,
       test_category: 'authentication_testing',
       test_name: `${roleName} - ${scenario}`,
       test_description: `Test ${scenario} for ${roleName} role`,
@@ -575,7 +576,7 @@ class EnhancedTestingService {
       for (const action of permissionActions) {
         tests.push({
           id: crypto.randomUUID(),
-          test_suite_type: 'unit',
+          test_suite_type: 'unit' as const,
           test_category: 'permission_testing',
           test_name: `${roleName} - ${action} Permission Test for ${moduleName}`,
           test_description: `Verify ${roleName} role ${action} permissions for ${moduleName} module`,
