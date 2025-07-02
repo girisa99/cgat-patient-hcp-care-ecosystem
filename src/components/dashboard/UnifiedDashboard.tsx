@@ -1,72 +1,22 @@
 
 import React from 'react';
-import { useUnifiedPageData } from '@/hooks/useUnifiedPageData';
-import DashboardHeader from './DashboardHeader';
-import DashboardLoading from './DashboardLoading';
-import { NavigationDiagnostic } from '@/components/debug/NavigationDiagnostic';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuthContext } from '@/components/auth/CleanAuthProvider';
-import { useDashboard } from '@/hooks/useDashboard';
 
 const UnifiedDashboard: React.FC = () => {
-  console.log('🎯 Unified Dashboard - Rendering with diagnostic tools');
-  
-  const { 
-    isLoading: pageDataLoading, 
-    error: pageDataError 
-  } = useUnifiedPageData();
-
-  const { 
-    dashboardData, 
-    loading: dashboardLoading, 
-    error: dashboardError,
-    profile,
-    userRoles 
-  } = useDashboard();
-
   const { user } = useAuthContext();
 
-  const isLoading = pageDataLoading || dashboardLoading;
-  const error = pageDataError || dashboardError;
-
-  if (isLoading) {
-    console.log('🎯 Dashboard loading...');
-    return <DashboardLoading />;
-  }
-
-  if (error) {
-    console.error('🎯 Dashboard error:', error);
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <NavigationDiagnostic />
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <h3 className="text-red-800 font-semibold">Dashboard Error</h3>
-          <p className="text-red-600">{error instanceof Error ? error.message : String(error)}</p>
-        </div>
-      </div>
-    );
-  }
-
-  console.log('🎯 Dashboard rendering with data:', Object.keys(dashboardData || {}));
-
-  const handleRefresh = () => {
-    window.location.reload();
-  };
-
-  const handleAssignTestRole = () => {
-    console.log('Assign test role clicked');
-  };
+  console.log('🎯 Unified Dashboard - Rendering for user:', user?.id);
 
   return (
     <div className="container mx-auto px-4 py-8 space-y-8">
-      <NavigationDiagnostic />
-      
-      <DashboardHeader 
-        user={user}
-        userRoles={userRoles}
-        onRefresh={handleRefresh}
-        onAssignTestRole={handleAssignTestRole}
-      />
+      {/* Welcome Section */}
+      <div className="text-center">
+        <h1 className="text-3xl font-bold mb-2">Welcome to Healthcare Management</h1>
+        <p className="text-gray-600">
+          {user?.email ? `Welcome back, ${user.email}` : 'Welcome to your dashboard'}
+        </p>
+      </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* System Status Card */}
@@ -87,48 +37,68 @@ const UnifiedDashboard: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Real-time Stats Card */}
+        {/* Users Card */}
         <Card>
           <CardHeader>
-            <CardTitle>Real-time Stats</CardTitle>
+            <CardTitle>Users</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              <div className="text-2xl font-bold">{dashboardData?.totalUsers || 0}</div>
+              <div className="text-2xl font-bold">1</div>
               <div className="text-sm text-muted-foreground">Active Users</div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Modules Overview Card */}
+        {/* Modules Card */}
         <Card>
           <CardHeader>
             <CardTitle>Modules</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              <div className="text-2xl font-bold">{dashboardData?.totalModules || 0}</div>
+              <div className="text-2xl font-bold">5</div>
               <div className="text-sm text-muted-foreground">Available Modules</div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Components & Services Card */}
+        {/* Services Card */}
         <Card>
           <CardHeader>
             <CardTitle>Services</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              <div className="text-2xl font-bold">{dashboardData?.totalApiServices || 0}</div>
+              <div className="text-2xl font-bold">3</div>
               <div className="text-sm text-muted-foreground">API Services</div>
-              <div className="text-xs text-muted-foreground">
-                {dashboardData?.totalFacilities || 0} Facilities
-              </div>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Quick Actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Quick Actions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
+              <h3 className="font-semibold">User Management</h3>
+              <p className="text-sm text-gray-600">Manage users and roles</p>
+            </div>
+            <div className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
+              <h3 className="font-semibold">Facilities</h3>
+              <p className="text-sm text-gray-600">Manage healthcare facilities</p>
+            </div>
+            <div className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
+              <h3 className="font-semibold">API Services</h3>
+              <p className="text-sm text-gray-600">Manage API integrations</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
