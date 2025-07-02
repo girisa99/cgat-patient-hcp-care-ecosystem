@@ -53,6 +53,14 @@ export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = ({
     console.log('👁️ View details:', id);
   };
 
+  const handleCreateClick = () => {
+    setCreateDialogOpen(true);
+  };
+
+  const handlePublishClick = () => {
+    console.log('🌍 Publish API clicked');
+  };
+
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
       <TabsList className="grid w-full grid-cols-3">
@@ -88,10 +96,11 @@ export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = ({
           internalApis={internalApis || []}
           searchTerm={searchTerm}
           createDialogOpen={createDialogOpen}
-          setCreateDialogOpen={setCreateDialogOpen}
+          onSearchChange={setSearchTerm}
+          onCreateClick={handleCreateClick}
           onEditApi={handleEditApi}
-          onDeleteApi={handleDeleteApi}
-          onTestEndpoint={handleTestEndpoint}
+          onViewDetails={handleViewDetails}
+          onDownloadCollection={handleDownloadCollection}
         />
       </TabsContent>
 
@@ -99,10 +108,10 @@ export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = ({
         <ExternalApisTabContent
           externalApis={externalApis || []}
           searchTerm={searchTerm}
-          createDialogOpen={createDialogOpen}
-          setCreateDialogOpen={setCreateDialogOpen}
-          onDownloadCollection={handleDownloadCollection}
+          onSearchChange={setSearchTerm}
+          onPublishClick={handlePublishClick}
           onViewDetails={handleViewDetails}
+          onTestEndpoint={handleTestEndpoint}
         />
       </TabsContent>
     </Tabs>

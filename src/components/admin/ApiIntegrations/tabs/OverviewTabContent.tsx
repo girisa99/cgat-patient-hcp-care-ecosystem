@@ -1,70 +1,55 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Activity, Database, Globe, Shield } from 'lucide-react';
+import { Activity, Globe, Server, Users } from 'lucide-react';
 
 interface OverviewTabContentProps {
   totalIntegrations: number;
-  consolidatedData?: any[];
+  consolidatedData: any[];
 }
 
 export const OverviewTabContent: React.FC<OverviewTabContentProps> = ({
   totalIntegrations,
-  consolidatedData = []
+  consolidatedData
 }) => {
-  console.log('📊 OverviewTabContent - Rendering with data:', {
-    totalIntegrations,
-    consolidatedData: consolidatedData.length
-  });
-
-  // Calculate statistics from real data
   const stats = {
-    total: consolidatedData.length,
-    internal: consolidatedData.filter(api => api.type === 'internal').length,
-    external: consolidatedData.filter(api => api.type === 'external').length,
     active: consolidatedData.filter(api => api.status === 'active').length,
-    published: consolidatedData.filter(api => api.status === 'published').length
+    published: consolidatedData.filter(api => api.status === 'published').length,
+    development: consolidatedData.filter(api => api.lifecycle_stage === 'development').length,
+    production: consolidatedData.filter(api => api.lifecycle_stage === 'production').length
   };
+
+  const recentActivities = consolidatedData
+    .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+    .slice(0, 5);
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Statistics Cards */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total APIs</CardTitle>
+            <Server className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalIntegrations}</div>
+            <p className="text-xs text-muted-foreground">
+              Across all integrations
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active APIs</CardTitle>
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.total}</div>
+            <div className="text-2xl font-bold">{stats.active}</div>
             <p className="text-xs text-muted-foreground">
-              All API integrations
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Internal APIs</CardTitle>
-            <Database className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.internal}</div>
-            <p className="text-xs text-muted-foreground">
-              Internal services
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">External APIs</CardTitle>
-            <Globe className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.external}</div>
-            <p className="text-xs text-muted-foreground">
-              External services
+              Currently operational
             </p>
           </CardContent>
         </Card>
@@ -72,53 +57,60 @@ export const OverviewTabContent: React.FC<OverviewTabContentProps> = ({
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Published</CardTitle>
-            <Shield className="h-4 w-4 text-muted-foreground" />
+            <Globe className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.published}</div>
             <p className="text-xs text-muted-foreground">
-              Live integrations
+              External marketplace
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Production</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.production}</div>
+            <p className="text-xs text-muted-foreground">
+              Production ready
             </p>
           </CardContent>
         </Card>
       </div>
 
+      {/* Recent Activity */}
       <Card>
         <CardHeader>
-          <CardTitle>API Integration Overview</CardTitle>
+          <CardTitle>Recent Activity</CardTitle>
+          <CardDescription>
+            Latest updates to your API integrations
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {consolidatedData.length > 0 ? (
-              consolidatedData.map((api, index) => (
-                <div key={api.id || index} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center gap-3">
-                    {api.type === 'internal' ? (
-                      <Database className="h-5 w-5 text-blue-500" />
-                    ) : (
-                      <Globe className="h-5 w-5 text-green-500" />
-                    )}
-                    <div>
-                      <h4 className="font-medium">{api.name || 'Unnamed API'}</h4>
-                      <p className="text-sm text-gray-600">{api.description || 'No description'}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant={api.status === 'active' ? 'default' : 'secondary'}>
-                      {api.status || 'inactive'}
-                    </Badge>
-                    <Badge variant="outline">
-                      {api.type || 'unknown'}
-                    </Badge>
-                  </div>
+            {recentActivities.map((api) => (
+              <div key={api.id} className="flex items-center justify-between border-b pb-2">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">{api.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Updated {new Date(api.updated_at).toLocaleDateString()}
+                  </p>
                 </div>
-              ))
-            ) : (
-              <div className="text-center py-8 text-gray-500">
-                <Activity className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                <p>No API integrations found</p>
-                <p className="text-sm">Create your first API integration to get started</p>
+                <div className="flex items-center gap-2">
+                  <Badge variant={api.status === 'active' ? 'default' : 'secondary'}>
+                    {api.status}
+                  </Badge>
+                  <Badge variant="outline">{api.lifecycle_stage}</Badge>
+                </div>
               </div>
+            ))}
+            {recentActivities.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No recent activity found
+              </p>
             )}
           </div>
         </CardContent>

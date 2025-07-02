@@ -10,7 +10,7 @@ export const LOCKED_COMPONENTS = {
     component: 'ApiIntegrationsManager',
     hook: 'useApiServicesPage',
     version: 'locked-v1.0.0',
-    lockDate: '2025-01-01',
+    lockDate: '2025-01-02',
     reason: 'Stable implementation needed for production use',
     dataSource: 'api_integration_registry',
     dependencies: [
@@ -25,7 +25,7 @@ export const LOCKED_COMPONENTS = {
     component: 'UnifiedDashboard',
     hook: 'useDashboardPage',
     version: 'locked-v1.0.0',
-    lockDate: '2025-01-01',
+    lockDate: '2025-01-02',
     reason: 'Critical dashboard functionality must remain stable',
     dataSource: 'consolidated_dashboard_data',
     dependencies: [
@@ -40,7 +40,7 @@ export const LOCKED_COMPONENTS = {
     component: 'ConsolidatedUserManagement',
     hook: 'useUserManagementPage',
     version: 'locked-v1.0.0',
-    lockDate: '2025-01-01',
+    lockDate: '2025-01-02',
     reason: 'User management system must be stable for security',
     dataSource: 'auth.users via edge function',
     dependencies: [
@@ -55,7 +55,7 @@ export const LOCKED_COMPONENTS = {
     component: 'PatientsManagement',
     hook: 'usePatientsPage',
     version: 'locked-v1.0.0',
-    lockDate: '2025-01-01',
+    lockDate: '2025-01-02',
     reason: 'Patient data handling requires stable implementation',
     dataSource: 'profiles table via unified system',
     dependencies: [
@@ -71,7 +71,7 @@ export const LOCKED_COMPONENTS = {
     component: 'FacilitiesManagement',
     hook: 'useFacilitiesPage',
     version: 'locked-v1.0.0',
-    lockDate: '2025-01-01',
+    lockDate: '2025-01-02',
     reason: 'Healthcare facilities data must remain consistent',
     dataSource: 'facilities table',
     dependencies: [
@@ -86,7 +86,7 @@ export const LOCKED_COMPONENTS = {
     component: 'ModulesManagement',
     hook: 'useModulesPage',
     version: 'locked-v1.0.0',
-    lockDate: '2025-01-01',
+    lockDate: '2025-01-02',
     reason: 'System modules configuration must be stable',
     dataSource: 'modules table',
     dependencies: [
@@ -101,7 +101,7 @@ export const LOCKED_COMPONENTS = {
     component: 'DataImportSystem',
     hook: 'useDataImportPage',
     version: 'locked-v1.0.0',
-    lockDate: '2025-01-01',
+    lockDate: '2025-01-02',
     reason: 'Data import functionality critical for system integrity',
     dataSource: 'consolidated_data_import',
     dependencies: [

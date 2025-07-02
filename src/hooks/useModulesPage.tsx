@@ -1,5 +1,6 @@
 
 import { useModules } from './useModules';
+import { useModuleData } from './modules/useModuleData';
 
 /**
  * Dedicated hook for Modules page - LOCKED IMPLEMENTATION
@@ -9,37 +10,37 @@ import { useModules } from './useModules';
 export const useModulesPage = () => {
   console.log('🔒 Modules Page Hook - Locked implementation active');
   
-  // Use consolidated modules hook as single source of truth
+  // Use consolidated modules management as single source of truth
   const modulesData = useModules();
+  const moduleDetailsData = useModuleData();
 
   // Return consolidated data with clear naming to prevent confusion
   return {
     // Primary data sources - LOCKED
     modules: modulesData.modules || [],
-    userModules: modulesData.userModules || [],
     isLoading: modulesData.isLoading,
     error: modulesData.error,
     
     // Actions - LOCKED
-    refetch: modulesData.refetch,
-    assignModuleToRole: modulesData.assignModuleToRole,
+    createModule: modulesData.createModule,
+    updateModule: modulesData.updateModule,
+    deleteModule: modulesData.deleteModule,
     
     // Utilities - LOCKED
-    getModuleStats: modulesData.getModuleStats,
     searchModules: modulesData.searchModules,
-    hasModuleAccess: modulesData.hasModuleAccess,
+    getModuleStats: modulesData.getModuleStats,
+    getActiveModules: modulesData.getActiveModules,
     
     // Status flags - LOCKED
-    isLoadingModules: modulesData.isLoadingModules,
-    isLoadingUserModules: modulesData.isLoadingUserModules,
-    isAssigningToRole: modulesData.isAssigningToRole,
+    isCreating: modulesData.isCreating,
+    isUpdating: modulesData.isUpdating,
+    isDeleting: modulesData.isDeleting,
     
     // Meta information - LOCKED
     meta: {
-      totalModules: modulesData.meta.totalModules,
-      dataSource: modulesData.meta.dataSource,
-      lastFetch: modulesData.meta.lastFetch,
-      version: modulesData.meta.version,
+      totalModules: modulesData.modules?.length || 0,
+      activeModules: modulesData.getActiveModules?.().length || 0,
+      dataSource: 'modules table',
       hookVersion: 'locked-v1.0.0',
       singleSourceValidated: true,
       implementationLocked: true

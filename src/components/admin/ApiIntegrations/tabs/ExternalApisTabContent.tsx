@@ -1,140 +1,138 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Globe, Download, Eye, Copy, ExternalLink } from 'lucide-react';
-import CreateIntegrationDialog from '../CreateIntegrationDialog';
+import { Input } from '@/components/ui/input';
+import { Search, Plus, Globe, Eye, TestTube } from 'lucide-react';
 
 interface ExternalApisTabContentProps {
-  externalApis?: any[];
-  searchTerm?: string;
-  createDialogOpen: boolean;
-  setCreateDialogOpen: (open: boolean) => void;
-  onDownloadCollection: (id: string) => void;
+  externalApis: any[];
+  searchTerm: string;
+  onSearchChange: (value: string) => void;
+  onPublishClick: () => void;
   onViewDetails: (id: string) => void;
-  selectedApiId?: string | null;
-  onApiSelect?: (id: string | null) => void;
+  onTestEndpoint: (endpoint: any) => void;
 }
 
 export const ExternalApisTabContent: React.FC<ExternalApisTabContentProps> = ({
-  externalApis = [],
-  searchTerm = '',
-  createDialogOpen,
-  setCreateDialogOpen,
-  onDownloadCollection,
+  externalApis,
+  searchTerm,
+  onSearchChange,
+  onPublishClick,
   onViewDetails,
-  selectedApiId,
-  onApiSelect
+  onTestEndpoint
 }) => {
   const filteredApis = externalApis.filter(api => 
-    !searchTerm || 
-    (api.external_name || api.name)?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (api.external_description || api.description)?.toLowerCase().includes(searchTerm.toLowerCase())
+    api.external_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    api.external_description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  const onCopyUrl = (url: string) => {
-    navigator.clipboard.writeText(url);
-  };
-
-  const onViewDocumentation = (id: string) => {
-    console.log('View documentation for API:', id);
-  };
-
-  if (filteredApis.length === 0) {
-    return (
-      <Card>
-        <CardContent className="flex flex-col items-center justify-center py-12">
-          <Globe className="h-12 w-12 text-muted-foreground mb-4" />
-          <h3 className="text-lg font-semibold mb-2">No External APIs</h3>
-          <p className="text-muted-foreground text-center mb-4">
-            {searchTerm 
-              ? `No external APIs match "${searchTerm}"`
-              : "You haven't integrated any external APIs yet. External APIs will appear here."
-            }
-          </p>
-          <CreateIntegrationDialog 
-            open={createDialogOpen}
-            onOpenChange={setCreateDialogOpen}
-          />
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium">External APIs ({filteredApis.length})</h3>
-        <CreateIntegrationDialog 
-          open={createDialogOpen}
-          onOpenChange={setCreateDialogOpen}
-        />
+      {/* Search and Publish */}
+      <div className="flex items-center gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+          <Input
+            placeholder="Search external APIs..."
+            value={searchTerm}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <Button onClick={onPublishClick}>
+          <Globe className="h-4 w-4 mr-2" />
+          Publish API
+        </Button>
       </div>
 
-      <div className="grid gap-4">
-        {filteredApis.map((api, index) => (
-          <Card 
-            key={api.id || index}
-            className={selectedApiId === api.id ? 'ring-2 ring-primary' : ''}
-          >
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <Globe className="h-5 w-5" />
-                  {api.external_name || api.name || `External API ${index + 1}`}
-                </CardTitle>
-                <Badge variant={api.status === 'published' ? 'default' : 'secondary'}>
-                  {api.status || 'active'}
-                </Badge>
+      {/* APIs Grid */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {filteredApis.map((api) => (
+          <Card key={api.id} className="hover:shadow-md transition-shadow">
+            <CardHeader className="pb-3">
+              <div className="flex items-start justify-between">
+                <div className="space-y-1">
+                  <CardTitle className="text-lg">{api.external_name}</CardTitle>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={api.status === 'published' ? 'default' : 'secondary'}>
+                      {api.status}
+                    </Badge>
+                    <Badge variant="outline">{api.version}</Badge>
+                    <Badge variant={api.visibility === 'public' ? 'default' : 'secondary'}>
+                      {api.visibility}
+                    </Badge>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onViewDetails(api.id)}
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onTestEndpoint(api)}
+                  >
+                    <TestTube className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground mb-4">
-                {api.external_description || api.description || 'External API integration'}
-              </p>
+            <CardContent className="pt-0">
+              <CardDescription className="text-sm mb-4">
+                {api.external_description || 'No description available'}
+              </CardDescription>
               
-              <div className="flex items-center gap-2 mb-4">
-                <Badge variant="outline">{api.version || '1.0.0'}</Badge>
-                <Badge variant="outline">{api.category || 'API'}</Badge>
-                {api.external_api_endpoints && (
-                  <Badge variant="outline">{api.external_api_endpoints.length} endpoints</Badge>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Category:</span>
+                  <span className="font-medium">{api.category || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Pricing:</span>
+                  <span className="font-medium">{api.pricing_model}</span>
+                </div>
+                {api.published_at && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Published:</span>
+                    <span className="font-medium">
+                      {new Date(api.published_at).toLocaleDateString()}
+                    </span>
+                  </div>
                 )}
               </div>
 
-              <div className="flex items-center gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => {
-                    onViewDetails(api.id);
-                    onApiSelect?.(api.id);
-                  }}
-                >
-                  <Eye className="h-4 w-4 mr-2" />
-                  View Details
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => onDownloadCollection(api.id)}>
-                  <Download className="h-4 w-4 mr-2" />
-                  Download
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => onCopyUrl(api.base_url || api.documentation_url || '#')}
-                >
-                  <Copy className="h-4 w-4 mr-2" />
-                  Copy URL
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => onViewDocumentation(api.id)}>
-                  <ExternalLink className="h-4 w-4 mr-2" />
-                  Documentation
-                </Button>
-              </div>
+              {api.base_url && (
+                <div className="mt-4 pt-4 border-t">
+                  <p className="text-xs text-muted-foreground mb-2">Base URL:</p>
+                  <code className="text-xs bg-muted p-1 rounded block break-all">
+                    {api.base_url}
+                  </code>
+                </div>
+              )}
             </CardContent>
           </Card>
         ))}
       </div>
+
+      {filteredApis.length === 0 && (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <p className="text-muted-foreground mb-4">
+              {searchTerm ? 'No external APIs match your search criteria' : 'No external APIs found'}
+            </p>
+            <Button onClick={onPublishClick}>
+              <Globe className="h-4 w-4 mr-2" />
+              Publish Your First API
+            </Button>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
