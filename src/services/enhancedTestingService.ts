@@ -62,6 +62,39 @@ export interface DocumentationGenerationResult {
   };
 }
 
+// Helper function to safely convert database records to ComprehensiveTestCase
+function convertToComprehensiveTestCase(dbRecord: any): ComprehensiveTestCase {
+  return {
+    id: dbRecord.id,
+    test_suite_type: dbRecord.test_suite_type as ComprehensiveTestCase['test_suite_type'],
+    test_category: dbRecord.test_category,
+    test_name: dbRecord.test_name,
+    test_description: dbRecord.test_description,
+    expected_results: dbRecord.expected_results,
+    actual_results: dbRecord.actual_results,
+    test_status: dbRecord.test_status,
+    related_functionality: dbRecord.related_functionality,
+    database_source: dbRecord.database_source,
+    validation_level: dbRecord.validation_level,
+    module_name: dbRecord.module_name,
+    topic: dbRecord.topic,
+    coverage_area: dbRecord.coverage_area,
+    business_function: dbRecord.business_function,
+    execution_duration_ms: dbRecord.execution_duration_ms,
+    test_steps: dbRecord.test_steps,
+    cfr_part11_metadata: dbRecord.cfr_part11_metadata,
+    compliance_requirements: dbRecord.compliance_requirements,
+    execution_data: dbRecord.execution_data,
+    api_integration_id: dbRecord.api_integration_id,
+    auto_generated: dbRecord.auto_generated,
+    created_at: dbRecord.created_at,
+    updated_at: dbRecord.updated_at,
+    created_by: dbRecord.created_by,
+    updated_by: dbRecord.updated_by,
+    last_executed_at: dbRecord.last_executed_at
+  };
+}
+
 class EnhancedTestingService {
   /**
    * Get test cases with advanced filtering capabilities
@@ -186,7 +219,8 @@ class EnhancedTestingService {
         throw error;
       }
       
-      return data || [];
+      // Convert database records to ComprehensiveTestCase objects
+      return (data || []).map(convertToComprehensiveTestCase);
     } catch (error) {
       console.error('Error fetching advanced test cases:', error);
       throw error;
