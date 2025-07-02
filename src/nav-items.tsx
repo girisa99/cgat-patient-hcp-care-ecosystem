@@ -15,7 +15,8 @@ import {
   Database,
   CheckCircle2,
   Import,
-  Cloud
+  Cloud,
+  TestTube
 } from 'lucide-react';
 
 export interface NavItem {
@@ -80,6 +81,14 @@ export const navItems: NavItem[] = [
     url: "/api-services",
     to: "/api-services",
     icon: Globe,
+    isActive: false,
+    items: []
+  },
+  {
+    title: "Testing Services Suite",
+    url: "/testing",
+    to: "/testing",
+    icon: TestTube,
     isActive: false,
     items: []
   },
