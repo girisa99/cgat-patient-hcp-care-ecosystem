@@ -1,6 +1,5 @@
 
 import React from 'react';
-import MainLayout from './MainLayout';
 import { PageContainer } from './PageContainer';
 import { useUnifiedPageData } from '@/hooks/useUnifiedPageData';
 import { Card, CardContent } from '@/components/ui/card';
@@ -16,7 +15,7 @@ interface UnifiedPageWrapperProps {
 
 /**
  * SINGLE WRAPPER COMPONENT - All pages must use this
- * Ensures consistent layout and single source of truth
+ * Direct layout implementation without MainLayout to prevent double sidebars
  */
 export const UnifiedPageWrapper: React.FC<UnifiedPageWrapperProps> = ({
   children,
@@ -28,11 +27,11 @@ export const UnifiedPageWrapper: React.FC<UnifiedPageWrapperProps> = ({
 }) => {
   const { meta, isLoading, hasError } = useUnifiedPageData();
 
-  console.log('🎯 Unified Page Wrapper - Single Layout Active for:', title);
+  console.log('🎯 Unified Page Wrapper - Direct Layout (No MainLayout) for:', title);
 
   if (isLoading) {
     return (
-      <MainLayout>
+      <div className="p-6">
         <PageContainer title={title} subtitle="Loading..." fluid={fluid}>
           <Card>
             <CardContent className="p-8 text-center">
@@ -41,13 +40,13 @@ export const UnifiedPageWrapper: React.FC<UnifiedPageWrapperProps> = ({
             </CardContent>
           </Card>
         </PageContainer>
-      </MainLayout>
+      </div>
     );
   }
 
   if (hasError) {
     return (
-      <MainLayout>
+      <div className="p-6">
         <PageContainer title={title} subtitle="Error loading data" fluid={fluid}>
           <Card>
             <CardContent className="p-8 text-center text-red-600">
@@ -55,12 +54,12 @@ export const UnifiedPageWrapper: React.FC<UnifiedPageWrapperProps> = ({
             </CardContent>
           </Card>
         </PageContainer>
-      </MainLayout>
+      </div>
     );
   }
 
   return (
-    <MainLayout>
+    <div className="p-6 w-full">
       <PageContainer
         title={title}
         subtitle={subtitle}
@@ -84,7 +83,7 @@ export const UnifiedPageWrapper: React.FC<UnifiedPageWrapperProps> = ({
                 <p><strong>Validated:</strong> {meta.singleSourceValidated ? '✅' : '❌'}</p>
               </div>
               <div>
-                <p><strong>Layout:</strong> Unified Wrapper</p>
+                <p><strong>Layout:</strong> Direct Unified Layout</p>
                 <p><strong>Last Updated:</strong> {new Date(meta.lastUpdated).toLocaleTimeString()}</p>
               </div>
             </div>
@@ -93,6 +92,6 @@ export const UnifiedPageWrapper: React.FC<UnifiedPageWrapperProps> = ({
 
         {children}
       </PageContainer>
-    </MainLayout>
+    </div>
   );
 };
