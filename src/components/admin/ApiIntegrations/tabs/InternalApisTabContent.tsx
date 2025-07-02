@@ -9,10 +9,9 @@ interface InternalApisTabContentProps {
   searchTerm: string;
   createDialogOpen: boolean;
   setCreateDialogOpen: (open: boolean) => void;
-  onDownloadCollection: (id: string) => void;
-  onViewDetails: (id: string) => void;
-  onViewDocumentation: (id: string) => void;
-  onCopyUrl: (url: string) => void;
+  onEditApi: (api: any) => void;
+  onDeleteApi: (id: string) => Promise<void>;
+  onTestEndpoint: (endpoint: any) => Promise<void>;
 }
 
 export const InternalApisTabContent: React.FC<InternalApisTabContentProps> = ({
@@ -20,10 +19,9 @@ export const InternalApisTabContent: React.FC<InternalApisTabContentProps> = ({
   searchTerm,
   createDialogOpen,
   setCreateDialogOpen,
-  onDownloadCollection,
-  onViewDetails,
-  onViewDocumentation,
-  onCopyUrl
+  onEditApi,
+  onDeleteApi,
+  onTestEndpoint
 }) => {
   return (
     <Section 
@@ -40,10 +38,10 @@ export const InternalApisTabContent: React.FC<InternalApisTabContentProps> = ({
       <InternalApiEndpointsList 
         apis={internalApis || []} 
         searchTerm={searchTerm}
-        onDownloadCollection={onDownloadCollection}
-        onViewDetails={onViewDetails}
-        onViewDocumentation={onViewDocumentation}
-        onCopyUrl={onCopyUrl}
+        onDownloadCollection={() => {}}
+        onViewDetails={() => {}}
+        onViewDocumentation={() => {}}
+        onCopyUrl={() => {}}
       />
     </Section>
   );

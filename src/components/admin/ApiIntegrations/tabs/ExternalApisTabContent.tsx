@@ -13,8 +13,8 @@ interface ExternalApisTabContentProps {
   setCreateDialogOpen: (open: boolean) => void;
   onDownloadCollection: (id: string) => void;
   onViewDetails: (id: string) => void;
-  onViewDocumentation: (id: string) => void;
-  onCopyUrl: (url: string) => void;
+  selectedApiId?: string | null;
+  onApiSelect?: (id: string | null) => void;
 }
 
 export const ExternalApisTabContent: React.FC<ExternalApisTabContentProps> = ({
@@ -24,14 +24,22 @@ export const ExternalApisTabContent: React.FC<ExternalApisTabContentProps> = ({
   setCreateDialogOpen,
   onDownloadCollection,
   onViewDetails,
-  onViewDocumentation,
-  onCopyUrl
+  selectedApiId,
+  onApiSelect
 }) => {
   const filteredApis = externalApis.filter(api => 
     !searchTerm || 
     (api.external_name || api.name)?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (api.external_description || api.description)?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const onCopyUrl = (url: string) => {
+    navigator.clipboard.writeText(url);
+  };
+
+  const onViewDocumentation = (id: string) => {
+    console.log('View documentation for API:', id);
+  };
 
   if (filteredApis.length === 0) {
     return (
@@ -66,7 +74,10 @@ export const ExternalApisTabContent: React.FC<ExternalApisTabContentProps> = ({
 
       <div className="grid gap-4">
         {filteredApis.map((api, index) => (
-          <Card key={api.id || index}>
+          <Card 
+            key={api.id || index}
+            className={selectedApiId === api.id ? 'ring-2 ring-primary' : ''}
+          >
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
@@ -92,7 +103,14 @@ export const ExternalApisTabContent: React.FC<ExternalApisTabContentProps> = ({
               </div>
 
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={() => onViewDetails(api.id)}>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => {
+                    onViewDetails(api.id);
+                    onApiSelect?.(api.id);
+                  }}
+                >
                   <Eye className="h-4 w-4 mr-2" />
                   View Details
                 </Button>
