@@ -602,6 +602,92 @@ export type Database = {
           },
         ]
       }
+      comprehensive_test_cases: {
+        Row: {
+          actual_results: string | null
+          api_integration_id: string | null
+          auto_generated: boolean | null
+          cfr_part11_metadata: Json | null
+          compliance_requirements: Json | null
+          created_at: string
+          created_by: string | null
+          database_source: string | null
+          execution_data: Json | null
+          execution_duration_ms: number | null
+          expected_results: string | null
+          id: string
+          last_executed_at: string | null
+          related_functionality: string | null
+          test_category: string
+          test_description: string | null
+          test_name: string
+          test_status: string | null
+          test_steps: Json | null
+          test_suite_type: string
+          updated_at: string
+          updated_by: string | null
+          validation_level: string | null
+        }
+        Insert: {
+          actual_results?: string | null
+          api_integration_id?: string | null
+          auto_generated?: boolean | null
+          cfr_part11_metadata?: Json | null
+          compliance_requirements?: Json | null
+          created_at?: string
+          created_by?: string | null
+          database_source?: string | null
+          execution_data?: Json | null
+          execution_duration_ms?: number | null
+          expected_results?: string | null
+          id?: string
+          last_executed_at?: string | null
+          related_functionality?: string | null
+          test_category: string
+          test_description?: string | null
+          test_name: string
+          test_status?: string | null
+          test_steps?: Json | null
+          test_suite_type: string
+          updated_at?: string
+          updated_by?: string | null
+          validation_level?: string | null
+        }
+        Update: {
+          actual_results?: string | null
+          api_integration_id?: string | null
+          auto_generated?: boolean | null
+          cfr_part11_metadata?: Json | null
+          compliance_requirements?: Json | null
+          created_at?: string
+          created_by?: string | null
+          database_source?: string | null
+          execution_data?: Json | null
+          execution_duration_ms?: number | null
+          expected_results?: string | null
+          id?: string
+          last_executed_at?: string | null
+          related_functionality?: string | null
+          test_category?: string
+          test_description?: string | null
+          test_name?: string
+          test_status?: string | null
+          test_steps?: Json | null
+          test_suite_type?: string
+          updated_at?: string
+          updated_by?: string | null
+          validation_level?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comprehensive_test_cases_api_integration_id_fkey"
+            columns: ["api_integration_id"]
+            isOneToOne: false
+            referencedRelation: "api_integration_registry"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       developer_applications: {
         Row: {
           company_name: string
@@ -1055,6 +1141,56 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      functionality_change_detection: {
+        Row: {
+          change_description: string
+          change_type: string
+          detected_at: string
+          functionality_id: string | null
+          generated_test_cases: string[] | null
+          id: string
+          impact_analysis: Json | null
+          metadata: Json | null
+          processed_at: string | null
+          processing_status: string | null
+          sync_status: string | null
+        }
+        Insert: {
+          change_description: string
+          change_type: string
+          detected_at?: string
+          functionality_id?: string | null
+          generated_test_cases?: string[] | null
+          id?: string
+          impact_analysis?: Json | null
+          metadata?: Json | null
+          processed_at?: string | null
+          processing_status?: string | null
+          sync_status?: string | null
+        }
+        Update: {
+          change_description?: string
+          change_type?: string
+          detected_at?: string
+          functionality_id?: string | null
+          generated_test_cases?: string[] | null
+          id?: string
+          impact_analysis?: Json | null
+          metadata?: Json | null
+          processed_at?: string | null
+          processing_status?: string | null
+          sync_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "functionality_change_detection_functionality_id_fkey"
+            columns: ["functionality_id"]
+            isOneToOne: false
+            referencedRelation: "system_functionality_registry"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       issue_fixes: {
         Row: {
@@ -3158,6 +3294,104 @@ export type Database = {
           },
         ]
       }
+      system_functionality_registry: {
+        Row: {
+          created_at: string
+          dependencies: Json | null
+          description: string | null
+          functionality_name: string
+          functionality_type: string
+          id: string
+          last_analyzed_at: string | null
+          metadata: Json | null
+          risk_level: string | null
+          schema_name: string | null
+          test_coverage_status: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          dependencies?: Json | null
+          description?: string | null
+          functionality_name: string
+          functionality_type: string
+          id?: string
+          last_analyzed_at?: string | null
+          metadata?: Json | null
+          risk_level?: string | null
+          schema_name?: string | null
+          test_coverage_status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          dependencies?: Json | null
+          description?: string | null
+          functionality_name?: string
+          functionality_type?: string
+          id?: string
+          last_analyzed_at?: string | null
+          metadata?: Json | null
+          risk_level?: string | null
+          schema_name?: string | null
+          test_coverage_status?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      test_execution_history: {
+        Row: {
+          environment_info: Json | null
+          error_message: string | null
+          executed_at: string
+          executed_by: string | null
+          execution_batch_id: string
+          execution_details: Json | null
+          execution_status: string
+          id: string
+          performance_metrics: Json | null
+          test_case_id: string
+          test_suite_run_id: string | null
+          validation_witness: string | null
+        }
+        Insert: {
+          environment_info?: Json | null
+          error_message?: string | null
+          executed_at?: string
+          executed_by?: string | null
+          execution_batch_id: string
+          execution_details?: Json | null
+          execution_status: string
+          id?: string
+          performance_metrics?: Json | null
+          test_case_id: string
+          test_suite_run_id?: string | null
+          validation_witness?: string | null
+        }
+        Update: {
+          environment_info?: Json | null
+          error_message?: string | null
+          executed_at?: string
+          executed_by?: string | null
+          execution_batch_id?: string
+          execution_details?: Json | null
+          execution_status?: string
+          id?: string
+          performance_metrics?: Json | null
+          test_case_id?: string
+          test_suite_run_id?: string | null
+          validation_witness?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_execution_history_test_case_id_fkey"
+            columns: ["test_case_id"]
+            isOneToOne: false
+            referencedRelation: "comprehensive_test_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       therapies: {
         Row: {
           created_at: string | null
@@ -3622,6 +3856,74 @@ export type Database = {
           },
         ]
       }
+      validation_documentation: {
+        Row: {
+          approval_status: string | null
+          approved_at: string | null
+          approved_by: string | null
+          change_control_number: string | null
+          compliance_metadata: Json | null
+          created_at: string
+          created_by: string | null
+          digital_signature: Json | null
+          document_content: Json
+          document_title: string
+          document_type: string
+          document_version: string
+          id: string
+          related_functionality_id: string | null
+          related_test_cases: string[] | null
+          reviewed_by: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          approval_status?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          change_control_number?: string | null
+          compliance_metadata?: Json | null
+          created_at?: string
+          created_by?: string | null
+          digital_signature?: Json | null
+          document_content?: Json
+          document_title: string
+          document_type: string
+          document_version?: string
+          id?: string
+          related_functionality_id?: string | null
+          related_test_cases?: string[] | null
+          reviewed_by?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          approval_status?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          change_control_number?: string | null
+          compliance_metadata?: Json | null
+          created_at?: string
+          created_by?: string | null
+          digital_signature?: Json | null
+          document_content?: Json
+          document_title?: string
+          document_type?: string
+          document_version?: string
+          id?: string
+          related_functionality_id?: string | null
+          related_test_cases?: string[] | null
+          reviewed_by?: string[] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "validation_documentation_related_functionality_id_fkey"
+            columns: ["related_functionality_id"]
+            isOneToOne: false
+            referencedRelation: "system_functionality_registry"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -3644,13 +3946,25 @@ export type Database = {
         }
         Returns: boolean
       }
+      detect_system_functionality: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       determine_risk_level: {
         Args: { p_risk_score: number }
         Returns: Database["public"]["Enums"]["risk_level"]
       }
+      execute_comprehensive_test_suite: {
+        Args: { suite_type?: string; batch_size?: number }
+        Returns: Json
+      }
       generate_api_key: {
         Args: { key_type: string }
         Returns: string
+      }
+      generate_comprehensive_test_cases: {
+        Args: { functionality_id?: string }
+        Returns: number
       }
       get_daily_fix_stats: {
         Args: { days_back?: number; target_user_id?: string }
