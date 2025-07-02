@@ -2,25 +2,18 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Database } from '@/integrations/supabase/types';
-
-type FacilityType = Database['public']['Enums']['facility_type'];
 
 export const useFacilityMutations = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const createFacilityMutation = useMutation({
-    mutationFn: async (facilityData: {
-      name: string;
-      facility_type: FacilityType;
-      address?: string;
-      phone?: string;
-      email?: string;
-    }) => {
+    mutationFn: async (facilityData: any) => {
+      console.log('🏥 Creating facility:', facilityData);
+      
       const { data, error } = await supabase
         .from('facilities')
-        .insert(facilityData)
+        .insert([facilityData])
         .select()
         .single();
 
@@ -36,18 +29,20 @@ export const useFacilityMutations = () => {
     },
     onError: (error: any) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to create facility",
+        title: "Facility Creation Failed",
+        description: error.message,
         variant: "destructive",
       });
     }
   });
 
   const updateFacilityMutation = useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: any }) => {
+    mutationFn: async ({ id, ...updateData }: any) => {
+      console.log('🏥 Updating facility:', id, updateData);
+      
       const { data, error } = await supabase
         .from('facilities')
-        .update(updates)
+        .update(updateData)
         .eq('id', id)
         .select()
         .single();
@@ -64,8 +59,8 @@ export const useFacilityMutations = () => {
     },
     onError: (error: any) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to update facility",
+        title: "Facility Update Failed",
+        description: error.message,
         variant: "destructive",
       });
     }
@@ -74,7 +69,7 @@ export const useFacilityMutations = () => {
   return {
     createFacility: createFacilityMutation.mutate,
     updateFacility: updateFacilityMutation.mutate,
-    isCreatingFacility: createFacilityMutation.isPending,
-    isUpdatingFacility: updateFacilityMutation.isPending
+    isCreating: createFacilityMutation.isPending,
+    isUpdating: updateFacilityMutation.isPending
   };
 };
