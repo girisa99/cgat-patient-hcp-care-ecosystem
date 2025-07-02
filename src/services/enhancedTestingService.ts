@@ -1,5 +1,4 @@
 import { supabase } from '@/integrations/supabase/client';
-import { comprehensiveTestingService, ComprehensiveTestCase } from './comprehensiveTestingService';
 
 export interface AdvancedTestFilters {
   suite_type?: string;
@@ -31,38 +30,8 @@ export interface TestExecutionMetrics {
   businessTests: number;
 }
 
-export interface RoleBasedTestSuite {
-  roleName: string;
-  moduleAccess: string[];
-  requiredTests: ComprehensiveTestCase[];
-  loginScenarios: ComprehensiveTestCase[];
-  permissionTests: ComprehensiveTestCase[];
-}
-
-export interface DocumentationGenerationResult {
-  userRequirements: string[];
-  functionalRequirements: string[];
-  traceabilityMatrix: Array<{
-    requirement: string;
-    testCases: string[];
-    coverage: number;
-  }>;
-  testingPlan: {
-    overview: string;
-    testApproach: string;
-    testSchedule: string;
-    resources: string[];
-  };
-  generatedAt: string;
-  compliance: {
-    cfrPart11: boolean;
-    validationLevel: string;
-    auditTrail: boolean;
-  };
-}
-
-// Simplified database record interface
-interface SimpleTestRecord {
+// Simplified test case interface to avoid circular dependencies
+export interface EnhancedTestCase {
   id: string;
   test_suite_type: string;
   test_category: string;
@@ -92,55 +61,33 @@ interface SimpleTestRecord {
   last_executed_at?: string;
 }
 
-// Simple conversion function with explicit types
-function createTestCase(record: SimpleTestRecord): ComprehensiveTestCase {
-  // Explicit type mapping
-  let suiteType: 'unit' | 'integration' | 'system' | 'regression' | 'api_integration' = 'unit';
-  if (record.test_suite_type === 'integration') suiteType = 'integration';
-  else if (record.test_suite_type === 'system') suiteType = 'system';
-  else if (record.test_suite_type === 'regression') suiteType = 'regression';
-  else if (record.test_suite_type === 'api_integration') suiteType = 'api_integration';
+export interface RoleBasedTestSuite {
+  roleName: string;
+  moduleAccess: string[];
+  requiredTests: EnhancedTestCase[];
+  loginScenarios: EnhancedTestCase[];
+  permissionTests: EnhancedTestCase[];
+}
 
-  let status: 'pending' | 'passed' | 'failed' | 'skipped' | 'blocked' = 'pending';
-  if (record.test_status === 'passed') status = 'passed';
-  else if (record.test_status === 'failed') status = 'failed';
-  else if (record.test_status === 'skipped') status = 'skipped';
-  else if (record.test_status === 'blocked') status = 'blocked';
-
-  let validationLevel: 'IQ' | 'OQ' | 'PQ' | 'validation_plan' | undefined;
-  if (record.validation_level === 'IQ') validationLevel = 'IQ';
-  else if (record.validation_level === 'OQ') validationLevel = 'OQ';
-  else if (record.validation_level === 'PQ') validationLevel = 'PQ';
-  else if (record.validation_level === 'validation_plan') validationLevel = 'validation_plan';
-
-  return {
-    id: record.id,
-    test_suite_type: suiteType,
-    test_category: record.test_category,
-    test_name: record.test_name,
-    test_description: record.test_description,
-    expected_results: record.expected_results,
-    actual_results: record.actual_results,
-    test_status: status,
-    related_functionality: record.related_functionality,
-    database_source: record.database_source,
-    validation_level: validationLevel,
-    module_name: record.module_name,
-    topic: record.topic,
-    coverage_area: record.coverage_area,
-    business_function: record.business_function,
-    execution_duration_ms: record.execution_duration_ms,
-    test_steps: record.test_steps,
-    cfr_part11_metadata: record.cfr_part11_metadata,
-    compliance_requirements: record.compliance_requirements,
-    execution_data: record.execution_data,
-    api_integration_id: record.api_integration_id,
-    auto_generated: record.auto_generated,
-    created_at: record.created_at,
-    updated_at: record.updated_at,
-    created_by: record.created_by,
-    updated_by: record.updated_by,
-    last_executed_at: record.last_executed_at
+export interface DocumentationGenerationResult {
+  userRequirements: string[];
+  functionalRequirements: string[];
+  traceabilityMatrix: Array<{
+    requirement: string;
+    testCases: string[];
+    coverage: number;
+  }>;
+  testingPlan: {
+    overview: string;
+    testApproach: string;
+    testSchedule: string;
+    resources: string[];
+  };
+  generatedAt: string;
+  compliance: {
+    cfrPart11: boolean;
+    validationLevel: string;
+    auditTrail: boolean;
   };
 }
 
@@ -148,7 +95,7 @@ class EnhancedTestingService {
   /**
    * Get test cases with advanced filtering capabilities
    */
-  async getAdvancedTestCases(filters: AdvancedTestFilters = {}): Promise<ComprehensiveTestCase[]> {
+  async getAdvancedTestCases(filters: AdvancedTestFilters = {}): Promise<EnhancedTestCase[]> {
     try {
       let query = supabase
         .from('comprehensive_test_cases')
@@ -268,8 +215,36 @@ class EnhancedTestingService {
         throw error;
       }
       
-      // Use simplified conversion
-      return (data || []).map(record => createTestCase(record as SimpleTestRecord));
+      // Simple direct mapping without complex type conversion
+      return (data || []).map(record => ({
+        id: record.id,
+        test_suite_type: record.test_suite_type || '',
+        test_category: record.test_category || '',
+        test_name: record.test_name || '',
+        test_description: record.test_description,
+        expected_results: record.expected_results,
+        actual_results: record.actual_results,
+        test_status: record.test_status,
+        related_functionality: record.related_functionality,
+        database_source: record.database_source,
+        validation_level: record.validation_level,
+        module_name: record.module_name,
+        topic: record.topic,
+        coverage_area: record.coverage_area,
+        business_function: record.business_function,
+        execution_duration_ms: record.execution_duration_ms,
+        test_steps: record.test_steps,
+        cfr_part11_metadata: record.cfr_part11_metadata,
+        compliance_requirements: record.compliance_requirements,
+        execution_data: record.execution_data,
+        api_integration_id: record.api_integration_id,
+        auto_generated: record.auto_generated,
+        created_at: record.created_at,
+        updated_at: record.updated_at,
+        created_by: record.created_by,
+        updated_by: record.updated_by,
+        last_executed_at: record.last_executed_at
+      }));
     } catch (error) {
       console.error('Error fetching advanced test cases:', error);
       throw error;
@@ -280,7 +255,7 @@ class EnhancedTestingService {
    * Get comprehensive test execution metrics
    */
   async getTestExecutionMetrics(): Promise<TestExecutionMetrics> {
-    const testCases = await comprehensiveTestingService.getTestCases();
+    const testCases = await this.getAdvancedTestCases();
     const now = Date.now();
     const oneWeekAgo = now - (7 * 24 * 60 * 60 * 1000);
     const oneDayAgo = now - (24 * 60 * 60 * 1000);
@@ -521,7 +496,7 @@ class EnhancedTestingService {
   /**
    * Private helper methods for documentation generation
    */
-  private extractUserRequirements(testCases: ComprehensiveTestCase[]): string[] {
+  private extractUserRequirements(testCases: EnhancedTestCase[]): string[] {
     const requirements = new Set<string>();
     
     testCases.forEach(testCase => {
@@ -539,7 +514,7 @@ class EnhancedTestingService {
     return Array.from(requirements);
   }
 
-  private generateFunctionalRequirements(testCases: ComprehensiveTestCase[]): string[] {
+  private generateFunctionalRequirements(testCases: EnhancedTestCase[]): string[] {
     const functionalReqs = new Set<string>();
     
     testCases.forEach(testCase => {
@@ -557,7 +532,7 @@ class EnhancedTestingService {
 
   private buildTraceabilityMatrix(
     requirements: string[], 
-    testCases: ComprehensiveTestCase[]
+    testCases: EnhancedTestCase[]
   ): Array<{ requirement: string; testCases: string[]; coverage: number }> {
     return requirements.map(requirement => {
       const relatedTests = testCases.filter(tc => 
@@ -575,7 +550,7 @@ class EnhancedTestingService {
   }
 
   private createTestingPlan(
-    testCases: ComprehensiveTestCase[], 
+    testCases: EnhancedTestCase[], 
     metrics: TestExecutionMetrics
   ): DocumentationGenerationResult['testingPlan'] {
     return {
@@ -595,11 +570,11 @@ class EnhancedTestingService {
   /**
    * Generate role-specific test cases for a given role and module names
    */
-  private async generateRoleSpecificTests(roleName: string, moduleNames: string[]): Promise<ComprehensiveTestCase[]> {
-    const tests: ComprehensiveTestCase[] = [];
+  private async generateRoleSpecificTests(roleName: string, moduleNames: string[]): Promise<EnhancedTestCase[]> {
+    const tests: EnhancedTestCase[] = [];
     
     for (const moduleName of moduleNames) {
-      const testCase: ComprehensiveTestCase = {
+      const testCase: EnhancedTestCase = {
         id: crypto.randomUUID(),
         test_suite_type: 'integration',
         test_category: 'role_based_testing',
@@ -623,7 +598,7 @@ class EnhancedTestingService {
   /**
    * Generate login scenarios for a given role
    */
-  private async generateLoginScenarios(roleName: string): Promise<ComprehensiveTestCase[]> {
+  private async generateLoginScenarios(roleName: string): Promise<EnhancedTestCase[]> {
     const scenarios = [
       'Valid Login Scenario',
       'Invalid Password Scenario',
@@ -634,7 +609,7 @@ class EnhancedTestingService {
 
     return scenarios.map(scenario => ({
       id: crypto.randomUUID(),
-      test_suite_type: 'system' as const,
+      test_suite_type: 'system',
       test_category: 'authentication_testing',
       test_name: `${roleName} - ${scenario}`,
       test_description: `Test ${scenario} for ${roleName} role`,
@@ -642,7 +617,7 @@ class EnhancedTestingService {
       topic: 'Login Security',
       coverage_area: 'Security',
       business_function: 'User Authentication',
-      test_status: 'pending' as const,
+      test_status: 'pending',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     }));
@@ -651,9 +626,9 @@ class EnhancedTestingService {
   /**
    * Generate permission tests for a given role and module names
    */
-  private async generatePermissionTests(roleName: string, moduleNames: string[]): Promise<ComprehensiveTestCase[]> {
+  private async generatePermissionTests(roleName: string, moduleNames: string[]): Promise<EnhancedTestCase[]> {
     const permissionActions = ['Create', 'Read', 'Update', 'Delete'];
-    const tests: ComprehensiveTestCase[] = [];
+    const tests: EnhancedTestCase[] = [];
 
     for (const moduleName of moduleNames) {
       for (const action of permissionActions) {
