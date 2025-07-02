@@ -20,15 +20,15 @@ export const TestingModule: React.FC = () => {
     getRecentTestResults
   } = useUnifiedTestingData();
   
-  console.log('🧪 Testing Module - Real data implementation with functional buttons');
+  console.log('🧪 Testing Module - SINGLE SOURCE OF TRUTH for all testing services');
 
   return (
     <div className="space-y-6">
-      {/* Testing Implementation Status Banner */}
+      {/* Single Source of Truth Banner */}
       <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
         <div className="flex items-center gap-2 mb-2">
           <div className="h-2 w-2 bg-emerald-500 rounded-full animate-pulse"></div>
-          <h3 className="font-semibold text-emerald-900">🧪 Testing Tools - Real Data Implementation</h3>
+          <h3 className="font-semibold text-emerald-900">🧪 Testing Services Suite - Single Source of Truth</h3>
         </div>
         <div className="text-sm text-emerald-700 grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
@@ -47,6 +47,11 @@ export const TestingModule: React.FC = () => {
             <p><strong>Status:</strong> Production Ready</p>
             <p><strong>Last Sync:</strong> {meta.lastSyncAt ? new Date(meta.lastSyncAt).toLocaleTimeString() : 'Never'}</p>
           </div>
+        </div>
+        <div className="mt-3 p-3 bg-emerald-100 border border-emerald-300 rounded-md">
+          <p className="text-emerald-800 font-medium">
+            ⚡ This is the unified testing suite for all testing needs - no redundancy with API Services.
+          </p>
         </div>
       </div>
 

@@ -36,6 +36,12 @@ interface TestResult {
   timestamp: string;
 }
 
+interface RecentTestResult {
+  testType: string;
+  status: string;
+  timestamp: string;
+}
+
 // Simulated real testing data based on actual system metrics
 const generateRealTestingData = (): TestingData => {
   const baseMetrics = {
@@ -120,8 +126,8 @@ export const useUnifiedTestingData = () => {
     return results;
   };
 
-  // Get recent test results (simulated)
-  const getRecentTestResults = () => {
+  // Get recent test results (simulated) - Fixed return type
+  const getRecentTestResults = (): RecentTestResult[] => {
     return [
       { testType: 'Unit', status: 'passed', timestamp: new Date(Date.now() - 300000).toISOString() },
       { testType: 'Integration', status: 'passed', timestamp: new Date(Date.now() - 600000).toISOString() },
