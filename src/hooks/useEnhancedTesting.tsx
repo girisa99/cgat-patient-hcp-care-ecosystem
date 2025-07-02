@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { enhancedTestingService, type AdvancedTestFilters, type TestExecutionMetrics } from '@/services/enhancedTestingService';
 import { type ComprehensiveTestCase } from '@/services/comprehensiveTestingService';
+import { enhancedTestingBusinessLayer } from '@/services/enhancedTestingBusinessLayer';
 import { toast } from 'sonner';
 
 export const useEnhancedTesting = () => {
@@ -21,31 +22,36 @@ export const useEnhancedTesting = () => {
     staleTime: 30000,
   });
 
-  // Test metrics query
+  // Enhanced metrics query - now uses business layer
   const {
     data: testMetrics,
     isLoading: isLoadingMetrics,
     error: metricsError,
     refetch: refetchMetrics
   } = useQuery({
-    queryKey: ['test-execution-metrics'],
-    queryFn: () => enhancedTestingService.getTestExecutionMetrics(),
+    queryKey: ['enhanced-test-metrics-legacy'],
+    queryFn: () => enhancedTestingBusinessLayer.getAdvancedTestMetrics('30d'),
     staleTime: 60000,
   });
 
-  // Execute test suite mutation
+  // Execute test suite mutation - now uses business layer
   const executeTestSuiteMutation = useMutation({
     mutationFn: async (suiteType?: string) => {
       setIsExecuting(true);
-      return enhancedTestingService.generateSecurityAndComplianceTests();
+      // Use business layer for enhanced execution
+      return enhancedTestingBusinessLayer.executeComprehensiveTestSuite({
+        suiteType: suiteType || 'security',
+        priority: 'medium',
+        reportingLevel: 'summary'
+      });
     },
     onSuccess: (result) => {
-      toast.success(`Generated ${result} security and compliance test cases`);
+      toast.success(`Enhanced test suite executed: ${result.passed_tests}/${result.total_tests} passed`);
       queryClient.invalidateQueries({ queryKey: ['enhanced-test-cases'] });
-      queryClient.invalidateQueries({ queryKey: ['test-execution-metrics'] });
+      queryClient.invalidateQueries({ queryKey: ['enhanced-test-metrics-legacy'] });
     },
     onError: (error) => {
-      console.error('Test execution failed:', error);
+      console.error('Enhanced test execution failed:', error);
       toast.error('Failed to execute test suite');
     },
     onSettled: () => {
@@ -53,32 +59,32 @@ export const useEnhancedTesting = () => {
     }
   });
 
-  // Get filtered test cases
+  // Get filtered test cases - maintains backward compatibility
   const getFilteredTestCases = async (filters: AdvancedTestFilters): Promise<ComprehensiveTestCase[]> => {
     return enhancedTestingService.getAdvancedTestCases(filters);
   };
 
-  // Generate documentation
+  // Generate documentation - now uses business layer
   const generateDocumentation = async () => {
     try {
-      const doc = await enhancedTestingService.generateComprehensiveDocumentation();
-      toast.success('Documentation generated successfully');
+      const doc = await enhancedTestingBusinessLayer.generateTestDocumentation('JSON');
+      toast.success('Enhanced documentation generated successfully');
       return doc;
     } catch (error) {
-      console.error('Documentation generation failed:', error);
+      console.error('Enhanced documentation generation failed:', error);
       toast.error('Failed to generate documentation');
       throw error;
     }
   };
 
-  // Generate role-based test suites
+  // Generate role-based test suites - now uses business layer
   const generateRoleBasedTests = async () => {
     try {
-      const suites = await enhancedTestingService.generateRoleBasedTestSuites();
-      toast.success(`Generated test suites for ${suites.length} roles`);
+      const suites = await enhancedTestingBusinessLayer.createRoleBasedTestScenarios(['admin', 'user', 'guest']);
+      toast.success(`Generated enhanced test suites for ${suites.length} roles`);
       return suites;
     } catch (error) {
-      console.error('Role-based test generation failed:', error);
+      console.error('Enhanced role-based test generation failed:', error);
       toast.error('Failed to generate role-based tests');
       throw error;
     }
@@ -88,7 +94,7 @@ export const useEnhancedTesting = () => {
   const error = testCasesError || metricsError;
 
   return {
-    // Data
+    // Data - maintaining backward compatibility
     testCases,
     testMetrics,
     
@@ -99,7 +105,7 @@ export const useEnhancedTesting = () => {
     // Error states
     error,
     
-    // Actions
+    // Actions - enhanced with business layer
     executeTestSuite: executeTestSuiteMutation.mutate,
     getFilteredTestCases,
     generateDocumentation,
