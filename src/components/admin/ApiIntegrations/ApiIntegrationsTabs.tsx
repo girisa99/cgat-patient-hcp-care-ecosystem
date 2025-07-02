@@ -62,7 +62,7 @@ export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = ({
 
       <TabsContent value="overview" className="space-y-4">
         <OverviewTabContent 
-          totalIntegrations={consolidatedCount}
+          integrations={integrations || []}
           consolidatedData={{
             consolidatedApis: integrations || [],
             syncStatus: { lastSync: new Date().toISOString(), status: 'success' }
@@ -76,7 +76,6 @@ export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = ({
           searchTerm=""
           createDialogOpen={false}
           setCreateDialogOpen={() => {}}
-          onCreateApi={() => Promise.resolve()}
           onEditApi={() => {}}
           onDeleteApi={() => Promise.resolve()}
           onTestEndpoint={() => Promise.resolve()}
@@ -89,8 +88,8 @@ export const ApiIntegrationsTabs: React.FC<ApiIntegrationsTabsProps> = ({
           setCreateDialogOpen={() => {}}
           onDownloadCollection={() => {}}
           onViewDetails={() => {}}
-          onSelectApi={setSelectedApiId}
           selectedApiId={selectedApiId}
+          onApiSelect={setSelectedApiId}
         />
       </TabsContent>
 

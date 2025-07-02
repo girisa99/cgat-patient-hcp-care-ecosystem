@@ -56,7 +56,7 @@ export const useApiPublish = (apiId: string) => {
       // Transform the data to match ApiDetails interface
       return {
         id: data.id,
-        name: data.name || data.external_name || 'Unnamed API',
+        name: data.external_name || 'Unnamed API',
         external_name: data.external_name,
         external_description: data.external_description,
         status: data.status,
@@ -65,7 +65,7 @@ export const useApiPublish = (apiId: string) => {
         category: data.category,
         tags: data.tags || [],
         documentation_url: data.documentation_url,
-        support_url: data.support_url,
+        support_url: data.documentation_url, // Use documentation_url as fallback
         marketplace_config: data.marketplace_config,
         published_at: data.published_at
       } as ApiDetails;
@@ -86,7 +86,6 @@ export const useApiPublish = (apiId: string) => {
           category: settings.category,
           tags: settings.tags,
           documentation_url: settings.documentationUrl,
-          support_url: settings.supportUrl,
           marketplace_config: {
             enabled: settings.marketplaceEnabled
           },

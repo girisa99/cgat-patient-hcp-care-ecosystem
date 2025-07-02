@@ -98,10 +98,31 @@ export const useApiServices = () => {
     }
   });
 
+  // Add missing methods for compatibility
+  const getApiStats = () => {
+    const apis = integrations || [];
+    return {
+      totalIntegrations: apis.length,
+      internalApis: apis.filter((api: any) => api.type === 'internal').length,
+      externalApis: apis.filter((api: any) => api.type === 'external').length,
+      publishedApis: apis.filter((api: any) => api.status === 'published').length
+    };
+  };
+
+  const searchApis = (searchTerm: string) => {
+    if (!searchTerm.trim()) return integrations || [];
+    const term = searchTerm.toLowerCase();
+    return (integrations || []).filter((api: any) => 
+      api.name?.toLowerCase().includes(term) ||
+      api.description?.toLowerCase().includes(term) ||
+      api.category?.toLowerCase().includes(term)
+    );
+  };
+
   // Provide backward compatibility with expected property names
   const apiServices = integrations || [];
-  const internalApis = apiServices.filter(api => api.type === 'internal');
-  const externalApis = apiServices.filter(api => api.type === 'external');
+  const internalApis = apiServices.filter((api: any) => api.type === 'internal');
+  const externalApis = apiServices.filter((api: any) => api.type === 'external');
 
   return {
     // New consolidated properties
@@ -113,6 +134,10 @@ export const useApiServices = () => {
     updateIntegration: updateMutation.mutate,
     isCreating: createMutation.isPending,
     isUpdating: updateMutation.isPending,
+    
+    // Required methods
+    getApiStats,
+    searchApis,
     
     // Backward compatibility properties
     apiServices,

@@ -86,3 +86,5 @@ export const ApiIntegrationsManager: React.FC = () => {
     </div>
   );
 };
+
+export default ApiIntegrationsManager;
