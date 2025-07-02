@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface ComprehensiveTestCase {
@@ -119,7 +118,23 @@ class ComprehensiveTestingService {
       }
       
       console.log('✅ Test suite execution completed:', data);
-      return data as TestExecutionResult;
+      
+      // Ensure proper type conversion from database JSON response
+      if (data && typeof data === 'object') {
+        return {
+          execution_batch_id: data.execution_batch_id || '',
+          suite_type: data.suite_type || '',
+          total_tests: Number(data.total_tests) || 0,
+          passed_tests: Number(data.passed_tests) || 0,
+          failed_tests: Number(data.failed_tests) || 0,
+          skipped_tests: Number(data.skipped_tests) || 0,
+          pass_rate: Number(data.pass_rate) || 0,
+          executed_at: data.executed_at || new Date().toISOString(),
+          compliance_status: data.compliance_status || ''
+        };
+      }
+      
+      throw new Error('Invalid response from test execution');
     } catch (error) {
       console.error('Error executing test suite:', error);
       throw error;
@@ -164,7 +179,13 @@ class ComprehensiveTestingService {
         throw error;
       }
       
-      return data || [];
+      // Type-safe conversion ensuring proper enum values
+      return (data || []).map(item => ({
+        ...item,
+        test_suite_type: item.test_suite_type as ComprehensiveTestCase['test_suite_type'],
+        test_status: item.test_status as ComprehensiveTestCase['test_status'],
+        validation_level: item.validation_level as ComprehensiveTestCase['validation_level']
+      }));
     } catch (error) {
       console.error('Error fetching test cases:', error);
       throw error;
@@ -204,7 +225,13 @@ class ComprehensiveTestingService {
         throw error;
       }
       
-      return data || [];
+      // Type-safe conversion ensuring proper enum values
+      return (data || []).map(item => ({
+        ...item,
+        functionality_type: item.functionality_type as SystemFunctionality['functionality_type'],
+        test_coverage_status: item.test_coverage_status as SystemFunctionality['test_coverage_status'],
+        risk_level: item.risk_level as SystemFunctionality['risk_level']
+      }));
     } catch (error) {
       console.error('Error fetching system functionality:', error);
       throw error;

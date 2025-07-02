@@ -285,7 +285,7 @@ export const ComprehensiveTestingTab: React.FC = () => {
                     {Object.entries(testStatistics.coverageByFunctionality || {}).map(([type, count]) => (
                       <div key={type} className="p-4 border rounded-lg">
                         <h4 className="font-medium capitalize">{type}s</h4>
-                        <div className="text-2xl font-bold text-blue-600">{count}</div>
+                        <div className="text-2xl font-bold text-blue-600">{String(count)}</div>
                       </div>
                     ))}
                   </div>
@@ -341,15 +341,16 @@ export const ComprehensiveTestingTab: React.FC = () => {
                     <h4 className="font-medium mb-3">Coverage by Test Type</h4>
                     <div className="space-y-3">
                       {Object.entries(testStatistics.testsByType || {}).map(([type, count]) => {
+                        const numCount = Number(count);
                         const percentage = testStatistics.totalTestCases > 0 
-                          ? (count / testStatistics.totalTestCases) * 100 
+                          ? (numCount / testStatistics.totalTestCases) * 100 
                           : 0;
                         
                         return (
                           <div key={type}>
                             <div className="flex justify-between text-sm mb-1">
                               <span className="capitalize">{type.replace('_', ' ')}</span>
-                              <span>{count} ({percentage.toFixed(1)}%)</span>
+                              <span>{String(count)} ({percentage.toFixed(1)}%)</span>
                             </div>
                             <Progress value={percentage} className="h-2" />
                           </div>
@@ -362,15 +363,16 @@ export const ComprehensiveTestingTab: React.FC = () => {
                     <h4 className="font-medium mb-3">Coverage by Status</h4>
                     <div className="space-y-3">
                       {Object.entries(testStatistics.testsByStatus || {}).map(([status, count]) => {
+                        const numCount = Number(count);
                         const percentage = testStatistics.totalTestCases > 0 
-                          ? (count / testStatistics.totalTestCases) * 100 
+                          ? (numCount / testStatistics.totalTestCases) * 100 
                           : 0;
                         
                         return (
                           <div key={status}>
                             <div className="flex justify-between text-sm mb-1">
                               <span className="capitalize">{status}</span>
-                              <span>{count} ({percentage.toFixed(1)}%)</span>
+                              <span>{String(count)} ({percentage.toFixed(1)}%)</span>
                             </div>
                             <Progress value={percentage} className="h-2" />
                           </div>
