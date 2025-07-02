@@ -41,7 +41,7 @@ export const EnhancedComprehensiveTestingTab: React.FC = () => {
 
   const handleExecuteTests = async () => {
     try {
-      await executeTestSuite();
+      executeTestSuite();
     } catch (error) {
       console.error('Test execution failed:', error);
     }
@@ -159,16 +159,18 @@ export const EnhancedComprehensiveTestingTab: React.FC = () => {
                       </div>
                     </div>
                     
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span>Execution Progress:</span>
-                        <span>{Math.round((testMetrics.executedTests / testMetrics.totalTests) * 100)}%</span>
+                    {testMetrics.totalTests > 0 && (
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span>Execution Progress:</span>
+                          <span>{Math.round((testMetrics.executedTests / testMetrics.totalTests) * 100)}%</span>
+                        </div>
+                        <Progress 
+                          value={(testMetrics.executedTests / testMetrics.totalTests) * 100} 
+                          className="h-2" 
+                        />
                       </div>
-                      <Progress 
-                        value={(testMetrics.executedTests / testMetrics.totalTests) * 100} 
-                        className="h-2" 
-                      />
-                    </div>
+                    )}
                   </div>
                 )}
               </CardContent>
