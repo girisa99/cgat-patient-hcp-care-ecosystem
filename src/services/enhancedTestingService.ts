@@ -61,8 +61,8 @@ export interface DocumentationGenerationResult {
   };
 }
 
-// Simplified type definition for database records
-interface DatabaseTestRecord {
+// Simplified database record interface
+interface SimpleTestRecord {
   id: string;
   test_suite_type: string;
   test_category: string;
@@ -92,49 +92,55 @@ interface DatabaseTestRecord {
   last_executed_at?: string;
 }
 
-// Helper function to safely convert database records to ComprehensiveTestCase
-function convertToComprehensiveTestCase(dbRecord: DatabaseTestRecord): ComprehensiveTestCase {
-  // Safe type conversion with fallbacks
-  const safeTestSuiteType = (['unit', 'integration', 'system', 'regression', 'api_integration'].includes(dbRecord.test_suite_type)) 
-    ? dbRecord.test_suite_type as 'unit' | 'integration' | 'system' | 'regression' | 'api_integration'
-    : 'unit';
+// Simple conversion function with explicit types
+function createTestCase(record: SimpleTestRecord): ComprehensiveTestCase {
+  // Explicit type mapping
+  let suiteType: 'unit' | 'integration' | 'system' | 'regression' | 'api_integration' = 'unit';
+  if (record.test_suite_type === 'integration') suiteType = 'integration';
+  else if (record.test_suite_type === 'system') suiteType = 'system';
+  else if (record.test_suite_type === 'regression') suiteType = 'regression';
+  else if (record.test_suite_type === 'api_integration') suiteType = 'api_integration';
 
-  const safeTestStatus = (['pending', 'passed', 'failed', 'skipped', 'blocked'].includes(dbRecord.test_status || ''))
-    ? dbRecord.test_status as 'pending' | 'passed' | 'failed' | 'skipped' | 'blocked'
-    : 'pending';
+  let status: 'pending' | 'passed' | 'failed' | 'skipped' | 'blocked' = 'pending';
+  if (record.test_status === 'passed') status = 'passed';
+  else if (record.test_status === 'failed') status = 'failed';
+  else if (record.test_status === 'skipped') status = 'skipped';
+  else if (record.test_status === 'blocked') status = 'blocked';
 
-  const safeValidationLevel = (['IQ', 'OQ', 'PQ', 'validation_plan'].includes(dbRecord.validation_level || ''))
-    ? dbRecord.validation_level as 'IQ' | 'OQ' | 'PQ' | 'validation_plan'
-    : undefined;
+  let validationLevel: 'IQ' | 'OQ' | 'PQ' | 'validation_plan' | undefined;
+  if (record.validation_level === 'IQ') validationLevel = 'IQ';
+  else if (record.validation_level === 'OQ') validationLevel = 'OQ';
+  else if (record.validation_level === 'PQ') validationLevel = 'PQ';
+  else if (record.validation_level === 'validation_plan') validationLevel = 'validation_plan';
 
   return {
-    id: dbRecord.id,
-    test_suite_type: safeTestSuiteType,
-    test_category: dbRecord.test_category,
-    test_name: dbRecord.test_name,
-    test_description: dbRecord.test_description,
-    expected_results: dbRecord.expected_results,
-    actual_results: dbRecord.actual_results,
-    test_status: safeTestStatus,
-    related_functionality: dbRecord.related_functionality,
-    database_source: dbRecord.database_source,
-    validation_level: safeValidationLevel,
-    module_name: dbRecord.module_name,
-    topic: dbRecord.topic,
-    coverage_area: dbRecord.coverage_area,
-    business_function: dbRecord.business_function,
-    execution_duration_ms: dbRecord.execution_duration_ms,
-    test_steps: dbRecord.test_steps,
-    cfr_part11_metadata: dbRecord.cfr_part11_metadata,
-    compliance_requirements: dbRecord.compliance_requirements,
-    execution_data: dbRecord.execution_data,
-    api_integration_id: dbRecord.api_integration_id,
-    auto_generated: dbRecord.auto_generated,
-    created_at: dbRecord.created_at,
-    updated_at: dbRecord.updated_at,
-    created_by: dbRecord.created_by,
-    updated_by: dbRecord.updated_by,
-    last_executed_at: dbRecord.last_executed_at
+    id: record.id,
+    test_suite_type: suiteType,
+    test_category: record.test_category,
+    test_name: record.test_name,
+    test_description: record.test_description,
+    expected_results: record.expected_results,
+    actual_results: record.actual_results,
+    test_status: status,
+    related_functionality: record.related_functionality,
+    database_source: record.database_source,
+    validation_level: validationLevel,
+    module_name: record.module_name,
+    topic: record.topic,
+    coverage_area: record.coverage_area,
+    business_function: record.business_function,
+    execution_duration_ms: record.execution_duration_ms,
+    test_steps: record.test_steps,
+    cfr_part11_metadata: record.cfr_part11_metadata,
+    compliance_requirements: record.compliance_requirements,
+    execution_data: record.execution_data,
+    api_integration_id: record.api_integration_id,
+    auto_generated: record.auto_generated,
+    created_at: record.created_at,
+    updated_at: record.updated_at,
+    created_by: record.created_by,
+    updated_by: record.updated_by,
+    last_executed_at: record.last_executed_at
   };
 }
 
@@ -262,8 +268,8 @@ class EnhancedTestingService {
         throw error;
       }
       
-      // Convert database records to ComprehensiveTestCase objects
-      return (data || []).map(convertToComprehensiveTestCase);
+      // Use simplified conversion
+      return (data || []).map(record => createTestCase(record as SimpleTestRecord));
     } catch (error) {
       console.error('Error fetching advanced test cases:', error);
       throw error;
@@ -639,7 +645,7 @@ class EnhancedTestingService {
       test_status: 'pending' as const,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
-    })) as ComprehensiveTestCase[];
+    }));
   }
 
   /**
@@ -664,7 +670,7 @@ class EnhancedTestingService {
           test_status: 'pending',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
-        } as ComprehensiveTestCase);
+        });
       }
     }
 
