@@ -137,71 +137,82 @@ export class TableUtilizationAssessor {
     try {
       // Handle specific tables with proper type checking
       switch (tableName) {
-        case 'profiles':
+        case 'profiles': {
           const { count: profilesCount, error: profilesError } = await supabase
             .from('profiles')
             .select('*', { count: 'exact', head: true });
           return profilesError ? 0 : (profilesCount || 0);
+        }
           
-        case 'facilities':
+        case 'facilities': {
           const { count: facilitiesCount, error: facilitiesError } = await supabase
             .from('facilities')
             .select('*', { count: 'exact', head: true });
           return facilitiesError ? 0 : (facilitiesCount || 0);
+        }
           
-        case 'modules':
+        case 'modules': {
           const { count: modulesCount, error: modulesError } = await supabase
             .from('modules')
             .select('*', { count: 'exact', head: true });
           return modulesError ? 0 : (modulesCount || 0);
+        }
           
-        case 'roles':
+        case 'roles': {
           const { count: rolesCount, error: rolesError } = await supabase
             .from('roles')
             .select('*', { count: 'exact', head: true });
           return rolesError ? 0 : (rolesCount || 0);
+        }
           
-        case 'user_roles':
+        case 'user_roles': {
           const { count: userRolesCount, error: userRolesError } = await supabase
             .from('user_roles')
             .select('*', { count: 'exact', head: true });
           return userRolesError ? 0 : (userRolesCount || 0);
+        }
           
-        case 'permissions':
+        case 'permissions': {
           const { count: permissionsCount, error: permissionsError } = await supabase
             .from('permissions')
             .select('*', { count: 'exact', head: true });
           return permissionsError ? 0 : (permissionsCount || 0);
+        }
           
-        case 'api_integration_registry':
+        case 'api_integration_registry': {
           const { count: apiIntegrationCount, error: apiIntegrationError } = await supabase
             .from('api_integration_registry')
             .select('*', { count: 'exact', head: true });
           return apiIntegrationError ? 0 : (apiIntegrationCount || 0);
+        }
           
-        case 'external_api_registry':
+        case 'external_api_registry': {
           const { count: externalApiCount, error: externalApiError } = await supabase
             .from('external_api_registry')
             .select('*', { count: 'exact', head: true });
           return externalApiError ? 0 : (externalApiCount || 0);
+        }
           
-        case 'api_lifecycle_events':
+        case 'api_lifecycle_events': {
           const { count: lifecycleEventsCount, error: lifecycleEventsError } = await supabase
             .from('api_lifecycle_events')
             .select('*', { count: 'exact', head: true });
           return lifecycleEventsError ? 0 : (lifecycleEventsCount || 0);
+        }
           
-        case 'developer_notification_preferences':
+        case 'developer_notification_preferences': {
           const { count: devNotifPrefCount, error: devNotifPrefError } = await supabase
             .from('developer_notification_preferences')
             .select('*', { count: 'exact', head: true });
           return devNotifPrefError ? 0 : (devNotifPrefCount || 0);
+        }
           
-        case 'marketplace_listings':
+        case 'marketplace_listings': {
           const { count: marketplaceCount, error: marketplaceError } = await supabase
             .from('marketplace_listings')
             .select('*', { count: 'exact', head: true });
           return marketplaceError ? 0 : (marketplaceCount || 0);
+        }
           
         default:
           console.warn(`Unknown table name: ${tableName}`);
@@ -228,7 +239,7 @@ export class TableUtilizationAssessor {
 
       if (tablesWithTimestamps.includes(tableName)) {
         switch (tableName) {
-          case 'profiles':
+          case 'profiles': {
             const { data: profileData, error: profileError } = await supabase
               .from('profiles')
               .select('created_at, updated_at')
@@ -236,8 +247,9 @@ export class TableUtilizationAssessor {
               .limit(1)
               .maybeSingle();
             return profileError || !profileData ? null : (profileData.updated_at || profileData.created_at);
+          }
             
-          case 'facilities':
+          case 'facilities': {
             const { data: facilityData, error: facilityError } = await supabase
               .from('facilities')
               .select('created_at, updated_at')
@@ -245,8 +257,9 @@ export class TableUtilizationAssessor {
               .limit(1)
               .maybeSingle();
             return facilityError || !facilityData ? null : (facilityData.updated_at || facilityData.created_at);
+          }
             
-          case 'modules':
+          case 'modules': {
             const { data: moduleData, error: moduleError } = await supabase
               .from('modules')
               .select('created_at, updated_at')
@@ -254,8 +267,9 @@ export class TableUtilizationAssessor {
               .limit(1)
               .maybeSingle();
             return moduleError || !moduleData ? null : (moduleData.updated_at || moduleData.created_at);
+          }
             
-          case 'api_lifecycle_events':
+          case 'api_lifecycle_events': {
             const { data: lifecycleData, error: lifecycleError } = await supabase
               .from('api_lifecycle_events')
               .select('created_at')
@@ -263,13 +277,14 @@ export class TableUtilizationAssessor {
               .limit(1)
               .maybeSingle();
             return lifecycleError || !lifecycleData ? null : lifecycleData.created_at;
+          }
             
           default:
             return null;
         }
       } else if (tablesWithCreatedAt.includes(tableName)) {
         switch (tableName) {
-          case 'roles':
+          case 'roles': {
             const { data: roleData, error: roleError } = await supabase
               .from('roles')
               .select('created_at')
@@ -277,8 +292,9 @@ export class TableUtilizationAssessor {
               .limit(1)
               .maybeSingle();
             return roleError || !roleData ? null : roleData.created_at;
+          }
             
-          case 'permissions':
+          case 'permissions': {
             const { data: permissionData, error: permissionError } = await supabase
               .from('permissions')
               .select('created_at')
@@ -286,6 +302,7 @@ export class TableUtilizationAssessor {
               .limit(1)
               .maybeSingle();
             return permissionError || !permissionData ? null : permissionData.created_at;
+          }
             
           default:
             return null;

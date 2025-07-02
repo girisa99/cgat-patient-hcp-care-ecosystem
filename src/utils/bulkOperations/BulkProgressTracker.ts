@@ -1,21 +1,26 @@
-
 /**
  * Tracks progress of bulk operations
  */
 
-import { BulkOperation, BulkOperationResult } from './types';
+import { BulkOperation, BulkOperationResult, DatabaseRecord } from './types';
+
+// Batch executor function type
+export type BatchExecutor<T extends DatabaseRecord = DatabaseRecord> = (batch: T[]) => Promise<{
+  data?: T[];
+  error?: Error;
+}>;
 
 export class BulkProgressTracker {
   /**
    * Process bulk operation with progress tracking and batching
    */
-  async processBulkOperation(
-    config: BulkOperation,
-    executeBatch: (batch: any[]) => Promise<any>,
+  async processBulkOperation<T extends DatabaseRecord = DatabaseRecord>(
+    config: BulkOperation<T>,
+    executeBatch: BatchExecutor<T>,
     defaultBatchSize: number = 100
-  ): Promise<BulkOperationResult> {
+  ): Promise<BulkOperationResult<T>> {
     const startTime = Date.now();
-    const results: any[] = [];
+    const results: T[] = [];
     const errors: Error[] = [];
     let processedCount = 0;
 
@@ -54,7 +59,7 @@ export class BulkProgressTracker {
         }
       }
 
-      const result: BulkOperationResult = {
+      const result: BulkOperationResult<T> = {
         success: errors.length === 0,
         processedCount,
         errorCount: errors.length,
@@ -69,7 +74,7 @@ export class BulkProgressTracker {
       return result;
 
     } catch (error) {
-      const errorResult: BulkOperationResult = {
+      const errorResult: BulkOperationResult<T> = {
         success: false,
         processedCount,
         errorCount: 1,
