@@ -75,6 +75,11 @@ export const TestCaseSearchFilter: React.FC<TestCaseSearchFilterProps> = ({
     { value: 'blocked', label: 'Blocked' }
   ];
 
+  // Helper function to safely get count values
+  const getCount = (obj: any, key: string): number => {
+    return typeof obj?.[key] === 'number' ? obj[key] : 0;
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -123,7 +128,7 @@ export const TestCaseSearchFilter: React.FC<TestCaseSearchFilterProps> = ({
                 <SelectItem value="all">All Suite Types</SelectItem>
                 {suiteTypes.map(type => (
                   <SelectItem key={type.value} value={type.value}>
-                    {type.label} ({testStatistics.testsByType?.[type.value] || 0})
+                    {type.label} ({getCount(testStatistics.testsByType, type.value)})
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -141,7 +146,7 @@ export const TestCaseSearchFilter: React.FC<TestCaseSearchFilterProps> = ({
                 <SelectItem value="all">All Statuses</SelectItem>
                 {testStatuses.map(status => (
                   <SelectItem key={status.value} value={status.value}>
-                    {status.label} ({testStatistics.testsByStatus?.[status.value] || 0})
+                    {status.label} ({getCount(testStatistics.testsByStatus, status.value)})
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -159,7 +164,7 @@ export const TestCaseSearchFilter: React.FC<TestCaseSearchFilterProps> = ({
                 <SelectItem value="all">All Modules</SelectItem>
                 {Object.entries(testStatistics.testsByModule || {}).map(([module, count]) => (
                   <SelectItem key={module} value={module}>
-                    {module} ({count})
+                    {module} ({typeof count === 'number' ? count : 0})
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -177,7 +182,7 @@ export const TestCaseSearchFilter: React.FC<TestCaseSearchFilterProps> = ({
                 <SelectItem value="all">All Topics</SelectItem>
                 {Object.entries(testStatistics.testsByTopic || {}).map(([topic, count]) => (
                   <SelectItem key={topic} value={topic}>
-                    {topic} ({count})
+                    {topic} ({typeof count === 'number' ? count : 0})
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -195,7 +200,7 @@ export const TestCaseSearchFilter: React.FC<TestCaseSearchFilterProps> = ({
                 <SelectItem value="all">All Coverage Areas</SelectItem>
                 {Object.entries(testStatistics.testsByCoverageArea || {}).map(([area, count]) => (
                   <SelectItem key={area} value={area}>
-                    {area} ({count})
+                    {area} ({typeof count === 'number' ? count : 0})
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -213,7 +218,7 @@ export const TestCaseSearchFilter: React.FC<TestCaseSearchFilterProps> = ({
                 <SelectItem value="all">All Business Functions</SelectItem>
                 {Object.entries(testStatistics.testsByBusinessFunction || {}).map(([func, count]) => (
                   <SelectItem key={func} value={func}>
-                    {func} ({count})
+                    {func} ({typeof count === 'number' ? count : 0})
                   </SelectItem>
                 ))}
               </SelectContent>
