@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface ComprehensiveTestCase {
@@ -119,18 +120,19 @@ class ComprehensiveTestingService {
       
       console.log('✅ Test suite execution completed:', data);
       
-      // Ensure proper type conversion from database JSON response
-      if (data && typeof data === 'object') {
+      // Safely handle the database response
+      if (data && typeof data === 'object' && !Array.isArray(data)) {
+        const result = data as Record<string, any>;
         return {
-          execution_batch_id: data.execution_batch_id || '',
-          suite_type: data.suite_type || '',
-          total_tests: Number(data.total_tests) || 0,
-          passed_tests: Number(data.passed_tests) || 0,
-          failed_tests: Number(data.failed_tests) || 0,
-          skipped_tests: Number(data.skipped_tests) || 0,
-          pass_rate: Number(data.pass_rate) || 0,
-          executed_at: data.executed_at || new Date().toISOString(),
-          compliance_status: data.compliance_status || ''
+          execution_batch_id: String(result.execution_batch_id || ''),
+          suite_type: String(result.suite_type || ''),
+          total_tests: Number(result.total_tests || 0),
+          passed_tests: Number(result.passed_tests || 0),
+          failed_tests: Number(result.failed_tests || 0),
+          skipped_tests: Number(result.skipped_tests || 0),
+          pass_rate: Number(result.pass_rate || 0),
+          executed_at: String(result.executed_at || new Date().toISOString()),
+          compliance_status: String(result.compliance_status || '')
         };
       }
       
@@ -179,12 +181,16 @@ class ComprehensiveTestingService {
         throw error;
       }
       
-      // Type-safe conversion ensuring proper enum values
+      // Safely convert database response to proper types
       return (data || []).map(item => ({
         ...item,
         test_suite_type: item.test_suite_type as ComprehensiveTestCase['test_suite_type'],
         test_status: item.test_status as ComprehensiveTestCase['test_status'],
-        validation_level: item.validation_level as ComprehensiveTestCase['validation_level']
+        validation_level: item.validation_level as ComprehensiveTestCase['validation_level'],
+        test_steps: Array.isArray(item.test_steps) ? item.test_steps : [],
+        execution_data: typeof item.execution_data === 'object' ? item.execution_data : {},
+        compliance_requirements: typeof item.compliance_requirements === 'object' ? item.compliance_requirements : {},
+        cfr_part11_metadata: typeof item.cfr_part11_metadata === 'object' ? item.cfr_part11_metadata : {},
       }));
     } catch (error) {
       console.error('Error fetching test cases:', error);
@@ -225,12 +231,14 @@ class ComprehensiveTestingService {
         throw error;
       }
       
-      // Type-safe conversion ensuring proper enum values
+      // Safely convert database response to proper types
       return (data || []).map(item => ({
         ...item,
         functionality_type: item.functionality_type as SystemFunctionality['functionality_type'],
         test_coverage_status: item.test_coverage_status as SystemFunctionality['test_coverage_status'],
-        risk_level: item.risk_level as SystemFunctionality['risk_level']
+        risk_level: item.risk_level as SystemFunctionality['risk_level'],
+        dependencies: Array.isArray(item.dependencies) ? item.dependencies : [],
+        metadata: typeof item.metadata === 'object' ? item.metadata : {},
       }));
     } catch (error) {
       console.error('Error fetching system functionality:', error);
