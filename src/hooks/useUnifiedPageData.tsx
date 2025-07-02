@@ -29,14 +29,26 @@ export const useUnifiedPageData = () => {
   // API Services - Single Source
   const apiServicesData = useApiServices();
   
-  // Real-time stats - Single Source
-  const { data: realTimeStats } = useRealTimeUserStats();
+  // Real-time stats - Single Source with proper refresh
+  const { data: realTimeStats, refetch: refetchStats } = useRealTimeUserStats();
 
   // Consolidated loading state
-  const isLoading = userData.isLoading || facilitiesData.isLoading || apiServicesData.isLoading;
+  const isLoading = userData.isLoading || facilitiesData.isLoading || modulesData.isLoading || apiServicesData.isLoading;
 
   // Consolidated error state
-  const hasError = userData.error || facilitiesData.error || apiServicesData.error;
+  const hasError = userData.error || facilitiesData.error || modulesData.error || apiServicesData.error;
+
+  // Global refresh function to update all data sources
+  const refreshAllData = async () => {
+    console.log('🔄 Refreshing all unified data sources...');
+    await Promise.all([
+      userData.refetch?.(),
+      facilitiesData.refetch?.(),
+      modulesData.refetch?.(),
+      apiServicesData.refetch?.(),
+      refetchStats()
+    ]);
+  };
 
   return {
     // Authentication - Single Source
@@ -76,7 +88,10 @@ export const useUnifiedPageData = () => {
       updateFacility: facilitiesData.updateFacility,
       searchFacilities: facilitiesData.searchFacilities,
       getFacilityStats: facilitiesData.getFacilityStats,
-      meta: facilitiesData.meta
+      meta: {
+        totalFacilities: facilitiesData.facilities?.length || 0,
+        dataSource: 'facilities table'
+      }
     },
 
     // Modules - Single Source
@@ -85,7 +100,18 @@ export const useUnifiedPageData = () => {
       isLoading: modulesData.isLoading,
       error: modulesData.error,
       getModuleStats: modulesData.getModuleStats,
-      meta: modulesData.meta
+      searchModules: modulesData.searchModules || ((query: string) => {
+        if (!query.trim()) return modulesData.modules || [];
+        const term = query.toLowerCase();
+        return (modulesData.modules || []).filter((module: any) => 
+          module.name?.toLowerCase().includes(term) ||
+          module.description?.toLowerCase().includes(term)
+        );
+      }),
+      meta: {
+        totalModules: modulesData.modules?.length || 0,
+        dataSource: 'modules table'
+      }
     },
 
     // API Services - Single Source  
@@ -99,7 +125,7 @@ export const useUnifiedPageData = () => {
       searchApis: apiServicesData.searchApis,
       meta: {
         totalIntegrations: apiServicesData.integrations?.length || 0,
-        dataSource: 'api_integration_registry'
+        dataSource: 'api_integration_registry table'
       }
     },
 
@@ -109,6 +135,7 @@ export const useUnifiedPageData = () => {
     // Global States - Single Source
     isLoading,
     hasError,
+    refreshAllData,
 
     // Meta Information - Single Source Validation
     meta: {
@@ -119,8 +146,8 @@ export const useUnifiedPageData = () => {
       lastUpdated: new Date().toISOString(),
       dataSources: {
         users: userData.meta.dataSource,
-        facilities: facilitiesData.meta?.dataSource || 'facilities table',
-        modules: modulesData.meta?.dataSource || 'modules table',
+        facilities: 'facilities table',
+        modules: 'modules table',
         apiServices: 'api_integration_registry table',
         auth: 'supabase auth'
       }

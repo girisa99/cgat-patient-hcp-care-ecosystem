@@ -12,7 +12,7 @@ import { UnifiedPageWrapper } from '@/components/layout/UnifiedPageWrapper';
 import { useUnifiedPageData } from '@/hooks/useUnifiedPageData';
 
 /**
- * Facilities Page - UNIFIED IMPLEMENTATION
+ * Facilities Page - UNIFIED LOCKED IMPLEMENTATION
  * Uses single source of truth via UnifiedPageWrapper and useUnifiedPageData
  */
 const Facilities: React.FC = () => {
@@ -22,7 +22,7 @@ const Facilities: React.FC = () => {
   const [selectedFacility, setSelectedFacility] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
-  console.log('🎯 Facilities Page - Unified Single Source Implementation');
+  console.log('🔒 Facilities Page - LOCKED VERSION active with unified data source');
 
   const handleCreateFacility = () => {
     setCreateDialogOpen(true);
@@ -47,7 +47,7 @@ const Facilities: React.FC = () => {
   return (
     <UnifiedPageWrapper
       title="Facilities Management"
-      subtitle={`Manage healthcare facilities (${facilities.data.length} facilities from ${facilities.meta?.dataSource})`}
+      subtitle={`Unified facilities management system (${facilities.data.length} facilities from ${facilities.meta?.dataSource})`}
       headerActions={headerActions}
       fluid
     >
@@ -104,10 +104,17 @@ const Facilities: React.FC = () => {
         {/* Facilities List */}
         <Card className="shadow-sm">
           <CardContent className="p-6">
-            <FacilitiesList 
-              facilities={filteredFacilities}
-              onEditFacility={handleEditFacility}
-            />
+            {facilities.isLoading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-gray-500">Loading facilities from unified source...</p>
+              </div>
+            ) : (
+              <FacilitiesList 
+                facilities={filteredFacilities}
+                onEditFacility={handleEditFacility}
+              />
+            )}
           </CardContent>
         </Card>
       </div>
