@@ -1,0 +1,33 @@
+name: NPM Audit Scan using Github Actions # Descriptive name for the workflow.
+
+on:
+  push:
+    branches: [ main ] # Trigger on push to the main branch.
+  workflow_dispatch: # Allows manual triggering of the workflow.
+
+jobs:
+  npm-audit-scan-job: # Name of the job.
+    name: NPM Audit Scan for Vulnerabilities # Descriptive name for the job.
+    runs-on: ubuntu-latest # Specify the operating system for the job.
+
+    steps:
+      - name: Step1 Download the Source Code # Step to checkout the repository code.
+        uses: actions/checkout@v3.5.3 # Use the actions/checkout action.
+
+      - name: Step2 Install Node.js # Step to set up Node.js environment.
+        uses: actions/setup-node@v3.7.0 # Use the actions/setup-node action.
+        with:
+          node-version: '18.16.1' # Specify the Node.js version.
+
+      - name: Step3 Install Dependencies # Step to install project dependencies.
+        run: npm install # Execute the npm install command.
+
+      - name: Step4 NPM Audit Scan and Generate Report in JSON Format # Step to perform an NPM audit.
+        run: npm audit --json > npm-audit-results.json # Run npm audit and save the output as a JSON file.
+        continue-on-error: true #  Allows the workflow to continue even if vulnerabilities are found.
+
+      - name: Step5 Upload NPM Audit Scan Report to GitHub # Step to upload the audit report as an artifact.
+        uses: actions/upload-artifact@v3 # Use the actions/upload-artifact action.
+        with:
+          name: npm-audit-results # Name of the artifact.
+          path: npm-audit-results.json # Path to the audit report file.
