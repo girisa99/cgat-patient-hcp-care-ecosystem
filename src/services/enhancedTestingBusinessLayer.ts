@@ -570,17 +570,5 @@ Key Components:
 // Export singleton instance
 export const enhancedTestingBusinessLayer = new EnhancedTestingBusinessLayer();
 
-// Export for direct usage
+// Export class for direct usage
 export { EnhancedTestingBusinessLayer };
-
-// Export all types for external usage
-export type {
-  UnifiedTestingCapabilities,
-  TestExecutionOptions,
-  EnhancedTestMetrics,
-  ComplianceReport,
-  ComplianceFinding,
-  DocumentationPackage,
-  TraceabilityMatrix,
-  ModuleComplianceStatus
-};
