@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { UnifiedTestingOverview } from './UnifiedTestingOverview';
@@ -55,7 +54,7 @@ export const TestingModule: React.FC = () => {
     // Return a mock result for compatibility
     return {
       id: `unified-${testType}-${Date.now()}`,
-      testType,
+      testType: 'integration' as const,
       testName: `${testType} Test Suite`,
       status: 'passed',
       duration: 1000,
