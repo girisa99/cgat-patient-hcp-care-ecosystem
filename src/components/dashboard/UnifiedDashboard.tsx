@@ -41,7 +41,7 @@ const UnifiedDashboard: React.FC = () => {
         <NavigationDiagnostic />
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <h3 className="text-red-800 font-semibold">Dashboard Error</h3>
-          <p className="text-red-600">{error}</p>
+          <p className="text-red-600">{error instanceof Error ? error.message : String(error)}</p>
         </div>
       </div>
     );
