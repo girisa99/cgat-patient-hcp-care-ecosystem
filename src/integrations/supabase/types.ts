@@ -607,8 +607,10 @@ export type Database = {
           actual_results: string | null
           api_integration_id: string | null
           auto_generated: boolean | null
+          business_function: string | null
           cfr_part11_metadata: Json | null
           compliance_requirements: Json | null
+          coverage_area: string | null
           created_at: string
           created_by: string | null
           database_source: string | null
@@ -617,6 +619,7 @@ export type Database = {
           expected_results: string | null
           id: string
           last_executed_at: string | null
+          module_name: string | null
           related_functionality: string | null
           test_category: string
           test_description: string | null
@@ -624,6 +627,7 @@ export type Database = {
           test_status: string | null
           test_steps: Json | null
           test_suite_type: string
+          topic: string | null
           updated_at: string
           updated_by: string | null
           validation_level: string | null
@@ -632,8 +636,10 @@ export type Database = {
           actual_results?: string | null
           api_integration_id?: string | null
           auto_generated?: boolean | null
+          business_function?: string | null
           cfr_part11_metadata?: Json | null
           compliance_requirements?: Json | null
+          coverage_area?: string | null
           created_at?: string
           created_by?: string | null
           database_source?: string | null
@@ -642,6 +648,7 @@ export type Database = {
           expected_results?: string | null
           id?: string
           last_executed_at?: string | null
+          module_name?: string | null
           related_functionality?: string | null
           test_category: string
           test_description?: string | null
@@ -649,6 +656,7 @@ export type Database = {
           test_status?: string | null
           test_steps?: Json | null
           test_suite_type: string
+          topic?: string | null
           updated_at?: string
           updated_by?: string | null
           validation_level?: string | null
@@ -657,8 +665,10 @@ export type Database = {
           actual_results?: string | null
           api_integration_id?: string | null
           auto_generated?: boolean | null
+          business_function?: string | null
           cfr_part11_metadata?: Json | null
           compliance_requirements?: Json | null
+          coverage_area?: string | null
           created_at?: string
           created_by?: string | null
           database_source?: string | null
@@ -667,6 +677,7 @@ export type Database = {
           expected_results?: string | null
           id?: string
           last_executed_at?: string | null
+          module_name?: string | null
           related_functionality?: string | null
           test_category?: string
           test_description?: string | null
@@ -674,6 +685,7 @@ export type Database = {
           test_status?: string | null
           test_steps?: Json | null
           test_suite_type?: string
+          topic?: string | null
           updated_at?: string
           updated_by?: string | null
           validation_level?: string | null

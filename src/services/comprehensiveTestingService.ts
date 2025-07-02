@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface ComprehensiveTestCase {
@@ -19,6 +18,10 @@ export interface ComprehensiveTestCase {
   validation_level?: 'IQ' | 'OQ' | 'PQ' | 'validation_plan';
   cfr_part11_metadata?: any;
   auto_generated?: boolean;
+  module_name?: string;
+  topic?: string;
+  coverage_area?: string;
+  business_function?: string;
   created_at: string;
   updated_at: string;
   last_executed_at?: string;
@@ -144,12 +147,16 @@ class ComprehensiveTestingService {
   }
 
   /**
-   * Get all test cases with filtering
+   * Get all test cases with enhanced filtering including module and topic support
    */
   async getTestCases(filters?: {
     suite_type?: string;
     test_status?: string;
     functionality?: string;
+    module_name?: string;
+    topic?: string;
+    coverage_area?: string;
+    business_function?: string;
     limit?: number;
   }): Promise<ComprehensiveTestCase[]> {
     try {
@@ -168,6 +175,22 @@ class ComprehensiveTestingService {
       
       if (filters?.functionality) {
         query = query.ilike('related_functionality', `%${filters.functionality}%`);
+      }
+
+      if (filters?.module_name) {
+        query = query.eq('module_name', filters.module_name);
+      }
+
+      if (filters?.topic) {
+        query = query.eq('topic', filters.topic);
+      }
+
+      if (filters?.coverage_area) {
+        query = query.eq('coverage_area', filters.coverage_area);
+      }
+
+      if (filters?.business_function) {
+        query = query.eq('business_function', filters.business_function);
       }
       
       if (filters?.limit) {
@@ -283,20 +306,24 @@ class ComprehensiveTestingService {
   }
 
   /**
-   * Get test statistics summary
+   * Get enhanced test statistics with module and topic breakdown
    */
   async getTestStatistics(): Promise<{
     totalTestCases: number;
     testsByType: Record<string, number>;
     testsByStatus: Record<string, number>;
+    testsByModule: Record<string, number>;
+    testsByTopic: Record<string, number>;
+    testsByCoverageArea: Record<string, number>;
+    testsByBusinessFunction: Record<string, number>;
     coverageByFunctionality: Record<string, number>;
     overallCoverage: number;
   }> {
     try {
-      // Get test cases summary
+      // Get test cases summary with new categorization fields
       const { data: testCases, error: testError } = await supabase
         .from('comprehensive_test_cases')
-        .select('test_suite_type, test_status, related_functionality');
+        .select('test_suite_type, test_status, related_functionality, module_name, topic, coverage_area, business_function');
 
       if (testError) throw testError;
 
@@ -320,6 +347,34 @@ class ComprehensiveTestingService {
         return acc;
       }, {} as Record<string, number>) || {};
 
+      const testsByModule = testCases?.reduce((acc, test) => {
+        if (test.module_name) {
+          acc[test.module_name] = (acc[test.module_name] || 0) + 1;
+        }
+        return acc;
+      }, {} as Record<string, number>) || {};
+
+      const testsByTopic = testCases?.reduce((acc, test) => {
+        if (test.topic) {
+          acc[test.topic] = (acc[test.topic] || 0) + 1;
+        }
+        return acc;
+      }, {} as Record<string, number>) || {};
+
+      const testsByCoverageArea = testCases?.reduce((acc, test) => {
+        if (test.coverage_area) {
+          acc[test.coverage_area] = (acc[test.coverage_area] || 0) + 1;
+        }
+        return acc;
+      }, {} as Record<string, number>) || {};
+
+      const testsByBusinessFunction = testCases?.reduce((acc, test) => {
+        if (test.business_function) {
+          acc[test.business_function] = (acc[test.business_function] || 0) + 1;
+        }
+        return acc;
+      }, {} as Record<string, number>) || {};
+
       const coverageByFunctionality = functionality?.reduce((acc, func) => {
         acc[func.functionality_type] = (acc[func.functionality_type] || 0) + 1;
         return acc;
@@ -333,6 +388,10 @@ class ComprehensiveTestingService {
         totalTestCases,
         testsByType,
         testsByStatus,
+        testsByModule,
+        testsByTopic,
+        testsByCoverageArea,
+        testsByBusinessFunction,
         coverageByFunctionality,
         overallCoverage: Math.round(overallCoverage)
       };
