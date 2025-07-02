@@ -32,7 +32,7 @@ export const AdvancedTestCaseFilter: React.FC<AdvancedTestCaseFilterProps> = ({
     if (value === 'all' || value === '') {
       delete newFilters[key];
     } else {
-      // Type-safe assignment for each key
+      // Type-safe assignment for each key with proper type casting
       switch (key) {
         case 'suite_type':
         case 'test_status':
@@ -40,10 +40,12 @@ export const AdvancedTestCaseFilter: React.FC<AdvancedTestCaseFilterProps> = ({
         case 'topic':
         case 'coverage_area':
         case 'business_function':
+          newFilters[key] = value;
+          break;
         case 'created_within':
         case 'last_executed_within':
         case 'last_updated_within':
-          newFilters[key] = value;
+          newFilters[key] = value as 'hour' | 'day' | 'week' | 'month';
           break;
         case 'execution_status':
           newFilters[key] = value as 'never_executed' | 'recently_executed' | 'stale' | 'failed_last_run';
