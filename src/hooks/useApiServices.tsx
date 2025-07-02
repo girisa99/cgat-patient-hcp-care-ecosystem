@@ -1,42 +1,43 @@
 
-import { useOptimizedQuery } from './useOptimizedQuery';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useErrorHandler } from './useErrorHandler';
 
 export const useApiServices = () => {
   const { toast } = useToast();
-  const { handleError } = useErrorHandler({ component: 'ApiServices' });
   const queryClient = useQueryClient();
 
-  // Use optimized query with caching and error handling
+  // Simplified query without useOptimizedQuery dependency
   const {
     data: integrations,
     isLoading,
     error,
     refetch
-  } = useOptimizedQuery({
+  } = useQuery({
     queryKey: ['api-integration-registry'],
     queryFn: async () => {
       console.log('🔍 Fetching API integrations...');
       
-      const { data, error } = await supabase
-        .from('api_integration_registry')
-        .select('*')
-        .order('created_at', { ascending: false });
+      try {
+        const { data, error } = await supabase
+          .from('api_integration_registry')
+          .select('*')
+          .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('❌ Error fetching API integrations:', error);
-        throw error;
+        if (error) {
+          console.error('❌ Error fetching API integrations:', error);
+          throw error;
+        }
+
+        console.log('✅ API integrations fetched:', data?.length || 0);
+        return data || [];
+      } catch (err) {
+        console.error('💥 Exception fetching API integrations:', err);
+        throw err;
       }
-
-      console.log('✅ API integrations fetched:', data?.length || 0);
-      return data || [];
     },
-    cacheTime: 300000, // 5 minutes cache
-    staleWhileRevalidate: true,
-    component: 'ApiServices'
+    retry: 1,
+    staleTime: 300000, // 5 minutes
   });
 
   const createMutation = useMutation({
@@ -45,7 +46,10 @@ export const useApiServices = () => {
       
       const { data, error } = await supabase
         .from('api_integration_registry')
-        .insert(newIntegration)
+        .insert({
+          ...newIntegration,
+          created_by: (await supabase.auth.getUser()).data.user?.id
+        })
         .select()
         .single();
 
@@ -64,7 +68,12 @@ export const useApiServices = () => {
       });
     },
     onError: (error: any) => {
-      handleError(error, { operation: 'create-integration' });
+      console.error('❌ Create integration error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create integration",
+        variant: "destructive",
+      });
     }
   });
 
@@ -94,11 +103,16 @@ export const useApiServices = () => {
       });
     },
     onError: (error: any) => {
-      handleError(error, { operation: 'update-integration' });
+      console.error('❌ Update integration error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update integration",
+        variant: "destructive",
+      });
     }
   });
 
-  // Add missing methods for compatibility
+  // Statistics calculation
   const getApiStats = () => {
     const apis = integrations || [];
     return {
@@ -109,6 +123,7 @@ export const useApiServices = () => {
     };
   };
 
+  // Search functionality
   const searchApis = (searchTerm: string) => {
     if (!searchTerm.trim()) return integrations || [];
     const term = searchTerm.toLowerCase();
@@ -119,7 +134,7 @@ export const useApiServices = () => {
     );
   };
 
-  // Provide backward compatibility with expected property names
+  // Backward compatibility properties
   const apiServices = integrations || [];
   const internalApis = apiServices.filter((api: any) => api.type === 'internal');
   const externalApis = apiServices.filter((api: any) => api.type === 'external');
