@@ -1,6 +1,6 @@
-
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { TestResult } from '@/services/testingService';
 
 interface TestingMetrics {
   total: number;
@@ -27,13 +27,6 @@ interface TestingMeta {
   dataSource: string;
   usingRealData: boolean;
   lastSyncAt: string;
-}
-
-interface TestResult {
-  status: string;
-  coverage: number;
-  duration: number;
-  timestamp: string;
 }
 
 // Simulated real testing data based on actual system metrics
@@ -74,10 +67,13 @@ export const useUnifiedTestingData = () => {
       await new Promise(resolve => setTimeout(resolve, 2000 + Math.random() * 3000));
       
       const result: TestResult = {
+        id: `test-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        testType: testType as 'unit' | 'integration' | 'system' | 'regression' | 'e2e',
+        testName: `${testType} Test Suite`,
         status: Math.random() > 0.1 ? 'passed' : 'failed',
-        coverage: Math.floor(85 + Math.random() * 10),
         duration: Math.floor(1000 + Math.random() * 4000),
-        timestamp: new Date().toISOString()
+        coverage: Math.floor(85 + Math.random() * 10),
+        executedAt: new Date().toISOString()
       };
 
       // Update test data based on results
@@ -87,7 +83,7 @@ export const useUnifiedTestingData = () => {
         if (newData[testKey]) {
           newData[testKey] = {
             ...newData[testKey],
-            coverage: result.coverage
+            coverage: result.coverage || 0
           };
         }
         return newData;
@@ -120,16 +116,49 @@ export const useUnifiedTestingData = () => {
     return results;
   };
 
-  // Get recent test results (simulated) - Fixed to return Promise<TestResult[]>
+  // Get recent test results (simulated) - Now returns proper TestResult format
   const getRecentTestResults = async (): Promise<TestResult[]> => {
     // Simulate async operation
     await new Promise(resolve => setTimeout(resolve, 100));
     
     return [
-      { status: 'passed', coverage: 89, duration: 1200, timestamp: new Date(Date.now() - 300000).toISOString() },
-      { status: 'passed', coverage: 92, duration: 1800, timestamp: new Date(Date.now() - 600000).toISOString() },
-      { status: 'failed', coverage: 75, duration: 900, timestamp: new Date(Date.now() - 900000).toISOString() },
-      { status: 'passed', coverage: 88, duration: 2100, timestamp: new Date(Date.now() - 1200000).toISOString() }
+      {
+        id: 'recent-1',
+        testType: 'unit',
+        testName: 'Unit Test Suite - Recent',
+        status: 'passed',
+        duration: 1200,
+        coverage: 89,
+        executedAt: new Date(Date.now() - 300000).toISOString()
+      },
+      {
+        id: 'recent-2',
+        testType: 'integration',
+        testName: 'Integration Test Suite - Recent',
+        status: 'passed',
+        duration: 1800,
+        coverage: 92,
+        executedAt: new Date(Date.now() - 600000).toISOString()
+      },
+      {
+        id: 'recent-3',
+        testType: 'system',
+        testName: 'System Test Suite - Recent',
+        status: 'failed',
+        duration: 900,
+        coverage: 75,
+        errorMessage: 'System performance threshold exceeded',
+        executedAt: new Date(Date.now() - 900000).toISOString()
+      },
+      {
+        id: 'recent-4',
+        testType: 'e2e',
+        testName: 'E2E Test Suite - Recent',
+        status: 'passed',
+        duration: 2100,
+        coverage: 88,
+        executedAt: new Date(Date.now() - 1200000).toISOString()
+      }
     ];
   };
 
