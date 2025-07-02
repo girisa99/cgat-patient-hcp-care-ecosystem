@@ -1,222 +1,279 @@
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useAuthContext } from '@/components/auth/CleanAuthProvider';
-import { useUserSettings } from '@/hooks/useUserSettings';
-import { User, Mail, Phone, Building, Clock, Globe } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { User, Mail, Phone, MapPin, Building } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
-const ProfileSettings = () => {
-  const { user, profile } = useAuthContext();
-  const { userPreferences, updatePreferences, isUpdating } = useUserSettings();
-  const [localPreferences, setLocalPreferences] = useState<{
-    theme_preference: 'light' | 'dark' | 'system';
-    language: string;
-    timezone: string;
-  }>({
-    theme_preference: (userPreferences?.theme_preference as 'light' | 'dark' | 'system') || 'system',
-    language: userPreferences?.language || 'en',
-    timezone: userPreferences?.timezone || 'UTC',
-  });
+interface Profile {
+  id: string;
+  first_name?: string | null;
+  last_name?: string | null;
+  email?: string;
+  phone?: string | null;
+  avatar_url?: string | null;
+  department?: string | null;
+  facility_id?: string | null;
+}
 
-  const handleSavePreferences = () => {
-    if (userPreferences) {
-      updatePreferences(localPreferences);
+export const ProfileSettings: React.FC = () => {
+  const { toast } = useToast();
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  // Form fields
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [department, setDepartment] = useState('');
+
+  useEffect(() => {
+    loadProfile();
+  }, []);
+
+  const loadProfile = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        console.log('No authenticated user found');
+        setLoading(false);
+        return;
+      }
+
+      // Try to fetch from profiles table
+      const { data: profileData, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching profile:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load profile data",
+          variant: "destructive",
+        });
+      }
+
+      // Use profile data if available, otherwise fallback to auth user data
+      const profile: Profile = profileData || {
+        id: user.id,
+        email: user.email,
+        first_name: user.user_metadata?.first_name || null,
+        last_name: user.user_metadata?.last_name || null,
+        phone: user.user_metadata?.phone || null,
+      };
+
+      setProfile(profile);
+      setFirstName(profile.first_name || '');
+      setLastName(profile.last_name || '');
+      setEmail(profile.email || '');
+      setPhone(profile.phone || '');
+      setDepartment(profile.department || '');
+
+    } catch (error) {
+      console.error('Error loading profile:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load profile",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
-  const timezones = [
-    { value: 'UTC', label: 'UTC (Coordinated Universal Time)' },
-    { value: 'America/New_York', label: 'Eastern Time (US & Canada)' },
-    { value: 'America/Chicago', label: 'Central Time (US & Canada)' },
-    { value: 'America/Denver', label: 'Mountain Time (US & Canada)' },
-    { value: 'America/Los_Angeles', label: 'Pacific Time (US & Canada)' },
-    { value: 'Europe/London', label: 'Greenwich Mean Time (London)' },
-    { value: 'Europe/Paris', label: 'Central European Time (Paris)' },
-    { value: 'Asia/Tokyo', label: 'Japan Standard Time (Tokyo)' },
-  ];
+  const saveProfile = async () => {
+    if (!profile) return;
 
-  const languages = [
-    { value: 'en', label: 'English' },
-    { value: 'es', label: 'Spanish' },
-    { value: 'fr', label: 'French' },
-    { value: 'de', label: 'German' },
-    { value: 'it', label: 'Italian' },
-    { value: 'pt', label: 'Portuguese' },
-    { value: 'zh', label: 'Chinese' },
-    { value: 'ja', label: 'Japanese' },
-  ];
+    setSaving(true);
+    try {
+      const updates = {
+        id: profile.id,
+        first_name: firstName.trim() || null,
+        last_name: lastName.trim() || null,
+        email: email.trim(),
+        phone: phone.trim() || null,
+        department: department.trim() || null,
+        updated_at: new Date().toISOString(),
+      };
 
-  return (
-    <div className="space-y-6">
-      {/* Profile Information */}
+      const { error } = await supabase
+        .from('profiles')
+        .upsert(updates, { onConflict: 'id' });
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Success",
+        description: "Profile updated successfully",
+      });
+
+      // Reload profile to get updated data
+      await loadProfile();
+
+    } catch (error: any) {
+      console.error('Error updating profile:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update profile",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="h-5 w-5" />
-            Profile Information
-          </CardTitle>
-          <CardDescription>
-            View and update your personal information
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="flex items-center gap-4">
-            <Avatar className="h-20 w-20">
-              <AvatarImage src="" />
-              <AvatarFallback className="text-lg">
-                {profile?.first_name?.[0]}{profile?.last_name?.[0]}
-              </AvatarFallback>
-            </Avatar>
-            <div className="space-y-1">
-              <h3 className="text-lg font-medium">
-                {profile?.first_name} {profile?.last_name}
-              </h3>
-              <p className="text-sm text-muted-foreground">{user?.email}</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="firstName">First Name</Label>
-              <Input
-                id="firstName"
-                value={profile?.first_name || ''}
-                readOnly
-                className="bg-muted"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="lastName">Last Name</Label>
-              <Input
-                id="lastName"
-                value={profile?.last_name || ''}
-                readOnly
-                className="bg-muted"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email" className="flex items-center gap-2">
-                <Mail className="h-4 w-4" />
-                Email
-              </Label>
-              <Input
-                id="email"
-                value={user?.email || ''}
-                readOnly
-                className="bg-muted"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="phone" className="flex items-center gap-2">
-                <Phone className="h-4 w-4" />
-                Phone
-              </Label>
-              <Input
-                id="phone"
-                value={profile?.phone || 'Not provided'}
-                readOnly
-                className="bg-muted"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="facility" className="flex items-center gap-2">
-                <Building className="h-4 w-4" />
-                Facility
-              </Label>
-              <Input
-                id="facility"
-                value={profile?.facility_id ? 'Assigned' : 'Not assigned'}
-                readOnly
-                className="bg-muted"
-              />
-            </div>
+        <CardContent className="p-6">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
           </div>
         </CardContent>
       </Card>
+    );
+  }
 
-      {/* Display Preferences */}
+  if (!profile) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="text-center text-muted-foreground">
+            <User className="h-12 w-12 mx-auto mb-4" />
+            <p>Unable to load profile data</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const getInitials = () => {
+    const firstInitial = firstName.charAt(0).toUpperCase();
+    const lastInitial = lastName.charAt(0).toUpperCase();
+    return `${firstInitial}${lastInitial}` || 'U';
+  };
+
+  return (
+    <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Globe className="h-5 w-5" />
-            Display & Regional Preferences
-          </CardTitle>
-          <CardDescription>
-            Customize your display settings and regional preferences
-          </CardDescription>
+          <CardTitle>Profile Information</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="theme">Theme Preference</Label>
-              <Select
-                value={localPreferences.theme_preference}
-                onValueChange={(value: 'light' | 'dark' | 'system') =>
-                  setLocalPreferences(prev => ({ ...prev, theme_preference: value }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="light">Light</SelectItem>
-                  <SelectItem value="dark">Dark</SelectItem>
-                  <SelectItem value="system">System</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="language">Language</Label>
-              <Select
-                value={localPreferences.language}
-                onValueChange={(value) =>
-                  setLocalPreferences(prev => ({ ...prev, language: value }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {languages.map((lang) => (
-                    <SelectItem key={lang.value} value={lang.value}>
-                      {lang.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="timezone" className="flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                Timezone
-              </Label>
-              <Select
-                value={localPreferences.timezone}
-                onValueChange={(value) =>
-                  setLocalPreferences(prev => ({ ...prev, timezone: value }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {timezones.map((tz) => (
-                    <SelectItem key={tz.value} value={tz.value}>
-                      {tz.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+        <CardContent className="space-y-6">
+          {/* Avatar Section */}
+          <div className="flex items-center space-x-4">
+            <Avatar className="h-20 w-20">
+              <AvatarImage src={profile.avatar_url || undefined} />
+              <AvatarFallback className="text-lg">
+                {getInitials()}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <h3 className="text-lg font-medium">
+                {firstName && lastName ? `${firstName} ${lastName}` : 'Your Name'}
+              </h3>
+              <p className="text-sm text-muted-foreground">{email}</p>
             </div>
           </div>
+
+          {/* Form Fields */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="firstName">First Name</Label>
+              <div className="relative">
+                <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="firstName"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  placeholder="Enter your first name"
+                  className="pl-10"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="lastName">Last Name</Label>
+              <div className="relative">
+                <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="lastName"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  placeholder="Enter your last name"
+                  className="pl-10"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Address</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter your email"
+                  className="pl-10"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone Number</Label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="phone"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="Enter your phone number"
+                  className="pl-10"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="department">Department</Label>
+              <div className="relative">
+                <Building className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="department"
+                  value={department}
+                  onChange={(e) => setDepartment(e.target.value)}
+                  placeholder="Enter your department"
+                  className="pl-10"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Save Button */}
           <div className="flex justify-end">
-            <Button onClick={handleSavePreferences} disabled={isUpdating}>
-              {isUpdating ? 'Saving...' : 'Save Preferences'}
+            <Button onClick={saveProfile} disabled={saving}>
+              {saving ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Saving...
+                </>
+              ) : (
+                'Save Changes'
+              )}
             </Button>
           </div>
         </CardContent>
@@ -224,5 +281,3 @@ const ProfileSettings = () => {
     </div>
   );
 };
-
-export default ProfileSettings;

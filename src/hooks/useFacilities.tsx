@@ -12,14 +12,21 @@ export const useFacilities = () => {
 
   // Calculate facility statistics from real data
   const getFacilityStats = () => {
+    const total = facilities?.length || 0;
+    const active = facilities?.filter(f => f.is_active !== false).length || 0;
+    const inactive = total - active;
+    const byType = facilities?.reduce((acc: any, facility) => {
+      const type = facility.facility_type || 'unknown';
+      acc[type] = (acc[type] || 0) + 1;
+      return acc;
+    }, {}) || {};
+
     return {
-      total: facilities?.length || 0,
-      active: facilities?.filter(f => f.is_active !== false).length || 0,
-      byType: facilities?.reduce((acc: any, facility) => {
-        const type = facility.facility_type || 'unknown';
-        acc[type] = (acc[type] || 0) + 1;
-        return acc;
-      }, {}) || {}
+      total,
+      active,
+      inactive,
+      byType,
+      typeBreakdown: byType
     };
   };
 
@@ -49,6 +56,7 @@ export const useFacilities = () => {
 
   return {
     // Data
+    data: facilities || [],
     facilities: facilities || [],
     isLoading,
     error,
