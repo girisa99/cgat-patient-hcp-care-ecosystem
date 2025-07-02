@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -33,7 +32,35 @@ export const AdvancedTestCaseFilter: React.FC<AdvancedTestCaseFilterProps> = ({
     if (value === 'all' || value === '') {
       delete newFilters[key];
     } else {
-      newFilters[key] = value as any;
+      // Type-safe assignment for each key
+      switch (key) {
+        case 'suite_type':
+        case 'test_status':
+        case 'module_name':
+        case 'topic':
+        case 'coverage_area':
+        case 'business_function':
+        case 'created_within':
+        case 'last_executed_within':
+        case 'last_updated_within':
+          newFilters[key] = value;
+          break;
+        case 'execution_status':
+          newFilters[key] = value as 'never_executed' | 'recently_executed' | 'stale' | 'failed_last_run';
+          break;
+        case 'test_category':
+          newFilters[key] = value as 'technical' | 'system' | 'business' | 'security' | 'compliance';
+          break;
+        case 'compliance_level':
+          newFilters[key] = value as 'IQ' | 'OQ' | 'PQ' | 'validation_plan';
+          break;
+        case 'risk_level':
+          newFilters[key] = value as 'low' | 'medium' | 'high' | 'critical';
+          break;
+        case 'auto_generated':
+          newFilters[key] = value === 'true';
+          break;
+      }
     }
     onFiltersChange(newFilters);
   };

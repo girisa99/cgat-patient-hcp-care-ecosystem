@@ -375,7 +375,7 @@ class EnhancedTestingService {
     const tests: ComprehensiveTestCase[] = [];
     
     for (const moduleName of moduleNames) {
-      const testCase: Partial<ComprehensiveTestCase> = {
+      const testCase: ComprehensiveTestCase = {
         id: crypto.randomUUID(),
         test_suite_type: 'integration',
         test_category: 'role_based_testing',
@@ -390,7 +390,7 @@ class EnhancedTestingService {
         updated_at: new Date().toISOString()
       };
       
-      tests.push(testCase as ComprehensiveTestCase);
+      tests.push(testCase);
     }
     
     return tests;
