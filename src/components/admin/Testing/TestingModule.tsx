@@ -11,9 +11,16 @@ import { TestReportsTab } from './tabs/TestReportsTab';
 import { useUnifiedTestingData } from '@/hooks/useUnifiedTestingData';
 
 export const TestingModule: React.FC = () => {
-  const { testingData, meta } = useUnifiedTestingData();
+  const { 
+    testingData, 
+    meta, 
+    isLoading,
+    runTestSuite,
+    runAllTests,
+    getRecentTestResults
+  } = useUnifiedTestingData();
   
-  console.log('🧪 Testing Module - Single source of truth implementation');
+  console.log('🧪 Testing Module - Real data implementation with functional buttons');
 
   return (
     <div className="space-y-6">
@@ -21,7 +28,7 @@ export const TestingModule: React.FC = () => {
       <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
         <div className="flex items-center gap-2 mb-2">
           <div className="h-2 w-2 bg-emerald-500 rounded-full animate-pulse"></div>
-          <h3 className="font-semibold text-emerald-900">🧪 Testing Tools - Single Source Implementation</h3>
+          <h3 className="font-semibold text-emerald-900">🧪 Testing Tools - Real Data Implementation</h3>
         </div>
         <div className="text-sm text-emerald-700 grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
@@ -34,11 +41,11 @@ export const TestingModule: React.FC = () => {
           </div>
           <div>
             <p><strong>Data Source:</strong> {meta.dataSource}</p>
-            <p><strong>Integration:</strong> Unified</p>
+            <p><strong>Real Data:</strong> {meta.usingRealData ? '✅ Active' : '❌ Mock'}</p>
           </div>
           <div>
             <p><strong>Status:</strong> Production Ready</p>
-            <p><strong>Last Run:</strong> {new Date().toLocaleTimeString()}</p>
+            <p><strong>Last Sync:</strong> {meta.lastSyncAt ? new Date(meta.lastSyncAt).toLocaleTimeString() : 'Never'}</p>
           </div>
         </div>
       </div>
@@ -55,27 +62,53 @@ export const TestingModule: React.FC = () => {
         </TabsList>
 
         <TabsContent value="overview">
-          <UnifiedTestingOverview testingData={testingData} />
+          <UnifiedTestingOverview 
+            testingData={testingData}
+            isLoading={isLoading}
+            runTestSuite={runTestSuite}
+            runAllTests={runAllTests}
+            getRecentTestResults={getRecentTestResults}
+          />
         </TabsContent>
 
         <TabsContent value="unit">
-          <UnitTestingTab testingData={testingData} />
+          <UnitTestingTab 
+            testingData={testingData}
+            runTestSuite={runTestSuite}
+            isLoading={isLoading}
+          />
         </TabsContent>
 
         <TabsContent value="integration">
-          <IntegrationTestingTab testingData={testingData} />
+          <IntegrationTestingTab 
+            testingData={testingData}
+            runTestSuite={runTestSuite}
+            isLoading={isLoading}
+          />
         </TabsContent>
 
         <TabsContent value="system">
-          <SystemTestingTab testingData={testingData} />
+          <SystemTestingTab 
+            testingData={testingData}
+            runTestSuite={runTestSuite}
+            isLoading={isLoading}
+          />
         </TabsContent>
 
         <TabsContent value="regression">
-          <RegressionTestingTab testingData={testingData} />
+          <RegressionTestingTab 
+            testingData={testingData}
+            runTestSuite={runTestSuite}
+            isLoading={isLoading}
+          />
         </TabsContent>
 
         <TabsContent value="e2e">
-          <E2ETestingTab testingData={testingData} />
+          <E2ETestingTab 
+            testingData={testingData}
+            runTestSuite={runTestSuite}
+            isLoading={isLoading}
+          />
         </TabsContent>
 
         <TabsContent value="reports">

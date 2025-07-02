@@ -2,8 +2,9 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { EnhancedButton } from '@/components/ui/enhanced-button';
+import { useToast } from '@/hooks/use-toast';
 import { 
   Play, 
   Code, 
@@ -17,16 +18,48 @@ import {
 
 interface UnitTestingTabProps {
   testingData: any;
+  runTestSuite?: (testType: string) => Promise<any>;
+  isLoading?: boolean;
 }
 
-export const UnitTestingTab: React.FC<UnitTestingTabProps> = ({ testingData }) => {
-  const [isRunning, setIsRunning] = useState(false);
-  const unitTests = testingData.unitTests;
+export const UnitTestingTab: React.FC<UnitTestingTabProps> = ({ 
+  testingData, 
+  runTestSuite,
+  isLoading = false 
+}) => {
+  const { toast } = useToast();
+  const unitTests = testingData.unitTests || { total: 0, passed: 0, failed: 0, skipped: 0, coverage: 0 };
 
   const handleRunTests = async () => {
-    setIsRunning(true);
-    // Simulate test execution
-    setTimeout(() => setIsRunning(false), 3000);
+    if (!runTestSuite) {
+      toast({
+        title: "Feature Unavailable",
+        description: "Test execution is not available in this context.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      toast({
+        title: "Running Unit Tests",
+        description: "Executing unit test suite...",
+      });
+      
+      const result = await runTestSuite('unit');
+      
+      toast({
+        title: "Unit Tests Completed",
+        description: `Status: ${result.status}. Coverage: ${result.coverage}%`,
+      });
+    } catch (error) {
+      toast({
+        title: "Test Execution Failed",
+        description: "Failed to run unit tests. Please check the console for details.",
+        variant: "destructive",
+      });
+      console.error('Unit test execution failed:', error);
+    }
   };
 
   return (
@@ -55,7 +88,9 @@ export const UnitTestingTab: React.FC<UnitTestingTabProps> = ({ testingData }) =
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">{unitTests.passed}</div>
-            <p className="text-xs text-muted-foreground">{((unitTests.passed / unitTests.total) * 100).toFixed(1)}% success rate</p>
+            <p className="text-xs text-muted-foreground">
+              {unitTests.total > 0 ? ((unitTests.passed / unitTests.total) * 100).toFixed(1) : 0}% success rate
+            </p>
           </CardContent>
         </Card>
 
@@ -97,65 +132,42 @@ export const UnitTestingTab: React.FC<UnitTestingTabProps> = ({ testingData }) =
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex gap-3">
-              <Button 
+              <EnhancedButton 
                 onClick={handleRunTests} 
-                disabled={isRunning}
+                loading={isLoading}
+                loadingText="Running Tests..."
                 className="flex-1"
+                disabled={!runTestSuite}
               >
-                {isRunning ? (
-                  <>
-                    <Clock className="h-4 w-4 mr-2 animate-spin" />
-                    Running Tests...
-                  </>
-                ) : (
-                  <>
-                    <Play className="h-4 w-4 mr-2" />
-                    Run All Unit Tests
-                  </>
-                )}
-              </Button>
-              <Button variant="outline">
+                <Play className="h-4 w-4 mr-2" />
+                Run All Unit Tests
+              </EnhancedButton>
+              <EnhancedButton variant="outline" disabled>
                 <FileText className="h-4 w-4 mr-2" />
                 View Reports
-              </Button>
+              </EnhancedButton>
             </div>
 
             <div className="space-y-3">
-              <div className="p-3 border rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-medium">API Services Tests</span>
-                  <Badge variant="default">23 tests</Badge>
+              {unitTests.total > 0 ? (
+                // Show real test categories based on actual data
+                <div className="p-3 border rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-medium">All Unit Tests</span>
+                    <Badge variant="default">{unitTests.total} tests</Badge>
+                  </div>
+                  <Progress value={unitTests.total > 0 ? (unitTests.passed / unitTests.total) * 100 : 0} className="h-2 mb-2" />
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                    <span>{unitTests.passed} passed, {unitTests.failed} failed</span>
+                    <span>Coverage: {unitTests.coverage}%</span>
+                  </div>
                 </div>
-                <Progress value={95} className="h-2 mb-2" />
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>22 passed, 1 failed</span>
-                  <span>Coverage: 95%</span>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Target className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No unit tests found. Run tests to see results.</p>
                 </div>
-              </div>
-
-              <div className="p-3 border rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-medium">Authentication Tests</span>
-                  <Badge variant="default">18 tests</Badge>
-                </div>
-                <Progress value={100} className="h-2 mb-2" />
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>18 passed, 0 failed</span>
-                  <span>Coverage: 98%</span>
-                </div>
-              </div>
-
-              <div className="p-3 border rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-medium">Data Processing Tests</span>
-                  <Badge variant="default">31 tests</Badge>
-                </div>
-                <Progress value={87} className="h-2 mb-2" />
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>27 passed, 4 failed</span>
-                  <span>Coverage: 87%</span>
-                </div>
-              </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -165,75 +177,60 @@ export const UnitTestingTab: React.FC<UnitTestingTabProps> = ({ testingData }) =
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Code className="h-5 w-5" />
-              Test Categories & Coverage
+              Test Categories Status
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {[
-              { category: 'Component Tests', tests: 45, coverage: 94, status: 'healthy' },
-              { category: 'Hook Tests', tests: 28, coverage: 91, status: 'healthy' },
-              { category: 'Utility Function Tests', tests: 38, coverage: 96, status: 'healthy' },
-              { category: 'API Client Tests', tests: 22, coverage: 88, status: 'warning' },
-              { category: 'State Management Tests', tests: 19, coverage: 93, status: 'healthy' }
-            ].map((category, index) => (
-              <div key={index} className="p-3 border rounded-lg">
+            {unitTests.total > 0 ? (
+              <div className="p-3 border rounded-lg">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="font-medium">{category.category}</span>
+                  <span className="font-medium">Unit Test Suite</span>
                   <div className="flex items-center gap-2">
-                    <Badge variant="outline">{category.tests} tests</Badge>
+                    <Badge variant="outline">{unitTests.total} tests</Badge>
                     <div className={`h-2 w-2 rounded-full ${
-                      category.status === 'healthy' ? 'bg-green-500' : 'bg-yellow-500'
+                      unitTests.failed === 0 ? 'bg-green-500' : 'bg-yellow-500'
                     }`} />
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <Progress value={category.coverage} className="h-2" />
+                  <Progress value={unitTests.total > 0 ? (unitTests.passed / unitTests.total) * 100 : 0} className="h-2" />
                   <div className="flex justify-between text-sm text-muted-foreground">
-                    <span>Coverage: {category.coverage}%</span>
-                    <span>{category.status === 'healthy' ? 'All passing' : 'Some issues'}</span>
+                    <span>Success Rate: {unitTests.total > 0 ? ((unitTests.passed / unitTests.total) * 100).toFixed(1) : 0}%</span>
+                    <span>{unitTests.failed === 0 ? 'All passing' : `${unitTests.failed} issues`}</span>
                   </div>
                 </div>
               </div>
-            ))}
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <Code className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>Test categories will appear after running tests.</p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
 
-      {/* Recent Test Results */}
+      {/* Status Message */}
       <Card>
         <CardHeader>
-          <CardTitle>Recent Unit Test Results</CardTitle>
+          <CardTitle>Test Status</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            {[
-              { test: 'ApiServices.handleCreateIntegration', status: 'passed', duration: '234ms', file: 'ApiServices.test.tsx' },
-              { test: 'useUnifiedPageData.fetchData', status: 'passed', duration: '156ms', file: 'useUnifiedPageData.test.tsx' },
-              { test: 'TestingModule.renderAllTabs', status: 'failed', duration: '445ms', file: 'TestingModule.test.tsx' },
-              { test: 'AuthenticationFlow.validateToken', status: 'passed', duration: '298ms', file: 'AuthenticationFlow.test.tsx' },
-              { test: 'DataProcessor.transformApiData', status: 'passed', duration: '187ms', file: 'DataProcessor.test.tsx' }
-            ].map((result, index) => (
-              <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                <div className="flex items-center gap-3">
-                  {result.status === 'passed' ? (
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                  ) : (
-                    <XCircle className="h-4 w-4 text-red-600" />
-                  )}
-                  <div>
-                    <p className="font-medium">{result.test}</p>
-                    <p className="text-sm text-muted-foreground">{result.file}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <Badge variant={result.status === 'passed' ? 'default' : 'destructive'}>
-                    {result.status}
-                  </Badge>
-                  <span className="text-sm text-muted-foreground">{result.duration}</span>
-                </div>
-              </div>
-            ))}
-          </div>
+          {unitTests.total > 0 ? (
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-blue-800">
+                <strong>Real Data Active:</strong> Unit tests are now using real API data from your integration registry. 
+                Test results reflect actual API configurations and statuses.
+              </p>
+            </div>
+          ) : (
+            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-yellow-800">
+                <strong>No Tests Found:</strong> Run the unit test suite to execute tests against your real API integrations 
+                and see detailed results here.
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
