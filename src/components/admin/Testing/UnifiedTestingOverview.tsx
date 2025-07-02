@@ -9,12 +9,11 @@ import {
   Play, 
   CheckCircle, 
   XCircle, 
-  Clock, 
-  TrendingUp,
-  Shield,
-  Zap,
-  Target,
-  GitBranch
+  AlertTriangle, 
+  Globe,
+  Database,
+  Activity,
+  Info
 } from 'lucide-react';
 import { TestResult } from '@/services/testingService';
 
@@ -22,7 +21,7 @@ interface UnifiedTestingOverviewProps {
   testingData: any;
   isLoading?: boolean;
   runTestSuite?: (testType: string) => Promise<any>;
-  runAllTests?: () => Promise<any>;
+  runAllTests?: () => Promise<TestResult[]>;
   getRecentTestResults?: () => Promise<TestResult[]>;
 }
 
@@ -35,115 +34,89 @@ export const UnifiedTestingOverview: React.FC<UnifiedTestingOverviewProps> = ({
 }) => {
   const { toast } = useToast();
   const [recentResults, setRecentResults] = useState<TestResult[]>([]);
-  const [loadingResults, setLoadingResults] = useState(false);
+  
+  const apiIntegrationTests = testingData.apiIntegrationTests || { total: 0, passed: 0, failed: 0, skipped: 0, coverage: 0 };
 
   useEffect(() => {
+    const loadRecentResults = async () => {
+      if (getRecentTestResults) {
+        try {
+          const results = await getRecentTestResults();
+          setRecentResults(results);
+        } catch (error) {
+          console.error('Failed to load recent results:', error);
+        }
+      }
+    };
     loadRecentResults();
-  }, [testingData]);
+  }, [getRecentTestResults]);
 
-  const loadRecentResults = async () => {
-    if (getRecentTestResults) {
-      try {
+  const handleRunIntegrationTests = async () => {
+    if (!runTestSuite) {
+      toast({
+        title: "Feature Unavailable",
+        description: "Test execution is not available in this context.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      await runTestSuite('integration');
+      // Refresh recent results after test run
+      if (getRecentTestResults) {
         const results = await getRecentTestResults();
         setRecentResults(results);
-      } catch (error) {
-        console.error('Failed to load recent results:', error);
       }
-    }
-  };
-
-  const calculateOverallStats = () => {
-    const allSuites = Object.values(testingData) as any[];
-    if (allSuites.length === 0) {
-      return { total: 0, passed: 0, failed: 0, skipped: 0, passRate: 0, avgCoverage: 0 };
-    }
-
-    const totals = allSuites.reduce((acc, suite) => ({
-      total: acc.total + (suite.total || 0),
-      passed: acc.passed + (suite.passed || 0),
-      failed: acc.failed + (suite.failed || 0),
-      skipped: acc.skipped + (suite.skipped || 0)
-    }), { total: 0, passed: 0, failed: 0, skipped: 0 });
-
-    const passRate = totals.total > 0 ? (totals.passed / totals.total) * 100 : 0;
-    const avgCoverage = allSuites.reduce((sum, suite) => sum + (suite.coverage || 0), 0) / allSuites.length;
-
-    return { ...totals, passRate, avgCoverage };
-  };
-
-  const stats = calculateOverallStats();
-
-  const handleRunAllTests = async () => {
-    if (!runAllTests) return;
-    
-    try {
-      setLoadingResults(true);
-      toast({
-        title: "Running All Tests",
-        description: "Executing all test suites... This may take a few minutes.",
-      });
-      
-      const results = await runAllTests();
-      
-      toast({
-        title: "Tests Completed",
-        description: `All test suites completed. ${results.filter((r: any) => r.status === 'passed').length}/${results.length} suites passed.`,
-      });
-      
-      await loadRecentResults();
     } catch (error) {
-      toast({
-        title: "Test Execution Failed",
-        description: "Failed to run test suites. Please check the console for details.",
-        variant: "destructive",
-      });
-      console.error('Test execution failed:', error);
-    } finally {
-      setLoadingResults(false);
+      console.error('Failed to run integration tests:', error);
     }
   };
 
-  const handleRunSuite = async (testType: string) => {
-    if (!runTestSuite) return;
+  const getHealthStatus = () => {
+    if (apiIntegrationTests.total === 0) return { status: 'No Tests', color: 'text-gray-600', bgColor: 'bg-gray-100' };
+    const passRate = (apiIntegrationTests.passed / apiIntegrationTests.total) * 100;
     
-    try {
-      toast({
-        title: `Running ${testType} Tests`,
-        description: "Executing test suite...",
-      });
-      
-      const result = await runTestSuite(testType);
-      
-      toast({
-        title: "Tests Completed",
-        description: `${testType} tests completed. Status: ${result.status}`,
-      });
-      
-      await loadRecentResults();
-    } catch (error) {
-      toast({
-        title: "Test Execution Failed",
-        description: `Failed to run ${testType} tests. Please check the console for details.`,
-        variant: "destructive",
-      });
-      console.error(`${testType} test execution failed:`, error);
-    }
+    if (passRate >= 90) return { status: 'Excellent', color: 'text-green-600', bgColor: 'bg-green-50' };
+    if (passRate >= 70) return { status: 'Good', color: 'text-blue-600', bgColor: 'bg-blue-50' };
+    if (passRate >= 50) return { status: 'Warning', color: 'text-yellow-600', bgColor: 'bg-yellow-50' };
+    return { status: 'Critical', color: 'text-red-600', bgColor: 'bg-red-50' };
   };
+
+  const healthStatus = getHealthStatus();
 
   return (
     <div className="space-y-6">
-      {/* Overall Statistics Cards */}
+      {/* API Integration Testing Focus Banner */}
+      <Card className="bg-blue-50 border-blue-200">
+        <CardContent className="pt-6">
+          <div className="flex items-center gap-3 mb-3">
+            <Globe className="h-6 w-6 text-blue-600" />
+            <h3 className="text-lg font-semibold text-blue-900">API Integration Testing Suite</h3>
+          </div>
+          <p className="text-blue-700 mb-4">
+            This testing suite focuses exclusively on API integration testing. It validates connectivity, 
+            authentication, data synchronization, and error handling for APIs in your integration registry.
+          </p>
+          <div className="flex items-center gap-2 text-sm text-blue-600">
+            <Info className="h-4 w-4" />
+            <span>System functionality testing is handled by separate specialized tools.</span>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* API Integration Test Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Target className="h-4 w-4 text-blue-600" />
+              <Database className="h-4 w-4 text-blue-600" />
               Total Tests
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{stats.total.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Across all test suites</p>
+            <div className="text-2xl font-bold text-blue-600">{apiIntegrationTests.total}</div>
+            <p className="text-xs text-muted-foreground">API integration scenarios</p>
           </CardContent>
         </Card>
 
@@ -151,170 +124,137 @@ export const UnifiedTestingOverview: React.FC<UnifiedTestingOverviewProps> = ({
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <CheckCircle className="h-4 w-4 text-green-600" />
-              Success Rate
+              Passed
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{stats.passRate.toFixed(1)}%</div>
-            <p className="text-xs text-muted-foreground">{stats.passed.toLocaleString()} tests passed</p>
+            <div className="text-2xl font-bold text-green-600">{apiIntegrationTests.passed}</div>
+            <p className="text-xs text-muted-foreground">Successful integrations</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Shield className="h-4 w-4 text-purple-600" />
-              Coverage
+              <XCircle className="h-4 w-4 text-red-600" />
+              Failed
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-600">{stats.avgCoverage.toFixed(1)}%</div>
-            <p className="text-xs text-muted-foreground">Average across suites</p>
+            <div className="text-2xl font-bold text-red-600">{apiIntegrationTests.failed}</div>
+            <p className="text-xs text-muted-foreground">Integration issues</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-orange-600" />
-              Quality Score
+              <Activity className={`h-4 w-4 ${healthStatus.color}`} />
+              Health Status
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">
-              {stats.total > 0 ? Math.round(stats.passRate) : 0}
-            </div>
-            <p className="text-xs text-muted-foreground">Based on pass rate</p>
+            <div className={`text-2xl font-bold ${healthStatus.color}`}>{healthStatus.status}</div>
+            <p className="text-xs text-muted-foreground">{apiIntegrationTests.coverage}% coverage</p>
           </CardContent>
         </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Test Suite Breakdown */}
+        {/* Test Execution Control */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <GitBranch className="h-5 w-5" />
-              Test Suite Breakdown
+              <Play className="h-5 w-5" />
+              API Integration Testing
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {Object.entries(testingData).map(([suiteName, suite]: [string, any]) => (
-              <div key={suiteName} className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium capitalize">{suiteName.replace('Tests', ' Tests')}</span>
-                    <Badge variant="outline">{suite.total || 0} tests</Badge>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-green-600">{suite.passed || 0}</span>
-                    <span className="text-sm text-red-600">{suite.failed || 0}</span>
-                    <span className="text-sm text-yellow-600">{suite.skipped || 0}</span>
-                  </div>
+            <EnhancedButton 
+              onClick={handleRunIntegrationTests} 
+              loading={isLoading}
+              loadingText="Running Integration Tests..."
+              className="w-full"
+              disabled={!runTestSuite}
+            >
+              <Play className="h-4 w-4 mr-2" />
+              Run API Integration Tests
+            </EnhancedButton>
+
+            {apiIntegrationTests.total > 0 && (
+              <div className="space-y-3">
+                <div className="flex justify-between text-sm">
+                  <span>Overall Pass Rate:</span>
+                  <span className="font-medium">
+                    {apiIntegrationTests.total > 0 ? ((apiIntegrationTests.passed / apiIntegrationTests.total) * 100).toFixed(1) : 0}%
+                  </span>
                 </div>
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between text-sm">
-                    <span>Pass Rate: {suite.total > 0 ? ((suite.passed / suite.total) * 100).toFixed(1) : 0}%</span>
-                    <span>Coverage: {suite.coverage || 0}%</span>
+                <Progress 
+                  value={apiIntegrationTests.total > 0 ? (apiIntegrationTests.passed / apiIntegrationTests.total) * 100 : 0} 
+                  className="h-3" 
+                />
+                <div className="grid grid-cols-3 gap-2 text-xs text-center">
+                  <div>
+                    <div className="font-bold text-green-600">{apiIntegrationTests.passed}</div>
+                    <div className="text-muted-foreground">Passed</div>
                   </div>
-                  <Progress value={suite.total > 0 ? (suite.passed / suite.total) * 100 : 0} className="h-2" />
+                  <div>
+                    <div className="font-bold text-red-600">{apiIntegrationTests.failed}</div>
+                    <div className="text-muted-foreground">Failed</div>
+                  </div>
+                  <div>
+                    <div className="font-bold text-yellow-600">{apiIntegrationTests.skipped}</div>
+                    <div className="text-muted-foreground">Skipped</div>
+                  </div>
                 </div>
               </div>
-            ))}
+            )}
           </CardContent>
         </Card>
 
-        {/* Quick Actions */}
+        {/* Recent Test Results */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Zap className="h-5 w-5" />
-              Quick Actions
+              <Activity className="h-5 w-5" />
+              Recent API Test Results
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <EnhancedButton 
-                className="w-full" 
-                onClick={handleRunAllTests}
-                loading={isLoading || loadingResults}
-                loadingText="Running..."
-                disabled={!runAllTests}
-              >
-                <Play className="h-4 w-4 mr-2" />
-                Run All Tests
-              </EnhancedButton>
-              <EnhancedButton variant="outline" className="w-full" disabled>
-                <Clock className="h-4 w-4 mr-2" />
-                Schedule Tests
-              </EnhancedButton>
-            </div>
-            
-            <div className="space-y-3">
-              {Object.keys(testingData).map((suiteName) => {
-                const testType = suiteName.replace('Tests', '');
-                return (
-                  <div key={suiteName} className="flex items-center justify-between p-3 border rounded-lg">
-                    <span className="text-sm font-medium capitalize">{testType} Tests</span>
-                    <EnhancedButton 
-                      size="sm" 
-                      variant="ghost"
-                      onClick={() => handleRunSuite(testType)}
-                      loading={isLoading}
-                      disabled={!runTestSuite}
-                    >
-                      <Play className="h-3 w-3 mr-1" />
-                      Run
-                    </EnhancedButton>
+          <CardContent>
+            {recentResults.length > 0 ? (
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {recentResults.slice(0, 5).map((result, index) => (
+                  <div key={result.id} className="flex items-center justify-between p-2 border rounded">
+                    <div className="flex-1">
+                      <p className="text-sm font-medium truncate">{result.testName}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(result.executedAt).toLocaleString()}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={
+                        result.status === 'passed' ? 'default' : 
+                        result.status === 'failed' ? 'destructive' : 'secondary'
+                      }>
+                        {result.status}
+                      </Badge>
+                      {result.coverage && (
+                        <span className="text-xs text-muted-foreground">{result.coverage}%</span>
+                      )}
+                    </div>
                   </div>
-                );
-              })}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <Database className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No recent API integration test results.</p>
+                <p className="text-sm">Run tests to see results here.</p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
-
-      {/* Recent Test Executions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Test Executions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {recentResults.length > 0 ? (
-            <div className="space-y-3">
-              {recentResults.slice(0, 5).map((result, index) => (
-                <div key={result.id || index} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center gap-3">
-                    {result.status === 'passed' ? (
-                      <CheckCircle className="h-4 w-4 text-green-600" />
-                    ) : (
-                      <XCircle className="h-4 w-4 text-red-600" />
-                    )}
-                    <div>
-                      <p className="font-medium">{result.testName}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {result.testType} • {result.apiId ? `API: ${result.apiId}` : 'System Test'}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <Badge variant={result.status === 'passed' ? 'default' : 'destructive'}>
-                      {result.status}
-                    </Badge>
-                    <span>{result.duration}ms</span>
-                    <span>{new Date(result.executedAt).toLocaleTimeString()}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              <Target className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No test results yet. Run some tests to see results here.</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 };

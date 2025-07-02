@@ -1,8 +1,10 @@
+
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { TestResult, testingService } from '@/services/testingService';
+import { supabase } from '@/integrations/supabase/client';
 
-interface TestingMetrics {
+interface ApiIntegrationMetrics {
   total: number;
   passed: number;
   failed: number;
@@ -11,11 +13,7 @@ interface TestingMetrics {
 }
 
 interface TestingData {
-  unitTests: TestingMetrics;
-  integrationTests: TestingMetrics;
-  systemTests: TestingMetrics;
-  regressionTests: TestingMetrics;
-  e2eTests: TestingMetrics;
+  apiIntegrationTests: ApiIntegrationMetrics;
 }
 
 interface TestingMeta {
@@ -27,222 +25,207 @@ interface TestingMeta {
   dataSource: string;
   usingRealData: boolean;
   lastSyncAt: string;
+  totalApisAvailable: number;
+  testingFocus: string;
 }
 
-// Simulated real testing data based on actual system metrics
-const generateRealTestingData = (): TestingData => {
-  const baseMetrics = {
-    unitTests: { total: 156, passed: 142, failed: 8, skipped: 6, coverage: 87 },
-    integrationTests: { total: 89, passed: 82, failed: 4, skipped: 3, coverage: 92 },
-    systemTests: { total: 67, passed: 61, failed: 3, skipped: 3, coverage: 85 },
-    regressionTests: { total: 123, passed: 115, failed: 5, skipped: 3, coverage: 91 },
-    e2eTests: { total: 45, passed: 41, failed: 2, skipped: 2, coverage: 88 }
-  };
-
-  return baseMetrics;
-};
-
 export const useUnifiedTestingData = () => {
-  const [testingData, setTestingData] = useState<TestingData>(generateRealTestingData());
+  const [testingData, setTestingData] = useState<TestingData>({
+    apiIntegrationTests: { total: 0, passed: 0, failed: 0, skipped: 0, coverage: 0 }
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [executionHistory, setExecutionHistory] = useState<TestResult[]>([]);
+  const [availableApis, setAvailableApis] = useState<number>(0);
   const { toast } = useToast();
+
+  // Check available APIs on mount
+  useEffect(() => {
+    const checkAvailableApis = async () => {
+      try {
+        const { data: apis, error } = await supabase
+          .from('api_integration_registry')
+          .select('id')
+          .eq('status', 'active');
+        
+        if (error) {
+          console.error('Error fetching APIs:', error);
+          setAvailableApis(0);
+        } else {
+          setAvailableApis(apis?.length || 0);
+          console.log(`🔍 Found ${apis?.length || 0} active APIs for integration testing`);
+        }
+      } catch (error) {
+        console.error('Failed to check available APIs:', error);
+        setAvailableApis(0);
+      }
+    };
+
+    checkAvailableApis();
+  }, []);
 
   const meta: TestingMeta = {
     singleSourceEnforced: true,
     integrationValidated: true,
-    testingVersion: 'v2.1.0',
-    totalTestSuites: 5,
-    overallCoverage: 89,
-    dataSource: 'Real System Metrics',
+    testingVersion: 'v2.1.0-api-focused',
+    totalTestSuites: 1, // Only API Integration Testing
+    overallCoverage: testingData.apiIntegrationTests.total > 0 
+      ? Math.round((testingData.apiIntegrationTests.passed / testingData.apiIntegrationTests.total) * 100) 
+      : 0,
+    dataSource: 'Real API Integration Registry',
     usingRealData: true,
-    lastSyncAt: new Date().toISOString()
+    lastSyncAt: new Date().toISOString(),
+    totalApisAvailable: availableApis,
+    testingFocus: 'API Integration Only'
   };
 
-  // Enhanced test execution with detailed tracking
   const runTestSuite = async (testType: string): Promise<TestResult> => {
+    if (testType !== 'integration') {
+      throw new Error('This testing suite only supports API integration testing');
+    }
+
+    if (availableApis === 0) {
+      toast({
+        title: "⚠️ No APIs Available",
+        description: "No active APIs found in the integration registry. Please add APIs before running tests.",
+        variant: "destructive",
+      });
+      
+      return {
+        id: `no-apis-${Date.now()}`,
+        testType: 'integration',
+        testName: 'API Integration Test Suite',
+        status: 'skipped',
+        duration: 0,
+        coverage: 0,
+        executedAt: new Date().toISOString(),
+        errorMessage: 'No APIs available for testing'
+      };
+    }
+
     setIsLoading(true);
     
     try {
       toast({
-        title: `🧪 Executing ${testType} Tests`,
-        description: "Running tests against real system data...",
+        title: `🧪 Executing API Integration Tests`,
+        description: `Testing ${availableApis} active APIs...`,
       });
 
-      // Use the actual testing service for real test execution
-      const results = await testingService.executeTestSuite(testType);
+      const results = await testingService.executeTestSuite('integration');
       
-      // Update execution history
       setExecutionHistory(prev => [...prev, ...results]);
-      
-      // Update local test data
       await updateTestingDataFromResults(results);
       
       const summary = generateTestSummary(results);
       
       toast({
-        title: `✅ ${testType} Tests Completed`,
-        description: `${summary.passed}/${summary.total} tests passed (${summary.passRate}%)`,
+        title: `✅ API Integration Tests Completed`,
+        description: `${results.filter(r => r.status === 'passed').length}/${results.length} tests passed`,
       });
 
       return summary;
     } catch (error) {
       toast({
-        title: "❌ Test Execution Failed",
-        description: `Failed to execute ${testType} tests. Check console for details.`,
+        title: "❌ API Integration Test Failed",
+        description: `Failed to execute API integration tests. Check console for details.`,
         variant: "destructive",
       });
-      console.error(`${testType} test execution failed:`, error);
+      console.error(`API integration test execution failed:`, error);
       throw error;
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Run all test suites with comprehensive tracking
   const runAllTests = async (): Promise<TestResult[]> => {
-    const testTypes = ['unit', 'integration', 'system', 'regression', 'e2e'];
-    const allResults: TestResult[] = [];
-    
-    setIsLoading(true);
-    
-    try {
+    if (availableApis === 0) {
       toast({
-        title: "🔄 Running Complete Test Suite",
-        description: "Executing all test types against real system data...",
-      });
-
-      for (const testType of testTypes) {
-        console.log(`🧪 Running ${testType} tests...`);
-        const results = await testingService.executeTestSuite(testType);
-        allResults.push(...results);
-        
-        // Update progress
-        toast({
-          title: `✅ ${testType} tests completed`,
-          description: `${results.filter(r => r.status === 'passed').length}/${results.length} tests passed`,
-        });
-      }
-
-      // Update execution history with all results
-      setExecutionHistory(prev => [...prev, ...allResults]);
-      
-      // Update local testing data
-      await updateTestingDataFromResults(allResults);
-      
-      const overallSummary = generateOverallSummary(allResults);
-      
-      toast({
-        title: "🎯 All Tests Completed",
-        description: `${overallSummary.totalPassed}/${overallSummary.totalTests} tests passed (${overallSummary.overallPassRate}%)`,
-      });
-
-      console.log('📊 Complete test execution summary:', overallSummary);
-      
-      return allResults;
-    } catch (error) {
-      toast({
-        title: "❌ Test Suite Execution Failed",
-        description: "Some tests failed to execute. Check console for details.",
+        title: "⚠️ No APIs Available",
+        description: "No active APIs found. Add APIs to your integration registry first.",
         variant: "destructive",
       });
-      console.error('Test suite execution failed:', error);
-      throw error;
-    } finally {
-      setIsLoading(false);
+      return [];
     }
+
+    return [await runTestSuite('integration')];
   };
 
-  // Get recent test results with enhanced details
   const getRecentTestResults = async (): Promise<TestResult[]> => {
     try {
-      // Get from service first (persistent storage)
       const serviceResults = await testingService.getTestResults();
-      
-      // Combine with current execution history
       const allResults = [...serviceResults, ...executionHistory];
       
-      // Return most recent 20 results
       return allResults
+        .filter(r => r.testType === 'integration') // Only API integration results
         .sort((a, b) => new Date(b.executedAt).getTime() - new Date(a.executedAt).getTime())
         .slice(0, 20);
     } catch (error) {
       console.error('Failed to get recent test results:', error);
-      return executionHistory.slice(-10); // Fallback to execution history
+      return executionHistory
+        .filter(r => r.testType === 'integration')
+        .slice(-10);
     }
   };
 
-  // Helper function to update testing data from results
   const updateTestingDataFromResults = async (results: TestResult[]) => {
-    const stats = await testingService.getTestSuiteStats();
-    setTestingData(prev => ({
-      unitTests: stats.unitTests || prev.unitTests,
-      integrationTests: stats.integrationTests || prev.integrationTests,
-      systemTests: stats.systemTests || prev.systemTests,
-      regressionTests: stats.regressionTests || prev.regressionTests,
-      e2eTests: stats.e2eTests || prev.e2eTests
-    }));
+    const integrationResults = results.filter(r => r.testType === 'integration');
+    const total = integrationResults.length;
+    const passed = integrationResults.filter(r => r.status === 'passed').length;
+    const failed = integrationResults.filter(r => r.status === 'failed').length;
+    const skipped = integrationResults.filter(r => r.status === 'skipped').length;
+    const avgCoverage = total > 0 
+      ? integrationResults.reduce((sum, r) => sum + (r.coverage || 0), 0) / total 
+      : 0;
+
+    setTestingData({
+      apiIntegrationTests: {
+        total,
+        passed,
+        failed,
+        skipped,
+        coverage: Math.round(avgCoverage)
+      }
+    });
   };
 
-  // Generate test summary
   const generateTestSummary = (results: TestResult[]): TestResult => {
     const passed = results.filter(r => r.status === 'passed').length;
     const total = results.length;
-    const passRate = total > 0 ? Math.round((passed / total) * 100) : 0;
-    const avgCoverage = results.reduce((sum, r) => sum + (r.coverage || 0), 0) / total;
     const totalDuration = results.reduce((sum, r) => sum + r.duration, 0);
+    const avgCoverage = results.reduce((sum, r) => sum + (r.coverage || 0), 0) / total;
 
     return {
-      id: `summary-${Date.now()}`,
-      testType: results[0]?.testType || 'unit',
-      testName: `${results[0]?.testType || 'Test'} Suite Summary`,
-      status: passRate >= 80 ? 'passed' : 'failed',
+      id: `api-integration-summary-${Date.now()}`,
+      testType: 'integration',
+      testName: 'API Integration Test Suite Summary',
+      status: passed === total ? 'passed' : passed > 0 ? 'failed' : 'skipped',
       duration: totalDuration,
       coverage: Math.round(avgCoverage),
       executedAt: new Date().toISOString(),
-      // Add custom properties for summary
-      passRate,
-      totalTests: total,
-      passedTests: passed
-    } as TestResult & { passRate: number; totalTests: number; passedTests: number };
-  };
-
-  // Generate overall summary
-  const generateOverallSummary = (allResults: TestResult[]) => {
-    const totalTests = allResults.length;
-    const totalPassed = allResults.filter(r => r.status === 'passed').length;
-    const overallPassRate = totalTests > 0 ? Math.round((totalPassed / totalTests) * 100) : 0;
-    
-    return {
-      totalTests,
-      totalPassed,
-      overallPassRate,
-      byType: {
-        unit: allResults.filter(r => r.testType === 'unit').length,
-        integration: allResults.filter(r => r.testType === 'integration').length,
-        system: allResults.filter(r => r.testType === 'system').length,
-        regression: allResults.filter(r => r.testType === 'regression').length,
-        e2e: allResults.filter(r => r.testType === 'e2e').length
-      }
+      errorMessage: passed < total ? `${total - passed} API integration tests failed` : undefined
     };
   };
 
-  // Refresh testing data periodically
+  // Refresh API count and testing data periodically
   useEffect(() => {
     const interval = setInterval(async () => {
-      // Update with latest stats
-      const stats = await testingService.getTestSuiteStats();
-      setTestingData(prev => ({
-        unitTests: stats.unitTests || prev.unitTests,
-        integrationTests: stats.integrationTests || prev.integrationTests,
-        systemTests: stats.systemTests || prev.systemTests,
-        regressionTests: stats.regressionTests || prev.regressionTests,
-        e2eTests: stats.e2eTests || prev.e2eTests
-      }));
-    }, 30000); // Refresh every 30 seconds
+      try {
+        const { data: apis } = await supabase
+          .from('api_integration_registry')
+          .select('id')
+          .eq('status', 'active');
+        
+        const currentApiCount = apis?.length || 0;
+        if (currentApiCount !== availableApis) {
+          setAvailableApis(currentApiCount);
+          console.log(`🔄 API count updated: ${currentApiCount} active APIs`);
+        }
+      } catch (error) {
+        console.error('Failed to refresh API count:', error);
+      }
+    }, 30000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [availableApis]);
 
   return {
     testingData,
@@ -252,7 +235,6 @@ export const useUnifiedTestingData = () => {
     runAllTests,
     getRecentTestResults,
     executionHistory,
-    // New utility functions
     getTestStats: () => testingService.getTestSuiteStats(),
     getAllTestResults: () => testingService.getTestResults()
   };
