@@ -16,7 +16,7 @@ const StatusAlerts: React.FC<StatusAlertsProps> = ({ user, profile, userRoles })
   // Get accurate user verification data using the correct method from the hook
   const totalUsers = users.data.length;
   const verifiedUsers = users.data.filter(u => 
-    u.email_confirmed_at || users.isUserEmailVerified(u)
+    u.email_confirmed_at || Boolean(u.email_confirmed_at)
   ).length;
   const verificationRate = totalUsers > 0 ? Math.round((verifiedUsers / totalUsers) * 100) : 0;
 
