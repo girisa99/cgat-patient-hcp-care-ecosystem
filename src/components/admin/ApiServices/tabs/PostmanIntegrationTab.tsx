@@ -258,7 +258,7 @@ const PostmanEnvironmentsTab: React.FC = () => {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">API Key:</span>
-                  <code className="bg-gray-100 px-2 py-1 rounded">{{dev_api_key}}</code>
+                  <code className="bg-gray-100 px-2 py-1 rounded">{'{{dev_api_key}}'}</code>
                 </div>
               </div>
               <Button size="sm" className="mt-3">
@@ -279,7 +279,7 @@ const PostmanEnvironmentsTab: React.FC = () => {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">API Key:</span>
-                  <code className="bg-gray-100 px-2 py-1 rounded">{{prod_api_key}}</code>
+                  <code className="bg-gray-100 px-2 py-1 rounded">{'{{prod_api_key}}'}</code>
                 </div>
               </div>
               <Button size="sm" className="mt-3">
