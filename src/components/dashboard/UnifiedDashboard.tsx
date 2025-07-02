@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useUnifiedPageData } from '@/hooks/useUnifiedPageData';
 import { useRealTimeUserStats } from '@/hooks/useRealTimeUserStats';
 import { useAuthValidation } from '@/hooks/useAuthValidation';
@@ -16,9 +16,13 @@ import StatusAlerts from './StatusAlerts';
 import { SystemHighlightsCard } from './SystemHighlightsCard';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const UnifiedDashboard: React.FC = () => {
   console.log('🎯 Unified Dashboard - Rendering with consolidated single source data');
+  
+  const [lastRefresh, setLastRefresh] = useState(new Date());
+  const { toast } = useToast();
   
   // Single source of truth for all data
   const { 
@@ -28,26 +32,77 @@ const UnifiedDashboard: React.FC = () => {
     apiServices, 
     auth,
     refreshAllData,
-    isLoading: unifiedLoading 
+    isLoading: unifiedLoading,
+    hasError 
   } = useUnifiedPageData();
   
   const { data: realTimeStats, isLoading: statsLoading, refetch: refetchStats } = useRealTimeUserStats();
   const { validationResult, validateAuth } = useAuthValidation();
 
+  // Auto-refresh data every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      console.log('🔄 Auto-refreshing dashboard data...');
+      refetchStats();
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [refetchStats]);
+
   const handleRefresh = async () => {
-    console.log('🔄 Refreshing all dashboard data from unified sources...');
-    await refreshAllData();
-    await refetchStats();
-    validateAuth();
+    console.log('🔄 Manual refresh triggered - refreshing all dashboard data from unified sources...');
+    
+    try {
+      await Promise.all([
+        refreshAllData(),
+        refetchStats(),
+        validateAuth()
+      ]);
+      
+      setLastRefresh(new Date());
+      
+      toast({
+        title: "Dashboard Refreshed",
+        description: "All data has been updated successfully.",
+      });
+      
+      console.log('✅ Dashboard refresh completed successfully');
+    } catch (error) {
+      console.error('❌ Dashboard refresh failed:', error);
+      
+      toast({
+        title: "Refresh Failed",
+        description: "Failed to refresh dashboard data. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleAssignTestRole = async () => {
     console.log('🔧 Test role assignment triggered');
     // This would be implemented based on your role assignment logic
+    toast({
+      title: "Test Role Assignment",
+      description: "Role assignment functionality would be triggered here.",
+    });
   };
 
   if (unifiedLoading || statsLoading) {
     return <DashboardLoading />;
+  }
+
+  if (hasError) {
+    return (
+      <div className="p-6">
+        <div className="text-center text-red-600">
+          <p>Error loading dashboard data. Please refresh the page or try again.</p>
+          <Button onClick={handleRefresh} className="mt-4">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   // Extract user roles from validation result using single source
@@ -91,7 +146,8 @@ const UnifiedDashboard: React.FC = () => {
     realTimeUsers: realTimeStats?.totalUsers,
     unifiedFacilities: unifiedMetrics.totalFacilities,
     realTimeFacilities: realTimeStats?.totalFacilities,
-    singleSourceValidated: unifiedMetrics.totalUsers === realTimeStats?.totalUsers
+    singleSourceValidated: unifiedMetrics.totalUsers === realTimeStats?.totalUsers,
+    lastRefresh: lastRefresh.toLocaleTimeString()
   });
 
   return (
@@ -103,7 +159,7 @@ const UnifiedDashboard: React.FC = () => {
         onAssignTestRole={handleAssignTestRole}
       />
       
-      {/* Enhanced Single Source Validation Alert */}
+      {/* Enhanced Single Source Validation Alert with Refresh Status */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
@@ -130,7 +186,7 @@ const UnifiedDashboard: React.FC = () => {
           </div>
         </div>
         <div className="mt-2 text-xs text-blue-600">
-          ✅ All metrics refreshed from live database | Last updated: {new Date().toLocaleTimeString()}
+          ✅ All metrics refreshed from live database | Last refresh: {lastRefresh.toLocaleTimeString()} | Auto-refresh: 30s
         </div>
       </div>
       
