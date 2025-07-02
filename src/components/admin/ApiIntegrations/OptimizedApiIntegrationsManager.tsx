@@ -95,14 +95,14 @@ const OptimizedApiIntegrationsManager: React.FC<OptimizedApiIntegrationsManagerP
   // Use hook data if no props provided (single source of truth)
   const { integrations: hookIntegrations } = useApiServices();
   
-  // Convert hook data to expected format if needed
+  // Convert hook data to expected format with correct property names
   const integrations = propIntegrations || (hookIntegrations || []).map(api => ({
     id: api.id,
     name: api.name || 'Unnamed API',
     status: (api.status as 'active' | 'inactive' | 'error') || 'inactive',
     type: (api.type as 'internal' | 'external') || 'internal',
-    endpoint: api.base_url || api.baseUrl || 'No endpoint',
-    lastSync: api.updated_at || api.updatedAt || 'Never'
+    endpoint: api.base_url || 'No endpoint', // Fixed: use base_url instead of baseUrl
+    lastSync: api.updated_at || 'Never' // Fixed: use updated_at instead of updatedAt
   }));
 
   const handleCreateIntegration = useCallback(() => {
