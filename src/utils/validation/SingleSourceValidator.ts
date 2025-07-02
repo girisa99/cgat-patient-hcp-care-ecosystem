@@ -191,7 +191,7 @@ export class SingleSourceValidator {
   static generateComplianceReport(result: ValidationResult): string {
     const { summary, violations } = result;
     
-    let report = `
+    const report = `
 SINGLE SOURCE OF TRUTH COMPLIANCE REPORT
 =======================================
 

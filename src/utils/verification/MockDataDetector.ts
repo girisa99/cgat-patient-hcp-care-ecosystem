@@ -364,7 +364,7 @@ export class MockDataDetector {
   static generateMockDataReport(analysis: MockDataAnalysis): string {
     const { violations, cleanFiles, suspiciousPatterns, databaseUsageScore } = analysis;
 
-    let report = `
+    const report = `
 # Mock Data Detection Report
 Generated: ${new Date().toISOString()}
 

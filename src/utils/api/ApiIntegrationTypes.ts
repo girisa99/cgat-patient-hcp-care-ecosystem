@@ -1,3 +1,126 @@
+// Base response schema types
+export interface ApiResponseSchema {
+  type: 'object' | 'array' | 'string' | 'number' | 'boolean' | 'null';
+  properties?: Record<string, ApiPropertySchema>;
+  items?: ApiPropertySchema;
+  required?: string[];
+  example?: unknown;
+}
+
+export interface ApiPropertySchema {
+  type: string;
+  description?: string;
+  format?: string;
+  example?: unknown;
+  enum?: string[];
+  properties?: Record<string, ApiPropertySchema>;
+  items?: ApiPropertySchema;
+}
+
+// Request/Response body schemas
+export interface ApiBodySchema {
+  type: string;
+  properties: Record<string, ApiPropertySchema>;
+  required?: string[];
+  additionalProperties?: boolean;
+}
+
+// Query parameters types
+export interface ApiQueryParam {
+  name: string;
+  type: 'string' | 'number' | 'boolean' | 'array';
+  required?: boolean;
+  description?: string;
+  default?: string | number | boolean;
+}
+
+// Contact information
+export interface ApiContactInfo {
+  name?: string;
+  email?: string;
+  url?: string;
+  phone?: string;
+  team?: string;
+  department?: string;
+}
+
+// SLA requirements
+export interface ApiSlaRequirements {
+  availability?: number; // percentage
+  responseTime?: number; // milliseconds
+  throughput?: number; // requests per second
+  errorRate?: number; // percentage
+  maintenanceWindow?: string;
+  supportLevel?: 'basic' | 'standard' | 'premium' | 'enterprise';
+}
+
+// Security requirements
+export interface ApiSecurityRequirements {
+  authentication?: string[];
+  authorization?: string[];
+  encryption?: 'none' | 'tls' | 'end-to-end';
+  dataClassification?: 'public' | 'internal' | 'confidential' | 'restricted';
+  auditLogging?: boolean;
+  compliance?: string[];
+}
+
+// Rate limiting configuration
+export interface ApiRateLimits {
+  requestsPerMinute?: number;
+  requestsPerHour?: number;
+  requestsPerDay?: number;
+  burstLimit?: number;
+  concurrentConnections?: number;
+}
+
+// Webhook configuration
+export interface ApiWebhookConfig {
+  url: string;
+  events: string[];
+  secret?: string;
+  retryPolicy?: {
+    maxRetries: number;
+    backoffStrategy: 'linear' | 'exponential';
+    initialDelay: number;
+  };
+  timeout?: number;
+}
+
+// Documentation metadata
+export interface ApiDocumentationMetadata {
+  fieldMappings?: ApiFieldMapping[];
+  generatedSchemas?: ApiResponseSchema[];
+  databaseTables?: string[];
+  rlsPolicies?: ApiRlsPolicy[];
+  endpoints?: ApiEndpoint[];
+}
+
+export interface ApiFieldMapping {
+  sourceField: string;
+  targetField: string;
+  transformation?: string;
+  validation?: string;
+  required: boolean;
+}
+
+// Error details for consumption logs
+export interface ApiErrorDetails {
+  code: string;
+  message: string;
+  details?: Record<string, unknown>;
+  stack?: string;
+  timestamp: string;
+}
+
+// Event metadata
+export interface ApiEventMetadata {
+  changeDescription?: string;
+  affectedEndpoints?: string[];
+  migrationRequired?: boolean;
+  rollbackPlan?: string;
+  communicationPlan?: string;
+  [key: string]: unknown;
+}
 
 export interface ApiEndpoint {
   id: string;
@@ -11,12 +134,12 @@ export interface ApiEndpoint {
     required: boolean;
   };
   parameters: string[];
-  responses: Record<string, any>;
+  responses: Record<string, ApiResponseSchema>;
   fullUrl?: string;
-  responseSchema?: Record<string, any>;
+  responseSchema?: ApiResponseSchema;
   headers?: Record<string, string>;
-  queryParams?: Record<string, any>;
-  bodySchema?: Record<string, any>;
+  queryParams?: Record<string, ApiQueryParam>;
+  bodySchema?: ApiBodySchema;
 }
 
 export interface ApiRlsPolicy {
@@ -50,7 +173,7 @@ export interface ApiIntegration {
   baseUrl?: string; // Make this optional to match the hook data
   status: 'active' | 'inactive' | 'draft' | 'deprecated';
   endpoints: ApiEndpoint[];
-  schemas: Record<string, any>;
+  schemas: Record<string, ApiResponseSchema>;
   rlsPolicies: ApiRlsPolicy[];
   mappings: ApiDataMapping[];
   category?: string;
@@ -62,15 +185,15 @@ export interface ApiIntegration {
   };
   createdAt?: string;
   updatedAt?: string;
-  contact?: Record<string, any>;
-  sla?: Record<string, any>;
+  contact?: ApiContactInfo;
+  sla?: ApiSlaRequirements;
   documentation?: {
     specificationUrl?: string;
-    fieldMappings?: any[];
-    generatedSchemas?: any[];
+    fieldMappings?: ApiFieldMapping[];
+    generatedSchemas?: ApiResponseSchema[];
     databaseTables?: string[];
-    rlsPolicies?: any[];
-    endpoints?: any[];
+    rlsPolicies?: ApiRlsPolicy[];
+    endpoints?: ApiEndpoint[];
   };
 }
 
@@ -90,11 +213,11 @@ export interface ApiIntegrationRegistry {
   endpoints_count?: number;
   rls_policies_count?: number;
   data_mappings_count?: number;
-  contact_info?: Record<string, any>;
-  sla_requirements?: Record<string, any>;
-  security_requirements?: Record<string, any>;
-  rate_limits?: Record<string, any>;
-  webhook_config?: Record<string, any>;
+  contact_info?: ApiContactInfo;
+  sla_requirements?: ApiSlaRequirements;
+  security_requirements?: ApiSecurityRequirements;
+  rate_limits?: ApiRateLimits;
+  webhook_config?: ApiWebhookConfig;
   documentation_url?: string;
   created_at: string;
   updated_at: string;
@@ -112,7 +235,7 @@ export interface ApiLifecycleEvent {
   impact_level: ImpactLevel;
   requires_migration?: boolean;
   migration_instructions?: string;
-  metadata?: Record<string, any>;
+  metadata?: ApiEventMetadata;
   created_at: string;
   created_by?: string;
 }
@@ -130,7 +253,7 @@ export interface ApiConsumptionLog {
   response_size_bytes?: number;
   ip_address?: string;
   user_agent?: string;
-  error_details?: Record<string, any>;
+  error_details?: ApiErrorDetails;
 }
 
 export type ApiDirection = 'inbound' | 'outbound' | 'bidirectional';
@@ -148,6 +271,14 @@ export type ImpactLevel = 'low' | 'medium' | 'high' | 'critical';
 
 export type ApiLifecycleStage = 'development' | 'testing' | 'staging' | 'production' | 'deprecated';
 
+// Postman types with proper typing
+export interface PostmanAuth {
+  type: 'bearer' | 'basic' | 'apikey' | 'oauth2' | 'noauth';
+  bearer?: { token: string }[];
+  basic?: { username: string; password: string }[];
+  apikey?: { key: string; value: string; in: 'header' | 'query' }[];
+}
+
 export interface PostmanCollection {
   info: {
     name: string;
@@ -157,7 +288,7 @@ export interface PostmanCollection {
   };
   item: PostmanItem[];
   variable?: PostmanVariable[];
-  auth?: any;
+  auth?: PostmanAuth;
 }
 
 export interface PostmanItem {
