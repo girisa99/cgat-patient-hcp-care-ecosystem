@@ -12,7 +12,17 @@ interface RealTimeStats {
   lastUpdated: Date;
 }
 
-export const RealTimeDashboardStats: React.FC = () => {
+interface RealTimeDashboardStatsProps {
+  users: any[];
+  realTimeStats: any;
+  meta: any;
+}
+
+export const RealTimeDashboardStats: React.FC<RealTimeDashboardStatsProps> = ({ 
+  users, 
+  realTimeStats, 
+  meta 
+}) => {
   const [stats, setStats] = useState<RealTimeStats>({
     recentActivity: 0,
     activeUsers: 0,
@@ -82,7 +92,7 @@ export const RealTimeDashboardStats: React.FC = () => {
 
         setStats({
           recentActivity: recentActivity || 0,
-          activeUsers: activeUsers || 0,
+          activeUsers: activeUsers || users.length,
           systemAlerts: 0, // This would come from a monitoring system
           lastUpdated: new Date()
         });
@@ -97,7 +107,7 @@ export const RealTimeDashboardStats: React.FC = () => {
       console.log('🔌 Cleaning up real-time dashboard connection');
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [users]);
 
   return (
     <Card>
@@ -105,7 +115,7 @@ export const RealTimeDashboardStats: React.FC = () => {
         <CardTitle className="flex items-center justify-between">
           <span className="flex items-center">
             <Activity className="h-5 w-5 mr-2" />
-            Real-time Activity
+            Real-time Activity Dashboard
           </span>
           <div className="flex items-center space-x-2">
             <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
@@ -128,7 +138,7 @@ export const RealTimeDashboardStats: React.FC = () => {
             <div className="flex items-center space-x-3">
               <Activity className="h-8 w-8 text-green-500" />
               <div>
-                <p className="text-2xl font-bold">{stats.activeUsers}</p>
+                <p className="text-2xl font-bold">{realTimeStats?.totalUsers || users.length}</p>
                 <p className="text-sm text-muted-foreground">Total Users</p>
               </div>
             </div>
@@ -141,12 +151,37 @@ export const RealTimeDashboardStats: React.FC = () => {
             </div>
           </div>
           
+          {/* Real-time stats comparison */}
+          {realTimeStats && (
+            <div className="mt-4 p-3 border border-blue-200 rounded-lg bg-blue-50">
+              <h4 className="font-medium text-blue-800 mb-2">📊 Live Statistics</h4>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                <div className="text-center">
+                  <div className="font-semibold text-blue-900">{realTimeStats.totalUsers}</div>
+                  <div className="text-blue-700">Total Users</div>
+                </div>
+                <div className="text-center">
+                  <div className="font-semibold text-green-900">{realTimeStats.verifiedUsers}</div>
+                  <div className="text-green-700">Verified</div>
+                </div>
+                <div className="text-center">
+                  <div className="font-semibold text-purple-900">{realTimeStats.totalPermissions}</div>
+                  <div className="text-purple-700">Permissions</div>
+                </div>
+                <div className="text-center">
+                  <div className="font-semibold text-orange-900">{realTimeStats.totalFacilities}</div>
+                  <div className="text-orange-700">Facilities</div>
+                </div>
+              </div>
+            </div>
+          )}
+          
           <div className="flex items-center justify-between text-sm text-muted-foreground border-t pt-4">
             <div className="flex items-center space-x-2">
               <Clock className="h-4 w-4" />
               <span>Last updated: {stats.lastUpdated.toLocaleTimeString()}</span>
             </div>
-            <span>Updates automatically</span>
+            <span>Data Source: {meta?.dataSource || 'Unified Management'}</span>
           </div>
         </div>
       </CardContent>
