@@ -36,12 +36,6 @@ interface TestResult {
   timestamp: string;
 }
 
-interface RecentTestResult {
-  testType: string;
-  status: string;
-  timestamp: string;
-}
-
 // Simulated real testing data based on actual system metrics
 const generateRealTestingData = (): TestingData => {
   const baseMetrics = {
@@ -126,13 +120,16 @@ export const useUnifiedTestingData = () => {
     return results;
   };
 
-  // Get recent test results (simulated) - Fixed return type
-  const getRecentTestResults = (): RecentTestResult[] => {
+  // Get recent test results (simulated) - Fixed to return Promise<TestResult[]>
+  const getRecentTestResults = async (): Promise<TestResult[]> => {
+    // Simulate async operation
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
     return [
-      { testType: 'Unit', status: 'passed', timestamp: new Date(Date.now() - 300000).toISOString() },
-      { testType: 'Integration', status: 'passed', timestamp: new Date(Date.now() - 600000).toISOString() },
-      { testType: 'System', status: 'failed', timestamp: new Date(Date.now() - 900000).toISOString() },
-      { testType: 'E2E', status: 'passed', timestamp: new Date(Date.now() - 1200000).toISOString() }
+      { status: 'passed', coverage: 89, duration: 1200, timestamp: new Date(Date.now() - 300000).toISOString() },
+      { status: 'passed', coverage: 92, duration: 1800, timestamp: new Date(Date.now() - 600000).toISOString() },
+      { status: 'failed', coverage: 75, duration: 900, timestamp: new Date(Date.now() - 900000).toISOString() },
+      { status: 'passed', coverage: 88, duration: 2100, timestamp: new Date(Date.now() - 1200000).toISOString() }
     ];
   };
 
