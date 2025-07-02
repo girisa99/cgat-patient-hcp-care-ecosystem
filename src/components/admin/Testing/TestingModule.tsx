@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { UnifiedTestingOverview } from './UnifiedTestingOverview';
@@ -14,6 +15,86 @@ import { AlertTriangle, TestTube, Database, Wrench, Factory } from 'lucide-react
 import { TestResult } from '@/services/testingService';
 
 export const TestingModule: React.FC = () => {
+  console.log('🧪 TestingModule: Component rendering started');
+  
+  // Add error boundary for hook initialization
+  const [hookError, setHookError] = useState<string | null>(null);
+  const [testingHookData, setTestingHookData] = useState<any>(null);
+
+  // Initialize the unified testing hook with error handling
+  useEffect(() => {
+    console.log('🧪 TestingModule: Initializing unified testing hook');
+    try {
+      // Test hook initialization
+      console.log('🧪 TestingModule: Hook initialization successful');
+    } catch (error) {
+      console.error('🧪 TestingModule: Hook initialization failed:', error);
+      setHookError(error instanceof Error ? error.message : 'Unknown hook error');
+    }
+  }, []);
+
+  // Use the hook with error handling
+  let hookData;
+  try {
+    hookData = useUnifiedTesting({
+      enableEnhancedFeatures: true,
+      enableComplianceMode: true,
+      batchSize: 50,
+      environment: 'development'
+    });
+    
+    if (!testingHookData && hookData) {
+      setTestingHookData(hookData);
+      console.log('🧪 TestingModule: Hook data loaded successfully', hookData);
+    }
+  } catch (error) {
+    console.error('🧪 TestingModule: Hook execution error:', error);
+    if (!hookError) {
+      setHookError(error instanceof Error ? error.message : 'Hook execution failed');
+    }
+  }
+
+  // If there's a hook error, show error state
+  if (hookError) {
+    console.log('🧪 TestingModule: Rendering error state due to:', hookError);
+    return (
+      <TestingErrorBoundary>
+        <div className="space-y-6">
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              <strong>Testing Module Error:</strong> {hookError}
+            </AlertDescription>
+          </Alert>
+          <div className="p-8 text-center">
+            <p className="text-muted-foreground">
+              The testing module is temporarily unavailable. Please refresh the page or try again later.
+            </p>
+          </div>
+        </div>
+      </TestingErrorBoundary>
+    );
+  }
+
+  // If hook data is not available yet, show loading state
+  if (!hookData) {
+    console.log('🧪 TestingModule: Rendering loading state');
+    return (
+      <TestingErrorBoundary>
+        <div className="space-y-6">
+          <div className="bg-gradient-to-r from-emerald-50 via-blue-50 to-purple-50 border border-emerald-200 rounded-lg p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="h-2 w-2 bg-emerald-500 rounded-full animate-pulse"></div>
+              <Factory className="h-6 w-6 text-purple-600" />
+              <h3 className="font-semibold text-emerald-900">🧪 Loading Unified Testing Suite...</h3>
+            </div>
+            <p className="text-emerald-700">Initializing testing architecture and loading configurations...</p>
+          </div>
+        </div>
+      </TestingErrorBoundary>
+    );
+  }
+
   const { 
     testingData, 
     meta, 
@@ -26,17 +107,21 @@ export const TestingModule: React.FC = () => {
     executeApiIntegrationTests,
     generateFullDocumentationPackage,
     refreshAllData
-  } = useUnifiedTesting({
-    enableEnhancedFeatures: true,
-    enableComplianceMode: true,
-    batchSize: 50,
-    environment: 'development'
+  } = hookData;
+
+  console.log('🧪 TestingModule: Rendering with data', { 
+    hasTestingData: !!testingData, 
+    hasMeta: !!meta,
+    isLoading,
+    isInitializing,
+    error: error?.message || null
   });
 
   const [allTestResults, setAllTestResults] = useState<TestResult[]>([]);
 
   // Mock function for backward compatibility with existing components
   const runTestSuite = async (testType: string): Promise<TestResult> => {
+    console.log('🧪 TestingModule: Running test suite:', testType);
     switch (testType) {
       case 'comprehensive':
         executeStandardTestSuite();
@@ -64,7 +149,7 @@ export const TestingModule: React.FC = () => {
   };
 
   const runAllTests = async (): Promise<TestResult[]> => {
-    if (meta.totalApisAvailable === 0) {
+    if (meta?.totalApisAvailable === 0) {
       return [];
     }
     return [await runTestSuite('comprehensive')];
@@ -78,7 +163,7 @@ export const TestingModule: React.FC = () => {
     return allTestResults;
   };
   
-  console.log('🧪 Testing Module - Unified Testing Architecture Active');
+  console.log('🧪 TestingModule: Full component render complete');
 
   return (
     <TestingErrorBoundary>
@@ -99,10 +184,10 @@ export const TestingModule: React.FC = () => {
                 <h4 className="font-medium text-emerald-900">API Integration Testing</h4>
               </div>
               <div className="text-sm text-emerald-700 space-y-1">
-                <div><strong>APIs Available:</strong> {meta.totalApisAvailable}</div>
-                <div><strong>Coverage:</strong> {meta.overallCoverage}%</div>
-                <div><strong>Data Source:</strong> {meta.dataSource}</div>
-                <div><strong>Real Data:</strong> {meta.usingRealData ? '✅ Active' : '❌ Mock'}</div>
+                <div><strong>APIs Available:</strong> {meta?.totalApisAvailable || 0}</div>
+                <div><strong>Coverage:</strong> {meta?.overallCoverage || 0}%</div>
+                <div><strong>Data Source:</strong> {meta?.dataSource || 'Unknown'}</div>
+                <div><strong>Real Data:</strong> {meta?.usingRealData ? '✅ Active' : '❌ Mock'}</div>
               </div>
             </div>
 
@@ -113,10 +198,10 @@ export const TestingModule: React.FC = () => {
                 <h4 className="font-medium text-purple-900">System Health</h4>
               </div>
               <div className="text-sm text-purple-700 space-y-1">
-                <div><strong>System Functions:</strong> {testingData.systemHealth.totalFunctionality}</div>
-                <div><strong>Test Cases:</strong> {testingData.systemHealth.totalTestCases}</div>
-                <div><strong>Coverage:</strong> {testingData.systemHealth.overallCoverage}%</div>
-                <div><strong>Issues:</strong> {testingData.systemHealth.criticalIssues}</div>
+                <div><strong>System Functions:</strong> {testingData?.systemHealth?.totalFunctionality || 0}</div>
+                <div><strong>Test Cases:</strong> {testingData?.systemHealth?.totalTestCases || 0}</div>
+                <div><strong>Coverage:</strong> {testingData?.systemHealth?.overallCoverage || 0}%</div>
+                <div><strong>Issues:</strong> {testingData?.systemHealth?.criticalIssues || 0}</div>
               </div>
             </div>
 
@@ -127,10 +212,10 @@ export const TestingModule: React.FC = () => {
                 <h4 className="font-medium text-blue-900">Enhanced Metrics</h4>
               </div>
               <div className="text-sm text-blue-700 space-y-1">
-                <div><strong>Service Factory:</strong> {meta.serviceFactoryStatus?.factoryInitialized ? '✅ Ready' : '⏳ Loading'}</div>
-                <div><strong>Compliance Score:</strong> {testingData.enhancedMetrics?.complianceScore ?? 0}%</div>
-                <div><strong>Total Tests:</strong> {testingData.enhancedMetrics?.totalTests ?? 0}</div>
-                <div><strong>Success Rate:</strong> {testingData.enhancedMetrics ? 
+                <div><strong>Service Factory:</strong> {meta?.serviceFactoryStatus?.factoryInitialized ? '✅ Ready' : '⏳ Loading'}</div>
+                <div><strong>Compliance Score:</strong> {testingData?.enhancedMetrics?.complianceScore ?? 0}%</div>
+                <div><strong>Total Tests:</strong> {testingData?.enhancedMetrics?.totalTests ?? 0}</div>
+                <div><strong>Success Rate:</strong> {testingData?.enhancedMetrics ? 
                   ((testingData.enhancedMetrics.executedTests / testingData.enhancedMetrics.totalTests) * 100).toFixed(1) : 0}%</div>
               </div>
             </div>
@@ -145,7 +230,7 @@ export const TestingModule: React.FC = () => {
         </div>
 
         {/* Error Alerts */}
-        {(meta.totalApisAvailable === 0 && testingData.systemHealth.totalFunctionality === 0) && (
+        {(meta?.totalApisAvailable === 0 && testingData?.systemHealth?.totalFunctionality === 0) && (
           <Alert>
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
@@ -164,7 +249,7 @@ export const TestingModule: React.FC = () => {
           </Alert>
         )}
 
-        {!meta.serviceFactoryStatus?.factoryInitialized && (
+        {!meta?.serviceFactoryStatus?.factoryInitialized && (
           <Alert>
             <Factory className="h-4 w-4" />
             <AlertDescription>
