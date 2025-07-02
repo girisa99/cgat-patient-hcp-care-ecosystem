@@ -1,7 +1,8 @@
 
 import React from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { CheckCircle, AlertCircle, Database } from 'lucide-react';
+import { CheckCircle, AlertCircle, Database, TrendingUp } from 'lucide-react';
+import { useRealTimeUserStats } from '@/hooks/useRealTimeUserStats';
 
 interface StatusAlertsProps {
   user: any;
@@ -10,6 +11,8 @@ interface StatusAlertsProps {
 }
 
 const StatusAlerts: React.FC<StatusAlertsProps> = ({ user, profile, userRoles }) => {
+  const { data: realTimeStats } = useRealTimeUserStats();
+
   return (
     <>
       {/* System Status Messages */}
@@ -36,6 +39,19 @@ const StatusAlerts: React.FC<StatusAlertsProps> = ({ user, profile, userRoles })
           <AlertCircle className="h-4 w-4 text-amber-600" />
           <AlertDescription className="text-amber-800">
             <strong>⚠️ Role Assignment Test Ready:</strong> Profile loaded but no roles found. Click "Test Role Assignment" to verify the new security definer function is working.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Real-time System Statistics */}
+      {realTimeStats && (
+        <Alert className="border-blue-200 bg-blue-50">
+          <TrendingUp className="h-4 w-4 text-blue-600" />
+          <AlertDescription className="text-blue-800">
+            <strong>📊 Real-time System Stats:</strong> {realTimeStats.totalUsers} total users, {realTimeStats.verifiedUsers} verified ({Math.round((realTimeStats.verifiedUsers / realTimeStats.totalUsers) * 100)}% verification rate), {realTimeStats.totalFacilities} facilities, {realTimeStats.totalPermissions} permissions configured.
+            <div className="mt-1 text-xs">
+              Last updated: {new Date(realTimeStats.lastUpdated).toLocaleTimeString()}
+            </div>
           </AlertDescription>
         </Alert>
       )}

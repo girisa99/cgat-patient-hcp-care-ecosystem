@@ -39,11 +39,30 @@ export const useRealTimeUserStats = () => {
         }
 
         const allUsers = userResponse.data || [];
+        console.log('📊 Raw user data for verification check:', allUsers.slice(0, 2));
         
-        // Count verified users (those with email_confirmed_at)
-        const verifiedUsers = allUsers.filter((user: any) => 
-          user.email_confirmed_at || user.email_confirmed
-        ).length;
+        // Count verified users - check both email_confirmed_at and email_confirmed fields
+        const verifiedUsers = allUsers.filter((user: any) => {
+          const isVerified = Boolean(
+            user.email_confirmed_at || 
+            user.email_confirmed || 
+            user.emailConfirmed ||
+            (user.user_metadata && user.user_metadata.email_verified) ||
+            (user.app_metadata && user.app_metadata.email_verified)
+          );
+          
+          if (isVerified) {
+            console.log('✅ Verified user found:', user.email, {
+              email_confirmed_at: user.email_confirmed_at,
+              email_confirmed: user.email_confirmed,
+              emailConfirmed: user.emailConfirmed
+            });
+          }
+          
+          return isVerified;
+        }).length;
+
+        console.log(`📈 Verification stats: ${verifiedUsers} verified out of ${allUsers.length} total users`);
 
         // Get role distribution
         const usersByRole = allUsers.reduce((acc: Record<string, number>, user: any) => {
@@ -83,7 +102,7 @@ export const useRealTimeUserStats = () => {
           lastUpdated: new Date().toISOString()
         };
 
-        console.log('✅ Real-time stats fetched:', stats);
+        console.log('✅ Real-time stats computed:', stats);
         return stats;
         
       } catch (error: any) {

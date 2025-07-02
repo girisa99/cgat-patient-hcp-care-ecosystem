@@ -1,7 +1,6 @@
 
 import React from 'react';
-import MainLayout from '@/components/layout/MainLayout';
-import { PageContainer } from '@/components/layout/PageContainer';
+import UnifiedDashboardLayout from '@/components/layout/UnifiedDashboardLayout';
 import { UserManagementMain } from '@/components/admin/UserManagement/UserManagementMain';
 import { useUserManagementPage } from '@/hooks/useUserManagementPage';
 import { Card, CardContent } from '@/components/ui/card';
@@ -18,31 +17,31 @@ const Users: React.FC = () => {
 
   if (isLoading) {
     return (
-      <MainLayout>
-        <PageContainer
-          title="Users"
-          subtitle="Loading unified user management system..."
-          fluid
-        >
+      <UnifiedDashboardLayout>
+        <div className="p-6">
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold text-gray-900">Users</h1>
+            <p className="text-gray-600">Loading unified user management system...</p>
+          </div>
           <Card>
             <CardContent className="p-8 text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
               <p>Loading users from unified data source...</p>
             </CardContent>
           </Card>
-        </PageContainer>
-      </MainLayout>
+        </div>
+      </UnifiedDashboardLayout>
     );
   }
 
   if (error) {
     return (
-      <MainLayout>
-        <PageContainer
-          title="Users"
-          subtitle="Error loading user data"
-          fluid
-        >
+      <UnifiedDashboardLayout>
+        <div className="p-6">
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold text-gray-900">Users</h1>
+            <p className="text-gray-600">Error loading user data</p>
+          </div>
           <Card>
             <CardContent className="p-8 text-center text-red-600">
               <p>Error loading users: {error.message}</p>
@@ -57,20 +56,24 @@ const Users: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-        </PageContainer>
-      </MainLayout>
+        </div>
+      </UnifiedDashboardLayout>
     );
   }
 
   return (
-    <MainLayout>
-      <PageContainer
-        title="Users"
-        subtitle={`Unified user management system (${users?.length || 0} users)`}
-        fluid
-      >
+    <UnifiedDashboardLayout>
+      <div className="p-6 space-y-6">
+        {/* Page Header */}
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Users</h1>
+          <p className="text-gray-600">
+            Unified user management system ({users?.length || 0} users)
+          </p>
+        </div>
+
         {/* LOCKED STATUS INDICATOR */}
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
           <div className="flex items-center gap-2 mb-2">
             <div className="h-2 w-2 bg-green-500 rounded-full"></div>
             <h3 className="font-semibold text-green-900">🔒 User Management Locked & Stable</h3>
@@ -84,8 +87,8 @@ const Users: React.FC = () => {
         </div>
 
         <UserManagementMain />
-      </PageContainer>
-    </MainLayout>
+      </div>
+    </UnifiedDashboardLayout>
   );
 };
 
