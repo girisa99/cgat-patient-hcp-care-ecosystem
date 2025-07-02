@@ -1,52 +1,28 @@
 
-import React, { useState } from 'react';
-import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
+import React from 'react';
 import Header from './Header';
-import MobileMenuBar from './MobileMenuBar';
 import Sidebar from './Sidebar';
+import { useLocation } from 'react-router-dom';
+import { SystemStatusBanner } from './SystemStatusBanner';
 
 interface MainLayoutProps {
   children: React.ReactNode;
 }
 
 const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { isMobile } = useResponsiveLayout();
+  const location = useLocation();
+  
+  // Show system status banner on admin pages
+  const isAdminPage = ['/users', '/facilities', '/modules', '/patients'].includes(location.pathname);
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Fixed Header */}
-      <Header onMenuClick={() => setSidebarOpen(true)} />
-      
-      {/* Mobile Menu Bar */}
-      {isMobile && (
-        <MobileMenuBar onMenuClick={() => setSidebarOpen(true)} />
-      )}
-      
-      {/* Main Container */}
-      <div className="flex">
-        {/* Desktop Sidebar - Fixed Position */}
-        {!isMobile && (
-          <div className="fixed left-0 top-16 w-64 h-[calc(100vh-4rem)] bg-white border-r border-gray-200 overflow-y-auto z-30">
-            <Sidebar />
-          </div>
-        )}
-        
-        {/* Mobile Sidebar - Overlay */}
-        {isMobile && (
-          <Sidebar 
-            isOpen={sidebarOpen} 
-            onClose={() => setSidebarOpen(false)} 
-          />
-        )}
-        
-        {/* Main Content */}
-        <main className={`flex-1 min-h-[calc(100vh-4rem)] ${
-          isMobile ? 'pt-12' : 'ml-64'
-        }`}>
-          <div className="p-6">
-            {children}
-          </div>
+    <div className="min-h-screen bg-gray-50 flex">
+      <Sidebar />
+      <div className="flex-1 flex flex-col">
+        <Header />
+        <main className="flex-1 p-6">
+          {isAdminPage && <SystemStatusBanner />}
+          {children}
         </main>
       </div>
     </div>

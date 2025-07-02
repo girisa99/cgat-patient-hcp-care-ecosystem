@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -130,7 +129,7 @@ export const ConsolidatedUserManagement: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Data Source Information - Fixed spacing */}
+      {/* Simplified Data Source Information - Removed duplicate status */}
       <Card className="border-blue-200 bg-blue-50/50">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-blue-900 text-lg">
@@ -152,10 +151,10 @@ export const ConsolidatedUserManagement: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Stats - Consistent spacing */}
+      {/* Stats */}
       <UserManagementStats stats={stats} />
 
-      {/* Main Content - Fixed header spacing */}
+      {/* Main Content */}
       <Card>
         <CardHeader className="pb-6">
           <div className="flex items-center justify-between">
@@ -176,7 +175,7 @@ export const ConsolidatedUserManagement: React.FC = () => {
           </div>
         </CardHeader>
         <CardContent className="pt-0">
-          {/* Search and Filters - Consistent spacing */}
+          {/* Search and Filters */}
           <div className="flex items-center gap-4 mb-6">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />

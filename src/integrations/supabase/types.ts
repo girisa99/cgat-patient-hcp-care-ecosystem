@@ -3757,6 +3757,10 @@ export type Database = {
         Args: { issues_data: Json }
         Returns: undefined
       }
+      test_rls_policies: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       update_api_key_usage: {
         Args: { key_hash: string }
         Returns: undefined
