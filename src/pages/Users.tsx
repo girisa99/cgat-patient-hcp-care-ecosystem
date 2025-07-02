@@ -4,7 +4,7 @@ import { AdminStatsGrid, StatCard } from '@/components/layout/AdminStatsGrid';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Users, Shield, Building2, UserCheck, Search, Filter, Download } from 'lucide-react';
+import { Plus, Users as UsersIcon, Shield, Building2, UserCheck, Search, Filter, Download } from 'lucide-react';
 import { UserManagementMain } from '@/components/admin/UserManagement/UserManagementMain';
 import { UnifiedPageWrapper } from '@/components/layout/UnifiedPageWrapper';
 import { useUnifiedPageData } from '@/hooks/useUnifiedPageData';
@@ -23,8 +23,13 @@ const Users: React.FC = () => {
     console.log('🆕 Create user action triggered');
   };
 
-  // Get user statistics from unified source
+  // Get user statistics from unified source with proper calculation
   const stats = users.getUserStats();
+  
+  // Calculate specific counts for display
+  const patientCount = users.getPatients().length;
+  const staffCount = users.getStaff().length;
+  const adminCount = users.getAdmins().length;
 
   const headerActions = (
     <Button onClick={handleCreateUser}>
@@ -46,24 +51,24 @@ const Users: React.FC = () => {
           <StatCard
             title="Total Users"
             value={stats.total}
-            icon={Users}
+            icon={UsersIcon}
             description="All registered users"
           />
           <StatCard
             title="Patients"
-            value={stats.patients}
+            value={patientCount}
             icon={UserCheck}
             description="Patient caregivers"
           />
           <StatCard
             title="Healthcare Staff"
-            value={stats.staff}
+            value={staffCount}
             icon={Shield}
             description="Medical professionals"
           />
           <StatCard
             title="Administrators"
-            value={stats.admins}
+            value={adminCount}
             icon={Building2}
             description="System administrators"
           />

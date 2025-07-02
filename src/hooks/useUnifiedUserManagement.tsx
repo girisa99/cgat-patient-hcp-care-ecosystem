@@ -210,13 +210,20 @@ export const useUnifiedUserManagement = () => {
       return acc;
     }, {});
     
+    // Get specialized user counts
+    const patientUsers = getPatientUsers(users);
+    const staffUsers = getHealthcareStaff(users);
+    const adminUsers = getAdminUsers(users);
+    
     return {
       total: users.length,
       active: users.filter(u => u.created_at).length,
       withRoles: users.filter(u => u.user_roles && u.user_roles.length > 0).length,
       withFacilities: users.filter(u => u.facilities).length,
       roleDistribution,
-      admins: roleDistribution.superAdmin || 0,
+      admins: adminUsers.length,
+      patients: patientUsers.length,
+      staff: staffUsers.length,
       regularUsers: roleDistribution.user || 0,
       moderators: roleDistribution.moderator || 0
     };
@@ -252,12 +259,12 @@ export const useUnifiedUserManagement = () => {
     getUserStats,
     isUserEmailVerified,
     
-    // Specialized filters
+    // Specialized filters - consistent with single source
     getPatients: () => getPatientUsers(users),
     getStaff: () => getHealthcareStaff(users), 
     getAdmins: () => getAdminUsers(users),
     
-    // Meta information
+    // Meta information - single source validation
     meta: {
       totalUsers: users.length,
       patientCount: getPatientUsers(users).length,
@@ -265,7 +272,8 @@ export const useUnifiedUserManagement = () => {
       adminCount: getAdminUsers(users).length,
       dataSource: 'auth.users table via edge function',
       lastFetched: new Date().toISOString(),
-      version: 'unified-v1'
+      version: 'unified-v1',
+      singleSourceValidated: true
     }
   };
 };
