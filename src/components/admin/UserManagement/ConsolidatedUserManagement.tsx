@@ -76,10 +76,12 @@ export const ConsolidatedUserManagement: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="text-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-        <p className="text-gray-500">Loading users from unified data source...</p>
-      </div>
+      <Card>
+        <CardContent className="p-8 text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-500">Loading users from unified data source...</p>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -128,7 +130,7 @@ export const ConsolidatedUserManagement: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Data Source Information */}
+      {/* Data Source Information - Fixed spacing */}
       <Card className="border-blue-200 bg-blue-50/50">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-blue-900 text-lg">
@@ -136,7 +138,7 @@ export const ConsolidatedUserManagement: React.FC = () => {
             Unified User Management System
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-0">
           <div className="text-sm text-blue-800 space-y-1">
             <p><strong>Data Source:</strong> {meta.dataSource}</p>
             <div className="flex gap-4">
@@ -150,16 +152,16 @@ export const ConsolidatedUserManagement: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Stats */}
+      {/* Stats - Consistent spacing */}
       <UserManagementStats stats={stats} />
 
-      {/* Main Content */}
+      {/* Main Content - Fixed header spacing */}
       <Card>
-        <CardHeader className="pb-4">
+        <CardHeader className="pb-6">
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-xl">User Management</CardTitle>
-              <p className="text-gray-600 mt-1">Unified system for managing users, roles, and permissions</p>
+              <CardTitle className="text-xl mb-2">User Management</CardTitle>
+              <p className="text-gray-600">Unified system for managing users, roles, and permissions</p>
             </div>
             <div className="flex items-center gap-2">
               <Button onClick={handleCreateRole} variant="outline">
@@ -173,8 +175,8 @@ export const ConsolidatedUserManagement: React.FC = () => {
             </div>
           </div>
         </CardHeader>
-        <CardContent>
-          {/* Search and Filters */}
+        <CardContent className="pt-0">
+          {/* Search and Filters - Consistent spacing */}
           <div className="flex items-center gap-4 mb-6">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />

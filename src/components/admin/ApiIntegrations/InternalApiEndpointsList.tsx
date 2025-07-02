@@ -1,58 +1,16 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { 
-  Server, 
-  ChevronDown, 
-  ChevronRight, 
-  Copy, 
-  Download, 
-  Eye,
-  FileText,
-  Settings,
-  Database,
-  Shield,
-  Code,
-  Zap,
-  Key
-} from 'lucide-react';
-
-interface ApiService {
-  id: string;
-  name: string;
-  description?: string;
-  type: string;
-  category: string;
-  base_url?: string;
-  version: string;
-  status: string;
-  direction: string;
-  purpose: string;
-  lifecycle_stage: string;
-  endpoints_count?: number;
-  documentation_url?: string;
-  created_at: string;
-  updated_at: string;
-  rls_policies_count?: number;
-  data_mappings_count?: number;
-  contact_info?: any;
-  sla_requirements?: any;
-  security_requirements?: any;
-  rate_limits?: any;
-  webhook_config?: any;
-  created_by?: string;
-  last_modified_by?: string;
-}
+import { Badge } from '@/components/ui/badge';
+import { Database, Eye, Download, Copy, ExternalLink } from 'lucide-react';
 
 interface InternalApiEndpointsListProps {
-  apis: ApiService[];
+  apis: any[];
   searchTerm: string;
-  onDownloadCollection: (integrationId: string) => void;
-  onViewDetails: (integrationId: string) => void;
-  onViewDocumentation: (integrationId: string) => void;
+  onDownloadCollection: (id: string) => void;
+  onViewDetails: (id: string) => void;
+  onViewDocumentation: (id: string) => void;
   onCopyUrl: (url: string) => void;
 }
 
@@ -64,23 +22,23 @@ export const InternalApiEndpointsList: React.FC<InternalApiEndpointsListProps> =
   onViewDocumentation,
   onCopyUrl
 }) => {
-  const [expandedApis, setExpandedApis] = React.useState<Record<string, boolean>>({});
+  const filteredApis = apis.filter(api => 
+    !searchTerm || 
+    api.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    api.description?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-  const toggleApi = (apiId: string) => {
-    setExpandedApis(prev => ({
-      ...prev,
-      [apiId]: !prev[apiId]
-    }));
-  };
-
-  if (apis.length === 0) {
+  if (filteredApis.length === 0) {
     return (
       <Card>
-        <CardContent className="p-8 text-center">
-          <Server className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="font-medium mb-2">No Internal APIs Found</h3>
-          <p className="text-muted-foreground">
-            {searchTerm ? 'No APIs match your search criteria.' : 'Internal APIs will appear here automatically.'}
+        <CardContent className="flex flex-col items-center justify-center py-12">
+          <Database className="h-12 w-12 text-muted-foreground mb-4" />
+          <h3 className="text-lg font-semibold mb-2">No Internal APIs</h3>
+          <p className="text-muted-foreground text-center mb-4">
+            {searchTerm 
+              ? `No internal APIs match "${searchTerm}"`
+              : "You haven't created any internal APIs yet. Internal APIs will appear here."
+            }
           </p>
         </CardContent>
       </Card>
@@ -89,192 +47,67 @@ export const InternalApiEndpointsList: React.FC<InternalApiEndpointsListProps> =
 
   return (
     <div className="space-y-4">
-      {apis.map((api) => {
-        const isExpanded = expandedApis[api.id];
-        
-        return (
-          <Card key={api.id} className="border-l-4 border-l-blue-500">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-medium">Internal APIs ({filteredApis.length})</h3>
+      </div>
+
+      <div className="grid gap-4">
+        {filteredApis.map((api, index) => (
+          <Card key={api.id || index}>
             <CardHeader>
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <CardTitle className="flex items-center gap-2 mb-2">
-                    <Server className="h-4 w-4" />
-                    {api.name}
-                    <Badge variant="outline">Internal</Badge>
-                    <Badge variant="secondary">v{api.version}</Badge>
-                    <Badge variant={api.status === 'active' ? 'default' : 'secondary'}>
-                      {api.status}
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      {api.lifecycle_stage}
-                    </Badge>
-                  </CardTitle>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    {api.description || 'No description provided'}
-                  </p>
-                  
-                  {/* Single Source Metrics */}
-                  <div className="flex items-center gap-4 text-sm mb-2">
-                    <span className="flex items-center gap-1">
-                      <Database className="h-3 w-3" />
-                      {api.endpoints_count || 0} endpoints
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Code className="h-3 w-3" />
-                      {Math.floor((api.endpoints_count || 0) * 0.8)} schemas
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Shield className="h-3 w-3" />
-                      {Math.floor((api.endpoints_count || 0) * 0.7)} secured
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Key className="h-3 w-3" />
-                      {api.rls_policies_count || 0} RLS policies
-                    </span>
-                    {api.documentation_url && (
-                      <span className="flex items-center gap-1">
-                        <FileText className="h-3 w-3" />
-                        Documentation
-                      </span>
-                    )}
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="text-xs">
-                      {api.direction}
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      {api.category}
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      {api.purpose}
-                    </Badge>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onCopyUrl(api.base_url || `${window.location.origin}/api/v1/${api.id}`)}
-                  >
-                    <Copy className="h-3 w-3 mr-1" />
-                    URL
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onDownloadCollection(api.id)}
-                  >
-                    <Download className="h-3 w-3 mr-1" />
-                    Collection
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onViewDetails(api.id)}
-                  >
-                    <Eye className="h-3 w-3 mr-1" />
-                    Details
-                  </Button>
-                </div>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Database className="h-5 w-5" />
+                  {api.name || `Internal API ${index + 1}`}
+                </CardTitle>
+                <Badge variant={api.status === 'published' ? 'default' : 'secondary'}>
+                  {api.status || 'active'}
+                </Badge>
               </div>
             </CardHeader>
             <CardContent>
-              <Collapsible open={isExpanded} onOpenChange={() => toggleApi(api.id)}>
-                <CollapsibleTrigger asChild>
-                  <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg cursor-pointer hover:bg-muted/70 transition-colors">
-                    <div className="flex items-center gap-2">
-                      <Settings className="h-4 w-4" />
-                      <span className="font-medium">API Details & Endpoints</span>
-                      <Badge variant="outline">{api.endpoints_count || 0} endpoints</Badge>
-                    </div>
-                    {isExpanded ? 
-                      <ChevronDown className="h-4 w-4" /> : 
-                      <ChevronRight className="h-4 w-4" />
-                    }
-                  </div>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <div className="mt-2 p-4 border rounded-lg bg-background">
-                    {/* Service Information - Single Source */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                      <div>
-                        <h4 className="font-medium text-sm mb-2">Service Information</h4>
-                        <div className="space-y-1 text-sm">
-                          <div><strong>ID:</strong> <code className="text-xs bg-muted px-1 py-0.5 rounded">{api.id}</code></div>
-                          <div><strong>Type:</strong> {api.type}</div>
-                          <div><strong>Direction:</strong> {api.direction}</div>
-                          <div><strong>Category:</strong> {api.category}</div>
-                          <div><strong>Purpose:</strong> {api.purpose}</div>
-                          <div><strong>Lifecycle:</strong> {api.lifecycle_stage}</div>
-                        </div>
-                      </div>
-                      <div>
-                        <h4 className="font-medium text-sm mb-2">Technical Details</h4>
-                        <div className="space-y-1 text-sm">
-                          <div><strong>Base URL:</strong> {api.base_url ? (
-                            <code className="text-xs bg-muted px-1 py-0.5 rounded break-all">{api.base_url}</code>
-                          ) : (
-                            <span className="text-muted-foreground">Auto-configured</span>
-                          )}</div>
-                          <div><strong>Version:</strong> {api.version}</div>
-                          <div><strong>Status:</strong> {api.status}</div>
-                          <div><strong>RLS Policies:</strong> {api.rls_policies_count || 0}</div>
-                          <div><strong>Data Mappings:</strong> {api.data_mappings_count || 0}</div>
-                          <div><strong>Documentation:</strong> {api.documentation_url ? (
-                            <a href={api.documentation_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                              Available
-                            </a>
-                          ) : (
-                            <span className="text-muted-foreground">Not configured</span>
-                          )}</div>
-                        </div>
-                      </div>
-                    </div>
+              <p className="text-muted-foreground mb-4">
+                {api.description || 'Internal API service'}
+              </p>
+              
+              <div className="flex items-center gap-2 mb-4">
+                <Badge variant="outline">{api.version || '1.0.0'}</Badge>
+                <Badge variant="outline">{api.category || 'API'}</Badge>
+                {api.endpoints_count && (
+                  <Badge variant="outline">{api.endpoints_count} endpoints</Badge>
+                )}
+              </div>
 
-                    {/* Simulated Endpoints based on existing data */}
-                    {(api.endpoints_count || 0) > 0 && (
-                      <div className="mb-4">
-                        <h4 className="font-medium text-sm mb-2">API Endpoints ({api.endpoints_count || 0})</h4>
-                        <div className="space-y-2">
-                          {Array.from({ length: api.endpoints_count || 0 }, (_, i) => (
-                            <div key={i} className="p-3 border rounded-lg bg-muted/30">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                  <Badge variant="outline" className="text-xs">
-                                    GET
-                                  </Badge>
-                                  <code className="text-sm">/api/v1/{api.id}/endpoint-{i + 1}</code>
-                                  <Shield className="h-3 w-3 text-orange-500" />
-                                  <Badge variant="outline" className="text-xs text-green-600">Secured</Badge>
-                                </div>
-                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                  <span>Request Schema</span>
-                                  <span>Response Schema</span>
-                                </div>
-                              </div>
-                              <p className="text-sm text-muted-foreground mt-1">
-                                Endpoint {i + 1} for {api.name}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    
-                    <div className="pt-4 border-t">
-                      <h4 className="font-medium text-sm mb-2">Purpose & Usage</h4>
-                      <p className="text-sm text-muted-foreground">
-                        {api.purpose || 'General API service for internal healthcare operations'}
-                      </p>
-                    </div>
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => onViewDetails(api.id)}
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  View Details
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => onDownloadCollection(api.id)}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Download
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => onCopyUrl(api.base_url || api.documentation_url || '#')}
+                >
+                  <Copy className="h-4 w-4 mr-2" />
+                  Copy URL
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => onViewDocumentation(api.id)}>
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Documentation
+                </Button>
+              </div>
             </CardContent>
           </Card>
-        );
-      })}
+        ))}
+      </div>
     </div>
   );
 };
