@@ -4,11 +4,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { UnifiedTestingOverview } from './UnifiedTestingOverview';
 import { IntegrationTestingTab } from './tabs/IntegrationTestingTab';
 import { ComprehensiveTestingTab } from './tabs/ComprehensiveTestingTab';
-import { TestResultsDashboard } from './TestResultsDashboard';
+import { UnitTestingTab } from './tabs/UnitTestingTab';
+import { RoleBasedTestingTab } from './tabs/RoleBasedTestingTab';
+import { UnifiedTestResultsDisplay } from './components/UnifiedTestResultsDisplay';
+import { RefactoringProgress } from './RefactoringProgress';
 import { useUnifiedTestingData } from '@/hooks/useUnifiedTestingData';
 import { useComprehensiveTesting } from '@/hooks/useComprehensiveTesting';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertTriangle, TestTube, Database } from 'lucide-react';
+import { AlertTriangle, TestTube, Database, Wrench } from 'lucide-react';
 
 export const TestingModule: React.FC = () => {
   const { 
@@ -17,7 +20,8 @@ export const TestingModule: React.FC = () => {
     isLoading: apiTestingLoading,
     runTestSuite,
     runAllTests,
-    getRecentTestResults
+    getRecentTestResults,
+    getAllTestResults
   } = useUnifiedTestingData();
 
   const {
@@ -97,12 +101,14 @@ export const TestingModule: React.FC = () => {
       )}
 
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="comprehensive">Comprehensive</TabsTrigger>
           <TabsTrigger value="api-integration">API Integration</TabsTrigger>
+          <TabsTrigger value="unit">Unit Tests</TabsTrigger>
+          <TabsTrigger value="role-based">Role-Based</TabsTrigger>
           <TabsTrigger value="results">Results</TabsTrigger>
-          <TabsTrigger value="compliance">Compliance</TabsTrigger>
+          <TabsTrigger value="refactoring">Refactoring</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview">
@@ -127,94 +133,29 @@ export const TestingModule: React.FC = () => {
           />
         </TabsContent>
 
-        <TabsContent value="results">
-          <TestResultsDashboard 
-            testResults={[]} 
-            isLoading={apiTestingLoading || isInitializing}
+        <TabsContent value="unit">
+          <UnitTestingTab
+            testingData={testingData}
+            runTestSuite={runTestSuite}
+            isLoading={apiTestingLoading}
           />
         </TabsContent>
 
-        <TabsContent value="compliance">
-          <div className="grid grid-cols-1 gap-6">
-            {/* 21 CFR Part 11 Compliance Overview */}
-            <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <TestTube className="h-8 w-8 text-green-600" />
-                <div>
-                  <h3 className="text-xl font-semibold text-green-900">21 CFR Part 11 Compliance Status</h3>
-                  <p className="text-green-700">Electronic Records and Electronic Signatures Compliance</p>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-white p-4 rounded-lg border border-green-100">
-                  <h4 className="font-medium text-green-900 mb-2">Electronic Records</h4>
-                  <div className="text-sm text-green-700 space-y-1">
-                    <div>✅ Audit trails maintained</div>
-                    <div>✅ Data integrity verified</div>
-                    <div>✅ Access controls active</div>
-                  </div>
-                </div>
-                
-                <div className="bg-white p-4 rounded-lg border border-green-100">
-                  <h4 className="font-medium text-green-900 mb-2">Electronic Signatures</h4>
-                  <div className="text-sm text-green-700 space-y-1">
-                    <div>✅ Digital signatures required</div>
-                    <div>✅ User authentication verified</div>
-                    <div>✅ Signature binding validated</div>
-                  </div>
-                </div>
-                
-                <div className="bg-white p-4 rounded-lg border border-green-100">
-                  <h4 className="font-medium text-green-900 mb-2">Validation Documentation</h4>
-                  <div className="text-sm text-green-700 space-y-1">
-                    <div>✅ IQ/OQ/PQ protocols</div>
-                    <div>✅ Test summary reports</div>
-                    <div>✅ Change control records</div>
-                  </div>
-                </div>
-              </div>
-            </div>
+        <TabsContent value="role-based">
+          <RoleBasedTestingTab />
+        </TabsContent>
 
-            {/* Compliance Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-white border rounded-lg p-6">
-                <h4 className="font-medium mb-4">Validation Levels Coverage</h4>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">IQ (Installation Qualification)</span>
-                    <span className="text-sm font-medium">Active</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">OQ (Operational Qualification)</span>
-                    <span className="text-sm font-medium">Active</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">PQ (Performance Qualification)</span>
-                    <span className="text-sm font-medium">Active</span>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="bg-white border rounded-lg p-6">
-                <h4 className="font-medium mb-4">Compliance Metrics</h4>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">Test Cases with CFR Metadata</span>
-                    <span className="text-sm font-medium text-green-600">100%</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">Electronic Signatures Required</span>
-                    <span className="text-sm font-medium text-green-600">Critical Tests</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">Audit Trail Coverage</span>
-                    <span className="text-sm font-medium text-green-600">Complete</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+        <TabsContent value="results">
+          <UnifiedTestResultsDisplay 
+            testResults={getAllTestResults ? getAllTestResults() : []} 
+            isLoading={apiTestingLoading || isInitializing}
+            title="All Test Results"
+            showTrends={true}
+          />
+        </TabsContent>
+
+        <TabsContent value="refactoring">
+          <RefactoringProgress />
         </TabsContent>
       </Tabs>
     </div>
