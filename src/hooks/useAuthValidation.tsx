@@ -12,6 +12,15 @@ interface AuthValidationResult {
   timestamp?: string;
 }
 
+interface RLSTestResult {
+  user_id?: string;
+  user_roles_count?: number;
+  can_access_profiles?: boolean;
+  is_admin_safe?: boolean;
+  timestamp?: string;
+  error?: string;
+}
+
 /**
  * Hook to validate authentication state and RLS policy functionality
  * Uses the new test_rls_policies function to verify the fix works
@@ -34,7 +43,10 @@ export const useAuthValidation = () => {
         throw error;
       }
 
-      if (data?.error) {
+      // Cast the response data to our expected type
+      const testResult = data as RLSTestResult;
+
+      if (testResult?.error) {
         console.log('ℹ️ No authenticated user for validation');
         setValidationResult({
           isValid: false,
@@ -45,15 +57,15 @@ export const useAuthValidation = () => {
         return;
       }
 
-      console.log('✅ Auth validation successful:', data);
+      console.log('✅ Auth validation successful:', testResult);
       
       const result: AuthValidationResult = {
         isValid: true,
-        userRolesCount: data.user_roles_count || 0,
-        canAccessProfiles: data.can_access_profiles || false,
-        isAdminSafe: data.is_admin_safe || false,
-        userId: data.user_id,
-        timestamp: data.timestamp
+        userRolesCount: testResult.user_roles_count || 0,
+        canAccessProfiles: testResult.can_access_profiles || false,
+        isAdminSafe: testResult.is_admin_safe || false,
+        userId: testResult.user_id,
+        timestamp: testResult.timestamp
       };
 
       setValidationResult(result);
