@@ -9,12 +9,13 @@ import { ApiPublishingWorkflowTab } from './tabs/ApiPublishingWorkflowTab';
 import { ApiDeveloperPortalTab } from './tabs/ApiDeveloperPortalTab';
 import { ApiTestingInterfaceTab } from './tabs/ApiTestingInterfaceTab';
 import { PostmanIntegrationTab } from './tabs/PostmanIntegrationTab';
+import { TestingModule } from '@/components/admin/Testing/TestingModule';
 import { useApiServicesLocked } from '@/hooks/useApiServicesLocked';
 
 export const ApiServicesModule: React.FC = () => {
   const { meta } = useApiServicesLocked();
   
-  console.log('🔒 ApiServicesModule: Enhanced with all subtabs and advanced functionality');
+  console.log('🔒 ApiServicesModule: Enhanced with all subtabs and testing services');
 
   return (
     <div className="space-y-6">
@@ -41,12 +42,13 @@ export const ApiServicesModule: React.FC = () => {
       </div>
 
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="grid w-full grid-cols-8">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="registry">API Registry</TabsTrigger>
           <TabsTrigger value="publishing">Publishing</TabsTrigger>
           <TabsTrigger value="developer">Developer Portal</TabsTrigger>
-          <TabsTrigger value="testing">Testing</TabsTrigger>
+          <TabsTrigger value="testing">API Testing</TabsTrigger>
+          <TabsTrigger value="test-services">Test Services</TabsTrigger>
           <TabsTrigger value="postman">Postman</TabsTrigger>
           <TabsTrigger value="consumption">Consumption</TabsTrigger>
         </TabsList>
@@ -69,6 +71,10 @@ export const ApiServicesModule: React.FC = () => {
 
         <TabsContent value="testing">
           <ApiTestingInterfaceTab />
+        </TabsContent>
+
+        <TabsContent value="test-services">
+          <TestingModule />
         </TabsContent>
 
         <TabsContent value="postman">
