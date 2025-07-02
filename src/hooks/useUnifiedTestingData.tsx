@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { TestResult } from '@/services/testingService';
+import { TestResult, testingService } from '@/services/testingService';
 
 interface TestingMetrics {
   total: number;
@@ -45,6 +45,7 @@ const generateRealTestingData = (): TestingData => {
 export const useUnifiedTestingData = () => {
   const [testingData, setTestingData] = useState<TestingData>(generateRealTestingData());
   const [isLoading, setIsLoading] = useState(false);
+  const [executionHistory, setExecutionHistory] = useState<TestResult[]>([]);
   const { toast } = useToast();
 
   const meta: TestingMeta = {
@@ -58,114 +59,186 @@ export const useUnifiedTestingData = () => {
     lastSyncAt: new Date().toISOString()
   };
 
-  // Simulate real test execution
+  // Enhanced test execution with detailed tracking
   const runTestSuite = async (testType: string): Promise<TestResult> => {
     setIsLoading(true);
     
     try {
-      // Simulate test execution time
-      await new Promise(resolve => setTimeout(resolve, 2000 + Math.random() * 3000));
-      
-      const result: TestResult = {
-        id: `test-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        testType: testType as 'unit' | 'integration' | 'system' | 'regression' | 'e2e',
-        testName: `${testType} Test Suite`,
-        status: Math.random() > 0.1 ? 'passed' : 'failed',
-        duration: Math.floor(1000 + Math.random() * 4000),
-        coverage: Math.floor(85 + Math.random() * 10),
-        executedAt: new Date().toISOString()
-      };
-
-      // Update test data based on results
-      setTestingData(prev => {
-        const newData = { ...prev };
-        const testKey = `${testType}Tests` as keyof TestingData;
-        if (newData[testKey]) {
-          newData[testKey] = {
-            ...newData[testKey],
-            coverage: result.coverage || 0
-          };
-        }
-        return newData;
+      toast({
+        title: `🧪 Executing ${testType} Tests`,
+        description: "Running tests against real system data...",
       });
 
-      console.log(`✅ ${testType} tests completed:`, result);
-      return result;
+      // Use the actual testing service for real test execution
+      const results = await testingService.executeTestSuite(testType);
+      
+      // Update execution history
+      setExecutionHistory(prev => [...prev, ...results]);
+      
+      // Update local test data
+      await updateTestingDataFromResults(results);
+      
+      const summary = generateTestSummary(results);
+      
+      toast({
+        title: `✅ ${testType} Tests Completed`,
+        description: `${summary.passed}/${summary.total} tests passed (${summary.passRate}%)`,
+      });
+
+      return summary;
     } catch (error) {
-      console.error(`❌ ${testType} test execution failed:`, error);
+      toast({
+        title: "❌ Test Execution Failed",
+        description: `Failed to execute ${testType} tests. Check console for details.`,
+        variant: "destructive",
+      });
+      console.error(`${testType} test execution failed:`, error);
       throw error;
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Run all test suites
+  // Run all test suites with comprehensive tracking
   const runAllTests = async (): Promise<TestResult[]> => {
     const testTypes = ['unit', 'integration', 'system', 'regression', 'e2e'];
-    const results: TestResult[] = [];
+    const allResults: TestResult[] = [];
     
-    for (const testType of testTypes) {
-      try {
-        const result = await runTestSuite(testType);
-        results.push(result);
-      } catch (error) {
-        console.error(`Failed to run ${testType} tests:`, error);
+    setIsLoading(true);
+    
+    try {
+      toast({
+        title: "🔄 Running Complete Test Suite",
+        description: "Executing all test types against real system data...",
+      });
+
+      for (const testType of testTypes) {
+        console.log(`🧪 Running ${testType} tests...`);
+        const results = await testingService.executeTestSuite(testType);
+        allResults.push(...results);
+        
+        // Update progress
+        toast({
+          title: `✅ ${testType} tests completed`,
+          description: `${results.filter(r => r.status === 'passed').length}/${results.length} tests passed`,
+        });
       }
+
+      // Update execution history with all results
+      setExecutionHistory(prev => [...prev, ...allResults]);
+      
+      // Update local testing data
+      await updateTestingDataFromResults(allResults);
+      
+      const overallSummary = generateOverallSummary(allResults);
+      
+      toast({
+        title: "🎯 All Tests Completed",
+        description: `${overallSummary.totalPassed}/${overallSummary.totalTests} tests passed (${overallSummary.overallPassRate}%)`,
+      });
+
+      console.log('📊 Complete test execution summary:', overallSummary);
+      
+      return allResults;
+    } catch (error) {
+      toast({
+        title: "❌ Test Suite Execution Failed",
+        description: "Some tests failed to execute. Check console for details.",
+        variant: "destructive",
+      });
+      console.error('Test suite execution failed:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
     }
-    
-    return results;
   };
 
-  // Get recent test results (simulated) - Now returns proper TestResult format
+  // Get recent test results with enhanced details
   const getRecentTestResults = async (): Promise<TestResult[]> => {
-    // Simulate async operation
-    await new Promise(resolve => setTimeout(resolve, 100));
+    try {
+      // Get from service first (persistent storage)
+      const serviceResults = await testingService.getTestResults();
+      
+      // Combine with current execution history
+      const allResults = [...serviceResults, ...executionHistory];
+      
+      // Return most recent 20 results
+      return allResults
+        .sort((a, b) => new Date(b.executedAt).getTime() - new Date(a.executedAt).getTime())
+        .slice(0, 20);
+    } catch (error) {
+      console.error('Failed to get recent test results:', error);
+      return executionHistory.slice(-10); // Fallback to execution history
+    }
+  };
+
+  // Helper function to update testing data from results
+  const updateTestingDataFromResults = async (results: TestResult[]) => {
+    const stats = await testingService.getTestSuiteStats();
+    setTestingData(prev => ({
+      unitTests: stats.unitTests || prev.unitTests,
+      integrationTests: stats.integrationTests || prev.integrationTests,
+      systemTests: stats.systemTests || prev.systemTests,
+      regressionTests: stats.regressionTests || prev.regressionTests,
+      e2eTests: stats.e2eTests || prev.e2eTests
+    }));
+  };
+
+  // Generate test summary
+  const generateTestSummary = (results: TestResult[]): TestResult => {
+    const passed = results.filter(r => r.status === 'passed').length;
+    const total = results.length;
+    const passRate = total > 0 ? Math.round((passed / total) * 100) : 0;
+    const avgCoverage = results.reduce((sum, r) => sum + (r.coverage || 0), 0) / total;
+    const totalDuration = results.reduce((sum, r) => sum + r.duration, 0);
+
+    return {
+      id: `summary-${Date.now()}`,
+      testType: results[0]?.testType || 'unit',
+      testName: `${results[0]?.testType || 'Test'} Suite Summary`,
+      status: passRate >= 80 ? 'passed' : 'failed',
+      duration: totalDuration,
+      coverage: Math.round(avgCoverage),
+      executedAt: new Date().toISOString(),
+      // Add custom properties for summary
+      passRate,
+      totalTests: total,
+      passedTests: passed
+    } as TestResult & { passRate: number; totalTests: number; passedTests: number };
+  };
+
+  // Generate overall summary
+  const generateOverallSummary = (allResults: TestResult[]) => {
+    const totalTests = allResults.length;
+    const totalPassed = allResults.filter(r => r.status === 'passed').length;
+    const overallPassRate = totalTests > 0 ? Math.round((totalPassed / totalTests) * 100) : 0;
     
-    return [
-      {
-        id: 'recent-1',
-        testType: 'unit',
-        testName: 'Unit Test Suite - Recent',
-        status: 'passed',
-        duration: 1200,
-        coverage: 89,
-        executedAt: new Date(Date.now() - 300000).toISOString()
-      },
-      {
-        id: 'recent-2',
-        testType: 'integration',
-        testName: 'Integration Test Suite - Recent',
-        status: 'passed',
-        duration: 1800,
-        coverage: 92,
-        executedAt: new Date(Date.now() - 600000).toISOString()
-      },
-      {
-        id: 'recent-3',
-        testType: 'system',
-        testName: 'System Test Suite - Recent',
-        status: 'failed',
-        duration: 900,
-        coverage: 75,
-        errorMessage: 'System performance threshold exceeded',
-        executedAt: new Date(Date.now() - 900000).toISOString()
-      },
-      {
-        id: 'recent-4',
-        testType: 'e2e',
-        testName: 'E2E Test Suite - Recent',
-        status: 'passed',
-        duration: 2100,
-        coverage: 88,
-        executedAt: new Date(Date.now() - 1200000).toISOString()
+    return {
+      totalTests,
+      totalPassed,
+      overallPassRate,
+      byType: {
+        unit: allResults.filter(r => r.testType === 'unit').length,
+        integration: allResults.filter(r => r.testType === 'integration').length,
+        system: allResults.filter(r => r.testType === 'system').length,
+        regression: allResults.filter(r => r.testType === 'regression').length,
+        e2e: allResults.filter(r => r.testType === 'e2e').length
       }
-    ];
+    };
   };
 
   // Refresh testing data periodically
   useEffect(() => {
-    const interval = setInterval(() => {
-      setTestingData(generateRealTestingData());
+    const interval = setInterval(async () => {
+      // Update with latest stats
+      const stats = await testingService.getTestSuiteStats();
+      setTestingData(prev => ({
+        unitTests: stats.unitTests || prev.unitTests,
+        integrationTests: stats.integrationTests || prev.integrationTests,
+        systemTests: stats.systemTests || prev.systemTests,
+        regressionTests: stats.regressionTests || prev.regressionTests,
+        e2eTests: stats.e2eTests || prev.e2eTests
+      }));
     }, 30000); // Refresh every 30 seconds
 
     return () => clearInterval(interval);
@@ -177,6 +250,10 @@ export const useUnifiedTestingData = () => {
     isLoading,
     runTestSuite,
     runAllTests,
-    getRecentTestResults
+    getRecentTestResults,
+    executionHistory,
+    // New utility functions
+    getTestStats: () => testingService.getTestSuiteStats(),
+    getAllTestResults: () => testingService.getTestResults()
   };
 };

@@ -8,6 +8,7 @@ import { SystemTestingTab } from './tabs/SystemTestingTab';
 import { RegressionTestingTab } from './tabs/RegressionTestingTab';
 import { E2ETestingTab } from './tabs/E2ETestingTab';
 import { TestReportsTab } from './tabs/TestReportsTab';
+import { TestResultsDashboard } from './TestResultsDashboard';
 import { useUnifiedTestingData } from '@/hooks/useUnifiedTestingData';
 
 export const TestingModule: React.FC = () => {
@@ -56,13 +57,14 @@ export const TestingModule: React.FC = () => {
       </div>
 
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="grid w-full grid-cols-8">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="unit">Unit Tests</TabsTrigger>
           <TabsTrigger value="integration">Integration</TabsTrigger>
           <TabsTrigger value="system">System</TabsTrigger>
           <TabsTrigger value="regression">Regression</TabsTrigger>
           <TabsTrigger value="e2e">E2E Tests</TabsTrigger>
+          <TabsTrigger value="results">Results</TabsTrigger>
           <TabsTrigger value="reports">Reports</TabsTrigger>
         </TabsList>
 
@@ -112,6 +114,13 @@ export const TestingModule: React.FC = () => {
           <E2ETestingTab 
             testingData={testingData}
             runTestSuite={runTestSuite}
+            isLoading={isLoading}
+          />
+        </TabsContent>
+
+        <TabsContent value="results">
+          <TestResultsDashboard 
+            testResults={[]} 
             isLoading={isLoading}
           />
         </TabsContent>
