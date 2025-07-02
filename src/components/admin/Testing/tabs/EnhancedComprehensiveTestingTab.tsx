@@ -1,11 +1,14 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { EnhancedButton } from '@/components/ui/enhanced-button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { TestCaseSearchFilter } from './TestCaseSearchFilter';
+import { AdvancedTestCaseFilter } from './AdvancedTestCaseFilter';
+import { RoleBasedTestingTab } from './RoleBasedTestingTab';
 import { useComprehensiveTesting } from '@/hooks/useComprehensiveTesting';
+import { enhancedTestingService, AdvancedTestFilters, TestExecutionMetrics } from '@/services/enhancedTestingService';
 import { 
   Play, 
   RefreshCw, 
@@ -18,8 +21,11 @@ import {
   BarChart3,
   Shield,
   Layers,
-  Tag
+  Tag,
+  Users,
+  Clock
 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 export const EnhancedComprehensiveTestingTab: React.FC = () => {
   const {
@@ -39,19 +45,72 @@ export const EnhancedComprehensiveTestingTab: React.FC = () => {
     refreshTestCases
   } = useComprehensiveTesting();
 
-  const [testFilters, setTestFilters] = useState({});
+  const [testFilters, setTestFilters] = useState<AdvancedTestFilters>({});
+  const [filteredTestCases, setFilteredTestCases] = useState(testCases);
+  const [executionMetrics, setExecutionMetrics] = useState<TestExecutionMetrics>({
+    totalTests: 0,
+    executedTests: 0,
+    pendingTests: 0,
+    failedTests: 0,
+    newTests: 0,
+    staleTests: 0,
+    securityTests: 0,
+    complianceTests: 0,
+    technicalTests: 0,
+    businessTests: 0
+  });
+
+  const { toast } = useToast();
+
+  // Load execution metrics on mount
+  useEffect(() => {
+    loadExecutionMetrics();
+  }, []);
+
+  // Update filtered test cases when filters change
+  useEffect(() => {
+    if (Object.keys(testFilters).length === 0) {
+      setFilteredTestCases(testCases);
+    } else {
+      applyAdvancedFilters();
+    }
+  }, [testFilters, testCases]);
+
+  const loadExecutionMetrics = async () => {
+    try {
+      const metrics = await enhancedTestingService.getTestExecutionMetrics();
+      setExecutionMetrics(metrics);
+    } catch (error) {
+      console.error('Failed to load execution metrics:', error);
+    }
+  };
+
+  const applyAdvancedFilters = async () => {
+    try {
+      const filtered = await enhancedTestingService.getAdvancedTestCases(testFilters);
+      setFilteredTestCases(filtered);
+    } catch (error) {
+      console.error('Failed to apply advanced filters:', error);
+      toast({
+        title: "❌ Filter Error",
+        description: "Failed to apply advanced filters",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleFiltersChange = async (filters: AdvancedTestFilters) => {
+    setTestFilters(filters);
+    await loadExecutionMetrics(); // Refresh metrics when filters change
+  };
 
   const handleExecuteTests = async (suiteType?: string) => {
     try {
       await executeTestSuite(suiteType === 'all' ? undefined : suiteType);
+      await loadExecutionMetrics(); // Refresh metrics after execution
     } catch (error) {
       console.error('Test execution failed:', error);
     }
-  };
-
-  const handleFiltersChange = async (filters: any) => {
-    setTestFilters(filters);
-    await refreshTestCases(filters);
   };
 
   const getHealthStatusColor = (coverage: number) => {
@@ -71,42 +130,47 @@ export const EnhancedComprehensiveTestingTab: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Enhanced Header with Module Coverage */}
+      {/* Enhanced Header with Execution Metrics */}
       <Card className="bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200">
         <CardContent className="pt-6">
           <div className="flex items-center gap-3 mb-4">
             <TestTube className="h-8 w-8 text-purple-600" />
             <div>
               <h3 className="text-xl font-semibold text-purple-900">Enhanced Comprehensive Testing Suite</h3>
-              <p className="text-purple-700">Module-organized testing with topic-based categorization</p>
+              <p className="text-purple-700">Advanced filtering, role-based testing, and comprehensive security coverage</p>
             </div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
             <div className="bg-white p-3 rounded-lg border">
-              <div className="text-sm text-gray-600">Total Functionality</div>
-              <div className="text-2xl font-bold text-purple-600">{systemHealth.totalFunctionality}</div>
+              <div className="text-sm text-gray-600">Total Tests</div>
+              <div className="text-2xl font-bold text-purple-600">{executionMetrics.totalTests}</div>
             </div>
             <div className="bg-white p-3 rounded-lg border">
-              <div className="text-sm text-gray-600">Test Cases</div>
-              <div className="text-2xl font-bold text-blue-600">{systemHealth.totalTestCases}</div>
+              <div className="text-sm text-gray-600">Executed</div>
+              <div className="text-2xl font-bold text-green-600">{executionMetrics.executedTests}</div>
             </div>
             <div className="bg-white p-3 rounded-lg border">
-              <div className="text-sm text-gray-600">Coverage</div>
-              <div className={`text-2xl font-bold ${getHealthStatusColor(systemHealth.overallCoverage)}`}>
-                {systemHealth.overallCoverage}%
-              </div>
+              <div className="text-sm text-gray-600">Pending</div>
+              <div className="text-2xl font-bold text-yellow-600">{executionMetrics.pendingTests}</div>
             </div>
             <div className="bg-white p-3 rounded-lg border">
-              <div className="text-sm text-gray-600">Modules</div>
-              <div className="text-2xl font-bold text-indigo-600">
-                {Object.keys(testStatistics.testsByModule || {}).length}
-              </div>
+              <div className="text-sm text-gray-600">Failed</div>
+              <div className="text-2xl font-bold text-red-600">{executionMetrics.failedTests}</div>
+            </div>
+            <div className="bg-white p-3 rounded-lg border">
+              <div className="text-sm text-gray-600">Security</div>
+              <div className="text-2xl font-bold text-indigo-600">{executionMetrics.securityTests}</div>
+            </div>
+            <div className="bg-white p-3 rounded-lg border">
+              <div className="text-sm text-gray-600">Compliance</div>
+              <div className="text-2xl font-bold text-blue-600">{executionMetrics.complianceTests}</div>
             </div>
           </div>
           
           {lastInitialized && (
-            <div className="mt-4 text-sm text-purple-600">
+            <div className="mt-4 text-sm text-purple-600 flex items-center gap-2">
+              <Clock className="h-4 w-4" />
               Last initialized: {lastInitialized.toLocaleString()}
             </div>
           )}
@@ -127,12 +191,13 @@ export const EnhancedComprehensiveTestingTab: React.FC = () => {
       )}
 
       <Tabs defaultValue="execution" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="execution">Test Execution</TabsTrigger>
-          <TabsTrigger value="browse">Browse Tests</TabsTrigger>
+          <TabsTrigger value="advanced">Advanced Filtering</TabsTrigger>
+          <TabsTrigger value="role-based">Role-Based Testing</TabsTrigger>
           <TabsTrigger value="modules">Module Coverage</TabsTrigger>
-          <TabsTrigger value="topics">Topic Analysis</TabsTrigger>
-          <TabsTrigger value="compliance">CFR Part 11</TabsTrigger>
+          <TabsTrigger value="security">Security & Compliance</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
 
         <TabsContent value="execution">
@@ -225,22 +290,22 @@ export const EnhancedComprehensiveTestingTab: React.FC = () => {
           </div>
         </TabsContent>
 
-        <TabsContent value="browse">
+        <TabsContent value="advanced">
           <div className="space-y-6">
-            <TestCaseSearchFilter
+            <AdvancedTestCaseFilter
               filters={testFilters}
               onFiltersChange={handleFiltersChange}
-              testStatistics={testStatistics}
+              metrics={executionMetrics}
             />
 
             <Card>
               <CardHeader>
-                <CardTitle>Test Cases ({testCases.length})</CardTitle>
+                <CardTitle>Filtered Test Cases ({filteredTestCases.length})</CardTitle>
               </CardHeader>
               <CardContent>
-                {testCases.length > 0 ? (
+                {filteredTestCases.length > 0 ? (
                   <div className="space-y-3">
-                    {testCases.slice(0, 20).map((testCase) => (
+                    {filteredTestCases.slice(0, 20).map((testCase) => (
                       <div key={testCase.id} className="flex items-start justify-between p-4 border rounded-lg">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
@@ -252,6 +317,12 @@ export const EnhancedComprehensiveTestingTab: React.FC = () => {
                             }>
                               {testCase.test_status}
                             </Badge>
+                            {testCase.last_executed_at && (
+                              <Badge variant="outline" className="text-xs">
+                                <Clock className="h-3 w-3 mr-1" />
+                                Last run: {new Date(testCase.last_executed_at).toLocaleDateString()}
+                              </Badge>
+                            )}
                           </div>
                           <p className="text-sm text-muted-foreground mb-2">
                             {testCase.test_description}
@@ -274,14 +345,12 @@ export const EnhancedComprehensiveTestingTab: React.FC = () => {
                                 {testCase.coverage_area}
                               </Badge>
                             )}
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <Badge variant="secondary" className="mb-2">
-                            {testCase.test_suite_type}
-                          </Badge>
-                          <div className="text-xs text-muted-foreground">
-                            {testCase.validation_level}
+                            {testCase.validation_level && (
+                              <Badge variant="outline" className="text-xs">
+                                <Shield className="h-3 w-3 mr-1" />
+                                {testCase.validation_level}
+                              </Badge>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -291,12 +360,16 @@ export const EnhancedComprehensiveTestingTab: React.FC = () => {
                   <div className="text-center py-8 text-muted-foreground">
                     <TestTube className="h-12 w-12 mx-auto mb-4 opacity-50" />
                     <p>No test cases found matching your filters.</p>
-                    <p className="text-sm">Try adjusting your search criteria or initialize the testing system.</p>
+                    <p className="text-sm">Try adjusting your search criteria or clear all filters.</p>
                   </div>
                 )}
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="role-based">
+          <RoleBasedTestingTab />
         </TabsContent>
 
         <TabsContent value="modules">
@@ -329,112 +402,174 @@ export const EnhancedComprehensiveTestingTab: React.FC = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="topics">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Tag className="h-5 w-5" />
-                Topic Distribution
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h4 className="font-medium mb-3">Test Cases by Topic</h4>
-                  <div className="space-y-3">
-                    {Object.entries(testStatistics.testsByTopic || {}).map(([topic, count]) => {
-                      const percentage = testStatistics.totalTestCases > 0 
-                        ? (Number(count) / testStatistics.totalTestCases) * 100 
-                        : 0;
-                      
-                      return (
-                        <div key={topic}>
-                          <div className="flex justify-between text-sm mb-1">
-                            <span>{topic}</span>
-                            <span>{String(count)} ({percentage.toFixed(1)}%)</span>
-                          </div>
-                          <Progress value={percentage} className="h-2" />
-                        </div>
-                      );
-                    })}
+        <TabsContent value="security">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Shield className="h-5 w-5" />
+                  Security Test Coverage
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span>Security Tests</span>
+                    <Badge variant="secondary">{executionMetrics.securityTests}</Badge>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span>Compliance Tests</span>
+                    <Badge variant="secondary">{executionMetrics.complianceTests}</Badge>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span>Authentication Tests</span>
+                    <Badge variant="secondary">
+                      {filteredTestCases.filter(tc => tc.topic?.includes('Authentication')).length}
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span>Privacy Tests</span>
+                    <Badge variant="secondary">
+                      {filteredTestCases.filter(tc => tc.topic?.includes('Privacy')).length}
+                    </Badge>
                   </div>
                 </div>
-                
-                <div>
-                  <h4 className="font-medium mb-3">Coverage Areas</h4>
-                  <div className="space-y-3">
-                    {Object.entries(testStatistics.testsByCoverageArea || {}).map(([area, count]) => {
-                      const percentage = testStatistics.totalTestCases > 0 
-                        ? (Number(count) / testStatistics.totalTestCases) * 100 
-                        : 0;
-                      
-                      return (
-                        <div key={area}>
-                          <div className="flex justify-between text-sm mb-1">
-                            <span>{area}</span>
-                            <span>{String(count)} ({percentage.toFixed(1)}%)</span>
-                          </div>
-                          <Progress value={percentage} className="h-2" />
-                        </div>
-                      );
-                    })}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5" />
+                  21 CFR Part 11 Compliance
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <h4 className="font-medium text-green-900 mb-2">Compliance Status: Active</h4>
+                    <p className="text-sm text-green-700">
+                      All test cases include 21 CFR Part 11 metadata and validation requirements.
+                      Enhanced security and compliance testing is now integrated.
+                    </p>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 gap-4">
+                    <div className="p-4 border rounded-lg">
+                      <h5 className="font-medium">Validation Levels Coverage</h5>
+                      <div className="text-sm text-muted-foreground mt-2">
+                        <div>• IQ: Installation Qualification Tests</div>
+                        <div>• OQ: Operational Qualification Tests</div>
+                        <div>• PQ: Performance Qualification Tests</div>
+                      </div>
+                    </div>
+                    
+                    <div className="p-4 border rounded-lg">
+                      <h5 className="font-medium">Security Categories</h5>
+                      <div className="text-sm text-muted-foreground mt-2">
+                        <div>• Authentication & Authorization</div>
+                        <div>• Data Privacy & Protection</div>
+                        <div>• Vulnerability Testing</div>
+                        <div>• Database Security</div>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
-        <TabsContent value="compliance">
-          {/* Keep existing compliance content */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="h-5 w-5" />
-                21 CFR Part 11 Compliance
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <h4 className="font-medium text-green-900 mb-2">Compliance Status: Active</h4>
-                  <p className="text-sm text-green-700">
-                    All test cases include 21 CFR Part 11 metadata and validation requirements.
-                    Module-based organization ensures comprehensive coverage across all business functions.
-                  </p>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="p-4 border rounded-lg">
-                    <h5 className="font-medium">Validation Levels</h5>
-                    <div className="text-sm text-muted-foreground mt-2">
-                      <div>• IQ: Installation Qualification</div>
-                      <div>• OQ: Operational Qualification</div>
-                      <div>• PQ: Performance Qualification</div>
-                    </div>
+        <TabsContent value="analytics">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Test Categories</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm">Technical</span>
+                    <span className="text-sm font-medium">{executionMetrics.technicalTests}</span>
                   </div>
-                  
-                  <div className="p-4 border rounded-lg">
-                    <h5 className="font-medium">Electronic Records</h5>
-                    <div className="text-sm text-muted-foreground mt-2">
-                      <div>• Digital signatures required</div>
-                      <div>• Audit trail maintained</div>
-                      <div>• Change control active</div>
-                    </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm">Business</span>
+                    <span className="text-sm font-medium">{executionMetrics.businessTests}</span>
                   </div>
-                  
-                  <div className="p-4 border rounded-lg">
-                    <h5 className="font-medium">Module Coverage</h5>
-                    <div className="text-sm text-muted-foreground mt-2">
-                      <div>• {Object.keys(testStatistics.testsByModule || {}).length} modules covered</div>
-                      <div>• {Object.keys(testStatistics.testsByTopic || {}).length} topics validated</div>
-                      <div>• Full traceability maintained</div>
-                    </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm">Security</span>
+                    <span className="text-sm font-medium">{executionMetrics.securityTests}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm">Compliance</span>
+                    <span className="text-sm font-medium">{executionMetrics.complianceTests}</span>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Execution Status</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm">New Tests</span>
+                    <span className="text-sm font-medium text-blue-600">{executionMetrics.newTests}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm">Stale Tests</span>
+                    <span className="text-sm font-medium text-orange-600">{executionMetrics.staleTests}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm">Never Executed</span>
+                    <span className="text-sm font-medium text-gray-600">
+                      {executionMetrics.totalTests - executionMetrics.executedTests}
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Success Rate</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-600">
+                    {executionMetrics.executedTests > 0 
+                      ? Math.round(((executionMetrics.executedTests - executionMetrics.failedTests) / executionMetrics.executedTests) * 100)
+                      : 0}%
+                  </div>
+                  <div className="text-sm text-muted-foreground">Pass Rate</div>
+                  <Progress 
+                    value={executionMetrics.executedTests > 0 
+                      ? ((executionMetrics.executedTests - executionMetrics.failedTests) / executionMetrics.executedTests) * 100
+                      : 0} 
+                    className="mt-2 h-2" 
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Coverage Summary</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-purple-600">{systemHealth.overallCoverage}%</div>
+                  <div className="text-sm text-muted-foreground">Overall Coverage</div>
+                  <Progress value={systemHealth.overallCoverage} className="mt-2 h-2" />
+                  <div className="text-xs text-muted-foreground mt-2">
+                    {systemHealth.totalFunctionality} functions detected
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
     </div>
