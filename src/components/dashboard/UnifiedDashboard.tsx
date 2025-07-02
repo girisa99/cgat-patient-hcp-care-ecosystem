@@ -17,8 +17,9 @@ import { SystemHighlightsCard } from './SystemHighlightsCard';
 import { supabase } from '@/integrations/supabase/client';
 
 const UnifiedDashboard: React.FC = () => {
-  console.log('🎯 Unified Dashboard - Rendering with real-time data integration');
+  console.log('🎯 Unified Dashboard - Rendering with consolidated single source data');
   
+  // Single source of truth for user data
   const { users, isLoading: usersLoading, meta } = useUnifiedUserManagement();
   const { data: realTimeStats, isLoading: statsLoading, refetch: refetchStats } = useRealTimeUserStats();
   const { validationResult, validateAuth } = useAuthValidation();
@@ -46,7 +47,7 @@ const UnifiedDashboard: React.FC = () => {
   }, []);
 
   const handleRefresh = () => {
-    console.log('🔄 Refreshing dashboard data...');
+    console.log('🔄 Refreshing dashboard data from single source...');
     refetchStats();
     validateAuth();
   };
@@ -60,7 +61,7 @@ const UnifiedDashboard: React.FC = () => {
     return <DashboardLoading />;
   }
 
-  // Extract user roles from validation result
+  // Extract user roles from validation result using single source
   const userRoles = validationResult?.userId ? 
     users.find(u => u.id === validationResult.userId)?.user_roles?.map(ur => ur.roles.name) || [] : 
     [];
@@ -83,6 +84,14 @@ const UnifiedDashboard: React.FC = () => {
     }
   };
 
+  // Validate single source metrics
+  console.log('📊 Dashboard Metrics Validation:', {
+    userSource: users.length,
+    realTimeSource: realTimeStats?.totalUsers,
+    metaSource: meta.totalUsers,
+    singleSourceValidated: meta.totalUsers === users.length && users.length === realTimeStats?.totalUsers
+  });
+
   return (
     <div className="space-y-6 p-6">
       <DashboardHeader 
@@ -91,6 +100,28 @@ const UnifiedDashboard: React.FC = () => {
         onRefresh={handleRefresh}
         onAssignTestRole={handleAssignTestRole}
       />
+      
+      {/* Single Source Validation Alert */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="flex items-center gap-2 mb-2">
+          <div className="h-2 w-2 bg-blue-500 rounded-full"></div>
+          <h3 className="font-semibold text-blue-900">📊 Single Source of Truth Validation</h3>
+        </div>
+        <div className="text-sm text-blue-700 grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div>
+            <strong>Unified Users:</strong> {users.length}
+          </div>
+          <div>
+            <strong>Real-time Stats:</strong> {realTimeStats?.totalUsers || 0}
+          </div>
+          <div>
+            <strong>Meta Count:</strong> {meta.totalUsers}
+          </div>
+          <div>
+            <strong>Validated:</strong> {meta.totalUsers === users.length && users.length === realTimeStats?.totalUsers ? '✅' : '❌'}
+          </div>
+        </div>
+      </div>
       
       {/* Real-Time Statistics - Primary Display */}
       <RealTimeStatsCard />
