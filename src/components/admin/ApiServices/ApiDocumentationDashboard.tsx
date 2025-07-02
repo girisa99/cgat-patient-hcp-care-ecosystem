@@ -1,74 +1,133 @@
 
-import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Book, Globe, FileText, Download, Eye } from 'lucide-react';
-import { useApiServices } from '@/hooks/useApiServices';
-import { ApiDocumentationGenerator } from '@/utils/api/ApiDocumentationGenerator';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { 
+  FileText, 
+  Code, 
+  Download, 
+  ExternalLink, 
+  Search, 
+  BookOpen,
+  Zap,
+  Shield,
+  Globe
+} from 'lucide-react';
+import { useUnifiedPageData } from '@/hooks/useUnifiedPageData';
 
 export const ApiDocumentationDashboard: React.FC = () => {
-  const { apiServices, isLoading } = useApiServices();
+  const { apiServices } = useUnifiedPageData();
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const handleViewDocumentation = (api: any) => {
-    ApiDocumentationGenerator.viewDocumentation(api);
-  };
+  console.log('📚 API Documentation Dashboard - Enhanced documentation system');
 
-  const handleDownloadDocumentation = (api: any) => {
-    const doc = ApiDocumentationGenerator.generateDocumentation(api);
-    const htmlContent = ApiDocumentationGenerator.generateHtmlDocumentation(doc);
-    
-    const blob = new Blob([htmlContent], { type: 'text/html' });
+  // Filter APIs with documentation
+  const documentedApis = apiServices.data.filter(api => 
+    api.documentation_url || api.name?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const generatePostmanCollection = (api: any) => {
+    const collection = {
+      info: {
+        name: `${api.name} - API Collection`,
+        description: api.description || 'API endpoints collection',
+        schema: 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json',
+        version: api.version || '1.0.0'
+      },
+      variable: [
+        {
+          key: 'baseUrl',
+          value: api.base_url || `{{protocol}}://{{host}}/api/v1/${api.id}`,
+          type: 'string'
+        }
+      ],
+      item: Array.from({ length: api.endpoints_count || 3 }, (_, i) => ({
+        name: `Endpoint ${i + 1}`,
+        request: {
+          method: 'GET',
+          header: [
+            { key: 'Content-Type', value: 'application/json' },
+            { key: 'Authorization', value: 'Bearer {{api_key}}' }
+          ],
+          url: {
+            raw: `{{baseUrl}}/endpoint-${i + 1}`,
+            host: ['{{baseUrl}}'],
+            path: [`endpoint-${i + 1}`]
+          }
+        }
+      }))
+    };
+
+    const blob = new Blob([JSON.stringify(collection, null, 2)], { 
+      type: 'application/json' 
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${api.name}-documentation.html`;
+    a.download = `${api.name}-postman-collection.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
 
-  if (isLoading) {
+  const documentationStats = {
+    totalApis: apiServices.data.length,
+    documentedApis: apiServices.data.filter(api => api.documentation_url).length,
+    publicApis: apiServices.data.filter(api => api.status === 'active').length,
+    endpointsCount: apiServices.data.reduce((sum, api) => sum + (api.endpoints_count || 0), 0)
+  };
+
+  if (apiServices.isLoading) {
     return (
-      <div className="space-y-6">
-        <Card>
-          <CardContent className="flex items-center justify-center py-8">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p>Loading API documentation...</p>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
-  const documentedApis = apiServices?.filter(api => api.status === 'active') || [];
-  const totalEndpoints = documentedApis.reduce((sum, api) => sum + (api.endpoints_count || 0), 0);
-
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold mb-2">API Documentation</h2>
-        <p className="text-gray-600">
-          Generate and manage comprehensive documentation for your API integrations
-        </p>
-      </div>
-
-      {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Documentation Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Documented APIs</CardTitle>
-            <Book className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Total APIs</CardTitle>
+            <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{documentedApis.length}</div>
+            <div className="text-2xl font-bold">{documentationStats.totalApis}</div>
             <p className="text-xs text-muted-foreground">
-              Active API integrations
+              Registered in system
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Documented</CardTitle>
+            <FileText className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">{documentationStats.documentedApis}</div>
+            <p className="text-xs text-muted-foreground">
+              Have documentation
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Public APIs</CardTitle>
+            <Globe className="h-4 w-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">{documentationStats.publicApis}</div>
+            <p className="text-xs text-muted-foreground">
+              Available publicly
             </p>
           </CardContent>
         </Card>
@@ -76,121 +135,195 @@ export const ApiDocumentationDashboard: React.FC = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Endpoints</CardTitle>
-            <Globe className="h-4 w-4 text-muted-foreground" />
+            <Zap className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalEndpoints}</div>
+            <div className="text-2xl font-bold text-purple-600">{documentationStats.endpointsCount}</div>
             <p className="text-xs text-muted-foreground">
-              Documented endpoints
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Documentation Coverage</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">100%</div>
-            <p className="text-xs text-muted-foreground">
-              APIs with documentation
+              Across all APIs
             </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* API Documentation Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>API Documentation</CardTitle>
-          <CardDescription>
-            View and download documentation for your API integrations
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>API Name</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Version</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Endpoints</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {documentedApis.map((api) => (
-                <TableRow key={api.id}>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{api.name}</div>
-                      <div className="text-sm text-gray-500 truncate max-w-xs">
-                        {api.description || 'No description available'}
+      {/* Documentation Tools */}
+      <Tabs defaultValue="overview" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="overview">Documentation Overview</TabsTrigger>
+          <TabsTrigger value="tools">Developer Tools</TabsTrigger>
+          <TabsTrigger value="guides">Integration Guides</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                API Documentation Status
+              </CardTitle>
+              <div className="relative">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Search APIs..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {documentedApis.map((api) => (
+                  <div key={api.id} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className={`h-2 w-2 rounded-full ${
+                        api.documentation_url ? 'bg-green-500' : 'bg-gray-400'
+                      }`} />
+                      <div>
+                        <h4 className="font-medium">{api.name}</h4>
+                        <p className="text-sm text-muted-foreground">{api.description}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant="outline">{api.version}</Badge>
+                          <Badge variant="secondary">{api.category}</Badge>
+                          <Badge variant={api.status === 'active' ? 'default' : 'secondary'}>
+                            {api.status}
+                          </Badge>
+                        </div>
                       </div>
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="capitalize">
-                      {api.type}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <code className="text-sm bg-gray-100 px-2 py-1 rounded">
-                      {api.version}
-                    </code>
-                  </TableCell>
-                  <TableCell>
-                    <Badge 
-                      className={
-                        api.status === 'active' ? 'bg-green-500' : 
-                        api.status === 'inactive' ? 'bg-gray-500' : 
-                        'bg-blue-500'
-                      }
-                    >
-                      {api.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm text-gray-600">
-                      {api.endpoints_count || 0} endpoints
-                    </span>
-                  </TableCell>
-                  <TableCell>
                     <div className="flex items-center gap-2">
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => handleViewDocumentation(api)}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => handleDownloadDocumentation(api)}
-                      >
-                        <Download className="h-4 w-4" />
+                      {api.documentation_url && (
+                        <Button variant="outline" size="sm" asChild>
+                          <a href={api.documentation_url} target="_blank" rel="noopener noreferrer">
+                            <ExternalLink className="h-4 w-4 mr-2" />
+                            View Docs
+                          </a>
+                        </Button>
+                      )}
+                      <Button variant="outline" size="sm" onClick={() => generatePostmanCollection(api)}>
+                        <Download className="h-4 w-4 mr-2" />
+                        Postman
                       </Button>
                     </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-          
-          {documentedApis.length === 0 && (
-            <div className="text-center py-8">
-              <Book className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600">No documented APIs found</p>
-              <p className="text-sm text-gray-500 mt-2">
-                APIs will appear here when they have active status
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="tools">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Code className="h-5 w-5" />
+                  Developer Tools
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  <h4 className="font-medium mb-2">Postman Collections</h4>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Download ready-to-use Postman collections for API testing
+                  </p>
+                  <Button variant="outline" size="sm">
+                    <Download className="h-4 w-4 mr-2" />
+                    Download All Collections
+                  </Button>
+                </div>
+                
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  <h4 className="font-medium mb-2">OpenAPI Specs</h4>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Generate OpenAPI 3.0 specifications for your APIs
+                  </p>
+                  <Button variant="outline" size="sm">
+                    <FileText className="h-4 w-4 mr-2" />
+                    Generate Specs
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Shield className="h-5 w-5" />
+                  Security & Authentication
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="p-4 bg-blue-50 rounded-lg">
+                  <h4 className="font-medium mb-2">API Key Management</h4>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Secure API access with key-based authentication
+                  </p>
+                  <Button variant="outline" size="sm">
+                    <Shield className="h-4 w-4 mr-2" />
+                    Manage Keys
+                  </Button>
+                </div>
+                
+                <div className="p-4 bg-blue-50 rounded-lg">
+                  <h4 className="font-medium mb-2">Rate Limiting</h4>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Configure rate limits and usage quotas
+                  </p>
+                  <Button variant="outline" size="sm">
+                    <Zap className="h-4 w-4 mr-2" />
+                    Configure Limits
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="guides">
+          <Card>
+            <CardHeader>
+              <CardTitle>Integration Guides</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="p-4 border rounded-lg">
+                  <h4 className="font-medium mb-2">Getting Started</h4>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Learn the basics of API integration
+                  </p>
+                  <Button variant="outline" size="sm">
+                    <BookOpen className="h-4 w-4 mr-2" />
+                    Read Guide
+                  </Button>
+                </div>
+                
+                <div className="p-4 border rounded-lg">
+                  <h4 className="font-medium mb-2">Authentication</h4>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Secure your API integrations
+                  </p>
+                  <Button variant="outline" size="sm">
+                    <Shield className="h-4 w-4 mr-2" />
+                    Security Guide
+                  </Button>
+                </div>
+                
+                <div className="p-4 border rounded-lg">
+                  <h4 className="font-medium mb-2">Best Practices</h4>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Optimize your API usage
+                  </p>
+                  <Button variant="outline" size="sm">
+                    <Zap className="h-4 w-4 mr-2" />
+                    Best Practices
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
