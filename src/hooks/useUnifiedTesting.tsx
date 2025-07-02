@@ -13,7 +13,7 @@ import {
 import { comprehensiveTestingService } from '@/services/comprehensiveTestingService';
 import { TestResult } from '@/services/testingService';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 interface UnifiedTestingConfig {
   enableEnhancedFeatures?: boolean;
@@ -193,23 +193,14 @@ export const useUnifiedTesting = (config?: UnifiedTestingConfig) => {
       if (Array.isArray(result)) {
         const passed = result.filter(r => r.status === 'passed').length;
         const total = result.length;
-        toast({
-          title: 'Test Suite Completed',
-          description: `${passed}/${total} tests passed`
-        });
+        toast(`Test Suite Completed: ${passed}/${total} tests passed`);
       } else if (result && typeof result === 'object') {
         // Handle business layer result format
         const passed = (result as any).passed_tests || 0;
         const total = (result as any).total_tests || 0;
-        toast({
-          title: 'Test Suite Completed',
-          description: `${passed}/${total} tests passed`
-        });
+        toast(`Test Suite Completed: ${passed}/${total} tests passed`);
       } else {
-        toast({
-          title: 'Test Suite Completed',
-          description: 'Test execution finished'
-        });
+        toast('Test Suite Completed');
       }
       
       // Invalidate all relevant queries
@@ -219,11 +210,7 @@ export const useUnifiedTesting = (config?: UnifiedTestingConfig) => {
     },
     onError: (error) => {
       console.error('Unified test execution failed:', error);
-      toast({
-        title: 'Test Execution Failed',
-        description: error instanceof Error ? error.message : 'An unknown error occurred',
-        variant: 'destructive'
-      });
+      toast.error(`Test Execution Failed: ${error instanceof Error ? error.message : 'An unknown error occurred'}`);
     },
     onSettled: () => {
       setIsExecuting(false);
@@ -237,18 +224,11 @@ export const useUnifiedTesting = (config?: UnifiedTestingConfig) => {
       return enhancedTestingBusinessLayer.generateTestDocumentation(format);
     },
     onSuccess: () => {
-      toast({
-        title: 'Documentation Generated',
-        description: 'Test documentation has been generated successfully'
-      });
+      toast('Documentation Generated: Test documentation has been generated successfully');
     },
     onError: (error) => {
       console.error('Documentation generation failed:', error);
-      toast({
-        title: 'Documentation Generation Failed',
-        description: error instanceof Error ? error.message : 'Failed to generate documentation',
-        variant: 'destructive'
-      });
+      toast.error(`Documentation Generation Failed: ${error instanceof Error ? error.message : 'Failed to generate documentation'}`);
     },
     onSettled: () => {
       setIsGeneratingDocs(false);
@@ -272,11 +252,7 @@ export const useUnifiedTesting = (config?: UnifiedTestingConfig) => {
 
   const executeApiIntegrationTests = useCallback(() => {
     if (availableApis === 0) {
-      toast({
-        title: 'No APIs Available',
-        description: 'No APIs are available for integration testing',
-        variant: 'destructive'
-      });
+      toast.error('No APIs Available: No APIs are available for integration testing');
       return Promise.reject(new Error('No APIs available'));
     }
     
@@ -289,18 +265,11 @@ export const useUnifiedTesting = (config?: UnifiedTestingConfig) => {
   const generateComplianceReport = useCallback(async (level?: '21CFR' | 'HIPAA' | 'SOX'): Promise<ComplianceReport | null> => {
     try {
       const report = await enhancedTestingBusinessLayer.generateComplianceReport(level);
-      toast({
-        title: 'Compliance Report Generated',
-        description: `${level || '21CFR'} compliance report has been generated`
-      });
+      toast(`Compliance Report Generated: ${level || '21CFR'} compliance report has been generated`);
       return report;
     } catch (error) {
       console.error('Compliance report generation failed:', error);
-      toast({
-        title: 'Compliance Report Failed',
-        description: error instanceof Error ? error.message : 'Failed to generate compliance report',
-        variant: 'destructive'
-      });
+      toast.error(`Compliance Report Failed: ${error instanceof Error ? error.message : 'Failed to generate compliance report'}`);
       return null;
     }
   }, []);
@@ -308,18 +277,11 @@ export const useUnifiedTesting = (config?: UnifiedTestingConfig) => {
   const buildTraceabilityMatrix = useCallback(async (): Promise<TraceabilityMatrix | null> => {
     try {
       const matrix = await enhancedTestingBusinessLayer.buildTraceabilityMatrix();
-      toast({
-        title: 'Traceability Matrix Built',
-        description: 'Traceability matrix has been built successfully'
-      });
+      toast('Traceability Matrix Built: Traceability matrix has been built successfully');
       return matrix;
     } catch (error) {
       console.error('Traceability matrix generation failed:', error);
-      toast({
-        title: 'Traceability Matrix Failed',
-        description: error instanceof Error ? error.message : 'Failed to build traceability matrix',
-        variant: 'destructive'
-      });
+      toast.error(`Traceability Matrix Failed: ${error instanceof Error ? error.message : 'Failed to build traceability matrix'}`);
       return null;
     }
   }, []);
