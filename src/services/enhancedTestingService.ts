@@ -1,4 +1,9 @@
 import { supabase } from '@/integrations/supabase/client';
+import { 
+  ComprehensiveTestCase, 
+  TestExecutionResult, 
+  SystemFunctionality 
+} from './comprehensiveTestingService';
 
 export interface AdvancedTestFilters {
   suite_type?: string;
@@ -28,37 +33,6 @@ export interface TestExecutionMetrics {
   complianceTests: number;
   technicalTests: number;
   businessTests: number;
-}
-
-// Use the existing ComprehensiveTestCase interface from the comprehensiveTestingService
-export interface ComprehensiveTestCase {
-  id: string;
-  test_suite_type: "system" | "api_integration" | "integration" | "unit" | "regression" | "uat";
-  test_category: string;
-  test_name: string;
-  test_description?: string;
-  expected_results?: string;
-  actual_results?: string;
-  test_status?: string;
-  related_functionality?: string;
-  database_source?: string;
-  validation_level?: string;
-  module_name?: string;
-  topic?: string;
-  coverage_area?: string;
-  business_function?: string;
-  execution_duration_ms?: number;
-  test_steps?: any;
-  cfr_part11_metadata?: any;
-  compliance_requirements?: any;
-  execution_data?: any;
-  api_integration_id?: string;
-  auto_generated?: boolean;
-  created_at: string;
-  updated_at: string;
-  created_by?: string;
-  updated_by?: string;
-  last_executed_at?: string;
 }
 
 export interface RoleBasedTestSuite {
@@ -230,15 +204,42 @@ class EnhancedTestingService {
     // Map string values to the expected union type for test_suite_type
     const mapTestSuiteType = (type: string): ComprehensiveTestCase['test_suite_type'] => {
       switch (type) {
-        case 'system':
-        case 'api_integration':
-        case 'integration':
         case 'unit':
+        case 'integration':
+        case 'system':
         case 'regression':
         case 'uat':
+        case 'api_integration':
           return type;
         default:
           return 'system'; // Default fallback
+      }
+    };
+
+    // Map string values to the expected union type for test_status
+    const mapTestStatus = (status: string): ComprehensiveTestCase['test_status'] => {
+      switch (status) {
+        case 'pending':
+        case 'passed':
+        case 'failed':
+        case 'skipped':
+        case 'blocked':
+          return status;
+        default:
+          return 'pending'; // Default fallback
+      }
+    };
+
+    // Map string values to the expected union type for validation_level
+    const mapValidationLevel = (level: string): ComprehensiveTestCase['validation_level'] => {
+      switch (level) {
+        case 'IQ':
+        case 'OQ':
+        case 'PQ':
+        case 'validation_plan':
+          return level;
+        default:
+          return undefined;
       }
     };
 
@@ -248,28 +249,28 @@ class EnhancedTestingService {
       test_category: record.test_category || '',
       test_name: record.test_name || '',
       test_description: record.test_description,
+      test_steps: Array.isArray(record.test_steps) ? record.test_steps : [],
       expected_results: record.expected_results,
       actual_results: record.actual_results,
-      test_status: record.test_status,
+      test_status: mapTestStatus(record.test_status || 'pending'),
+      execution_data: typeof record.execution_data === 'object' ? record.execution_data : {},
       related_functionality: record.related_functionality,
       database_source: record.database_source,
-      validation_level: record.validation_level,
+      api_integration_id: record.api_integration_id,
+      compliance_requirements: typeof record.compliance_requirements === 'object' ? record.compliance_requirements : {},
+      validation_level: mapValidationLevel(record.validation_level),
+      cfr_part11_metadata: typeof record.cfr_part11_metadata === 'object' ? record.cfr_part11_metadata : {},
+      auto_generated: record.auto_generated,
       module_name: record.module_name,
       topic: record.topic,
       coverage_area: record.coverage_area,
       business_function: record.business_function,
-      execution_duration_ms: record.execution_duration_ms,
-      test_steps: record.test_steps,
-      cfr_part11_metadata: record.cfr_part11_metadata,
-      compliance_requirements: record.compliance_requirements,
-      execution_data: record.execution_data,
-      api_integration_id: record.api_integration_id,
-      auto_generated: record.auto_generated,
       created_at: record.created_at,
       updated_at: record.updated_at,
+      last_executed_at: record.last_executed_at,
+      execution_duration_ms: record.execution_duration_ms,
       created_by: record.created_by,
-      updated_by: record.updated_by,
-      last_executed_at: record.last_executed_at
+      updated_by: record.updated_by
     };
   }
 
@@ -602,13 +603,17 @@ class EnhancedTestingService {
         test_category: 'role_based_testing',
         test_name: `${roleName} Role - ${moduleName} Module Access Test`,
         test_description: `Verify ${roleName} role can access ${moduleName} module functionality`,
+        test_steps: [],
+        test_status: 'pending',
+        execution_data: {},
         module_name: moduleName,
         topic: 'Role-Based Access Control',
         coverage_area: 'Security',
         business_function: 'User Administration',
-        test_status: 'pending',
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        compliance_requirements: {},
+        cfr_part11_metadata: {}
       };
       
       tests.push(testCase);
@@ -635,13 +640,17 @@ class EnhancedTestingService {
       test_category: 'authentication_testing',
       test_name: `${roleName} - ${scenario}`,
       test_description: `Test ${scenario} for ${roleName} role`,
+      test_steps: [],
+      test_status: 'pending' as const,
+      execution_data: {},
       module_name: 'Authentication',
       topic: 'Login Security',
       coverage_area: 'Security',
       business_function: 'User Authentication',
-      test_status: 'pending',
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
+      compliance_requirements: {},
+      cfr_part11_metadata: {}
     }));
   }
 
@@ -660,13 +669,17 @@ class EnhancedTestingService {
           test_category: 'permission_testing',
           test_name: `${roleName} - ${action} Permission Test for ${moduleName}`,
           test_description: `Verify ${roleName} role ${action} permissions for ${moduleName} module`,
+          test_steps: [],
+          test_status: 'pending',
+          execution_data: {},
           module_name: moduleName,
           topic: 'Permission Validation',
           coverage_area: 'Security',
           business_function: 'Access Control',
-          test_status: 'pending',
           created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
+          compliance_requirements: {},
+          cfr_part11_metadata: {}
         });
       }
     }
