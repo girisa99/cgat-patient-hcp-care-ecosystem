@@ -73,8 +73,18 @@ class EnhancedTestingService {
    */
   async getAdvancedTestCases(filters: AdvancedTestFilters = {}): Promise<ComprehensiveTestCase[]> {
     try {
-      // Use the existing comprehensive testing service method
-      return await comprehensiveTestingService.getComprehensiveTestCases();
+      // Convert our advanced filters to the format expected by the comprehensive service
+      const comprehensiveFilters = {
+        suite_type: filters.suite_type,
+        test_status: filters.test_status,
+        module_name: filters.module_name,
+        topic: filters.topic,
+        coverage_area: filters.coverage_area,
+        business_function: filters.business_function
+      };
+      
+      // Use the existing comprehensive testing service method with correct name
+      return await comprehensiveTestingService.getTestCases(comprehensiveFilters);
     } catch (error) {
       console.error('Error fetching advanced test cases:', error);
       throw error;
@@ -189,8 +199,8 @@ class EnhancedTestingService {
    */
   async generateSecurityAndComplianceTests(): Promise<number> {
     try {
-      // Use existing comprehensive testing service method
-      return await comprehensiveTestingService.generateComprehensiveTestCases();
+      // Use existing comprehensive testing service method with correct name
+      return await comprehensiveTestingService.generateTestCases();
     } catch (error) {
       console.error('Error generating security and compliance tests:', error);
       throw error;

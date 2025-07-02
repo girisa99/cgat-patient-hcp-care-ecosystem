@@ -9,7 +9,7 @@ export const useEnhancedTesting = () => {
   const [isExecuting, setIsExecuting] = useState(false);
   const queryClient = useQueryClient();
 
-  // Test cases query
+  // Test cases query - now passes empty object as default filter
   const {
     data: testCases = [],
     isLoading: isLoadingTestCases,
@@ -17,7 +17,7 @@ export const useEnhancedTesting = () => {
     refetch: refetchTestCases
   } = useQuery({
     queryKey: ['enhanced-test-cases'],
-    queryFn: () => enhancedTestingService.getAdvancedTestCases(),
+    queryFn: () => enhancedTestingService.getAdvancedTestCases({}),
     staleTime: 30000,
   });
 
