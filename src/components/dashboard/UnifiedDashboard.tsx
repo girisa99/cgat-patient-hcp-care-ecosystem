@@ -2,8 +2,8 @@
 import React from 'react';
 import { useUnifiedPageData } from '@/hooks/useUnifiedPageData';
 import DashboardHeader from './DashboardHeader';
-import { DashboardLoading } from './DashboardLoading';
-import { SystemStatusCard } from './SystemStatusCard';
+import DashboardLoading from './DashboardLoading';
+import SystemStatusCard from './SystemStatusCard';
 import { RealTimeStatsCard } from './RealTimeStatsCard';
 import { ModulesOverviewCard } from './ModulesOverviewCard';
 import { ComponentsServicesCard } from './ComponentsServicesCard';
