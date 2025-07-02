@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import type { ApiResponse } from '@/types/common';
 
 export interface Profile {
   id: string;
@@ -16,7 +17,7 @@ export interface Profile {
   email_confirmed_at?: string;
 }
 
-interface UserRole {
+interface UserRoleData {
   roles: {
     name: string;
     description: string | null;
@@ -80,7 +81,7 @@ export const useCleanAuth = () => {
         return [];
       }
 
-      const roles = data?.map((item: any) => item.roles?.name).filter(Boolean) || [];
+      const roles = data?.map((item: UserRoleData) => item.roles?.name).filter(Boolean) || [];
       console.log('✅ Roles fetched successfully:', roles);
       return roles;
     } catch (error) {
@@ -178,8 +179,9 @@ export const useCleanAuth = () => {
       if (error) throw error;
 
       return { success: true, user: data.user };
-    } catch (error: any) {
-      return { success: false, error: error.message };
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      return { success: false, error: errorMessage };
     }
   };
 
@@ -198,8 +200,9 @@ export const useCleanAuth = () => {
       if (error) throw error;
 
       return { success: true, user: data.user };
-    } catch (error: any) {
-      return { success: false, error: error.message };
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      return { success: false, error: errorMessage };
     }
   };
 
@@ -216,14 +219,15 @@ export const useCleanAuth = () => {
       if (error) throw error;
       
       return { success: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('❌ Error signing out:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       toast({
         title: "Error",
         description: "Failed to sign out",
         variant: "destructive",
       });
-      return { success: false, error: error.message };
+      return { success: false, error: errorMessage };
     } finally {
       setIsLoading(false);
     }
