@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { comprehensiveTestingService, ComprehensiveTestCase } from './comprehensiveTestingService';
 
@@ -62,11 +61,42 @@ export interface DocumentationGenerationResult {
   };
 }
 
+// Simplified type definition for database records
+interface DatabaseTestRecord {
+  id: string;
+  test_suite_type: string;
+  test_category: string;
+  test_name: string;
+  test_description?: string;
+  expected_results?: string;
+  actual_results?: string;
+  test_status?: string;
+  related_functionality?: string;
+  database_source?: string;
+  validation_level?: string;
+  module_name?: string;
+  topic?: string;
+  coverage_area?: string;
+  business_function?: string;
+  execution_duration_ms?: number;
+  test_steps?: any;
+  cfr_part11_metadata?: any;
+  compliance_requirements?: any;
+  execution_data?: any;
+  api_integration_id?: string;
+  auto_generated?: boolean;
+  created_at: string;
+  updated_at: string;
+  created_by?: string;
+  updated_by?: string;
+  last_executed_at?: string;
+}
+
 // Helper function to safely convert database records to ComprehensiveTestCase
-function convertToComprehensiveTestCase(dbRecord: any): ComprehensiveTestCase {
+function convertToComprehensiveTestCase(dbRecord: DatabaseTestRecord): ComprehensiveTestCase {
   return {
     id: dbRecord.id,
-    test_suite_type: dbRecord.test_suite_type as ComprehensiveTestCase['test_suite_type'],
+    test_suite_type: dbRecord.test_suite_type as 'unit' | 'integration' | 'system' | 'regression' | 'api_integration',
     test_category: dbRecord.test_category,
     test_name: dbRecord.test_name,
     test_description: dbRecord.test_description,
@@ -431,7 +461,7 @@ class EnhancedTestingService {
           const { error } = await supabase
             .from('comprehensive_test_cases')
             .insert({
-              test_suite_type: 'system' as const,
+              test_suite_type: 'system',
               test_category: 'security_compliance',
               test_name: `${template.category}: ${testName}`,
               test_description: `Automated security and compliance test for ${testName} within ${template.category}`,
@@ -552,7 +582,7 @@ class EnhancedTestingService {
     for (const moduleName of moduleNames) {
       const testCase: ComprehensiveTestCase = {
         id: crypto.randomUUID(),
-        test_suite_type: 'integration' as const,
+        test_suite_type: 'integration',
         test_category: 'role_based_testing',
         test_name: `${roleName} Role - ${moduleName} Module Access Test`,
         test_description: `Verify ${roleName} role can access ${moduleName} module functionality`,
@@ -610,7 +640,7 @@ class EnhancedTestingService {
       for (const action of permissionActions) {
         tests.push({
           id: crypto.randomUUID(),
-          test_suite_type: 'unit' as const,
+          test_suite_type: 'unit',
           test_category: 'permission_testing',
           test_name: `${roleName} - ${action} Permission Test for ${moduleName}`,
           test_description: `Verify ${roleName} role ${action} permissions for ${moduleName} module`,
