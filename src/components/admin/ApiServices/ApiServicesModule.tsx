@@ -2,21 +2,19 @@
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ApiServicesOverview } from './ApiServicesOverview';
-import { ApiRegistryTab } from './ApiRegistryTab';
+import { EnhancedApiRegistryTab } from './EnhancedApiRegistryTab';
 import { ApiDocumentationDashboard } from './ApiDocumentationDashboard';
 import { ApiConsumptionTab } from '@/components/api/ApiConsumptionTab';
+import { ApiPublishingWorkflowTab } from './tabs/ApiPublishingWorkflowTab';
+import { ApiDeveloperPortalTab } from './tabs/ApiDeveloperPortalTab';
+import { ApiTestingInterfaceTab } from './tabs/ApiTestingInterfaceTab';
+import { PostmanIntegrationTab } from './tabs/PostmanIntegrationTab';
 import { useApiServicesLocked } from '@/hooks/useApiServicesLocked';
 
 export const ApiServicesModule: React.FC = () => {
   const { meta } = useApiServicesLocked();
   
-  console.log('🔒 ApiServicesModule: Using locked hook pattern with single source of truth');
-  console.log('📊 Locked Pattern Status:', {
-    implementationLocked: meta.implementationLocked,
-    singleSourceValidated: meta.singleSourceValidated,
-    lockedPatternEnforced: meta.lockedPatternEnforced,
-    version: meta.hookVersion
-  });
+  console.log('🔒 ApiServicesModule: Enhanced with all subtabs and advanced functionality');
 
   return (
     <div className="space-y-6">
@@ -24,7 +22,7 @@ export const ApiServicesModule: React.FC = () => {
       <div className="bg-green-50 border border-green-200 rounded-lg p-4">
         <div className="flex items-center gap-2 mb-2">
           <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
-          <h3 className="font-semibold text-green-900">🔒 API Services - Locked Implementation Active</h3>
+          <h3 className="font-semibold text-green-900">🔒 API Services - Complete Implementation</h3>
         </div>
         <div className="text-sm text-green-700 grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
@@ -37,17 +35,20 @@ export const ApiServicesModule: React.FC = () => {
           </div>
           <div>
             <p><strong>Total APIs:</strong> {meta.totalIntegrations}</p>
-            <p><strong>Last Updated:</strong> {new Date(meta.lastLockUpdate).toLocaleTimeString()}</p>
+            <p><strong>Features:</strong> Publishing, Testing, Documentation, Consumption</p>
           </div>
         </div>
       </div>
 
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="registry">API Registry</TabsTrigger>
-          <TabsTrigger value="documentation">Documentation</TabsTrigger>
-          <TabsTrigger value="consumption">Usage Analytics</TabsTrigger>
+          <TabsTrigger value="publishing">Publishing</TabsTrigger>
+          <TabsTrigger value="developer">Developer Portal</TabsTrigger>
+          <TabsTrigger value="testing">Testing</TabsTrigger>
+          <TabsTrigger value="postman">Postman</TabsTrigger>
+          <TabsTrigger value="consumption">Consumption</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview">
@@ -55,11 +56,23 @@ export const ApiServicesModule: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="registry">
-          <ApiRegistryTab />
+          <EnhancedApiRegistryTab />
         </TabsContent>
 
-        <TabsContent value="documentation">
-          <ApiDocumentationDashboard />
+        <TabsContent value="publishing">
+          <ApiPublishingWorkflowTab />
+        </TabsContent>
+
+        <TabsContent value="developer">
+          <ApiDeveloperPortalTab />
+        </TabsContent>
+
+        <TabsContent value="testing">
+          <ApiTestingInterfaceTab />
+        </TabsContent>
+
+        <TabsContent value="postman">
+          <PostmanIntegrationTab />
         </TabsContent>
 
         <TabsContent value="consumption">
