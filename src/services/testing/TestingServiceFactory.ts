@@ -173,8 +173,13 @@ class TestingServiceFactory {
       return this.serviceRegistry.comprehensive.executeTestSuite(testType, this.configuration.batchSize);
     }
 
-    // Core service
-    return service.executeTestSuite(testType);
+    // At this point, service can only be the core service
+    if (service === this.serviceRegistry.core) {
+      return service.executeTestSuite(testType);
+    }
+
+    // This should never happen, but added for completeness
+    throw new Error('Unknown service type');
   }
 
   /**
