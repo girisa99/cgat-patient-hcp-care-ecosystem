@@ -1,89 +1,103 @@
 
-import React from 'react';
-import MainLayout from '@/components/layout/MainLayout';
-import { PageContainer } from '@/components/layout/PageContainer';
-import { UserManagementMain } from '@/components/admin/UserManagement/UserManagementMain';
-import { useUserManagementPage } from '@/hooks/useUserManagementPage';
+import React, { useState } from 'react';
+import { AdminStatsGrid, StatCard } from '@/components/layout/AdminStatsGrid';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Plus, Users, Shield, Building2, UserCheck, Search, Filter, Download } from 'lucide-react';
+import { UserManagementMain } from '@/components/admin/UserManagement/UserManagementMain';
+import { UnifiedPageWrapper } from '@/components/layout/UnifiedPageWrapper';
+import { useUnifiedPageData } from '@/hooks/useUnifiedPageData';
 
 /**
- * Users Page - LOCKED IMPLEMENTATION
- * Uses dedicated useUserManagementPage hook for consistent data access
- * DO NOT MODIFY - This page is locked for stability
+ * Users Page - UNIFIED IMPLEMENTATION
+ * Uses single source of truth via UnifiedPageWrapper and useUnifiedPageData
  */
 const Users: React.FC = () => {
-  const { users, isLoading, error, meta } = useUserManagementPage();
+  const { users } = useUnifiedPageData();
+  const [searchQuery, setSearchQuery] = useState('');
 
-  console.log('🔒 Users Page - LOCKED VERSION active with hook version:', meta.hookVersion);
+  console.log('🎯 Users Page - Unified Single Source Implementation');
 
-  if (isLoading) {
-    return (
-      <MainLayout>
-        <PageContainer
-          title="Users"
-          subtitle="Loading unified user management system..."
-        >
-          <Card>
-            <CardContent className="p-8 text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p>Loading users from unified data source...</p>
-            </CardContent>
-          </Card>
-        </PageContainer>
-      </MainLayout>
-    );
-  }
+  const handleCreateUser = () => {
+    console.log('🆕 Create user action triggered');
+  };
 
-  if (error) {
-    return (
-      <MainLayout>
-        <PageContainer
-          title="Users"
-          subtitle="Error loading user data"
-        >
-          <Card>
-            <CardContent className="p-8 text-center text-red-600">
-              <p>Error loading users: {error.message}</p>
-              <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded text-left">
-                <h4 className="font-semibold text-yellow-800">System Info:</h4>
-                <p className="text-sm text-yellow-700 mt-1">
-                  Source: {meta.dataSource}
-                </p>
-                <p className="text-sm text-yellow-700">
-                  Version: {meta.hookVersion} - Locked user management system
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </PageContainer>
-      </MainLayout>
-    );
-  }
+  // Get user statistics from unified source
+  const stats = users.getUserStats();
+
+  const headerActions = (
+    <Button onClick={handleCreateUser}>
+      <Plus className="h-4 w-4 mr-2" />
+      Add User
+    </Button>
+  );
 
   return (
-    <MainLayout>
-      <PageContainer
-        title="Users"
-        subtitle={`Unified user management system (${users?.length || 0} users)`}
-        fluid
-      >
-        {/* LOCKED STATUS INDICATOR */}
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="h-2 w-2 bg-green-500 rounded-full"></div>
-            <h3 className="font-semibold text-green-900">🔒 User Management Locked & Stable</h3>
+    <UnifiedPageWrapper
+      title="Users Management"
+      subtitle={`Unified user management system (${users.data.length} users from ${users.meta.dataSource})`}
+      headerActions={headerActions}
+      fluid
+    >
+      <div className="space-y-6">
+        {/* Stats Grid - Real Data from Single Source */}
+        <AdminStatsGrid columns={4}>
+          <StatCard
+            title="Total Users"
+            value={stats.total}
+            icon={Users}
+            description="All registered users"
+          />
+          <StatCard
+            title="Patients"
+            value={stats.patients}
+            icon={UserCheck}
+            description="Patient caregivers"
+          />
+          <StatCard
+            title="Healthcare Staff"
+            value={stats.staff}
+            icon={Shield}
+            description="Medical professionals"
+          />
+          <StatCard
+            title="Administrators"
+            value={stats.admins}
+            icon={Building2}
+            description="System administrators"
+          />
+        </AdminStatsGrid>
+
+        {/* Search and Filters */}
+        <div className="flex items-center gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Search users by name or email..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
           </div>
-          <p className="text-sm text-green-700">
-            Data from {meta.dataSource} | Total: {meta.totalUsers} | Patients: {meta.patientCount} | Staff: {meta.staffCount} | Admins: {meta.adminCount}
-          </p>
-          <p className="text-xs text-green-600 mt-1">
-            Hook Version: {meta.hookVersion} | Single Source Validated: {meta.singleSourceValidated ? '✅' : '❌'}
-          </p>
+          <Button variant="outline">
+            <Filter className="h-4 w-4 mr-2" />
+            Filters
+          </Button>
+          <Button variant="outline">
+            <Download className="h-4 w-4 mr-2" />
+            Export
+          </Button>
         </div>
 
-        <UserManagementMain />
-      </PageContainer>
-    </MainLayout>
+        {/* User Management Component */}
+        <Card className="shadow-sm">
+          <CardContent className="p-6">
+            <UserManagementMain />
+          </CardContent>
+        </Card>
+      </div>
+    </UnifiedPageWrapper>
   );
 };
 
