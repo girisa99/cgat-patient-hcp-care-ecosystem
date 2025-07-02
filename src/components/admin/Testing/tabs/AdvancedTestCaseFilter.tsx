@@ -177,7 +177,7 @@ export const AdvancedTestCaseFilter: React.FC<AdvancedTestCaseFilterProps> = ({
                     <SelectItem value="all">All States</SelectItem>
                     <SelectItem value="never_executed">Never Executed</SelectItem>
                     <SelectItem value="recently_executed">Recently Executed</SelectItem>
-                    <SelectItem value="stale">Stale (>7 days)</SelectItem>
+                    <SelectItem value="stale">Stale (7+ days)</SelectItem>
                     <SelectItem value="failed_last_run">Failed Last Run</SelectItem>
                   </SelectContent>
                 </Select>
