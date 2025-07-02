@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -41,7 +40,7 @@ export const EnhancedComprehensiveTestingTab: React.FC = () => {
 
   const handleExecuteTests = async () => {
     try {
-      executeTestSuite();
+      executeTestSuite('security'); // Pass a default suite type
     } catch (error) {
       console.error('Test execution failed:', error);
     }
