@@ -30,10 +30,10 @@ export interface TestExecutionMetrics {
   businessTests: number;
 }
 
-// Simplified test case interface to avoid circular dependencies
-export interface EnhancedTestCase {
+// Use the existing ComprehensiveTestCase interface from the comprehensiveTestingService
+export interface ComprehensiveTestCase {
   id: string;
-  test_suite_type: string;
+  test_suite_type: "system" | "api_integration" | "integration" | "unit" | "regression" | "uat";
   test_category: string;
   test_name: string;
   test_description?: string;
@@ -64,9 +64,9 @@ export interface EnhancedTestCase {
 export interface RoleBasedTestSuite {
   roleName: string;
   moduleAccess: string[];
-  requiredTests: EnhancedTestCase[];
-  loginScenarios: EnhancedTestCase[];
-  permissionTests: EnhancedTestCase[];
+  requiredTests: ComprehensiveTestCase[];
+  loginScenarios: ComprehensiveTestCase[];
+  permissionTests: ComprehensiveTestCase[];
 }
 
 export interface DocumentationGenerationResult {
@@ -95,7 +95,7 @@ class EnhancedTestingService {
   /**
    * Get test cases with advanced filtering capabilities
    */
-  async getAdvancedTestCases(filters: AdvancedTestFilters = {}): Promise<EnhancedTestCase[]> {
+  async getAdvancedTestCases(filters: AdvancedTestFilters = {}): Promise<ComprehensiveTestCase[]> {
     try {
       let query = supabase
         .from('comprehensive_test_cases')
@@ -215,40 +215,62 @@ class EnhancedTestingService {
         throw error;
       }
       
-      // Simple direct mapping without complex type conversion
-      return (data || []).map(record => ({
-        id: record.id,
-        test_suite_type: record.test_suite_type || '',
-        test_category: record.test_category || '',
-        test_name: record.test_name || '',
-        test_description: record.test_description,
-        expected_results: record.expected_results,
-        actual_results: record.actual_results,
-        test_status: record.test_status,
-        related_functionality: record.related_functionality,
-        database_source: record.database_source,
-        validation_level: record.validation_level,
-        module_name: record.module_name,
-        topic: record.topic,
-        coverage_area: record.coverage_area,
-        business_function: record.business_function,
-        execution_duration_ms: record.execution_duration_ms,
-        test_steps: record.test_steps,
-        cfr_part11_metadata: record.cfr_part11_metadata,
-        compliance_requirements: record.compliance_requirements,
-        execution_data: record.execution_data,
-        api_integration_id: record.api_integration_id,
-        auto_generated: record.auto_generated,
-        created_at: record.created_at,
-        updated_at: record.updated_at,
-        created_by: record.created_by,
-        updated_by: record.updated_by,
-        last_executed_at: record.last_executed_at
-      }));
+      // Convert database records to ComprehensiveTestCase interface
+      return (data || []).map(record => this.convertDatabaseRecordToTestCase(record));
     } catch (error) {
       console.error('Error fetching advanced test cases:', error);
       throw error;
     }
+  }
+
+  /**
+   * Convert database record to ComprehensiveTestCase
+   */
+  private convertDatabaseRecordToTestCase(record: any): ComprehensiveTestCase {
+    // Map string values to the expected union type for test_suite_type
+    const mapTestSuiteType = (type: string): ComprehensiveTestCase['test_suite_type'] => {
+      switch (type) {
+        case 'system':
+        case 'api_integration':
+        case 'integration':
+        case 'unit':
+        case 'regression':
+        case 'uat':
+          return type;
+        default:
+          return 'system'; // Default fallback
+      }
+    };
+
+    return {
+      id: record.id,
+      test_suite_type: mapTestSuiteType(record.test_suite_type || 'system'),
+      test_category: record.test_category || '',
+      test_name: record.test_name || '',
+      test_description: record.test_description,
+      expected_results: record.expected_results,
+      actual_results: record.actual_results,
+      test_status: record.test_status,
+      related_functionality: record.related_functionality,
+      database_source: record.database_source,
+      validation_level: record.validation_level,
+      module_name: record.module_name,
+      topic: record.topic,
+      coverage_area: record.coverage_area,
+      business_function: record.business_function,
+      execution_duration_ms: record.execution_duration_ms,
+      test_steps: record.test_steps,
+      cfr_part11_metadata: record.cfr_part11_metadata,
+      compliance_requirements: record.compliance_requirements,
+      execution_data: record.execution_data,
+      api_integration_id: record.api_integration_id,
+      auto_generated: record.auto_generated,
+      created_at: record.created_at,
+      updated_at: record.updated_at,
+      created_by: record.created_by,
+      updated_by: record.updated_by,
+      last_executed_at: record.last_executed_at
+    };
   }
 
   /**
@@ -496,7 +518,7 @@ class EnhancedTestingService {
   /**
    * Private helper methods for documentation generation
    */
-  private extractUserRequirements(testCases: EnhancedTestCase[]): string[] {
+  private extractUserRequirements(testCases: ComprehensiveTestCase[]): string[] {
     const requirements = new Set<string>();
     
     testCases.forEach(testCase => {
@@ -514,7 +536,7 @@ class EnhancedTestingService {
     return Array.from(requirements);
   }
 
-  private generateFunctionalRequirements(testCases: EnhancedTestCase[]): string[] {
+  private generateFunctionalRequirements(testCases: ComprehensiveTestCase[]): string[] {
     const functionalReqs = new Set<string>();
     
     testCases.forEach(testCase => {
@@ -532,7 +554,7 @@ class EnhancedTestingService {
 
   private buildTraceabilityMatrix(
     requirements: string[], 
-    testCases: EnhancedTestCase[]
+    testCases: ComprehensiveTestCase[]
   ): Array<{ requirement: string; testCases: string[]; coverage: number }> {
     return requirements.map(requirement => {
       const relatedTests = testCases.filter(tc => 
@@ -550,7 +572,7 @@ class EnhancedTestingService {
   }
 
   private createTestingPlan(
-    testCases: EnhancedTestCase[], 
+    testCases: ComprehensiveTestCase[], 
     metrics: TestExecutionMetrics
   ): DocumentationGenerationResult['testingPlan'] {
     return {
@@ -570,11 +592,11 @@ class EnhancedTestingService {
   /**
    * Generate role-specific test cases for a given role and module names
    */
-  private async generateRoleSpecificTests(roleName: string, moduleNames: string[]): Promise<EnhancedTestCase[]> {
-    const tests: EnhancedTestCase[] = [];
+  private async generateRoleSpecificTests(roleName: string, moduleNames: string[]): Promise<ComprehensiveTestCase[]> {
+    const tests: ComprehensiveTestCase[] = [];
     
     for (const moduleName of moduleNames) {
-      const testCase: EnhancedTestCase = {
+      const testCase: ComprehensiveTestCase = {
         id: crypto.randomUUID(),
         test_suite_type: 'integration',
         test_category: 'role_based_testing',
@@ -598,7 +620,7 @@ class EnhancedTestingService {
   /**
    * Generate login scenarios for a given role
    */
-  private async generateLoginScenarios(roleName: string): Promise<EnhancedTestCase[]> {
+  private async generateLoginScenarios(roleName: string): Promise<ComprehensiveTestCase[]> {
     const scenarios = [
       'Valid Login Scenario',
       'Invalid Password Scenario',
@@ -609,7 +631,7 @@ class EnhancedTestingService {
 
     return scenarios.map(scenario => ({
       id: crypto.randomUUID(),
-      test_suite_type: 'system',
+      test_suite_type: 'system' as const,
       test_category: 'authentication_testing',
       test_name: `${roleName} - ${scenario}`,
       test_description: `Test ${scenario} for ${roleName} role`,
@@ -626,9 +648,9 @@ class EnhancedTestingService {
   /**
    * Generate permission tests for a given role and module names
    */
-  private async generatePermissionTests(roleName: string, moduleNames: string[]): Promise<EnhancedTestCase[]> {
+  private async generatePermissionTests(roleName: string, moduleNames: string[]): Promise<ComprehensiveTestCase[]> {
     const permissionActions = ['Create', 'Read', 'Update', 'Delete'];
-    const tests: EnhancedTestCase[] = [];
+    const tests: ComprehensiveTestCase[] = [];
 
     for (const moduleName of moduleNames) {
       for (const action of permissionActions) {
