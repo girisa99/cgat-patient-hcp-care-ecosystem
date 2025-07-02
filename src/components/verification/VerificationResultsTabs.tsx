@@ -4,10 +4,12 @@ import { AdminModuleVerificationResult } from '@/utils/verification/AdminModuleV
 import UnifiedVerificationTabs from './UnifiedVerificationTabs';
 import { useAuthValidation } from '@/hooks/useAuthValidation';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useRealTimeUserStats } from '@/hooks/useRealTimeUserStats';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Shield, AlertTriangle, CheckCircle, RefreshCw } from 'lucide-react';
+import { Shield, AlertTriangle, CheckCircle, RefreshCw, TrendingUp } from 'lucide-react';
+import { RealTimeStatsCard } from '@/components/dashboard/RealTimeStatsCard';
 
 interface VerificationResultsTabsProps {
   verificationResult: AdminModuleVerificationResult;
@@ -28,15 +30,20 @@ const VerificationResultsTabs: React.FC<VerificationResultsTabsProps> = ({
   } = useAuthValidation();
 
   const { clearPermissionCache, cacheSize } = usePermissions();
+  const { data: realTimeStats, refetch: refreshStats } = useRealTimeUserStats();
 
   const handleSecurityRefresh = () => {
     console.log('🔄 Refreshing security validation...');
     clearPermissionCache();
     validateAuth();
+    refreshStats();
   };
 
   return (
     <div className="space-y-6">
+      {/* Real-Time Statistics */}
+      <RealTimeStatsCard />
+
       {/* Enhanced Security Status Panel */}
       <Card className={`border-2 ${
         isSecure 
@@ -130,6 +137,34 @@ const VerificationResultsTabs: React.FC<VerificationResultsTabsProps> = ({
               <p className="text-gray-500">
                 {isValidating ? 'Validating user access...' : 'No validation data available'}
               </p>
+            </div>
+          )}
+
+          {/* Real-time Data Comparison */}
+          {realTimeStats && (
+            <div className="mt-4 p-3 border border-blue-200 rounded-lg bg-blue-50">
+              <div className="flex items-center gap-2 mb-2">
+                <TrendingUp className="h-4 w-4 text-blue-600" />
+                <h4 className="font-medium text-blue-800">System-wide Statistics</h4>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                <div className="text-center">
+                  <div className="font-semibold text-blue-900">{realTimeStats.totalUsers}</div>
+                  <div className="text-blue-700">Total Users</div>
+                </div>
+                <div className="text-center">
+                  <div className="font-semibold text-green-900">{realTimeStats.verifiedUsers}</div>
+                  <div className="text-green-700">Verified</div>
+                </div>
+                <div className="text-center">
+                  <div className="font-semibold text-purple-900">{realTimeStats.totalPermissions}</div>
+                  <div className="text-purple-700">Permissions</div>
+                </div>
+                <div className="text-center">
+                  <div className="font-semibold text-orange-900">{realTimeStats.totalFacilities}</div>
+                  <div className="text-orange-700">Facilities</div>
+                </div>
+              </div>
             </div>
           )}
 
