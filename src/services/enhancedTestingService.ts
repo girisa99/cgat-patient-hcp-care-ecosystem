@@ -94,18 +94,31 @@ interface DatabaseTestRecord {
 
 // Helper function to safely convert database records to ComprehensiveTestCase
 function convertToComprehensiveTestCase(dbRecord: DatabaseTestRecord): ComprehensiveTestCase {
+  // Safe type conversion with fallbacks
+  const safeTestSuiteType = (['unit', 'integration', 'system', 'regression', 'api_integration'].includes(dbRecord.test_suite_type)) 
+    ? dbRecord.test_suite_type as 'unit' | 'integration' | 'system' | 'regression' | 'api_integration'
+    : 'unit';
+
+  const safeTestStatus = (['pending', 'passed', 'failed', 'skipped', 'blocked'].includes(dbRecord.test_status || ''))
+    ? dbRecord.test_status as 'pending' | 'passed' | 'failed' | 'skipped' | 'blocked'
+    : 'pending';
+
+  const safeValidationLevel = (['IQ', 'OQ', 'PQ', 'validation_plan'].includes(dbRecord.validation_level || ''))
+    ? dbRecord.validation_level as 'IQ' | 'OQ' | 'PQ' | 'validation_plan'
+    : undefined;
+
   return {
     id: dbRecord.id,
-    test_suite_type: dbRecord.test_suite_type as 'unit' | 'integration' | 'system' | 'regression' | 'api_integration',
+    test_suite_type: safeTestSuiteType,
     test_category: dbRecord.test_category,
     test_name: dbRecord.test_name,
     test_description: dbRecord.test_description,
     expected_results: dbRecord.expected_results,
     actual_results: dbRecord.actual_results,
-    test_status: dbRecord.test_status,
+    test_status: safeTestStatus,
     related_functionality: dbRecord.related_functionality,
     database_source: dbRecord.database_source,
-    validation_level: dbRecord.validation_level,
+    validation_level: safeValidationLevel,
     module_name: dbRecord.module_name,
     topic: dbRecord.topic,
     coverage_area: dbRecord.coverage_area,
@@ -623,7 +636,7 @@ class EnhancedTestingService {
       topic: 'Login Security',
       coverage_area: 'Security',
       business_function: 'User Authentication',
-      test_status: 'pending',
+      test_status: 'pending' as const,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     })) as ComprehensiveTestCase[];
