@@ -11,7 +11,6 @@ const Testing: React.FC = () => {
       title="Testing Services Suite"
       subtitle="Comprehensive testing and quality assurance tools (Simplified for debugging)"
       fluid
-      showBreadcrumb
     >
       <SimpleTestingModule />
     </UnifiedPageWrapper>
