@@ -5,6 +5,15 @@
 
 import { ApiIntegration, ApiEndpoint, ApiRlsPolicy, ApiDataMapping, ApiResponseSchema } from './ApiIntegrationTypes';
 
+export interface OnboardingApiEndpoint {
+  module: string;
+  name: string;
+  path: string;
+  method: string;
+  description: string;
+  requiresWorkflowPermission: boolean;
+}
+
 export class OnboardingApiDetector {
   static generateOnboardingApiIntegration(): ApiIntegration {
     const baseUrl = window.location.origin;
@@ -90,5 +99,58 @@ export class OnboardingApiDetector {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
+  }
+
+  static detectOnboardingApis(): OnboardingApiEndpoint[] {
+    return [
+      {
+        module: 'Onboarding Workflow',
+        name: 'Initialize Onboarding',
+        path: '/api/onboarding/init',
+        method: 'POST',
+        description: 'Initialize a new onboarding workflow',
+        requiresWorkflowPermission: true
+      },
+      {
+        module: 'Onboarding Workflow',
+        name: 'Update Application Status',
+        path: '/api/onboarding/:id/status',
+        method: 'PATCH',
+        description: 'Update the status of an onboarding application',
+        requiresWorkflowPermission: true
+      },
+      {
+        module: 'Treatment Center Onboarding',
+        name: 'Submit Application',
+        path: '/api/treatment-center/submit',
+        method: 'POST',
+        description: 'Submit treatment center application',
+        requiresWorkflowPermission: false
+      },
+      {
+        module: 'Treatment Center Onboarding',
+        name: 'Get Application Details',
+        path: '/api/treatment-center/:id',
+        method: 'GET',
+        description: 'Retrieve treatment center application details',
+        requiresWorkflowPermission: false
+      },
+      {
+        module: 'Onboarding Compliance',
+        name: 'Validate Compliance',
+        path: '/api/onboarding/compliance/validate',
+        method: 'POST',
+        description: 'Validate compliance requirements',
+        requiresWorkflowPermission: true
+      },
+      {
+        module: 'Onboarding Compliance',
+        name: 'Generate Compliance Report',
+        path: '/api/onboarding/compliance/report',
+        method: 'GET',
+        description: 'Generate compliance verification report',
+        requiresWorkflowPermission: true
+      }
+    ];
   }
 }

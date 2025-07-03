@@ -16,12 +16,13 @@ import {
   Code,
   Database
 } from 'lucide-react';
-import { OnboardingApiDetector } from '@/utils/api/OnboardingApiDetector';
+import { OnboardingApiDetector, type OnboardingApiEndpoint } from '@/utils/api/OnboardingApiDetector';
+import type { ApiIntegration } from '@/utils/api/ApiIntegrationTypes';
 
 export const OnboardingIntegrationTabContent: React.FC = () => {
   // Get onboarding APIs
-  const onboardingIntegration = OnboardingApiDetector.generateOnboardingIntegration();
-  const onboardingEndpoints = OnboardingApiDetector.detectOnboardingApis();
+  const onboardingIntegration: ApiIntegration = OnboardingApiDetector.generateOnboardingApiIntegration();
+  const onboardingEndpoints: OnboardingApiEndpoint[] = OnboardingApiDetector.detectOnboardingApis();
 
   // Group endpoints by module
   const endpointsByModule = onboardingEndpoints.reduce((acc, endpoint) => {
@@ -30,7 +31,7 @@ export const OnboardingIntegrationTabContent: React.FC = () => {
     }
     acc[endpoint.module].push(endpoint);
     return acc;
-  }, {} as Record<string, typeof onboardingEndpoints>);
+  }, {} as Record<string, OnboardingApiEndpoint[]>);
 
   const getMethodColor = (method: string) => {
     switch (method) {
