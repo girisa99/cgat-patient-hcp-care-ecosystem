@@ -8,6 +8,10 @@ import SimpleFacilities from "@/pages/SimpleFacilities";
 import SimpleModules from "@/pages/SimpleModules";
 import SimpleSecurity from "@/pages/SimpleSecurity";
 import ApiServices from "@/pages/ApiServices";
+import DataImport from "@/pages/DataImport";
+import TestingSuite from "@/pages/TestingSuite";
+import ActiveVerificationPage from "@/pages/ActiveVerificationPage";
+import Onboarding from "@/pages/Onboarding";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -33,6 +37,10 @@ const App = () => {
             <Route path="/facilities" element={<SimpleFacilities />} />
             <Route path="/modules" element={<SimpleModules />} />
             <Route path="/api-services" element={<ApiServices />} />
+            <Route path="/testing" element={<TestingSuite />} />
+            <Route path="/data-import" element={<DataImport />} />
+            <Route path="/active-verification" element={<ActiveVerificationPage />} />
+            <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/security" element={<SimpleSecurity />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
