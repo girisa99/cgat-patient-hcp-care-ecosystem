@@ -14,7 +14,7 @@ import {
   SidebarHeader,
   SidebarFooter,
   useSidebar,
-} from '@/components/ui/sidebar';
+} from '@/components/ui/sidebar-compliant';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { LogOut, User } from 'lucide-react';
@@ -39,7 +39,7 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar className={collapsed ? "w-16" : "w-64"} collapsible>
+    <Sidebar className={collapsed ? "w-16" : "w-64"} collapsible="offcanvas">
       {/* Header */}
       <SidebarHeader className="border-b p-4">
         {!collapsed && (
@@ -71,13 +71,14 @@ export function AppSidebar() {
                 const Icon = tab.icon;
                 return (
                   <SidebarMenuItem key={tab.to}>
-                    <SidebarMenuButton asChild>
-                      <Link 
-                        to={tab.to} 
-                        className={getNavClassName(tab.to)}
-                      >
+                    <SidebarMenuButton 
+                      asChild 
+                      isActive={isActive(tab.to)}
+                      className={getNavClassName(tab.to)}
+                    >
+                      <Link to={tab.to}>
                         <Icon className="h-4 w-4" />
-                        {!collapsed && <span>{tab.title}</span>}
+                        <span>{tab.title}</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
