@@ -1,4 +1,5 @@
 #!/usr/bin/env ts-node
+import '@/bootstrap';
 import { postgresAdapter } from '@/utils/db/PostgresAdapter';
 import { DatabaseSchemaAnalyzer } from '@/utils/verification/DatabaseSchemaAnalyzer';
 
