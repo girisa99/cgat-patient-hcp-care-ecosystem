@@ -7,7 +7,6 @@
 
 import { RealDatabaseValidator, RealDatabaseValidationResult } from './RealDatabaseValidator';
 import { supabase } from '@/integrations/supabase/client';
-import { VerificationIssue } from '@/types/verification';
 
 export interface RealSystemHealthResult {
   overallHealthScore: number;
@@ -19,6 +18,9 @@ export interface RealSystemHealthResult {
   systemRecommendations: string[];
   quickFixes: string[];
 }
+
+// Using a minimal shape for issues created in this orchestrator
+interface IssueEntry { category?: string; type?: string; description?: string }
 
 export class RealVerificationOrchestrator {
   /**
@@ -295,7 +297,7 @@ export class RealVerificationOrchestrator {
   /**
    * Categorize issues based on type and source
    */
-  private static categorizeIssue(issue: VerificationIssue): string {
+  private static categorizeIssue(issue: IssueEntry): string {
     if (issue.type === 'missing_rls' || issue.type === 'security_gap') {
       return 'Security';
     }
@@ -311,7 +313,7 @@ export class RealVerificationOrchestrator {
   /**
    * Get summary of issue categories for logging
    */
-  private static getIssueCategorySummary(issues: VerificationIssue[]): Record<string, number> {
+  private static getIssueCategorySummary(issues: Array<{ category?: string }>): Record<string, number> {
     const summary: Record<string, number> = {};
     issues.forEach(issue => {
       summary[issue.category] = (summary[issue.category] || 0) + 1;
