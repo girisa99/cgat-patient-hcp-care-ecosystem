@@ -13,13 +13,13 @@ import {
   Activity,
   MapPin
 } from 'lucide-react';
-import { useRealFacilities } from '@/hooks/api/useRealFacilities';
+import { useFacilities } from '@/hooks/useFacilities';
 import FacilitiesList from './FacilitiesList';
 import CreateFacilityDialog from './CreateFacilityDialog';
 import EditFacilityDialog from './EditFacilityDialog';
 
 export const FacilitiesManagement: React.FC = () => {
-  const { data: facilities = [], isLoading, error } = useRealFacilities();
+  const { facilities, isLoading, error, getFacilityStats, searchFacilities } = useFacilities();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFacility, setSelectedFacility] = useState<any>(null);
   
@@ -27,26 +27,9 @@ export const FacilitiesManagement: React.FC = () => {
   const [createFacilityOpen, setCreateFacilityOpen] = useState(false);
   const [editFacilityOpen, setEditFacilityOpen] = useState(false);
 
-  const getFacilityStats = () => {
-    return {
-      total: facilities.length,
-      active: facilities.filter(f => f.is_active !== false).length,
-      inactive: facilities.filter(f => f.is_active === false).length,
-      typeBreakdown: facilities.reduce((acc: any, f) => {
-        const t = f.facility_type || 'unknown';
-        acc[t] = (acc[t] || 0) + 1;
-        return acc;
-      }, {})
-    };
-  };
-
-  const searchFacilities = (query: string) => {
-    if (!query.trim()) return facilities;
-    return facilities.filter(f =>
-      f.name.toLowerCase().includes(query.toLowerCase()) ||
-      (f.address ?? '').toLowerCase().includes(query.toLowerCase())
-    );
-  };
+  const stats = getFacilityStats();
+  const inactiveCount = stats.total - stats.active;
+  const filteredFacilities = searchFacilities(searchQuery);
 
   const handleEditFacility = (facility: any) => {
     setSelectedFacility(facility);
@@ -79,9 +62,9 @@ export const FacilitiesManagement: React.FC = () => {
             <Building className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{getFacilityStats().total}</div>
+            <div className="text-2xl font-bold">{stats.total}</div>
             <p className="text-xs text-muted-foreground">
-              {getFacilityStats().active} active, {getFacilityStats().inactive} inactive
+              {stats.active} active, {inactiveCount} inactive
             </p>
           </CardContent>
         </Card>
@@ -92,7 +75,7 @@ export const FacilitiesManagement: React.FC = () => {
             <Settings className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{Object.keys(getFacilityStats().typeBreakdown).length}</div>
+            <div className="text-2xl font-bold">{Object.keys(stats.byType).length}</div>
             <p className="text-xs text-muted-foreground">Different facility types</p>
           </CardContent>
         </Card>
@@ -103,7 +86,7 @@ export const FacilitiesManagement: React.FC = () => {
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{getFacilityStats().active}</div>
+            <div className="text-2xl font-bold">{stats.active}</div>
             <p className="text-xs text-muted-foreground">Currently operational</p>
           </CardContent>
         </Card>
@@ -114,7 +97,7 @@ export const FacilitiesManagement: React.FC = () => {
             <MapPin className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{getFacilityStats().total}</div>
+            <div className="text-2xl font-bold">{stats.total}</div>
             <p className="text-xs text-muted-foreground">Unique locations</p>
           </CardContent>
         </Card>
@@ -148,7 +131,7 @@ export const FacilitiesManagement: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-2">
-            {Object.entries(getFacilityStats().typeBreakdown).map(([type, count]) => (
+            {Object.entries(stats.byType).map(([type, count]) => (
               <Badge key={type} variant="outline" className="text-sm">
                 {type}: {count as number}
               </Badge>
@@ -172,7 +155,7 @@ export const FacilitiesManagement: React.FC = () => {
         </Card>
       ) : (
         <FacilitiesList
-          facilities={searchFacilities(searchQuery)}
+          facilities={filteredFacilities}
           onEditFacility={handleEditFacility}
         />
       )}
