@@ -1,35 +1,14 @@
-
 import { useUnifiedTesting } from './useUnifiedTesting';
 
-// This is a compatibility wrapper for the unified testing data
-export const useUnifiedTestingData = (config?: any) => {
-  console.log('🔗 useUnifiedTestingData: Compatibility wrapper called');
-  
-  try {
-    const unifiedData = useUnifiedTesting(config);
-    console.log('🔗 useUnifiedTestingData: Successfully wrapped unified testing data');
-    
-    return {
-      ...unifiedData,
-      // Ensure we have the meta data structure expected by the Testing page
-      meta: unifiedData.meta || {
-        singleSourceEnforced: true,
-        integrationValidated: true,
-        testingVersion: 'v3.0.0-unified',
-        totalTestSuites: 4,
-        overallCoverage: 0,
-        dataSource: 'Unified Testing Architecture',
-        usingRealData: true,
-        lastSyncAt: new Date().toISOString(),
-        totalApisAvailable: 0,
-        testingFocus: 'Comprehensive Unified Testing',
-        serviceFactoryStatus: null
-      }
-    };
-  } catch (error) {
-    console.error('🔗 useUnifiedTestingData: Error in compatibility wrapper:', error);
-    
-    // Return a safe fallback
+// Compatibility wrapper without conditional hook usage
+export const useUnifiedTestingData = (config?: unknown) => {
+  console.log('🔗 useUnifiedTestingData: wrapper');
+
+  const unifiedData = useUnifiedTesting(config);
+
+  if (unifiedData.error) {
+    console.error('🔗 useUnifiedTestingData: underlying hook returned error', unifiedData.error);
+
     return {
       testingData: {
         apiIntegrationTests: { total: 0, passed: 0, failed: 0, skipped: 0, coverage: 0 },
@@ -49,9 +28,26 @@ export const useUnifiedTestingData = (config?: any) => {
         serviceFactoryStatus: null
       },
       isLoading: false,
-      error: error instanceof Error ? error : new Error('Unknown error in testing data')
+      error: unifiedData.error
     };
   }
+
+  return {
+    ...unifiedData,
+    meta: unifiedData.meta || {
+      singleSourceEnforced: true,
+      integrationValidated: true,
+      testingVersion: 'v3.0.0-unified',
+      totalTestSuites: 4,
+      overallCoverage: 0,
+      dataSource: 'Unified Testing Architecture',
+      usingRealData: true,
+      lastSyncAt: new Date().toISOString(),
+      totalApisAvailable: 0,
+      testingFocus: 'Comprehensive Unified Testing',
+      serviceFactoryStatus: null
+    }
+  };
 };
 
 export default useUnifiedTestingData;

@@ -10,7 +10,7 @@
       "@/*": ["./src/*"]
     },
     "jsx": "react-jsx",
-    "types": ["node"],
+    "types": ["node", "react", "react/jsx-runtime"],
     "noImplicitAny": false,
     "noUnusedParameters": false,
     "skipLibCheck": true,

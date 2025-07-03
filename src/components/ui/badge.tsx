@@ -27,12 +27,16 @@ export interface BadgeProps
   extends React.HTMLAttributes<HTMLSpanElement>,
     VariantProps<typeof badgeVariants> {}
 
-const Badge: React.FC<BadgeProps> = ({ className, variant, children, ...rest }) => {
-  return (
-    <span className={cn(badgeVariants({ variant }), className)} {...rest}>
-      {children}
-    </span>
-  );
-};
+const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
+  ({ className, variant, ...props }, ref) => (
+    <span
+      ref={ref}
+      className={cn(badgeVariants({ variant }), className)}
+      {...props}
+    />
+  )
+);
+
+Badge.displayName = 'Badge';
 
 export { Badge, badgeVariants }
