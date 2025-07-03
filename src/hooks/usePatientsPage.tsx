@@ -1,5 +1,5 @@
 
-import { useUnifiedUserManagement } from './useUnifiedUserManagement';
+import { useMasterUserManagement } from './useMasterUserManagement';
 
 /**
  * Dedicated hook for Patients page - LOCKED IMPLEMENTATION
@@ -10,7 +10,7 @@ export const usePatientsPage = () => {
   console.log('🔒 Patients Page Hook - Locked implementation active');
   
   // Use unified user management as single source of truth for patients
-  const { users, isLoading, getPatients, searchUsers, meta } = useUnifiedUserManagement();
+  const { users, isLoading, getPatients, searchUsers, meta } = useMasterUserManagement();
 
   // Get patients from unified system
   const patients = getPatients();

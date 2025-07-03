@@ -16,7 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useDatabaseAuth } from '@/hooks/useDatabaseAuth';
 import { useRoleBasedNavigation } from '@/hooks/useRoleBasedNavigation';
 import { useLearningOrchestration } from '@/hooks/useLearningOrchestration';
-import { useUnifiedUserManagement } from '@/hooks/useUnifiedUserManagement';
+import { useMasterUserManagement } from '@/hooks/useMasterUserManagement';
 import { unifiedOrchestrator, SDLCWorkflow, SDLCPhase, ProjectContext } from '@/services/orchestration/UnifiedDevelopmentLifecycleOrchestrator';
 import { LearningInsight } from '@/utils/learning/LearningEngine';
 
@@ -57,7 +57,7 @@ export const useUnifiedDevelopmentLifecycle = (projectId?: string) => {
   const auth = useDatabaseAuth();
   const navigation = useRoleBasedNavigation();
   const learning = useLearningOrchestration();
-  const userManagement = useUnifiedUserManagement();
+  const userManagement = useMasterUserManagement();
   
   // Unified state
   const [currentProjectId, setCurrentProjectId] = useState<string | undefined>(projectId);

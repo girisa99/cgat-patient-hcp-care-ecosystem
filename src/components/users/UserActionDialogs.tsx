@@ -5,9 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { useRoleMutations } from '@/hooks/mutations/useRoleMutations';
-import { useFacilityMutations } from '@/hooks/mutations/useFacilityMutations';
-import { useUserDeactivation } from '@/hooks/mutations/useUserDeactivation';
+import { useMasterUserManagement } from '@/hooks/useMasterUserManagement';
 import { supabase } from '@/integrations/supabase/client';
 import { Check, X, Shield, Building2, UserX, Trash2, Mail } from 'lucide-react';
 import type { UserWithRoles } from '@/types/userManagement';
@@ -42,9 +40,11 @@ export const UserActionDialogs: React.FC<UserActionDialogsProps> = ({
   onUserUpdated
 }) => {
   const { toast } = useToast();
-  const { assignRole, removeRole, isAssigningRole, isRemovingRole } = useRoleMutations();
-  const { assignFacility, isAssigningFacility } = useFacilityMutations();
-  const { deactivateUser, isDeactivating } = useUserDeactivation();
+  const { 
+    assignRole, removeRole, isAssigningRole, isRemovingRole,
+    assignFacility, isAssigningFacility,
+    deactivateUser, isDeactivating
+  } = useMasterUserManagement();
 
   // Edit form state
   const [editForm, setEditForm] = useState({

@@ -9,7 +9,7 @@ export { useDatabaseAuth } from './useDatabaseAuth';
 export { useAuthContext } from '@/components/auth/DatabaseAuthProvider';
 
 // User Management - Single Source  
-export { useUnifiedUserManagement } from './useUnifiedUserManagement';
+export { useMasterUserManagement } from './useMasterUserManagement';
 
 // Dashboard - Single Source
 export { useDashboard } from './useDashboard';

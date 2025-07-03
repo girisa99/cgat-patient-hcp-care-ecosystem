@@ -1,5 +1,5 @@
 
-import { useUnifiedUserManagement } from '@/hooks/useUnifiedUserManagement';
+import { useMasterUserManagement } from '@/hooks/useMasterUserManagement';
 
 /**
  * Consolidated Patients Hook - Uses Unified User Management
@@ -13,7 +13,7 @@ export const useConsolidatedPatients = () => {
     getPatients,
     searchUsers,
     meta 
-  } = useUnifiedUserManagement();
+  } = useMasterUserManagement();
 
   const patients = getPatients();
 

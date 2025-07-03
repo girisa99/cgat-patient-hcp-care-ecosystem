@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useUnifiedUserManagement } from '@/hooks/useUnifiedUserManagement';
+import { useMasterUserManagement } from '@/hooks/useMasterUserManagement';
 import { 
   UserPlus, 
   Edit, 
@@ -35,7 +35,7 @@ import type { UserWithRoles } from '@/types/userManagement';
 
 export const EnhancedUserManagementTable: React.FC = () => {
   console.log('🎨 Enhanced UserManagementTable rendering');
-  const { users, isLoading, error, meta } = useUnifiedUserManagement();
+  const { users, isLoading, error, meta } = useMasterUserManagement();
   console.log('🎨 Enhanced Debug - users:', users?.length || 0, 'isLoading:', isLoading, 'error:', error);
   
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);

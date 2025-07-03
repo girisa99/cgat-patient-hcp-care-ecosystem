@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { useAuthContext } from '@/components/auth/DatabaseAuthProvider';
-import { useUnifiedUserManagement } from './useUnifiedUserManagement';
+import { useMasterUserManagement } from './useMasterUserManagement';
 import { useFacilities } from './useFacilities';
 import { useModules } from './useModules';
 import { useApiServices } from './useApiServices';
@@ -12,7 +12,7 @@ export const useDashboard = () => {
   const { user, isAuthenticated, profile, userRoles, signOut } = useAuthContext();
   
   // Get real data from all consolidated sources
-  const { users, meta: userMeta } = useUnifiedUserManagement();
+  const { users, meta: userMeta } = useMasterUserManagement();
   const { facilities, getFacilityStats } = useFacilities();
   const { modules, getModuleStats } = useModules();
   const { apiServices } = useApiServices();

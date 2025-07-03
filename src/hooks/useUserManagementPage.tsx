@@ -1,5 +1,5 @@
 
-import { useUnifiedUserManagement } from './useUnifiedUserManagement';
+import { useMasterUserManagement } from './useMasterUserManagement';
 import { useUserManagementDialogs } from './useUserManagementDialogs';
 
 /**
@@ -11,7 +11,7 @@ export const useUserManagementPage = () => {
   console.log('🔒 User Management Page Hook - Locked implementation active');
   
   // Use consolidated user management as single source of truth
-  const userData = useUnifiedUserManagement();
+  const userData = useMasterUserManagement();
   const dialogsData = useUserManagementDialogs();
 
   // Return consolidated data with clear naming to prevent confusion

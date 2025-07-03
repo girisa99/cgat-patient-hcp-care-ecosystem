@@ -7,14 +7,14 @@
 // TODO: Implement these template hooks when needed
 
 // Unified system integration - uses the main unified user management
-import { useUnifiedUserManagement } from '@/hooks/useUnifiedUserManagement';
+import { useMasterUserManagement } from '@/hooks/useMasterUserManagement';
 
 /**
  * Template-compatible wrapper for unified user management
  * Maintains compatibility with template system while using single source of truth
  */
 export const useTemplateUnifiedUsers = () => {
-  const unifiedData = useUnifiedUserManagement();
+  const unifiedData = useMasterUserManagement();
   
   return {
     ...unifiedData,

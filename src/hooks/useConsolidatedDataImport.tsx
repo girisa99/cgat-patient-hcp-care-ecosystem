@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { useUnifiedUserManagement } from './useUnifiedUserManagement';
+import { useMasterUserManagement } from './useMasterUserManagement';
 import { useFacilities } from './useFacilities';
 
 /**
@@ -15,7 +15,7 @@ export const useConsolidatedDataImport = () => {
   const [importProgress, setImportProgress] = useState(0);
   
   // Use consolidated hooks for data operations
-  const { createUser, refetch: refetchUsers } = useUnifiedUserManagement();
+  const { createUser, refetch: refetchUsers } = useMasterUserManagement();
   const { createFacility, refetch: refetchFacilities } = useFacilities();
 
   const importUsers = async (userData: any[]) => {

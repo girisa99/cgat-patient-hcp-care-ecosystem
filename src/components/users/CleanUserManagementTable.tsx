@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
-import { useUnifiedUserManagement } from '@/hooks/useUnifiedUserManagement';
+import { useMasterUserManagement } from '@/hooks/useMasterUserManagement';
 import { 
   UserPlus, 
   Edit, 
@@ -39,7 +39,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { UserWithRoles } from '@/types/userManagement';
 
 export const CleanUserManagementTable: React.FC = () => {
-  const { users, isLoading, error, meta } = useUnifiedUserManagement();
+  const { users, isLoading, error, meta } = useMasterUserManagement();
   const { toast } = useToast();
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
