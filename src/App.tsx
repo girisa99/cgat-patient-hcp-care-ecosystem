@@ -14,7 +14,7 @@ import OnboardingDashboard from "@/pages/OnboardingDashboard";
 import Onboarding from "@/pages/Onboarding";
 import CollaborativeOnboarding from "@/pages/CollaborativeOnboarding";
 import TreatmentCenterOnboarding from "@/pages/TreatmentCenterOnboarding";
-import ApiServices from "@/pages/ApiServices";
+
 import Testing from "@/pages/Testing";
 import DataImport from "@/pages/DataImport";
 import ActiveVerification from "@/pages/ActiveVerification";
@@ -51,7 +51,7 @@ const App = () => {
                 <Route path="/patients" element={<Patients />} />
                 <Route path="/facilities" element={<FacilitiesManagement />} />
                 <Route path="/modules" element={<ModulesManagement />} />
-                <Route path="/api-services" element={<ApiServices />} />
+                
                 <Route path="/testing" element={<Testing />} />
                 <Route path="/data-import" element={<DataImport />} />
                 <Route path="/active-verification" element={<ActiveVerification />} />
