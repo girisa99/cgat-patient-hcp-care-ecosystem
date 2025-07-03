@@ -79,6 +79,7 @@ export const useApiServicesLocked = () => {
     // Meta information - LOCKED
     meta: {
       ...apiServices.meta,
+      totalIntegrations: apiServices.data.length, // Add missing property
       hookVersion: 'locked-v2.0.0',
       implementationLocked: true,
       singleSourceValidated: true,

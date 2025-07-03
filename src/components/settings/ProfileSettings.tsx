@@ -21,7 +21,7 @@ interface Profile {
   facility_id?: string | null;
 }
 
-export const ProfileSettings: React.FC = () => {
+const ProfileSettings: React.FC = () => {
   const { toast } = useToast();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -281,3 +281,7 @@ export const ProfileSettings: React.FC = () => {
     </div>
   );
 };
+
+// Export as both named and default
+export { ProfileSettings };
+export default ProfileSettings;

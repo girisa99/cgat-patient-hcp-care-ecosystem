@@ -1,62 +1,52 @@
 
-import { useModuleData } from './modules/useModuleData';
-import { useModuleMutations } from './modules/useModuleMutations';
-import { useModulePermissions } from './modules/useModulePermissions';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
-/**
- * Main Modules Hook - Now uses consolidated approach
- * Following the unified user management pattern
- */
 export const useModules = () => {
-  const { data: modules, isLoading, error, refetch } = useModuleData();
-  const mutations = useModuleMutations();
-  const { hasModuleAccess, userModules } = useModulePermissions();
+  const { data: modules, isLoading, error } = useQuery({
+    queryKey: ['modules'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('modules')
+        .select('*')
+        .eq('is_active', true)
+        .order('name');
+      
+      if (error) throw error;
+      return data || [];
+    }
+  });
 
+  // Calculate module statistics
   const getModuleStats = () => {
+    const total = modules?.length || 0;
+    const active = modules?.filter(m => m.is_active !== false).length || 0;
+    const inactive = total - active;
+    const userAccessible = active; // For now, assume all active modules are user accessible
+    const byCategory = modules?.reduce((acc: any, module) => {
+      const category = 'general'; // Default category since modules table doesn't have category
+      acc[category] = (acc[category] || 0) + 1;
+      return acc;
+    }, {}) || {};
+
     return {
-      total: modules?.length || 0,
-      active: modules?.filter(m => m.is_active !== false).length || 0,
-      inactive: modules?.filter(m => m.is_active === false).length || 0,
-      userAccessible: userModules?.length || 0
+      total,
+      active,
+      inactive,
+      userAccessible,
+      byCategory
     };
-  };
-
-  const searchModules = (query: string) => {
-    if (!query.trim()) return modules || [];
-    
-    return (modules || []).filter((module: any) => 
-      module.name?.toLowerCase().includes(query.toLowerCase()) ||
-      module.description?.toLowerCase().includes(query.toLowerCase())
-    );
-  };
-
-  // Mock functions for role assignment (using console.log for now)
-  const assignModuleToRole = async ({ roleId, moduleId }: { roleId: string; moduleId: string }) => {
-    console.log('🔄 Assigning module to role:', { roleId, moduleId });
-    // This would be implemented with actual API calls
-    return Promise.resolve();
   };
 
   return {
     modules: modules || [],
-    userModules: userModules || [],
     isLoading,
-    isLoadingModules: isLoading,
-    isLoadingUserModules: isLoading,
     error,
-    refetch,
     getModuleStats,
-    searchModules,
-    hasModuleAccess,
-    assignModuleToRole,
-    isAssigningToRole: false,
-    ...mutations,
-    // Meta information consistent with unified system
     meta: {
       totalModules: modules?.length || 0,
-      dataSource: 'modules table via direct query',
-      lastFetch: new Date().toISOString(),
-      version: 'consolidated-v1'
+      dataSource: 'modules table',
+      lastUpdated: new Date().toISOString()
     }
   };
 };

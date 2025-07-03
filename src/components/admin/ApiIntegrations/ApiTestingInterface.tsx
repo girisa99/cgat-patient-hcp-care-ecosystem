@@ -19,13 +19,17 @@ interface ApiQueryParam {
 }
 
 interface ApiTestingInterfaceProps {
+  integration?: any;
   selectedApi?: any;
   selectedEndpoint?: any;
+  onClose?: () => void;
 }
 
 export const ApiTestingInterface: React.FC<ApiTestingInterfaceProps> = ({
+  integration,
   selectedApi,
-  selectedEndpoint
+  selectedEndpoint,
+  onClose
 }) => {
   const { toast } = useToast();
   const [testUrl, setTestUrl] = useState('');
@@ -37,10 +41,13 @@ export const ApiTestingInterface: React.FC<ApiTestingInterfaceProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [responseStatus, setResponseStatus] = useState<'success' | 'error' | 'warning' | null>(null);
 
+  // Use integration or selectedApi interchangeably
+  const currentApi = integration || selectedApi;
+
   // Initialize form when endpoint changes
   useEffect(() => {
-    if (selectedEndpoint && selectedApi) {
-      setTestUrl(`${selectedApi.base_url || ''}${selectedEndpoint.path || ''}`);
+    if (selectedEndpoint && currentApi) {
+      setTestUrl(`${currentApi.base_url || currentApi.baseUrl || ''}${selectedEndpoint.path || selectedEndpoint.url || ''}`);
       setRequestMethod(selectedEndpoint.method || 'GET');
       
       // Initialize query parameters
@@ -58,7 +65,7 @@ export const ApiTestingInterface: React.FC<ApiTestingInterfaceProps> = ({
       }
       setQueryParams(params);
     }
-  }, [selectedEndpoint, selectedApi]);
+  }, [selectedEndpoint, currentApi]);
 
   const updateQueryParam = (name: string, field: keyof ApiQueryParam, value: string) => {
     setQueryParams(prev => ({
@@ -234,7 +241,7 @@ export const ApiTestingInterface: React.FC<ApiTestingInterfaceProps> = ({
     }
   };
 
-  if (!selectedApi || !selectedEndpoint) {
+  if (!currentApi || !selectedEndpoint) {
     return (
       <Card className="h-full">
         <CardContent className="flex items-center justify-center h-full">
@@ -255,6 +262,11 @@ export const ApiTestingInterface: React.FC<ApiTestingInterfaceProps> = ({
           <CardTitle className="flex items-center gap-2">
             <Play className="h-5 w-5" />
             API Test Configuration
+            {onClose && (
+              <Button variant="outline" size="sm" onClick={onClose} className="ml-auto">
+                Close
+              </Button>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">

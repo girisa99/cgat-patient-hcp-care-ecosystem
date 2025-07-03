@@ -44,6 +44,7 @@ export const useUnifiedPageData = () => {
     totalModules: 0,
     totalApis: 0,
     totalPermissions: 0,
+    total: 0, // Add missing 'total' property
   };
 
   const refreshAllData = () => {
