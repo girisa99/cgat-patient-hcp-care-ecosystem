@@ -35,12 +35,15 @@ import { UserRow } from './UserRow';
 import { BulkActionsTab } from './BulkActionsTab';
 
 export const ImprovedUserManagementTable: React.FC = () => {
+  // All hooks must be called unconditionally at the top
   const { users, isLoading, error, meta, createUser, isCreatingUser, refetch } = useUnifiedUserManagement();
   const { toast } = useToast();
   const { assignRole, removeRole, isAssigningRole, isRemovingRole } = useRoleMutations();
   const { deactivateUser, isDeactivating } = useUserDeactivation();
   const { assignFacility, isAssigningFacility } = useFacilityMutations();
   const queryClient = useQueryClient();
+  
+  // All useState hooks must be called unconditionally
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddUserDialog, setShowAddUserDialog] = useState(false);
@@ -51,8 +54,6 @@ export const ImprovedUserManagementTable: React.FC = () => {
   const [showDeactivateDialog, setShowDeactivateDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserWithRoles | null>(null);
   const [activeTab, setActiveTab] = useState('users');
-  
-  // Add User Form State
   const [newUser, setNewUser] = useState({
     firstName: '',
     lastName: '',

@@ -53,8 +53,10 @@ export const useUnifiedUserManagement = () => {
       
       return users;
     },
-    retry: USER_MANAGEMENT_CONFIG.CACHE_SETTINGS.RETRY_COUNT,
-    staleTime: USER_MANAGEMENT_CONFIG.CACHE_SETTINGS.STALE_TIME,
+    retry: 1,
+    staleTime: 300000, // 5 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
   // Real user creation mutation
