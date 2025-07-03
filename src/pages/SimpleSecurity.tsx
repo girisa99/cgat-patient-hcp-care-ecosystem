@@ -2,11 +2,13 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AppLayout from '@/components/layout/AppLayout';
 import { useRoleBasedNavigation } from '@/hooks/useRoleBasedNavigation';
+import { useMasterSecurity } from '@/hooks/useMasterSecurity';
 import { Badge } from '@/components/ui/badge';
 
 const SimpleSecurity: React.FC = () => {
   console.log('🔒 Simple Security page rendering');
   const { currentRole, isSuperAdmin, hasAccess } = useRoleBasedNavigation();
+  const { securityEvents, apiKeys, securityStats, isLoading } = useMasterSecurity();
 
   return (
     <AppLayout title="Security Dashboard">

@@ -2,19 +2,19 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AppLayout from '@/components/layout/AppLayout';
 import { useRoleBasedNavigation } from '@/hooks/useRoleBasedNavigation';
-import { useAutomatedVerification } from '@/hooks/useAutomatedVerification';
+import { useMasterVerification } from '@/hooks/useMasterVerification';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 
 const ActiveVerificationPage: React.FC = () => {
   console.log('✅ Active Verification page rendering');
   const { currentRole, hasAccess } = useRoleBasedNavigation();
-  const { isRunning } = useAutomatedVerification();
+  const { 
+    activeIssues, verificationSessions, verificationStats, isLoading,
+    runVerification, isRunningVerification, healthScore 
+  } = useMasterVerification();
   
-  // Mock data for display
-  const verificationSessions = [];
-  const isVerifying = isRunning;
-  const verificationHistory = [];
-
+  
   if (!hasAccess('/active-verification')) {
     return (
       <AppLayout title="Access Denied">
@@ -42,7 +42,7 @@ const ActiveVerificationPage: React.FC = () => {
           <Card>
             <CardContent className="p-4">
               <div className="text-2xl font-bold text-green-600">
-                {verificationHistory.filter((vh: any) => vh.status === 'completed').length}
+                {verificationSessions.filter((vh: any) => vh.status === 'completed').length}
               </div>
               <div className="text-sm text-muted-foreground">Completed</div>
             </CardContent>
@@ -50,7 +50,7 @@ const ActiveVerificationPage: React.FC = () => {
           <Card>
             <CardContent className="p-4">
               <div className="text-2xl font-bold text-yellow-600">
-                {verificationHistory.filter((vh: any) => vh.status === 'pending').length}
+                {activeIssues.length}
               </div>
               <div className="text-sm text-muted-foreground">Pending</div>
             </CardContent>
@@ -58,7 +58,7 @@ const ActiveVerificationPage: React.FC = () => {
           <Card>
             <CardContent className="p-4">
               <div className="text-2xl font-bold text-red-600">
-                {verificationHistory.filter((vh: any) => vh.status === 'failed').length}
+                {verificationStats.criticalIssues}
               </div>
               <div className="text-sm text-muted-foreground">Failed</div>
             </CardContent>
@@ -70,8 +70,8 @@ const ActiveVerificationPage: React.FC = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               System Verification & Validation
-              <Badge variant={isVerifying ? 'secondary' : 'outline'}>
-                {isVerifying ? 'Verifying...' : 'Ready'}
+              <Badge variant={isRunningVerification ? 'secondary' : 'outline'}>
+                {isRunningVerification ? 'Verifying...' : 'Ready'}
               </Badge>
             </CardTitle>
           </CardHeader>
@@ -118,25 +118,25 @@ const ActiveVerificationPage: React.FC = () => {
               )}
 
               {/* Recent Verification History */}
-              {verificationHistory.length > 0 && (
+              {activeIssues.length > 0 && (
                 <div className="space-y-2">
-                  <h4 className="font-medium">Recent Verification History</h4>
-                  {verificationHistory.slice(0, 5).map((verification: any) => (
-                    <div key={verification.id} className="flex items-center justify-between p-3 border rounded">
+                  <h4 className="font-medium">Active Issues</h4>
+                  {activeIssues.slice(0, 5).map((issue: any) => (
+                    <div key={issue.id} className="flex items-center justify-between p-3 border rounded">
                       <div>
-                        <div className="font-medium">{verification.type} Verification</div>
+                        <div className="font-medium">{issue.issue_type}</div>
                         <div className="text-sm text-muted-foreground">
-                          {new Date(verification.timestamp).toLocaleString()}
+                          {issue.issue_message}
                         </div>
                       </div>
                       <Badge 
                         variant={
-                          verification.status === 'completed' ? 'default' : 
-                          verification.status === 'pending' ? 'secondary' : 
+                          issue.issue_severity === 'low' ? 'secondary' : 
+                          issue.issue_severity === 'medium' ? 'default' : 
                           'destructive'
                         }
                       >
-                        {verification.status}
+                        {issue.issue_severity}
                       </Badge>
                     </div>
                   ))}
