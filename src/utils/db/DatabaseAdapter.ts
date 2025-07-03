@@ -28,11 +28,3 @@ export interface DatabaseAdapter {
   /** Custom error type for adapter operations */
   readonly ErrorClass?: new (message: string, original?: any) => Error;
 }
-
-// Generic error wrapper for DB operations
-export class DatabaseError extends Error {
-  constructor(message: string, public readonly original?: any) {
-    super(message);
-    this.name = 'DatabaseError';
-  }
-}
