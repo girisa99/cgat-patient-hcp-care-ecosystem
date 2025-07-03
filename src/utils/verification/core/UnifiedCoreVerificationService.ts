@@ -4,7 +4,7 @@
  * Runs continuously in background, validates everything, ensures zero breaking changes
  */
 
-import { EventEmitter } from 'events';
+import { TypedEventEmitter } from '@/utils/TypedEventEmitter';
 
 // Import existing verifiers (we'll consolidate these)
 import { SingleSourceValidator } from '../SingleSourceValidator';
@@ -119,10 +119,25 @@ const DEFAULT_CONFIG: VerificationConfig = {
   progressTracking: true
 };
 
+// Typed event map for UnifiedCoreVerificationService
+export interface UnifiedCoreVerificationEvents {
+  [key: string | number | symbol]: unknown[];
+  scanCompleted: [RegistryState];
+  scanError: [unknown];
+  duplicatesDetected: [DuplicateReport];
+  validationCompleted: [ValidationResult];
+  monitoringError: [unknown];
+  monitoringStarted: never[];
+  monitoringStopped: never[];
+  healthIssueDetected: [HealthCheck];
+  issueDetected: [ValidationResult];
+  configUpdated: [VerificationConfig];
+}
+
 /**
  * Main Unified Core Verification Service
  */
-export class UnifiedCoreVerificationService extends EventEmitter {
+export class UnifiedCoreVerificationService extends TypedEventEmitter<UnifiedCoreVerificationEvents> {
   private static instance: UnifiedCoreVerificationService;
   private registry: RegistryState;
   private config: VerificationConfig;

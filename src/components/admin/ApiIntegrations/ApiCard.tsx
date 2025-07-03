@@ -1,19 +1,19 @@
-
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { RefreshCw } from 'lucide-react';
 import { ApiCardActions } from './ApiCardActions';
+import { ApiSummary } from '@/types/api';
 
 interface ApiCardProps {
-  api: any;
+  api: ApiSummary;
   type: 'internal' | 'external' | 'published';
   isProcessing: string | null;
-  onPublish?: (api: any) => void;
-  onConfigure?: (api: any) => void;
-  onViewAnalytics?: (api: any) => void;
-  onRevertToDraft?: (api: any) => void;
-  onCancelPublication?: (api: any) => void;
+  onPublish?: (api: ApiSummary) => void;
+  onConfigure?: (api: ApiSummary) => void;
+  onViewAnalytics?: (api: ApiSummary) => void;
+  onRevertToDraft?: (api: ApiSummary) => void;
+  onCancelPublication?: (api: ApiSummary) => void;
   onStatusUpdate?: (apiId: string, status: string) => void;
   onViewDetails?: (apiId: string) => void;
   isUpdatingStatus?: boolean;

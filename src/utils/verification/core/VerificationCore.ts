@@ -1,4 +1,3 @@
-
 /**
  * Verification Core - Extracted from large AutomatedVerificationOrchestrator
  * Handles core verification logic with reduced complexity
@@ -15,7 +14,7 @@ export interface VerificationTask {
 export interface VerificationResult {
   taskId: string;
   success: boolean;
-  data?: any;
+  data?: unknown;
   error?: string;
   duration: number;
 }
@@ -73,7 +72,7 @@ export class VerificationCore {
   /**
    * Run task by type with simplified switch logic
    */
-  private async runTaskByType(task: VerificationTask): Promise<any> {
+  private async runTaskByType(task: VerificationTask): Promise<unknown> {
     switch (task.type) {
       case 'validation':
         return this.runValidationTask(task);
@@ -82,7 +81,7 @@ export class VerificationCore {
       case 'performance':
         return this.runPerformanceTask(task);
       case 'database':
-        return this.runDatabaseTask(task);
+        return this.runDatabaseTask();
       default:
         throw new Error(`Unknown task type: ${task.type}`);
     }
@@ -91,28 +90,28 @@ export class VerificationCore {
   /**
    * Simplified validation task
    */
-  private async runValidationTask(task: VerificationTask): Promise<any> {
+  private async runValidationTask(task: VerificationTask): Promise<{ type: 'validation'; passed: boolean; issues: unknown[] }> {
     return { type: 'validation', passed: true, issues: [] };
   }
 
   /**
    * Simplified security task
    */
-  private async runSecurityTask(task: VerificationTask): Promise<any> {
+  private async runSecurityTask(task: VerificationTask): Promise<{ type: 'security'; vulnerabilities: unknown[]; score: number }> {
     return { type: 'security', vulnerabilities: [], score: 95 };
   }
 
   /**
    * Simplified performance task
    */
-  private async runPerformanceTask(task: VerificationTask): Promise<any> {
+  private async runPerformanceTask(task: VerificationTask): Promise<{ type: 'performance'; metrics: Record<string, unknown>; score: number }> {
     return { type: 'performance', metrics: {}, score: 85 };
   }
 
   /**
    * Simplified database task
    */
-  private async runDatabaseTask(task: VerificationTask): Promise<any> {
+  private async runDatabaseTask(): Promise<{ type: 'database'; status: 'healthy' | 'degraded'; issues: unknown[] }> {
     return { type: 'database', status: 'healthy', issues: [] };
   }
 

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -7,9 +6,10 @@ import { Badge } from '@/components/ui/badge';
 import { ApiConsolidationUtility } from '@/utils/api/ApiConsolidationUtility';
 import { useToast } from '@/hooks/use-toast';
 import { CheckCircle, AlertTriangle, Loader2, GitMerge, Target } from 'lucide-react';
+import { ApiDiff, ConsolidationOutcome, ApiSummary } from '@/types/api';
 
 interface ApiConsolidationActionProps {
-  comparisonResult?: any;
+  comparisonResult?: ApiDiff;
   onConsolidationComplete?: () => void;
 }
 
@@ -18,7 +18,7 @@ export const ApiConsolidationAction: React.FC<ApiConsolidationActionProps> = ({
   onConsolidationComplete
 }) => {
   const [isConsolidating, setIsConsolidating] = useState(false);
-  const [consolidationResult, setConsolidationResult] = useState<any>(null);
+  const [consolidationResult, setConsolidationResult] = useState<ConsolidationOutcome | null>(null);
   const { toast } = useToast();
 
   const handleConsolidate = async (forceConsolidation = false) => {
@@ -30,7 +30,7 @@ export const ApiConsolidationAction: React.FC<ApiConsolidationActionProps> = ({
       console.log('🚀 Starting consolidation process...');
       
       const keepApiId = comparisonResult.recommended.id;
-      const removeApiIds = comparisonResult.deprecated.map((api: any) => api.id);
+      const removeApiIds = comparisonResult.deprecated.map((api: ApiSummary) => api.id);
       
       const result = await ApiConsolidationUtility.consolidateToSingleSource(
         keepApiId, 
@@ -57,12 +57,13 @@ export const ApiConsolidationAction: React.FC<ApiConsolidationActionProps> = ({
         });
       }
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('❌ Consolidation failed:', error);
+      const message = error instanceof Error ? error.message : 'An unexpected error occurred';
       toast({
-        title: "❌ Consolidation Failed",
-        description: error.message || 'An unexpected error occurred',
-        variant: "destructive",
+        title: '❌ Consolidation Failed',
+        description: message,
+        variant: 'destructive'
       });
     } finally {
       setIsConsolidating(false);
@@ -99,12 +100,13 @@ export const ApiConsolidationAction: React.FC<ApiConsolidationActionProps> = ({
         });
       }
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('❌ Core healthcare API consolidation failed:', error);
+      const message = error instanceof Error ? error.message : 'Failed to consolidate core healthcare APIs';
       toast({
-        title: "❌ Consolidation Failed",
-        description: error.message || 'Failed to consolidate core healthcare APIs',
-        variant: "destructive",
+        title: '❌ Consolidation Failed',
+        description: message,
+        variant: 'destructive'
       });
     } finally {
       setIsConsolidating(false);

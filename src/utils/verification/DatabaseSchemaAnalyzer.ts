@@ -1,14 +1,11 @@
-
 /**
  * Database Schema Analyzer
  * Analyzes database schema changes, foreign keys, constraints, and relationships
  * Integrates with Update First Gateway to prevent duplicate schema elements
  */
 
-import { supabase } from '@/integrations/supabase/client';
-import { Database } from '@/integrations/supabase/types';
-
-type DatabaseTables = keyof Database['public']['Tables'];
+import { dbAdapter } from '@/utils/db';
+import { ColumnInfo, TableInfo } from '@/utils/db/DatabaseAdapter';
 
 export interface DatabaseSchemaAnalysis {
   tables: DatabaseTableInfo[];
@@ -143,7 +140,7 @@ export class DatabaseSchemaAnalyzer {
     const tables: DatabaseTableInfo[] = [];
     
     // Known framework tables
-    const frameworkTables: DatabaseTables[] = [
+    const frameworkTables: string[] = [
       'profiles', 'facilities', 'modules', 'permissions', 'roles',
       'user_roles', 'user_permissions', 'user_facility_access',
       'audit_logs', 'api_keys', 'external_api_registry'
@@ -151,25 +148,18 @@ export class DatabaseSchemaAnalyzer {
 
     for (const tableName of frameworkTables) {
       try {
-        // Get table structure using edge function
-        const { data: tableInfo, error } = await supabase.functions.invoke('get-table-info', {
-          body: { tableName }
-        });
-
-        if (error || !tableInfo) {
-          console.warn(`Failed to get info for table ${tableName}:`, error);
+        const tableInfo = await dbAdapter.getTableInfo(tableName);
+        if (!tableInfo) {
+          console.warn(`Failed to get info for table ${tableName}`);
           continue;
         }
 
-        // Get row count
-        const { count } = await supabase
-          .from(tableName as any)
-          .select('*', { count: 'exact', head: true });
+        const rowCount = await dbAdapter.getTableRowCount(tableName);
 
         const tableAnalysis: DatabaseTableInfo = {
           tableName,
           columns: this.normalizeColumnInfo(tableInfo.columns || []),
-          rowCount: count || 0,
+          rowCount,
           hasRLS: (tableInfo.rls_policies || []).length > 0,
           hasTriggers: (tableInfo.triggers || []).length > 0,
           relationships: this.extractRelationships(tableInfo.foreign_keys || []),

@@ -1,4 +1,3 @@
-
 /**
  * Score Calculator
  * Calculates overall system health scores and generates action plans
@@ -8,14 +7,7 @@ export class ScoreCalculator {
   /**
    * Calculate overall system score
    */
-  static calculateOverallScore(results: {
-    singleSourceResult: any;
-    mockDataResult: any;
-    codeQualityResult: any;
-    databaseResult: any;
-    moduleRegistryResult: any;
-    typescriptResult: any;
-  }): number {
+  static calculateOverallScore(results: import('@/types/verification').VerificationResults): number {
     const weights = {
       singleSource: 0.25,
       mockData: 0.15,
@@ -54,7 +46,7 @@ export class ScoreCalculator {
   /**
    * Identify critical issues across all systems
    */
-  static identifyCriticalIssues(results: any): string[] {
+  static identifyCriticalIssues(results: import('@/types/verification').VerificationResults): string[] {
     const criticalIssues: string[] = [];
 
     // Check single source violations

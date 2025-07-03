@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -29,6 +28,7 @@ export const FacilitiesManagement: React.FC = () => {
   const [editFacilityOpen, setEditFacilityOpen] = useState(false);
 
   const stats = getFacilityStats();
+  const inactiveCount = stats.total - stats.active;
   const filteredFacilities = searchFacilities(searchQuery);
 
   const handleEditFacility = (facility: any) => {
@@ -64,7 +64,7 @@ export const FacilitiesManagement: React.FC = () => {
           <CardContent>
             <div className="text-2xl font-bold">{stats.total}</div>
             <p className="text-xs text-muted-foreground">
-              {stats.active} active, {stats.inactive} inactive
+              {stats.active} active, {inactiveCount} inactive
             </p>
           </CardContent>
         </Card>
@@ -75,7 +75,7 @@ export const FacilitiesManagement: React.FC = () => {
             <Settings className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{Object.keys(stats.typeBreakdown).length}</div>
+            <div className="text-2xl font-bold">{Object.keys(stats.byType).length}</div>
             <p className="text-xs text-muted-foreground">Different facility types</p>
           </CardContent>
         </Card>
@@ -131,7 +131,7 @@ export const FacilitiesManagement: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-2">
-            {Object.entries(stats.typeBreakdown).map(([type, count]) => (
+            {Object.entries(stats.byType).map(([type, count]) => (
               <Badge key={type} variant="outline" className="text-sm">
                 {type}: {count as number}
               </Badge>

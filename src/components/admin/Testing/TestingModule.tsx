@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { UnifiedTestingOverview } from './UnifiedTestingOverview';
@@ -21,38 +20,21 @@ export const TestingModule: React.FC = () => {
   const [hookError, setHookError] = useState<string | null>(null);
   const [testingHookData, setTestingHookData] = useState<any>(null);
 
-  // Initialize the unified testing hook with error handling
-  useEffect(() => {
-    console.log('🧪 TestingModule: Initializing unified testing hook');
-    try {
-      // Test hook initialization
-      console.log('🧪 TestingModule: Hook initialization successful');
-    } catch (error) {
-      console.error('🧪 TestingModule: Hook initialization failed:', error);
-      setHookError(error instanceof Error ? error.message : 'Unknown hook error');
-    }
-  }, []);
+  // Call the unified testing hook once (React Hooks must be unconditional)
+  const hookData = useUnifiedTesting({
+    enableEnhancedFeatures: true,
+    enableComplianceMode: true,
+    batchSize: 50,
+    environment: 'development'
+  });
 
-  // Use the hook with error handling
-  let hookData;
-  try {
-    hookData = useUnifiedTesting({
-      enableEnhancedFeatures: true,
-      enableComplianceMode: true,
-      batchSize: 50,
-      environment: 'development'
-    });
-    
+  // Store reference for logging once
+  useEffect(() => {
     if (!testingHookData && hookData) {
       setTestingHookData(hookData);
       console.log('🧪 TestingModule: Hook data loaded successfully', hookData);
     }
-  } catch (error) {
-    console.error('🧪 TestingModule: Hook execution error:', error);
-    if (!hookError) {
-      setHookError(error instanceof Error ? error.message : 'Hook execution failed');
-    }
-  }
+  }, [hookData, testingHookData]);
 
   // If there's a hook error, show error state
   if (hookError) {
