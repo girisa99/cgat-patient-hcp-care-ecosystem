@@ -109,14 +109,16 @@ export const useDatabaseAuth = (): DatabaseAuthContext => {
         const { data: userRolesData, error: rolesError } = await supabase
           .from('user_roles')
           .select(`
-            roles!inner(
+            roles(
               name
             )
           `)
           .eq('user_id', userId);
 
+        console.log('🔍 Raw user roles query result:', { userRolesData, rolesError });
+
         if (rolesError) {
-          console.warn('⚠️ Could not load user roles:', rolesError);
+          console.error('❌ Could not load user roles:', rolesError);
         }
 
         console.log('📋 User roles data:', userRolesData);
