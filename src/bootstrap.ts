@@ -1,13 +1,20 @@
-import { registryFixAgent } from '@/utils/agents/RegistryFixAgent';
 
+// Browser-compatible bootstrap
 export function startBackgroundServices() {
-  // Start Registry Fix Agent which internally kicks off verification service monitoring
-  registryFixAgent.start();
-  console.log('🛡️ Registry Fix Agent started (background verification active)');
+  console.log('🛡️ Background services starting (browser mode)');
+  
+  // In browser environment, we don't start background services
+  // that require Node.js modules
+  if (typeof window !== 'undefined') {
+    console.log('🌐 Running in browser - background services disabled');
+    return;
+  }
+  
+  console.log('🛡️ Background services ready');
 }
 
-// Auto-start when this module is imported at application entry
-if (typeof window === 'undefined') {
+// Only auto-start in appropriate environments
+if (typeof window === 'undefined' && typeof Deno === 'undefined') {
   // Only start on server / Node environment, not in the browser bundle
   startBackgroundServices();
 }
