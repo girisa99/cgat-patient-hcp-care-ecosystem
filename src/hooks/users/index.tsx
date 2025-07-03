@@ -8,7 +8,7 @@
 export { useMasterUserManagement } from '../useMasterUserManagement';
 
 // Specialized hooks for specific functionality
-export { useUserDeactivation } from '../mutations/useUserDeactivation';
+// useUserDeactivation removed - use useMasterUserManagement instead
 export { usePermissions } from '../usePermissions';
 export { useUserManagementDialogs } from '../useUserManagementDialogs';
 
@@ -16,4 +16,4 @@ export { useUserManagementDialogs } from '../useUserManagementDialogs';
 export { useMasterUserManagement as useUsers } from '../useMasterUserManagement';
 export { useMasterUserManagement as useConsolidatedUsers } from '../useMasterUserManagement';
 export { useMasterUserManagement as useUnifiedUserData } from '../useMasterUserManagement';
-export { useMasterUserManagement as useUnifiedUserManagement } from '../useMasterUserManagement';
+// useUnifiedUserManagement removed - use useMasterUserManagement directly

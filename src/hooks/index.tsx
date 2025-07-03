@@ -33,7 +33,7 @@ export { usePublishedApiIntegration } from './usePublishedApiIntegration';
 export { useExternalApiPublishing } from './useExternalApiPublishing';
 
 // Specialized hooks
-export { useUserDeactivation } from './mutations/useUserDeactivation';
+// useUserDeactivation removed - use useMasterUserManagement instead
 export { usePermissions } from './usePermissions';
 export { useUserManagementDialogs } from './useUserManagementDialogs';
 

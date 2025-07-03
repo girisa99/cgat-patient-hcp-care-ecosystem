@@ -6,7 +6,7 @@
 
 export { useFacilities } from '../useFacilities';
 export { useFacilityData } from './useFacilityData';
-export { useFacilityMutations } from './useFacilityMutations';
+// useFacilityMutations removed - use useMasterFacilities instead
 
 // This ensures all facilities imports use the same consolidated approach
 // No more duplicate hooks or mock data
