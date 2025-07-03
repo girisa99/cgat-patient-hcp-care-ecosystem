@@ -489,9 +489,8 @@ export const ImprovedUserManagementTable: React.FC = () => {
         onCloseFacility={() => setShowFacilityDialog(false)}
         onCloseDeactivate={() => setShowDeactivateDialog(false)}
         onUserUpdated={() => {
-          // Force refetch users to get updated data
-          queryClient.invalidateQueries({ queryKey: ['users'] });
-          queryClient.invalidateQueries({ queryKey: ['unified-user-management'] });
+          // Use the correct master cache key
+          queryClient.invalidateQueries({ queryKey: ['master-user-management'] });
           refetch();
         }}
       />
