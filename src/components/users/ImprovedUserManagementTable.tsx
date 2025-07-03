@@ -9,6 +9,7 @@ import { useUnifiedUserManagement } from '@/hooks/useUnifiedUserManagement';
 import { useRoleMutations } from '@/hooks/mutations/useRoleMutations';
 import { useUserDeactivation } from '@/hooks/mutations/useUserDeactivation';
 import { useFacilityMutations } from '@/hooks/mutations/useFacilityMutations';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   UserPlus, 
   Edit, 
@@ -50,7 +51,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { UserWithRoles } from '@/types/userManagement';
 
 export const ImprovedUserManagementTable: React.FC = () => {
-  const { users, isLoading, error, meta } = useUnifiedUserManagement();
+  const { users, isLoading, error, meta, createUser, isCreatingUser } = useUnifiedUserManagement();
   const { toast } = useToast();
   const { assignRole, removeRole, isAssigningRole, isRemovingRole } = useRoleMutations();
   const { deactivateUser, isDeactivating } = useUserDeactivation();
@@ -109,10 +110,13 @@ export const ImprovedUserManagementTable: React.FC = () => {
       return;
     }
 
-    // Here you would call the actual create user function
-    toast({
-      title: "User Created Successfully",
-      description: `${newUser.firstName} ${newUser.lastName} has been added with role: ${newUser.role}`,
+    // Use the real createUser function from unified user management
+    createUser({
+      email: newUser.email,
+      first_name: newUser.firstName,
+      last_name: newUser.lastName,
+      phone: newUser.phone || null,
+      role: newUser.role as any
     });
     
     setNewUser({ firstName: '', lastName: '', email: '', role: '', phone: '' });
@@ -324,8 +328,8 @@ export const ImprovedUserManagementTable: React.FC = () => {
               <Button variant="outline" onClick={() => setShowAddUserDialog(false)} className="flex-1">
                 Cancel
               </Button>
-              <Button onClick={handleAddUser} className="flex-1">
-                Create User
+              <Button onClick={handleAddUser} className="flex-1" disabled={isCreatingUser}>
+                {isCreatingUser ? 'Creating...' : 'Create User'}
               </Button>
             </div>
           </DialogContent>
@@ -404,7 +408,7 @@ export const ImprovedUserManagementTable: React.FC = () => {
           </TabsTrigger>
           <TabsTrigger 
             value="bulk" 
-            disabled={selectedUsers.length === 0}
+            disabled={filteredUsers.length === 0}
             className="flex items-center gap-2"
           >
             <Package className="h-4 w-4" />
