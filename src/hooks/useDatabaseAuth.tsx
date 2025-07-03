@@ -95,11 +95,16 @@ export const useDatabaseAuth = (): DatabaseAuthContext => {
         console.log('📋 Loading profile and roles for user:', userId);
         console.log('🔍 TESTING: Starting immediate role query only...');
         
-        // Test roles query directly
-        const { data: userRoleIds, error: rolesError } = await supabase
+        // Test roles query directly with timeout
+        console.log('🔍 About to call supabase.from user_roles...');
+        const roleQuery = supabase
           .from('user_roles')
           .select('role_id')
           .eq('user_id', userId);
+          
+        console.log('🔍 Query created, now executing...');
+        const { data: userRoleIds, error: rolesError } = await roleQuery;
+        console.log('🔍 Query completed!');
 
         console.log('🔍 IMMEDIATE TEST - User role IDs:', { userRoleIds, rolesError });
 
@@ -108,10 +113,12 @@ export const useDatabaseAuth = (): DatabaseAuthContext => {
         if (userRoleIds && userRoleIds.length > 0 && !rolesError) {
           console.log('🔍 Getting role names for IDs:', userRoleIds.map(ur => ur.role_id));
           
+          console.log('🔍 About to call supabase.from roles...');
           const { data: rolesData, error: roleNamesError } = await supabase
             .from('roles')
             .select('name')
             .in('id', userRoleIds.map(ur => ur.role_id));
+          console.log('🔍 Roles query completed!');
           
           console.log('🔍 Role names result:', { rolesData, roleNamesError });
           
@@ -119,9 +126,13 @@ export const useDatabaseAuth = (): DatabaseAuthContext => {
             roleNames = rolesData.map(r => r.name);
             console.log('✅ Successfully loaded roles:', roleNames);
           }
+        } else {
+          console.log('❌ No user role IDs found or error occurred');
         }
 
+        console.log('🔍 About to check mounted state...');
         if (mounted) {
+          console.log('🔍 Component is mounted, setting user roles...');
           // Set user roles array
           setUserRoles(roleNames);
           console.log('✅ Loaded user roles:', roleNames);
