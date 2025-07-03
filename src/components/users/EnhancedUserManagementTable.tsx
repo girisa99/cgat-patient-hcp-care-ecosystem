@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -18,7 +18,11 @@ import {
   UserX,
   Package,
   Users2,
-  ChevronDown
+  ChevronDown,
+  Search,
+  Filter,
+  Download,
+  Upload
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -26,34 +30,82 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
 import type { UserWithRoles } from '@/types/userManagement';
 
-export const UserManagementTable: React.FC = () => {
-  console.log('📊 UserManagementTable rendering');
+export const EnhancedUserManagementTable: React.FC = () => {
+  console.log('🎨 Enhanced UserManagementTable rendering');
   const { users, isLoading, error, meta } = useUnifiedUserManagement();
-  console.log('📊 Debug - users:', users?.length || 0, 'isLoading:', isLoading, 'error:', error);
-  console.log('📊 Meta:', meta);
-  console.log('📊 Users data:', users);
+  console.log('🎨 Enhanced Debug - users:', users?.length || 0, 'isLoading:', isLoading, 'error:', error);
+  
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState('users');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterRole, setFilterRole] = useState('all');
+
+  // Filter and search users
+  const filteredUsers = useMemo(() => {
+    let filtered = users || [];
+    
+    // Apply search filter
+    if (searchQuery.trim()) {
+      filtered = filtered.filter((user: UserWithRoles) => 
+        user.first_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.last_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.email?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    
+    // Apply role filter
+    if (filterRole !== 'all') {
+      filtered = filtered.filter((user: UserWithRoles) => {
+        const userRoles = user.user_roles?.map((ur: any) => ur.roles?.name) || [];
+        return userRoles.includes(filterRole);
+      });
+    }
+    
+    return filtered;
+  }, [users, searchQuery, filterRole]);
 
   if (isLoading) {
     return (
-      <Card>
-        <CardContent className="p-8 text-center">
-          <p>Loading users...</p>
-        </CardContent>
-      </Card>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight">User Management</h2>
+            <p className="text-muted-foreground">Loading user data...</p>
+          </div>
+        </div>
+        <Card>
+          <CardContent className="p-8">
+            <div className="flex items-center justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <span className="ml-3 text-muted-foreground">Loading users...</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Card>
-        <CardContent className="p-8 text-center">
-          <p className="text-red-600">Error loading users: {String(error)}</p>
-        </CardContent>
-      </Card>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight">User Management</h2>
+            <p className="text-muted-foreground">Error loading user data</p>
+          </div>
+        </div>
+        <Card>
+          <CardContent className="p-8">
+            <div className="text-center">
+              <div className="text-red-600 mb-2">⚠️ Error loading users</div>
+              <p className="text-muted-foreground">{String(error)}</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
@@ -119,7 +171,7 @@ export const UserManagementTable: React.FC = () => {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedUsers(users.map(user => user.id));
+      setSelectedUsers(filteredUsers.map(user => user.id));
     } else {
       setSelectedUsers([]);
     }
@@ -154,68 +206,152 @@ export const UserManagementTable: React.FC = () => {
     return Boolean(user.email_confirmed_at);
   };
 
-  const isAllSelected = users.length > 0 && selectedUsers.length === users.length;
-  const isIndeterminate = selectedUsers.length > 0 && selectedUsers.length < users.length;
+  const isAllSelected = filteredUsers.length > 0 && selectedUsers.length === filteredUsers.length;
+  const isIndeterminate = selectedUsers.length > 0 && selectedUsers.length < filteredUsers.length;
 
   return (
     <div className="space-y-6">
-      {/* Header with Add User Button */}
+      {/* Header with Enhanced Styling */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">User Management</h2>
-          <p className="text-muted-foreground">Manage users, roles, modules, and permissions</p>
+          <h2 className="text-3xl font-bold tracking-tight">User Management</h2>
+          <p className="text-muted-foreground">
+            Manage users, roles, modules, and permissions across your organization
+          </p>
         </div>
-        <Button onClick={handleAddUser} className="flex items-center gap-2">
-          <UserPlus className="h-4 w-4" />
-          Add User
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button variant="outline" size="sm" className="flex items-center gap-2">
+            <Upload className="h-4 w-4" />
+            Import
+          </Button>
+          <Button variant="outline" size="sm" className="flex items-center gap-2">
+            <Download className="h-4 w-4" />
+            Export
+          </Button>
+          <Button onClick={handleAddUser} className="flex items-center gap-2 bg-primary hover:bg-primary/90">
+            <UserPlus className="h-4 w-4" />
+            Add User
+          </Button>
+        </div>
       </div>
 
-      {/* User Statistics */}
+      {/* Enhanced Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
+        <Card className="border-l-4 border-l-blue-500">
           <CardContent className="p-4">
-            <div className="text-2xl font-bold">{meta.totalUsers}</div>
-            <div className="text-sm text-muted-foreground">Total Users</div>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-2xl font-bold text-blue-600">{meta.totalUsers}</div>
+                <div className="text-sm text-muted-foreground">Total Users</div>
+              </div>
+              <Users2 className="h-8 w-8 text-blue-500" />
+            </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-l-4 border-l-green-500">
           <CardContent className="p-4">
-            <div className="text-2xl font-bold text-blue-600">{meta.adminCount}</div>
-            <div className="text-sm text-muted-foreground">Admins</div>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-2xl font-bold text-green-600">{meta.adminCount}</div>
+                <div className="text-sm text-muted-foreground">Admins</div>
+              </div>
+              <Shield className="h-8 w-8 text-green-500" />
+            </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-l-4 border-l-purple-500">
           <CardContent className="p-4">
-            <div className="text-2xl font-bold text-green-600">{meta.staffCount}</div>
-            <div className="text-sm text-muted-foreground">Staff</div>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-2xl font-bold text-purple-600">{meta.staffCount}</div>
+                <div className="text-sm text-muted-foreground">Staff</div>
+              </div>
+              <Package className="h-8 w-8 text-purple-500" />
+            </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-l-4 border-l-orange-500">
           <CardContent className="p-4">
-            <div className="text-2xl font-bold text-purple-600">{meta.patientCount}</div>
-            <div className="text-sm text-muted-foreground">Patients</div>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-2xl font-bold text-orange-600">{meta.patientCount}</div>
+                <div className="text-sm text-muted-foreground">Patients</div>
+              </div>
+              <Building2 className="h-8 w-8 text-orange-500" />
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Tabs for Users and Bulk Operations */}
+      {/* Search and Filter Bar */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input
+                placeholder="Search users by name or email..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="flex items-center gap-2">
+                  <Filter className="h-4 w-4" />
+                  Filter by Role
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={() => setFilterRole('all')}>
+                  All Roles
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setFilterRole('superAdmin')}>
+                  Super Admin
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setFilterRole('onboardingTeam')}>
+                  Onboarding Team
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setFilterRole('healthcareProvider')}>
+                  Healthcare Provider
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setFilterRole('patientCaregiver')}>
+                  Patient Caregiver
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Enhanced Tabs for Users and Bulk Operations */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="users">Users Management</TabsTrigger>
-          <TabsTrigger value="bulk" disabled={selectedUsers.length === 0}>
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="users" className="flex items-center gap-2">
+            <Users2 className="h-4 w-4" />
+            User Management
+          </TabsTrigger>
+          <TabsTrigger 
+            value="bulk" 
+            disabled={selectedUsers.length === 0}
+            className="flex items-center gap-2"
+          >
+            <Package className="h-4 w-4" />
             Bulk Actions {selectedUsers.length > 0 && `(${selectedUsers.length})`}
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="users" className="space-y-4">
-          {/* Users Table */}
+          {/* Enhanced Users Table */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
+                  <Users2 className="h-5 w-5" />
                   Users
-                  <Badge variant="outline">{users.length} total</Badge>
+                  <Badge variant="outline">{filteredUsers.length} found</Badge>
                 </div>
                 {selectedUsers.length > 0 && (
                   <div className="flex items-center gap-2">
@@ -225,7 +361,7 @@ export const UserManagementTable: React.FC = () => {
                       size="sm" 
                       onClick={() => setActiveTab('bulk')}
                     >
-                      Bulk Actions
+                      View Bulk Actions
                     </Button>
                   </div>
                 )}
@@ -235,7 +371,7 @@ export const UserManagementTable: React.FC = () => {
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse">
                   <thead>
-                    <tr className="border-b">
+                    <tr className="border-b bg-muted/50">
                       <th className="text-left p-4 font-medium w-12">
                         <Checkbox
                           checked={isAllSelected}
@@ -243,23 +379,22 @@ export const UserManagementTable: React.FC = () => {
                           onCheckedChange={handleSelectAll}
                         />
                       </th>
-                      <th className="text-left p-4 font-medium">Name</th>
-                      <th className="text-left p-4 font-medium">Email</th>
+                      <th className="text-left p-4 font-medium">User</th>
+                      <th className="text-left p-4 font-medium">Contact</th>
                       <th className="text-left p-4 font-medium">Roles</th>
                       <th className="text-left p-4 font-medium">Facility</th>
                       <th className="text-left p-4 font-medium">Status</th>
-                      <th className="text-left p-4 font-medium">Verified</th>
                       <th className="text-left p-4 font-medium">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {users.map((user) => {
+                    {filteredUsers.map((user) => {
                       const roles = getUserRoles(user);
                       const verified = isUserVerified(user);
                       const isSelected = selectedUsers.includes(user.id);
                       
                       return (
-                        <tr key={user.id} className="border-b hover:bg-muted/50">
+                        <tr key={user.id} className="border-b hover:bg-muted/25 transition-colors">
                           <td className="p-4">
                             <Checkbox
                               checked={isSelected}
@@ -267,17 +402,29 @@ export const UserManagementTable: React.FC = () => {
                             />
                           </td>
                           <td className="p-4">
-                            <div>
-                              <div className="font-medium">
-                                {user.first_name} {user.last_name}
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                                <span className="text-sm font-medium text-primary">
+                                  {user.first_name?.[0]}{user.last_name?.[0]}
+                                </span>
                               </div>
-                              <div className="text-sm text-muted-foreground">
-                                ID: {user.id.slice(0, 8)}...
+                              <div>
+                                <div className="font-medium">
+                                  {user.first_name} {user.last_name}
+                                </div>
+                                <div className="text-sm text-muted-foreground">
+                                  ID: {user.id.slice(0, 8)}...
+                                </div>
                               </div>
                             </div>
                           </td>
                           <td className="p-4">
-                            <div className="text-sm">{user.email}</div>
+                            <div>
+                              <div className="text-sm font-medium">{user.email}</div>
+                              {user.phone && (
+                                <div className="text-sm text-muted-foreground">{user.phone}</div>
+                              )}
+                            </div>
                           </td>
                           <td className="p-4">
                             <div className="flex flex-wrap gap-1">
@@ -306,27 +453,25 @@ export const UserManagementTable: React.FC = () => {
                             </div>
                           </td>
                           <td className="p-4">
-                            <Badge variant={user.created_at ? 'default' : 'secondary'}>
-                              {user.created_at ? 'Active' : 'Inactive'}
-                            </Badge>
-                          </td>
-                          <td className="p-4">
                             <div className="flex items-center gap-2">
                               {verified ? (
-                                <Check className="h-4 w-4 text-green-600" />
+                                <Badge variant="default" className="bg-green-100 text-green-800">
+                                  <Check className="h-3 w-3 mr-1" />
+                                  Verified
+                                </Badge>
                               ) : (
-                                <X className="h-4 w-4 text-red-600" />
+                                <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+                                  <X className="h-3 w-3 mr-1" />
+                                  Pending
+                                </Badge>
                               )}
-                              <span className="text-xs text-muted-foreground">
-                                {verified ? 'Verified' : 'Not Verified'}
-                              </span>
                             </div>
                           </td>
                           <td className="p-4">
                             <div className="flex items-center gap-1">
                               {/* Primary Actions */}
                               <Button
-                                variant="outline"
+                                variant="ghost"
                                 size="sm"
                                 onClick={() => handleViewUser(user)}
                                 className="h-8 w-8 p-0"
@@ -335,7 +480,7 @@ export const UserManagementTable: React.FC = () => {
                                 <Eye className="h-3 w-3" />
                               </Button>
                               <Button
-                                variant="outline"
+                                variant="ghost"
                                 size="sm"
                                 onClick={() => handleEditUser(user)}
                                 className="h-8 w-8 p-0"
@@ -348,7 +493,7 @@ export const UserManagementTable: React.FC = () => {
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                   <Button
-                                    variant="outline"
+                                    variant="ghost"
                                     size="sm"
                                     className="h-8 w-8 p-0"
                                   >
@@ -402,9 +547,16 @@ export const UserManagementTable: React.FC = () => {
                   </tbody>
                 </table>
                 
-                {users.length === 0 && (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No users found
+                {filteredUsers.length === 0 && (
+                  <div className="text-center py-12">
+                    <Users2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-muted-foreground">No users found</h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {searchQuery || filterRole !== 'all' 
+                        ? 'Try adjusting your search or filter criteria'
+                        : 'Get started by adding your first user'
+                      }
+                    </p>
                   </div>
                 )}
               </div>
@@ -413,22 +565,22 @@ export const UserManagementTable: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="bulk" className="space-y-4">
-          {/* Bulk Operations */}
+          {/* Enhanced Bulk Operations */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Users2 className="h-5 w-5" />
+                <Package className="h-5 w-5" />
                 Bulk Actions
                 <Badge variant="secondary">{selectedUsers.length} users selected</Badge>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 <Button
                   variant="outline"
                   onClick={handleBulkAssignRole}
                   disabled={selectedUsers.length === 0}
-                  className="flex items-center gap-2 h-20 flex-col"
+                  className="flex items-center gap-2 h-20 flex-col border-2 hover:border-primary"
                 >
                   <Shield className="h-6 w-6" />
                   <span className="text-sm">Assign Role</span>
@@ -438,7 +590,7 @@ export const UserManagementTable: React.FC = () => {
                   variant="outline"
                   onClick={handleBulkAssignModule}
                   disabled={selectedUsers.length === 0}
-                  className="flex items-center gap-2 h-20 flex-col"
+                  className="flex items-center gap-2 h-20 flex-col border-2 hover:border-primary"
                 >
                   <Package className="h-6 w-6" />
                   <span className="text-sm">Assign Module</span>
@@ -448,7 +600,7 @@ export const UserManagementTable: React.FC = () => {
                   variant="outline"
                   onClick={handleBulkAssignFacility}
                   disabled={selectedUsers.length === 0}
-                  className="flex items-center gap-2 h-20 flex-col"
+                  className="flex items-center gap-2 h-20 flex-col border-2 hover:border-primary"
                 >
                   <Building2 className="h-6 w-6" />
                   <span className="text-sm">Assign Facility</span>
@@ -458,7 +610,7 @@ export const UserManagementTable: React.FC = () => {
                   variant="outline"
                   onClick={handleBulkDeactivate}
                   disabled={selectedUsers.length === 0}
-                  className="flex items-center gap-2 h-20 flex-col text-orange-600 border-orange-200 hover:bg-orange-50"
+                  className="flex items-center gap-2 h-20 flex-col border-2 hover:border-destructive text-destructive"
                 >
                   <UserX className="h-6 w-6" />
                   <span className="text-sm">Deactivate</span>
@@ -466,14 +618,20 @@ export const UserManagementTable: React.FC = () => {
               </div>
               
               {selectedUsers.length > 0 && (
-                <div className="mt-6 p-4 bg-muted rounded-lg">
-                  <h4 className="font-medium mb-2">Selected Users:</h4>
-                  <div className="flex flex-wrap gap-2">
+                <div className="p-4 bg-muted rounded-lg">
+                  <h4 className="font-medium mb-3">Selected Users:</h4>
+                  <div className="flex flex-wrap gap-2 mb-4">
                     {selectedUsers.map(userId => {
-                      const user = users.find(u => u.id === userId);
+                      const user = filteredUsers.find(u => u.id === userId);
                       return user ? (
-                        <Badge key={userId} variant="secondary">
+                        <Badge key={userId} variant="secondary" className="flex items-center gap-1">
                           {user.first_name} {user.last_name}
+                          <button
+                            onClick={() => handleSelectUser(userId, false)}
+                            className="ml-1 hover:bg-destructive hover:text-destructive-foreground rounded-full p-0.5"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
                         </Badge>
                       ) : null;
                     })}
@@ -482,8 +640,9 @@ export const UserManagementTable: React.FC = () => {
                     variant="outline"
                     size="sm"
                     onClick={() => setSelectedUsers([])}
-                    className="mt-2"
+                    className="flex items-center gap-2"
                   >
+                    <X className="h-4 w-4" />
                     Clear Selection
                   </Button>
                 </div>

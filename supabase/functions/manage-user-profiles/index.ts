@@ -143,6 +143,9 @@ serve(async (req) => {
           facility_id: profile?.facility_id || null,
           created_at: authUser.created_at,
           updated_at: authUser.updated_at || profile?.updated_at,
+          // Add auth-related properties for verification status
+          email_confirmed_at: authUser.email_confirmed_at,
+          last_sign_in_at: authUser.last_sign_in_at,
           user_roles: userRolesList,
           facilities: userFacility
         }

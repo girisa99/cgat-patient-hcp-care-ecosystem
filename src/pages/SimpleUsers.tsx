@@ -2,7 +2,7 @@ import React from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { useRoleBasedNavigation } from '@/hooks/useRoleBasedNavigation';
 import { Card, CardContent } from '@/components/ui/card';
-import { UserManagementTable } from '@/components/users/UserManagementTable';
+import { EnhancedUserManagementTable } from '@/components/users/EnhancedUserManagementTable';
 
 const SimpleUsers: React.FC = () => {
   console.log('👥 Simple Users page rendering - START');
@@ -26,7 +26,7 @@ const SimpleUsers: React.FC = () => {
 
   return (
     <AppLayout title="User Management">
-      <UserManagementTable />
+      <EnhancedUserManagementTable />
     </AppLayout>
   );
 };
