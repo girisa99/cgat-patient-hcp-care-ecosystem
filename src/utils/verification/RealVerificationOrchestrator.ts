@@ -7,6 +7,7 @@
 
 import { RealDatabaseValidator, RealDatabaseValidationResult } from './RealDatabaseValidator';
 import { supabase } from '@/integrations/supabase/client';
+import type { Json } from '@/integrations/supabase/types';
 
 export interface RealSystemHealthResult {
   overallHealthScore: number;
@@ -29,7 +30,7 @@ export class RealVerificationOrchestrator {
   private static async logVerificationActivity(
     activityType: string,
     description: string,
-    metadata: Record<string, unknown> = {}
+    metadata: Json = {}
   ): Promise<void> {
     try {
       const { error } = await supabase.rpc('log_verification_activity', {
