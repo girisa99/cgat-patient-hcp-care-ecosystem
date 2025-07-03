@@ -93,79 +93,54 @@ export const useDatabaseAuth = (): DatabaseAuthContext => {
     const loadDatabaseProfile = async (userId: string) => {
       try {
         console.log('📋 Loading profile and roles for user:', userId);
+        console.log('🔍 TESTING: Starting immediate role query only...');
         
-        // Load profile data
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', userId)
-          .single();
+        // Test roles query directly
+        const { data: userRoleIds, error: rolesError } = await supabase
+          .from('user_roles')
+          .select('role_id')
+          .eq('user_id', userId);
+
+        console.log('🔍 IMMEDIATE TEST - User role IDs:', { userRoleIds, rolesError });
+
+        let roleNames: string[] = [];
         
-        if (profileError) {
-          console.warn('⚠️ Could not load database profile:', profileError);
+        if (userRoleIds && userRoleIds.length > 0 && !rolesError) {
+          console.log('🔍 Getting role names for IDs:', userRoleIds.map(ur => ur.role_id));
+          
+          const { data: rolesData, error: roleNamesError } = await supabase
+            .from('roles')
+            .select('name')
+            .in('id', userRoleIds.map(ur => ur.role_id));
+          
+          console.log('🔍 Role names result:', { rolesData, roleNamesError });
+          
+          if (rolesData && !roleNamesError) {
+            roleNames = rolesData.map(r => r.name);
+            console.log('✅ Successfully loaded roles:', roleNames);
+          }
         }
 
-        // Load user roles - use a simple direct approach
-        console.log('🔍 Starting role query...');
-        
-        try {
-          const { data: userRoleIds, error: rolesError } = await supabase
-            .from('user_roles')
-            .select('role_id')
-            .eq('user_id', userId);
+        if (mounted) {
+          // Set user roles array
+          setUserRoles(roleNames);
+          console.log('✅ Loaded user roles:', roleNames);
 
-          console.log('🔍 Step 1 - User role IDs:', { userRoleIds, rolesError });
-
-          let roleNames: string[] = [];
-          
-          if (userRoleIds && userRoleIds.length > 0 && !rolesError) {
-            console.log('🔍 Step 2 - Getting role names for IDs:', userRoleIds.map(ur => ur.role_id));
-            
-            const { data: rolesData, error: roleNamesError } = await supabase
-              .from('roles')
-              .select('name')
-              .in('id', userRoleIds.map(ur => ur.role_id));
-            
-            console.log('🔍 Step 3 - Role names result:', { rolesData, roleNamesError });
-            
-            if (rolesData && !roleNamesError) {
-              roleNames = rolesData.map(r => r.name);
-              console.log('✅ Successfully loaded roles:', roleNames);
-            } else {
-              console.error('❌ Failed to get role names:', roleNamesError);
-            }
-          } else {
-            console.warn('⚠️ No role IDs found or error:', rolesError);
-          }
-
-          console.log('📋 Final role names:', roleNames);
-
-          if (mounted) {
-            // Set user roles array
-            setUserRoles(roleNames);
-            console.log('✅ Loaded user roles:', roleNames);
-
-            // Set profile with primary role
-            const primaryRole = roleNames[0] as DatabaseUserRole || null;
-            
-            if (profileData) {
-              const dbProfile: DatabaseProfile = {
-                id: profileData.id,
-                first_name: profileData.first_name,
-                last_name: profileData.last_name,
-                email: profileData.email,
-                role: primaryRole, // Set the primary role
-                is_active: true,
-                facility_id: profileData.facility_id,
-                created_at: profileData.created_at,
-                updated_at: profileData.updated_at,
-              };
-              setProfile(dbProfile);
-              console.log('✅ Loaded profile with role:', primaryRole);
-            }
-          }
-        } catch (roleError) {
-          console.error('💥 Role loading error:', roleError);
+          // Create a minimal profile with just the user ID and primary role
+          const primaryRole = roleNames[0] as DatabaseUserRole || null;
+          const dbProfile: DatabaseProfile = {
+            id: userId,
+            first_name: null,
+            last_name: null,
+            email: null,
+            role: primaryRole,
+            is_active: true,
+            facility_id: null,
+            created_at: null,
+            updated_at: null,
+          };
+          setProfile(dbProfile);
+          console.log('✅ Set minimal profile with role:', primaryRole);
         }
       } catch (error) {
         console.error('💥 Database profile/roles load error:', error);
