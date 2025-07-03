@@ -24,7 +24,15 @@ export default tseslint.config(
         { allowConstantExport: true },
       ],
       "@typescript-eslint/no-unused-vars": "off",
-      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-explicit-any": ["warn", {"ignoreRestArgs": true}],
     },
+    overrides: [
+      {
+        files: ["src/hooks/**/*.{ts,tsx}"],
+        rules: {
+          "@typescript-eslint/no-explicit-any": "error"
+        }
+      }
+    ],
   }
 );
