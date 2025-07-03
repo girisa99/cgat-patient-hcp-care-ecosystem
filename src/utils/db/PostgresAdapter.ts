@@ -30,7 +30,7 @@ export class PostgresAdapter implements DatabaseAdapter {
     );
   }
 
-  async query<T = any>(sql: string, params: any[] = []): Promise<T[]> {
+  async query<T = Record<string, unknown>>(sql: string, params: unknown[] = []): Promise<T[]> {
     const client = await this.pool.connect();
     try {
       const { rows } = await client.query(sql, params);

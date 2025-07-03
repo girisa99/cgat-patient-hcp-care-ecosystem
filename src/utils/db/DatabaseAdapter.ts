@@ -7,9 +7,9 @@ export interface ColumnInfo {
 
 export interface TableInfo {
   columns: ColumnInfo[];
-  rls_policies: any[];
-  triggers: any[];
-  foreign_keys: any[];
+  rls_policies: unknown[];
+  triggers: unknown[];
+  foreign_keys: unknown[];
 }
 
 export interface DatabaseAdapter {
@@ -23,8 +23,8 @@ export interface DatabaseAdapter {
   getTableRowCount(table: string): Promise<number>;
 
   /** Execute arbitrary SQL and return rows */
-  query<T = any>(sql: string, params?: any[]): Promise<T[]>;
+  query<T = Record<string, unknown>>(sql: string, params?: unknown[]): Promise<T[]>;
 
   /** Custom error type for adapter operations */
-  readonly ErrorClass?: new (message: string, original?: any) => Error;
+  readonly ErrorClass?: new (message: string, original?: unknown) => Error;
 }
