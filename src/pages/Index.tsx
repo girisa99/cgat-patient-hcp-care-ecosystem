@@ -7,6 +7,7 @@ import { useRoleBasedNavigation } from '@/hooks/useRoleBasedNavigation';
 
 const Index: React.FC = () => {
   const { isAuthenticated, isLoading, signIn } = useAuthContext();
+  const { availableTabs, currentRole, isAdmin } = useRoleBasedNavigation();
 
   console.log('🏠 Index page - Auth state:', { isAuthenticated, isLoading });
 
@@ -31,21 +32,19 @@ const Index: React.FC = () => {
             <h1 className="text-2xl font-bold mb-4">Healthcare Management System</h1>
             <p className="text-gray-600 mb-6">Please sign in to continue</p>
             <button 
-              onClick={() => signIn('demo@example.com', 'demo123')}
+              onClick={() => signIn('superadmintest@geniecellgene.com', 'yourpassword')}
               className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700"
             >
-              Demo Sign In
+              Sign In as Super Admin
             </button>
             <p className="text-xs text-gray-500 mt-4">
-              This is a demo system. Click above to sign in with demo credentials.
+              Click above to sign in with your existing super admin account.
             </p>
           </CardContent>
         </Card>
       </div>
     );
   }
-
-  const { availableTabs, currentRole, isAdmin } = useRoleBasedNavigation();
 
   return (
     <AppLayout title="Healthcare Management Dashboard">
