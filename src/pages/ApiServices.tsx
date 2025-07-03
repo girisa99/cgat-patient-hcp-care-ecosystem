@@ -2,13 +2,13 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AppLayout from '@/components/layout/AppLayout';
 import { useRoleBasedNavigation } from '@/hooks/useRoleBasedNavigation';
-import { useApiServices } from '@/hooks/useApiServices';
+import { useMasterApiServices } from '@/hooks/useMasterApiServices';
 import { Badge } from '@/components/ui/badge';
 
 const ApiServices: React.FC = () => {
   console.log('🔗 API Services page rendering');
   const { currentRole, hasAccess } = useRoleBasedNavigation();
-  const { apiServices, isLoading, internalApis, externalApis, totalCount } = useApiServices();
+  const { apiServices, isLoading, internalApis, externalApis, totalCount } = useMasterApiServices();
 
   if (!hasAccess('/api-services')) {
     return (

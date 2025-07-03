@@ -1,13 +1,13 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AppLayout from '@/components/layout/AppLayout';
-import { useFacilities } from '@/hooks/useFacilities';
+import { useMasterFacilities } from '@/hooks/useMasterFacilities';
 import { useRoleBasedNavigation } from '@/hooks/useRoleBasedNavigation';
 import { Badge } from '@/components/ui/badge';
 
 const SimpleFacilities: React.FC = () => {
   console.log('🏢 Simple Facilities page rendering');
-  const { facilities, isLoading, error, getFacilityStats } = useFacilities();
+  const { facilities, isLoading, error, getFacilityStats } = useMasterFacilities();
   const { hasAccess, currentRole } = useRoleBasedNavigation();
 
   if (!hasAccess('/facilities')) {
@@ -44,13 +44,13 @@ const SimpleFacilities: React.FC = () => {
           </Card>
           <Card>
             <CardContent className="p-4">
-              <div className="text-2xl font-bold text-blue-600">{Object.keys(stats.typeBreakdown || {}).length}</div>
+              <div className="text-2xl font-bold text-blue-600">{Object.keys(stats.typeDistribution || {}).length}</div>
               <div className="text-sm text-muted-foreground">Facility Types</div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4">
-              <div className="text-2xl font-bold text-purple-600">{Object.keys(stats.byType || {}).length}</div>
+              <div className="text-2xl font-bold text-purple-600">{Object.keys(stats.typeDistribution || {}).length}</div>
               <div className="text-sm text-muted-foreground">Categories</div>
             </CardContent>
           </Card>

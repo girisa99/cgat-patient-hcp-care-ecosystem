@@ -2,18 +2,18 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AppLayout from '@/components/layout/AppLayout';
 import { useRoleBasedNavigation } from '@/hooks/useRoleBasedNavigation';
-import { useOnboarding } from '@/hooks/useOnboarding';
+import { useMasterOnboarding } from '@/hooks/useMasterOnboarding';
 import { Badge } from '@/components/ui/badge';
 
 const Onboarding: React.FC = () => {
   console.log('🚀 Onboarding page rendering');
   const { currentRole, hasAccess } = useRoleBasedNavigation();
-  const { onboardingWorkflows } = useOnboarding();
+  const { onboardingWorkflows } = useMasterOnboarding();
   
   // Mock data for display
-  const onboardingProgress = onboardingWorkflows.filter((w: any) => w.status === 'in_progress');
-  const pendingReviews = onboardingWorkflows.filter((w: any) => w.status === 'pending');
-  const completedOnboarding = onboardingWorkflows.filter((w: any) => w.status === 'completed');
+  const onboardingProgress = onboardingWorkflows.filter((w: any) => w.status === 'under_review');
+  const pendingReviews = onboardingWorkflows.filter((w: any) => w.status === 'submitted');
+  const completedOnboarding = onboardingWorkflows.filter((w: any) => w.status === 'approved');
 
   if (!hasAccess('/onboarding')) {
     return (

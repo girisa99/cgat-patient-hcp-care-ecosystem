@@ -2,13 +2,13 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AppLayout from '@/components/layout/AppLayout';
 import { useRoleBasedNavigation } from '@/hooks/useRoleBasedNavigation';
-import { useDataImport } from '@/hooks/useDataImport';
+import { useMasterDataImport } from '@/hooks/useMasterDataImport';
 import { Badge } from '@/components/ui/badge';
 
 const DataImport: React.FC = () => {
   console.log('📥 Data Import page rendering');
   const { currentRole, hasAccess } = useRoleBasedNavigation();
-  const { isLoading, importCSVData } = useDataImport();
+  const { isLoading, importCSVData } = useMasterDataImport();
   
   // Mock data for display
   const importHistory = [];

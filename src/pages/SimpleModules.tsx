@@ -1,13 +1,13 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AppLayout from '@/components/layout/AppLayout';
-import { useModules } from '@/hooks/useModules';
+import { useMasterModules } from '@/hooks/useMasterModules';
 import { useRoleBasedNavigation } from '@/hooks/useRoleBasedNavigation';
 import { Badge } from '@/components/ui/badge';
 
 const SimpleModules: React.FC = () => {
   console.log('📦 Simple Modules page rendering');
-  const { modules, isLoading, error, getModuleStats } = useModules();
+  const { modules, isLoading, error, getModuleStats } = useMasterModules();
   const { hasAccess, currentRole } = useRoleBasedNavigation();
 
   if (!hasAccess('/modules')) {
@@ -44,13 +44,13 @@ const SimpleModules: React.FC = () => {
           </Card>
           <Card>
             <CardContent className="p-4">
-              <div className="text-2xl font-bold text-blue-600">{stats.userAccessible}</div>
+              <div className="text-2xl font-bold text-blue-600">{stats.active}</div>
               <div className="text-sm text-muted-foreground">User Accessible</div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4">
-              <div className="text-2xl font-bold text-purple-600">{Object.keys(stats.byCategory || {}).length}</div>
+              <div className="text-2xl font-bold text-purple-600">{stats.inactive}</div>
               <div className="text-sm text-muted-foreground">Categories</div>
             </CardContent>
           </Card>
