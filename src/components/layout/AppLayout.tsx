@@ -1,6 +1,7 @@
 import React, { ReactNode } from 'react';
 import { useAuthContext } from '@/components/auth/CleanAuthProvider';
-import { RoleBasedNavigation, MobileRoleBasedNavigation } from '@/components/navigation/RoleBasedNavigation';
+import { AppSidebar } from '@/components/sidebar/AppSidebar';
+import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { Button } from '@/components/ui/button';
 
@@ -11,8 +12,8 @@ interface AppLayoutProps {
 }
 
 /**
- * CENTRAL APP LAYOUT
- * Single source for consistent page layout with role-based navigation
+ * CENTRAL APP LAYOUT WITH SIDEBAR
+ * Single source for consistent page layout with role-based sidebar navigation
  */
 export const AppLayout: React.FC<AppLayoutProps> = ({ 
   children, 
@@ -42,52 +43,45 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
     );
   }
 
-  // Authenticated layout with navigation
+  // Authenticated layout with sidebar
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              {title && <h1 className="text-2xl font-bold">{title}</h1>}
+    <SidebarProvider defaultOpen={true}>
+      <div className="min-h-screen flex w-full">
+        {/* Sidebar */}
+        {showNavigation && <AppSidebar />}
+        
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col">
+          {/* Header */}
+          <header className="border-b bg-card">
+            <div className="flex items-center justify-between px-4 py-3">
+              <div className="flex items-center gap-4">
+                {showNavigation && <SidebarTrigger />}
+                {title && <h1 className="text-xl font-semibold">{title}</h1>}
+              </div>
+              <div className="flex items-center gap-4">
+                <span className="text-sm text-muted-foreground hidden md:block">
+                  {user?.email}
+                </span>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => signOut()}
+                  className="md:hidden"
+                >
+                  Sign Out
+                </Button>
+              </div>
             </div>
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-muted-foreground">
-                {user?.email}
-              </span>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => signOut()}
-              >
-                Sign Out
-              </Button>
-            </div>
-          </div>
+          </header>
+
+          {/* Page Content */}
+          <main className="flex-1 p-6 overflow-auto">
+            {children}
+          </main>
         </div>
-      </header>
-
-      {/* Navigation */}
-      {showNavigation && (
-        <>
-          {/* Desktop Navigation */}
-          <div className="hidden md:block border-b bg-card">
-            <div className="container mx-auto px-4 py-2">
-              <RoleBasedNavigation />
-            </div>
-          </div>
-          
-          {/* Mobile Navigation */}
-          <MobileRoleBasedNavigation className="border-b bg-card" />
-        </>
-      )}
-
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
-        {children}
-      </main>
-    </div>
+      </div>
+    </SidebarProvider>
   );
 };
 
