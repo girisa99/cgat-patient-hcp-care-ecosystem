@@ -6,6 +6,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { useUnifiedUserManagement } from '@/hooks/useUnifiedUserManagement';
+import { useRoleMutations } from '@/hooks/mutations/useRoleMutations';
+import { useUserDeactivation } from '@/hooks/mutations/useUserDeactivation';
+import { useFacilityMutations } from '@/hooks/mutations/useFacilityMutations';
 import { 
   UserPlus, 
   Edit, 
@@ -49,6 +52,9 @@ import type { UserWithRoles } from '@/types/userManagement';
 export const ImprovedUserManagementTable: React.FC = () => {
   const { users, isLoading, error, meta } = useUnifiedUserManagement();
   const { toast } = useToast();
+  const { assignRole, removeRole, isAssigningRole, isRemovingRole } = useRoleMutations();
+  const { deactivateUser, isDeactivating } = useUserDeactivation();
+  const { assignFacility, isAssigningFacility } = useFacilityMutations();
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddUserDialog, setShowAddUserDialog] = useState(false);
@@ -127,18 +133,17 @@ export const ImprovedUserManagementTable: React.FC = () => {
     });
   };
 
-  const handleAssignRole = (user: UserWithRoles) => {
-    toast({
-      title: "Role Assignment",
-      description: `Opening role assignment for ${user.first_name} ${user.last_name}`,
+  const handleAssignRole = (user: UserWithRoles, role: string = 'onboardingTeam') => {
+    assignRole({ 
+      userId: user.id, 
+      roleName: role as any 
     });
   };
 
-  const handleRemoveRole = (user: UserWithRoles) => {
-    toast({
-      title: "Role Removal",
-      description: `Removing role from ${user.first_name} ${user.last_name}`,
-      variant: "destructive",
+  const handleRemoveRole = (user: UserWithRoles, role: string = 'onboardingTeam') => {
+    removeRole({ 
+      userId: user.id, 
+      roleName: role as any 
     });
   };
 
@@ -150,9 +155,11 @@ export const ImprovedUserManagementTable: React.FC = () => {
   };
 
   const handleAssignFacility = (user: UserWithRoles) => {
-    toast({
-      title: "Facility Assignment", 
-      description: `Assigning facility to ${user.first_name} ${user.last_name}`,
+    // For now, assign to a default facility - in a real app this would open a selector
+    assignFacility({ 
+      userId: user.id, 
+      facilityId: 'default', 
+      accessLevel: 'read' 
     });
   };
 
@@ -164,10 +171,9 @@ export const ImprovedUserManagementTable: React.FC = () => {
   };
 
   const handleDeactivateUser = (user: UserWithRoles) => {
-    toast({
-      title: "User Deactivated",
-      description: `${user.first_name} ${user.last_name} has been deactivated`,
-      variant: "destructive",
+    deactivateUser({ 
+      userId: user.id, 
+      reason: 'Administrative action' 
     });
   };
 
@@ -181,9 +187,8 @@ export const ImprovedUserManagementTable: React.FC = () => {
 
   // Bulk Actions
   const handleBulkAssignRole = () => {
-    toast({
-      title: "Bulk Role Assignment",
-      description: `Assigned roles to ${selectedUsers.length} users`,
+    selectedUsers.forEach(userId => {
+      assignRole({ userId, roleName: 'onboardingTeam' as any });
     });
     setSelectedUsers([]);
   };
@@ -197,18 +202,15 @@ export const ImprovedUserManagementTable: React.FC = () => {
   };
 
   const handleBulkAssignFacility = () => {
-    toast({
-      title: "Bulk Facility Assignment",
-      description: `Assigned facilities to ${selectedUsers.length} users`,
+    selectedUsers.forEach(userId => {
+      assignFacility({ userId, facilityId: 'default', accessLevel: 'read' });
     });
     setSelectedUsers([]);
   };
 
   const handleBulkDeactivate = () => {
-    toast({
-      title: "Bulk Deactivation",
-      description: `Deactivated ${selectedUsers.length} users`,
-      variant: "destructive",
+    selectedUsers.forEach(userId => {
+      deactivateUser({ userId, reason: 'Bulk administrative action' });
     });
     setSelectedUsers([]);
   };
@@ -411,7 +413,7 @@ export const ImprovedUserManagementTable: React.FC = () => {
         </TabsList>
 
         <TabsContent value="users">
-          {/* Users Table with Proper Heading */}
+          {/* Users Table with Proper Table Headings */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
@@ -438,16 +440,23 @@ export const ImprovedUserManagementTable: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
+                {/* Table Headers */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center p-4 bg-muted/30 rounded-lg font-semibold text-sm">
+                  <div className="flex items-center gap-3">
+                    <Checkbox
+                      checked={isAllSelected}
+                      indeterminate={isIndeterminate}
+                      onCheckedChange={handleSelectAll}
+                    />
+                    <span>User Information</span>
+                  </div>
+                  <div>Roles</div>
+                  <div>Status</div>
+                  <div className="text-right">Actions</div>
+                </div>
+
                 {/* Select All Header */}
                 <div className="flex items-center gap-3 pb-3 border-b">
-                  <Checkbox
-                    checked={isAllSelected}
-                    indeterminate={isIndeterminate}
-                    onCheckedChange={handleSelectAll}
-                  />
-                  <span className="text-sm font-medium">
-                    {isAllSelected ? 'Deselect all users' : 'Select all users'}
-                  </span>
                   {selectedUsers.length > 0 && (
                     <Badge variant="secondary">{selectedUsers.length} selected</Badge>
                   )}
@@ -527,11 +536,11 @@ export const ImprovedUserManagementTable: React.FC = () => {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="w-48">
-                                <DropdownMenuItem onClick={() => handleAssignRole(user)}>
+                                <DropdownMenuItem onClick={() => handleAssignRole(user, 'onboardingTeam')}>
                                   <Shield className="h-4 w-4 mr-2" />
                                   Assign Role
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleRemoveRole(user)}>
+                                <DropdownMenuItem onClick={() => handleRemoveRole(user, 'onboardingTeam')}>
                                   <UserX className="h-4 w-4 mr-2" />
                                   Remove Role
                                 </DropdownMenuItem>
@@ -599,13 +608,15 @@ export const ImprovedUserManagementTable: React.FC = () => {
                 <Button
                   variant="outline"
                   onClick={handleBulkAssignRole}
-                  disabled={selectedUsers.length === 0}
+                  disabled={selectedUsers.length === 0 || isAssigningRole}
                   className="flex items-center gap-3 h-16 justify-start text-left"
                 >
                   <Shield className="h-8 w-8 text-blue-500" />
                   <div>
                     <div className="font-medium">Assign Roles</div>
-                    <div className="text-sm text-muted-foreground">Assign roles to selected users</div>
+                    <div className="text-sm text-muted-foreground">
+                      {isAssigningRole ? 'Assigning...' : 'Assign roles to selected users'}
+                    </div>
                   </div>
                 </Button>
                 
@@ -625,26 +636,30 @@ export const ImprovedUserManagementTable: React.FC = () => {
                 <Button
                   variant="outline"
                   onClick={handleBulkAssignFacility}
-                  disabled={selectedUsers.length === 0}
+                  disabled={selectedUsers.length === 0 || isAssigningFacility}
                   className="flex items-center gap-3 h-16 justify-start text-left"
                 >
                   <Building2 className="h-8 w-8 text-purple-500" />
                   <div>
                     <div className="font-medium">Assign Facilities</div>
-                    <div className="text-sm text-muted-foreground">Assign facilities to selected users</div>
+                    <div className="text-sm text-muted-foreground">
+                      {isAssigningFacility ? 'Assigning...' : 'Assign facilities to selected users'}
+                    </div>
                   </div>
                 </Button>
                 
                 <Button
                   variant="outline"
                   onClick={handleBulkDeactivate}
-                  disabled={selectedUsers.length === 0}
+                  disabled={selectedUsers.length === 0 || isDeactivating}
                   className="flex items-center gap-3 h-16 justify-start text-left border-red-200 hover:bg-red-50"
                 >
                   <UserX className="h-8 w-8 text-red-500" />
                   <div>
                     <div className="font-medium text-red-600">Deactivate Users</div>
-                    <div className="text-sm text-muted-foreground">Deactivate selected users</div>
+                    <div className="text-sm text-muted-foreground">
+                      {isDeactivating ? 'Deactivating...' : 'Deactivate selected users'}
+                    </div>
                   </div>
                 </Button>
               </div>
