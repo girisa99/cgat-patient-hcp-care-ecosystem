@@ -4,7 +4,6 @@
  */
 
 export { useModuleData } from './useModuleData';
-export { useModulePermissions } from './useModulePermissions';
 export { useModuleMutations } from './useModuleMutations';
 
 // Re-export combined hook

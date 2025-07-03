@@ -8,6 +8,7 @@ import SimpleFacilities from "@/pages/SimpleFacilities";
 import SimpleModules from "@/pages/SimpleModules";
 import SimpleSecurity from "@/pages/SimpleSecurity";
 import ApiServices from "@/pages/ApiServices";
+import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -33,7 +34,7 @@ const App = () => {
             <Route path="/modules" element={<SimpleModules />} />
             <Route path="/api-services" element={<ApiServices />} />
             <Route path="/security" element={<SimpleSecurity />} />
-            <Route path="*" element={<Index />} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
       </CleanAuthProvider>
