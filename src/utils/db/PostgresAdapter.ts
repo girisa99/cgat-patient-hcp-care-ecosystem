@@ -1,5 +1,6 @@
 import { Pool } from 'pg';
 import { DatabaseAdapter, TableInfo, ColumnInfo } from './DatabaseAdapter';
+import { DatabaseError } from './DatabaseError';
 
 /**
  * PostgresAdapter
@@ -10,6 +11,7 @@ import { DatabaseAdapter, TableInfo, ColumnInfo } from './DatabaseAdapter';
  */
 export class PostgresAdapter implements DatabaseAdapter {
   private pool: Pool;
+  readonly ErrorClass = DatabaseError;
 
   constructor() {
     // Prefer DATABASE_URL for simplicity; fallback to individual vars.
@@ -33,6 +35,8 @@ export class PostgresAdapter implements DatabaseAdapter {
     try {
       const { rows } = await client.query(sql, params);
       return rows as T[];
+    } catch (err: any) {
+      throw new DatabaseError(err.message, err);
     } finally {
       client.release();
     }
