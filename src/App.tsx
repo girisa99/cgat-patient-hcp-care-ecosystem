@@ -19,6 +19,7 @@ import Testing from "@/pages/Testing";
 import DataImport from "@/pages/DataImport";
 import ActiveVerification from "@/pages/ActiveVerification";
 import SecurityDashboard from "@/components/security/SecurityDashboard";
+import ApiServices from "@/pages/ApiServices";
 import { navItems } from "@/nav-items";
 
 const queryClient = new QueryClient({
@@ -51,6 +52,7 @@ const App = () => {
                 <Route path="/patients" element={<Patients />} />
                 <Route path="/facilities" element={<FacilitiesManagement />} />
                 <Route path="/modules" element={<ModulesManagement />} />
+                <Route path="/api-services" element={<ApiServices />} />
                 
                 <Route path="/testing" element={<Testing />} />
                 <Route path="/data-import" element={<DataImport />} />
