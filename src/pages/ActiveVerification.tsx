@@ -1,22 +1,24 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle2, Activity, Shield, Database, Code } from 'lucide-react';
-import { useComprehensiveVerification } from '@/hooks/useComprehensiveVerification';
+import { useMasterVerification } from '@/hooks/useMasterVerification';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
 const ActiveVerification: React.FC = () => {
   const {
-    verificationResult,
-    hasResults,
+    activeIssues,
+    verificationSessions,
     healthScore,
+    verificationStats,
+    runVerification,
+    isRunningVerification,
+    hasResults,
+    verificationResult,
     criticalIssues,
     totalIssues,
-    isSystemStable,
-    runComprehensiveVerification,
-    isVerifying
-  } = useComprehensiveVerification();
+    isSystemStable
+  } = useMasterVerification();
 
   const getHealthScoreColor = (score: number) => {
     if (score >= 90) return 'text-green-600';
@@ -71,10 +73,10 @@ const ActiveVerification: React.FC = () => {
           </p>
         </div>
         <Button 
-          onClick={runComprehensiveVerification}
-          disabled={isVerifying}
+          onClick={() => runVerification('comprehensive')}
+          disabled={isRunningVerification}
         >
-          {isVerifying ? 'Running...' : 'Run Verification'}
+          {isRunningVerification ? 'Running...' : 'Run Verification'}
         </Button>
       </div>
 
@@ -221,8 +223,8 @@ const ActiveVerification: React.FC = () => {
           <CardContent className="p-8 text-center">
             <Activity className="h-12 w-12 mx-auto mb-4 text-gray-400" />
             <p className="text-gray-500 mb-4">No verification results available</p>
-            <Button onClick={runComprehensiveVerification} disabled={isVerifying}>
-              {isVerifying ? 'Running Verification...' : 'Run First Verification'}
+            <Button onClick={() => runVerification('comprehensive')} disabled={isRunningVerification}>
+              {isRunningVerification ? 'Running Verification...' : 'Run First Verification'}
             </Button>
           </CardContent>
         </Card>
