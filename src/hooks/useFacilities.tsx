@@ -20,21 +20,6 @@ export interface Facility {
   updated_at: string;
 }
 
-// Sync type with useRealFacilities hook (could be moved to a shared file)
-export interface Facility {
-  id: string;
-  name: string;
-  facility_type: string;
-  address?: string;
-  phone?: string;
-  email?: string;
-  license_number?: string;
-  npi_number?: string;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
 export const useFacilities = () => {
 <<<<<<< HEAD
   const { data: facilities, isLoading, error, refetch } = useFacilityData();
