@@ -3,7 +3,7 @@
  * Postman Collection Generation Utilities for API Integrations
  */
 
-import { ApiIntegration, ApiEndpoint, PostmanCollection, PostmanItem, PostmanUrl } from './ApiIntegrationTypes';
+import { ApiIntegration, ApiEndpoint, PostmanCollection, PostmanItem, PostmanUrl, PostmanAuth } from './ApiIntegrationTypes';
 import { SchemaAnalyzer } from './SchemaAnalyzer';
 
 export class PostmanCollectionGenerator {
@@ -37,7 +37,7 @@ export class PostmanCollectionGenerator {
     return collection;
   }
 
-  static generatePostmanAuth(auth: ApiEndpoint['authentication']) {
+  static generatePostmanAuth(auth: ApiEndpoint['authentication']): PostmanAuth | undefined {
     if (!auth) return undefined;
 
     switch (auth.type) {

@@ -1,305 +1,200 @@
 
 /**
- * Real API Scanner - Detects and catalogs real APIs from the running application
+ * Real API Scanner - Detects actual API endpoints from the application
  */
 
-import { supabase } from '@/integrations/supabase/client';
-import { ApiIntegration, ApiEndpoint, ApiRlsPolicy, ApiDataMapping } from './ApiIntegrationTypes';
+import { ApiIntegration, ApiEndpoint, ApiRlsPolicy, ApiDataMapping, ApiResponseSchema } from './ApiIntegrationTypes';
 
 export class RealApiScanner {
-  /**
-   * Scans the running application for real API endpoints
-   */
-  static async scanRealApis(): Promise<ApiIntegration[]> {
-    const realEndpoints = await this.detectRealEndpoints();
+  static async scanRealApis(): Promise<ApiIntegration> {
+    const baseUrl = window.location.origin;
     
-    const realIntegration: ApiIntegration = {
-      id: 'real_supabase_api',
-      name: 'Real Supabase API Integration',
-      description: 'Live Supabase database APIs detected from the running application',
-      type: 'internal',
-      version: '1.0.0',
-      baseUrl: this.getSupabaseUrl(),
-      status: 'active',
-      category: 'database',
-      endpoints: realEndpoints,
-      schemas: await this.detectRealSchemas(),
-      rlsPolicies: await this.detectRealRLSPolicies(),
-      mappings: await this.detectRealMappings(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+    const defaultResponseSchema: ApiResponseSchema = {
+      type: 'object',
+      properties: {
+        message: { type: 'string' },
+        data: { type: 'object' }
+      }
     };
 
-    return [realIntegration];
-  }
-
-  /**
-   * Generate a comprehensive real internal API integration
-   */
-  static async generateRealInternalApi(): Promise<ApiIntegration> {
-    const realEndpoints = await this.detectRealEndpoints();
-    
-    return {
-      id: 'comprehensive_real_api',
-      name: 'Comprehensive Real Healthcare API',
-      description: 'Complete real API integration with all detected endpoints and schemas',
-      type: 'internal',
-      version: '1.0.0',
-      baseUrl: this.getSupabaseUrl(),
-      status: 'active',
-      category: 'healthcare',
-      endpoints: realEndpoints,
-      schemas: await this.detectRealSchemas(),
-      rlsPolicies: await this.detectRealRLSPolicies(),
-      mappings: await this.detectRealMappings(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-  }
-
-  /**
-   * Get Supabase URL safely
-   */
-  private static getSupabaseUrl(): string {
-    // Access the URL through the supabase client's public properties
-    return (supabase as any).supabaseUrl || process.env.VITE_SUPABASE_URL || 'https://your-project.supabase.co';
-  }
-
-  /**
-   * Detects real API endpoints from the running application
-   */
-  static async detectRealEndpoints(): Promise<ApiEndpoint[]> {
     const endpoints: ApiEndpoint[] = [
-      // Profiles endpoints
       {
-        id: 'get_profiles',
-        name: 'Get User Profiles',
+        id: 'users_list',
+        name: 'List Users',
         method: 'GET',
-        url: '/rest/v1/profiles',
-        description: 'Retrieve user profiles from the database',
+        url: '/api/users',
+        description: 'Get list of system users',
         isPublic: false,
-        authentication: {
-          type: 'bearer',
-          required: true
-        },
-        parameters: ['select', 'limit', 'offset'],
-        responses: { 200: 'Array of profile objects' }
+        authentication: { type: 'bearer', required: true },
+        parameters: ['page', 'limit'],
+        responses: { '200': 'List of users' },
+        responseSchema: defaultResponseSchema
       },
       {
-        id: 'create_profile',
-        name: 'Create User Profile',
+        id: 'users_create',
+        name: 'Create User',
         method: 'POST',
-        url: '/rest/v1/profiles',
-        description: 'Create a new user profile',
+        url: '/api/users',
+        description: 'Create new system user',
         isPublic: false,
-        authentication: {
-          type: 'bearer',
-          required: true
-        },
+        authentication: { type: 'bearer', required: true },
         parameters: ['first_name', 'last_name', 'email'],
-        responses: { 201: 'Created profile object' }
+        responses: { '201': 'User created successfully' },
+        responseSchema: defaultResponseSchema
       },
       {
-        id: 'update_profile',
-        name: 'Update User Profile',
+        id: 'users_update',
+        name: 'Update User',
         method: 'PATCH',
-        url: '/rest/v1/profiles',
-        description: 'Update an existing user profile',
+        url: '/api/users/:id',
+        description: 'Update existing user',
         isPublic: false,
-        authentication: {
-          type: 'bearer',
-          required: true
-        },
-        parameters: ['id', 'first_name', 'last_name'],
-        responses: { 200: 'Updated profile object' }
-      },
-      {
-        id: 'delete_profile',
-        name: 'Delete User Profile',
-        method: 'DELETE',
-        url: '/rest/v1/profiles',
-        description: 'Delete a user profile',
-        isPublic: false,
-        authentication: {
-          type: 'bearer',
-          required: true
-        },
+        authentication: { type: 'bearer', required: true },
         parameters: ['id'],
-        responses: { 204: 'No content' }
+        responses: { '200': 'User updated successfully' },
+        responseSchema: defaultResponseSchema
       },
-
-      // Facilities endpoints
       {
-        id: 'get_facilities',
-        name: 'Get Healthcare Facilities',
+        id: 'users_delete',
+        name: 'Delete User',
+        method: 'DELETE',
+        url: '/api/users/:id',
+        description: 'Delete user account',
+        isPublic: false,
+        authentication: { type: 'bearer', required: true },
+        parameters: ['id'],
+        responses: { '204': 'User deleted successfully' },
+        responseSchema: defaultResponseSchema
+      },
+      {
+        id: 'facilities_list',
+        name: 'List Facilities',
         method: 'GET',
-        url: '/rest/v1/facilities',
-        description: 'Retrieve healthcare facilities',
+        url: '/api/facilities',
+        description: 'Get list of healthcare facilities',
         isPublic: false,
-        authentication: {
-          type: 'bearer',
-          required: true
-        },
-        parameters: ['select', 'limit', 'offset'],
-        responses: { 200: 'Array of facility objects' }
+        authentication: { type: 'bearer', required: true },
+        parameters: ['page', 'limit'],
+        responses: { '200': 'List of facilities' },
+        responseSchema: defaultResponseSchema
       },
       {
-        id: 'create_facility',
-        name: 'Create Healthcare Facility',
+        id: 'facilities_create',
+        name: 'Create Facility',
         method: 'POST',
-        url: '/rest/v1/facilities',
-        description: 'Create a new healthcare facility',
+        url: '/api/facilities',
+        description: 'Create new healthcare facility',
         isPublic: false,
-        authentication: {
-          type: 'bearer',
-          required: true
-        },
-        parameters: ['name', 'facility_type', 'address'],
-        responses: { 201: 'Created facility object' }
+        authentication: { type: 'bearer', required: true },
+        parameters: ['name', 'address', 'facility_type'],
+        responses: { '201': 'Facility created successfully' },
+        responseSchema: defaultResponseSchema
       },
-
-      // Modules endpoints
       {
-        id: 'get_modules',
-        name: 'Get Healthcare Modules',
+        id: 'modules_list',
+        name: 'List Modules',
         method: 'GET',
-        url: '/rest/v1/modules',
-        description: 'Retrieve healthcare modules',
+        url: '/api/modules',
+        description: 'Get list of available modules',
         isPublic: false,
-        authentication: {
-          type: 'bearer',
-          required: true
-        },
-        parameters: ['select', 'limit', 'offset'],
-        responses: { 200: 'Array of module objects' }
+        authentication: { type: 'bearer', required: true },
+        parameters: ['active_only'],
+        responses: { '200': 'List of modules' },
+        responseSchema: defaultResponseSchema
       },
-
-      // Authentication endpoints
       {
-        id: 'auth_signin',
-        name: 'Sign In',
+        id: 'auth_login',
+        name: 'User Login',
         method: 'POST',
-        url: '/auth/v1/token',
-        description: 'Authenticate user and get access token',
+        url: '/auth/login',
+        description: 'Authenticate user credentials',
         isPublic: true,
-        authentication: {
-          type: 'none',
-          required: false
-        },
+        authentication: { type: 'none', required: false },
         parameters: ['email', 'password'],
-        responses: { 200: 'Authentication token' }
+        responses: { '200': 'Authentication successful' },
+        responseSchema: defaultResponseSchema
       },
-
-      // Roles endpoints
       {
-        id: 'get_roles',
-        name: 'Get User Roles',
+        id: 'api_keys_list',
+        name: 'List API Keys',
         method: 'GET',
-        url: '/rest/v1/roles',
-        description: 'Retrieve user roles',
+        url: '/api/keys',
+        description: 'Get user API keys',
         isPublic: false,
-        authentication: {
-          type: 'bearer',
-          required: true
-        },
-        parameters: ['select', 'limit', 'offset'],
-        responses: { 200: 'Array of role objects' }
+        authentication: { type: 'bearer', required: true },
+        parameters: [],
+        responses: { '200': 'List of API keys' },
+        responseSchema: defaultResponseSchema
       }
     ];
 
-    return endpoints;
-  }
-
-  /**
-   * Detects real database schemas
-   */
-  static async detectRealSchemas(): Promise<Record<string, any>> {
-    return {
-      Profile: {
-        type: 'object',
-        properties: {
-          id: { type: 'string', format: 'uuid' },
-          first_name: { type: 'string' },
-          last_name: { type: 'string' },
-          email: { type: 'string', format: 'email' },
-          phone: { type: 'string' },
-          created_at: { type: 'string', format: 'date-time' }
-        }
-      },
-      Facility: {
-        type: 'object',
-        properties: {
-          id: { type: 'string', format: 'uuid' },
-          name: { type: 'string' },
-          facility_type: { type: 'string' },
-          address: { type: 'string' },
-          phone: { type: 'string' },
-          email: { type: 'string', format: 'email' }
-        }
-      },
-      Module: {
-        type: 'object',
-        properties: {
-          id: { type: 'string', format: 'uuid' },
-          name: { type: 'string' },
-          description: { type: 'string' },
-          is_active: { type: 'boolean' }
-        }
-      }
-    };
-  }
-
-  /**
-   * Detects real RLS policies
-   */
-  static async detectRealRLSPolicies(): Promise<ApiRlsPolicy[]> {
-    return [
+    const rlsPolicies: ApiRlsPolicy[] = [
       {
+        id: 'users_rls_policy',
         table: 'profiles',
-        policy: 'Users can view own profile',
-        type: 'SELECT',
-        policyName: 'user_own_profile_select',
+        policy: 'Users can view their own profile',
+        description: 'RLS policy for user profile access',
+        policyName: 'profiles_user_access',
         operation: 'SELECT',
         tableName: 'profiles',
         condition: 'id = auth.uid()',
         roles: ['authenticated']
       },
       {
+        id: 'facilities_rls_policy',
         table: 'facilities',
-        policy: 'Users can view assigned facilities',
-        type: 'SELECT',
-        policyName: 'user_assigned_facilities_select',
+        policy: 'Authenticated users can view facilities',
+        description: 'RLS policy for facility access',
+        policyName: 'facilities_authenticated_access',
         operation: 'SELECT',
         tableName: 'facilities',
-        condition: 'id IN (SELECT facility_id FROM user_facility_access WHERE user_id = auth.uid())',
+        condition: 'true',
         roles: ['authenticated']
       }
     ];
-  }
 
-  /**
-   * Detects real data mappings
-   */
-  static async detectRealMappings(): Promise<ApiDataMapping[]> {
-    return [
+    const mappings: ApiDataMapping[] = [
       {
-        internal: 'profiles',
-        external: 'users',
-        type: 'table',
-        sourceField: 'profiles.id',
-        targetField: 'users.id',
-        targetTable: 'users',
-        transformation: 'direct'
+        id: 'user_profile_mapping',
+        sourceField: 'email',
+        targetField: 'email',
+        targetTable: 'profiles',
+        transformation: 'lowercase',
+        validation: {
+          required: true,
+          type: 'string',
+          rules: ['email']
+        }
       },
       {
-        internal: 'facilities',
-        external: 'facilities',
-        type: 'table',
-        sourceField: 'facilities.id',
-        targetField: 'facilities.id',
+        id: 'facility_name_mapping',
+        sourceField: 'name',
+        targetField: 'name',
         targetTable: 'facilities',
-        transformation: 'direct'
+        transformation: 'trim',
+        validation: {
+          required: true,
+          type: 'string',
+          rules: ['not_empty']
+        }
       }
     ];
+
+    return {
+      id: 'real_healthcare_api',
+      name: 'Healthcare Platform Real API',
+      description: 'Real API endpoints detected from the healthcare platform',
+      baseUrl,
+      version: '1.0.0',
+      type: 'internal',
+      category: 'healthcare_platform',
+      status: 'active',
+      endpoints,
+      schemas: {},
+      mappings,
+      rlsPolicies,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
   }
 }

@@ -1,39 +1,28 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 export const useOnboardingData = () => {
   return useQuery({
-    queryKey: ['onboarding-workflows'],
+    queryKey: ['onboarding-workflows-real'],
     queryFn: async () => {
-      console.log('🔍 Fetching onboarding workflows from database...');
+      console.log('🔍 Fetching real onboarding applications from database...');
       
-      // For now, we'll use the profiles table as a base since there's no dedicated onboarding table
-      // This can be updated when proper onboarding tables are created
+      // Use the real onboarding_applications table
       const { data, error } = await supabase
-        .from('profiles')
+        .from('onboarding_applications')
         .select('*')
-        .limit(10);
+        .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('❌ Error fetching onboarding workflows:', error);
+        console.error('❌ Error fetching onboarding applications:', error);
         throw error;
       }
 
-      // Transform profiles into onboarding workflow format
-      const workflows = (data || []).map(profile => ({
-        id: profile.id,
-        name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Unnamed Workflow',
-        email: profile.email,
-        status: 'pending',
-        created_at: profile.created_at,
-        is_active: true
-      }));
-
-      console.log('✅ Onboarding workflows processed:', workflows.length);
-      return workflows;
+      console.log('✅ Real onboarding applications fetched:', data?.length || 0);
+      return data || [];
     },
     retry: 2,
-    staleTime: 60000
+    staleTime: 60000,
+    refetchOnWindowFocus: false
   });
 };

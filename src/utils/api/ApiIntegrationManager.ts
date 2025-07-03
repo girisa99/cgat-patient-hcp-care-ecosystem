@@ -4,7 +4,7 @@
  * Centralized management for all API integrations
  */
 
-import { ApiIntegration } from './ApiIntegrationTypes';
+import { ApiIntegration, ApiBodySchema, ApiResponseSchema } from './ApiIntegrationTypes';
 import { InternalApiDetector } from './InternalApiDetector';
 import { PostmanCollectionGenerator } from './PostmanCollectionGenerator';
 
