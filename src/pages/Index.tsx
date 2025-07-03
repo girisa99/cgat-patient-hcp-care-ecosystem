@@ -1,10 +1,6 @@
-
 import React from 'react';
 import { useAuthContext } from '@/components/auth/CleanAuthProvider';
-import { UnifiedPageWrapper } from '@/components/layout/UnifiedPageWrapper';
-import UnifiedDashboard from '@/components/dashboard/UnifiedDashboard';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const Index: React.FC = () => {
   const { isAuthenticated, isLoading, signIn } = useAuthContext();
@@ -31,12 +27,12 @@ const Index: React.FC = () => {
           <CardContent className="p-8 text-center">
             <h1 className="text-2xl font-bold mb-4">Healthcare Management System</h1>
             <p className="text-gray-600 mb-6">Please sign in to continue</p>
-            <Button 
+            <button 
               onClick={() => signIn('demo@example.com', 'demo123')}
-              className="w-full"
+              className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700"
             >
               Demo Sign In
-            </Button>
+            </button>
             <p className="text-xs text-gray-500 mt-4">
               This is a demo system. Click above to sign in with demo credentials.
             </p>
@@ -47,14 +43,67 @@ const Index: React.FC = () => {
   }
 
   return (
-    <UnifiedPageWrapper
-      title="Healthcare Management Dashboard"
-      subtitle="Unified system overview with consolidated data sources"
-      fluid
-      showSystemStatus={true}
-    >
-      <UnifiedDashboard />
-    </UnifiedPageWrapper>
+    <div className="min-h-screen bg-gray-50 p-8">
+      <div className="max-w-6xl mx-auto">
+        <h1 className="text-3xl font-bold mb-8">Healthcare Management Dashboard</h1>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>Users</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <a href="/users" className="text-blue-600 hover:underline">Manage Users</a>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Patients</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <a href="/patients" className="text-blue-600 hover:underline">Manage Patients</a>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Facilities</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <a href="/facilities" className="text-blue-600 hover:underline">Manage Facilities</a>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Modules</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <a href="/modules" className="text-blue-600 hover:underline">Manage Modules</a>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>API Services</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <a href="/api-services" className="text-blue-600 hover:underline">Manage APIs</a>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Security</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <a href="/security" className="text-blue-600 hover:underline">Security Dashboard</a>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
   );
 };
 

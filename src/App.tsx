@@ -1,26 +1,13 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { CleanAuthProvider } from "@/components/auth/CleanAuthProvider";
-import MainLayout from "@/components/layout/MainLayout";
-import UnifiedDashboard from "@/components/dashboard/UnifiedDashboard";
-import Users from "@/pages/Users";
-import Patients from "@/pages/Patients";
-import { ModulesManagement } from "@/components/modules/ModulesManagement";
-import { FacilitiesManagement } from "@/components/facilities/FacilitiesManagement";
-import OnboardingDashboard from "@/pages/OnboardingDashboard";
-import Onboarding from "@/pages/Onboarding";
-import CollaborativeOnboarding from "@/pages/CollaborativeOnboarding";
-import TreatmentCenterOnboarding from "@/pages/TreatmentCenterOnboarding";
-
-import Testing from "@/pages/Testing";
-import DataImport from "@/pages/DataImport";
-import ActiveVerification from "@/pages/ActiveVerification";
-import SecurityDashboard from "@/components/security/SecurityDashboard";
+import Index from "@/pages/Index";
+import SimpleUsers from "@/pages/SimpleUsers";
+import SimplePatients from "@/pages/SimplePatients";
+import SimpleFacilities from "@/pages/SimpleFacilities";
+import SimpleModules from "@/pages/SimpleModules";
+import SimpleSecurity from "@/pages/SimpleSecurity";
 import ApiServices from "@/pages/ApiServices";
-import { navItems } from "@/nav-items";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -32,46 +19,23 @@ const queryClient = new QueryClient({
 });
 
 const App = () => {
-  console.log('🚀 App component rendering with navigation routes:', navItems.length);
+  console.log('🚀 App rendering - minimal version');
   
   return (
     <QueryClientProvider client={queryClient}>
       <CleanAuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <MainLayout>
-              <Routes>
-                {/* Dashboard */}
-                <Route path="/" element={<UnifiedDashboard />} />
-                <Route path="/dashboard" element={<UnifiedDashboard />} />
-                
-                {/* Core Pages - SINGLE SOURCE OF TRUTH */}
-                <Route path="/users" element={<Users />} />
-                <Route path="/patients" element={<Patients />} />
-                <Route path="/facilities" element={<FacilitiesManagement />} />
-                <Route path="/modules" element={<ModulesManagement />} />
-                <Route path="/api-services" element={<ApiServices />} />
-                
-                <Route path="/testing" element={<Testing />} />
-                <Route path="/data-import" element={<DataImport />} />
-                <Route path="/active-verification" element={<ActiveVerification />} />
-                <Route path="/security" element={<SecurityDashboard />} />
-                
-                {/* Comprehensive Onboarding Suite */}
-                <Route path="/onboarding" element={<OnboardingDashboard />} />
-                <Route path="/onboarding/dashboard" element={<OnboardingDashboard />} />
-                <Route path="/onboarding/management" element={<Onboarding />} />
-                <Route path="/onboarding/collaborative/:applicationId?" element={<CollaborativeOnboarding />} />
-                <Route path="/onboarding/treatment-center" element={<TreatmentCenterOnboarding />} />
-                
-                {/* Fallback route */}
-                <Route path="*" element={<UnifiedDashboard />} />
-              </Routes>
-            </MainLayout>
-          </BrowserRouter>
-        </TooltipProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/users" element={<SimpleUsers />} />
+            <Route path="/patients" element={<SimplePatients />} />
+            <Route path="/facilities" element={<SimpleFacilities />} />
+            <Route path="/modules" element={<SimpleModules />} />
+            <Route path="/api-services" element={<ApiServices />} />
+            <Route path="/security" element={<SimpleSecurity />} />
+            <Route path="*" element={<Index />} />
+          </Routes>
+        </BrowserRouter>
       </CleanAuthProvider>
     </QueryClientProvider>
   );
