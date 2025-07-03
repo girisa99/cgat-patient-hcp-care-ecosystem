@@ -1,13 +1,13 @@
-
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Settings, X } from 'lucide-react';
+import { ApiSummary } from '@/types/api';
 
 interface ExternalApiConfigDialogProps {
-  api: any;
+  api: ApiSummary | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }

@@ -1,20 +1,20 @@
-
 import React, { useState } from 'react';
+import { ApiSummary } from '@/types/api';
 import ExternalApiConfigDialog from './ExternalApiConfigDialog';
 import ExternalApiAnalyticsDialog from './ExternalApiAnalyticsDialog';
 
 export const useApiDialogManager = () => {
   const [showConfigDialog, setShowConfigDialog] = useState<boolean>(false);
   const [showAnalyticsDialog, setShowAnalyticsDialog] = useState<boolean>(false);
-  const [configApi, setConfigApi] = useState<any>(null);
-  const [analyticsApi, setAnalyticsApi] = useState<any>(null);
+  const [configApi, setConfigApi] = useState<ApiSummary | null>(null);
+  const [analyticsApi, setAnalyticsApi] = useState<ApiSummary | null>(null);
 
-  const handleConfigureApi = (api: any) => {
+  const handleConfigureApi = (api: ApiSummary) => {
     setConfigApi(api);
     setShowConfigDialog(true);
   };
 
-  const handleViewAnalytics = (api: any) => {
+  const handleViewAnalytics = (api: ApiSummary) => {
     setAnalyticsApi(api);
     setShowAnalyticsDialog(true);
   };
