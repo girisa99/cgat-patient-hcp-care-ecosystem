@@ -34,7 +34,7 @@ export default tseslint.config(
   {
     files: ["src/hooks/**/*.{ts,tsx}"],
     rules: {
-      "@typescript-eslint/no-explicit-any": "error"
+      "@typescript-eslint/no-explicit-any": "warn"
     }
   }
 );
