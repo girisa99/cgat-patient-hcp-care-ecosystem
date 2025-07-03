@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { useUnifiedUserManagement } from '@/hooks/useUnifiedUserManagement';
+import { useQueryClient } from '@tanstack/react-query';
 import { useRoleMutations } from '@/hooks/mutations/useRoleMutations';
 import { useUserDeactivation } from '@/hooks/mutations/useUserDeactivation';
 import { useFacilityMutations } from '@/hooks/mutations/useFacilityMutations';
@@ -49,18 +50,23 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import type { UserWithRoles } from '@/types/userManagement';
+import { UserActionDialogs } from './UserActionDialogs';
 
 export const ImprovedUserManagementTable: React.FC = () => {
-  const { users, isLoading, error, meta, createUser, isCreatingUser } = useUnifiedUserManagement();
+  const { users, isLoading, error, meta, createUser, isCreatingUser, refetch } = useUnifiedUserManagement();
   const { toast } = useToast();
   const { assignRole, removeRole, isAssigningRole, isRemovingRole } = useRoleMutations();
   const { deactivateUser, isDeactivating } = useUserDeactivation();
   const { assignFacility, isAssigningFacility } = useFacilityMutations();
+  const queryClient = useQueryClient();
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddUserDialog, setShowAddUserDialog] = useState(false);
   const [showViewUserDialog, setShowViewUserDialog] = useState(false);
   const [showEditUserDialog, setShowEditUserDialog] = useState(false);
+  const [showRoleDialog, setShowRoleDialog] = useState(false);
+  const [showFacilityDialog, setShowFacilityDialog] = useState(false);
+  const [showDeactivateDialog, setShowDeactivateDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserWithRoles | null>(null);
   const [activeTab, setActiveTab] = useState('users');
   
@@ -144,17 +150,31 @@ export const ImprovedUserManagementTable: React.FC = () => {
     setShowEditUserDialog(true);
   };
 
-  const handleAssignRole = (user: UserWithRoles, role: string = 'onboardingTeam') => {
-    assignRole({ 
-      userId: user.id, 
-      roleName: role as any 
-    });
+  const handleAssignRole = (user: UserWithRoles) => {
+    setSelectedUser(user);
+    setShowRoleDialog(true);
   };
 
-  const handleRemoveRole = (user: UserWithRoles, role: string = 'onboardingTeam') => {
-    removeRole({ 
-      userId: user.id, 
-      roleName: role as any 
+  const handleRemoveRole = (user: UserWithRoles) => {
+    setSelectedUser(user);
+    setShowRoleDialog(true);
+  };
+
+  const handleAssignFacility = (user: UserWithRoles) => {
+    setSelectedUser(user);
+    setShowFacilityDialog(true);
+  };
+
+  const handleDeactivateUser = (user: UserWithRoles) => {
+    setSelectedUser(user);
+    setShowDeactivateDialog(true);
+  };
+
+  const handleDeleteUser = (user: UserWithRoles) => {
+    toast({
+      title: "Delete User", 
+      description: `Delete functionality for ${user.first_name} ${user.last_name} - Feature coming soon`,
+      variant: "destructive",
     });
   };
 
@@ -167,20 +187,11 @@ export const ImprovedUserManagementTable: React.FC = () => {
     });
   };
 
-  const handleAssignFacility = (user: UserWithRoles) => {
-    // For now, assign to a default facility - in a real app this would open a selector
-    assignFacility({ 
-      userId: user.id, 
-      facilityId: 'default', 
-      accessLevel: 'read' 
-    });
-  };
-
   const handleResendEmail = async (user: UserWithRoles) => {
     console.log('📧 Resending verification email to:', user.email);
     try {
       const { error } = await supabase.auth.resend({
-        type: 'email_change',
+        type: 'signup',
         email: user.email,
       });
       
@@ -197,21 +208,6 @@ export const ImprovedUserManagementTable: React.FC = () => {
         variant: "destructive",
       });
     }
-  };
-
-  const handleDeactivateUser = (user: UserWithRoles) => {
-    deactivateUser({ 
-      userId: user.id, 
-      reason: 'Administrative action' 
-    });
-  };
-
-  const handleDeleteUser = (user: UserWithRoles) => {
-    toast({
-      title: "User Deleted", 
-      description: `${user.first_name} ${user.last_name} has been permanently deleted`,
-      variant: "destructive",
-    });
   };
 
   // Bulk Actions
@@ -565,11 +561,11 @@ export const ImprovedUserManagementTable: React.FC = () => {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="w-48">
-                                <DropdownMenuItem onClick={() => handleAssignRole(user, 'onboardingTeam')}>
+                                <DropdownMenuItem onClick={() => handleAssignRole(user)}>
                                   <Shield className="h-4 w-4 mr-2" />
                                   Assign Role
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleRemoveRole(user, 'onboardingTeam')}>
+                                <DropdownMenuItem onClick={() => handleRemoveRole(user)}>
                                   <UserX className="h-4 w-4 mr-2" />
                                   Remove Role
                                 </DropdownMenuItem>
@@ -728,160 +724,26 @@ export const ImprovedUserManagementTable: React.FC = () => {
         </TabsContent>
       </Tabs>
 
-      {/* View User Dialog */}
-      <Dialog open={showViewUserDialog} onOpenChange={setShowViewUserDialog}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>User Profile Details</DialogTitle>
-            <DialogDescription>
-              View detailed information for {selectedUser?.first_name} {selectedUser?.last_name}
-            </DialogDescription>
-          </DialogHeader>
-          {selectedUser && (
-            <div className="space-y-6 py-4">
-              <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <h4 className="font-semibold text-sm text-muted-foreground mb-2">Personal Information</h4>
-                  <div className="space-y-2">
-                    <div>
-                      <span className="text-sm font-medium">Name:</span>
-                      <p className="text-sm">{selectedUser.first_name} {selectedUser.last_name}</p>
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium">Email:</span>
-                      <p className="text-sm">{selectedUser.email}</p>
-                    </div>
-                    {selectedUser.phone && (
-                      <div>
-                        <span className="text-sm font-medium">Phone:</span>
-                        <p className="text-sm">{selectedUser.phone}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-sm text-muted-foreground mb-2">Account Information</h4>
-                  <div className="space-y-2">
-                    <div>
-                      <span className="text-sm font-medium">Status:</span>
-                      <div className="mt-1">
-                        {isUserVerified(selectedUser) ? (
-                          <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
-                            <Check className="h-3 w-3 mr-1" />
-                            Verified
-                          </Badge>
-                        ) : (
-                          <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 border-yellow-200">
-                            <X className="h-3 w-3 mr-1" />
-                            Pending Verification
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium">User ID:</span>
-                      <p className="text-xs font-mono text-muted-foreground">{selectedUser.id}</p>
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium">Created:</span>
-                      <p className="text-sm">{new Date(selectedUser.created_at).toLocaleDateString()}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div>
-                <h4 className="font-semibold text-sm text-muted-foreground mb-2">Roles & Permissions</h4>
-                <div className="flex gap-2 flex-wrap">
-                  {getUserRoles(selectedUser).length > 0 ? (
-                    getUserRoles(selectedUser).map((role) => (
-                      <Badge key={role} variant="secondary">
-                        {role}
-                      </Badge>
-                    ))
-                  ) : (
-                    <Badge variant="outline">No roles assigned</Badge>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit User Dialog */}
-      <Dialog open={showEditUserDialog} onOpenChange={setShowEditUserDialog}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Edit User Details</DialogTitle>
-            <DialogDescription>
-              Update information for {selectedUser?.first_name} {selectedUser?.last_name}
-            </DialogDescription>
-          </DialogHeader>
-          {selectedUser && (
-            <div className="space-y-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium">First Name</label>
-                  <Input 
-                    defaultValue={selectedUser.first_name}
-                    placeholder="Enter first name"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Last Name</label>
-                  <Input 
-                    defaultValue={selectedUser.last_name}
-                    placeholder="Enter last name"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="text-sm font-medium">Email Address</label>
-                <Input 
-                  defaultValue={selectedUser.email}
-                  placeholder="Enter email address"
-                  type="email"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Phone Number</label>
-                <Input 
-                  defaultValue={selectedUser.phone || ''}
-                  placeholder="Enter phone number"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Current Roles</label>
-                <div className="flex gap-2 flex-wrap p-3 bg-muted/30 rounded-md min-h-[40px]">
-                  {getUserRoles(selectedUser).length > 0 ? (
-                    getUserRoles(selectedUser).map((role) => (
-                      <Badge key={role} variant="secondary">
-                        {role}
-                      </Badge>
-                    ))
-                  ) : (
-                    <span className="text-sm text-muted-foreground">No roles assigned</span>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-          <div className="flex gap-3">
-            <Button variant="outline" onClick={() => setShowEditUserDialog(false)} className="flex-1">
-              Cancel
-            </Button>
-            <Button onClick={() => {
-              toast({
-                title: "Feature Coming Soon",
-                description: "User editing functionality will be implemented soon",
-              });
-              setShowEditUserDialog(false);
-            }} className="flex-1">
-              Save Changes
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* User Action Dialogs */}
+      <UserActionDialogs
+        selectedUser={selectedUser}
+        showViewDialog={showViewUserDialog}
+        showEditDialog={showEditUserDialog}
+        showRoleDialog={showRoleDialog}
+        showFacilityDialog={showFacilityDialog}
+        showDeactivateDialog={showDeactivateDialog}
+        onCloseView={() => setShowViewUserDialog(false)}
+        onCloseEdit={() => setShowEditUserDialog(false)}
+        onCloseRole={() => setShowRoleDialog(false)}
+        onCloseFacility={() => setShowFacilityDialog(false)}
+        onCloseDeactivate={() => setShowDeactivateDialog(false)}
+        onUserUpdated={() => {
+          // Force refetch users to get updated data
+          queryClient.invalidateQueries({ queryKey: ['users'] });
+          queryClient.invalidateQueries({ queryKey: ['unified-user-management'] });
+          refetch();
+        }}
+      />
     </div>
   );
 };
