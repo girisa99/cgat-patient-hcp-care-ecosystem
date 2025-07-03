@@ -59,6 +59,9 @@ export const ImprovedUserManagementTable: React.FC = () => {
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddUserDialog, setShowAddUserDialog] = useState(false);
+  const [showViewUserDialog, setShowViewUserDialog] = useState(false);
+  const [showEditUserDialog, setShowEditUserDialog] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UserWithRoles | null>(null);
   const [activeTab, setActiveTab] = useState('users');
   
   // Add User Form State
@@ -76,6 +79,12 @@ export const ImprovedUserManagementTable: React.FC = () => {
     user.last_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     user.email?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  console.log('📊 User Management - Real Data Check:', {
+    totalUsers: users?.length || 0,
+    sampleUser: users?.[0],
+    metaData: meta
+  });
 
   if (isLoading) {
     return (
@@ -124,17 +133,15 @@ export const ImprovedUserManagementTable: React.FC = () => {
   };
 
   const handleViewUser = (user: UserWithRoles) => {
-    toast({
-      title: "User Profile",
-      description: `Viewing profile for ${user.first_name} ${user.last_name} (${user.email})`,
-    });
+    console.log('👁️ Viewing user:', user);
+    setSelectedUser(user);
+    setShowViewUserDialog(true);
   };
 
   const handleEditUser = (user: UserWithRoles) => {
-    toast({
-      title: "Edit User",
-      description: `Opening edit form for ${user.first_name} ${user.last_name}`,
-    });
+    console.log('✏️ Editing user:', user);
+    setSelectedUser(user);
+    setShowEditUserDialog(true);
   };
 
   const handleAssignRole = (user: UserWithRoles, role: string = 'onboardingTeam') => {
@@ -152,9 +159,11 @@ export const ImprovedUserManagementTable: React.FC = () => {
   };
 
   const handleAssignModule = (user: UserWithRoles) => {
+    // Real module assignment would require a modules selection dialog
+    console.log('📦 Assigning modules to user:', user.id);
     toast({
       title: "Module Assignment",
-      description: `Assigning modules to ${user.first_name} ${user.last_name}`,
+      description: `Module assignment for ${user.first_name} ${user.last_name} - Feature coming soon`,
     });
   };
 
@@ -167,11 +176,27 @@ export const ImprovedUserManagementTable: React.FC = () => {
     });
   };
 
-  const handleResendEmail = (user: UserWithRoles) => {
-    toast({
-      title: "Verification Email Sent",
-      description: `Verification email sent to ${user.email}`,
-    });
+  const handleResendEmail = async (user: UserWithRoles) => {
+    console.log('📧 Resending verification email to:', user.email);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'email_change',
+        email: user.email,
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Verification Email Sent",
+        description: `Verification email sent to ${user.email}`,
+      });
+    } catch (error) {
+      toast({
+        title: "Failed to Send Email",
+        description: "There was an error sending the verification email",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleDeactivateUser = (user: UserWithRoles) => {
@@ -702,6 +727,161 @@ export const ImprovedUserManagementTable: React.FC = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* View User Dialog */}
+      <Dialog open={showViewUserDialog} onOpenChange={setShowViewUserDialog}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>User Profile Details</DialogTitle>
+            <DialogDescription>
+              View detailed information for {selectedUser?.first_name} {selectedUser?.last_name}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedUser && (
+            <div className="space-y-6 py-4">
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                  <h4 className="font-semibold text-sm text-muted-foreground mb-2">Personal Information</h4>
+                  <div className="space-y-2">
+                    <div>
+                      <span className="text-sm font-medium">Name:</span>
+                      <p className="text-sm">{selectedUser.first_name} {selectedUser.last_name}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium">Email:</span>
+                      <p className="text-sm">{selectedUser.email}</p>
+                    </div>
+                    {selectedUser.phone && (
+                      <div>
+                        <span className="text-sm font-medium">Phone:</span>
+                        <p className="text-sm">{selectedUser.phone}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-sm text-muted-foreground mb-2">Account Information</h4>
+                  <div className="space-y-2">
+                    <div>
+                      <span className="text-sm font-medium">Status:</span>
+                      <div className="mt-1">
+                        {isUserVerified(selectedUser) ? (
+                          <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
+                            <Check className="h-3 w-3 mr-1" />
+                            Verified
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 border-yellow-200">
+                            <X className="h-3 w-3 mr-1" />
+                            Pending Verification
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium">User ID:</span>
+                      <p className="text-xs font-mono text-muted-foreground">{selectedUser.id}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium">Created:</span>
+                      <p className="text-sm">{new Date(selectedUser.created_at).toLocaleDateString()}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <h4 className="font-semibold text-sm text-muted-foreground mb-2">Roles & Permissions</h4>
+                <div className="flex gap-2 flex-wrap">
+                  {getUserRoles(selectedUser).length > 0 ? (
+                    getUserRoles(selectedUser).map((role) => (
+                      <Badge key={role} variant="secondary">
+                        {role}
+                      </Badge>
+                    ))
+                  ) : (
+                    <Badge variant="outline">No roles assigned</Badge>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit User Dialog */}
+      <Dialog open={showEditUserDialog} onOpenChange={setShowEditUserDialog}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Edit User Details</DialogTitle>
+            <DialogDescription>
+              Update information for {selectedUser?.first_name} {selectedUser?.last_name}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedUser && (
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium">First Name</label>
+                  <Input 
+                    defaultValue={selectedUser.first_name}
+                    placeholder="Enter first name"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Last Name</label>
+                  <Input 
+                    defaultValue={selectedUser.last_name}
+                    placeholder="Enter last name"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium">Email Address</label>
+                <Input 
+                  defaultValue={selectedUser.email}
+                  placeholder="Enter email address"
+                  type="email"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Phone Number</label>
+                <Input 
+                  defaultValue={selectedUser.phone || ''}
+                  placeholder="Enter phone number"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Current Roles</label>
+                <div className="flex gap-2 flex-wrap p-3 bg-muted/30 rounded-md min-h-[40px]">
+                  {getUserRoles(selectedUser).length > 0 ? (
+                    getUserRoles(selectedUser).map((role) => (
+                      <Badge key={role} variant="secondary">
+                        {role}
+                      </Badge>
+                    ))
+                  ) : (
+                    <span className="text-sm text-muted-foreground">No roles assigned</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={() => setShowEditUserDialog(false)} className="flex-1">
+              Cancel
+            </Button>
+            <Button onClick={() => {
+              toast({
+                title: "Feature Coming Soon",
+                description: "User editing functionality will be implemented soon",
+              });
+              setShowEditUserDialog(false);
+            }} className="flex-1">
+              Save Changes
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
