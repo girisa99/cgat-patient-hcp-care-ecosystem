@@ -1,7 +1,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuthContext } from '@/components/auth/CleanAuthProvider';
+import { useAuthContext } from '@/components/auth/DatabaseAuthProvider';
 import { toast } from 'sonner';
 
 interface NotificationRequest {

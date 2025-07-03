@@ -1,7 +1,7 @@
 
 import { ReactNode, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuthContext } from './CleanAuthProvider';
+import { useAuthContext } from '@/components/auth/DatabaseAuthProvider';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 interface ProtectedRouteProps {

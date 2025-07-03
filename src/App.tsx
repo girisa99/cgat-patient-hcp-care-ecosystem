@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { CleanAuthProvider } from "@/components/auth/CleanAuthProvider";
+import { DatabaseAuthProvider } from "@/components/auth/DatabaseAuthProvider";
 import Index from "@/pages/Index";
 import SimpleUsers from "@/pages/SimpleUsers";
 import SimplePatients from "@/pages/SimplePatients";
@@ -28,7 +28,7 @@ const App = () => {
   
   return (
     <QueryClientProvider client={queryClient}>
-      <CleanAuthProvider>
+      <DatabaseAuthProvider>
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
@@ -45,7 +45,7 @@ const App = () => {
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
-      </CleanAuthProvider>
+      </DatabaseAuthProvider>
     </QueryClientProvider>
   );
 };

@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { useAuthContext } from '@/components/auth/CleanAuthProvider';
+import { useAuthContext } from '@/components/auth/DatabaseAuthProvider';
 import { useUnifiedUserManagement } from './useUnifiedUserManagement';
 import { useFacilities } from './useFacilities';
 import { useModules } from './useModules';

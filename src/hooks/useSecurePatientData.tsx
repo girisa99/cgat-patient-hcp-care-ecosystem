@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useAuthContext } from '@/components/auth/CleanAuthProvider';
+import { useAuthContext } from '@/components/auth/DatabaseAuthProvider';
 
 interface PatientData {
   id: string;

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAuthContext } from '@/components/auth/CleanAuthProvider';
+import { useAuthContext } from '@/components/auth/DatabaseAuthProvider';
 
 const SimpleUnifiedDashboard: React.FC = () => {
   const { user } = useAuthContext();

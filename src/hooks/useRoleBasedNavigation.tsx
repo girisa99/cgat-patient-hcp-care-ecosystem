@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useAuthContext } from '@/components/auth/CleanAuthProvider';
+import { useAuthContext } from '@/components/auth/DatabaseAuthProvider';
 import { navItems, NavItem } from '@/nav-items';
 import { Database } from '@/integrations/supabase/types';
 

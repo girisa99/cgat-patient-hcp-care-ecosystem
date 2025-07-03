@@ -9,8 +9,8 @@ import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { useAuthContext } from '@/components/auth/CleanAuthProvider'
-import { useRoleBasedNavigation } from '@/hooks/useRoleBasedNavigation'
+import { useAuthContext } from '@/components/auth/DatabaseAuthProvider';
+import { useRoleBasedNavigation } from '@/hooks/useRoleBasedNavigation';
 
 // Database-aligned interfaces following verification standards
 interface DatabaseSidebarContext {

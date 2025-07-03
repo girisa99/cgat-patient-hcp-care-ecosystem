@@ -1,5 +1,5 @@
 import React, { ReactNode } from 'react';
-import { useAuthContext } from '@/components/auth/CleanAuthProvider';
+import { useAuthContext } from '@/components/auth/DatabaseAuthProvider';
 import { AppSidebar } from '@/components/sidebar/AppSidebar';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar-database-aligned';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';

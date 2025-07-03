@@ -5,8 +5,8 @@
  */
 
 // Authentication - Single Source
-export { useCleanAuth } from './useCleanAuth';
-export { useAuthContext } from '@/components/auth/CleanAuthProvider';
+export { useDatabaseAuth } from './useDatabaseAuth';
+export { useAuthContext } from '@/components/auth/DatabaseAuthProvider';
 
 // User Management - Single Source  
 export { useUnifiedUserManagement } from './useUnifiedUserManagement';

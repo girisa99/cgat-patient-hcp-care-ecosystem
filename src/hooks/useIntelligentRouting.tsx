@@ -1,5 +1,5 @@
 
-import { useAuthContext } from '@/components/auth/CleanAuthProvider';
+import { useAuthContext } from '@/components/auth/DatabaseAuthProvider';
 import { useSimpleRouting } from './useSimpleRouting';
 import { useModules } from './useModules';
 import { useUserSettings } from './useUserSettings';
