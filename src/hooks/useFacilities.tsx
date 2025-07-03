@@ -21,54 +21,9 @@ export interface Facility {
 }
 
 export const useFacilities = () => {
-<<<<<<< HEAD
-  const { data: facilities, isLoading, error, refetch } = useFacilityData();
-  const mutations = useFacilityMutations();
-
-  // Calculate facility statistics from real data
-  const getFacilityStats = () => {
-    const base: Record<string, number> = {};
-    const byType = (facilities ?? []).reduce<Record<string, number>>((acc, facility) => {
-      const type = facility.facility_type ?? 'unknown';
-      acc[type] = (acc[type] ?? 0) + 1;
-      return acc;
-    }, base);
-
-    return {
-      total: facilities?.length ?? 0,
-      active: (facilities ?? []).filter((f) => f.is_active !== false).length,
-      byType
-    };
-  };
-
-  // Search facilities function
-  const searchFacilities = (query: string) => {
-    if (!query.trim()) return facilities || [];
-    
-    return facilities?.filter(facility => 
-      facility.name?.toLowerCase().includes(query.toLowerCase()) ||
-      facility.address?.toLowerCase().includes(query.toLowerCase())
-    ) || [];
-  };
-
-  // Create facility function (placeholder)
-  const createFacility = async (facilityData: Partial<Facility>) => {
-    console.log('🏥 Create facility requested:', facilityData);
-    // This would be implemented with actual API calls
-    return Promise.resolve();
-  };
-
-  // Update facility function (placeholder)
-  const updateFacility = async (id: string, facilityData: Partial<Facility>) => {
-    console.log('🏥 Update facility requested:', id, facilityData);
-    // This would be implemented with actual API calls
-    return Promise.resolve();
-  };
-=======
   const realFacilitiesData = useRealFacilities();
   
   console.log('🏥 Facilities Hook - Using REAL DATABASE data only');
->>>>>>> main
 
   return {
     // Real data from database
