@@ -121,7 +121,7 @@ const DEFAULT_CONFIG: VerificationConfig = {
 
 // Typed event map for UnifiedCoreVerificationService
 export interface UnifiedCoreVerificationEvents {
-  [key: string | number | symbol]: any[];
+  [key: string | number | symbol]: unknown[];
   scanCompleted: [RegistryState];
   scanError: [unknown];
   duplicatesDetected: [DuplicateReport];
