@@ -40,20 +40,45 @@ export interface ApiEndpoint {
   bodySchema?: ApiBodySchema;
 }
 
-// RLS Policy
+// RLS Policy with all required properties
 export interface ApiRlsPolicy {
   id: string;
   table: string;
   policy: string;
   description: string;
+  policyName: string;
+  operation: string;
+  tableName: string;
+  condition: string;
+  roles: string[];
 }
 
-// Data mapping
+// Data mapping with all required properties
 export interface ApiDataMapping {
   id: string;
   sourceField: string;
   targetField: string;
   transformation?: string;
+  targetTable: string;
+  validation?: {
+    required: boolean;
+    type: string;
+    rules: string[];
+  };
+  internal?: boolean;
+}
+
+// API Integration Registry type for compatibility
+export interface ApiIntegrationRegistry {
+  id: string;
+  name: string;
+  description: string;
+  status: string;
+  type: string;
+  endpoints: ApiEndpoint[];
+  schemas: Record<string, any>;
+  mappings: ApiDataMapping[];
+  rlsPolicies: ApiRlsPolicy[];
 }
 
 // Main integration type
