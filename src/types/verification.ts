@@ -20,3 +20,13 @@ export interface VerificationResults {
   typescriptResult: ResultSummary;
   [key: string]: unknown;
 }
+
+export interface VerificationIssue {
+  type: string;
+  description: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  table?: string;
+  column?: string;
+  autoFixable?: boolean;
+  category?: string;
+}

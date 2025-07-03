@@ -7,6 +7,7 @@
 
 import { RealDatabaseValidator, RealDatabaseValidationResult } from './RealDatabaseValidator';
 import { supabase } from '@/integrations/supabase/client';
+import { VerificationIssue } from '@/types/verification';
 
 export interface RealSystemHealthResult {
   overallHealthScore: number;
@@ -26,7 +27,7 @@ export class RealVerificationOrchestrator {
   private static async logVerificationActivity(
     activityType: string,
     description: string,
-    metadata: any = {}
+    metadata: Record<string, unknown> = {}
   ): Promise<void> {
     try {
       const { error } = await supabase.rpc('log_verification_activity', {
@@ -294,7 +295,7 @@ export class RealVerificationOrchestrator {
   /**
    * Categorize issues based on type and source
    */
-  private static categorizeIssue(issue: any): string {
+  private static categorizeIssue(issue: VerificationIssue): string {
     if (issue.type === 'missing_rls' || issue.type === 'security_gap') {
       return 'Security';
     }
@@ -310,7 +311,7 @@ export class RealVerificationOrchestrator {
   /**
    * Get summary of issue categories for logging
    */
-  private static getIssueCategorySummary(issues: any[]): Record<string, number> {
+  private static getIssueCategorySummary(issues: VerificationIssue[]): Record<string, number> {
     const summary: Record<string, number> = {};
     issues.forEach(issue => {
       summary[issue.category] = (summary[issue.category] || 0) + 1;
