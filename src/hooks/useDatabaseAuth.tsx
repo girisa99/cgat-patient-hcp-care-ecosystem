@@ -165,11 +165,13 @@ export const useDatabaseAuth = (): DatabaseAuthContext => {
       
       if (mounted) {
         if (session?.user) {
+          console.log('✅ User found, setting auth state...');
           setUser(session.user);
           setSession(session);
           setIsAuthenticated(true);
           
           // Load profile aligned with database
+          console.log('📋 Loading profile and roles...');
           await loadDatabaseProfile(session.user.id);
         } else {
           setUser(null);
