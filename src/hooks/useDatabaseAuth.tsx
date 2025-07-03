@@ -105,25 +105,38 @@ export const useDatabaseAuth = (): DatabaseAuthContext => {
           console.warn('⚠️ Could not load database profile:', profileError);
         }
 
-        // Load user roles from user_roles and roles tables
-        const { data: userRolesData, error: rolesError } = await supabase
+        // Load user roles - first get role IDs, then get role names
+        const { data: userRoleIds, error: rolesError } = await supabase
           .from('user_roles')
-          .select(`
-            roles(name)
-          `)
+          .select('role_id')
           .eq('user_id', userId);
 
-        console.log('🔍 Raw user roles query result:', { userRolesData, rolesError });
+        console.log('🔍 User role IDs query result:', { userRoleIds, rolesError });
+
+        let roleNames: string[] = [];
+        if (userRoleIds && userRoleIds.length > 0 && !rolesError) {
+          // Get role names from the roles table
+          const roleIdArray = userRoleIds.map(ur => ur.role_id);
+          const { data: rolesData, error: roleNamesError } = await supabase
+            .from('roles')
+            .select('name')
+            .in('id', roleIdArray);
+          
+          console.log('🔍 Role names query result:', { rolesData, roleNamesError });
+          
+          if (rolesData && !roleNamesError) {
+            roleNames = rolesData.map(r => r.name);
+          }
+        }
 
         if (rolesError) {
           console.error('❌ Could not load user roles:', rolesError);
         }
 
-        console.log('📋 User roles data:', userRolesData);
+        console.log('📋 Final role names:', roleNames);
 
         if (mounted) {
           // Set user roles array
-          const roleNames = userRolesData?.map(ur => ur.roles?.name).filter(Boolean) || [];
           setUserRoles(roleNames);
           console.log('✅ Loaded user roles:', roleNames);
 
