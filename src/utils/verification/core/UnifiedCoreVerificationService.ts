@@ -121,13 +121,14 @@ const DEFAULT_CONFIG: VerificationConfig = {
 
 // Typed event map for UnifiedCoreVerificationService
 export interface UnifiedCoreVerificationEvents {
+  [key: string | number | symbol]: any[];
   scanCompleted: [RegistryState];
   scanError: [unknown];
   duplicatesDetected: [DuplicateReport];
   validationCompleted: [ValidationResult];
   monitoringError: [unknown];
-  monitoringStarted: [];
-  monitoringStopped: [];
+  monitoringStarted: never[];
+  monitoringStopped: never[];
   healthIssueDetected: [HealthCheck];
   issueDetected: [ValidationResult];
   configUpdated: [VerificationConfig];

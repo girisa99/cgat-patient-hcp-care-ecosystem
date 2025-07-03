@@ -33,8 +33,9 @@ export interface FixProposal {
 
 // Strongly typed events emitted by RegistryFixAgent
 export interface RegistryFixAgentEvents {
-  started: [];
-  stopped: [];
+  [key: string | number | symbol]: any[];
+  started: never[];
+  stopped: never[];
   autoMerged: [DuplicateEntry[]];
   fixProposals: [FixProposal[]];
   autoMergeSuccess: [{ entityType: EntityType; kept: string; removed: string[] }];
