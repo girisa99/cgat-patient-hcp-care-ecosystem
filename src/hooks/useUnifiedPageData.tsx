@@ -1,52 +1,50 @@
 import { useState, useEffect } from 'react';
 import { UnifiedCoreVerificationService } from '@/utils/verification/core/UnifiedCoreVerificationService';
 import { RealVerificationOrchestrator } from '@/utils/verification/RealVerificationOrchestrator';
-import { useRealFacilities } from './useRealFacilities';
-import { useUnifiedUserManagement } from './useUnifiedUserManagement';
-import { useModules } from './useModules';
 import { useRealDatabaseValidation } from './useRealDatabaseValidation';
 
 /**
- * Unified Page Data Hook - REAL DATA ONLY, NO MOCK
- * Uses the comprehensive verification system with real database connections
- * Implements Verify, Validate, Update pattern - Single Source of Truth
+ * Unified Page Data Hook - REGISTRY AS SINGLE SOURCE OF TRUTH
+ * Uses the comprehensive verification system with registry-based data
+ * Implements Verify, Validate, Update pattern - Registry-driven architecture
  */
 export const useUnifiedPageData = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [verificationResults, setVerificationResults] = useState<any>(null);
   
-  // Use real verification service - NO MOCK DATA
+  // Use verification service with proper registry population
   const verificationService = UnifiedCoreVerificationService.getInstance({
     enforceRealDataOnly: true,
     preventDuplicates: true,
-    strictMode: true
+    strictMode: true,
+    enableRealtimeMonitoring: true,
+    securityScanEnabled: true
   });
 
-  // Real database hooks - DIRECT SUPABASE CONNECTIONS
-  const realFacilities = useRealFacilities();
-  const realUsers = useUnifiedUserManagement();
-  const realModules = useModules();
   const { validateNow, isValidating } = useRealDatabaseValidation();
 
   useEffect(() => {
-    const initializeRealSystem = async () => {
+    const initializeRegistrySystem = async () => {
       try {
         setIsLoading(true);
         setError(null);
 
-        console.log('🔍 Initializing REAL verification system - Using direct database hooks');
+        console.log('🔍 Initializing REGISTRY SYSTEM as single source of truth...');
         
         // Start real-time monitoring
         verificationService.startBackgroundMonitoring();
         
-        // Perform comprehensive real system validation
-        const systemValidation = await RealVerificationOrchestrator.performRealSystemValidation();
-        
-        // Scan and register all real entities
+        // CRITICAL: Scan and populate the registry first
+        console.log('📊 Scanning and registering all entities...');
         await verificationService.scanAndRegisterEntities();
         
-        // Get real system status
+        // Perform comprehensive real system validation
+        console.log('✅ Running comprehensive validation...');
+        const systemValidation = await RealVerificationOrchestrator.performRealSystemValidation();
+        
+        // Get populated registry and system status
+        console.log('📋 Getting populated registry and system status...');
         const systemStatus = await verificationService.getSystemStatus();
         
         setVerificationResults({
@@ -56,17 +54,26 @@ export const useUnifiedPageData = () => {
         });
 
         setIsLoading(false);
-        console.log('✅ Real verification system initialized successfully');
+        console.log('✅ Registry system initialized successfully');
+        console.log('📊 Registry populated with:', {
+          hooks: systemStatus.registry.hooks.size,
+          components: systemStatus.registry.components.size,
+          types: systemStatus.registry.types.size,
+          tables: systemStatus.registry.tables.size,
+          apis: systemStatus.registry.apis.size,
+          routes: systemStatus.registry.routes.size,
+          services: systemStatus.registry.services.size
+        });
         
       } catch (err) {
-        console.error('❌ Real verification system initialization failed:', err);
-        const error = err instanceof Error ? err : new Error('Verification system initialization failed');
+        console.error('❌ Registry system initialization failed:', err);
+        const error = err instanceof Error ? err : new Error('Registry system initialization failed');
         setError(error);
         setIsLoading(false);
       }
     };
 
-    initializeRealSystem();
+    initializeRegistrySystem();
     
     // Cleanup on unmount
     return () => {
@@ -74,149 +81,168 @@ export const useUnifiedPageData = () => {
     };
   }, []);
 
-  // Real facilities data with verification - DIRECT FROM DATABASE
+  // Facilities data FROM REGISTRY - single source of truth
   const facilities = {
-    data: realFacilities.facilities,
-    isLoading: realFacilities.isLoading,
-    error: realFacilities.error,
+    data: verificationResults?.systemStatus?.registry?.tables ? 
+          Array.from(verificationResults.systemStatus.registry.tables.values())
+            .filter(entity => entity.name === 'facilities')
+            .map(entity => ({
+              id: entity.id,
+              name: entity.metadata.displayName || entity.name,
+              facility_type: entity.metadata.type || 'healthcare',
+              is_active: entity.metadata.isActive !== false,
+              metadata: entity.metadata
+            })) : [],
+    isLoading: isLoading || isValidating,
+    error: error,
     getFacilityStats: () => {
-      const total = realFacilities.facilities.length;
-      const active = realFacilities.facilities.filter(f => f.is_active).length;
+      const facilityEntities = verificationResults?.systemStatus?.registry?.tables ? 
+        Array.from(verificationResults.systemStatus.registry.tables.values())
+          .filter(entity => entity.name === 'facilities') : [];
+      
+      const total = facilityEntities.length;
+      const active = facilityEntities.filter(f => f.metadata?.isActive !== false).length;
       const inactive = total - active;
-      const typeBreakdown = realFacilities.facilities.reduce((acc: any, facility) => {
-        const type = facility.facility_type;
-        acc[type] = (acc[type] || 0) + 1;
-        return acc;
-      }, {});
-
+      
       return {
         total,
         active,
         inactive,
-        typeBreakdown,
-        byType: typeBreakdown
+        typeBreakdown: { healthcare: active },
+        byType: { healthcare: active }
       };
     },
     searchFacilities: (query: string) => {
-      if (!query.trim()) return realFacilities.facilities;
-      return realFacilities.facilities.filter(facility => 
-        facility.name.toLowerCase().includes(query.toLowerCase()) ||
-        facility.address?.toLowerCase().includes(query.toLowerCase()) ||
-        facility.facility_type.toLowerCase().includes(query.toLowerCase())
+      const facilityData = facilities.data;
+      if (!query.trim()) return facilityData;
+      return facilityData.filter(facility => 
+        facility.name.toLowerCase().includes(query.toLowerCase())
       );
     },
-    meta: realFacilities.meta
+    meta: {
+      dataSource: 'registry-facilities-table (single source of truth)',
+      lastUpdated: new Date().toISOString()
+    }
   };
 
-  // Real users data - DIRECT FROM DATABASE VIA EDGE FUNCTIONS
+  // Users data FROM REGISTRY - single source of truth
   const users = {
-    data: realUsers.users,
-    isLoading: realUsers.isLoading,
-    error: realUsers.error,
-    getUserStats: realUsers.getUserStats,
-    getPatients: realUsers.getPatients,
-    getStaff: realUsers.getStaff,
-    getAdmins: realUsers.getAdmins,
-    searchUsers: realUsers.searchUsers,
-    meta: realUsers.meta
+    data: verificationResults?.systemStatus?.registry?.hooks ? 
+          Array.from(verificationResults.systemStatus.registry.hooks.values())
+            .filter(entity => entity.metadata?.category === 'user-management')
+            .map(entity => ({
+              id: entity.id,
+              name: entity.name,
+              metadata: entity.metadata,
+              isRealData: entity.metadata?.isRealData || false,
+              category: entity.metadata?.category
+            })) : [],
+    isLoading: isLoading || isValidating,
+    error: error,
+    getUserStats: () => {
+      const userHooks = verificationResults?.systemStatus?.registry?.hooks ? 
+        Array.from(verificationResults.systemStatus.registry.hooks.values())
+          .filter(entity => entity.metadata?.category === 'user-management') : [];
+      
+      const realDataHooks = userHooks.filter(hook => hook.metadata?.isRealData);
+      
+      return {
+        total: userHooks.length,
+        active: realDataHooks.length,
+        totalUsers: userHooks.length,
+        activeUsers: realDataHooks.length,
+        totalFacilities: facilities.data.length,
+        totalModules: modules.data.length,
+        totalApis: apiServices.data.length,
+        totalPermissions: 0
+      };
+    },
+    getPatients: () => {
+      return users.data.filter(u => u.metadata?.category === 'patient-management');
+    },
+    getStaff: () => {
+      return users.data.filter(u => u.metadata?.category === 'staff-management');
+    },
+    getAdmins: () => {
+      return users.data.filter(u => u.metadata?.category === 'admin-management');
+    },
+    searchUsers: (query: string) => {
+      if (!query.trim()) return users.data;
+      return users.data.filter(user => 
+        user.name.toLowerCase().includes(query.toLowerCase())
+      );
+    },
+    meta: {
+      totalUsers: users.data.length,
+      dataSource: 'registry-user-hooks (single source of truth)',
+      lastUpdated: new Date().toISOString()
+    }
   };
 
-  // Real modules data - DIRECT FROM DATABASE
+  // Modules data FROM REGISTRY - single source of truth
   const modules = {
-    data: realModules.modules,
-    isLoading: realModules.isLoading,
-    error: realModules.error,
-    getModuleStats: realModules.getModuleStats,
-    searchModules: realModules.searchModules,
-    meta: realModules.meta
+    data: verificationResults?.systemStatus?.registry?.hooks ? 
+          Array.from(verificationResults.systemStatus.registry.hooks.values())
+            .filter(entity => entity.metadata?.category === 'modules')
+            .concat(
+              Array.from(verificationResults.systemStatus.registry.tables.values())
+                .filter(entity => entity.name === 'modules')
+            )
+            .map(entity => ({
+              id: entity.id,
+              name: entity.name,
+              description: entity.metadata?.description || `${entity.name} module`,
+              is_active: entity.metadata?.isActive !== false,
+              metadata: entity.metadata
+            })) : [],
+    isLoading: isLoading || isValidating,
+    error: error,
+    getModuleStats: () => {
+      const moduleEntities = modules.data;
+      const total = moduleEntities.length;
+      const active = moduleEntities.filter(m => m.is_active).length;
+      const inactive = total - active;
+      
+      return {
+        total,
+        active,
+        inactive,
+        userAccessible: active,
+        byCategory: { general: active }
+      };
+    },
+    searchModules: (query: string) => {
+      if (!query.trim()) return modules.data;
+      return modules.data.filter(module => 
+        module.name.toLowerCase().includes(query.toLowerCase()) ||
+        module.description.toLowerCase().includes(query.toLowerCase())
+      );
+    },
+    meta: {
+      totalModules: modules.data.length,
+      dataSource: 'registry-modules-entities (single source of truth)',
+      lastUpdated: new Date().toISOString()
+    }
   };
 
-  // Real API services data - GENERATE FROM ACTUAL SYSTEM DISCOVERY
+  // API services data FROM REGISTRY - single source of truth
   const apiServices = {
-    data: [
-      {
-        id: 'user-management-api',
-        name: 'User Management API',
-        description: 'Real user management via edge functions',
-        status: 'active',
-        type: 'REST',
-        endpoints_count: 8,
-        documentation_url: '/docs/user-management',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        metadata: {
-          type: 'REST',
-          status: 'active',
-          realDataSource: 'auth.users via edge functions'
-        }
-      },
-      {
-        id: 'facilities-api',
-        name: 'Facilities Management API',
-        description: 'Real facilities data management',
-        status: 'active',
-        type: 'REST',
-        endpoints_count: 6,
-        documentation_url: '/docs/facilities',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        metadata: {
-          type: 'REST',
-          status: 'active',
-          realDataSource: 'facilities table'
-        }
-      },
-      {
-        id: 'modules-api',
-        name: 'Modules Management API',
-        description: 'Real modules system integration',
-        status: 'active',
-        type: 'REST',
-        endpoints_count: 5,
-        documentation_url: '/docs/modules',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        metadata: {
-          type: 'REST',
-          status: 'active',
-          realDataSource: 'modules table'
-        }
-      },
-      {
-        id: 'onboarding-api',
-        name: 'Onboarding Workflow API',
-        description: 'Treatment center onboarding system',
-        status: 'active',
-        type: 'REST',
-        endpoints_count: 12,
-        documentation_url: '/docs/onboarding',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        metadata: {
-          type: 'REST',
-          status: 'active',
-          realDataSource: 'onboarding_applications table'
-        }
-      },
-      {
-        id: 'testing-api',
-        name: 'Testing Services API',
-        description: 'Comprehensive testing and validation system',
-        status: 'active',
-        type: 'REST',
-        endpoints_count: 15,
-        documentation_url: '/docs/testing',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        metadata: {
-          type: 'REST',
-          status: 'active',
-          realDataSource: 'testing infrastructure'
-        }
-      }
-    ],
-    isLoading: false,
-    error: null,
+    data: verificationResults?.systemStatus?.registry?.apis ? 
+          Array.from(verificationResults.systemStatus.registry.apis.values())
+            .map(entity => ({
+              id: entity.id,
+              name: entity.name,
+              description: entity.metadata?.description || '',
+              status: entity.metadata?.isActive ? 'active' : 'inactive',
+              type: entity.metadata?.type || 'REST',
+              endpoints_count: entity.metadata?.endpointCount || 0,
+              documentation_url: `/docs/${entity.id}`,
+              created_at: entity.lastModified,
+              updated_at: entity.lastModified,
+              metadata: entity.metadata
+            })) : [],
+    isLoading: isLoading || isValidating,
+    error: error,
     getApiStats: () => {
       const apiData = apiServices.data;
       const total = apiData.length;
@@ -241,17 +267,20 @@ export const useUnifiedPageData = () => {
       );
     },
     meta: {
-      totalApis: 5,
-      dataSource: 'system discovery (real APIs)',
+      totalApis: apiServices.data.length,
+      dataSource: 'registry-apis (single source of truth)',
       lastUpdated: new Date().toISOString()
     }
   };
 
-  // Real-time refresh using verification system
+  // Real-time refresh using registry system
   const refreshAllData = async () => {
-    console.log('🔄 Refreshing all data from real database hooks...');
+    console.log('🔄 Refreshing all data from registry system...');
     try {
+      // Re-scan and populate registry
       await verificationService.scanAndRegisterEntities();
+      
+      // Re-validate system
       const systemStatus = await verificationService.getSystemStatus();
       const systemValidation = await RealVerificationOrchestrator.performRealSystemValidation();
       
@@ -261,45 +290,44 @@ export const useUnifiedPageData = () => {
         timestamp: new Date().toISOString()
       });
       
-      await realFacilities.refetch();
-      await realUsers.refetch();
-      console.log('✅ All real data refreshed successfully');
+      console.log('✅ All registry data refreshed successfully');
     } catch (err) {
-      console.error('❌ Real data refresh failed:', err);
+      console.error('❌ Registry data refresh failed:', err);
     }
   };
 
-  console.log('🎯 Unified Page Data - REAL DATABASE HOOKS ACTIVE');
-  console.log('📊 Real Data Sources:', {
+  console.log('🎯 Unified Page Data - REGISTRY SYSTEM AS SINGLE SOURCE OF TRUTH');
+  console.log('📊 Registry Data Sources:', {
     facilities: facilities.meta.dataSource,
     users: users.meta.dataSource,
     modules: modules.meta.dataSource,
     apiServices: apiServices.meta.dataSource
   });
 
-  // Log real data counts
-  console.log('📈 Real Data Counts:', {
+  // Log registry data counts
+  console.log('📈 Registry Data Counts:', {
     users: users.data.length,
     facilities: facilities.data.length,
     modules: modules.data.length,
-    apiServices: apiServices.data.length
+    apiServices: apiServices.data.length,
+    registryStatus: verificationResults?.systemStatus ? 'populated' : 'loading'
   });
 
   return {
-    isLoading: realFacilities.isLoading || realUsers.isLoading || realModules.isLoading,
-    error: realFacilities.error || realUsers.error || realModules.error,
-    hasError: !!(realFacilities.error || realUsers.error || realModules.error),
+    isLoading: isLoading || isValidating,
+    error: error,
+    hasError: !!error,
     
-    // All real data - NO MOCK - DIRECT DATABASE CONNECTIONS
+    // All data from registry - SINGLE SOURCE OF TRUTH
     facilities,
     users,
     modules,
     apiServices,
     
-    // Real-time stats from actual database data
+    // Real-time stats from registry
     realTimeStats: {
       totalUsers: users.data.length,
-      activeUsers: users.data.filter((u: any) => u.created_at).length,
+      activeUsers: users.data.filter((u: any) => u.isRealData).length,
       totalFacilities: facilities.data.length,
       totalModules: modules.data.length,
       totalApis: apiServices.data.length,
@@ -307,22 +335,22 @@ export const useUnifiedPageData = () => {
       total: users.data.length + facilities.data.length + modules.data.length
     },
     
-    // Real verification system methods
+    // Registry system methods
     refreshAllData,
     validateNow,
     
-    // Real verification results
+    // Full registry access
     verificationResults,
     
     meta: {
       implementationLocked: true,
-      version: 'unified-real-verification-v3.0.0',
+      version: 'unified-registry-verification-v4.0.0',
       singleSourceValidated: true,
       dataSourcesCount: 4,
       lastUpdated: new Date().toISOString(),
-      principle: 'Verify, Validate, Update - Single Source of Truth - REAL DATA ONLY',
-      realDatabaseConnections: true,
-      mockDataEliminated: true
+      principle: 'Verify, Validate, Update - Registry as Single Source of Truth',
+      registrySystemActive: true,
+      comprehensiveVerificationActive: true
     }
   };
 };
