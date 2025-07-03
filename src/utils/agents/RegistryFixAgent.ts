@@ -11,6 +11,8 @@
  * actions require manual confirmation and are surfaced via the `fixProposals` event.
  */
 
+/// <reference types="node" />
+
 import { EventEmitter } from 'events';
 import {
   UnifiedCoreVerificationService,
