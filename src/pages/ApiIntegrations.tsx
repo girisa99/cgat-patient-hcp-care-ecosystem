@@ -1,17 +1,15 @@
-
 import React from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { PageContainer } from '@/components/layout/PageContainer';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Code, ExternalLink, Settings, Activity } from 'lucide-react';
+import { Code, ExternalLink, Settings, Activity, RefreshCw } from 'lucide-react';
 
 const ApiIntegrations = () => {
   console.log('🔗 API Integrations page rendering...');
   
-  // Mock data for demonstration
+  // Clean mock data for demonstration
   const apiIntegrations = [
     {
       id: '1',
@@ -57,9 +55,13 @@ const ApiIntegrations = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center justify-between mb-4">
-                    <Badge variant={integration.status === 'active' ? 'default' : 'secondary'}>
+                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                      integration.status === 'active' 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-gray-100 text-gray-800'
+                    }`}>
                       {integration.status}
-                    </Badge>
+                    </span>
                     <span className="text-sm text-muted-foreground">
                       {integration.type}
                     </span>
@@ -77,11 +79,11 @@ const ApiIntegrations = () => {
                   </div>
                   
                   <div className="flex gap-2 mt-4">
-                    <Button variant="outline" size="sm" className="flex-1">
+                    <Button className="flex-1 h-8 text-xs">
                       <Settings className="h-3 w-3 mr-1" />
                       Configure
                     </Button>
-                    <Button variant="outline" size="sm" className="flex-1">
+                    <Button variant="outline" className="flex-1 h-8 text-xs">
                       <Activity className="h-3 w-3 mr-1" />
                       Monitor
                     </Button>
