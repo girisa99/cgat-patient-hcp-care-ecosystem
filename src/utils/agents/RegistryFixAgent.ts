@@ -13,7 +13,7 @@
 
 /// <reference types="node" />
 
-import { EventEmitter } from 'events';
+import { TypedEventEmitter } from '@/utils/TypedEventEmitter';
 import {
   UnifiedCoreVerificationService,
   DuplicateEntry,
@@ -31,7 +31,16 @@ export interface FixProposal {
   entities: string[];
 }
 
-export class RegistryFixAgent extends EventEmitter {
+// Strongly typed events emitted by RegistryFixAgent
+export interface RegistryFixAgentEvents {
+  started: [];
+  stopped: [];
+  autoMerged: [DuplicateEntry[]];
+  fixProposals: [FixProposal[]];
+  autoMergeSuccess: [{ entityType: EntityType; kept: string; removed: string[] }];
+}
+
+export class RegistryFixAgent extends TypedEventEmitter<RegistryFixAgentEvents> {
   private verificationService: UnifiedCoreVerificationService;
   private isActive = false;
 
