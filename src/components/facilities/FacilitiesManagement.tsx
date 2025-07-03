@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,13 +13,13 @@ import {
   Activity,
   MapPin
 } from 'lucide-react';
-import { useFacilities } from '@/hooks/useFacilities';
+import { useRealFacilities } from '@/hooks/api/useRealFacilities';
 import FacilitiesList from './FacilitiesList';
 import CreateFacilityDialog from './CreateFacilityDialog';
 import EditFacilityDialog from './EditFacilityDialog';
 
 export const FacilitiesManagement: React.FC = () => {
-  const { facilities, isLoading, error, getFacilityStats, searchFacilities } = useFacilities();
+  const { data: facilities = [], isLoading, error } = useRealFacilities();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFacility, setSelectedFacility] = useState<any>(null);
   
@@ -28,8 +27,26 @@ export const FacilitiesManagement: React.FC = () => {
   const [createFacilityOpen, setCreateFacilityOpen] = useState(false);
   const [editFacilityOpen, setEditFacilityOpen] = useState(false);
 
-  const stats = getFacilityStats();
-  const filteredFacilities = searchFacilities(searchQuery);
+  const getFacilityStats = () => {
+    return {
+      total: facilities.length,
+      active: facilities.filter(f => f.is_active !== false).length,
+      inactive: facilities.filter(f => f.is_active === false).length,
+      typeBreakdown: facilities.reduce((acc: any, f) => {
+        const t = f.facility_type || 'unknown';
+        acc[t] = (acc[t] || 0) + 1;
+        return acc;
+      }, {})
+    };
+  };
+
+  const searchFacilities = (query: string) => {
+    if (!query.trim()) return facilities;
+    return facilities.filter(f =>
+      f.name.toLowerCase().includes(query.toLowerCase()) ||
+      (f.address ?? '').toLowerCase().includes(query.toLowerCase())
+    );
+  };
 
   const handleEditFacility = (facility: any) => {
     setSelectedFacility(facility);
@@ -62,9 +79,9 @@ export const FacilitiesManagement: React.FC = () => {
             <Building className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.total}</div>
+            <div className="text-2xl font-bold">{getFacilityStats().total}</div>
             <p className="text-xs text-muted-foreground">
-              {stats.active} active, {stats.inactive} inactive
+              {getFacilityStats().active} active, {getFacilityStats().inactive} inactive
             </p>
           </CardContent>
         </Card>
@@ -75,7 +92,7 @@ export const FacilitiesManagement: React.FC = () => {
             <Settings className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{Object.keys(stats.typeBreakdown).length}</div>
+            <div className="text-2xl font-bold">{Object.keys(getFacilityStats().typeBreakdown).length}</div>
             <p className="text-xs text-muted-foreground">Different facility types</p>
           </CardContent>
         </Card>
@@ -86,7 +103,7 @@ export const FacilitiesManagement: React.FC = () => {
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.active}</div>
+            <div className="text-2xl font-bold">{getFacilityStats().active}</div>
             <p className="text-xs text-muted-foreground">Currently operational</p>
           </CardContent>
         </Card>
@@ -97,7 +114,7 @@ export const FacilitiesManagement: React.FC = () => {
             <MapPin className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.total}</div>
+            <div className="text-2xl font-bold">{getFacilityStats().total}</div>
             <p className="text-xs text-muted-foreground">Unique locations</p>
           </CardContent>
         </Card>
@@ -131,7 +148,7 @@ export const FacilitiesManagement: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-2">
-            {Object.entries(stats.typeBreakdown).map(([type, count]) => (
+            {Object.entries(getFacilityStats().typeBreakdown).map(([type, count]) => (
               <Badge key={type} variant="outline" className="text-sm">
                 {type}: {count as number}
               </Badge>
@@ -155,7 +172,7 @@ export const FacilitiesManagement: React.FC = () => {
         </Card>
       ) : (
         <FacilitiesList
-          facilities={filteredFacilities}
+          facilities={searchFacilities(searchQuery)}
           onEditFacility={handleEditFacility}
         />
       )}
