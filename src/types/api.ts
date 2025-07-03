@@ -18,3 +18,24 @@ export interface ApiSummary {
   // Catch-all for future, still typed — better than any
   [key: string]: unknown;
 }
+
+export interface ApiDiff {
+  recommended: ApiSummary;
+  deprecated: ApiSummary[];
+  differences: {
+    endpoints: {
+      deprecated: number[];
+    };
+  };
+  validationResults?: {
+    safeToRemove: boolean;
+    missingData?: string[];
+  };
+}
+
+export interface ConsolidationOutcome {
+  apisRemoved: number;
+  endpointsMigrated: number;
+  errors: string[];
+  message?: string;
+}

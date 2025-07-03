@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -7,9 +6,10 @@ import { Badge } from '@/components/ui/badge';
 import { ApiConsolidationUtility } from '@/utils/api/ApiConsolidationUtility';
 import { useToast } from '@/hooks/use-toast';
 import { CheckCircle, AlertTriangle, Loader2, GitMerge, Target } from 'lucide-react';
+import { ApiDiff, ConsolidationOutcome, ApiSummary } from '@/types/api';
 
 interface ApiConsolidationActionProps {
-  comparisonResult?: any;
+  comparisonResult?: ApiDiff;
   onConsolidationComplete?: () => void;
 }
 
@@ -18,7 +18,7 @@ export const ApiConsolidationAction: React.FC<ApiConsolidationActionProps> = ({
   onConsolidationComplete
 }) => {
   const [isConsolidating, setIsConsolidating] = useState(false);
-  const [consolidationResult, setConsolidationResult] = useState<any>(null);
+  const [consolidationResult, setConsolidationResult] = useState<ConsolidationOutcome | null>(null);
   const { toast } = useToast();
 
   const handleConsolidate = async (forceConsolidation = false) => {
@@ -30,7 +30,7 @@ export const ApiConsolidationAction: React.FC<ApiConsolidationActionProps> = ({
       console.log('🚀 Starting consolidation process...');
       
       const keepApiId = comparisonResult.recommended.id;
-      const removeApiIds = comparisonResult.deprecated.map((api: any) => api.id);
+      const removeApiIds = comparisonResult.deprecated.map((api: ApiSummary) => api.id);
       
       const result = await ApiConsolidationUtility.consolidateToSingleSource(
         keepApiId, 
