@@ -40,6 +40,11 @@ export interface ApiEndpoint {
   bodySchema?: ApiBodySchema;
 }
 
+// API Lifecycle Types
+export type ApiLifecycleStage = 'development' | 'testing' | 'staging' | 'production' | 'deprecated';
+export type ApiEventType = 'created' | 'updated' | 'deployed' | 'deprecated' | 'retired';
+export type ImpactLevel = 'low' | 'medium' | 'high' | 'critical';
+
 // RLS Policy with all required properties
 export interface ApiRlsPolicy {
   id: string;
@@ -167,4 +172,19 @@ export interface ApiQueryParam {
   type: 'string' | 'number' | 'boolean';
   required: boolean;
   description?: string;
+}
+
+// API Consumption types
+export interface ApiConsumptionConfig {
+  enableRateLimiting: boolean;
+  enableAnalytics: boolean;
+  enableCaching: boolean;
+  cacheTimeoutMs: number;
+}
+
+export interface ApiConsumptionResult {
+  success: boolean;
+  data?: any;
+  error?: string;
+  timestamp: string;
 }

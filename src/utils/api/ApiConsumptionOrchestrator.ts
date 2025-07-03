@@ -3,7 +3,7 @@
  * API Consumption Orchestration
  */
 
-import { ApiIntegration, ApiIntegrationRegistry } from './ApiIntegrationTypes';
+import { ApiIntegration, ApiIntegrationRegistry, ApiConsumptionConfig, ApiConsumptionResult } from './ApiIntegrationTypes';
 
 export interface ConsumptionMetrics {
   totalRequests: number;
@@ -94,3 +94,6 @@ export class ApiConsumptionOrchestrator {
     };
   }
 }
+
+// Export singleton instance for consistent usage
+export const apiConsumptionOrchestrator = new ApiConsumptionOrchestrator();
