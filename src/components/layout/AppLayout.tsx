@@ -21,6 +21,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
   showNavigation = true 
 }) => {
   const { isLoading, isAuthenticated, signOut, user } = useAuthContext();
+  
+  console.log('🏢 AppLayout Debug - isLoading:', isLoading, 'isAuthenticated:', isAuthenticated, 'user:', user?.email);
 
   // Loading state
   if (isLoading) {

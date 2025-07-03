@@ -29,7 +29,9 @@ import {
 import type { UserWithRoles } from '@/types/userManagement';
 
 export const UserManagementTable: React.FC = () => {
+  console.log('📊 UserManagementTable rendering');
   const { users, isLoading, error, meta } = useUnifiedUserManagement();
+  console.log('📊 Debug - users:', users.length, 'isLoading:', isLoading, 'error:', error);
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState('users');
 

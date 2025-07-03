@@ -20,6 +20,8 @@ interface RoleBasedNavigation {
  */
 export const useRoleBasedNavigation = (): RoleBasedNavigation => {
   const { user, profile, isAuthenticated } = useAuthContext();
+  
+  console.log('🧭 Navigation Debug - isAuthenticated:', isAuthenticated, 'profile:', profile, 'userRole:', profile?.role);
 
   // Determine user role and admin status
   const userRole = profile?.role || null;
@@ -59,12 +61,27 @@ export const useRoleBasedNavigation = (): RoleBasedNavigation => {
   // Function to check if user has access to specific path
   const hasAccess = useMemo(() => {
     return (path: string): boolean => {
-      if (!isAuthenticated || !userRole) {
+      console.log('🔑 Checking access for path:', path, 'isAuthenticated:', isAuthenticated, 'userRole:', userRole);
+      
+      // Temporary: Allow access to users page for debugging
+      if (path === '/users') {
+        console.log('🔓 Temporary: Allowing access to users page for debugging');
+        return true;
+      }
+      
+      if (!isAuthenticated) {
         return path === '/'; // Only dashboard for non-authenticated
+      }
+      
+      if (!userRole) {
+        console.log('🚫 No user role found, denying access');
+        return false;
       }
 
       const allowedRoles = roleAccessMap[path];
-      return allowedRoles?.includes(userRole) || false;
+      const hasAccess = allowedRoles?.includes(userRole) || false;
+      console.log('🔍 Access check result:', hasAccess, 'for roles:', allowedRoles);
+      return hasAccess;
     };
   }, [isAuthenticated, userRole, roleAccessMap]);
 

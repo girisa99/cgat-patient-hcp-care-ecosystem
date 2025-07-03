@@ -25,6 +25,7 @@ const queryClient = new QueryClient({
 
 const App = () => {
   console.log('🚀 App rendering - minimal version');
+  console.log('🔍 Routes configured for users page at /users');
   
   return (
     <QueryClientProvider client={queryClient}>
