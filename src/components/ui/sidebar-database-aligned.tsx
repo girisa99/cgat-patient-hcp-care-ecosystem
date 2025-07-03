@@ -352,15 +352,15 @@ export function AppSidebar() {
                 const Icon = tab.icon
                 return (
                   <SidebarMenuItem key={tab.to}>
-                    <SidebarMenuButton 
-                      asChild 
-                      isActive={isActive(tab.to)}
-                    >
-                      <Link to={tab.to} className={getNavClassName(tab.to)}>
-                        <Icon className="h-4 w-4" />
-                        <span>{tab.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
+                     <SidebarMenuButton 
+                       asChild 
+                       isActive={isActive(tab.to)}
+                     >
+                       <Link to={tab.to} className={cn("flex items-center gap-3", getNavClassName(tab.to))}>
+                         <Icon className="h-4 w-4 shrink-0" />
+                         {!collapsed && <span className="truncate">{tab.title}</span>}
+                       </Link>
+                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 )
               })}
