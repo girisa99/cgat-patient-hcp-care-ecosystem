@@ -4013,6 +4013,12 @@ export type Database = {
           expires_at: string
         }[]
       }
+      get_user_roles: {
+        Args: { check_user_id: string }
+        Returns: {
+          role_name: string
+        }[]
+      }
       has_permission: {
         Args: { user_id: string; permission_name: string }
         Returns: boolean

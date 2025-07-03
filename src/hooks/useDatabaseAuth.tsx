@@ -93,49 +93,28 @@ export const useDatabaseAuth = (): DatabaseAuthContext => {
     const loadDatabaseProfile = async (userId: string) => {
       try {
         console.log('📋 Loading profile and roles for user:', userId);
-        console.log('🔍 TESTING: Starting immediate role query only...');
+        console.log('🔍 Using database function to get roles...');
         
-        // Test roles query directly with timeout
-        console.log('🔍 About to call supabase.from user_roles...');
-        const roleQuery = supabase
-          .from('user_roles')
-          .select('role_id')
-          .eq('user_id', userId);
-          
-        console.log('🔍 Query created, now executing...');
-        const { data: userRoleIds, error: rolesError } = await roleQuery;
-        console.log('🔍 Query completed!');
+        // Use the database function instead of direct table queries
+        const { data: rolesData, error: rolesError } = await supabase
+          .rpc('get_user_roles', { check_user_id: userId });
 
-        console.log('🔍 IMMEDIATE TEST - User role IDs:', { userRoleIds, rolesError });
+        console.log('🔍 Function result:', { rolesData, rolesError });
 
         let roleNames: string[] = [];
         
-        if (userRoleIds && userRoleIds.length > 0 && !rolesError) {
-          console.log('🔍 Getting role names for IDs:', userRoleIds.map(ur => ur.role_id));
-          
-          console.log('🔍 About to call supabase.from roles...');
-          const { data: rolesData, error: roleNamesError } = await supabase
-            .from('roles')
-            .select('name')
-            .in('id', userRoleIds.map(ur => ur.role_id));
-          console.log('🔍 Roles query completed!');
-          
-          console.log('🔍 Role names result:', { rolesData, roleNamesError });
-          
-          if (rolesData && !roleNamesError) {
-            roleNames = rolesData.map(r => r.name);
-            console.log('✅ Successfully loaded roles:', roleNames);
-          }
+        if (rolesData && !rolesError) {
+          roleNames = rolesData.map((row: any) => row.role_name);
+          console.log('✅ Successfully loaded roles via function:', roleNames);
         } else {
-          console.log('❌ No user role IDs found or error occurred');
+          console.log('❌ Error loading roles:', rolesError);
         }
 
-        console.log('🔍 About to check mounted state...');
         if (mounted) {
-          console.log('🔍 Component is mounted, setting user roles...');
+          console.log('🔍 Setting user roles in state:', roleNames);
           // Set user roles array
           setUserRoles(roleNames);
-          console.log('✅ Loaded user roles:', roleNames);
+          console.log('✅ User roles set in state:', roleNames);
 
           // Create a minimal profile with just the user ID and primary role
           const primaryRole = roleNames[0] as DatabaseUserRole || null;
