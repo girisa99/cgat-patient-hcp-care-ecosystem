@@ -57,12 +57,13 @@ export const ApiConsolidationAction: React.FC<ApiConsolidationActionProps> = ({
         });
       }
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('❌ Consolidation failed:', error);
+      const message = error instanceof Error ? error.message : 'An unexpected error occurred';
       toast({
-        title: "❌ Consolidation Failed",
-        description: error.message || 'An unexpected error occurred',
-        variant: "destructive",
+        title: '❌ Consolidation Failed',
+        description: message,
+        variant: 'destructive'
       });
     } finally {
       setIsConsolidating(false);
@@ -99,12 +100,13 @@ export const ApiConsolidationAction: React.FC<ApiConsolidationActionProps> = ({
         });
       }
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('❌ Core healthcare API consolidation failed:', error);
+      const message = error instanceof Error ? error.message : 'Failed to consolidate core healthcare APIs';
       toast({
-        title: "❌ Consolidation Failed",
-        description: error.message || 'Failed to consolidate core healthcare APIs',
-        variant: "destructive",
+        title: '❌ Consolidation Failed',
+        description: message,
+        variant: 'destructive'
       });
     } finally {
       setIsConsolidating(false);
