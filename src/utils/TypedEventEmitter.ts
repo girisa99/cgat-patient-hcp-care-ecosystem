@@ -1,11 +1,10 @@
-import { EventEmitter } from 'events';
+import { EventEmitter } from 'eventemitter3';
 
 /**
  * TypedEventEmitter
  *
- * Utility wrapper around Node.js `EventEmitter` that preserves generic event maps.
- * Node's type definitions already support generics, so we simply re-export a
- * subclass with a more memorable name.
+ * Utility wrapper around browser-compatible `EventEmitter` that preserves generic event maps.
+ * Uses eventemitter3 for cross-platform compatibility.
  */
 export interface EventsMap {
   [event: string | symbol]: readonly unknown[];

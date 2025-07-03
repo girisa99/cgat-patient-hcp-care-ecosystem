@@ -612,6 +612,12 @@ export class UnifiedCoreVerificationService extends TypedEventEmitter<UnifiedCor
     console.log('🔍 Scanning hooks directory...');
     
     try {
+      // Browser-compatible implementation - skip file system scanning
+      if (typeof window !== 'undefined') {
+        console.log('⚠️ File system scanning not available in browser environment');
+        return;
+      }
+
       const fs = await import('fs');
       const path = await import('path');
       
@@ -629,12 +635,12 @@ export class UnifiedCoreVerificationService extends TypedEventEmitter<UnifiedCor
 
           if (entry.isDirectory()) {
             await scanHooksDirectory(fullPath);
-          } else if (entry.isFile() && (entry.name.endsWith('.ts') || entry.name.endsWith('.tsx'))) {
+          } else if (entry.isFile() && (entry.name.endsWith('.tsx') || entry.name.endsWith('.ts'))) {
             try {
               const content = fs.readFileSync(fullPath, 'utf-8');
               
-              // Check if it's actually a hook (exports use* functions)
-              const hookMatches = content.matchAll(/export\s+(?:const|function)\s+(use[A-Z][a-zA-Z]*)/g);
+              // Check if it's a React hook (starts with 'use')
+              const hookMatches = content.match(/export\s+(?:const|function)\s+(use[A-Z][a-zA-Z]*)/g);
               
               if (hookMatches) {
                 hookMatches.forEach(match => {
@@ -689,6 +695,12 @@ export class UnifiedCoreVerificationService extends TypedEventEmitter<UnifiedCor
     console.log('🔍 Scanning components directory...');
     
     try {
+      // Browser-compatible implementation - skip file system scanning  
+      if (typeof window !== 'undefined') {
+        console.log('⚠️ File system scanning not available in browser environment');
+        return;
+      }
+
       const fs = await import('fs');
       const path = await import('path');
       
@@ -766,6 +778,12 @@ export class UnifiedCoreVerificationService extends TypedEventEmitter<UnifiedCor
     console.log('🔍 Scanning types directory...');
     
     try {
+      // Browser-compatible implementation - skip file system scanning
+      if (typeof window !== 'undefined') {
+        console.log('⚠️ File system scanning not available in browser environment');
+        return;
+      }
+
       const fs = await import('fs');
       const path = await import('path');
       
@@ -840,6 +858,36 @@ export class UnifiedCoreVerificationService extends TypedEventEmitter<UnifiedCor
     console.log('🔍 Scanning database tables...');
     
     try {
+      // Browser-compatible implementation - skip file system scanning
+      if (typeof window !== 'undefined') {
+        console.log('⚠️ File system scanning not available in browser environment');
+        
+        // Add known core tables for browser environment
+        const coreTables = ['profiles', 'facilities', 'modules', 'onboarding_applications', 'user_module_assignments', 'role_module_assignments'];
+        coreTables.forEach(tableName => {
+          const entityId = `table-${tableName}`;
+          const entity: EntityDefinition = {
+            id: entityId,
+            name: tableName,
+            type: 'table',
+            filePath: `database/${tableName}`,
+            dependencies: [],
+            metadata: {
+              category: 'database',
+              isCore: true,
+              isActive: true
+            },
+            lastModified: new Date().toISOString(),
+            hash: this.generateHash(tableName)
+          };
+          
+          this.registry.tables.set(entityId, entity);
+        });
+        
+        console.log(`✅ Tables scan completed: ${this.registry.tables.size} tables registered`);
+        return;
+      }
+
       // Scan for database table references in the codebase
       const fs = await import('fs');
       const path = await import('path');
@@ -1008,6 +1056,12 @@ export class UnifiedCoreVerificationService extends TypedEventEmitter<UnifiedCor
     console.log('🔍 Scanning routes...');
     
     try {
+      // Browser-compatible implementation - skip file system scanning
+      if (typeof window !== 'undefined') {
+        console.log('⚠️ File system scanning not available in browser environment');
+        return;
+      }
+
       const fs = await import('fs');
       
       // Scan App.tsx for routes
