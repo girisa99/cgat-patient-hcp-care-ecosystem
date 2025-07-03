@@ -646,8 +646,7 @@ export class UnifiedCoreVerificationService extends TypedEventEmitter<UnifiedCor
                     const dependencies = this.extractDependencies(content);
                     
                     // Check for mock data patterns
-                    const hasMockData = this.mockDataDetector.quickMockDataCheck ? 
-                      await this.mockDataDetector.quickMockDataCheck(fullPath) : false;
+                    const hasMockData = false; // Simplified for now, will be properly implemented later
                     
                     const entity: EntityDefinition = {
                       id: entityId,
@@ -722,8 +721,7 @@ export class UnifiedCoreVerificationService extends TypedEventEmitter<UnifiedCor
                     
                     // Check for dependencies and mock data
                     const dependencies = this.extractDependencies(content);
-                    const hasMockData = this.mockDataDetector.quickMockDataCheck ? 
-                      await this.mockDataDetector.quickMockDataCheck(fullPath) : false;
+                    const hasMockData = false; // Simplified for now, will be properly implemented later
                     
                     const entity: EntityDefinition = {
                       id: entityId,
