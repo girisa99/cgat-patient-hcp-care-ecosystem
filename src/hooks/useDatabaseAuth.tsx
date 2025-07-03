@@ -103,11 +103,12 @@ export const useDatabaseAuth = (): DatabaseAuthContext => {
 
         let roleNames: string[] = [];
         
-        if (rolesData && !rolesError) {
-          roleNames = rolesData.map((row: any) => row.role_name);
+        if (rolesData && !rolesError && Array.isArray(rolesData)) {
+          roleNames = rolesData.map((row: any) => row.role_name).filter(Boolean);
           console.log('✅ Successfully loaded roles via function:', roleNames);
         } else {
           console.log('❌ Error loading roles:', rolesError);
+          console.log('❌ Raw rolesData:', rolesData);
         }
 
         if (mounted) {
