@@ -14,7 +14,7 @@ export function startBackgroundServices() {
 }
 
 // Only auto-start in appropriate environments
-if (typeof window === 'undefined' && typeof Deno === 'undefined') {
+if (typeof window === 'undefined') {
   // Only start on server / Node environment, not in the browser bundle
   startBackgroundServices();
 }
