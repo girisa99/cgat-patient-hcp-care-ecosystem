@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -12,16 +11,17 @@ import {
   Rocket,
   ArrowUpCircle
 } from 'lucide-react';
+import { ApiSummary } from '@/types/api';
 
 interface ApiCardActionsProps {
-  api: any;
+  api: ApiSummary;
   type: 'internal' | 'external' | 'published';
   isProcessing: string | null;
-  onPublish?: (api: any) => void;
-  onConfigure?: (api: any) => void;
-  onViewAnalytics?: (api: any) => void;
-  onRevertToDraft?: (api: any) => void;
-  onCancelPublication?: (api: any) => void;
+  onPublish?: (api: ApiSummary) => void;
+  onConfigure?: (api: ApiSummary) => void;
+  onViewAnalytics?: (api: ApiSummary) => void;
+  onRevertToDraft?: (api: ApiSummary) => void;
+  onCancelPublication?: (api: ApiSummary) => void;
   onStatusUpdate?: (apiId: string, status: string) => void;
   onViewDetails?: (apiId: string) => void;
   isUpdatingStatus?: boolean;
