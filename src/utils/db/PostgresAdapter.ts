@@ -35,8 +35,11 @@ export class PostgresAdapter implements DatabaseAdapter {
     try {
       const { rows } = await client.query(sql, params);
       return rows as T[];
-    } catch (err: any) {
-      throw new DatabaseError(err.message, err);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        throw new DatabaseError(err.message, err);
+      }
+      throw new DatabaseError('Unknown database error', err);
     } finally {
       client.release();
     }
