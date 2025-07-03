@@ -5,11 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
-import { useUnifiedUserManagement } from '@/hooks/useUnifiedUserManagement';
+import { useMasterUserManagement } from '@/hooks/useMasterUserManagement';
 import { useQueryClient } from '@tanstack/react-query';
-import { useRoleMutations } from '@/hooks/mutations/useRoleMutations';
-import { useUserDeactivation } from '@/hooks/mutations/useUserDeactivation';
-import { useFacilityMutations } from '@/hooks/mutations/useFacilityMutations';
 import { supabase } from '@/integrations/supabase/client';
 import { UserPlus, Package, Users2, Search } from 'lucide-react';
 import {
@@ -35,12 +32,15 @@ import { UserRow } from './UserRow';
 import { BulkActionsTab } from './BulkActionsTab';
 
 export const ImprovedUserManagementTable: React.FC = () => {
-  // All hooks must be called unconditionally at the top
-  const { users, isLoading, error, meta, createUser, isCreatingUser, refetch } = useUnifiedUserManagement();
+  // SINGLE MASTER HOOK - No more multiple hook dependencies
+  const { 
+    users, isLoading, error, meta, refetch,
+    createUser, isCreatingUser,
+    assignRole, removeRole, isAssigningRole, isRemovingRole,
+    assignFacility, isAssigningFacility,
+    deactivateUser, isDeactivating
+  } = useMasterUserManagement();
   const { toast } = useToast();
-  const { assignRole, removeRole, isAssigningRole, isRemovingRole } = useRoleMutations();
-  const { deactivateUser, isDeactivating } = useUserDeactivation();
-  const { assignFacility, isAssigningFacility } = useFacilityMutations();
   const queryClient = useQueryClient();
   
   // All useState hooks must be called unconditionally
