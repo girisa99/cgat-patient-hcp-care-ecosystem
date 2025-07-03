@@ -46,26 +46,12 @@ export const useCleanAuth = () => {
             setUser(initialSession.user);
             setSession(initialSession);
             setIsAuthenticated(true);
-            
-            // Try to get profile - but don't block on it
-            try {
-              const { data: profileData } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', initialSession.user.id)
-                .single();
-              
-              if (profileData) {
-                setProfile(profileData);
-              }
-            } catch (profileError) {
-              console.warn('⚠️ Could not load profile:', profileError);
-            }
           } else {
             console.log('ℹ️ No existing session found');
             setIsAuthenticated(false);
           }
           
+          // Always set loading to false after checking session
           setIsLoading(false);
         }
       } catch (error) {
@@ -76,6 +62,14 @@ export const useCleanAuth = () => {
         }
       }
     };
+
+    // Set loading timeout as fallback
+    const loadingTimeout = setTimeout(() => {
+      if (mounted) {
+        console.log('⏰ Loading timeout - forcing loading to false');
+        setIsLoading(false);
+      }
+    }, 3000);
 
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -119,6 +113,7 @@ export const useCleanAuth = () => {
 
     return () => {
       mounted = false;
+      clearTimeout(loadingTimeout);
       subscription.unsubscribe();
     };
   }, []);
