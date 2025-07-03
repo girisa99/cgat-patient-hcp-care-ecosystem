@@ -1,40 +1,50 @@
 
 /**
- * RLS Policy Generation Utilities for API Integrations
+ * RLS Policy Generation for API Integrations
  */
 
-import { ApiIntegration, ApiRlsPolicy } from './ApiIntegrationTypes';
+import { ApiRlsPolicy } from './ApiIntegrationTypes';
 
 export class RLSPolicyGenerator {
-  static async generateRLSPolicies(integration: ApiIntegration): Promise<ApiRlsPolicy[]> {
-    const policies: ApiRlsPolicy[] = [];
-    const tables = [...new Set(integration.mappings.map(m => m.targetTable))];
-    
-    for (const table of tables) {
-      policies.push(
-        {
-          table: table,
-          policy: `${integration.name}_select_policy`,
-          type: 'SELECT',
-          policyName: `${integration.name}_select_policy`,
-          operation: 'SELECT',
-          tableName: table,
-          condition: `integration_id = '${integration.id}'`,
-          roles: ['authenticated']
-        },
-        {
-          table: table,
-          policy: `${integration.name}_insert_policy`,
-          type: 'INSERT',
-          policyName: `${integration.name}_insert_policy`,
-          operation: 'INSERT',
-          tableName: table,
-          condition: `auth.uid() IS NOT NULL`,
-          roles: ['authenticated']
-        }
-      );
-    }
-    
-    return policies;
+  static generateBasicUserPolicy(tableName: string): ApiRlsPolicy {
+    return {
+      id: `${tableName}_user_policy`,
+      table: tableName,
+      policy: `Users can manage their own ${tableName} records`,
+      description: `Allow users to create, read, update, and delete their own ${tableName} records`,
+      policyName: `${tableName}_user_access`,
+      operation: 'ALL',
+      tableName: tableName,
+      condition: 'user_id = auth.uid()',
+      roles: ['authenticated']
+    };
+  }
+
+  static generateAdminPolicy(tableName: string): ApiRlsPolicy {
+    return {
+      id: `${tableName}_admin_policy`,
+      table: tableName,
+      policy: `Admins can manage all ${tableName} records`,
+      description: `Allow administrators to manage all ${tableName} records`,
+      policyName: `${tableName}_admin_access`,
+      operation: 'ALL',
+      tableName: tableName,
+      condition: 'has_role(auth.uid(), \'superAdmin\')',
+      roles: ['superAdmin', 'onboardingTeam']
+    };
+  }
+
+  static generateReadOnlyPolicy(tableName: string): ApiRlsPolicy {
+    return {
+      id: `${tableName}_readonly_policy`,
+      table: tableName,
+      policy: `Public read access to ${tableName}`,
+      description: `Allow public read-only access to ${tableName} records`,
+      policyName: `${tableName}_public_read`,
+      operation: 'SELECT',
+      tableName: tableName,
+      condition: 'true',
+      roles: ['public', 'authenticated']
+    };
   }
 }

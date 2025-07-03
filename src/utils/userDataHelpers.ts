@@ -34,3 +34,10 @@ export const getRegularUsers = (users: UserWithRoles[]): UserWithRoles[] => {
     user.user_roles?.some((userRole: any) => userRole.roles?.name === 'user')
   );
 };
+
+/**
+ * Create consistent query keys for user-related data
+ */
+export const createUserQueryKey = (type: string, ...params: any[]) => {
+  return ['users', type, ...params];
+};

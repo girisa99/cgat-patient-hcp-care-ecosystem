@@ -1,128 +1,73 @@
+
 /**
- * Data Mapping Generation Utilities for API Integrations
+ * Data Mapping Generation Utilities
  */
 
-import { ApiIntegration, ApiDataMapping } from './ApiIntegrationTypes';
+import { ApiDataMapping, ApiIntegration } from './ApiIntegrationTypes';
 
 export class DataMappingGenerator {
-  static async generateDataMappings(integration: ApiIntegration): Promise<ApiDataMapping[]> {
+  static generateDataMappings(integration: ApiIntegration): ApiDataMapping[] {
     const mappings: ApiDataMapping[] = [];
-    
-    for (const [schemaName, schema] of Object.entries(integration.schemas)) {
-      if (schema.properties) {
-        for (const [fieldName, fieldSchema] of Object.entries(schema.properties)) {
-          const mapping = await this.suggestMapping(fieldName, fieldSchema as any, integration.name);
-          if (mapping) {
-            mappings.push(mapping);
-          }
-        }
+
+    integration.endpoints.forEach(endpoint => {
+      if (endpoint.bodySchema) {
+        Object.keys(endpoint.bodySchema.properties || {}).forEach(fieldName => {
+          mappings.push({
+            id: `mapping_${integration.id}_${endpoint.id}_${fieldName}`,
+            sourceField: fieldName,
+            targetField: `target_${fieldName}`,
+            targetTable: 'processed_data',
+            transformation: 'direct',
+            validation: {
+              required: true,
+              type: 'string',
+              rules: ['not_empty']
+            }
+          });
+        });
       }
-    }
-    
+    });
+
     return mappings;
   }
 
-  static async suggestMapping(fieldName: string, fieldSchema: any, integrationName: string): Promise<ApiDataMapping | null> {
-    const tables = await this.getDatabaseTables();
-    
-    for (const table of tables) {
-      const columns = await this.getTableColumns(table);
-      
-      for (const column of columns) {
-        if (this.isFieldMatch(fieldName, column.name)) {
-          return {
-            internal: fieldName,
-            external: column.name,
-            type: 'field',
-            sourceField: fieldName,
-            targetField: column.name,
-            targetTable: table,
-            transformation: this.suggestTransformation(fieldSchema, column),
-            validation: this.suggestValidation(fieldSchema)
-          };
-        }
-      }
-    }
-    
-    return null;
+  static validateMapping(mapping: ApiDataMapping): boolean {
+    return !!(
+      mapping.sourceField &&
+      mapping.targetField &&
+      mapping.targetTable
+    );
   }
 
-  static async applyDataMappings(data: any, mappings: ApiDataMapping[]): Promise<any> {
-    const mapped: any = {};
-    
-    for (const mapping of mappings) {
+  static applyMapping(data: any, mappings: ApiDataMapping[]): any {
+    const result: any = {};
+
+    mappings.forEach(mapping => {
       if (data[mapping.sourceField] !== undefined) {
-        mapped[mapping.targetField] = await this.transformValue(
-          data[mapping.sourceField],
-          mapping.transformation
-        );
+        let value = data[mapping.sourceField];
+        
+        // Apply transformation if specified
+        if (mapping.transformation) {
+          switch (mapping.transformation) {
+            case 'uppercase':
+              value = String(value).toUpperCase();
+              break;
+            case 'lowercase':
+              value = String(value).toLowerCase();
+              break;
+            case 'trim':
+              value = String(value).trim();
+              break;
+            default:
+              // Direct mapping
+              break;
+          }
+        }
+
+        result[mapping.targetField] = value;
       }
-    }
-    
-    return mapped;
-  }
+    });
 
-  static async transformValue(value: any, transformation?: string): Promise<any> {
-    if (!transformation || transformation === 'direct') {
-      return value;
-    }
-    
-    switch (transformation) {
-      case 'parseUUID':
-        return typeof value === 'string' ? value : String(value);
-      case 'parseTimestamp':
-        return new Date(value).toISOString();
-      default:
-        return value;
-    }
-  }
-
-  private static async getDatabaseTables(): Promise<string[]> {
-    return ['profiles', 'facilities', 'modules', 'permissions', 'roles', 'user_roles', 'audit_logs'];
-  }
-
-  private static async getTableColumns(tableName: string): Promise<any[]> {
-    const knownColumns: Record<string, any[]> = {
-      profiles: [
-        { name: 'id', type: 'uuid' },
-        { name: 'first_name', type: 'varchar' },
-        { name: 'last_name', type: 'varchar' },
-        { name: 'email', type: 'varchar' },
-        { name: 'phone', type: 'varchar' }
-      ],
-      facilities: [
-        { name: 'id', type: 'uuid' },
-        { name: 'name', type: 'varchar' },
-        { name: 'email', type: 'varchar' },
-        { name: 'phone', type: 'varchar' }
-      ]
-    };
-    
-    return knownColumns[tableName] || [];
-  }
-
-  private static isFieldMatch(apiField: string, dbField: string): boolean {
-    const normalized1 = apiField.toLowerCase().replace(/[_-]/g, '');
-    const normalized2 = dbField.toLowerCase().replace(/[_-]/g, '');
-    return normalized1 === normalized2 || normalized1.includes(normalized2) || normalized2.includes(normalized1);
-  }
-
-  private static suggestTransformation(fieldSchema: any, column: any): string {
-    if (fieldSchema.type === 'string' && column.type === 'uuid') {
-      return 'parseUUID';
-    }
-    if (fieldSchema.format === 'date-time' && column.type === 'timestamp') {
-      return 'parseTimestamp';
-    }
-    return 'direct';
-  }
-
-  private static suggestValidation(fieldSchema: any): string {
-    const validations = [];
-    if (fieldSchema.required) validations.push('required');
-    if (fieldSchema.minLength) validations.push(`minLength:${fieldSchema.minLength}`);
-    if (fieldSchema.maxLength) validations.push(`maxLength:${fieldSchema.maxLength}`);
-    if (fieldSchema.pattern) validations.push(`pattern:${fieldSchema.pattern}`);
-    return validations.join('|');
+    return result;
   }
 }

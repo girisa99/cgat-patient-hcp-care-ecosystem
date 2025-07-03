@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,7 +10,10 @@ import Users from "@/pages/Users";
 import Patients from "@/pages/Patients";
 import { ModulesManagement } from "@/components/modules/ModulesManagement";
 import { FacilitiesManagement } from "@/components/facilities/FacilitiesManagement";
-import { CollaborativeOnboardingView } from "@/components/onboarding/CollaborativeOnboardingView";
+import OnboardingDashboard from "@/pages/OnboardingDashboard";
+import Onboarding from "@/pages/Onboarding";
+import CollaborativeOnboarding from "@/pages/CollaborativeOnboarding";
+import TreatmentCenterOnboarding from "@/pages/TreatmentCenterOnboarding";
 import ApiServices from "@/pages/ApiServices";
 import Testing from "@/pages/Testing";
 import DataImport from "@/pages/DataImport";
@@ -53,8 +55,14 @@ const App = () => {
                 <Route path="/testing" element={<Testing />} />
                 <Route path="/data-import" element={<DataImport />} />
                 <Route path="/active-verification" element={<ActiveVerification />} />
-                <Route path="/onboarding" element={<CollaborativeOnboardingView />} />
                 <Route path="/security" element={<SecurityDashboard />} />
+                
+                {/* Comprehensive Onboarding Suite */}
+                <Route path="/onboarding" element={<OnboardingDashboard />} />
+                <Route path="/onboarding/dashboard" element={<OnboardingDashboard />} />
+                <Route path="/onboarding/management" element={<Onboarding />} />
+                <Route path="/onboarding/collaborative/:applicationId?" element={<CollaborativeOnboarding />} />
+                <Route path="/onboarding/treatment-center" element={<TreatmentCenterOnboarding />} />
                 
                 {/* Fallback route */}
                 <Route path="*" element={<UnifiedDashboard />} />

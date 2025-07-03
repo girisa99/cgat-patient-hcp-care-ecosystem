@@ -1,88 +1,144 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { 
-  Play, 
-  Copy, 
-  Save, 
-  Download,
-  ExternalLink,
-  Settings,
-  AlertTriangle,
-  CheckCircle,
-  XCircle
-} from 'lucide-react';
-import { ApiIntegration, ApiEndpoint } from '@/utils/api/ApiIntegrationTypes';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Play, Copy, Download, Loader2, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+
+interface ApiQueryParam {
+  name: string;
+  value: string;
+  type: 'string' | 'number' | 'boolean';
+  required: boolean;
+  description?: string;
+}
 
 interface ApiTestingInterfaceProps {
-  integration: ApiIntegration;
-  onClose: () => void;
+  integration?: any;
+  selectedApi?: any;
+  selectedEndpoint?: any;
+  onClose?: () => void;
 }
 
 export const ApiTestingInterface: React.FC<ApiTestingInterfaceProps> = ({
   integration,
+  selectedApi,
+  selectedEndpoint,
   onClose
 }) => {
   const { toast } = useToast();
-  const [selectedEndpoint, setSelectedEndpoint] = useState<string>(integration.endpoints[0]?.id || '');
+  const [testUrl, setTestUrl] = useState('');
+  const [requestMethod, setRequestMethod] = useState('GET');
+  const [requestHeaders, setRequestHeaders] = useState('{}');
   const [requestBody, setRequestBody] = useState('{}');
-  const [customHeaders, setCustomHeaders] = useState('{}');
-  const [queryParams, setQueryParams] = useState('');
-  const [testResponse, setTestResponse] = useState<any>(null);
+  const [queryParams, setQueryParams] = useState<Record<string, ApiQueryParam>>({});
+  const [response, setResponse] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [savedTests, setSavedTests] = useState<any[]>([]);
+  const [responseStatus, setResponseStatus] = useState<'success' | 'error' | 'warning' | null>(null);
 
-  const currentEndpoint = integration.endpoints.find(e => e.id === selectedEndpoint);
+  // Use integration or selectedApi interchangeably
+  const currentApi = integration || selectedApi;
 
-  const handleTestEndpoint = async () => {
-    if (!currentEndpoint) return;
+  // Initialize form when endpoint changes
+  useEffect(() => {
+    if (selectedEndpoint && currentApi) {
+      setTestUrl(`${currentApi.base_url || currentApi.baseUrl || ''}${selectedEndpoint.path || selectedEndpoint.url || ''}`);
+      setRequestMethod(selectedEndpoint.method || 'GET');
+      
+      // Initialize query parameters
+      const params: Record<string, ApiQueryParam> = {};
+      if (selectedEndpoint.parameters) {
+        selectedEndpoint.parameters.forEach((param: any) => {
+          params[param.name] = {
+            name: param.name,
+            value: param.default || '',
+            type: param.type || 'string',
+            required: param.required || false,
+            description: param.description
+          };
+        });
+      }
+      setQueryParams(params);
+    }
+  }, [selectedEndpoint, currentApi]);
 
+  const updateQueryParam = (name: string, field: keyof ApiQueryParam, value: string) => {
+    setQueryParams(prev => ({
+      ...prev,
+      [name]: {
+        ...prev[name],
+        [field]: value
+      }
+    }));
+  };
+
+  const addQueryParam = () => {
+    const newParamName = `param_${Object.keys(queryParams).length + 1}`;
+    setQueryParams(prev => ({
+      ...prev,
+      [newParamName]: {
+        name: newParamName,
+        value: '',
+        type: 'string',
+        required: false
+      }
+    }));
+  };
+
+  const removeQueryParam = (name: string) => {
+    setQueryParams(prev => {
+      const newParams = { ...prev };
+      delete newParams[name];
+      return newParams;
+    });
+  };
+
+  const executeTest = async () => {
     setIsLoading(true);
+    setResponse(null);
+    setResponseStatus(null);
+
     try {
-      let headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-        ...currentEndpoint.headers
+      console.log('🧪 Executing API test:', {
+        url: testUrl,
+        method: requestMethod,
+        headers: requestHeaders,
+        body: requestBody,
+        queryParams
+      });
+
+      // Convert query params to URLSearchParams format
+      const urlParams = new URLSearchParams();
+      Object.values(queryParams).forEach(param => {
+        if (param.value.trim()) {
+          urlParams.append(param.name, param.value);
+        }
+      });
+
+      const finalUrl = urlParams.toString() ? `${testUrl}?${urlParams.toString()}` : testUrl;
+
+      let headers: HeadersInit = {
+        'Content-Type': 'application/json'
       };
 
-      // Parse custom headers
       try {
-        const customHeadersObj = JSON.parse(customHeaders || '{}');
-        headers = { ...headers, ...customHeadersObj };
+        const parsedHeaders = JSON.parse(requestHeaders);
+        headers = { ...headers, ...parsedHeaders };
       } catch (e) {
-        console.warn('Invalid custom headers JSON, using default headers');
-      }
-
-      // Get authentication token if available
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.access_token && !currentEndpoint.isPublic) {
-        headers['Authorization'] = `Bearer ${session.access_token}`;
-      }
-
-      // Build URL with query parameters
-      let url = currentEndpoint.fullUrl || 
-                `${integration.baseUrl}${currentEndpoint.url}`;
-
-      if (queryParams) {
-        const separator = url.includes('?') ? '&' : '?';
-        url += separator + queryParams;
+        console.warn('Invalid headers JSON, using defaults');
       }
 
       const requestOptions: RequestInit = {
-        method: currentEndpoint.method,
+        method: requestMethod,
         headers
       };
 
-      // Add body for non-GET requests
-      if (currentEndpoint.method !== 'GET' && requestBody && requestBody !== '{}') {
+      if (['POST', 'PUT', 'PATCH'].includes(requestMethod) && requestBody.trim()) {
         try {
           JSON.parse(requestBody); // Validate JSON
           requestOptions.body = requestBody;
@@ -91,20 +147,21 @@ export const ApiTestingInterface: React.FC<ApiTestingInterfaceProps> = ({
         }
       }
 
-      console.log('Testing endpoint:', {
-        url,
-        method: currentEndpoint.method,
-        headers,
-        body: requestOptions.body
-      });
+      const startTime = Date.now();
+      const response = await fetch(finalUrl, requestOptions);
+      const endTime = Date.now();
+      const responseTime = endTime - startTime;
 
-      const response = await fetch(url, requestOptions);
       let responseData;
+      const contentType = response.headers.get('content-type');
       
-      try {
-        const responseText = await response.text();
-        responseData = responseText ? JSON.parse(responseText) : null;
-      } catch (e) {
+      if (contentType?.includes('application/json')) {
+        try {
+          responseData = await response.json();
+        } catch {
+          responseData = await response.text();
+        }
+      } else {
         responseData = await response.text();
       }
 
@@ -113,29 +170,41 @@ export const ApiTestingInterface: React.FC<ApiTestingInterfaceProps> = ({
         statusText: response.statusText,
         headers: Object.fromEntries(response.headers.entries()),
         data: responseData,
+        responseTime,
         timestamp: new Date().toISOString(),
-        success: response.ok
+        url: finalUrl,
+        method: requestMethod
       };
 
-      setTestResponse(testResult);
+      setResponse(testResult);
+      
+      if (response.ok) {
+        setResponseStatus('success');
+        toast({
+          title: "Test Successful",
+          description: `Request completed in ${responseTime}ms`,
+        });
+      } else {
+        setResponseStatus('error');
+        toast({
+          title: "Test Failed",
+          description: `HTTP ${response.status}: ${response.statusText}`,
+          variant: "destructive",
+        });
+      }
 
-      toast({
-        title: response.ok ? "Test Successful" : "Test Failed",
-        description: `${currentEndpoint.method} ${currentEndpoint.name} - ${response.status} ${response.statusText}`,
-        variant: response.ok ? "default" : "destructive"
-      });
     } catch (error: any) {
-      console.error('Endpoint test error:', error);
-      
-      setTestResponse({
-        error: error.message,
+      console.error('❌ API test failed:', error);
+      setResponse({
+        error: error.message || 'Network error occurred',
         timestamp: new Date().toISOString(),
-        success: false
+        url: testUrl,
+        method: requestMethod
       });
-      
+      setResponseStatus('error');
       toast({
-        title: "Test Failed",
-        description: error.message,
+        title: "Test Error",
+        description: error.message || 'Failed to execute test',
         variant: "destructive",
       });
     } finally {
@@ -143,318 +212,243 @@ export const ApiTestingInterface: React.FC<ApiTestingInterfaceProps> = ({
     }
   };
 
-  const handleSaveTest = () => {
-    if (!currentEndpoint || !testResponse) return;
-
-    const testCase = {
-      id: Date.now().toString(),
-      endpointId: currentEndpoint.id,
-      endpointName: currentEndpoint.name,
-      method: currentEndpoint.method,
-      requestBody,
-      customHeaders,
-      queryParams,
-      response: testResponse,
-      createdAt: new Date().toISOString()
-    };
-
-    setSavedTests(prev => [...prev, testCase]);
-    
-    toast({
-      title: "Test Saved",
-      description: `Test case for ${currentEndpoint.name} has been saved`,
-    });
-  };
-
-  const handleExportTests = () => {
-    const exportData = {
-      integration: integration.name,
-      tests: savedTests,
-      exportedAt: new Date().toISOString()
-    };
-
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { 
-      type: 'application/json' 
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${integration.name}-test-cases.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-  const populateWithSampleData = () => {
-    if (currentEndpoint?.bodySchema) {
-      setRequestBody(JSON.stringify(currentEndpoint.bodySchema, null, 2));
-    }
-    if (currentEndpoint?.queryParams) {
-      const params = new URLSearchParams(currentEndpoint.queryParams).toString();
-      setQueryParams(params);
+  const copyResponse = () => {
+    if (response) {
+      navigator.clipboard.writeText(JSON.stringify(response, null, 2));
+      toast({
+        title: "Copied",
+        description: "Response copied to clipboard",
+      });
     }
   };
 
-  const resetForm = () => {
-    setRequestBody('{}');
-    setCustomHeaders('{}');
-    setQueryParams('');
-    setTestResponse(null);
+  const downloadResponse = () => {
+    if (response) {
+      const blob = new Blob([JSON.stringify(response, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `api-test-${Date.now()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Downloaded",
+        description: "Response saved as JSON file",
+      });
+    }
   };
+
+  if (!currentApi || !selectedEndpoint) {
+    return (
+      <Card className="h-full">
+        <CardContent className="flex items-center justify-center h-full">
+          <div className="text-center text-muted-foreground">
+            <AlertCircle className="h-12 w-12 mx-auto mb-4" />
+            <p>Select an API and endpoint to start testing</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-2xl font-bold">API Testing Interface</h3>
-          <p className="text-muted-foreground">{integration.name} - Real Endpoint Testing</p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={handleExportTests} disabled={savedTests.length === 0}>
-            <Download className="h-4 w-4 mr-2" />
-            Export Tests ({savedTests.length})
-          </Button>
-          <Button variant="outline" onClick={onClose}>
-            Close
-          </Button>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              Request Configuration
-              <Button size="sm" variant="ghost" onClick={resetForm}>
-                Reset
+      {/* Request Configuration */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Play className="h-5 w-5" />
+            API Test Configuration
+            {onClose && (
+              <Button variant="outline" size="sm" onClick={onClose} className="ml-auto">
+                Close
               </Button>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label className="text-sm font-medium mb-2 block">Endpoint</label>
-              <Select value={selectedEndpoint} onValueChange={setSelectedEndpoint}>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* URL and Method */}
+          <div className="grid grid-cols-4 gap-4">
+            <div className="col-span-1">
+              <Select value={requestMethod} onValueChange={setRequestMethod}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select an endpoint" />
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {integration.endpoints.map((endpoint) => (
-                    <SelectItem key={endpoint.id} value={endpoint.id}>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-xs">
-                          {endpoint.method}
-                        </Badge>
-                        {endpoint.name}
-                      </div>
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="GET">GET</SelectItem>
+                  <SelectItem value="POST">POST</SelectItem>
+                  <SelectItem value="PUT">PUT</SelectItem>
+                  <SelectItem value="PATCH">PATCH</SelectItem>
+                  <SelectItem value="DELETE">DELETE</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+            <div className="col-span-3">
+              <Input
+                placeholder="API endpoint URL"
+                value={testUrl}
+                onChange={(e) => setTestUrl(e.target.value)}
+              />
+            </div>
+          </div>
 
-            {currentEndpoint && (
-              <>
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="text-sm font-medium">Request URL</label>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => navigator.clipboard.writeText(currentEndpoint.fullUrl || `${integration.baseUrl}${currentEndpoint.url}`)}
-                    >
-                      <Copy className="h-3 w-3" />
-                    </Button>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline">{currentEndpoint.method}</Badge>
-                    <code className="text-sm bg-muted px-2 py-1 rounded flex-1">
-                      {currentEndpoint.fullUrl || `${integration.baseUrl}${currentEndpoint.url}`}
-                    </code>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Query Parameters</label>
+          {/* Query Parameters */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-medium">Query Parameters</h3>
+              <Button size="sm" variant="outline" onClick={addQueryParam}>
+                Add Parameter
+              </Button>
+            </div>
+            
+            {Object.entries(queryParams).map(([key, param]) => (
+              <div key={key} className="grid grid-cols-12 gap-2 items-end">
+                <div className="col-span-3">
                   <Input
-                    placeholder="key1=value1&key2=value2"
-                    value={queryParams}
-                    onChange={(e) => setQueryParams(e.target.value)}
+                    placeholder="Parameter name"
+                    value={param.name}
+                    onChange={(e) => updateQueryParam(key, 'name', e.target.value)}
                   />
                 </div>
-
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Custom Headers (JSON)</label>
-                  <Textarea
-                    placeholder='{"Authorization": "Bearer token", "X-Custom-Header": "value"}'
-                    value={customHeaders}
-                    onChange={(e) => setCustomHeaders(e.target.value)}
-                    rows={3}
+                <div className="col-span-4">
+                  <Input
+                    placeholder="Parameter value"
+                    value={param.value}
+                    onChange={(e) => updateQueryParam(key, 'value', e.target.value)}
                   />
                 </div>
-
-                {currentEndpoint.method !== 'GET' && (
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <label className="text-sm font-medium">Request Body (JSON)</label>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={populateWithSampleData}
-                      >
-                        <Settings className="h-3 w-3 mr-1" />
-                        Sample Data
-                      </Button>
-                    </div>
-                    <Textarea
-                      placeholder="{}"
-                      value={requestBody}
-                      onChange={(e) => setRequestBody(e.target.value)}
-                      rows={8}
-                    />
-                  </div>
-                )}
-
-                <div className="flex gap-2">
-                  <Button 
-                    onClick={handleTestEndpoint} 
-                    disabled={isLoading}
-                    className="flex-1"
+                <div className="col-span-2">
+                  <Select
+                    value={param.type}
+                    onValueChange={(value) => updateQueryParam(key, 'type', value)}
                   >
-                    {isLoading ? (
-                      "Testing..."
-                    ) : (
-                      <>
-                        <Play className="h-4 w-4 mr-2" />
-                        Test Endpoint
-                      </>
-                    )}
-                  </Button>
-                  {testResponse && (
-                    <Button variant="outline" onClick={handleSaveTest}>
-                      <Save className="h-4 w-4 mr-2" />
-                      Save Test
-                    </Button>
-                  )}
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="string">String</SelectItem>
+                      <SelectItem value="number">Number</SelectItem>
+                      <SelectItem value="boolean">Boolean</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
+                <div className="col-span-2 flex items-center gap-2">
+                  <Badge variant={param.required ? "default" : "secondary"}>
+                    {param.required ? "Required" : "Optional"}
+                  </Badge>
+                </div>
+                <div className="col-span-1">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => removeQueryParam(key)}
+                  >
+                    ✕
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
 
-                {currentEndpoint.authentication?.type !== 'none' && !currentEndpoint.isPublic && (
-                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                    <div className="flex items-center gap-2 mb-1">
-                      <AlertTriangle className="h-4 w-4 text-amber-600" />
-                      <span className="text-sm font-medium text-amber-800">Authentication Required</span>
-                    </div>
-                    <p className="text-sm text-amber-700">
-                      This endpoint requires authentication. Make sure you're logged in or include proper credentials.
-                    </p>
-                  </div>
-                )}
+          {/* Request Tabs */}
+          <Tabs defaultValue="headers">
+            <TabsList>
+              <TabsTrigger value="headers">Headers</TabsTrigger>
+              <TabsTrigger value="body">Body</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="headers" className="space-y-2">
+              <Textarea
+                placeholder='{"Authorization": "Bearer your-token", "Content-Type": "application/json"}'
+                value={requestHeaders}
+                onChange={(e) => setRequestHeaders(e.target.value)}
+                rows={6}
+              />
+            </TabsContent>
+            
+            <TabsContent value="body" className="space-y-2">
+              <Textarea
+                placeholder='{"key": "value"}'
+                value={requestBody}
+                onChange={(e) => setRequestBody(e.target.value)}
+                rows={8}
+                disabled={!['POST', 'PUT', 'PATCH'].includes(requestMethod)}
+              />
+            </TabsContent>
+          </Tabs>
+
+          {/* Execute Button */}
+          <Button 
+            onClick={executeTest} 
+            disabled={isLoading || !testUrl.trim()}
+            className="w-full"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Testing...
+              </>
+            ) : (
+              <>
+                <Play className="h-4 w-4 mr-2" />
+                Execute Test
               </>
             )}
-          </CardContent>
-        </Card>
+          </Button>
+        </CardContent>
+      </Card>
 
+      {/* Response */}
+      {response && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              Response
-              {testResponse?.success === true && <CheckCircle className="h-4 w-4 text-green-500" />}
-              {testResponse?.success === false && <XCircle className="h-4 w-4 text-red-500" />}
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                {responseStatus === 'success' && <CheckCircle className="h-5 w-5 text-green-500" />}
+                {responseStatus === 'error' && <XCircle className="h-5 w-5 text-red-500" />}
+                Response
+              </CardTitle>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" onClick={copyResponse}>
+                  <Copy className="h-4 w-4 mr-2" />
+                  Copy
+                </Button>
+                <Button size="sm" variant="outline" onClick={downloadResponse}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Download
+                </Button>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="response" className="space-y-4">
-              <TabsList>
-                <TabsTrigger value="response">Response</TabsTrigger>
-                <TabsTrigger value="saved-tests">Saved Tests ({savedTests.length})</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="response">
-                <ScrollArea className="h-96 w-full">
-                  {testResponse ? (
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-2">
-                        <Badge variant={testResponse.success ? "default" : "destructive"}>
-                          {testResponse.status || 'Error'}
-                        </Badge>
-                        <span className="text-sm text-muted-foreground">
-                          {testResponse.statusText || 'Request Failed'}
-                        </span>
-                        <span className="text-xs text-muted-foreground ml-auto">
-                          {testResponse.success ? 'Success' : 'Failed'}
-                        </span>
-                      </div>
-                      
-                      {testResponse.headers && (
-                        <div>
-                          <h4 className="font-medium mb-2">Response Headers</h4>
-                          <pre className="text-xs bg-muted p-3 rounded overflow-x-auto">
-                            {JSON.stringify(testResponse.headers, null, 2)}
-                          </pre>
-                        </div>
-                      )}
-
-                      <div>
-                        <h4 className="font-medium mb-2">Response Body</h4>
-                        <pre className="text-xs bg-muted p-3 rounded overflow-x-auto">
-                          {JSON.stringify(testResponse.data || testResponse.error, null, 2)}
-                        </pre>
-                      </div>
-
-                      <div className="text-xs text-muted-foreground">
-                        Tested at: {new Date(testResponse.timestamp).toLocaleString()}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <Play className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                      Select an endpoint and click "Test Endpoint" to see the response
-                    </div>
+            <div className="space-y-4">
+              {/* Status Info */}
+              {response.status && (
+                <div className="flex items-center gap-4 text-sm">
+                  <Badge variant={response.status < 400 ? "default" : "destructive"}>
+                    {response.status} {response.statusText}
+                  </Badge>
+                  {response.responseTime && (
+                    <span className="text-muted-foreground">
+                      Response time: {response.responseTime}ms
+                    </span>
                   )}
-                </ScrollArea>
-              </TabsContent>
+                </div>
+              )}
 
-              <TabsContent value="saved-tests">
-                <ScrollArea className="h-96 w-full">
-                  {savedTests.length > 0 ? (
-                    <div className="space-y-3">
-                      {savedTests.map((test) => (
-                        <div key={test.id} className="border rounded-lg p-3">
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-2">
-                              <Badge variant="outline" className="text-xs">
-                                {test.method}
-                              </Badge>
-                              <span className="text-sm font-medium">{test.endpointName}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Badge variant={test.response?.success ? "default" : "destructive"}>
-                                {test.response?.status || 'Error'}
-                              </Badge>
-                              {test.response?.success ? 
-                                <CheckCircle className="h-3 w-3 text-green-500" /> : 
-                                <XCircle className="h-3 w-3 text-red-500" />
-                              }
-                            </div>
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {new Date(test.createdAt).toLocaleString()}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <Save className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                      No saved tests yet. Run some tests and save them for future reference.
-                    </div>
-                  )}
-                </ScrollArea>
-              </TabsContent>
-            </Tabs>
+              {/* Response Data */}
+              <div className="bg-muted rounded-lg p-4">
+                <pre className="text-sm overflow-auto max-h-96">
+                  {JSON.stringify(response, null, 2)}
+                </pre>
+              </div>
+            </div>
           </CardContent>
         </Card>
-      </div>
+      )}
     </div>
   );
 };
