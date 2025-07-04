@@ -9,15 +9,17 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Package, CheckCircle, Shield } from 'lucide-react';
+import { Plus, Package, CheckCircle, Shield, Code, Database } from 'lucide-react';
 import { useMasterModules } from '@/hooks/useMasterModules';
-import { useMasterConsolidationCompliance } from '@/hooks/useMasterConsolidationCompliance';
+import { useMasterSystemCompliance } from '@/hooks/useMasterSystemCompliance';
+import { useMasterTypeScriptCompliance } from '@/hooks/useMasterTypeScriptCompliance';
 import { MasterConsolidationStatus } from '@/components/verification/MasterConsolidationStatus';
 
 const Modules: React.FC = () => {
   const { hasAccess } = useRoleBasedNavigation();
   const masterModules = useMasterModules();
-  const compliance = useMasterConsolidationCompliance();
+  const systemCompliance = useMasterSystemCompliance();
+  const typeScriptCompliance = useMasterTypeScriptCompliance();
   
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newModule, setNewModule] = useState({
@@ -47,26 +49,34 @@ const Modules: React.FC = () => {
   };
 
   const integrity = masterModules.verifyModuleIntegrity();
-  const complianceReport = compliance.validateCompliance();
+  const complianceReport = systemCompliance.validateSystemCompliance();
+  const typeScriptReport = typeScriptCompliance.validateTypeScriptCompliance();
 
   return (
     <AppLayout title="Master Modules Management">
       <div className="space-y-6">
-        {/* Header with Master Consolidation Status */}
+        {/* Enhanced Header with Master System Compliance */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Master Modules System</h1>
             <p className="text-muted-foreground">
-              Single source of truth for all module management - Consolidated, Verified, Validated
+              Single source of truth - Master consolidated, TypeScript aligned, Fully verified
             </p>
           </div>
           <div className="flex items-center gap-2">
             <Badge 
-              variant={complianceReport.overallScore >= 95 ? "default" : "destructive"}
+              variant={complianceReport.overallCompliance >= 98 ? "default" : "destructive"}
               className="flex items-center gap-1"
             >
               <Shield className="h-3 w-3" />
-              {complianceReport.overallScore}% Compliant
+              {complianceReport.overallCompliance}% Master Compliant
+            </Badge>
+            <Badge 
+              variant={typeScriptReport.overallTypeScriptHealth >= 98 ? "default" : "secondary"}
+              className="flex items-center gap-1"
+            >
+              <Code className="h-3 w-3" />
+              TS: {typeScriptReport.overallTypeScriptHealth}%
             </Badge>
             <Badge variant={integrity.isHealthy ? "default" : "destructive"}>
               {integrity.isHealthy ? "✅ Healthy" : "⚠️ Issues"}
@@ -78,37 +88,48 @@ const Modules: React.FC = () => {
           </div>
         </div>
 
-        {/* Master Consolidation Compliance Summary */}
+        {/* Master System Compliance Dashboard */}
         <Card className="border-blue-200 bg-blue-50/50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-blue-800">
               <Shield className="h-5 w-5" />
-              Master Consolidation Status
+              Master System Compliance Status
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-4 text-sm">
               <div>
-                <div className="font-medium text-blue-700">Overall Score</div>
-                <div className="text-2xl font-bold text-blue-900">{complianceReport.overallScore}%</div>
-              </div>
-              <div>
-                <div className="font-medium text-blue-700">Master Hooks</div>
-                <div className="text-xl font-semibold text-blue-800">
-                  {complianceReport.masterHookCompliance.implementedHooks.length}/
-                  {complianceReport.masterHookCompliance.implementedHooks.length + complianceReport.masterHookCompliance.missingHooks.length}
-                </div>
+                <div className="font-medium text-blue-700">Overall</div>
+                <div className="text-2xl font-bold text-blue-900">{complianceReport.overallCompliance}%</div>
               </div>
               <div>
                 <div className="font-medium text-blue-700">Single Source</div>
-                <div className={`text-xl font-semibold ${complianceReport.singleSourceCompliance.score === 100 ? 'text-green-600' : 'text-orange-600'}`}>
-                  {complianceReport.singleSourceCompliance.score}%
+                <div className={`text-xl font-semibold ${complianceReport.singleSourceTruth.isCompliant ? 'text-green-600' : 'text-orange-600'}`}>
+                  {complianceReport.singleSourceTruth.score}%
                 </div>
               </div>
               <div>
-                <div className="font-medium text-blue-700">TypeScript Aligned</div>
-                <div className={`text-xl font-semibold ${complianceReport.typeScriptAlignment.score >= 95 ? 'text-green-600' : 'text-orange-600'}`}>
+                <div className="font-medium text-blue-700">TypeScript</div>
+                <div className={`text-xl font-semibold ${typeScriptReport.validationResults.masterHooksAligned ? 'text-green-600' : 'text-orange-600'}`}>
                   {complianceReport.typeScriptAlignment.score}%
+                </div>
+              </div>
+              <div>
+                <div className="font-medium text-blue-700">Verification</div>
+                <div className="text-xl font-semibold text-blue-800">
+                  {complianceReport.verificationSystems.score}%
+                </div>
+              </div>
+              <div>
+                <div className="font-medium text-blue-700">Registry</div>
+                <div className="text-xl font-semibold text-blue-800">
+                  {complianceReport.registrySystem.consolidatedEntries}/{complianceReport.registrySystem.totalEntries}
+                </div>
+              </div>
+              <div>
+                <div className="font-medium text-blue-700">Learning</div>
+                <div className={`text-xl font-semibold ${complianceReport.knowledgeLearning.learningActive ? 'text-green-600' : 'text-orange-600'}`}>
+                  {complianceReport.knowledgeLearning.score}%
                 </div>
               </div>
             </div>
@@ -119,7 +140,8 @@ const Modules: React.FC = () => {
           <TabsList>
             <TabsTrigger value="modules">Modules ({masterModules.modules.length})</TabsTrigger>
             <TabsTrigger value="verification">Master Consolidation</TabsTrigger>
-            <TabsTrigger value="compliance">Compliance Report</TabsTrigger>
+            <TabsTrigger value="compliance">System Compliance</TabsTrigger>
+            <TabsTrigger value="typescript">TypeScript Alignment</TabsTrigger>
           </TabsList>
 
           <TabsContent value="modules" className="space-y-4">
@@ -210,29 +232,100 @@ const Modules: React.FC = () => {
             <div className="space-y-4">
               <Card>
                 <CardHeader>
-                  <CardTitle>Compliance Actions Required</CardTitle>
+                  <CardTitle>Master System Compliance Actions</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    {compliance.generateComplianceActions(complianceReport).map((action, index) => (
+                    {complianceReport.complianceActions.map((action, index) => (
                       <div key={index} className="flex items-start gap-2 p-2 border rounded">
                         <CheckCircle className="h-4 w-4 text-orange-500 mt-0.5" />
                         <span className="text-sm">{action}</span>
                       </div>
                     ))}
-                    {compliance.generateComplianceActions(complianceReport).length === 0 && (
+                    {complianceReport.complianceActions.length === 0 && (
                       <div className="flex items-center gap-2 p-2 text-green-600">
                         <CheckCircle className="h-4 w-4" />
-                        <span className="text-sm">All compliance requirements met!</span>
+                        <span className="text-sm">✅ All master compliance requirements met!</span>
                       </div>
                     )}
                   </div>
                 </CardContent>
               </Card>
               
-              <Button onClick={() => compliance.runComplianceCheck()}>
-                Run Full Compliance Check
-              </Button>
+              <div className="flex gap-3">
+                <Button onClick={() => systemCompliance.runFullComplianceCheck()}>
+                  Run Full System Compliance Check
+                </Button>
+                <Button variant="outline" onClick={() => systemCompliance.ensureCompliance()}>
+                  Ensure Master Compliance
+                </Button>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="typescript">
+            <div className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Code className="h-5 w-5" />
+                    TypeScript Alignment Status
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                      <div className="font-medium text-purple-700">Overall Health</div>
+                      <div className="text-2xl font-bold text-purple-900">{typeScriptReport.overallTypeScriptHealth}%</div>
+                    </div>
+                    <div>
+                      <div className="font-medium text-purple-700">Master Hooks</div>
+                      <div className={`text-xl font-semibold ${typeScriptReport.validationResults.masterHooksAligned ? 'text-green-600' : 'text-orange-600'}`}>
+                        {typeScriptReport.validationResults.masterHooksAligned ? '✅ Aligned' : '⚠️ Issues'}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="font-medium text-purple-700">Interfaces</div>
+                      <div className={`text-xl font-semibold ${typeScriptReport.validationResults.interfacesConsistent ? 'text-green-600' : 'text-orange-600'}`}>
+                        {typeScriptReport.validationResults.interfacesConsistent ? '✅ Consistent' : '⚠️ Issues'}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="font-medium text-purple-700">Toast System</div>
+                      <div className={`text-xl font-semibold ${typeScriptReport.validationResults.toastSystemAligned ? 'text-green-600' : 'text-orange-600'}`}>
+                        {typeScriptReport.complianceMetrics.toastAlignmentScore}%
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {typeScriptReport.recommendations.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>TypeScript Alignment Recommendations</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {typeScriptReport.recommendations.map((recommendation, index) => (
+                        <div key={index} className="flex items-start gap-2">
+                          <Code className="h-4 w-4 text-blue-500 mt-0.5" />
+                          <span className="text-sm">{recommendation}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              <div className="flex gap-3">
+                <Button onClick={() => typeScriptCompliance.runTypeScriptValidation()}>
+                  Run TypeScript Validation
+                </Button>
+                <Button variant="outline" onClick={() => typeScriptCompliance.enforceTypeScriptCompliance()}>
+                  Enforce TypeScript Compliance
+                </Button>
+              </div>
             </div>
           </TabsContent>
         </Tabs>
@@ -241,14 +334,14 @@ const Modules: React.FC = () => {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5" />
-              Master Consolidation Status
+              <Database className="h-5 w-5" />
+              Master System Information
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
               <div>
-                <div className="font-medium">Version</div>
+                <div className="font-medium">System Version</div>
                 <div className="text-muted-foreground">{masterModules.meta.version}</div>
               </div>
               <div>
@@ -262,8 +355,8 @@ const Modules: React.FC = () => {
                 </div>
               </div>
               <div>
-                <div className="font-medium">Cache Strategy</div>
-                <div className="text-muted-foreground font-mono text-xs">{masterModules.meta.cacheKey}</div>
+                <div className="font-medium">Compliance Target</div>
+                <div className="text-muted-foreground font-mono text-xs">98%+ Master Compliant</div>
               </div>
             </div>
           </CardContent>
