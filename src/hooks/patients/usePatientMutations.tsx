@@ -1,79 +1,81 @@
 
 /**
- * PATIENT MUTATIONS - FIXED FORM STATE ALIGNMENT
- * Version: patient-mutations-v2.0.0 - Complete dual compatibility
+ * PATIENT MUTATIONS HOOK - FIXED FIELD NAMES
+ * Uses consistent PatientFormState interface
  */
-import { useState } from 'react';
-import type { PatientFormState } from '@/types/formState';
-
-// Helper function to create complete patient form state
-const createPatientFormState = (partial: Partial<PatientFormState>): PatientFormState => ({
-  firstName: partial.firstName || '',
-  lastName: partial.lastName || '',
-  first_name: partial.first_name || partial.firstName || '',
-  last_name: partial.last_name || partial.lastName || '',
-  email: partial.email || '',
-  phone: partial.phone || '',
-  dateOfBirth: partial.dateOfBirth || '',
-  medicalRecordNumber: partial.medicalRecordNumber || '',
-  isActive: partial.isActive ?? true
-});
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { PatientFormState } from '@/types/formState';
+import { useMasterToast } from '../useMasterToast';
 
 export const usePatientMutations = () => {
-  const [createPatientForm, setCreatePatientForm] = useState<PatientFormState>(() =>
-    createPatientFormState({
-      firstName: '',
-      lastName: '',
-      dateOfBirth: '',
-      email: '',
-      phone: ''
-    })
-  );
+  const queryClient = useQueryClient();
+  const { showSuccess, showError } = useMasterToast();
 
-  const [updatePatientForm, setUpdatePatientForm] = useState<PatientFormState>(() =>
-    createPatientFormState({
-      firstName: '',
-      lastName: '',
-      dateOfBirth: '',
-      email: '',
-      phone: ''
-    })
-  );
+  const createPatientMutation = useMutation({
+    mutationFn: async (patientData: Partial<PatientFormState>) => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .insert([{
+          firstName: patientData.firstName,
+          lastName: patientData.lastName,
+          email: patientData.email,
+          phone: patientData.phone,
+          dateOfBirth: patientData.dateOfBirth,
+          medicalRecordNumber: patientData.medicalRecordNumber,
+          role: 'patient',
+          isActive: patientData.isActive ?? true
+        }])
+        .select()
+        .single();
 
-  const [editPatientForm, setEditPatientForm] = useState<PatientFormState>(() =>
-    createPatientFormState({
-      firstName: '',
-      lastName: '',
-      dateOfBirth: '',
-      email: '',
-      phone: ''
-    })
-  );
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['patients'] });
+      showSuccess('Patient created successfully');
+    },
+    onError: (error) => {
+      showError('Failed to create patient');
+      console.error('Create patient error:', error);
+    }
+  });
 
-  const createPatient = async (patientData: PatientFormState) => {
-    console.log('Creating patient:', patientData);
-    // Implementation would go here
-  };
+  const updatePatientMutation = useMutation({
+    mutationFn: async ({ id, ...patientData }: { id: string } & Partial<PatientFormState>) => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({
+          firstName: patientData.firstName,
+          lastName: patientData.lastName,
+          email: patientData.email,
+          phone: patientData.phone,
+          dateOfBirth: patientData.dateOfBirth,
+          medicalRecordNumber: patientData.medicalRecordNumber,
+          isActive: patientData.isActive
+        })
+        .eq('id', id)
+        .select()
+        .single();
 
-  const updatePatient = async (patientId: string, patientData: PatientFormState) => {
-    console.log('Updating patient:', patientId, patientData);
-    // Implementation would go here
-  };
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['patients'] });
+      showSuccess('Patient updated successfully');
+    },
+    onError: (error) => {
+      showError('Failed to update patient');
+      console.error('Update patient error:', error);
+    }
+  });
 
   return {
-    createPatientForm,
-    setCreatePatientForm,
-    updatePatientForm,
-    setUpdatePatientForm,
-    editPatientForm,
-    setEditPatientForm,
-    createPatient,
-    updatePatient,
-    
-    meta: {
-      version: 'patient-mutations-v2.0.0',
-      formStateFixed: true,
-      dualCompatibilityEnsured: true
-    }
+    createPatient: createPatientMutation.mutate,
+    updatePatient: updatePatientMutation.mutate,
+    isCreating: createPatientMutation.isPending,
+    isUpdating: updatePatientMutation.isPending
   };
 };

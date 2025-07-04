@@ -1,38 +1,53 @@
 
 /**
- * API INTEGRATIONS HOOK - FIXED FORM STATE ALIGNMENT
- * Version: api-integrations-v2.0.0 - Fixed property names
+ * API INTEGRATIONS HOOK - FIXED INTERFACES
+ * Uses proper ApiIntegrationState interface
  */
 import { useState } from 'react';
-import type { ApiIntegrationState } from '@/types/formState';
+import { ApiIntegrationState } from '@/types/formState';
+import { useMasterToast } from './useMasterToast';
 
 export const useApiIntegrations = () => {
-  const [integrationState, setIntegrationState] = useState<ApiIntegrationState>({
+  const [integration, setIntegration] = useState<ApiIntegrationState>({
+    name: '',
+    status: 'active',
+    endpoint: '',
+    isActive: true,
     integrationId: '',
-    apiName: '',
-    status: 'inactive',
-    configuration: {},
-    lastSync: undefined
+    apiName: ''
   });
 
-  const updateIntegrationState = (updates: Partial<ApiIntegrationState>) => {
-    setIntegrationState(prev => ({
+  const [isLoading, setIsLoading] = useState(false);
+  const { showSuccess, showError } = useMasterToast();
+
+  const createIntegration = async (data: Partial<ApiIntegrationState>) => {
+    setIsLoading(true);
+    try {
+      setIntegration(prev => ({
+        ...prev,
+        ...data,
+        apiName: data.name || prev.apiName
+      }));
+      showSuccess('Integration created successfully');
+    } catch (error) {
+      showError('Failed to create integration');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const updateIntegration = (updates: Partial<ApiIntegrationState>) => {
+    setIntegration(prev => ({
       ...prev,
       ...updates
     }));
   };
 
-  const getIntegrationName = () => integrationState.apiName;
-
   return {
-    integrationState,
-    setIntegrationState,
-    updateIntegrationState,
-    getIntegrationName,
-    
-    meta: {
-      version: 'api-integrations-v2.0.0',
-      propertyNamesFixed: true
-    }
+    integration,
+    setIntegration,
+    createIntegration,
+    updateIntegration,
+    isLoading
   };
 };

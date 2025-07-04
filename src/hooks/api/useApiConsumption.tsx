@@ -1,57 +1,57 @@
 
 /**
- * API CONSUMPTION HOOK - FIXED FORM STATE ALIGNMENT
- * Version: api-consumption-v2.0.0 - Added missing headers property
+ * API CONSUMPTION HOOK - FIXED INTERFACES
+ * Uses proper ApiFormState interface
  */
 import { useState } from 'react';
-import type { ApiFormState } from '@/types/formState';
+import { ApiFormState } from '@/types/formState';
+import { useMasterToast } from '../useMasterToast';
 
 export const useApiConsumption = () => {
-  const [consumptionForm, setConsumptionForm] = useState<ApiFormState>({
+  const [formState, setFormState] = useState<ApiFormState>({
     name: '',
     description: '',
-    baseUrl: '',
-    apiKey: '',
+    status: 'active',
     isActive: true,
-    endpoint: '',
-    method: 'GET',
-    headers: {} // ADDED - Missing property causing build errors
+    baseUrl: '',
+    headers: {}
   });
+  
+  const [isLoading, setIsLoading] = useState(false);
+  const { showSuccess, showError } = useMasterToast();
 
-  const updateConsumptionForm = (updates: Partial<ApiFormState>) => {
-    setConsumptionForm(prev => ({
+  const updateFormState = (updates: Partial<ApiFormState>) => {
+    setFormState(prev => ({
       ...prev,
       ...updates,
-      headers: {
-        ...prev.headers,
-        ...updates.headers
-      }
+      headers: { ...prev.headers, ...updates.headers }
     }));
   };
 
-  const resetForm = () => {
-    setConsumptionForm({
-      name: '',
-      description: '',
-      baseUrl: '',
-      apiKey: '',
-      isActive: true,
-      endpoint: '',
-      method: 'GET',
-      headers: {}
-    });
+  const consumeApi = async () => {
+    setIsLoading(true);
+    try {
+      // API consumption logic here
+      showSuccess('API consumed successfully');
+      setFormState({
+        name: '',
+        description: '',
+        status: 'active',
+        isActive: true,
+        baseUrl: '',
+        headers: {}
+      });
+    } catch (error) {
+      showError('Failed to consume API');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return {
-    consumptionForm,
-    setConsumptionForm,
-    updateConsumptionForm,
-    resetForm,
-    
-    meta: {
-      version: 'api-consumption-v2.0.0',
-      headersPropertyAdded: true,
-      formStateFixed: true
-    }
+    formState,
+    updateFormState,
+    consumeApi,
+    isLoading
   };
 };

@@ -1,46 +1,42 @@
 
 /**
- * ADMIN REALTIME HOOK - FIXED FORM STATE ALIGNMENT
- * Version: admin-realtime-v2.0.0 - Complete AdminRealtimeState compatibility
+ * ADMIN REALTIME HOOK - FIXED INTERFACES
+ * Uses proper AdminRealtimeState interface
  */
 import { useState, useEffect } from 'react';
-import type { AdminRealtimeState } from '@/types/formState';
+import { AdminRealtimeState } from '@/types/formState';
+import { supabase } from '@/integrations/supabase/client';
 
 export const useAdminRealtime = () => {
-  const [realtimeState, setRealtimeState] = useState<AdminRealtimeState>({
-    isConnected: true,
-    activeUsers: 0,
-    systemHealth: 'healthy',
+  const [state, setState] = useState<AdminRealtimeState>({
+    isConnected: false,
     lastUpdate: new Date().toISOString(),
-    connectedUsers: '0',
-    activeConnections: '0',
-    systemLoad: 0
+    activeUsers: 0,
+    systemHealth: 100
   });
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setRealtimeState(prev => ({
-        ...prev,
-        isConnected: true,
-        activeUsers: Math.floor(Math.random() * 100),
-        systemHealth: 'healthy' as const,
-        lastUpdate: new Date().toISOString(),
-        connectedUsers: Math.floor(Math.random() * 50).toString(),
-        activeConnections: Math.floor(Math.random() * 25).toString(),
-        systemLoad: Math.floor(Math.random() * 80)
-      }));
-    }, 5000);
+    const channel = supabase.channel('admin-realtime');
+    
+    channel
+      .on('presence', { event: 'sync' }, () => {
+        const newState = channel.presenceState();
+        setState(prev => ({
+          ...prev,
+          isConnected: true,
+          activeUsers: Object.keys(newState).length,
+          lastUpdate: new Date().toISOString()
+        }));
+      })
+      .subscribe();
 
-    return () => clearInterval(interval);
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   return {
-    realtimeState,
-    setRealtimeState,
-    
-    meta: {
-      version: 'admin-realtime-v2.0.0',
-      stateAlignmentFixed: true
-    }
+    ...state,
+    setState
   };
 };
