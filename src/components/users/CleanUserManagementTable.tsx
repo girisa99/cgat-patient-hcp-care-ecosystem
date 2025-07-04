@@ -7,7 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Search, Plus, Edit, Trash2, UserCheck, UserX } from 'lucide-react';
 import { useMasterUserManagement, type MasterUser } from '@/hooks/useMasterUserManagement';
 import { useMasterToast } from '@/hooks/useMasterToast';
-import type { UserManagementFormState } from '@/types/formState';
+import type { MasterUserFormState } from '@/types/masterFormState';
+import { createCompleteFormState, updateFormState } from '@/utils/formStateUtils';
 
 export const CleanUserManagementTable: React.FC = () => {
   console.log('🔧 CleanUserManagementTable - Master Consolidation Pattern Active');
@@ -19,13 +20,9 @@ export const CleanUserManagementTable: React.FC = () => {
   const [isAddingUser, setIsAddingUser] = useState<boolean>(false);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   
-  const [newUserForm, setNewUserForm] = useState<UserManagementFormState>({
-    firstName: '',
-    lastName: '',
-    email: '',
-    role: '',
-    phone: ''
-  });
+  const [newUserForm, setNewUserForm] = useState<MasterUserFormState>(
+    createCompleteFormState()
+  );
 
   const filteredUsers = useMemo(() => {
     if (!searchTerm.trim()) return userManagement.users;
@@ -48,20 +45,14 @@ export const CleanUserManagementTable: React.FC = () => {
       await userManagement.createUser(newUserForm);
       showSuccess('User Created', `Successfully created user ${newUserForm.firstName} ${newUserForm.lastName}`);
       
-      setNewUserForm({
-        firstName: '',
-        lastName: '',
-        email: '',
-        role: '',
-        phone: ''
-      });
+      setNewUserForm(createCompleteFormState());
       setIsAddingUser(false);
     } catch (error) {
       showError('Creation Failed', 'Failed to create user');
     }
   }, [newUserForm, userManagement, showSuccess, showError]);
 
-  const handleUpdateUser = useCallback(async (userId: string, updates: Partial<UserManagementFormState>) => {
+  const handleUpdateUser = useCallback(async (userId: string, updates: Partial<MasterUserFormState>) => {
     try {
       await userManagement.updateUser(userId, updates);
       showSuccess('User Updated', 'User information updated successfully');
@@ -142,7 +133,7 @@ export const CleanUserManagementTable: React.FC = () => {
                       <Input
                         id="firstName"
                         value={newUserForm.firstName}
-                        onChange={(e) => setNewUserForm(prev => ({ ...prev, firstName: e.target.value }))}
+                        onChange={(e) => setNewUserForm(prev => updateFormState(prev, { firstName: e.target.value }))}
                         placeholder="Enter first name"
                       />
                     </div>
@@ -151,7 +142,7 @@ export const CleanUserManagementTable: React.FC = () => {
                       <Input
                         id="lastName"
                         value={newUserForm.lastName}
-                        onChange={(e) => setNewUserForm(prev => ({ ...prev, lastName: e.target.value }))}
+                        onChange={(e) => setNewUserForm(prev => updateFormState(prev, { lastName: e.target.value }))}
                         placeholder="Enter last name"
                       />
                     </div>
@@ -161,7 +152,7 @@ export const CleanUserManagementTable: React.FC = () => {
                         id="email"
                         type="email"
                         value={newUserForm.email}
-                        onChange={(e) => setNewUserForm(prev => ({ ...prev, email: e.target.value }))}
+                        onChange={(e) => setNewUserForm(prev => updateFormState(prev, { email: e.target.value }))}
                         placeholder="Enter email"
                       />
                     </div>
@@ -170,7 +161,7 @@ export const CleanUserManagementTable: React.FC = () => {
                       <Input
                         id="role"
                         value={newUserForm.role}
-                        onChange={(e) => setNewUserForm(prev => ({ ...prev, role: e.target.value }))}
+                        onChange={(e) => setNewUserForm(prev => updateFormState(prev, { role: e.target.value }))}
                         placeholder="Enter role"
                       />
                     </div>
@@ -178,8 +169,8 @@ export const CleanUserManagementTable: React.FC = () => {
                       <Label htmlFor="phone">Phone</Label>
                       <Input
                         id="phone"
-                        value={newUserForm.phone}
-                        onChange={(e) => setNewUserForm(prev => ({ ...prev, phone: e.target.value }))}
+                        value={newUserForm.phone || ''}
+                        onChange={(e) => setNewUserForm(prev => updateFormState(prev, { phone: e.target.value }))}
                         placeholder="Enter phone number"
                       />
                     </div>
@@ -192,13 +183,7 @@ export const CleanUserManagementTable: React.FC = () => {
                       variant="outline" 
                       onClick={() => {
                         setIsAddingUser(false);
-                        setNewUserForm({
-                          firstName: '',
-                          lastName: '',
-                          email: '',
-                          role: '',
-                          phone: ''
-                        });
+                        setNewUserForm(createCompleteFormState());
                       }}
                     >
                       Cancel
