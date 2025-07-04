@@ -2,7 +2,7 @@
 /**
  * MASTER USER MANAGEMENT HOOK - SINGLE SOURCE OF TRUTH
  * Complete user management with enhanced interface to support all components
- * Version: master-user-management-v9.0.0 - Enhanced with missing properties for comprehensive compatibility
+ * Version: master-user-management-v10.0.0 - Complete interface compatibility
  */
 import { useState, useCallback } from 'react';
 import { useMasterToast } from './useMasterToast';
@@ -22,6 +22,9 @@ export interface MasterUser {
   is_active?: boolean;
   created_at?: string;
   updated_at?: string;
+  // Additional properties for complete compatibility
+  user_roles?: Array<{ role: { name: string } }>;
+  facilities?: Array<{ id: string; name: string }>;
 }
 
 export const useMasterUserManagement = () => {
@@ -30,7 +33,7 @@ export const useMasterUserManagement = () => {
   const [error, setError] = useState<string | null>(null);
   const { showSuccess, showError } = useMasterToast();
   
-  console.log('🎯 Master User Management v9.0 - Enhanced with Complete Interface Compatibility');
+  console.log('🎯 Master User Management v10.0 - Complete Interface Compatibility');
 
   // Core methods with fixed signatures - no parameters
   const fetchUsers = useCallback(async () => {
@@ -50,7 +53,9 @@ export const useMasterUserManagement = () => {
           email: 'john.doe@example.com',
           role: 'admin',
           isActive: true,
-          is_active: true
+          is_active: true,
+          user_roles: [{ role: { name: 'admin' } }],
+          facilities: [{ id: '1', name: 'Main Facility' }]
         },
         {
           id: '2', 
@@ -61,7 +66,9 @@ export const useMasterUserManagement = () => {
           email: 'jane.smith@example.com',
           role: 'patient',
           isActive: true,
-          is_active: true
+          is_active: true,
+          user_roles: [{ role: { name: 'patient' } }],
+          facilities: [{ id: '2', name: 'Secondary Facility' }]
         },
         {
           id: '3',
@@ -72,7 +79,9 @@ export const useMasterUserManagement = () => {
           email: 'bob.wilson@example.com',
           role: 'staff',
           isActive: false,
-          is_active: false
+          is_active: false,
+          user_roles: [{ role: { name: 'staff' } }],
+          facilities: []
         }
       ];
       
@@ -239,11 +248,12 @@ export const useMasterUserManagement = () => {
     adminCount: stats.adminCount,
     
     meta: {
-      userManagementVersion: 'master-user-management-v9.0.0',
+      userManagementVersion: 'master-user-management-v10.0.0',
       singleSourceValidated: true,
       methodSignaturesFixed: true,
       allSignaturesConsistent: true,
       enhancedCompatibility: true,
+      completeInterfaceSupport: true,
       totalUsers: stats.totalUsers,
       patientCount: stats.patientCount,
       staffCount: stats.staffCount,
