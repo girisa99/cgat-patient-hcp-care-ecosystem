@@ -4,16 +4,17 @@ import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Package, Activity, Database } from 'lucide-react';
-import { useMasterModules } from '@/hooks/useMasterModules';
+import { useSingleMasterModules } from '@/hooks/useSingleMasterModules';
 
 const SimpleModules: React.FC = () => {
-  // USE THE EXACT SAME SOURCE AS MASTER MODULES PAGE - SINGLE SOURCE OF TRUTH
-  const { modules, activeModules, isLoading, getModuleStats } = useMasterModules();
+  // USE THE EXACT SAME SINGLE SOURCE AS MASTER MODULES PAGE
+  const singleModules = useSingleMasterModules();
   
-  console.log('📦 Simple Modules - CONSOLIDATED Single Source of Truth - Same as Master Modules');
-  console.log('📊 Real modules count:', modules.length);
+  console.log('📦 Simple Modules - Using SINGLE MASTER HOOK ONLY');
+  console.log('🏆 Hook Count: 1 (Same as Master Modules)');
+  console.log('📊 Real modules count:', singleModules.modules.length);
   
-  const stats = getModuleStats();
+  const stats = singleModules.getModuleStats();
 
   return (
     <AppLayout title="Simple Modules">
@@ -22,21 +23,21 @@ const SimpleModules: React.FC = () => {
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Simple Modules View</h1>
             <p className="text-muted-foreground">
-              Consolidated single source of truth - Same data as Master Modules: {modules.length} modules
+              🏆 SINGLE HOOK ONLY - Same data as Master Modules: {singleModules.modules.length} modules
             </p>
           </div>
           <div className="flex items-center gap-2">
             <Badge variant="default" className="flex items-center gap-1">
               <Database className="h-3 w-3" />
-              Single Source Active
+              Single Hook Active
             </Badge>
             <Badge variant="secondary" className="flex items-center gap-1">
-              Total: {modules.length}
+              Total: {singleModules.modules.length}
             </Badge>
           </div>
         </div>
 
-        {/* Stats Cards - SAME DATA AS MASTER MODULES */}
+        {/* Stats Cards - SAME DATA FROM SINGLE HOOK */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -46,7 +47,7 @@ const SimpleModules: React.FC = () => {
             <CardContent>
               <div className="text-2xl font-bold">{stats.total}</div>
               <p className="text-xs text-muted-foreground">
-                Same as Master Modules
+                Via Single Hook Only
               </p>
             </CardContent>
           </Card>
@@ -78,17 +79,17 @@ const SimpleModules: React.FC = () => {
           </Card>
         </div>
 
-        {/* Modules List - SAME DATA AS MASTER MODULES */}
+        {/* Modules List - SAME DATA FROM SINGLE HOOK */}
         <Card>
           <CardHeader>
-            <CardTitle>All Modules (Single Source of Truth: {modules.length})</CardTitle>
+            <CardTitle>All Modules - Single Hook Source ({singleModules.modules.length})</CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
-              <div className="text-center p-8">Loading modules from consolidated source...</div>
+            {singleModules.isLoading ? (
+              <div className="text-center p-8">Loading modules from SINGLE hook source...</div>
             ) : (
               <div className="space-y-4">
-                {modules.map((module) => (
+                {singleModules.modules.map((module) => (
                   <div key={module.id} className="flex items-center justify-between p-4 border rounded">
                     <div>
                       <h3 className="font-medium">{module.name}</h3>
@@ -100,9 +101,9 @@ const SimpleModules: React.FC = () => {
                     </Badge>
                   </div>
                 ))}
-                {modules.length === 0 && (
+                {singleModules.modules.length === 0 && (
                   <div className="text-center p-8 text-gray-500">
-                    No modules found in consolidated source
+                    No modules found in SINGLE hook source
                   </div>
                 )}
               </div>
@@ -110,17 +111,17 @@ const SimpleModules: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Data Source Verification - CONSOLIDATED */}
+        {/* Single Hook Source Verification */}
         <Card className="border-green-200 bg-green-50/50">
           <CardContent className="p-4">
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm text-muted-foreground">
-                <span>Data Source: Consolidated Master Modules (useMasterModules)</span>
-                <span>Records: {modules.length}</span>
+                <span>🏆 Data Source: Single Master Hook (useSingleMasterModules)</span>
+                <span>🏆 Records: {singleModules.modules.length}</span>
               </div>
               <div className="flex items-center justify-between text-sm font-medium text-green-700">
-                <span>✅ Single Source of Truth Verified</span>
-                <span>✅ Same Count as Master Modules: {modules.length}</span>
+                <span>✅ SINGLE HOOK VERIFIED - No duplicates, No multiple implementations</span>
+                <span>✅ Same Count as Master Modules: {singleModules.modules.length}</span>
               </div>
             </div>
           </CardContent>

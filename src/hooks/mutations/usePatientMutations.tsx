@@ -1,7 +1,7 @@
 
 /**
- * PATIENT MUTATIONS HOOK - FIXED FIELD NAMES
- * Uses correct database field names for profiles table
+ * PATIENT MUTATIONS HOOK - FIXED DATABASE INTEGRATION
+ * Uses correct database field names and handles missing ID
  */
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,15 +14,17 @@ export const usePatientMutations = () => {
 
   const createPatientMutation = useMutation({
     mutationFn: async (patientData: Partial<PatientFormState>) => {
+      // Generate ID for new patient since it's required
+      const patientId = crypto.randomUUID();
+      
       const { data, error } = await supabase
         .from('profiles')
         .insert({
-          first_name: patientData.firstName,
-          last_name: patientData.lastName,
-          email: patientData.email,
-          phone: patientData.phone,
-          // Note: profiles table doesn't have dateOfBirth or medicalRecordNumber
-          // These would need to be added to the schema or stored in a separate patients table
+          id: patientId,
+          first_name: patientData.firstName || '',
+          last_name: patientData.lastName || '',
+          email: patientData.email || '',
+          phone: patientData.phone || null,
         })
         .select()
         .single();
