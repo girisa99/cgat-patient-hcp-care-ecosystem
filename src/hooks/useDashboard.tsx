@@ -12,7 +12,7 @@ export const useDashboard = () => {
   const { user, isAuthenticated, profile, userRoles, signOut } = useAuthContext();
   
   // Get real data from all consolidated sources
-  const { users, meta: userMeta } = useMasterUserManagement();
+  const userManagement = useMasterUserManagement();
   const { facilities, getFacilityStats } = useFacilities();
   const { modules, getModuleStats } = useModules();
   const { apiServices } = useApiServices();
@@ -22,16 +22,16 @@ export const useDashboard = () => {
   
   const dashboardData = {
     // Real metrics from consolidated sources
-    totalUsers: userMeta.totalUsers,
+    totalUsers: userManagement.totalUsers,
     totalFacilities: facilities.length,
     totalModules: modules.length,
     totalApiServices: apiServices.length,
     
     // Detailed stats
     userStats: {
-      admins: userMeta.adminCount,
-      staff: userMeta.staffCount,
-      patients: userMeta.patientCount
+      admins: userManagement.adminCount,
+      staff: userManagement.staffCount,
+      patients: userManagement.patientCount
     },
     facilityStats: facilityStats,
     moduleStats: moduleStats,
@@ -46,11 +46,11 @@ export const useDashboard = () => {
     
     // Welcome message with real data
     welcomeMessage: `Welcome back${profile?.first_name ? `, ${profile.first_name}` : ''}!`,
-    summary: `Managing ${userMeta.totalUsers} users across ${facilities.length} facilities`,
+    summary: `Managing ${userManagement.totalUsers} users across ${facilities.length} facilities`,
     
     // Real data items
     items: [
-      { id: 1, name: `${userMeta.totalUsers} Users`, type: 'users' },
+      { id: 1, name: `${userManagement.totalUsers} Users`, type: 'users' },
       { id: 2, name: `${facilities.length} Facilities`, type: 'facilities' },
       { id: 3, name: `${modules.length} Modules`, type: 'modules' },
       { id: 4, name: `${apiServices.length} API Services`, type: 'api-services' }
@@ -77,14 +77,14 @@ export const useDashboard = () => {
     profile,
     userRoles: userRoles || [],
     // Consolidated data access
-    users,
+    users: userManagement.users,
     facilities,
     modules,
     apiServices,
     // Meta information showing single source
     meta: {
       dataSources: {
-        users: userMeta.dataSource,
+        users: userManagement.meta.dataSource,
         facilities: 'facilities table via direct query',
         modules: 'modules table via direct query',
         apiServices: 'api_integration_registry table via direct query'

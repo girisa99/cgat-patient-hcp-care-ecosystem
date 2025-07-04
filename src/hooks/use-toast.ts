@@ -60,7 +60,7 @@ export const reducer = (state: ToasterToast[], action: ToastActionType): Toaster
         t.id === id || id === undefined
           ? {
               ...t,
-              open: false,
+              variant: t.variant || "default",
             }
           : t
       )
@@ -101,10 +101,7 @@ function toast({ ...props }: Toast) {
     toast: {
       ...props,
       id,
-      open: true,
-      onOpenChange: (open: boolean) => {
-        if (!open) dismiss()
-      },
+      variant: props.variant || "default",
     },
   })
 
@@ -129,7 +126,7 @@ function useToast() {
   }, [state])
 
   return {
-    ...state,
+    toasts: state,
     toast,
     dismiss: (toastId?: string) => dispatch({ type: "DISMISS_TOAST", toast: { id: toastId } }),
   }

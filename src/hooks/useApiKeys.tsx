@@ -14,6 +14,8 @@ interface ApiKey {
   created_at: string;
   last_used?: string;
   usage_count: number;
+  user_id: string;
+  key_hash: string;
 }
 
 export const useApiKeys = () => {
@@ -47,7 +49,7 @@ export const useApiKeys = () => {
     }
   };
 
-  const createApiKey = async (keyData: Partial<ApiKey>) => {
+  const createApiKey = async (keyData: Omit<ApiKey, 'id' | 'created_at' | 'usage_count' | 'last_used'>) => {
     try {
       const { data, error } = await supabase
         .from('api_keys')

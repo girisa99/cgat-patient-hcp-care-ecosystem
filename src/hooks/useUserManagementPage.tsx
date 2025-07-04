@@ -30,7 +30,6 @@ export const useUserManagementPage = () => {
     // Utilities - LOCKED
     searchUsers: userData.searchUsers,
     getUserStats: userData.getUserStats,
-    isUserEmailVerified: userData.isUserEmailVerified,
     
     // Specialized filters - LOCKED
     getPatients: userData.getPatients,
@@ -56,10 +55,10 @@ export const useUserManagementPage = () => {
     
     // Meta information - LOCKED
     meta: {
-      totalUsers: userData.meta.totalUsers,
-      patientCount: userData.meta.patientCount,
-      staffCount: userData.meta.staffCount,
-      adminCount: userData.meta.adminCount,
+      totalUsers: userData.totalUsers,
+      patientCount: userData.patientCount,
+      staffCount: userData.staffCount,
+      adminCount: userData.adminCount,
       dataSource: userData.meta.dataSource,
       hookVersion: 'locked-v1.0.0',
       singleSourceValidated: true,

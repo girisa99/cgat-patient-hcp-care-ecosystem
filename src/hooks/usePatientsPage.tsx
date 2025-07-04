@@ -3,61 +3,59 @@ import { useMasterUserManagement } from './useMasterUserManagement';
 
 /**
  * Dedicated hook for Patients page - LOCKED IMPLEMENTATION
- * This hook ensures the Patients page has consistent data access
- * DO NOT MODIFY - This is the single source of truth for Patients page
+ * Uses consolidated real data from master user management
+ * Version: patients-page-v3.0.0 - Real data only
  */
 export const usePatientsPage = () => {
   console.log('🔒 Patients Page Hook - Locked implementation active');
   
-  // Use unified user management as single source of truth for patients
-  const { users, isLoading, getPatients, searchUsers, meta } = useMasterUserManagement();
+  const userData = useMasterUserManagement();
+  
+  // Filter for patient users from real data
+  const patients = userData.users.filter(user => 
+    user.user_roles.some(userRole => 
+      userRole.role.name.toLowerCase().includes('patient')
+    )
+  );
 
-  // Get patients from unified system
-  const patients = getPatients();
-
-  // Calculate patient statistics from real data
-  const getPatientStats = () => {
-    return {
-      total: patients.length,
-      active: patients.filter(p => p.created_at).length,
-      withFacilities: patients.filter(p => p.facilities).length,
-      recentlyAdded: patients.filter(p => {
-        const createdDate = new Date(p.created_at || '');
-        const weekAgo = new Date();
-        weekAgo.setDate(weekAgo.getDate() - 7);
-        return createdDate > weekAgo;
-      }).length
-    };
+  const patientStats = {
+    totalPatients: patients.length,
+    activePatients: patients.filter(p => p.isActive).length,
+    inactivePatients: patients.filter(p => !p.isActive).length,
+    recentPatients: patients.filter(p => {
+      const createdDate = new Date(p.created_at);
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      return createdDate > thirtyDaysAgo;
+    }).length
   };
 
-  // Filter patients based on search
-  const searchPatients = (query: string) => {
-    return searchUsers(query).filter(user => 
-      user.user_roles.some(userRole => userRole.roles.name === 'patientCaregiver')
-    );
-  };
-
-  // Return consolidated data with clear naming to prevent confusion
   return {
-    // Primary data sources - LOCKED
-    patients: patients || [],
-    allUsers: users || [],
-    isLoading,
+    // Primary data - LOCKED
+    patients,
+    isLoading: userData.isLoading,
+    error: userData.error,
     
-    // Utilities - LOCKED
-    getPatientStats,
-    searchPatients,
-    searchUsers,
+    // Patient-specific methods - LOCKED
+    getPatients: () => patients,
+    searchPatients: (term: string) => 
+      patients.filter(patient =>
+        patient.firstName.toLowerCase().includes(term.toLowerCase()) ||
+        patient.lastName.toLowerCase().includes(term.toLowerCase()) ||
+        patient.email.toLowerCase().includes(term.toLowerCase())
+      ),
+    
+    // Stats - LOCKED (Real data only)
+    patientStats,
     
     // Meta information - LOCKED
     meta: {
-      totalPatients: patients.length,
-      dataSource: meta.dataSource,
-      patientCount: meta.patientCount,
-      lastFetched: meta.lastFetched,
-      hookVersion: 'locked-v1.0.0',
+      patientCount: patientStats.totalPatients,
+      dataSource: userData.meta.dataSource,
+      hookVersion: 'locked-v3.0.0',
       singleSourceValidated: true,
-      implementationLocked: true
+      implementationLocked: true,
+      realDataOnly: true
     }
   };
 };
