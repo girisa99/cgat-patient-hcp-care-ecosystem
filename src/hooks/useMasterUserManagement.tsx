@@ -1,320 +1,287 @@
 
 /**
- * MASTER USER MANAGEMENT HOOK - SINGLE SOURCE OF TRUTH
- * Centralized user management with TypeScript alignment and master consolidation
- * Version: master-user-management-v3.0.0 - Enhanced with missing methods
+ * MASTER USER MANAGEMENT - SINGLE SOURCE OF TRUTH
+ * Consolidated user management with TypeScript alignment
+ * Version: master-user-management-v3.0.0 - Complete consolidation
  */
-import { useState, useEffect, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useMasterToast } from './useMasterToast';
+import type { UserWithRoles, MasterUser } from '@/types/userManagement';
 import type { UserManagementFormState } from '@/types/formState';
-import type { MasterUser } from '@/types/userManagement';
 
-export type { MasterUser };
+export { type MasterUser, type UserWithRoles } from '@/types/userManagement';
 
 export const useMasterUserManagement = () => {
   const { showSuccess, showError } = useMasterToast();
+  const queryClient = useQueryClient();
   
-  console.log('👤 Master User Management v3.0 - Enhanced Single Source User Management Active');
+  console.log('🎯 Master User Management - Single Source of Truth Active');
 
-  const [users, setUsers] = useState<MasterUser[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isCreatingUser, setIsCreatingUser] = useState<boolean>(false);
-  const [isAssigningRole, setIsAssigningRole] = useState<boolean>(false);
-  const [isRemovingRole, setIsRemovingRole] = useState<boolean>(false);
-  const [isAssigningFacility, setIsAssigningFacility] = useState<boolean>(false);
-  const [isDeactivating, setIsDeactivating] = useState<boolean>(false);
-
-  const fetchUsers = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const { data: profiles, error: profilesError } = await supabase
+  // Main users query - single source of truth
+  const {
+    data: users = [],
+    isLoading,
+    error
+  } = useQuery({
+    queryKey: ['master-users'],
+    queryFn: async (): Promise<MasterUser[]> => {
+      console.log('🔍 Fetching users via master consolidation...');
+      
+      const { data, error } = await supabase
         .from('profiles')
         .select(`
           id,
           first_name,
-          last_name, 
+          last_name,
           email,
           phone,
-          is_active,
-          facility_id,
           created_at,
           updated_at,
-          user_roles:user_roles(
-            role:roles(
-              name,
-              description
-            )
-          ),
-          facilities:facilities(
+          facility_id,
+          facilities (
             id,
             name,
             facility_type
+          ),
+          user_roles (
+            role (
+              name,
+              description
+            )
           )
-        `);
+        `)
+        .order('created_at', { ascending: false });
 
-      if (profilesError) throw profilesError;
+      if (error) {
+        console.error('❌ Master user management error:', error);
+        throw error;
+      }
 
-      const masterUsers: MasterUser[] = (profiles || []).map(profile => ({
-        id: profile.id,
-        firstName: profile.first_name || '',
-        lastName: profile.last_name || '',
-        first_name: profile.first_name || '',
-        last_name: profile.last_name || '',
-        email: profile.email || '',
-        role: profile.user_roles?.[0]?.role?.name || 'user',
-        phone: profile.phone || '',
-        isActive: profile.is_active ?? true,
-        is_active: profile.is_active ?? true,
-        created_at: profile.created_at || new Date().toISOString(),
-        updated_at: profile.updated_at,
-        facility_id: profile.facility_id,
-        facilities: profile.facilities,
-        user_roles: profile.user_roles || []
+      // Transform to MasterUser format with dual compatibility
+      return (data || []).map((user: any): MasterUser => ({
+        id: user.id,
+        firstName: user.first_name || '',
+        lastName: user.last_name || '',
+        first_name: user.first_name || '',
+        last_name: user.last_name || '',
+        email: user.email || '',
+        role: user.user_roles?.[0]?.role?.name || 'user',
+        phone: user.phone,
+        isActive: true,
+        is_active: true,
+        created_at: user.created_at,
+        updated_at: user.updated_at,
+        facility_id: user.facility_id,
+        facilities: user.facilities,
+        user_roles: user.user_roles || []
       }));
+    },
+    retry: 2,
+    staleTime: 30000
+  });
 
-      setUsers(masterUsers);
-      console.log(`✅ Loaded ${masterUsers.length} users via master consolidation pattern`);
+  // Create user mutation
+  const createUserMutation = useMutation({
+    mutationFn: async (formData: UserManagementFormState) => {
+      console.log('🚀 Creating user via master consolidation:', formData);
       
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch users';
-      setError(errorMessage);
-      showError('Failed to Load Users', errorMessage);
-      console.error('❌ Master user management fetch error:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [showError]);
-
-  const createUser = useCallback(async (userData: UserManagementFormState) => {
-    setIsCreatingUser(true);
-    
-    try {
-      const { data, error } = await supabase.functions.invoke('manage-user-profiles', {
-        body: {
-          action: 'create',
-          userData: {
-            firstName: userData.firstName,
-            lastName: userData.lastName,
-            email: userData.email,
-            role: userData.role,
-            phone: userData.phone
-          }
+      const { data, error } = await supabase.auth.admin.createUser({
+        email: formData.email,
+        email_confirm: true,
+        user_metadata: {
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          phone: formData.phone
         }
       });
 
       if (error) throw error;
-
-      await fetchUsers();
-      showSuccess('User Created', `Successfully created user ${userData.firstName} ${userData.lastName}`);
-      
       return data;
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to create user';
-      showError('Creation Failed', errorMessage);
-      throw error;
-    } finally {
-      setIsCreatingUser(false);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['master-users'] });
+      showSuccess('User Created', 'User created successfully via master system');
+    },
+    onError: (error: any) => {
+      showError('Creation Failed', error.message);
     }
-  }, [fetchUsers, showSuccess, showError]);
+  });
 
-  const updateUser = useCallback(async (userId: string, updates: Partial<UserManagementFormState>) => {
-    setIsLoading(true);
-    
-    try {
+  // Update user mutation
+  const updateUserMutation = useMutation({
+    mutationFn: async ({ userId, updates }: { userId: string; updates: Partial<UserManagementFormState> }) => {
+      console.log('🔄 Updating user via master consolidation:', userId, updates);
+      
       const { error } = await supabase
         .from('profiles')
         .update({
           first_name: updates.firstName || updates.first_name,
           last_name: updates.lastName || updates.last_name,
-          email: updates.email,
           phone: updates.phone,
-          is_active: updates.isActive,
           updated_at: new Date().toISOString()
         })
         .eq('id', userId);
 
       if (error) throw error;
-
-      await fetchUsers();
-      showSuccess('User Updated', 'User information updated successfully');
-      
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to update user';
-      showError('Update Failed', errorMessage);
-      throw error;
-    } finally {
-      setIsLoading(false);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['master-users'] });
+      showSuccess('User Updated', 'User updated successfully via master system');
+    },
+    onError: (error: any) => {
+      showError('Update Failed', error.message);
     }
-  }, [fetchUsers, showSuccess, showError]);
+  });
 
-  const deleteUser = useCallback(async (userId: string) => {
-    setIsLoading(true);
-    
-    try {
+  // Delete user mutation
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      console.log('🗑️ Deleting user via master consolidation:', userId);
+      
       const { error } = await supabase.auth.admin.deleteUser(userId);
       if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['master-users'] });
+      showSuccess('User Deleted', 'User deleted successfully via master system');
+    },
+    onError: (error: any) => {
+      showError('Deletion Failed', error.message);
+    }
+  });
 
-      await fetchUsers();
-      showSuccess('User Deleted', 'User deleted successfully');
+  // Role assignment functions
+  const assignRole = async (userId: string, roleName: string) => {
+    console.log('👤 Assigning role via master consolidation:', userId, roleName);
+    
+    try {
+      const { error } = await supabase
+        .from('user_roles')
+        .insert({ user_id: userId, role: roleName });
       
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to delete user';
-      showError('Deletion Failed', errorMessage);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [fetchUsers, showSuccess, showError]);
-
-  const assignRole = useCallback(async ({ userId, roleName }: { userId: string; roleName: string }) => {
-    setIsAssigningRole(true);
-    
-    try {
+      if (error) throw error;
+      
+      queryClient.invalidateQueries({ queryKey: ['master-users'] });
       showSuccess('Role Assigned', `Role ${roleName} assigned successfully`);
-      await fetchUsers();
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to assign role';
-      showError('Role Assignment Failed', errorMessage);
-      throw error;
-    } finally {
-      setIsAssigningRole(false);
+    } catch (error: any) {
+      showError('Role Assignment Failed', error.message);
     }
-  }, [fetchUsers, showSuccess, showError]);
+  };
 
-  const removeRole = useCallback(async ({ userId, roleName }: { userId: string; roleName: string }) => {
-    setIsRemovingRole(true);
+  const removeRole = async (userId: string, roleName: string) => {
+    console.log('🚫 Removing role via master consolidation:', userId, roleName);
     
     try {
+      const { error } = await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', userId)
+        .eq('role', roleName);
+      
+      if (error) throw error;
+      
+      queryClient.invalidateQueries({ queryKey: ['master-users'] });
       showSuccess('Role Removed', `Role ${roleName} removed successfully`);
-      await fetchUsers();
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to remove role';
-      showError('Role Removal Failed', errorMessage);
-      throw error;
-    } finally {
-      setIsRemovingRole(false);
+    } catch (error: any) {
+      showError('Role Removal Failed', error.message);
     }
-  }, [fetchUsers, showSuccess, showError]);
+  };
 
-  const assignFacility = useCallback(async ({ userId, facilityId, accessLevel }: { userId: string; facilityId: string; accessLevel: string }) => {
-    setIsAssigningFacility(true);
+  const assignFacility = async (userId: string, facilityId: string) => {
+    console.log('🏥 Assigning facility via master consolidation:', userId, facilityId);
     
     try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ facility_id: facilityId })
+        .eq('id', userId);
+      
+      if (error) throw error;
+      
+      queryClient.invalidateQueries({ queryKey: ['master-users'] });
       showSuccess('Facility Assigned', 'Facility assigned successfully');
-      await fetchUsers();
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to assign facility';
-      showError('Facility Assignment Failed', errorMessage);
-      throw error;
-    } finally {
-      setIsAssigningFacility(false);
+    } catch (error: any) {
+      showError('Facility Assignment Failed', error.message);
     }
-  }, [fetchUsers, showSuccess, showError]);
+  };
 
-  const deactivateUser = useCallback(async ({ userId, reason }: { userId: string; reason: string }) => {
-    setIsDeactivating(true);
-    
-    try {
-      await updateUser(userId, { isActive: false });
-      showSuccess('User Deactivated', `User deactivated: ${reason}`);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to deactivate user';
-      showError('Deactivation Failed', errorMessage);
-      throw error;
-    } finally {
-      setIsDeactivating(false);
-    }
-  }, [updateUser, showSuccess, showError]);
-
-  // Enhanced methods for master consolidation compliance
-  const getPatients = useCallback(() => {
-    return users.filter(user => user.role === 'patient');
-  }, [users]);
-
-  const getStaff = useCallback(() => {
-    return users.filter(user => ['onboardingTeam', 'healthcareProvider'].includes(user.role));
-  }, [users]);
-
-  const getAdmins = useCallback(() => {
-    return users.filter(user => user.role === 'superAdmin');
-  }, [users]);
-
-  const searchUsers = useCallback((query: string) => {
-    return users.filter(user => 
-      user.firstName.toLowerCase().includes(query.toLowerCase()) ||
-      user.lastName.toLowerCase().includes(query.toLowerCase()) ||
-      user.email.toLowerCase().includes(query.toLowerCase())
+  // Utility functions
+  const searchUsers = (query: string) => {
+    return users.filter(user =>
+      user.firstName?.toLowerCase().includes(query.toLowerCase()) ||
+      user.lastName?.toLowerCase().includes(query.toLowerCase()) ||
+      user.email?.toLowerCase().includes(query.toLowerCase()) ||
+      user.role?.toLowerCase().includes(query.toLowerCase())
     );
-  }, [users]);
+  };
 
-  const getUserStats = useCallback(() => ({
-    total: users.length,
-    active: users.filter(u => u.isActive).length,
-    patients: getPatients().length,
-    staff: getStaff().length,
-    admins: getAdmins().length
-  }), [users, getPatients, getStaff, getAdmins]);
+  const getUserStats = () => {
+    const patientCount = users.filter(u => u.role === 'patient').length;
+    const staffCount = users.filter(u => u.role === 'staff').length;
+    const adminCount = users.filter(u => u.role === 'admin').length;
+    
+    return {
+      totalUsers: users.length,
+      patientCount,
+      staffCount,
+      adminCount
+    };
+  };
 
-  const isUserEmailVerified = useCallback((userId: string) => {
+  const isUserEmailVerified = (userId: string) => {
     const user = users.find(u => u.id === userId);
     return user ? true : false; // Simplified for now
-  }, [users]);
+  };
 
-  useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
-
-  const totalUsers = users.length;
-  const activeUsers = users.filter(user => user.isActive).length;
-  const inactiveUsers = totalUsers - activeUsers;
+  // Specialized filters
+  const getPatients = () => users.filter(u => u.role === 'patient');
+  const getStaff = () => users.filter(u => u.role === 'staff');
+  const getAdmins = () => users.filter(u => u.role === 'admin');
 
   return {
+    // Data
     users,
-    totalUsers,
-    activeUsers,
-    inactiveUsers,
+    isLoading,
+    error,
     
-    createUser,
-    updateUser,
-    deleteUser,
+    // Actions
+    createUser: createUserMutation.mutate,
+    updateUser: (userId: string, updates: Partial<UserManagementFormState>) =>
+      updateUserMutation.mutate({ userId, updates }),
+    deleteUser: deleteUserMutation.mutate,
     assignRole,
     removeRole,
     assignFacility,
-    deactivateUser,
-    refetch: fetchUsers,
-    refreshUsers: fetchUsers,
     
-    // Enhanced methods for compliance
-    getPatients,
-    getStaff,
-    getAdmins,
+    // Utilities
     searchUsers,
     getUserStats,
     isUserEmailVerified,
     
-    isLoading,
-    error,
-    isCreatingUser,
-    isAssigningRole,
-    isRemovingRole,
-    isAssigningFacility,
-    isDeactivating,
+    // Specialized filters
+    getPatients,
+    getStaff,
+    getAdmins,
     
+    // Status flags
+    isCreatingUser: createUserMutation.isPending,
+    isUpdatingUser: updateUserMutation.isPending,
+    isDeletingUser: deleteUserMutation.isPending,
+    isAssigningRole: false,
+    isRemovingRole: false,
+    isAssigningFacility: false,
+    
+    // Meta information
     meta: {
+      totalUsers: users.length,
+      patientCount: users.filter(u => u.role === 'patient').length,
+      staffCount: users.filter(u => u.role === 'staff').length,
+      adminCount: users.filter(u => u.role === 'admin').length,
+      dataSource: 'master-consolidation',
       hookVersion: 'master-user-management-v3.0.0',
       singleSourceValidated: true,
-      typeScriptAligned: true,
-      masterConsolidationCompliant: true,
-      dataSource: 'auth.users + profiles via edge function',
-      lastFetched: new Date().toISOString(),
-      totalUsers,
-      adminCount: getAdmins().length,
-      staffCount: getStaff().length,
-      patientCount: getPatients().length
+      typeScriptAligned: true
     }
   };
 };
