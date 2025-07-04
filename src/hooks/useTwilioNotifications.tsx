@@ -1,65 +1,124 @@
-
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuthContext } from '@/components/auth/DatabaseAuthProvider';
-import { toast } from 'sonner';
+import { useMasterAuth } from '@/hooks/useMasterAuth';
 
 interface NotificationRequest {
-  type: 'sms' | 'voice' | 'email' | 'whatsapp';
+  type: 'sms' | 'voice' | 'email';
   to: string;
   message: string;
-  subject?: string;
+  userId?: string;
+  priority?: 'high' | 'normal' | 'low';
+}
+
+interface NotificationResponse {
+  success: boolean;
+  messageId?: string;
+  error?: string;
 }
 
 export const useTwilioNotifications = () => {
-  const { user } = useAuthContext();
-  const queryClient = useQueryClient();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { user } = useMasterAuth();
 
-  const sendNotificationMutation = useMutation({
-    mutationFn: async (notification: NotificationRequest) => {
-      const { data, error } = await supabase.functions.invoke('twilio-notifications', {
+  const sendNotification = async (request: NotificationRequest): Promise<NotificationResponse> => {
+    if (!user?.id) {
+      const errorMsg = 'Authentication required for notifications';
+      setError(errorMsg);
+      return { success: false, error: errorMsg };
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      console.log('📱 Sending Twilio notification:', request.type, 'to', request.to);
+
+      const { data, error: functionError } = await supabase.functions.invoke('twilio-notifications', {
         body: {
-          ...notification,
-          userId: user?.id,
-        },
+          ...request,
+          userId: user.id,
+          timestamp: new Date().toISOString()
+        }
       });
 
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: (data, variables) => {
-      toast.success(`${variables.type.toUpperCase()} notification sent successfully`);
-      // Invalidate related queries to refresh data
-      queryClient.invalidateQueries({ queryKey: ['userActivityLogs'] });
-      queryClient.invalidateQueries({ queryKey: ['notificationPreferences'] });
-    },
-    onError: (error: any) => {
-      console.error('Error sending notification:', error);
-      toast.error(`Failed to send notification: ${error.message}`);
-    },
-  });
+      if (functionError) {
+        console.error('❌ Twilio function error:', functionError);
+        setError(functionError.message);
+        return { success: false, error: functionError.message };
+      }
 
-  const sendSMS = (to: string, message: string) => {
-    sendNotificationMutation.mutate({ type: 'sms', to, message });
+      console.log('✅ Notification sent successfully:', data);
+      return { success: true, messageId: data?.messageId };
+
+    } catch (err: any) {
+      console.error('💥 Exception sending notification:', err);
+      const errorMsg = err.message || 'Failed to send notification';
+      setError(errorMsg);
+      return { success: false, error: errorMsg };
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const sendWhatsApp = (to: string, message: string) => {
-    sendNotificationMutation.mutate({ type: 'whatsapp', to, message });
+  const sendSMS = async (to: string, message: string, priority: 'high' | 'normal' | 'low' = 'normal') => {
+    return sendNotification({ type: 'sms', to, message, priority, userId: user?.id });
   };
 
-  const sendVoiceCall = (to: string, message: string) => {
-    sendNotificationMutation.mutate({ type: 'voice', to, message });
+  const sendVoice = async (to: string, message: string, priority: 'high' | 'normal' | 'low' = 'normal') => {
+    return sendNotification({ type: 'voice', to, message, priority, userId: user?.id });
   };
 
-  const sendEmail = (to: string, message: string, subject?: string) => {
-    sendNotificationMutation.mutate({ type: 'email', to, message, subject });
+  const sendEmail = async (to: string, message: string, priority: 'high' | 'normal' | 'low' = 'normal') => {
+    return sendNotification({ type: 'email', to, message, priority, userId: user?.id });
+  };
+
+  // Bulk notification sending
+  const sendBulkNotifications = async (requests: NotificationRequest[]): Promise<NotificationResponse[]> => {
+    if (!user?.id) {
+      const errorMsg = 'Authentication required for bulk notifications';
+      setError(errorMsg);
+      return requests.map(() => ({ success: false, error: errorMsg }));
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      console.log('📱 Sending bulk notifications:', requests.length, 'requests');
+
+      const results = await Promise.allSettled(
+        requests.map(request => sendNotification(request))
+      );
+
+      const responses = results.map(result => 
+        result.status === 'fulfilled' 
+          ? result.value 
+          : { success: false, error: 'Request failed' }
+      );
+
+      console.log('✅ Bulk notifications completed:', responses.filter(r => r.success).length, 'successful');
+      return responses;
+
+    } catch (err: any) {
+      console.error('💥 Exception sending bulk notifications:', err);
+      const errorMsg = err.message || 'Failed to send bulk notifications';
+      setError(errorMsg);
+      return requests.map(() => ({ success: false, error: errorMsg }));
+    } finally {
+      setLoading(false);
+    }
   };
 
   return {
+    loading,
+    error,
+    sendNotification,
     sendSMS,
-    sendWhatsApp,
-    sendVoiceCall,
+    sendVoice,
     sendEmail,
-    isLoading: sendNotificationMutation.isPending,
+    sendBulkNotifications,
+    isAuthenticated: !!user?.id,
+    userId: user?.id
   };
 };
