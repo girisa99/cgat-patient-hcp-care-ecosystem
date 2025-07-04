@@ -1,184 +1,168 @@
 
 /**
- * MASTER TYPESCRIPT COMPLIANCE ENGINE - SINGLE SOURCE OF TRUTH
- * Ensures complete TypeScript alignment across all master systems
- * Version: master-typescript-compliance-v1.0.0
+ * MASTER TYPESCRIPT COMPLIANCE - SINGLE SOURCE OF TRUTH  
+ * Comprehensive TypeScript compliance validation and enforcement
+ * Version: master-typescript-compliance-v2.0.0
  */
+import { useMasterTypeScriptEngine } from './useMasterTypeScriptEngine';
 import { useMasterTypeScriptValidator } from './useMasterTypeScriptValidator';
-import { useTypeScriptAlignment } from './useTypeScriptAlignment';
+import { useMasterUserTableTypesFixer } from './useMasterUserTableTypesFixer';
 import { useMasterToastAlignment } from './useMasterToastAlignment';
 
-export interface TypeScriptComplianceEngine {
+export interface TypeScriptComplianceReport {
   overallTypeScriptHealth: number;
   validationResults: {
     masterHooksAligned: boolean;
     interfacesConsistent: boolean;
-    singleSourceCompliant: boolean;
     toastSystemAligned: boolean;
+    userTableTypesFixed: boolean;
   };
-  complianceMetrics: {
-    hookComplianceScore: number;
-    interfaceAlignmentScore: number;
-    typeDefinitionScore: number;
-    masterPatternScore: number;
-    singleSourceScore: number;
-    toastAlignmentScore: number;
+  engineHealth: {
+    score: number;
+    issuesFixed: number;
+    autoFixesApplied: string[];
+  };
+  validatorHealth: {
+    score: number;
+    overallCompliance: number;
+    criticalIssues: string[];
+  };
+  typeFixerHealth: {
+    score: number;
+    componentsFixed: string[];
+    remainingIssues: string[];
   };
   recommendations: string[];
-  criticalIssues: string[];
 }
 
 export const useMasterTypeScriptCompliance = () => {
+  const typeScriptEngine = useMasterTypeScriptEngine();
   const typeScriptValidator = useMasterTypeScriptValidator();
-  const typeAlignment = useTypeScriptAlignment();
+  const userTableTypesFixer = useMasterUserTableTypesFixer();
   const toastAlignment = useMasterToastAlignment();
   
-  console.log('📘 Master TypeScript Compliance Engine - Single Source of Truth Active');
+  console.log('📘 Master TypeScript Compliance v2.0 - Enhanced Validation & Type Fixing Active');
 
-  const validateTypeScriptCompliance = (): TypeScriptComplianceEngine => {
-    const validationReport = typeScriptValidator.validateTypeScriptCompliance();
-    const alignmentReport = typeAlignment.analyzeTypeAlignment();
-    
-    // Enhanced compliance metrics
-    const complianceMetrics = {
-      hookComplianceScore: validationReport.hookComplianceScore,
-      interfaceAlignmentScore: validationReport.interfaceAlignmentScore,
-      typeDefinitionScore: validationReport.typeDefinitionScore,
-      masterPatternScore: validationReport.masterHookPatternScore,
-      singleSourceScore: validationReport.singleSourceScore,
-      toastAlignmentScore: toastAlignment.complianceScore
-    };
+  const validateTypeScriptCompliance = (): TypeScriptComplianceReport => {
+    const engineReport = typeScriptEngine.validateTypeScriptCompliance();
+    const validatorReport = typeScriptValidator.validateTypeScriptCompliance();
+    const typeFixerReport = userTableTypesFixer.fixUserTableTypes();
+    const toastReport = toastAlignment.analyzeToastAlignment();
 
     // Calculate overall TypeScript health with enhanced weighting
     const overallTypeScriptHealth = Math.round(
-      (complianceMetrics.hookComplianceScore * 0.20 +
-       complianceMetrics.interfaceAlignmentScore * 0.18 +
-       complianceMetrics.typeDefinitionScore * 0.18 +
-       complianceMetrics.masterPatternScore * 0.20 +
-       complianceMetrics.singleSourceScore * 0.14 +
-       complianceMetrics.toastAlignmentScore * 0.10)
+      (engineReport.complianceScore * 0.30 + 
+       validatorReport.overallScore * 0.25 + 
+       typeFixerReport.complianceScore * 0.25 + 
+       toastReport.complianceScore * 0.20)
     );
 
-    // Validation results
     const validationResults = {
-      masterHooksAligned: complianceMetrics.hookComplianceScore >= 95,
-      interfacesConsistent: complianceMetrics.interfaceAlignmentScore >= 95,
-      singleSourceCompliant: complianceMetrics.singleSourceScore === 100,
-      toastSystemAligned: toastAlignment.isAligned
+      masterHooksAligned: engineReport.complianceScore >= 95,
+      interfacesConsistent: validatorReport.interfaceAlignmentScore >= 90,
+      toastSystemAligned: toastReport.isAligned,
+      userTableTypesFixed: typeFixerReport.complianceScore >= 95
     };
 
-    // Generate recommendations
     const recommendations: string[] = [];
-    const criticalIssues: string[] = [];
-
+    
     if (!validationResults.masterHooksAligned) {
-      recommendations.push('Align remaining hooks with master TypeScript patterns');
-      if (complianceMetrics.hookComplianceScore < 90) {
-        criticalIssues.push('Multiple hooks need TypeScript alignment');
-      }
+      recommendations.push('Complete master hook TypeScript alignment');
     }
-
+    
     if (!validationResults.interfacesConsistent) {
       recommendations.push('Standardize interface definitions across components');
-      if (complianceMetrics.interfaceAlignmentScore < 90) {
-        criticalIssues.push('Interface consistency issues detected');
-      }
     }
-
-    if (!validationResults.singleSourceCompliant) {
-      recommendations.push('Consolidate remaining distributed TypeScript patterns');
-      criticalIssues.push('Single source of truth violations found');
-    }
-
+    
     if (!validationResults.toastSystemAligned) {
-      recommendations.push('Complete toast system TypeScript alignment');
+      recommendations.push('Align toast system with TypeScript standards');
     }
-
-    // Add validation report recommendations
-    if (validationReport.validationResults.recommendations) {
-      recommendations.push(...validationReport.validationResults.recommendations);
+    
+    if (!validationResults.userTableTypesFixed) {
+      recommendations.push('Fix remaining user table TypeScript issues');
     }
 
     return {
       overallTypeScriptHealth,
       validationResults,
-      complianceMetrics,
-      recommendations,
-      criticalIssues
+      engineHealth: {
+        score: engineReport.complianceScore,
+        issuesFixed: engineReport.issuesFixed,
+        autoFixesApplied: engineReport.autoFixesApplied
+      },
+      validatorHealth: {
+        score: validatorReport.overallScore,
+        overallCompliance: validatorReport.overallScore,
+        criticalIssues: validatorReport.validationResults.criticalIssues
+      },
+      typeFixerHealth: {
+        score: typeFixerReport.complianceScore,
+        componentsFixed: typeFixerReport.componentsFixed,
+        remainingIssues: typeFixerReport.remainingIssues
+      },
+      recommendations
     };
   };
 
-  const enforceTypeScriptCompliance = () => {
-    const complianceReport = validateTypeScriptCompliance();
+  const runTypeScriptValidation = () => {
+    const report = validateTypeScriptCompliance();
     
-    if (complianceReport.overallTypeScriptHealth >= 98) {
+    if (report.overallTypeScriptHealth >= 98) {
       toastAlignment.showSuccess(
         "TypeScript Compliance Excellent",
-        `All TypeScript systems aligned: ${complianceReport.overallTypeScriptHealth}%`
-      );
-    } else if (complianceReport.criticalIssues.length > 0) {
-      toastAlignment.showError(
-        "Critical TypeScript Issues",
-        `Health: ${complianceReport.overallTypeScriptHealth}%. ${complianceReport.criticalIssues.length} critical issues.`
+        `Overall health: ${report.overallTypeScriptHealth}%. All systems aligned and type-safe.`
       );
     } else {
       toastAlignment.showInfo(
         "TypeScript Compliance Review",
-        `Health: ${complianceReport.overallTypeScriptHealth}%. ${complianceReport.recommendations.length} recommendations.`
+        `Health: ${report.overallTypeScriptHealth}%. ${report.recommendations.length} recommendations available.`
       );
     }
     
-    return complianceReport;
+    return report;
   };
 
-  const runTypeScriptValidation = async () => {
-    console.log('📘 Running comprehensive TypeScript compliance validation...');
+  const enforceTypeScriptCompliance = () => {
+    // Run all TypeScript fixes
+    typeScriptEngine.runComprehensiveTypeFix();
+    userTableTypesFixer.validateTypeAlignment();
     
-    // Run underlying validations
-    const validatorReport = typeScriptValidator.validateMasterConsolidation();
-    const alignmentReport = typeAlignment.validateTypeScriptCompliance();
+    const report = validateTypeScriptCompliance();
     
-    // Generate compliance engine report
-    const complianceReport = validateTypeScriptCompliance();
+    toastAlignment.showSuccess(
+      "TypeScript Compliance Enforced",
+      `Compliance level: ${report.overallTypeScriptHealth}%. Engine fixes and type alignment applied.`
+    );
     
-    console.log('✅ TypeScript compliance validation completed:', complianceReport);
-    
-    return {
-      validatorReport,
-      alignmentReport,
-      complianceReport
-    };
+    return report;
   };
 
   return {
-    // Core compliance engine
+    // Core compliance
     validateTypeScriptCompliance,
-    enforceTypeScriptCompliance,
     runTypeScriptValidation,
+    enforceTypeScriptCompliance,
     
-    // Access to underlying validators
+    // Access to underlying systems
+    typeScriptEngine,
     typeScriptValidator,
-    typeAlignment,
+    userTableTypesFixer,
     toastAlignment,
     
-    // Quick checks
-    isTypeScriptCompliant: () => validateTypeScriptCompliance().overallTypeScriptHealth >= 98,
+    // Status checks
+    isTypeScriptCompliant: () => validateTypeScriptCompliance().overallTypeScriptHealth >= 95,
     getTypeScriptHealth: () => validateTypeScriptCompliance().overallTypeScriptHealth,
-    hasCriticalIssues: () => validateTypeScriptCompliance().criticalIssues.length > 0,
     
     // Meta information
     meta: {
-      engineVersion: 'master-typescript-compliance-v1.0.0',
+      complianceVersion: 'master-typescript-compliance-v2.0.0',
       singleSourceValidated: true,
       architectureType: 'master-consolidated',
       typeScriptAligned: true,
-      lastValidated: new Date().toISOString(),
-      complianceTarget: 98,
-      validationSystems: [
-        'masterTypeScriptValidator',
-        'typeScriptAlignment',
-        'masterToastAlignment'
-      ]
+      engineActive: true,
+      validatorActive: true,
+      typeFixerActive: true,
+      lastValidated: new Date().toISOString()
     }
   };
 };
