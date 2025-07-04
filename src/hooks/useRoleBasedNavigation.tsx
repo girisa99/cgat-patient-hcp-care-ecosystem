@@ -5,11 +5,11 @@
  */
 import { useState, useMemo } from 'react';
 import { navItems } from '@/nav-items';
-import { useAuthContext } from '@/components/auth/DatabaseAuthProvider';
+import { useMasterAuth } from '@/hooks/useMasterAuth';
 
 export const useRoleBasedNavigation = () => {
   const [currentRole] = useState('user');
-  const { user, profile } = useAuthContext();
+  const { user, profile } = useMasterAuth();
 
   // Enhanced navigation with all available tabs
   const availableTabs = useMemo(() => {

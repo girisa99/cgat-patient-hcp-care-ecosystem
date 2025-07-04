@@ -145,9 +145,6 @@ export const MasterAuthForm: React.FC<MasterAuthFormProps> = ({
             description: "Account created successfully! Redirecting..."
           });
           await refreshAuth();
-          setTimeout(() => {
-            onSuccess?.();
-          }, 1500);
         } else {
           toast({
             title: "Account Created",

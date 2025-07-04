@@ -9,7 +9,7 @@ import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { useAuthContext } from '@/components/auth/DatabaseAuthProvider';
+import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { useRoleBasedNavigation } from '@/hooks/useRoleBasedNavigation';
 
 // Database-aligned interfaces following verification standards
@@ -304,7 +304,7 @@ export function AppSidebar() {
   const { collapsed } = useSidebar()
   const location = useLocation()
   const currentPath = location.pathname
-  const { user, profile, signOut } = useAuthContext()
+  const { user, profile, signOut } = useMasterAuth()
   const { availableTabs, currentRole, isAdmin, isSuperAdmin } = useRoleBasedNavigation()
 
   const isActive = (path: string) => currentPath === path
