@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Package, CheckCircle, Shield, Code, Database } from 'lucide-react';
+import { Plus, Package, CheckCircle, Shield, Code, Database, Zap } from 'lucide-react';
 import { useMasterModules } from '@/hooks/useMasterModules';
 import { useMasterSystemCompliance } from '@/hooks/useMasterSystemCompliance';
 import { useMasterTypeScriptCompliance } from '@/hooks/useMasterTypeScriptCompliance';
@@ -58,9 +58,9 @@ const Modules: React.FC = () => {
         {/* Enhanced Header with Master System Compliance */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Master Modules System</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Master Modules System v2.0</h1>
             <p className="text-muted-foreground">
-              Single source of truth - Master consolidated, TypeScript aligned, Fully verified
+              Single source of truth - Master consolidated, TypeScript engine aligned, Fully verified
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -76,7 +76,14 @@ const Modules: React.FC = () => {
               className="flex items-center gap-1"
             >
               <Code className="h-3 w-3" />
-              TS: {typeScriptReport.overallTypeScriptHealth}%
+              TS Engine: {complianceReport.typeScriptAlignment.engineHealth}%
+            </Badge>
+            <Badge 
+              variant={complianceReport.typeScriptAlignment.isAligned ? "default" : "secondary"}
+              className="flex items-center gap-1"
+            >
+              <Zap className="h-3 w-3" />
+              Type Safe: {complianceReport.typeScriptAlignment.score}%
             </Badge>
             <Badge variant={integrity.isHealthy ? "default" : "destructive"}>
               {integrity.isHealthy ? "✅ Healthy" : "⚠️ Issues"}
@@ -88,16 +95,16 @@ const Modules: React.FC = () => {
           </div>
         </div>
 
-        {/* Master System Compliance Dashboard */}
+        {/* Enhanced Master System Compliance Dashboard */}
         <Card className="border-blue-200 bg-blue-50/50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-blue-800">
               <Shield className="h-5 w-5" />
-              Master System Compliance Status
+              Master System Compliance Status v2.0 - TypeScript Engine Active
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-6 gap-4 text-sm">
+            <div className="grid grid-cols-2 md:grid-cols-7 gap-4 text-sm">
               <div>
                 <div className="font-medium text-blue-700">Overall</div>
                 <div className="text-2xl font-bold text-blue-900">{complianceReport.overallCompliance}%</div>
@@ -110,20 +117,26 @@ const Modules: React.FC = () => {
               </div>
               <div>
                 <div className="font-medium text-blue-700">TypeScript</div>
-                <div className={`text-xl font-semibold ${typeScriptReport.validationResults.masterHooksAligned ? 'text-green-600' : 'text-orange-600'}`}>
+                <div className={`text-xl font-semibold ${complianceReport.typeScriptAlignment.isAligned ? 'text-green-600' : 'text-orange-600'}`}>
                   {complianceReport.typeScriptAlignment.score}%
+                </div>
+              </div>
+              <div>
+                <div className="font-medium text-blue-700">TS Engine</div>
+                <div className="text-xl font-semibold text-purple-600">
+                  {complianceReport.typeScriptAlignment.engineHealth}%
+                </div>
+              </div>
+              <div>
+                <div className="font-medium text-blue-700">Toast System</div>
+                <div className="text-xl font-semibold text-green-600">
+                  {complianceReport.typeScriptAlignment.toastCompliance}%
                 </div>
               </div>
               <div>
                 <div className="font-medium text-blue-700">Verification</div>
                 <div className="text-xl font-semibold text-blue-800">
                   {complianceReport.verificationSystems.score}%
-                </div>
-              </div>
-              <div>
-                <div className="font-medium text-blue-700">Registry</div>
-                <div className="text-xl font-semibold text-blue-800">
-                  {complianceReport.registrySystem.consolidatedEntries}/{complianceReport.registrySystem.totalEntries}
                 </div>
               </div>
               <div>
@@ -141,7 +154,7 @@ const Modules: React.FC = () => {
             <TabsTrigger value="modules">Modules ({masterModules.modules.length})</TabsTrigger>
             <TabsTrigger value="verification">Master Consolidation</TabsTrigger>
             <TabsTrigger value="compliance">System Compliance</TabsTrigger>
-            <TabsTrigger value="typescript">TypeScript Alignment</TabsTrigger>
+            <TabsTrigger value="typescript">TypeScript Engine</TabsTrigger>
           </TabsList>
 
           <TabsContent value="modules" className="space-y-4">
@@ -269,14 +282,20 @@ const Modules: React.FC = () => {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Code className="h-5 w-5" />
-                    TypeScript Alignment Status
+                    TypeScript Engine Status v2.0
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
                     <div>
                       <div className="font-medium text-purple-700">Overall Health</div>
                       <div className="text-2xl font-bold text-purple-900">{typeScriptReport.overallTypeScriptHealth}%</div>
+                    </div>
+                    <div>
+                      <div className="font-medium text-purple-700">Engine Health</div>
+                      <div className="text-xl font-semibold text-blue-600">
+                        {complianceReport.typeScriptAlignment.engineHealth}%
+                      </div>
                     </div>
                     <div>
                       <div className="font-medium text-purple-700">Master Hooks</div>
@@ -293,7 +312,7 @@ const Modules: React.FC = () => {
                     <div>
                       <div className="font-medium text-purple-700">Toast System</div>
                       <div className={`text-xl font-semibold ${typeScriptReport.validationResults.toastSystemAligned ? 'text-green-600' : 'text-orange-600'}`}>
-                        {typeScriptReport.complianceMetrics.toastAlignmentScore}%
+                        {complianceReport.typeScriptAlignment.toastCompliance}%
                       </div>
                     </div>
                   </div>
@@ -303,7 +322,7 @@ const Modules: React.FC = () => {
               {typeScriptReport.recommendations.length > 0 && (
                 <Card>
                   <CardHeader>
-                    <CardTitle>TypeScript Alignment Recommendations</CardTitle>
+                    <CardTitle>TypeScript Engine Recommendations</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2">
@@ -320,26 +339,29 @@ const Modules: React.FC = () => {
 
               <div className="flex gap-3">
                 <Button onClick={() => typeScriptCompliance.runTypeScriptValidation()}>
-                  Run TypeScript Validation
+                  Run TypeScript Engine Validation
                 </Button>
                 <Button variant="outline" onClick={() => typeScriptCompliance.enforceTypeScriptCompliance()}>
                   Enforce TypeScript Compliance
+                </Button>
+                <Button variant="outline" onClick={() => systemCompliance.typeScriptEngine.fixUIComponentTypes()}>
+                  Auto-Fix Component Types
                 </Button>
               </div>
             </div>
           </TabsContent>
         </Tabs>
 
-        {/* System Meta Information */}
+        {/* Enhanced System Meta Information */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Database className="h-5 w-5" />
-              Master System Information
+              Master System Information v2.0
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
               <div>
                 <div className="font-medium">System Version</div>
                 <div className="text-muted-foreground">{masterModules.meta.version}</div>
@@ -352,6 +374,12 @@ const Modules: React.FC = () => {
                 <div className="font-medium">Single Source</div>
                 <div className="text-green-600">
                   {masterModules.meta.singleSourceValidated ? '✅ Validated' : '❌ Invalid'}
+                </div>
+              </div>
+              <div>
+                <div className="font-medium">TS Engine</div>
+                <div className="text-blue-600">
+                  {systemCompliance.meta.typeScriptEngineActive ? '✅ Active' : '❌ Inactive'}
                 </div>
               </div>
               <div>
