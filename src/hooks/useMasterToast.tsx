@@ -1,74 +1,54 @@
 
 /**
- * MASTER TOAST MANAGEMENT HOOK - SINGLE SOURCE OF TRUTH
- * Consolidates ALL toast functionality into ONE hook
+ * MASTER TOAST SYSTEM - SINGLE SOURCE OF TRUTH
+ * Consolidates all toast functionality into one master hook
  * Version: master-toast-v1.0.0
  */
-import { useToast } from '@/hooks/use-toast';
-
-export interface MasterToastOptions {
-  title: string;
-  description?: string;
-  variant?: 'default' | 'destructive';
-  duration?: number;
-}
+import { useToast } from './use-toast';
 
 export const useMasterToast = () => {
-  const { toast, dismiss, toasts } = useToast();
+  const { toast } = useToast();
   
-  console.log('🔔 Master Toast - Single Source of Truth Active');
-
-  // Enhanced toast with consistent messaging patterns
-  const showToast = (options: MasterToastOptions) => {
-    return toast({
-      title: options.title,
-      description: options.description,
-      variant: options.variant || 'default',
-      duration: options.duration,
-    });
-  };
+  console.log('🎯 Master Toast - Single Source of Truth Active');
 
   const showSuccess = (title: string, description?: string) => {
-    return showToast({
-      title: `✅ ${title}`,
+    toast({
+      title,
       description,
       variant: 'default'
     });
   };
 
   const showError = (title: string, description?: string) => {
-    return showToast({
-      title: `❌ ${title}`,
+    toast({
+      title,
       description,
       variant: 'destructive'
     });
   };
 
   const showInfo = (title: string, description?: string) => {
-    return showToast({
-      title: `ℹ️ ${title}`,
+    toast({
+      title,
       description,
       variant: 'default'
     });
   };
 
   return {
-    // Core functionality
-    toast: showToast,
-    dismiss,
-    toasts,
-    
-    // Enhanced methods
+    // Standardized toast methods
     showSuccess,
     showError,
     showInfo,
     
+    // Direct toast access for advanced usage
+    toast,
+    
     // Meta information
     meta: {
-      totalToasts: toasts.length,
-      version: 'master-toast-v1.0.0',
+      toastVersion: 'master-toast-v1.0.0',
       singleSourceValidated: true,
-      architectureType: 'consolidated'
+      architectureType: 'master-consolidated'
     }
   };
 };
