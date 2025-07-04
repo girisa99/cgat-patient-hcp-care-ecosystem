@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -27,18 +26,11 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import type { UserWithRoles } from '@/types/userManagement';
+import type { NewUserForm } from '@/types/formState';
 import { UserActionDialogs } from './UserActionDialogs';
 import { UserStatsCards } from './UserStatsCards';
 import { UserRow } from './UserRow';
 import { BulkActionsTab } from './BulkActionsTab';
-
-interface NewUserForm {
-  firstName: string;
-  lastName: string;
-  email: string;
-  role: string;
-  phone: string;
-}
 
 export const CleanUserManagementTable: React.FC = () => {
   // SINGLE MASTER HOOK - Must be called first, unconditionally
