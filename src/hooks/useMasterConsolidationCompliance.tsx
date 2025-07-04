@@ -6,6 +6,7 @@
  */
 import { useMasterVerificationSystem } from './useMasterVerificationSystem';
 import { useTypeScriptAlignment } from './useTypeScriptAlignment';
+import { useMasterToast } from './useMasterToast';
 
 export interface MasterComplianceReport {
   overallScore: number;
@@ -53,6 +54,7 @@ export interface MasterComplianceReport {
 export const useMasterConsolidationCompliance = () => {
   const verificationSystem = useMasterVerificationSystem();
   const typeAlignment = useTypeScriptAlignment();
+  const { showSuccess, showError, showInfo } = useMasterToast();
   
   console.log('📊 Master Consolidation Compliance - Single Source of Truth Active');
 
@@ -62,8 +64,8 @@ export const useMasterConsolidationCompliance = () => {
     const validationSummary = verificationSystem.getValidationSummary();
     const alignmentReport = typeAlignment.analyzeTypeAlignment();
 
-    // Master hooks compliance
-    const expectedMasterHooks = [
+    // Master hooks compliance - Fixed with proper TypeScript types
+    const expectedMasterHooks: string[] = [
       'useMasterModules',
       'useMasterToast', 
       'useMasterVerificationSystem',
@@ -174,11 +176,31 @@ export const useMasterConsolidationCompliance = () => {
     return actions;
   };
 
+  const runComplianceCheck = () => {
+    const report = validateCompliance();
+    const isCompliant = isFullyCompliant(report);
+    
+    if (isCompliant) {
+      showSuccess(
+        "Master Consolidation Compliant", 
+        `System is ${report.overallScore}% compliant with master consolidation principles`
+      );
+    } else {
+      showError(
+        "Compliance Issues Found", 
+        `System compliance: ${report.overallScore}%. Action required.`
+      );
+    }
+    
+    return report;
+  };
+
   return {
     // Core functionality
     validateCompliance,
     isFullyCompliant,
     generateComplianceActions,
+    runComplianceCheck,
     
     // Access to underlying systems
     verificationSystem,
@@ -189,7 +211,12 @@ export const useMasterConsolidationCompliance = () => {
       complianceVersion: 'master-compliance-v1.0.0',
       singleSourceValidated: true,
       architectureType: 'master-consolidated',
-      lastValidated: new Date().toISOString()
+      lastValidated: new Date().toISOString(),
+      typeScriptAligned: true,
+      verificationEnabled: true,
+      validationEnabled: true,
+      registryEnabled: true,
+      knowledgeLearningEnabled: true
     }
   };
 };
