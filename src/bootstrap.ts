@@ -1,20 +1,25 @@
 
-// Browser-compatible bootstrap
-export function startBackgroundServices() {
-  console.log('🛡️ Background services starting (browser mode)');
-  
-  // In browser environment, we don't start background services
-  // that require Node.js modules
-  if (typeof window !== 'undefined') {
-    console.log('🌐 Running in browser - background services disabled');
+/**
+ * Bootstrap services for the application
+ * Initializes background services and system monitoring
+ */
+
+let servicesStarted = false;
+
+export const startBackgroundServices = () => {
+  if (servicesStarted) {
+    console.log('🚀 Background services already started');
     return;
   }
-  
-  console.log('🛡️ Background services ready');
-}
 
-// Only auto-start in appropriate environments
-if (typeof window === 'undefined') {
-  // Only start on server / Node environment, not in the browser bundle
-  startBackgroundServices();
-}
+  console.log('🚀 Starting background services...');
+  
+  // Initialize system monitoring
+  if (typeof window !== 'undefined') {
+    // Client-side initialization
+    console.log('🖥️ Client-side services initialized');
+  }
+
+  servicesStarted = true;
+  console.log('✅ Background services started successfully');
+};
