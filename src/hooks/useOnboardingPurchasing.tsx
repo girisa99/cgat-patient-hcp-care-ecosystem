@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuthContext } from '@/components/auth/DatabaseAuthProvider';
+import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { useToast } from '@/hooks/use-toast';
 import { PurchasingMethod, InventoryModel } from '@/types/onboarding';
 
@@ -21,7 +21,7 @@ export interface PurchasingPreferences {
 }
 
 export const useOnboardingPurchasing = () => {
-  const { user } = useAuthContext();
+  const { user } = useMasterAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
