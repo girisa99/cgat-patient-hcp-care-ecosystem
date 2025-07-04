@@ -1,89 +1,41 @@
 
 /**
- * MASTER FORM STATE TYPES - COMPLETE IMPLEMENTATION
- * Single source of truth for all form state definitions with full dual compatibility
- * Version: master-form-state-v10.0.0 - Complete property alignment
+ * MASTER FORM STATE - SINGLE SOURCE OF TRUTH
+ * Complete form state implementation with dual compatibility
+ * Version: master-form-state-v3.0.0 - Complete property alignment
  */
 
-// Master User Form State - Complete dual compatibility implementation
 export interface MasterUserFormState {
-  // Primary naming convention
   firstName: string;
   lastName: string;
-  email: string;
-  role: string;
-  phone?: string;
-  isActive: boolean;
-  
-  // Dual compatibility for database alignment
   first_name: string;
   last_name: string;
-  is_active?: boolean;
-  
-  // Required timestamp fields for full compatibility
-  created_at: string;
-  updated_at?: string;
-  
-  // Optional user management fields
+  email: string;
+  phone?: string;
+  role?: string;
   facility_id?: string;
-  email_confirmed_at?: string;
-  last_sign_in_at?: string;
-  email_confirmed?: boolean;
-  
-  // Nested facility relationship (optional)
-  facilities?: {
-    id: string;
-    name: string;
-    facility_type: string;
-  } | null;
-  
-  // User roles relationship for full compatibility
-  user_roles: {
-    role: {
-      name: string;
-      description?: string;
-    };
-  }[];
+  isActive: boolean;
+  is_active?: boolean;
 }
 
-// Normalization function to ensure dual compatibility
 export const normalizeMasterUserFormState = (data: Partial<MasterUserFormState>): MasterUserFormState => {
-  const now = new Date().toISOString();
+  const firstName = data.firstName || data.first_name || '';
+  const lastName = data.lastName || data.last_name || '';
   
   return {
-    // Primary fields
-    firstName: data.firstName || data.first_name || '',
-    lastName: data.lastName || data.last_name || '',
+    firstName,
+    lastName,
+    first_name: firstName,
+    last_name: lastName,
     email: data.email || '',
-    role: data.role || 'patient',
-    phone: data.phone || '',
-    isActive: data.isActive ?? data.is_active ?? true,
-    
-    // Dual compatibility fields
-    first_name: data.first_name || data.firstName || '',
-    last_name: data.last_name || data.lastName || '',
-    is_active: data.is_active ?? data.isActive ?? true,
-    
-    // Required timestamp fields
-    created_at: data.created_at || now,
-    updated_at: data.updated_at || now,
-    
-    // Optional fields with defaults
+    phone: data.phone,
+    role: data.role,
     facility_id: data.facility_id,
-    email_confirmed_at: data.email_confirmed_at,
-    last_sign_in_at: data.last_sign_in_at,
-    email_confirmed: data.email_confirmed,
-    facilities: data.facilities || null,
-    user_roles: data.user_roles || [{
-      role: {
-        name: data.role || 'patient',
-        description: null
-      }
-    }]
+    isActive: data.isActive ?? data.is_active ?? true,
+    is_active: data.is_active ?? data.isActive ?? true
   };
 };
 
-// Factory function for creating complete form state
-export const createMasterUserFormState = (initialData?: Partial<MasterUserFormState>): MasterUserFormState => {
-  return normalizeMasterUserFormState(initialData || {});
+export const createMasterUserFormState = (partial: Partial<MasterUserFormState> = {}): MasterUserFormState => {
+  return normalizeMasterUserFormState(partial);
 };

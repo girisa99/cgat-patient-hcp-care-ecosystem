@@ -1,66 +1,58 @@
 
-import { useState, useCallback } from 'react';
-import { useMasterToast } from './useMasterToast';
+/**
+ * API CONSUMPTION TRIGGER HOOK - FIXED FORM STATE ALIGNMENT
+ * Version: api-consumption-trigger-v2.0.0 - Fixed property names
+ */
+import { useState } from 'react';
 import type { ApiConsumptionTriggerState } from '@/types/formState';
 
 export const useApiConsumptionTrigger = () => {
-  const { showSuccess, showError } = useMasterToast();
-  
-  const [triggerData, setTriggerData] = useState<ApiConsumptionTriggerState>({
-    apiName: '',
-    triggerType: '',
-    endpoint: '',
-    method: 'GET',
-    payload: ''
+  const [triggerState, setTriggerState] = useState<ApiConsumptionTriggerState>({
+    triggerId: '',
+    apiEndpoint: '',
+    triggerCondition: '',
+    isActive: false,
+    lastTriggered: undefined
   });
 
-  const [automationData, setAutomationData] = useState<ApiConsumptionTriggerState>({
-    apiName: '',
-    triggerType: 'scheduled',
-    endpoint: '',
-    method: 'POST',
-    payload: ''
+  const [activeTriggerState, setActiveTriggerState] = useState<ApiConsumptionTriggerState>({
+    triggerId: 'active-trigger-1',
+    apiEndpoint: '/api/active',
+    triggerCondition: 'on-demand',
+    isActive: true,
+    lastTriggered: new Date().toISOString()
   });
 
-  const [isTriggering, setIsTriggering] = useState<boolean>(false);
-
-  const updateTriggerField = useCallback((field: keyof ApiConsumptionTriggerState, value: string) => {
-    setTriggerData(prev => ({
+  const updateTriggerState = (updates: Partial<ApiConsumptionTriggerState>) => {
+    setTriggerState(prev => ({
       ...prev,
-      [field]: value
+      ...updates
     }));
-  }, []);
+  };
 
-  const updateAutomationField = useCallback((field: keyof ApiConsumptionTriggerState, value: string) => {
-    setAutomationData(prev => ({
+  const activateTrigger = (triggerId: string) => {
+    console.log('Activating trigger:', triggerId);
+    setActiveTriggerState(prev => ({
       ...prev,
-      [field]: value
+      isActive: true,
+      lastTriggered: new Date().toISOString()
     }));
-  }, []);
+  };
 
-  const executeTrigger = useCallback(async () => {
-    setIsTriggering(true);
-    try {
-      // Mock API trigger execution
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      showSuccess('API Trigger Executed', `Successfully triggered ${triggerData.apiName}`);
-    } catch (error) {
-      showError('Trigger Failed', 'Failed to execute API trigger');
-    } finally {
-      setIsTriggering(false);
-    }
-  }, [triggerData, showSuccess, showError]);
+  const getApiEndpoint = () => triggerState.apiEndpoint;
 
   return {
-    triggerData,
-    automationData,
-    isTriggering,
-    updateTriggerField,
-    updateAutomationField,
-    executeTrigger,
+    triggerState,
+    setTriggerState,
+    activeTriggerState,
+    setActiveTriggerState,
+    updateTriggerState,
+    activateTrigger,
+    getApiEndpoint,
+    
     meta: {
-      hookVersion: 'api-consumption-trigger-v1.0.0',
-      typeScriptAligned: true
+      version: 'api-consumption-trigger-v2.0.0',
+      propertyNamesFixed: true
     }
   };
 };

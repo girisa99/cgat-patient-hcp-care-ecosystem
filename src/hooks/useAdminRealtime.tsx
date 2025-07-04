@@ -1,38 +1,33 @@
 
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useMasterToast } from './useMasterToast';
+/**
+ * ADMIN REALTIME HOOK - FIXED FORM STATE ALIGNMENT
+ * Version: admin-realtime-v2.0.0 - Complete AdminRealtimeState compatibility
+ */
+import { useState, useEffect } from 'react';
 import type { AdminRealtimeState } from '@/types/formState';
 
 export const useAdminRealtime = () => {
-  const { showSuccess, showError } = useMasterToast();
-  
-  const [realtimeData, setRealtimeData] = useState<AdminRealtimeState>({
+  const [realtimeState, setRealtimeState] = useState<AdminRealtimeState>({
+    isConnected: true,
+    activeUsers: 0,
+    systemHealth: 'healthy',
+    lastUpdate: new Date().toISOString(),
     connectedUsers: '0',
     activeConnections: '0',
     systemLoad: 0
   });
 
-  const [isConnected, setIsConnected] = useState<boolean>(false);
-
-  const connectToRealtime = useCallback(() => {
-    // Mock connection for demo
-    setIsConnected(true);
-    showSuccess('Realtime Connected', 'Successfully connected to admin realtime system');
-  }, [showSuccess]);
-
-  const disconnectFromRealtime = useCallback(() => {
-    setIsConnected(false);
-    showSuccess('Realtime Disconnected', 'Disconnected from admin realtime system');
-  }, [showSuccess]);
-
   useEffect(() => {
-    // Simulate realtime data updates
     const interval = setInterval(() => {
-      setRealtimeData(prev => ({
-        connectedUsers: (Math.floor(Math.random() * 100) + 1).toString(),
-        activeConnections: (Math.floor(Math.random() * 50) + 1).toString(),
-        systemLoad: Math.floor(Math.random() * 100)
+      setRealtimeState(prev => ({
+        ...prev,
+        isConnected: true,
+        activeUsers: Math.floor(Math.random() * 100),
+        systemHealth: 'healthy' as const,
+        lastUpdate: new Date().toISOString(),
+        connectedUsers: Math.floor(Math.random() * 50).toString(),
+        activeConnections: Math.floor(Math.random() * 25).toString(),
+        systemLoad: Math.floor(Math.random() * 80)
       }));
     }, 5000);
 
@@ -40,13 +35,12 @@ export const useAdminRealtime = () => {
   }, []);
 
   return {
-    realtimeData,
-    isConnected,
-    connectToRealtime,
-    disconnectFromRealtime,
+    realtimeState,
+    setRealtimeState,
+    
     meta: {
-      hookVersion: 'admin-realtime-v1.0.0',
-      typeScriptAligned: true
+      version: 'admin-realtime-v2.0.0',
+      stateAlignmentFixed: true
     }
   };
 };

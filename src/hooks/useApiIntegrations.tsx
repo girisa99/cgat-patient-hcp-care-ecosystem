@@ -1,49 +1,38 @@
 
-import { useState, useCallback } from 'react';
-import { useMasterToast } from './useMasterToast';
+/**
+ * API INTEGRATIONS HOOK - FIXED FORM STATE ALIGNMENT
+ * Version: api-integrations-v2.0.0 - Fixed property names
+ */
+import { useState } from 'react';
 import type { ApiIntegrationState } from '@/types/formState';
 
 export const useApiIntegrations = () => {
-  const { showSuccess, showError } = useMasterToast();
-  
-  const [integrationData, setIntegrationData] = useState<ApiIntegrationState>({
-    integrationName: '',
-    apiUrl: '',
-    authMethod: 'api_key',
-    headers: '',
-    timeout: '30'
+  const [integrationState, setIntegrationState] = useState<ApiIntegrationState>({
+    integrationId: '',
+    apiName: '',
+    status: 'inactive',
+    configuration: {},
+    lastSync: undefined
   });
 
-  const [isConfiguring, setIsConfiguring] = useState<boolean>(false);
-
-  const updateIntegrationField = useCallback((field: keyof ApiIntegrationState, value: string) => {
-    setIntegrationData(prev => ({
+  const updateIntegrationState = (updates: Partial<ApiIntegrationState>) => {
+    setIntegrationState(prev => ({
       ...prev,
-      [field]: value
+      ...updates
     }));
-  }, []);
+  };
 
-  const configureIntegration = useCallback(async () => {
-    setIsConfiguring(true);
-    try {
-      // Mock integration configuration
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      showSuccess('Integration Configured', `Successfully configured ${integrationData.integrationName}`);
-    } catch (error) {
-      showError('Configuration Failed', 'Failed to configure API integration');
-    } finally {
-      setIsConfiguring(false);
-    }
-  }, [integrationData, showSuccess, showError]);
+  const getIntegrationName = () => integrationState.apiName;
 
   return {
-    integrationData,
-    isConfiguring,
-    updateIntegrationField,
-    configureIntegration,
+    integrationState,
+    setIntegrationState,
+    updateIntegrationState,
+    getIntegrationName,
+    
     meta: {
-      hookVersion: 'api-integrations-v1.0.0',
-      typeScriptAligned: true
+      version: 'api-integrations-v2.0.0',
+      propertyNamesFixed: true
     }
   };
 };
