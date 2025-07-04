@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Search, Plus, Edit, Trash2, UserCheck, UserX } from 'lucide-react';
-import { useMasterUserManagement } from '@/hooks/useMasterUserManagement';
+import { useMasterUserManagement, type MasterUser } from '@/hooks/useMasterUserManagement';
 import { useMasterToast } from '@/hooks/useMasterToast';
 import type { UserManagementFormState } from '@/types/formState';
 
@@ -30,7 +30,7 @@ export const CleanUserManagementTable: React.FC = () => {
   const filteredUsers = useMemo(() => {
     if (!searchTerm.trim()) return userManagement.users;
     
-    return userManagement.users.filter(user =>
+    return userManagement.users.filter((user: MasterUser) =>
       user.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -106,7 +106,7 @@ export const CleanUserManagementTable: React.FC = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            <span>User Management</span>
+            <span>Clean User Management</span>
             <Button 
               onClick={() => setIsAddingUser(true)}
               className="flex items-center gap-2"
@@ -229,7 +229,7 @@ export const CleanUserManagementTable: React.FC = () => {
                       </td>
                     </tr>
                   ) : (
-                    filteredUsers.map((user) => (
+                    filteredUsers.map((user: MasterUser) => (
                       <tr key={user.id} className="hover:bg-gray-50">
                         <td className="border border-gray-200 px-4 py-2">
                           {user.firstName} {user.lastName}
@@ -287,7 +287,7 @@ export const CleanUserManagementTable: React.FC = () => {
               <Card>
                 <CardContent className="p-4 text-center">
                   <div className="text-2xl font-bold text-blue-600">
-                    {userManagement.users.length}
+                    {userManagement.totalUsers}
                   </div>
                   <div className="text-sm text-gray-600">Total Users</div>
                 </CardContent>
@@ -295,7 +295,7 @@ export const CleanUserManagementTable: React.FC = () => {
               <Card>
                 <CardContent className="p-4 text-center">
                   <div className="text-2xl font-bold text-green-600">
-                    {userManagement.users.filter(u => u.isActive).length}
+                    {userManagement.activeUsers}
                   </div>
                   <div className="text-sm text-gray-600">Active Users</div>
                 </CardContent>
@@ -303,7 +303,7 @@ export const CleanUserManagementTable: React.FC = () => {
               <Card>
                 <CardContent className="p-4 text-center">
                   <div className="text-2xl font-bold text-red-600">
-                    {userManagement.users.filter(u => !u.isActive).length}
+                    {userManagement.inactiveUsers}
                   </div>
                   <div className="text-sm text-gray-600">Inactive Users</div>
                 </CardContent>
