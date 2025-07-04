@@ -2,7 +2,7 @@
 /**
  * MASTER USER MANAGEMENT HOOK - SINGLE SOURCE OF TRUTH
  * Centralized user management with TypeScript alignment and master consolidation
- * Version: master-user-management-v2.1.0
+ * Version: master-user-management-v2.2.0
  */
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -35,7 +35,7 @@ export interface MasterUser {
 export const useMasterUserManagement = () => {
   const { showSuccess, showError } = useMasterToast();
   
-  console.log('👤 Master User Management v2.1 - Enhanced Single Source User Management Active');
+  console.log('👤 Master User Management v2.2 - Enhanced Single Source User Management Active');
 
   const [users, setUsers] = useState<MasterUser[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -285,9 +285,9 @@ export const useMasterUserManagement = () => {
     isAssigningFacility,
     isDeactivating,
     
-    // Meta information
+    // Meta information - now with all required properties
     meta: {
-      hookVersion: 'master-user-management-v2.1.0',
+      hookVersion: 'master-user-management-v2.2.0',
       singleSourceValidated: true,
       typeScriptAligned: true,
       masterConsolidationCompliant: true,
@@ -295,7 +295,8 @@ export const useMasterUserManagement = () => {
       lastFetched: new Date().toISOString(),
       totalUsers,
       adminCount: users.filter(u => u.role === 'superAdmin').length,
-      staffCount: users.filter(u => ['onboardingTeam', 'healthcareProvider'].includes(u.role)).length
+      staffCount: users.filter(u => ['onboardingTeam', 'healthcareProvider'].includes(u.role)).length,
+      patientCount: users.filter(u => u.role === 'patient').length // Added missing property
     }
   };
 };
