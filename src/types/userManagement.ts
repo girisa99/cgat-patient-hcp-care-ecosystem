@@ -2,7 +2,7 @@
 /**
  * MASTER USER MANAGEMENT TYPES - SINGLE SOURCE OF TRUTH
  * Unified user interface definitions for master consolidation compliance
- * Version: user-management-types-v4.0.0 - Complete interface alignment
+ * Version: user-management-types-v5.0.0 - Fixed required field alignment
  */
 
 export interface UserWithRoles {
@@ -30,7 +30,7 @@ export interface UserWithRoles {
   } | null;
 }
 
-// Master User interface - now fully compatible with UserWithRoles
+// Master User interface - now fully compatible with UserWithRoles with required created_at
 export interface MasterUser {
   id: string;
   firstName: string;
@@ -42,7 +42,7 @@ export interface MasterUser {
   phone?: string;
   isActive: boolean;
   is_active?: boolean;
-  created_at: string; // Required field for UserWithRoles compatibility
+  created_at: string; // NOW REQUIRED - aligned with UserWithRoles
   updated_at?: string;
   facility_id?: string;
   email_confirmed_at?: string;

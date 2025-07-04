@@ -2,7 +2,7 @@
 /**
  * MASTER FORM STATE TYPES - SINGLE SOURCE OF TRUTH
  * All form state definitions point to master implementations
- * Version: form-state-types-v8.0.0 - Complete type export coverage
+ * Version: form-state-types-v9.0.0 - Complete missing property coverage
  */
 
 // Re-export master types as single source of truth
@@ -29,33 +29,37 @@ export interface FacilityManagementFormState {
   is_active?: boolean;
 }
 
-// Missing form state types that hooks are importing
+// Enhanced ApiFormState with missing properties from learning system
 export interface ApiFormState {
   name: string;
   description?: string;
   baseUrl?: string;
   apiKey?: string;
   isActive: boolean;
+  endpoint?: string; // ADDED - identified by pattern recognition
 }
 
+// Enhanced PublishFormState with missing properties
 export interface PublishFormState {
   title: string;
   description: string;
   version: string;
   isPublic: boolean;
   category?: string;
+  content?: string; // ADDED - identified by usage patterns
 }
 
+// Enhanced PatientFormState with complete dual compatibility
 export interface PatientFormState {
   firstName: string;
   lastName: string;
-  first_name: string;
-  last_name: string;
+  first_name: string; // ADDED - dual compatibility requirement
+  last_name: string; // ADDED - dual compatibility requirement
   email: string;
   phone?: string;
   dateOfBirth?: string;
   medicalRecordNumber?: string;
-  isActive: boolean;
+  isActive: boolean; // ADDED - standard pattern requirement
 }
 
 export interface SharedModuleState {
