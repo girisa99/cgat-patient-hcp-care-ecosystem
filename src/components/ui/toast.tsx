@@ -38,11 +38,9 @@ const toastVariants = cva(
   }
 )
 
-interface ToastProps extends React.ComponentPropsWithoutRef<typeof ToastPrimitives.Root>, VariantProps<typeof toastVariants> {}
-
 const Toast = React.forwardRef<
   React.ElementRef<typeof ToastPrimitives.Root>,
-  ToastProps
+  React.ComponentPropsWithoutRef<typeof ToastPrimitives.Root> & VariantProps<typeof toastVariants>
 >(({ className, variant, ...props }, ref) => {
   return (
     <ToastPrimitives.Root
@@ -114,7 +112,6 @@ ToastDescription.displayName = ToastPrimitives.Description.displayName
 type ToastActionElement = React.ReactElement<typeof ToastAction>
 
 export {
-  type ToastProps,
   type ToastActionElement,
   ToastProvider,
   ToastViewport,

@@ -2,7 +2,7 @@
 /**
  * MASTER USER MANAGEMENT TYPES - SINGLE SOURCE OF TRUTH
  * Unified user interface definitions for master consolidation compliance
- * Version: user-management-types-v2.0.0
+ * Version: user-management-types-v3.0.0 - Enhanced with facilities support
  */
 
 export interface UserWithRoles {
@@ -45,6 +45,11 @@ export interface MasterUser {
   created_at: string;
   updated_at?: string;
   facility_id?: string;
+  facilities?: {
+    id: string;
+    name: string;
+    facility_type: string;
+  } | null;
   user_roles: {
     role: {
       name: string;
