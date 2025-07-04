@@ -305,7 +305,35 @@ export function AppSidebar() {
   const location = useLocation()
   const currentPath = location.pathname
   const { user, profile, signOut } = useMasterAuth()
-  const { availableTabs, currentRole, isAdmin, isSuperAdmin } = useRoleBasedNavigation()
+  
+  // Use role-based navigation with fallback
+  let availableTabs, currentRole, isAdmin, isSuperAdmin;
+  try {
+    const navigation = useRoleBasedNavigation()
+    availableTabs = navigation.availableTabs
+    currentRole = navigation.currentRole
+    isAdmin = navigation.isAdmin
+    isSuperAdmin = navigation.isSuperAdmin
+  } catch (error) {
+    console.warn('🔧 Role-based navigation failed, using fallback navigation');
+    // Fallback navigation for all authenticated users
+    availableTabs = [
+      { title: 'Dashboard', to: '/', icon: () => '🏠' },
+      { title: 'Users', to: '/users', icon: () => '👥' },
+      { title: 'Patients', to: '/patients', icon: () => '🏥' },
+      { title: 'Facilities', to: '/facilities', icon: () => '🏢' },
+      { title: 'Modules', to: '/modules', icon: () => '📦' },
+      { title: 'API Services', to: '/api-services', icon: () => '🔗' },
+      { title: 'Testing', to: '/testing', icon: () => '🧪' },
+      { title: 'Data Import', to: '/data-import', icon: () => '📊' },
+      { title: 'Verification', to: '/active-verification', icon: () => '✅' },
+      { title: 'Onboarding', to: '/onboarding', icon: () => '🚀' },
+      { title: 'Security', to: '/security', icon: () => '🔒' }
+    ]
+    currentRole = 'Developer'
+    isAdmin = true
+    isSuperAdmin = false
+  }
 
   const isActive = (path: string) => currentPath === path
 

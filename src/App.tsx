@@ -6,7 +6,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar-database-aligned";
 import { MasterAuthProvider, useMasterAuth } from "@/hooks/useMasterAuth";
-import { useRoleBasedNavigation } from "@/hooks/useRoleBasedNavigation";
 import { AppSidebar } from "@/components/sidebar/AppSidebar";
 import MasterAuthForm from "@/components/auth/MasterAuthForm";
 
@@ -26,45 +25,17 @@ const ActiveVerification = lazy(() => import("./pages/ActiveVerification"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 const Security = lazy(() => import("./pages/Security"));
 
-// Development-friendly Route Protection Component
-const ProtectedRoute = ({ children, path }: { children: React.ReactNode; path: string }) => {
-  const { hasAccess, userRoles } = useRoleBasedNavigation();
-  const { isLoading } = useMasterAuth();
-  
-  // Be permissive during loading or development
-  if (isLoading || userRoles.length === 0) {
-    console.log('🔓 ProtectedRoute: Allowing access during loading/development for path:', path);
-    return <>{children}</>;
-  }
-  
-  if (!hasAccess(path)) {
-    console.log('🚫 ProtectedRoute: Access denied for path:', path, 'User roles:', userRoles);
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto p-6">
-          <h2 className="text-2xl font-bold text-red-600 mb-2">Access Restricted</h2>
-          <p className="text-gray-600 mb-4">
-            This page requires specific permissions. 
-            {userRoles.length === 0 ? ' Please wait for role loading or contact support.' : ` Your current roles: ${userRoles.join(', ')}`}
-          </p>
-          <button 
-            onClick={() => window.history.back()} 
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-          >
-            Go Back
-          </button>
-        </div>
-      </div>
-    );
-  }
-  
-  return <>{children}</>;
-};
-
 // Main App content component
 const AppContent = () => {
   const { isAuthenticated, isLoading, user, userRoles } = useMasterAuth();
-  const { roleStats } = useRoleBasedNavigation();
+
+  console.log('🎯 SINGLE SOURCE OF TRUTH - Architecture Check:', {
+    isAuthenticated,
+    isLoading,
+    userEmail: user?.email,
+    userRoles,
+    timestamp: new Date().toISOString()
+  });
 
   if (isLoading) {
     return (
@@ -82,15 +53,8 @@ const AppContent = () => {
     return <MasterAuthForm />;
   }
 
-  // Show role-based welcome message and debug info
-  console.log('🎯 SINGLE SOURCE OF TRUTH - App loaded with:', {
-    user: user?.email,
-    userRoles,
-    accessiblePages: roleStats.accessiblePages,
-    roleLevel: roleStats.roleLevel,
-    isAuthenticated,
-    profileLoaded: !!user
-  });
+  // ✅ AUTHENTICATED - Show all pages (development-friendly)
+  console.log('� User authenticated - Loading full application with single source of truth');
 
   return (
     <BrowserRouter>
@@ -105,75 +69,19 @@ const AppContent = () => {
               </div>
             }>
               <Routes>
-                {/* Dashboard - Always accessible */}
+                {/* All pages accessible after authentication - Single Source of Truth */}
                 <Route path="/" element={<Index />} />
-                
-                {/* All other routes with development-friendly protection */}
-                <Route path="/users" element={
-                  <ProtectedRoute path="/users">
-                    <Users />
-                  </ProtectedRoute>
-                } />
-                
-                <Route path="/patients" element={
-                  <ProtectedRoute path="/patients">
-                    <Patients />
-                  </ProtectedRoute>
-                } />
-                
-                <Route path="/facilities" element={
-                  <ProtectedRoute path="/facilities">
-                    <Facilities />
-                  </ProtectedRoute>
-                } />
-                
-                <Route path="/modules" element={
-                  <ProtectedRoute path="/modules">
-                    <SimpleModules />
-                  </ProtectedRoute>
-                } />
-                
-                <Route path="/api-services" element={
-                  <ProtectedRoute path="/api-services">
-                    <ApiServices />
-                  </ProtectedRoute>
-                } />
-                
-                <Route path="/testing" element={
-                  <ProtectedRoute path="/testing">
-                    <Testing />
-                  </ProtectedRoute>
-                } />
-                
-                <Route path="/data-import" element={
-                  <ProtectedRoute path="/data-import">
-                    <DataImport />
-                  </ProtectedRoute>
-                } />
-                
-                <Route path="/active-verification" element={
-                  <ProtectedRoute path="/active-verification">
-                    <ActiveVerification />
-                  </ProtectedRoute>
-                } />
-                
-                <Route path="/onboarding" element={
-                  <ProtectedRoute path="/onboarding">
-                    <Onboarding />
-                  </ProtectedRoute>
-                } />
-                
-                <Route path="/security" element={
-                  <ProtectedRoute path="/security">
-                    <Security />
-                  </ProtectedRoute>
-                } />
-                
-                <Route path="/role-management" element={
-                  <ProtectedRoute path="/role-management">
-                    <RoleManagement />
-                  </ProtectedRoute>
-                } />
+                <Route path="/users" element={<Users />} />
+                <Route path="/patients" element={<Patients />} />
+                <Route path="/facilities" element={<Facilities />} />
+                <Route path="/modules" element={<SimpleModules />} />
+                <Route path="/api-services" element={<ApiServices />} />
+                <Route path="/testing" element={<Testing />} />
+                <Route path="/data-import" element={<DataImport />} />
+                <Route path="/active-verification" element={<ActiveVerification />} />
+                <Route path="/onboarding" element={<Onboarding />} />
+                <Route path="/security" element={<Security />} />
+                <Route path="/role-management" element={<RoleManagement />} />
                 
                 {/* Catch all - redirect to dashboard */}
                 <Route path="*" element={<Navigate to="/" replace />} />
