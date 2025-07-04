@@ -13,6 +13,7 @@ import { useMasterAuth } from "@/hooks/useMasterAuth";
 import { useComprehensiveSystemStatus } from "@/hooks/useComprehensiveSystemStatus";
 import { useRoleBasedNavigation } from "@/hooks/useRoleBasedNavigation";
 import DashboardHeader from "@/components/layout/DashboardHeader";
+import DatabaseTest from "@/components/DatabaseTest";
 
 const Index = () => {
   const { user, profile, userRoles, isLoading } = useMasterAuth();
@@ -337,6 +338,9 @@ const Index = () => {
             </CardContent>
           </Card>
         )}
+
+        {/* Database Test Component */}
+        <DatabaseTest />
       </div>
     </div>
   );

@@ -80,39 +80,61 @@ export const useMasterData = () => {
       console.log('🔍 Fetching users from master data source...');
       
       try {
-        const { data, error } = await supabase
+        // Step 1: Get basic profiles (no complex relationships)
+        const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
-          .select(`
-            id,
-            first_name,
-            last_name,
-            email,
-            phone,
-            created_at,
-            user_roles(
-              role:roles(name, description)
-            )
-          `)
+          .select('id, first_name, last_name, email, phone, created_at')
           .order('created_at', { ascending: false });
 
-        if (error) {
-          console.error('❌ Users query error:', error);
-          throw error;
+        if (profilesError) {
+          console.error('❌ Profiles query error:', profilesError);
+          throw profilesError;
         }
+
+        if (!profilesData || profilesData.length === 0) {
+          console.log('ℹ️ No profiles found');
+          return [];
+        }
+
+        // Step 2: Get user roles separately for all users
+        const userIds = profilesData.map(p => p.id);
+        const { data: userRolesData, error: rolesError } = await supabase
+          .from('user_roles')
+          .select(`
+            user_id,
+            roles (
+              name,
+              description
+            )
+          `)
+          .in('user_id', userIds);
+
+        if (rolesError) {
+          console.warn('⚠️ User roles query failed, continuing without roles:', rolesError);
+        }
+
+        // Step 3: Combine the data
+        const usersWithRoles = profilesData.map(profile => {
+          const userRoles = userRolesData?.filter(ur => ur.user_id === profile.id) || [];
+          
+          return {
+            id: profile.id,
+            first_name: profile.first_name || '',
+            last_name: profile.last_name || '',
+            email: profile.email || '',
+            phone: profile.phone || '',
+            created_at: profile.created_at || new Date().toISOString(),
+            user_roles: userRoles.map(ur => ({
+              role: {
+                name: ur.roles?.name || '',
+                description: ur.roles?.description || ''
+              }
+            }))
+          };
+        });
         
-        // Clean and validate the data
-        const cleanedData = (data || []).map(user => ({
-          id: user.id,
-          first_name: user.first_name || '',
-          last_name: user.last_name || '',
-          email: user.email || '',
-          phone: user.phone || '',
-          created_at: user.created_at || new Date().toISOString(),
-          user_roles: Array.isArray(user.user_roles) ? user.user_roles : []
-        }));
-        
-        console.log('✅ Users loaded successfully:', cleanedData.length);
-        return cleanedData;
+        console.log('✅ Users loaded successfully:', usersWithRoles.length);
+        return usersWithRoles;
       } catch (error) {
         console.error('💥 Users fetch exception:', error);
         throw error;

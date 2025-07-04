@@ -50,6 +50,31 @@ export const MasterAuthProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     try {
       console.log('📋 Loading profile for user:', userId);
       
+      // Step 0: Ensure required database function exists
+      try {
+        await supabase.rpc('sql', {
+          query: `
+            CREATE OR REPLACE FUNCTION public.check_user_has_role(user_id uuid, role_name text)
+            RETURNS boolean
+            LANGUAGE sql
+            STABLE SECURITY DEFINER
+            SET search_path = ''
+            AS $$
+              SELECT EXISTS (
+                SELECT 1
+                FROM public.user_roles ur
+                JOIN public.roles r ON r.id = ur.role_id
+                WHERE ur.user_id = user_id
+                AND r.name = role_name
+              );
+            $$;
+          `
+        });
+        console.log('✅ Database function check_user_has_role ensured');
+      } catch (funcError) {
+        console.warn('⚠️ Could not create check_user_has_role function:', funcError);
+      }
+      
       // Step 1: Get basic profile
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
