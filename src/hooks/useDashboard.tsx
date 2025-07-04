@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { useAuthContext } from '@/components/auth/DatabaseAuthProvider';
+import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { useMasterUserManagement } from './useMasterUserManagement';
 import { useFacilities } from './useFacilities';
 import { useModules } from './useModules';
@@ -9,7 +9,7 @@ import { useApiServices } from './useApiServices';
 export const useDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { user, isAuthenticated, profile, userRoles, signOut } = useAuthContext();
+  const { user, isAuthenticated, profile, userRoles, signOut } = useMasterAuth();
   
   // Get real data from all consolidated sources
   const userManagement = useMasterUserManagement();

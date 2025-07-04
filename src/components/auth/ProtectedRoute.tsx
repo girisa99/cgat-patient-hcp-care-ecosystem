@@ -1,7 +1,7 @@
 
 import { ReactNode, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuthContext } from '@/components/auth/DatabaseAuthProvider';
+import { useMasterAuth } from '@/hooks/useMasterAuth';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 interface ProtectedRouteProps {
@@ -9,7 +9,7 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const { isLoading, isAuthenticated, user } = useAuthContext();
+  const { isLoading, isAuthenticated, user } = useMasterAuth();
   const navigate = useNavigate();
 
   console.log('🛡️ ProtectedRoute check:', { isLoading, isAuthenticated, hasUser: !!user });
