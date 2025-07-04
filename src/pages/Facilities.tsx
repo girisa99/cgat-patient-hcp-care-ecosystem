@@ -1,101 +1,89 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Building2, Search, RefreshCw, MapPin } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Building2, Search, RefreshCw, MapPin, Plus, Settings, Users } from 'lucide-react';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
-import { supabase } from '@/integrations/supabase/client';
-
-interface Facility {
-  id: string;
-  name: string;
-  facility_type: string;
-  address?: string;
-  phone?: string;
-  email?: string;
-  is_active: boolean;
-  created_at: string;
-}
+import { useMasterData } from '@/hooks/useMasterData';
 
 const Facilities: React.FC = () => {
   const { isAuthenticated, isLoading: authLoading } = useMasterAuth();
-  const [facilities, setFacilities] = useState<Facility[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { 
+    facilities,
+    users,
+    modules,
+    isLoading, 
+    error, 
+    refreshData, 
+    searchFacilities,
+    stats
+  } = useMasterData();
+  
   const [searchQuery, setSearchQuery] = useState('');
-
-  console.log('🏢 Facilities Page - Direct Database Loading');
-
-  const loadFacilities = async () => {
-    if (!isAuthenticated) return;
-    
-    setLoading(true);
-    setError(null);
-    
-    try {
-      console.log('🔍 Loading facilities directly from database...');
-      
-      const { data, error: dbError } = await supabase
-        .from('facilities')
-        .select('*')
-        .order('name');
-
-      if (dbError) {
-        console.error('❌ Database error:', dbError);
-        setError(dbError.message);
-        return;
-      }
-
-      const cleanFacilities = (data || []).map(facility => ({
-        id: facility.id,
-        name: facility.name || '',
-        facility_type: facility.facility_type || '',
-        address: facility.address || '',
-        phone: facility.phone || '',
-        email: facility.email || '',
-        is_active: facility.is_active ?? true,
-        created_at: facility.created_at || new Date().toISOString()
-      }));
-
-      setFacilities(cleanFacilities);
-      console.log('✅ Facilities loaded successfully:', cleanFacilities.length, 'facilities');
-      
-    } catch (err: any) {
-      console.error('💥 Exception loading facilities:', err);
-      setError(err.message || 'Failed to load facilities');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (isAuthenticated && !authLoading) {
-      loadFacilities();
-    }
-  }, [isAuthenticated, authLoading]);
-
-  const handleRefresh = () => {
-    loadFacilities();
-  };
-
-  const filteredFacilities = facilities.filter(facility => {
-    if (!searchQuery.trim()) return true;
-    const query = searchQuery.toLowerCase();
-    return (
-      facility.name.toLowerCase().includes(query) ||
-      facility.facility_type.toLowerCase().includes(query) ||
-      (facility.address && facility.address.toLowerCase().includes(query))
-    );
+  const [selectedFacility, setSelectedFacility] = useState<any>(null);
+  const [isAddFacilityOpen, setIsAddFacilityOpen] = useState(false);
+  const [isAssignUserOpen, setIsAssignUserOpen] = useState(false);
+  const [isAssignModuleOpen, setIsAssignModuleOpen] = useState(false);
+  
+  // Form states
+  const [newFacility, setNewFacility] = useState({
+    name: '',
+    facilityType: '',
+    address: '',
+    phone: '',
+    email: ''
   });
+  const [selectedUser, setSelectedUser] = useState<string>('');
+  const [selectedModule, setSelectedModule] = useState<string>('');
+
+  console.log('🏢 Facilities Page - Master Data Integration (Single Source)');
+
+  const handleAddFacility = () => {
+    if (!newFacility.name || !newFacility.facilityType) {
+      return;
+    }
+
+    // TODO: Implement facility creation through useMasterData
+    console.log('Creating facility:', newFacility);
+    setIsAddFacilityOpen(false);
+    setNewFacility({ name: '', facilityType: '', address: '', phone: '', email: '' });
+  };
+
+  const handleAssignUser = () => {
+    if (!selectedFacility || !selectedUser) {
+      return;
+    }
+
+    // TODO: Implement user assignment to facility
+    console.log('Assigning user to facility:', { facilityId: selectedFacility.id, userId: selectedUser });
+    setIsAssignUserOpen(false);
+    setSelectedUser('');
+  };
+
+  const handleAssignModule = () => {
+    if (!selectedFacility || !selectedModule) {
+      return;
+    }
+
+    // TODO: Implement module assignment to facility
+    console.log('Assigning module to facility:', { facilityId: selectedFacility.id, moduleId: selectedModule });
+    setIsAssignModuleOpen(false);
+    setSelectedModule('');
+  };
+
+  const filteredFacilities = searchFacilities(searchQuery);
 
   // Loading state
-  if (authLoading) {
+  if (authLoading || isLoading) {
     return (
       <div className="p-6">
         <div className="text-center">
-          <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
-          <div className="text-muted-foreground">Authenticating...</div>
+          <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-green-600" />
+          <div className="text-muted-foreground">Loading facilities...</div>
         </div>
       </div>
     );
@@ -120,8 +108,8 @@ const Facilities: React.FC = () => {
       <div className="p-6">
         <Card>
           <CardContent className="p-8 text-center">
-            <div className="text-red-600 mb-4">Error loading facilities: {error}</div>
-            <Button onClick={handleRefresh} variant="outline">
+            <div className="text-red-600 mb-4">Error loading facilities: {error.message}</div>
+            <Button onClick={refreshData} variant="outline">
               <RefreshCw className="h-4 w-4 mr-2" />
               Retry
             </Button>
@@ -131,18 +119,14 @@ const Facilities: React.FC = () => {
     );
   }
 
-  const stats = {
-    totalFacilities: facilities.length,
-    activeFacilities: facilities.filter(f => f.is_active).length,
-    facilityTypes: [...new Set(facilities.map(f => f.facility_type))].length
-  };
+  const facilityTypes = [...new Set(facilities.map(f => f.facility_type))];
 
   return (
     <div className="p-6">
       <div className="mb-6">
         <h1 className="text-3xl font-bold tracking-tight">Facilities Management</h1>
         <p className="text-muted-foreground">
-          Manage healthcare facilities and locations
+          Manage healthcare facilities, assign users, and configure modules
         </p>
       </div>
 
@@ -157,7 +141,7 @@ const Facilities: React.FC = () => {
           <div className="text-sm text-blue-600">Active</div>
         </div>
         <div className="text-center p-4 bg-purple-50 rounded-lg">
-          <div className="text-2xl font-bold text-purple-600">{stats.facilityTypes}</div>
+          <div className="text-2xl font-bold text-purple-600">{facilityTypes.length}</div>
           <div className="text-sm text-purple-600">Facility Types</div>
         </div>
       </div>
@@ -171,15 +155,88 @@ const Facilities: React.FC = () => {
             </div>
             <div className="flex items-center gap-2">
               <Button
-                onClick={handleRefresh}
+                onClick={refreshData}
                 variant="outline"
                 size="sm"
-                disabled={loading}
+                disabled={isLoading}
                 className="flex items-center gap-2"
               >
-                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
                 Refresh
               </Button>
+              <Dialog open={isAddFacilityOpen} onOpenChange={setIsAddFacilityOpen}>
+                <DialogTrigger asChild>
+                  <Button size="sm" className="flex items-center gap-2">
+                    <Plus className="h-4 w-4" />
+                    Add Facility
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Add New Facility</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="name">Facility Name</Label>
+                      <Input
+                        id="name"
+                        value={newFacility.name}
+                        onChange={(e) => setNewFacility(prev => ({ ...prev, name: e.target.value }))}
+                        placeholder="Enter facility name"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="facilityType">Facility Type</Label>
+                      <Select value={newFacility.facilityType} onValueChange={(value) => setNewFacility(prev => ({ ...prev, facilityType: value }))}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select facility type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="hospital">Hospital</SelectItem>
+                          <SelectItem value="clinic">Clinic</SelectItem>
+                          <SelectItem value="pharmacy">Pharmacy</SelectItem>
+                          <SelectItem value="laboratory">Laboratory</SelectItem>
+                          <SelectItem value="imaging">Imaging Center</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="address">Address</Label>
+                      <Input
+                        id="address"
+                        value={newFacility.address}
+                        onChange={(e) => setNewFacility(prev => ({ ...prev, address: e.target.value }))}
+                        placeholder="Enter facility address"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="phone">Phone</Label>
+                      <Input
+                        id="phone"
+                        value={newFacility.phone}
+                        onChange={(e) => setNewFacility(prev => ({ ...prev, phone: e.target.value }))}
+                        placeholder="Enter phone number"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="email">Email</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={newFacility.email}
+                        onChange={(e) => setNewFacility(prev => ({ ...prev, email: e.target.value }))}
+                        placeholder="Enter email address"
+                      />
+                    </div>
+                    <Button 
+                      onClick={handleAddFacility} 
+                      className="w-full"
+                    >
+                      Create Facility
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
           </CardTitle>
         </CardHeader>
@@ -196,16 +253,8 @@ const Facilities: React.FC = () => {
               />
             </div>
 
-            {/* Loading state */}
-            {loading && (
-              <div className="text-center p-8">
-                <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-green-600" />
-                <div className="text-muted-foreground">Loading facilities...</div>
-              </div>
-            )}
-
             {/* Facilities List */}
-            {!loading && filteredFacilities.length === 0 && (
+            {filteredFacilities.length === 0 ? (
               <div className="text-center p-8 text-muted-foreground">
                 <Building2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p>No facilities found</p>
@@ -213,9 +262,7 @@ const Facilities: React.FC = () => {
                   <p className="text-sm">Try adjusting your search terms</p>
                 )}
               </div>
-            )}
-
-            {!loading && filteredFacilities.length > 0 && (
+            ) : (
               <div className="space-y-2">
                 {filteredFacilities.map((facility) => (
                   <div key={facility.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50">
@@ -241,8 +288,25 @@ const Facilities: React.FC = () => {
                       <Badge variant={facility.is_active ? "default" : "secondary"}>
                         {facility.is_active ? "Active" : "Inactive"}
                       </Badge>
-                      <Button variant="outline" size="sm">
-                        Manage
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          setSelectedFacility(facility);
+                          setIsAssignUserOpen(true);
+                        }}
+                      >
+                        <Users className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          setSelectedFacility(facility);
+                          setIsAssignModuleOpen(true);
+                        }}
+                      >
+                        <Settings className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
@@ -252,6 +316,72 @@ const Facilities: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Assign User Dialog */}
+      <Dialog open={isAssignUserOpen} onOpenChange={setIsAssignUserOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assign User to {selectedFacility?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="user">Select User</Label>
+              <Select value={selectedUser} onValueChange={setSelectedUser}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a user" />
+                </SelectTrigger>
+                <SelectContent>
+                  {users.map((user) => (
+                    <SelectItem key={user.id} value={user.id}>
+                      {user.first_name} {user.last_name} - {user.email}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button 
+              onClick={handleAssignUser} 
+              disabled={!selectedUser}
+              className="w-full"
+            >
+              Assign User
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Assign Module Dialog */}
+      <Dialog open={isAssignModuleOpen} onOpenChange={setIsAssignModuleOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assign Module to {selectedFacility?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="module">Select Module</Label>
+              <Select value={selectedModule} onValueChange={setSelectedModule}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a module" />
+                </SelectTrigger>
+                <SelectContent>
+                  {modules.map((module) => (
+                    <SelectItem key={module.id} value={module.id}>
+                      {module.name} {module.description && `- ${module.description}`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button 
+              onClick={handleAssignModule} 
+              disabled={!selectedModule}
+              className="w-full"
+            >
+              Assign Module
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

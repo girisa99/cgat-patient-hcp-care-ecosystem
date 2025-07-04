@@ -1,80 +1,28 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { HeartHandshake, Search, RefreshCw, UserPlus } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { HeartHandshake, Search, RefreshCw, Eye, Edit, UserPlus } from 'lucide-react';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
-import { supabase } from '@/integrations/supabase/client';
-
-interface Patient {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone?: string;
-  created_at: string;
-}
+import { useMasterData } from '@/hooks/useMasterData';
 
 const Patients: React.FC = () => {
   const { isAuthenticated, isLoading: authLoading } = useMasterAuth();
-  const [patients, setPatients] = useState<Patient[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { 
+    patients, 
+    isLoading, 
+    error, 
+    refreshData, 
+    stats
+  } = useMasterData();
+  
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedPatient, setSelectedPatient] = useState<any>(null);
+  const [isViewPatientOpen, setIsViewPatientOpen] = useState(false);
 
-  console.log('🏥 Patients Page - Direct Database Loading');
-
-  const loadPatients = async () => {
-    if (!isAuthenticated) return;
-    
-    setLoading(true);
-    setError(null);
-    
-    try {
-      console.log('🔍 Loading patients directly from database...');
-      
-      // For now, we'll use the profiles table and filter for patient-type users
-      const { data, error: dbError } = await supabase
-        .from('profiles')
-        .select('id, first_name, last_name, email, phone, created_at')
-        .order('created_at', { ascending: false });
-
-      if (dbError) {
-        console.error('❌ Database error:', dbError);
-        setError(dbError.message);
-        return;
-      }
-
-      const cleanPatients = (data || []).map(patient => ({
-        id: patient.id,
-        first_name: patient.first_name || '',
-        last_name: patient.last_name || '',
-        email: patient.email || '',
-        phone: patient.phone || '',
-        created_at: patient.created_at || new Date().toISOString()
-      }));
-
-      setPatients(cleanPatients);
-      console.log('✅ Patients loaded successfully:', cleanPatients.length, 'patients');
-      
-    } catch (err: any) {
-      console.error('💥 Exception loading patients:', err);
-      setError(err.message || 'Failed to load patients');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (isAuthenticated && !authLoading) {
-      loadPatients();
-    }
-  }, [isAuthenticated, authLoading]);
-
-  const handleRefresh = () => {
-    loadPatients();
-  };
+  console.log('🏥 Patients Page - Master Data Integration (Patient-Specific)');
 
   const filteredPatients = patients.filter(patient => {
     if (!searchQuery.trim()) return true;
@@ -86,13 +34,23 @@ const Patients: React.FC = () => {
     );
   });
 
+  const handleViewPatient = (patient: any) => {
+    setSelectedPatient(patient);
+    setIsViewPatientOpen(true);
+  };
+
+  const handleEditPatient = (patient: any) => {
+    console.log('Editing patient:', patient.id);
+    // Implement edit functionality
+  };
+
   // Loading state
-  if (authLoading) {
+  if (authLoading || isLoading) {
     return (
       <div className="p-6">
         <div className="text-center">
-          <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
-          <div className="text-muted-foreground">Authenticating...</div>
+          <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-pink-600" />
+          <div className="text-muted-foreground">Loading patients...</div>
         </div>
       </div>
     );
@@ -117,8 +75,8 @@ const Patients: React.FC = () => {
       <div className="p-6">
         <Card>
           <CardContent className="p-8 text-center">
-            <div className="text-red-600 mb-4">Error loading patients: {error}</div>
-            <Button onClick={handleRefresh} variant="outline">
+            <div className="text-red-600 mb-4">Error loading patients: {error.message}</div>
+            <Button onClick={refreshData} variant="outline">
               <RefreshCw className="h-4 w-4 mr-2" />
               Retry
             </Button>
@@ -128,9 +86,9 @@ const Patients: React.FC = () => {
     );
   }
 
-  const stats = {
+  const patientStats = {
     totalPatients: patients.length,
-    activePatients: patients.length,
+    activePatients: patients.length, // All patients are considered active
     recentPatients: patients.filter(p => 
       new Date(p.created_at) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
     ).length
@@ -148,15 +106,15 @@ const Patients: React.FC = () => {
       {/* Stats Summary */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div className="text-center p-4 bg-pink-50 rounded-lg">
-          <div className="text-2xl font-bold text-pink-600">{stats.totalPatients}</div>
+          <div className="text-2xl font-bold text-pink-600">{patientStats.totalPatients}</div>
           <div className="text-sm text-pink-600">Total Patients</div>
         </div>
         <div className="text-center p-4 bg-green-50 rounded-lg">
-          <div className="text-2xl font-bold text-green-600">{stats.activePatients}</div>
+          <div className="text-2xl font-bold text-green-600">{patientStats.activePatients}</div>
           <div className="text-sm text-green-600">Active</div>
         </div>
         <div className="text-center p-4 bg-blue-50 rounded-lg">
-          <div className="text-2xl font-bold text-blue-600">{stats.recentPatients}</div>
+          <div className="text-2xl font-bold text-blue-600">{patientStats.recentPatients}</div>
           <div className="text-sm text-blue-600">Recent (30 days)</div>
         </div>
       </div>
@@ -170,14 +128,18 @@ const Patients: React.FC = () => {
             </div>
             <div className="flex items-center gap-2">
               <Button
-                onClick={handleRefresh}
+                onClick={refreshData}
                 variant="outline"
                 size="sm"
-                disabled={loading}
+                disabled={isLoading}
                 className="flex items-center gap-2"
               >
-                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
                 Refresh
+              </Button>
+              <Button size="sm" className="flex items-center gap-2">
+                <UserPlus className="h-4 w-4" />
+                Add Patient
               </Button>
             </div>
           </CardTitle>
@@ -195,45 +157,61 @@ const Patients: React.FC = () => {
               />
             </div>
 
-            {/* Loading state */}
-            {loading && (
-              <div className="text-center p-8">
-                <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-pink-600" />
-                <div className="text-muted-foreground">Loading patients...</div>
-              </div>
-            )}
-
             {/* Patients List */}
-            {!loading && filteredPatients.length === 0 && (
+            {filteredPatients.length === 0 ? (
               <div className="text-center p-8 text-muted-foreground">
                 <HeartHandshake className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p>No patients found</p>
                 {searchQuery && (
                   <p className="text-sm">Try adjusting your search terms</p>
                 )}
+                {patients.length === 0 && !searchQuery && (
+                  <p className="text-sm">No users with patient/caregiver roles found</p>
+                )}
               </div>
-            )}
-
-            {!loading && filteredPatients.length > 0 && (
+            ) : (
               <div className="space-y-2">
                 {filteredPatients.map((patient) => (
                   <div key={patient.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50">
                     <div className="flex-1">
-                      <div className="font-medium">
-                        {patient.first_name} {patient.last_name}
+                      <div className="flex items-center gap-2">
+                        <div className="font-medium">
+                          {patient.first_name} {patient.last_name}
+                        </div>
+                        <Badge variant="outline" className="text-xs">
+                          Patient
+                        </Badge>
                       </div>
                       <div className="text-sm text-muted-foreground">{patient.email}</div>
                       {patient.phone && (
-                        <div className="text-sm text-muted-foreground">{patient.phone}</div>
+                        <div className="text-sm text-muted-foreground">📞 {patient.phone}</div>
                       )}
+                      <div className="flex gap-1 mt-1">
+                        {patient.user_roles?.map((ur, index) => (
+                          <Badge key={index} variant="secondary" className="text-xs">
+                            {ur.role?.name || 'Unknown Role'}
+                          </Badge>
+                        ))}
+                      </div>
                       <div className="text-xs text-muted-foreground mt-1">
                         Registered: {new Date(patient.created_at).toLocaleDateString()}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge variant="default">Active</Badge>
-                      <Button variant="outline" size="sm">
-                        View Records
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleViewPatient(patient)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleEditPatient(patient)}
+                      >
+                        <Edit className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
@@ -243,6 +221,49 @@ const Patients: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* View Patient Dialog */}
+      <Dialog open={isViewPatientOpen} onOpenChange={setIsViewPatientOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Patient Details</DialogTitle>
+          </DialogHeader>
+          {selectedPatient && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Name</label>
+                  <div className="text-sm">{selectedPatient.first_name} {selectedPatient.last_name}</div>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Email</label>
+                  <div className="text-sm">{selectedPatient.email}</div>
+                </div>
+                {selectedPatient.phone && (
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Phone</label>
+                    <div className="text-sm">{selectedPatient.phone}</div>
+                  </div>
+                )}
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Registration Date</label>
+                  <div className="text-sm">{new Date(selectedPatient.created_at).toLocaleDateString()}</div>
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Roles</label>
+                <div className="flex gap-1 mt-1">
+                  {selectedPatient.user_roles?.map((ur, index) => (
+                    <Badge key={index} variant="outline" className="text-xs">
+                      {ur.role?.name || 'Unknown Role'}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
