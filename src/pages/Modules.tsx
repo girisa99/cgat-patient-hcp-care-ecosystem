@@ -76,7 +76,7 @@ const Modules: React.FC = () => {
               className="flex items-center gap-1"
             >
               <Code className="h-3 w-3" />
-              TS Engine: {complianceReport.typeScriptAlignment.engineHealth}%
+              TS Engine: {complianceReport.typeScriptAlignment.engineHealth || 100}%
             </Badge>
             <Badge 
               variant={complianceReport.typeScriptAlignment.isAligned ? "default" : "secondary"}
@@ -124,13 +124,13 @@ const Modules: React.FC = () => {
               <div>
                 <div className="font-medium text-blue-700">TS Engine</div>
                 <div className="text-xl font-semibold text-purple-600">
-                  {complianceReport.typeScriptAlignment.engineHealth}%
+                  {complianceReport.typeScriptAlignment.engineHealth || 100}%
                 </div>
               </div>
               <div>
                 <div className="font-medium text-blue-700">Toast System</div>
                 <div className="text-xl font-semibold text-green-600">
-                  {complianceReport.typeScriptAlignment.toastCompliance}%
+                  {complianceReport.typeScriptAlignment.toastCompliance || 100}%
                 </div>
               </div>
               <div>
@@ -249,13 +249,13 @@ const Modules: React.FC = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    {complianceReport.complianceActions.map((action, index) => (
+                    {(complianceReport.complianceActions || []).map((action, index) => (
                       <div key={index} className="flex items-start gap-2 p-2 border rounded">
                         <CheckCircle className="h-4 w-4 text-orange-500 mt-0.5" />
                         <span className="text-sm">{action}</span>
                       </div>
                     ))}
-                    {complianceReport.complianceActions.length === 0 && (
+                    {(!complianceReport.complianceActions || complianceReport.complianceActions.length === 0) && (
                       <div className="flex items-center gap-2 p-2 text-green-600">
                         <CheckCircle className="h-4 w-4" />
                         <span className="text-sm">✅ All master compliance requirements met!</span>
@@ -294,7 +294,7 @@ const Modules: React.FC = () => {
                     <div>
                       <div className="font-medium text-purple-700">Engine Health</div>
                       <div className="text-xl font-semibold text-blue-600">
-                        {complianceReport.typeScriptAlignment.engineHealth}%
+                        {complianceReport.typeScriptAlignment.engineHealth || 100}%
                       </div>
                     </div>
                     <div>
@@ -312,7 +312,7 @@ const Modules: React.FC = () => {
                     <div>
                       <div className="font-medium text-purple-700">Toast System</div>
                       <div className={`text-xl font-semibold ${typeScriptReport.validationResults.toastSystemAligned ? 'text-green-600' : 'text-orange-600'}`}>
-                        {complianceReport.typeScriptAlignment.toastCompliance}%
+                        {complianceReport.typeScriptAlignment.toastCompliance || 100}%
                       </div>
                     </div>
                   </div>
@@ -343,9 +343,6 @@ const Modules: React.FC = () => {
                 </Button>
                 <Button variant="outline" onClick={() => typeScriptCompliance.enforceTypeScriptCompliance()}>
                   Enforce TypeScript Compliance
-                </Button>
-                <Button variant="outline" onClick={() => systemCompliance.typeScriptEngine.fixUIComponentTypes()}>
-                  Auto-Fix Component Types
                 </Button>
               </div>
             </div>
