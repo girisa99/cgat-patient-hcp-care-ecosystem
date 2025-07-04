@@ -22,9 +22,8 @@ const toastVariants = cva(
 )
 
 const Toast = React.forwardRef<
-  React.ElementRef<"div">,
-  React.ComponentPropsWithoutRef<"div"> &
-    VariantProps<typeof toastVariants>
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement> & VariantProps<typeof toastVariants>
 >(({ className, variant, ...props }, ref) => {
   return (
     <div
@@ -37,8 +36,8 @@ const Toast = React.forwardRef<
 Toast.displayName = "Toast"
 
 const ToastAction = React.forwardRef<
-  React.ElementRef<"button">,
-  React.ComponentPropsWithoutRef<"button">
+  HTMLButtonElement,
+  React.ButtonHTMLAttributes<HTMLButtonElement>
 >(({ className, ...props }, ref) => (
   <button
     ref={ref}
@@ -52,8 +51,8 @@ const ToastAction = React.forwardRef<
 ToastAction.displayName = "ToastAction"
 
 const ToastClose = React.forwardRef<
-  React.ElementRef<"button">,
-  React.ComponentPropsWithoutRef<"button">
+  HTMLButtonElement,
+  React.ButtonHTMLAttributes<HTMLButtonElement>
 >(({ className, ...props }, ref) => (
   <button
     ref={ref}
@@ -70,8 +69,8 @@ const ToastClose = React.forwardRef<
 ToastClose.displayName = "ToastClose"
 
 const ToastTitle = React.forwardRef<
-  React.ElementRef<"div">,
-  React.ComponentPropsWithoutRef<"div">
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
@@ -82,8 +81,8 @@ const ToastTitle = React.forwardRef<
 ToastTitle.displayName = "ToastTitle"
 
 const ToastDescription = React.forwardRef<
-  React.ElementRef<"div">,
-  React.ComponentPropsWithoutRef<"div">
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
