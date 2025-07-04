@@ -1,12 +1,13 @@
-
 /**
  * MASTER SYSTEM COMPLIANCE - SINGLE SOURCE OF TRUTH
  * Ensures complete adherence to master consolidation principles
- * Version: master-system-compliance-v2.0.0
+ * Version: master-system-compliance-v3.0.0
  */
 import { useMasterConsolidationCompliance } from './useMasterConsolidationCompliance';
 import { useMasterToastAlignment } from './useMasterToastAlignment';
 import { useMasterTypeScriptEngine } from './useMasterTypeScriptEngine';
+import { useMasterTypeScriptValidator } from './useMasterTypeScriptValidator';
+import { useMasterUserTableTypesFixer } from './useMasterUserTableTypesFixer';
 
 export interface SystemComplianceReport {
   overallCompliance: number;
@@ -48,31 +49,36 @@ export const useMasterSystemCompliance = () => {
   const consolidationCompliance = useMasterConsolidationCompliance();
   const toastAlignment = useMasterToastAlignment();
   const typeScriptEngine = useMasterTypeScriptEngine();
+  const typeScriptValidator = useMasterTypeScriptValidator();
+  const userTableTypesFixer = useMasterUserTableTypesFixer();
   
-  console.log('🎯 Master System Compliance v2.0 - Enhanced TypeScript Validation Active');
+  console.log('🎯 Master System Compliance v3.0 - Enhanced TypeScript Validation & Type Fixing Active');
 
   const validateSystemCompliance = (): SystemComplianceReport => {
     const complianceReport = consolidationCompliance.validateCompliance();
     const typeScriptReport = typeScriptEngine.validateTypeScriptCompliance();
+    const validatorReport = typeScriptValidator.validateTypeScriptCompliance();
+    const typeFixReport = userTableTypesFixer.fixUserTableTypes();
     
-    // Enhanced TypeScript compliance calculation
+    // Enhanced TypeScript compliance calculation with type fixes
     const enhancedTypeScriptScore = Math.round(
-      (complianceReport.typeScriptAlignment.score * 0.6 + 
+      (complianceReport.typeScriptAlignment.score * 0.4 + 
        toastAlignment.complianceScore * 0.2 + 
-       typeScriptReport.complianceScore * 0.2)
+       typeScriptReport.complianceScore * 0.2 +
+       validatorReport.overallScore * 0.15 +
+       typeFixReport.complianceScore * 0.05)
     );
 
-    // Calculate overall compliance with enhanced TypeScript weighting
+    // Calculate overall compliance with enhanced TypeScript weighting and type fixes
     const overallCompliance = Math.round(
       (complianceReport.masterHookCompliance.score * 0.25 +
        complianceReport.singleSourceCompliance.score * 0.25 +
-       enhancedTypeScriptScore * 0.30 + // Increased weight for TypeScript
-       complianceReport.verificationSystem.score * 0.15 +
-       complianceReport.registrySystem.score * 0.05) * 0.98 // 98% target compliance
+       enhancedTypeScriptScore * 0.35 + // Increased weight for TypeScript with fixes
+       complianceReport.verificationSystem.score * 0.15) * 0.99 // 99% target compliance with fixes
     );
 
     const singleSourceCompliant = complianceReport.singleSourceCompliance.score === 100;
-    const typeScriptAligned = enhancedTypeScriptScore >= 95;
+    const typeScriptAligned = enhancedTypeScriptScore >= 98; // Higher threshold with fixes
     const verificationActive = complianceReport.verificationSystem.score >= 95;
 
     return {
@@ -110,7 +116,8 @@ export const useMasterSystemCompliance = () => {
       },
       complianceActions: [
         ...consolidationCompliance.generateComplianceActions(complianceReport),
-        ...typeScriptReport.remainingIssues.map(issue => `TypeScript: ${issue}`)
+        ...typeScriptReport.remainingIssues.map(issue => `TypeScript: ${issue}`),
+        ...validatorReport.validationResults.recommendations.map(rec => `Validator: ${rec}`)
       ]
     };
   };
@@ -123,7 +130,10 @@ export const useMasterSystemCompliance = () => {
     typeScriptEngine.fixUIComponentTypes();
     typeScriptEngine.fixHookTypeDefinitions();
     
-    if (report.overallCompliance >= 98) {
+    // Auto-fix user table types
+    userTableTypesFixer.fixUserTableTypes();
+    
+    if (report.overallCompliance >= 99) {
       toastAlignment.showSuccess(
         "Master System Fully Compliant",
         `All systems aligned: ${report.overallCompliance}% compliance achieved. TypeScript: ${report.typeScriptAlignment.score}%`
@@ -131,7 +141,7 @@ export const useMasterSystemCompliance = () => {
     } else {
       toastAlignment.showInfo(
         "System Compliance Enhanced",
-        `Current compliance: ${report.overallCompliance}%. TypeScript engine active. Review remaining actions.`
+        `Current compliance: ${report.overallCompliance}%. TypeScript engine & type fixes active. Review remaining actions.`
       );
     }
     
@@ -139,15 +149,12 @@ export const useMasterSystemCompliance = () => {
   };
 
   const runFullComplianceCheck = () => {
-    console.log('🔍 Running enhanced master system compliance check with TypeScript engine...');
+    console.log('🔍 Running enhanced master system compliance check with TypeScript engine & type fixes...');
     
-    // Run underlying compliance check
     const underlyingReport = consolidationCompliance.runComplianceCheck();
-    
-    // Generate our enhanced report with TypeScript fixes
     const enhancedReport = validateSystemCompliance();
     
-    console.log('✅ Master system compliance check completed with TypeScript engine:', enhancedReport);
+    console.log('✅ Master system compliance check completed with TypeScript engine & type fixes:', enhancedReport);
     
     return enhancedReport;
   };
@@ -156,30 +163,44 @@ export const useMasterSystemCompliance = () => {
     // Core compliance functionality
     validateSystemCompliance,
     ensureCompliance,
-    runFullComplianceCheck,
+    runFullComplianceCheck: () => {
+      console.log('🔍 Running enhanced master system compliance check with TypeScript engine & type fixes...');
+      
+      const underlyingReport = consolidationCompliance.runComplianceCheck();
+      const enhancedReport = validateSystemCompliance();
+      
+      console.log('✅ Master system compliance check completed with TypeScript engine & type fixes:', enhancedReport);
+      
+      return enhancedReport;
+    },
     
     // Access to underlying systems
     consolidationCompliance,
     toastAlignment,
     typeScriptEngine,
+    typeScriptValidator,
+    userTableTypesFixer,
     
     // Quick compliance checks
-    isFullyCompliant: () => validateSystemCompliance().overallCompliance >= 98,
+    isFullyCompliant: () => validateSystemCompliance().overallCompliance >= 99,
     getComplianceScore: () => validateSystemCompliance().overallCompliance,
     
     // Meta information
     meta: {
-      complianceVersion: 'master-system-compliance-v2.0.0',
+      complianceVersion: 'master-system-compliance-v3.0.0',
       singleSourceValidated: true,
       architectureType: 'master-consolidated',
       lastValidated: new Date().toISOString(),
-      complianceTarget: 98,
+      complianceTarget: 99,
       typeScriptEngineActive: true,
+      typeFixesActive: true,
       systemsMonitored: [
         'masterConsolidation',
         'singleSourceTruth', 
         'typeScriptAlignment',
         'typeScriptEngine',
+        'typeScriptValidator',
+        'userTableTypesFixer',
         'verificationSystems',
         'registrySystem',
         'knowledgeLearning'
