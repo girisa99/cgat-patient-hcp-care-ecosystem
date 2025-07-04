@@ -1,24 +1,26 @@
-import { useState, useEffect } from 'react';
+
+/**
+ * API SERVICES HOOK - Real data management
+ */
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 export const useApiServices = () => {
-  const [loading, setLoading] = useState(false);
-  const [apiServices, setApiServices] = useState([]);
-
-  useEffect(() => {
-    console.log('🔗 API Services hook loaded - minimal version');
-  }, []);
+  const { data: apiServices = [], isLoading } = useQuery({
+    queryKey: ['api-services'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('api_integration_registry')
+        .select('*')
+        .order('name');
+      
+      if (error) throw error;
+      return data || [];
+    }
+  });
 
   return {
-    loading,
-    isLoading: loading,
     apiServices,
-    internalApis: [],
-    externalApis: [],
-    totalCount: 0,
-    refresh: () => {},
-    createApiService: async () => ({ success: false }),
-    updateApiService: async () => ({ success: false }),
-    deleteApiService: async () => ({ success: false })
+    isLoading
   };
 };

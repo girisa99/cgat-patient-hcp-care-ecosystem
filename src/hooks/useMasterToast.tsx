@@ -20,8 +20,17 @@ export const useMasterToast = () => {
     });
   };
 
+  const showInfo = (title: string, description?: string) => {
+    toast({
+      title,
+      description,
+      variant: "default",
+    });
+  };
+
   return {
     showSuccess,
     showError,
+    showInfo,
   };
 };
