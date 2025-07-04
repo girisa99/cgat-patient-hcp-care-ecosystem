@@ -2,7 +2,7 @@
 /**
  * MASTER USER MANAGEMENT HOOK - COMPLETE SINGLE SOURCE OF TRUTH
  * Unified user management with comprehensive TypeScript alignment
- * Version: master-user-management-v2.0.0
+ * Version: master-user-management-v2.1.0 - Enhanced with missing properties
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -130,6 +130,15 @@ export const useMasterUserManagement = () => {
     }
   });
 
+  // Calculate derived properties for consistency
+  const getUserStats = () => ({
+    total: users.length,
+    active: users.filter(u => u.isActive).length,
+    inactive: users.filter(u => !u.isActive).length
+  });
+
+  const stats = getUserStats();
+
   return {
     // Data
     users,
@@ -148,6 +157,11 @@ export const useMasterUserManagement = () => {
     isUpdatingUser: updateUserMutation.isPending,
     isDeletingUser: deleteUserMutation.isPending,
     
+    // Stats - these properties were missing and causing errors
+    totalUsers: stats.total,
+    activeUsers: stats.active,
+    inactiveUsers: stats.inactive,
+    
     // Utility functions
     searchUsers: (term: string) => 
       users.filter(user => 
@@ -156,11 +170,7 @@ export const useMasterUserManagement = () => {
         user.email.toLowerCase().includes(term.toLowerCase())
       ),
     
-    getUserStats: () => ({
-      total: users.length,
-      active: users.filter(u => u.isActive).length,
-      inactive: users.filter(u => !u.isActive).length
-    }),
+    getUserStats: () => stats,
     
     // Specialized getters
     getPatients: () => users.filter(u => u.role.toLowerCase().includes('patient')),
@@ -185,12 +195,12 @@ export const useMasterUserManagement = () => {
     
     // Meta information
     meta: {
-      totalUsers: users.length,
+      totalUsers: stats.total,
       patientCount: users.filter(u => u.role.toLowerCase().includes('patient')).length,
       staffCount: users.filter(u => !u.role.toLowerCase().includes('patient')).length,
       adminCount: users.filter(u => u.role.toLowerCase().includes('admin')).length,
       dataSource: 'auth.users via profiles table',
-      hookVersion: 'master-user-management-v2.0.0',
+      hookVersion: 'master-user-management-v2.1.0',
       singleSourceValidated: true,
       typeScriptAligned: true
     }

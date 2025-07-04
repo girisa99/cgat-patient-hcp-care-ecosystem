@@ -1,21 +1,21 @@
 
 /**
- * MASTER TOAST HOOK - SINGLE SOURCE OF TRUTH
- * Unified toast functionality with TypeScript alignment
+ * MASTER TOAST HOOK - UNIFIED NOTIFICATION SYSTEM
+ * Single source of truth for all toast notifications with TypeScript alignment
  * Version: master-toast-v1.0.0
  */
 import { useToast } from '@/hooks/use-toast';
 
 export const useMasterToast = () => {
   const { toast } = useToast();
-  
-  console.log('🎯 Master Toast - Single Source of Truth Active');
+
+  console.log('🎯 Master Toast Hook - Unified notification system active');
 
   const showSuccess = (title: string, description?: string) => {
     toast({
       title,
       description,
-      variant: "default",
+      variant: 'default'
     });
   };
 
@@ -23,7 +23,7 @@ export const useMasterToast = () => {
     toast({
       title,
       description,
-      variant: "destructive",
+      variant: 'destructive'
     });
   };
 
@@ -31,7 +31,7 @@ export const useMasterToast = () => {
     toast({
       title,
       description,
-      variant: "default",
+      variant: 'default'
     });
   };
 
@@ -42,7 +42,7 @@ export const useMasterToast = () => {
     toast,
     
     meta: {
-      toastVersion: 'master-toast-v1.0.0',
+      hookVersion: 'master-toast-v1.0.0',
       singleSourceValidated: true,
       typeScriptAligned: true
     }
