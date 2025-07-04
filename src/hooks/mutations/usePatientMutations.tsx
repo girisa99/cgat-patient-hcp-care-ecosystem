@@ -1,7 +1,7 @@
 
 /**
  * PATIENT MUTATIONS HOOK - FIXED FIELD NAMES
- * Uses consistent PatientFormState interface
+ * Uses correct database field names for profiles table
  */
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -17,14 +17,12 @@ export const usePatientMutations = () => {
       const { data, error } = await supabase
         .from('profiles')
         .insert([{
-          firstName: patientData.firstName,
-          lastName: patientData.lastName,
+          first_name: patientData.firstName,
+          last_name: patientData.lastName,
           email: patientData.email,
           phone: patientData.phone,
-          dateOfBirth: patientData.dateOfBirth,
-          medicalRecordNumber: patientData.medicalRecordNumber,
-          role: 'patient',
-          isActive: patientData.isActive ?? true
+          // Note: profiles table doesn't have dateOfBirth or medicalRecordNumber
+          // These would need to be added to the schema or stored in a separate patients table
         }])
         .select()
         .single();
@@ -47,13 +45,10 @@ export const usePatientMutations = () => {
       const { data, error } = await supabase
         .from('profiles')
         .update({
-          firstName: patientData.firstName,
-          lastName: patientData.lastName,
+          first_name: patientData.firstName,
+          last_name: patientData.lastName,
           email: patientData.email,
-          phone: patientData.phone,
-          dateOfBirth: patientData.dateOfBirth,
-          medicalRecordNumber: patientData.medicalRecordNumber,
-          isActive: patientData.isActive
+          phone: patientData.phone
         })
         .eq('id', id)
         .select()

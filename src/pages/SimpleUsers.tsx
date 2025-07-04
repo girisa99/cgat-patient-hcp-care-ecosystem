@@ -1,16 +1,15 @@
+
 import React from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { useRoleBasedNavigation } from '@/hooks/useRoleBasedNavigation';
 import { Card, CardContent } from '@/components/ui/card';
-import { CleanUserManagementTable } from '@/components/users/CleanUserManagementTable';
+import { CompleteUserManagementTable } from '@/components/users/CompleteUserManagementTable';
 
 const SimpleUsers: React.FC = () => {
-  console.log('👥 Simple Users page rendering - START');
+  console.log('👥 Simple Users page - Using Complete User Management Table');
   
   const { hasAccess, currentRole } = useRoleBasedNavigation();
   
-  console.log('🔍 Debug - hasAccess:', hasAccess('/users'), 'currentRole:', currentRole);
-
   if (!hasAccess('/users')) {
     return (
       <AppLayout title="Access Denied">
@@ -26,7 +25,7 @@ const SimpleUsers: React.FC = () => {
 
   return (
     <AppLayout title="User Management">
-      <CleanUserManagementTable />
+      <CompleteUserManagementTable />
     </AppLayout>
   );
 };

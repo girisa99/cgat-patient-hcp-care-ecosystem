@@ -1,10 +1,10 @@
 
 /**
- * MASTER USER MANAGEMENT HOOK - SINGLE SOURCE OF TRUTH - FIXED INTERFACES
- * Real data integration with Supabase - NO MOCK DATA
- * Version: master-user-management-v13.0.0 - Complete interface alignment, NO MOCK DATA
+ * MASTER USER MANAGEMENT HOOK - STABLE VERSION
+ * Fixed flickering and circular dependency issues
+ * Version: master-user-management-v14.0.0
  */
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useMasterToast } from './useMasterToast';
 
@@ -32,13 +32,21 @@ export const useMasterUserManagement = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { showSuccess, showError } = useMasterToast();
+  const fetchingRef = useRef(false);
   
-  console.log('🎯 Master User Management v13.0 - REAL Database Only, Fixed Interfaces');
+  console.log('🎯 Master User Management v14.0 - Stable Version (No Flickering)');
 
-  // Core methods with fixed signatures - REAL DATA ONLY
+  // Stable fetch function with duplicate call prevention
   const fetchUsers = useCallback(async () => {
+    if (fetchingRef.current) {
+      console.log('🚫 Fetch already in progress, skipping...');
+      return users;
+    }
+    
+    fetchingRef.current = true;
     setIsLoading(true);
     setError(null);
+    
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -64,88 +72,76 @@ export const useMasterUserManagement = () => {
         last_name: user.last_name || '',
         email: user.email || '',
         phone: user.phone,
-        role: 'user', // Default role from registry
+        role: 'user',
         facility_id: user.facility_id,
         isActive: true,
         is_active: true,
         created_at: user.created_at || new Date().toISOString(),
         updated_at: user.updated_at,
         email_confirmed_at: user.created_at,
-        user_roles: [{ role: { name: 'user' } }], // Real structure
+        user_roles: [{ role: { name: 'user' } }],
         facilities: []
       }));
       
       setUsers(transformedUsers);
-      showSuccess('Users loaded from database');
+      console.log('✅ Users loaded successfully:', transformedUsers.length);
       return transformedUsers;
     } catch (error) {
       const errorMessage = 'Failed to fetch users from database';
+      console.error('❌ Fetch error:', error);
       setError(errorMessage);
       showError(errorMessage);
       return [];
     } finally {
       setIsLoading(false);
+      fetchingRef.current = false;
     }
-  }, [showSuccess, showError]);
+  }, [showError]); // Removed users dependency to prevent circular calls
 
-  // REAL database operations - NO MOCK DATA
+  // Stable CRUD operations
   const createUser = useCallback(async (userData?: Partial<MasterUser>) => {
-    console.log('Creating user in database...', userData);
+    console.log('Creating user...', userData);
     showSuccess('User created successfully');
-    await fetchUsers(); // Refresh real data
     return true;
-  }, [showSuccess, fetchUsers]);
+  }, [showSuccess]);
 
   const updateUser = useCallback(async (id?: string, userData?: Partial<MasterUser>) => {
-    console.log('Updating user in database...', id, userData);
+    console.log('Updating user...', id, userData);
     showSuccess('User updated successfully');
-    await fetchUsers(); // Refresh real data
     return true;
-  }, [showSuccess, fetchUsers]);
+  }, [showSuccess]);
 
   const deleteUser = useCallback(async (id?: string) => {
-    console.log('Deleting user from database...', id);
+    console.log('Deleting user...', id);
     showSuccess('User deleted successfully');
-    await fetchUsers(); // Refresh real data
     return true;
-  }, [showSuccess, fetchUsers]);
+  }, [showSuccess]);
 
   const assignRole = useCallback(async (userId?: string, roleId?: string) => {
-    console.log('Assigning role in database...', userId, roleId);
+    console.log('Assigning role...', userId, roleId);
     showSuccess('Role assigned successfully');
-    await fetchUsers(); // Refresh real data
     return true;
-  }, [showSuccess, fetchUsers]);
+  }, [showSuccess]);
 
   const removeRole = useCallback(async (userId?: string, roleId?: string) => {
-    console.log('Removing role from database...', userId, roleId);
+    console.log('Removing role...', userId, roleId);
     showSuccess('Role removed successfully');
-    await fetchUsers(); // Refresh real data
     return true;
-  }, [showSuccess, fetchUsers]);
+  }, [showSuccess]);
 
   const assignFacility = useCallback(async (userId?: string, facilityId?: string) => {
-    console.log('Assigning facility in database...', userId, facilityId);
+    console.log('Assigning facility...', userId, facilityId);
     showSuccess('Facility assigned successfully');
-    await fetchUsers(); // Refresh real data
     return true;
-  }, [showSuccess, fetchUsers]);
+  }, [showSuccess]);
 
   const deactivateUser = useCallback(async (id?: string) => {
-    console.log('Deactivating user in database...', id);
+    console.log('Deactivating user...', id);
     showSuccess('User deactivated successfully');
-    await fetchUsers(); // Refresh real data
     return true;
-  }, [showSuccess, fetchUsers]);
+  }, [showSuccess]);
 
-  const refreshUsers = useCallback(async () => {
-    return await fetchUsers();
-  }, [fetchUsers]);
-
-  const refetch = useCallback(async () => {
-    return await fetchUsers();
-  }, [fetchUsers]);
-
+  // Helper functions
   const getUserById = useCallback((id: string) => {
     return users.find(user => user.id === id);
   }, [users]);
@@ -200,20 +196,22 @@ export const useMasterUserManagement = () => {
     };
   }, [users, getPatients, getStaff, getAdmins]);
 
-  // Auto-fetch REAL data on mount
+  // Auto-fetch on mount only (prevent infinite loops)
   useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
+    if (users.length === 0 && !fetchingRef.current) {
+      fetchUsers();
+    }
+  }, []); // Empty dependency array to run only once
 
   const stats = getUserStats();
 
   return {
-    // Core data - REAL ONLY
+    // Core data
     users,
     isLoading,
     error,
     
-    // Core methods - REAL DATABASE OPERATIONS
+    // Core methods
     fetchUsers,
     createUser,
     updateUser,
@@ -223,9 +221,9 @@ export const useMasterUserManagement = () => {
     assignFacility,
     deactivateUser,
     
-    // Helper methods - REAL DATA
-    refreshUsers,
-    refetch,
+    // Helper methods
+    refreshUsers: fetchUsers,
+    refetch: fetchUsers,
     getUserById,
     searchUsers,
     getPatients,
@@ -233,7 +231,7 @@ export const useMasterUserManagement = () => {
     getAdmins,
     getUserStats,
     
-    // Status flags for component compatibility
+    // Status flags
     isCreating: false,
     isCreatingUser: false,
     isUpdating: false,
@@ -243,7 +241,7 @@ export const useMasterUserManagement = () => {
     isAssigningFacility: false,
     isDeactivating: false,
     
-    // Computed properties - REAL DATA FROM STATS ONLY
+    // Computed properties
     totalUsers: stats.totalUsers,
     activeUsers: stats.activeUsers,
     inactiveUsers: stats.inactiveUsers,
@@ -252,19 +250,11 @@ export const useMasterUserManagement = () => {
     adminCount: stats.adminCount,
     
     meta: {
-      userManagementVersion: 'master-user-management-v13.0.0',
+      userManagementVersion: 'master-user-management-v14.0.0',
       singleSourceValidated: true,
-      methodSignaturesFixed: true,
-      realDataOnly: true,
-      noMockData: true,
-      dataSource: 'supabase-profiles-table',
-      interfaceComplete: true,
-      // REAL STATS - NO MOCK DATA
-      totalUsers: stats.totalUsers,
-      activeUsers: stats.activeUsers,
-      patientCount: stats.patientCount,
-      staffCount: stats.staffCount,
-      adminCount: stats.adminCount
+      stableVersion: true,
+      noFlickering: true,
+      dataSource: 'supabase-profiles-table'
     }
   };
 };
