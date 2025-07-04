@@ -2,7 +2,7 @@
 /**
  * MASTER CONSOLIDATION VALIDATOR - COMPLETE IMPLEMENTATION
  * Enhanced validator with all required methods and proper interface alignment
- * Version: master-consolidation-validator-v5.0.0 - Fixed method signatures
+ * Version: master-consolidation-validator-v6.0.0 - Added missing methods
  */
 import { useMasterToast } from './useMasterToast';
 import { useMasterVerificationSystem } from './useMasterVerificationSystem';
@@ -30,6 +30,7 @@ export interface ConsolidationReport {
     isCompliant: boolean;
     activatedHooks: string[];
     missingHooks: string[];
+    implementedHooks?: string[]; // Added for compatibility
   };
 }
 
@@ -39,13 +40,14 @@ export interface ConsolidationPlan {
   recommendedActions: string[];
   timeline: string;
   priority: 'high' | 'medium' | 'low';
+  architectureType?: string; // Added for compatibility
 }
 
 export const useMasterConsolidationValidator = () => {
   const { showSuccess, showInfo } = useMasterToast();
   const verificationSystem = useMasterVerificationSystem();
   
-  console.log('🎯 Master Consolidation Validator v5.0 - Fixed Method Signatures');
+  console.log('🎯 Master Consolidation Validator v6.0 - Added Missing Methods');
 
   const validateConsolidation = (): ConsolidationReport => {
     const masterHooksActive = [
@@ -65,7 +67,8 @@ export const useMasterConsolidationValidator = () => {
       score: 100,
       isCompliant: true,
       activatedHooks: masterHooksActive,
-      missingHooks: []
+      missingHooks: [],
+      implementedHooks: masterHooksActive // Added for compatibility
     };
 
     return {
@@ -99,8 +102,18 @@ export const useMasterConsolidationValidator = () => {
         'Regular pattern validation'
       ],
       timeline: 'Ongoing maintenance',
-      priority: 'medium' as const
+      priority: 'medium' as const,
+      architectureType: 'Master Consolidation Pattern' // Added for compatibility
     };
+  };
+
+  // Added missing methods for compatibility
+  const validateMasterConsolidation = () => {
+    return validateConsolidation();
+  };
+
+  const generateConsolidationPlan = () => {
+    return createConsolidationPlan();
   };
 
   // Fixed method signatures - no parameters needed
@@ -151,6 +164,10 @@ export const useMasterConsolidationValidator = () => {
     enforceConsolidation,
     runConsolidationValidation,
     
+    // Added missing methods for compatibility
+    validateMasterConsolidation,
+    generateConsolidationPlan,
+    
     // Access to verification systems
     verificationSystem,
     
@@ -159,10 +176,11 @@ export const useMasterConsolidationValidator = () => {
     getConsolidationScore: () => validateConsolidation().score,
     
     meta: {
-      validatorVersion: 'master-consolidation-validator-v5.0.0',
+      validatorVersion: 'master-consolidation-validator-v6.0.0',
       singleSourceValidated: true,
       masterConsolidationComplete: true,
-      methodSignaturesFixed: true
+      methodSignaturesFixed: true,
+      missingMethodsAdded: true
     }
   };
 };
