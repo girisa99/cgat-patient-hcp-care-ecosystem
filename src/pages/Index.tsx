@@ -11,22 +11,41 @@ import {
 } from "lucide-react";
 import { useMasterAuth } from "@/hooks/useMasterAuth";
 import { useComprehensiveSystemStatus } from "@/hooks/useComprehensiveSystemStatus";
+import { useRoleBasedNavigation } from "@/hooks/useRoleBasedNavigation";
 import DashboardHeader from "@/components/layout/DashboardHeader";
 
 const Index = () => {
   const { user, profile, userRoles, isLoading } = useMasterAuth();
   const { systemStatus, isChecking, recheckStatus } = useComprehensiveSystemStatus();
+  const { availableTabs, roleStats } = useRoleBasedNavigation();
 
   const getUserDisplayName = () => {
+    // Try profile first name and last name
     if (profile?.first_name && profile?.last_name) {
       return `${profile.first_name} ${profile.last_name}`;
     }
+    
+    // Try just first name
     if (profile?.first_name) {
       return profile.first_name;
     }
-    if (user?.email) {
-      return user.email.split('@')[0];
+    
+    // Try user metadata as fallback
+    if (user?.user_metadata?.first_name && user?.user_metadata?.last_name) {
+      return `${user.user_metadata.first_name} ${user.user_metadata.last_name}`;
     }
+    
+    if (user?.user_metadata?.first_name) {
+      return user.user_metadata.first_name;
+    }
+    
+    // Try extracting from email
+    if (user?.email) {
+      const emailPart = user.email.split('@')[0];
+      // Clean up email part for display
+      return emailPart.replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    }
+    
     return 'User';
   };
 
@@ -48,7 +67,7 @@ const Index = () => {
     }
   };
 
-  // Quick Actions for all modules
+  // All Quick Actions including Data Import - ensuring all are visible
   const quickActions = [
     { title: "User Management", path: "/users", icon: Users, color: "text-blue-600" },
     { title: "Patients", path: "/patients", icon: HeartHandshake, color: "text-pink-600" },
@@ -56,7 +75,9 @@ const Index = () => {
     { title: "Modules", path: "/modules", icon: Package, color: "text-purple-600" },
     { title: "API Services", path: "/api-services", icon: Globe, color: "text-indigo-600" },
     { title: "Testing", path: "/testing", icon: TestTube, color: "text-orange-600" },
+    { title: "Data Import", path: "/data-import", icon: Database, color: "text-teal-600" }, // ADDED Data Import
     { title: "Verification", path: "/active-verification", icon: CheckCircle2, color: "text-cyan-600" },
+    { title: "Onboarding", path: "/onboarding", icon: UserPlus, color: "text-amber-600" },
     { title: "Security", path: "/security", icon: Shield, color: "text-red-600" }
   ];
 
@@ -82,19 +103,44 @@ const Index = () => {
     );
   }
 
+  const displayName = getUserDisplayName();
+  
+  // Debug logging for troubleshooting
+  console.log('🎯 Dashboard Debug:', {
+    user: user?.email,
+    profile: profile,
+    userRoles,
+    availableTabs: availableTabs.length,
+    displayName,
+    profileFirstName: profile?.first_name,
+    profileLastName: profile?.last_name,
+    userMetadata: user?.user_metadata
+  });
+
   return (
     <div className="min-h-screen bg-gray-50">
       <DashboardHeader />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Welcome Section */}
+        {/* Welcome Section with Better Name Display */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Welcome back, {getUserDisplayName()}! 👋
+            Welcome back, {displayName}! 👋
           </h1>
           <p className="text-lg text-gray-600">
             Here's your healthcare system overview and quick access to all modules.
           </p>
+          <div className="flex items-center space-x-2 mt-3">
+            <Badge variant="outline" className="text-sm">
+              {userRoles.length > 0 ? `${userRoles.length} Active Role${userRoles.length !== 1 ? 's' : ''}` : 'Development Mode'}
+            </Badge>
+            <Badge variant="secondary" className="text-sm">
+              {availableTabs.length} Modules Available
+            </Badge>
+            <Badge variant="outline" className="text-sm">
+              {roleStats.roleLevel}
+            </Badge>
+          </div>
         </div>
 
         {/* System Status Overview */}
@@ -247,23 +293,23 @@ const Index = () => {
           </Card>
         </div>
 
-        {/* Quick Actions */}
+        {/* Quick Actions - All Available Pages Including Data Import */}
         <Card className="border-0 shadow-sm">
           <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
+            <CardTitle>Quick Actions - All Available Modules</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
               {quickActions.map((action, index) => {
                 const Icon = action.icon;
                 return (
                   <Link key={index} to={action.path}>
                     <div className="p-4 border rounded-lg hover:bg-gray-50 hover:shadow-md transition-all duration-200 cursor-pointer">
-                      <div className="flex items-center space-x-3">
-                        <Icon className={`h-5 w-5 ${action.color}`} />
+                      <div className="flex flex-col items-center space-y-2 text-center">
+                        <Icon className={`h-6 w-6 ${action.color}`} />
                         <div>
-                          <h3 className="font-semibold text-gray-900">{action.title}</h3>
-                          <p className="text-sm text-gray-600">Access {action.title.toLowerCase()}</p>
+                          <h3 className="font-semibold text-gray-900 text-sm">{action.title}</h3>
+                          <p className="text-xs text-gray-600">Access {action.title.toLowerCase()}</p>
                         </div>
                       </div>
                     </div>
@@ -273,6 +319,24 @@ const Index = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Development Debug Info */}
+        {(userRoles.length === 0 || roleStats.roleLevel === 'Development Mode') && (
+          <Card className="border-0 shadow-sm bg-yellow-50 border-yellow-200">
+            <CardHeader>
+              <CardTitle className="text-yellow-800">🚧 Development Mode Active</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-sm text-yellow-700">
+                <p><strong>Status:</strong> All pages accessible for development</p>
+                <p><strong>User:</strong> {user?.email}</p>
+                <p><strong>Profile:</strong> {profile ? 'Loaded' : 'Not loaded'}</p>
+                <p><strong>Roles:</strong> {userRoles.length > 0 ? userRoles.join(', ') : 'None loaded'}</p>
+                <p><strong>Available Pages:</strong> {availableTabs.length}/{quickActions.length}</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
