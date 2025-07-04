@@ -54,7 +54,7 @@ export const CleanUserManagementTable: React.FC = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  // ALL useState hooks MUST be called unconditionally with PROPER TYPING
+  // ALL useState hooks MUST be called unconditionally with EXPLICIT TYPING
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [showAddUserDialog, setShowAddUserDialog] = useState<boolean>(false);
@@ -100,7 +100,13 @@ export const CleanUserManagementTable: React.FC = () => {
       role: newUser.role as any
     });
     
-    setNewUser({ firstName: '', lastName: '', email: '', role: '', phone: '' });
+    setNewUser({ 
+      firstName: '', 
+      lastName: '', 
+      email: '', 
+      role: '', 
+      phone: '' 
+    });
     setShowAddUserDialog(false);
   }, [newUser, createUser, toast]);
 
@@ -281,7 +287,7 @@ export const CleanUserManagementTable: React.FC = () => {
                   <Input 
                     placeholder="Enter first name"
                     value={newUser.firstName}
-                    onChange={(e) => setNewUser({...newUser, firstName: e.target.value})}
+                    onChange={(e) => setNewUser(prev => ({...prev, firstName: e.target.value}))}
                   />
                 </div>
                 <div>
@@ -289,7 +295,7 @@ export const CleanUserManagementTable: React.FC = () => {
                   <Input 
                     placeholder="Enter last name"
                     value={newUser.lastName}
-                    onChange={(e) => setNewUser({...newUser, lastName: e.target.value})}
+                    onChange={(e) => setNewUser(prev => ({...prev, lastName: e.target.value}))}
                   />
                 </div>
               </div>
@@ -299,7 +305,7 @@ export const CleanUserManagementTable: React.FC = () => {
                   placeholder="Enter email address"
                   type="email"
                   value={newUser.email}
-                  onChange={(e) => setNewUser({...newUser, email: e.target.value})}
+                  onChange={(e) => setNewUser(prev => ({...prev, email: e.target.value}))}
                 />
               </div>
               <div>
@@ -307,12 +313,12 @@ export const CleanUserManagementTable: React.FC = () => {
                 <Input 
                   placeholder="Enter phone number"
                   value={newUser.phone}
-                  onChange={(e) => setNewUser({...newUser, phone: e.target.value})}
+                  onChange={(e) => setNewUser(prev => ({...prev, phone: e.target.value}))}
                 />
               </div>
               <div>
                 <label className="text-sm font-medium">Role *</label>
-                <Select value={newUser.role} onValueChange={(value) => setNewUser({...newUser, role: value})}>
+                <Select value={newUser.role} onValueChange={(value) => setNewUser(prev => ({...prev, role: value}))}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select a role" />
                   </SelectTrigger>
