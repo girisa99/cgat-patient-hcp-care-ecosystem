@@ -1,41 +1,20 @@
-
 /**
  * MASTER USER MANAGEMENT HOOK - SINGLE SOURCE OF TRUTH
  * Centralized user management with TypeScript alignment and master consolidation
- * Version: master-user-management-v2.2.0
+ * Version: master-user-management-v2.3.0
  */
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useMasterToast } from './useMasterToast';
 import type { UserManagementFormState } from '@/types/formState';
+import type { MasterUser } from '@/types/userManagement';
 
-// Master User interface - single source of truth for all user data
-export interface MasterUser {
-  id: string;
-  firstName: string;
-  lastName: string;
-  first_name: string; // Database compatibility
-  last_name: string;  // Database compatibility
-  email: string;
-  role: string;
-  phone?: string;
-  isActive: boolean;
-  is_active?: boolean; // Database compatibility
-  created_at: string; // Required for compatibility
-  updated_at?: string;
-  facility_id?: string;
-  user_roles: {
-    role: {
-      name: string;
-      description?: string;
-    };
-  }[];
-}
+export type { MasterUser };
 
 export const useMasterUserManagement = () => {
   const { showSuccess, showError } = useMasterToast();
   
-  console.log('👤 Master User Management v2.2 - Enhanced Single Source User Management Active');
+  console.log('👤 Master User Management v2.3 - Enhanced Single Source User Management Active');
 
   const [users, setUsers] = useState<MasterUser[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -107,7 +86,6 @@ export const useMasterUserManagement = () => {
     setIsCreatingUser(true);
     
     try {
-      // Create user via edge function for proper auth integration
       const { data, error } = await supabase.functions.invoke('manage-user-profiles', {
         body: {
           action: 'create',
@@ -123,7 +101,7 @@ export const useMasterUserManagement = () => {
 
       if (error) throw error;
 
-      await fetchUsers(); // Refresh users list
+      await fetchUsers();
       showSuccess('User Created', `Successfully created user ${userData.firstName} ${userData.lastName}`);
       
       return data;
@@ -154,7 +132,7 @@ export const useMasterUserManagement = () => {
 
       if (error) throw error;
 
-      await fetchUsers(); // Refresh users list
+      await fetchUsers();
       showSuccess('User Updated', 'User information updated successfully');
       
     } catch (error) {
@@ -173,7 +151,7 @@ export const useMasterUserManagement = () => {
       const { error } = await supabase.auth.admin.deleteUser(userId);
       if (error) throw error;
 
-      await fetchUsers(); // Refresh users list
+      await fetchUsers();
       showSuccess('User Deleted', 'User deleted successfully');
       
     } catch (error) {
@@ -189,7 +167,6 @@ export const useMasterUserManagement = () => {
     setIsAssigningRole(true);
     
     try {
-      // Implementation for role assignment
       showSuccess('Role Assigned', `Role ${roleName} assigned successfully`);
       await fetchUsers();
     } catch (error) {
@@ -205,7 +182,6 @@ export const useMasterUserManagement = () => {
     setIsRemovingRole(true);
     
     try {
-      // Implementation for role removal
       showSuccess('Role Removed', `Role ${roleName} removed successfully`);
       await fetchUsers();
     } catch (error) {
@@ -221,7 +197,6 @@ export const useMasterUserManagement = () => {
     setIsAssigningFacility(true);
     
     try {
-      // Implementation for facility assignment
       showSuccess('Facility Assigned', 'Facility assigned successfully');
       await fetchUsers();
     } catch (error) {
@@ -248,24 +223,20 @@ export const useMasterUserManagement = () => {
     }
   }, [updateUser, showSuccess, showError]);
 
-  // Initialize on mount
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
 
-  // Calculate statistics
   const totalUsers = users.length;
   const activeUsers = users.filter(user => user.isActive).length;
   const inactiveUsers = totalUsers - activeUsers;
 
   return {
-    // User data
     users,
     totalUsers,
     activeUsers,
     inactiveUsers,
     
-    // Actions
     createUser,
     updateUser,
     deleteUser,
@@ -276,7 +247,6 @@ export const useMasterUserManagement = () => {
     refetch: fetchUsers,
     refreshUsers: fetchUsers,
     
-    // State flags
     isLoading,
     error,
     isCreatingUser,
@@ -285,9 +255,8 @@ export const useMasterUserManagement = () => {
     isAssigningFacility,
     isDeactivating,
     
-    // Meta information - now with all required properties
     meta: {
-      hookVersion: 'master-user-management-v2.2.0',
+      hookVersion: 'master-user-management-v2.3.0',
       singleSourceValidated: true,
       typeScriptAligned: true,
       masterConsolidationCompliant: true,
@@ -296,7 +265,7 @@ export const useMasterUserManagement = () => {
       totalUsers,
       adminCount: users.filter(u => u.role === 'superAdmin').length,
       staffCount: users.filter(u => ['onboardingTeam', 'healthcareProvider'].includes(u.role)).length,
-      patientCount: users.filter(u => u.role === 'patient').length // Added missing property
+      patientCount: users.filter(u => u.role === 'patient').length
     }
   };
 };
