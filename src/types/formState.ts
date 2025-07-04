@@ -1,35 +1,22 @@
 
 /**
  * MASTER FORM STATE TYPES - SINGLE SOURCE OF TRUTH
- * Unified form state definitions for master consolidation compliance
- * Version: form-state-types-v6.0.0 - Complete TypeScript alignment and dual compatibility
+ * All form state definitions point to master implementations
+ * Version: form-state-types-v7.0.0
  */
 
-export interface UserManagementFormState {
-  firstName: string;
-  lastName: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  role: string;
-  phone?: string;
-  isActive?: boolean;
-  facility_id?: string;
-  termsAccepted?: boolean;
-}
+// Re-export master types as single source of truth
+export type { MasterUserFormState } from './masterFormState';
+export { normalizeMasterUserFormState, createMasterUserFormState } from './masterFormState';
 
-export interface OnboardingFormState {
-  firstName: string;
-  lastName: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  role: string;
-  phone?: string;
-  facilityId?: string;
-  facility_id?: string;
-  termsAccepted: boolean;
-}
+// Backward compatibility aliases
+export type UserManagementFormState = import('./masterFormState').MasterUserFormState;
+export type OnboardingFormState = import('./masterFormState').MasterUserFormState;
+
+// Legacy helper functions for backward compatibility
+export const normalizeMasterFormState = normalizeMasterUserFormState;
+export const createCompleteFormState = createMasterUserFormState;
+export const createMasterFormState = createMasterUserFormState;
 
 export interface FacilityManagementFormState {
   name: string;
@@ -41,47 +28,3 @@ export interface FacilityManagementFormState {
   isActive: boolean;
   is_active?: boolean;
 }
-
-// Enhanced helper function with complete dual compatibility
-export const normalizeMasterFormState = (data: Partial<UserManagementFormState>): UserManagementFormState => {
-  return {
-    firstName: data.firstName || data.first_name || '',
-    lastName: data.lastName || data.last_name || '',
-    first_name: data.first_name || data.firstName || '',
-    last_name: data.last_name || data.lastName || '',
-    email: data.email || '',
-    role: data.role || '',
-    phone: data.phone,
-    isActive: data.isActive,
-    facility_id: data.facility_id,
-    termsAccepted: data.termsAccepted
-  };
-};
-
-// Create properly structured form state for master consolidation
-export const createMasterFormState = (
-  firstName: string = '',
-  lastName: string = '',
-  email: string = '',
-  role: string = '',
-  phone: string = ''
-): UserManagementFormState => {
-  return {
-    firstName,
-    lastName,
-    first_name: firstName,
-    last_name: lastName,
-    email,
-    role,
-    phone,
-    isActive: true,
-    facility_id: undefined,
-    termsAccepted: false
-  };
-};
-
-// Master form state creation with full dual compatibility
-export const createCompleteFormState = (data: Partial<UserManagementFormState> = {}): UserManagementFormState => {
-  const baseState = createMasterFormState();
-  return normalizeMasterFormState({ ...baseState, ...data });
-};

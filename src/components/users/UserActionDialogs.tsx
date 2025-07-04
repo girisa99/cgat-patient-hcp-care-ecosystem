@@ -1,386 +1,243 @@
+
 import React from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  User, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Calendar, 
-  Shield, 
-  Building, 
-  Package,
-  Activity
-} from 'lucide-react';
-import type { UserWithRoles } from '@/types/userManagement';
+import { X } from 'lucide-react';
 
 interface UserActionDialogsProps {
-  selectedUser: UserWithRoles | null;
-  showViewDialog: boolean;
-  showEditDialog: boolean;
-  showRoleDialog: boolean;
-  showFacilityDialog: boolean;
-  showDeactivateDialog: boolean;
-  onCloseView: () => void;
-  onCloseEdit: () => void;
-  onCloseRole: () => void;
-  onCloseFacility: () => void;
-  onCloseDeactivate: () => void;
-  onUserUpdated: () => void;
+  // User data with proper role structure
+  selectedUser: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    role: {
+      name: string;
+      description?: string;
+    } | string;
+    roles?: Array<{ name: string; description?: string; }>;
+  } | null;
+  
+  // Dialog states
+  assignRoleOpen: boolean;
+  removeRoleOpen: boolean;
+  assignFacilityOpen: boolean;
+  
+  // Dialog controls
+  setAssignRoleOpen: (open: boolean) => void;
+  setRemoveRoleOpen: (open: boolean) => void;
+  setAssignFacilityOpen: (open: boolean) => void;
+  
+  // Actions
+  onAssignRole: (userId: string, roleName: string) => void;
+  onRemoveRole: (userId: string, roleName: string) => void;
+  onAssignFacility: (userId: string, facilityId: string) => void;
+  
+  // Available options
+  availableRoles: Array<{ id: string; name: string; description?: string; }>;
+  availableFacilities: Array<{ id: string; name: string; }>;
 }
 
 export const UserActionDialogs: React.FC<UserActionDialogsProps> = ({
   selectedUser,
-  showViewDialog,
-  showEditDialog,
-  showRoleDialog,
-  showFacilityDialog,
-  showDeactivateDialog,
-  onCloseView,
-  onCloseEdit,
-  onCloseRole,
-  onCloseFacility,
-  onCloseDeactivate,
-  onUserUpdated,
+  assignRoleOpen,
+  removeRoleOpen,
+  assignFacilityOpen,
+  setAssignRoleOpen,
+  setRemoveRoleOpen,  
+  setAssignFacilityOpen,
+  onAssignRole,
+  onRemoveRole,
+  onAssignFacility,
+  availableRoles = [],
+  availableFacilities = []
 }) => {
+  const [selectedRoleName, setSelectedRoleName] = React.useState<string>('');
+  const [selectedFacilityId, setSelectedFacilityId] = React.useState<string>('');
+
+  // Normalize user roles - handle both string and object formats
   const getUserRoles = () => {
-    if (!selectedUser?.user_roles) return [];
-    return selectedUser.user_roles.map(ur => ur.roles.name);
+    if (!selectedUser) return [];
+    
+    // If user has roles array, use it
+    if (selectedUser.roles && Array.isArray(selectedUser.roles)) {
+      return selectedUser.roles;
+    }
+    
+    // If user has single role object, convert to array
+    if (selectedUser.role && typeof selectedUser.role === 'object') {
+      return [selectedUser.role];
+    }
+    
+    // If user has string role, convert to object format
+    if (selectedUser.role && typeof selectedUser.role === 'string') {
+      return [{ name: selectedUser.role }];
+    }
+    
+    return [];
   };
 
-  const isPatient = () => getUserRoles().includes('patientCaregiver');
-  const isStaff = () => getUserRoles().some(role => 
-    ['healthcareProvider', 'caseManager', 'nurse'].includes(role)
-  );
-  const isAdmin = () => getUserRoles().some(role => 
-    ['superAdmin', 'onboardingTeam'].includes(role)
-  );
+  const userRoles = getUserRoles();
+
+  const handleAssignRole = () => {
+    if (selectedUser && selectedRoleName) {
+      onAssignRole(selectedUser.id, selectedRoleName);
+      setSelectedRoleName('');
+      setAssignRoleOpen(false);
+    }
+  };
+
+  const handleRemoveRole = (roleName: string) => {
+    if (selectedUser) {
+      onRemoveRole(selectedUser.id, roleName);
+      setRemoveRoleOpen(false);
+    }
+  };
+
+  const handleAssignFacility = () => {
+    if (selectedUser && selectedFacilityId) {
+      onAssignFacility(selectedUser.id, selectedFacilityId);
+      setSelectedFacilityId('');
+      setAssignFacilityOpen(false);
+    }
+  };
 
   return (
     <>
-      {/* Enhanced View User Dialog with Cross-Module Information */}
-      <Dialog open={showViewDialog} onOpenChange={onCloseView}>
-        <DialogContent className="sm:max-w-[800px] max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
-              User Profile - {selectedUser?.first_name} {selectedUser?.last_name}
-            </DialogTitle>
-            <DialogDescription>
-              Complete user information across all system modules
-            </DialogDescription>
-          </DialogHeader>
-          
-          {selectedUser && (
-            <Tabs defaultValue="profile" className="w-full">
-              <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger value="profile">Profile</TabsTrigger>
-                <TabsTrigger value="roles">Roles & Access</TabsTrigger>
-                <TabsTrigger value="modules">Modules</TabsTrigger>
-                <TabsTrigger value="activity">Activity</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="profile">
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <Card>
-                      <CardContent className="p-4">
-                        <div className="flex items-center gap-3">
-                          <User className="h-8 w-8 text-blue-600" />
-                          <div>
-                            <p className="font-semibold">{selectedUser.first_name} {selectedUser.last_name}</p>
-                            <p className="text-sm text-muted-foreground">Full Name</p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                    
-                    <Card>
-                      <CardContent className="p-4">
-                        <div className="flex items-center gap-3">
-                          <Mail className="h-8 w-8 text-green-600" />
-                          <div>
-                            <p className="font-semibold">{selectedUser.email}</p>
-                            <p className="text-sm text-muted-foreground">Email Address</p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                    
-                    {selectedUser.phone && (
-                      <Card>
-                        <CardContent className="p-4">
-                          <div className="flex items-center gap-3">
-                            <Phone className="h-8 w-8 text-purple-600" />
-                            <div>
-                              <p className="font-semibold">{selectedUser.phone}</p>
-                              <p className="text-sm text-muted-foreground">Phone Number</p>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    )}
-                    
-                    <Card>
-                      <CardContent className="p-4">
-                        <div className="flex items-center gap-3">
-                          <Calendar className="h-8 w-8 text-orange-600" />
-                          <div>
-                            <p className="font-semibold">{new Date(selectedUser.created_at).toLocaleDateString()}</p>
-                            <p className="text-sm text-muted-foreground">Member Since</p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-                  
-                  <div className="flex gap-2">
-                    <Badge variant={selectedUser.email_confirmed_at ? "default" : "secondary"}>
-                      {selectedUser.email_confirmed_at ? "Verified" : "Not Verified"}
-                    </Badge>
-                    {isPatient() && <Badge variant="outline">Patient</Badge>}
-                    {isStaff() && <Badge variant="outline">Staff Member</Badge>}
-                    {isAdmin() && <Badge variant="outline">Administrator</Badge>}
-                  </div>
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="roles">
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="font-semibold mb-2">Assigned Roles</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {getUserRoles().map((role) => (
-                        <Badge key={role} variant="secondary" className="flex items-center gap-1">
-                          <Shield className="h-3 w-3" />
-                          {role}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <h4 className="font-semibold mb-2">Access Level</h4>
-                    <p className="text-sm text-muted-foreground">
-                      {isAdmin() ? 'Full administrative access across all modules' :
-                       isStaff() ? 'Staff access to clinical and operational modules' :
-                       isPatient() ? 'Patient portal access with limited permissions' :
-                       'Basic user access'}
-                    </p>
-                  </div>
-                  
-                  {selectedUser.facilities && (
-                    <div>
-                      <h4 className="font-semibold mb-2">Facility Access</h4>
-                      <div className="flex items-center gap-2">
-                        <Building className="h-4 w-4" />
-                        <span className="text-sm">Assigned to facility</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="modules">
-                <div className="space-y-4">
-                  <h4 className="font-semibold">Module Access</h4>
-                  <div className="grid grid-cols-2 gap-3">
-                    <Card>
-                      <CardContent className="p-3">
-                        <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-blue-600" />
-                          <span className="text-sm font-medium">User Management</span>
-                          <Badge variant={isAdmin() ? "default" : "secondary"} className="ml-auto">
-                            {isAdmin() ? "Full" : "Limited"}
-                          </Badge>
-                        </div>
-                      </CardContent>
-                    </Card>
-                    
-                    <Card>
-                      <CardContent className="p-3">
-                        <div className="flex items-center gap-2">
-                          <Activity className="h-4 w-4 text-green-600" />
-                          <span className="text-sm font-medium">Patient Management</span>
-                          <Badge variant={isPatient() || isStaff() || isAdmin() ? "default" : "secondary"} className="ml-auto">
-                            {isAdmin() ? "Full" : isStaff() ? "Clinical" : isPatient() ? "Self" : "None"}
-                          </Badge>
-                        </div>
-                      </CardContent>
-                    </Card>
-                    
-                    <Card>
-                      <CardContent className="p-3">
-                        <div className="flex items-center gap-2">
-                          <Building className="h-4 w-4 text-purple-600" />
-                          <span className="text-sm font-medium">Facility Management</span>
-                          <Badge variant={isAdmin() || isStaff() ? "default" : "secondary"} className="ml-auto">
-                            {isAdmin() ? "Full" : isStaff() ? "View" : "None"}
-                          </Badge>
-                        </div>
-                      </CardContent>
-                    </Card>
-                    
-                    <Card>
-                      <CardContent className="p-3">
-                        <div className="flex items-center gap-2">
-                          <Package className="h-4 w-4 text-orange-600" />
-                          <span className="text-sm font-medium">Module Management</span>
-                          <Badge variant={isAdmin() ? "default" : "secondary"} className="ml-auto">
-                            {isAdmin() ? "Full" : "None"}
-                          </Badge>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="activity">
-                <div className="space-y-4">
-                  <h4 className="font-semibold">Recent Activity</h4>
-                  <div className="space-y-2">
-                    <div className="p-3 border rounded">
-                      <p className="text-sm font-medium">Account Created</p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(selectedUser.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                    {selectedUser.email_confirmed_at && (
-                      <div className="p-3 border rounded">
-                        <p className="text-sm font-medium">Email Verified</p>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(selectedUser.email_confirmed_at).toLocaleDateString()}
-                        </p>
-                      </div>
-                    )}
-                    {selectedUser.updated_at && (
-                      <div className="p-3 border rounded">
-                        <p className="text-sm font-medium">Profile Updated</p>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(selectedUser.updated_at).toLocaleDateString()}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </TabsContent>
-            </Tabs>
-          )}
-          
-          <div className="flex gap-3 pt-4">
-            <Button variant="outline" onClick={onCloseView} className="flex-1">
-              Close
-            </Button>
-            <Button onClick={() => {
-              onCloseView();
-              // Could trigger edit dialog here if needed
-            }} className="flex-1">
-              Edit User
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit User Dialog */}
-      <Dialog open={showEditDialog} onOpenChange={onCloseEdit}>
+      {/* Assign Role Dialog */}
+      <Dialog open={assignRoleOpen} onOpenChange={setAssignRoleOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit User</DialogTitle>
-            <DialogDescription>
-              Modify user information and settings
-            </DialogDescription>
+            <DialogTitle>Assign Role</DialogTitle>
           </DialogHeader>
-          <div className="py-4">
-            <p className="text-sm text-muted-foreground">
-              Edit functionality will be implemented here
-            </p>
-          </div>
-          <div className="flex gap-3">
-            <Button variant="outline" onClick={onCloseEdit} className="flex-1">
-              Cancel
-            </Button>
-            <Button className="flex-1">
-              Save Changes
-            </Button>
+          <div className="space-y-4">
+            <div>
+              <Label>User</Label>
+              <Input 
+                value={selectedUser ? `${selectedUser.firstName} ${selectedUser.lastName}` : ''} 
+                disabled 
+              />
+            </div>
+            <div>
+              <Label>Select Role</Label>
+              <Select value={selectedRoleName} onValueChange={setSelectedRoleName}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a role" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableRoles.map((role) => (
+                    <SelectItem key={role.id} value={role.name}>
+                      {role.name}
+                      {role.description && (
+                        <span className="text-xs text-gray-500 ml-2">{role.description}</span>
+                      )}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={handleAssignRole} disabled={!selectedRoleName}>
+                Assign Role
+              </Button>
+              <Button variant="outline" onClick={() => setAssignRoleOpen(false)}>
+                Cancel
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Role Assignment Dialog */}
-      <Dialog open={showRoleDialog} onOpenChange={onCloseRole}>
+      {/* Remove Role Dialog */}
+      <Dialog open={removeRoleOpen} onOpenChange={setRemoveRoleOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Manage User Roles</DialogTitle>
-            <DialogDescription>
-              Assign or remove roles for this user
-            </DialogDescription>
+            <DialogTitle>Remove Role</DialogTitle>
           </DialogHeader>
-          <div className="py-4">
-            <p className="text-sm text-muted-foreground">
-              Role management functionality will be implemented here
-            </p>
-          </div>
-          <div className="flex gap-3">
-            <Button variant="outline" onClick={onCloseRole} className="flex-1">
-              Cancel
-            </Button>
-            <Button className="flex-1">
-              Save Changes
-            </Button>
+          <div className="space-y-4">
+            <div>
+              <Label>User</Label>
+              <Input 
+                value={selectedUser ? `${selectedUser.firstName} ${selectedUser.lastName}` : ''} 
+                disabled 
+              />
+            </div>
+            <div>
+              <Label>Current Roles</Label>
+              <div className="space-y-2">
+                {userRoles.length > 0 ? (
+                  userRoles.map((role, index) => (
+                    <div key={index} className="flex items-center justify-between p-2 border rounded">
+                      <div>
+                        <Badge variant="outline">{role.name}</Badge>
+                        {role.description && (
+                          <span className="text-xs text-gray-500 ml-2">{role.description}</span>
+                        )}
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleRemoveRole(role.name)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-gray-500">No roles assigned</p>
+                )}
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setRemoveRoleOpen(false)}>
+                Close
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Facility Assignment Dialog */}
-      <Dialog open={showFacilityDialog} onOpenChange={onCloseFacility}>
+      {/* Assign Facility Dialog */}
+      <Dialog open={assignFacilityOpen} onOpenChange={setAssignFacilityOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Assign Facility</DialogTitle>
-            <DialogDescription>
-              Assign this user to a facility
-            </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
-            <p className="text-sm text-muted-foreground">
-              Facility assignment functionality will be implemented here
-            </p>
-          </div>
-          <div className="flex gap-3">
-            <Button variant="outline" onClick={onCloseFacility} className="flex-1">
-              Cancel
-            </Button>
-            <Button className="flex-1">
-              Assign Facility
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Deactivate User Dialog */}
-      <Dialog open={showDeactivateDialog} onOpenChange={onCloseDeactivate}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Deactivate User</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to deactivate this user account?
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <p className="text-sm text-muted-foreground">
-              This action will prevent the user from accessing the system. You can reactivate the account later if needed.
-            </p>
-          </div>
-          <div className="flex gap-3">
-            <Button variant="outline" onClick={onCloseDeactivate} className="flex-1">
-              Cancel
-            </Button>
-            <Button variant="destructive" className="flex-1">
-              Deactivate User
-            </Button>
+          <div className="space-y-4">
+            <div>
+              <Label>User</Label>
+              <Input 
+                value={selectedUser ? `${selectedUser.firstName} ${selectedUser.lastName}` : ''} 
+                disabled 
+              />
+            </div>
+            <div>
+              <Label>Select Facility</Label>
+              <Select value={selectedFacilityId} onValueChange={setSelectedFacilityId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a facility" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableFacilities.map((facility) => (
+                    <SelectItem key={facility.id} value={facility.id}>
+                      {facility.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={handleAssignFacility} disabled={!selectedFacilityId}>
+                Assign Facility
+              </Button>
+              <Button variant="outline" onClick={() => setAssignFacilityOpen(false)}>
+                Cancel
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

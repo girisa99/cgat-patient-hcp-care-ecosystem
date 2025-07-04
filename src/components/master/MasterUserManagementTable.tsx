@@ -8,7 +8,7 @@ import { Search, Plus, UserCheck, UserX, Trash2 } from 'lucide-react';
 import { useMasterUserManagement, type MasterUser } from '@/hooks/useMasterUserManagement';
 import { useMasterToast } from '@/hooks/useMasterToast';
 import { useMasterFormStateManager } from '@/hooks/useMasterFormStateManager';
-import type { UserManagementFormState } from '@/types/formState';
+import type { MasterUserFormState } from '@/types/masterFormState';
 
 export const MasterUserManagementTable: React.FC = () => {
   console.log('🔧 MasterUserManagementTable - Master Consolidation Pattern Active');
@@ -18,7 +18,6 @@ export const MasterUserManagementTable: React.FC = () => {
   
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [isAddingUser, setIsAddingUser] = useState<boolean>(false);
-  const [editingUserId, setEditingUserId] = useState<string | null>(null);
   
   // Use master form state manager for complete TypeScript alignment
   const {
@@ -56,11 +55,10 @@ export const MasterUserManagementTable: React.FC = () => {
     }
   }, [newUserForm, userManagement, showSuccess, showError, isFormValid, resetFormState]);
 
-  const handleUpdateUser = useCallback(async (userId: string, updates: Partial<UserManagementFormState>) => {
+  const handleUpdateUser = useCallback(async (userId: string, updates: Partial<MasterUserFormState>) => {
     try {
       await userManagement.updateUser(userId, updates);
       showSuccess('User Updated', 'User information updated successfully');
-      setEditingUserId(null);
     } catch (error) {
       showError('Update Failed', 'Failed to update user');
     }

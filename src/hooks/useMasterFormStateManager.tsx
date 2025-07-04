@@ -1,28 +1,28 @@
 
 /**
- * MASTER FORM STATE MANAGER - SINGLE SOURCE OF TRUTH
- * Centralized form state management with TypeScript alignment
- * Version: master-form-state-manager-v1.0.0
+ * MASTER FORM STATE MANAGER - COMPLETE DUAL COMPATIBILITY
+ * Centralized form state management with comprehensive TypeScript alignment
+ * Version: master-form-state-manager-v2.0.0
  */
 import { useState, useCallback } from 'react';
-import type { UserManagementFormState } from '@/types/formState';
-import { normalizeMasterFormState, createCompleteFormState } from '@/types/formState';
+import type { MasterUserFormState } from '@/types/masterFormState';
+import { normalizeMasterUserFormState, createMasterUserFormState } from '@/types/masterFormState';
 
-export const useMasterFormStateManager = (initialState?: Partial<UserManagementFormState>) => {
-  const [formState, setFormState] = useState<UserManagementFormState>(
-    createCompleteFormState(initialState)
+export const useMasterFormStateManager = (initialState?: Partial<MasterUserFormState>) => {
+  const [formState, setFormState] = useState<MasterUserFormState>(
+    createMasterUserFormState(initialState)
   );
 
-  const updateFormState = useCallback((updates: Partial<UserManagementFormState>) => {
-    setFormState(prev => normalizeMasterFormState({ ...prev, ...updates }));
+  const updateFormState = useCallback((updates: Partial<MasterUserFormState>) => {
+    setFormState(prev => normalizeMasterUserFormState({ ...prev, ...updates }));
   }, []);
 
-  const resetFormState = useCallback((newState?: Partial<UserManagementFormState>) => {
-    setFormState(createCompleteFormState(newState));
+  const resetFormState = useCallback((newState?: Partial<MasterUserFormState>) => {
+    setFormState(createMasterUserFormState(newState));
   }, []);
 
-  const setCompleteFormState = useCallback((newState: UserManagementFormState) => {
-    setFormState(normalizeMasterFormState(newState));
+  const setCompleteFormState = useCallback((newState: MasterUserFormState) => {
+    setFormState(normalizeMasterUserFormState(newState));
   }, []);
 
   return {
@@ -32,13 +32,13 @@ export const useMasterFormStateManager = (initialState?: Partial<UserManagementF
     setCompleteFormState,
     
     // Utility getters
-    isFormValid: formState.firstName && formState.lastName && formState.email && formState.role,
-    hasChanges: JSON.stringify(formState) !== JSON.stringify(createCompleteFormState(initialState)),
+    isFormValid: !!(formState.firstName && formState.lastName && formState.email && formState.role),
+    hasChanges: JSON.stringify(formState) !== JSON.stringify(createMasterUserFormState(initialState)),
     
     meta: {
-      managerVersion: 'master-form-state-manager-v1.0.0',
+      managerVersion: 'master-form-state-manager-v2.0.0',
       singleSourceValidated: true,
-      typeScriptAligned: true
+      dualCompatibilityComplete: true
     }
   };
 };
