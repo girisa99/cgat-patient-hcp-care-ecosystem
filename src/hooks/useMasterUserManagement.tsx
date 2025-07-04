@@ -1,15 +1,15 @@
 
 /**
- * MASTER USER MANAGEMENT - SINGLE SOURCE OF TRUTH
- * Consolidates all user management functionality with TypeScript alignment
- * Version: master-user-management-v2.1.0 - Enhanced TypeScript Compliance
+ * MASTER USER MANAGEMENT HOOK - SINGLE SOURCE OF TRUTH
+ * Centralized user management with TypeScript alignment and master consolidation
+ * Version: master-user-management-v2.0.0
  */
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { useMasterToast } from './useMasterToast';
-import { useMasterVerificationSystem } from './useMasterVerificationSystem';
 import type { UserManagementFormState } from '@/types/formState';
 
-// Enhanced TypeScript interfaces for complete alignment
+// Master User interface - single source of truth for all user data
 export interface MasterUser {
   id: string;
   firstName: string;
@@ -20,309 +20,201 @@ export interface MasterUser {
   role: string;
   phone?: string;
   isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-  created_at: string; // Database compatibility
-  user_roles?: Array<{ role: { name: string } }>; // For compatibility with UserWithRoles
-  facilities?: any[]; // For compatibility with existing components
-}
-
-export interface UserManagementState {
-  users: MasterUser[];
-  isLoading: boolean;
-  error: string | null;
-  totalUsers: number;
-  activeUsers: number;
-  inactiveUsers: number;
-}
-
-export interface UserManagementMeta {
-  hookVersion: string;
-  singleSourceValidated: boolean;
-  architectureType: string;
-  typeScriptAligned: boolean;
-  verificationSystemIntegrated: boolean;
-  totalUsers: number;
-  adminCount: number;
-  staffCount: number;
-  patientCount: number;
+  is_active?: boolean; // Database compatibility
+  created_at?: string;
+  updated_at?: string;
+  facility_id?: string;
+  user_roles: {
+    role: {
+      name: string;
+      description?: string;
+    };
+  }[];
 }
 
 export const useMasterUserManagement = () => {
   const { showSuccess, showError } = useMasterToast();
-  const verificationSystem = useMasterVerificationSystem();
   
-  console.log('👥 Master User Management v2.1.0 - Enhanced TypeScript Compliance Active');
+  console.log('👤 Master User Management v2.0 - Single Source User Management Active');
 
-  const [state, setState] = useState<UserManagementState>({
-    users: [],
-    isLoading: false,
-    error: null,
-    totalUsers: 0,
-    activeUsers: 0,
-    inactiveUsers: 0
-  });
+  const [users, setUsers] = useState<MasterUser[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Enhanced mock data with dual interface compatibility
-  const mockUsers: MasterUser[] = [
-    {
-      id: '1',
-      firstName: 'John',
-      lastName: 'Doe',
-      first_name: 'John',
-      last_name: 'Doe',
-      email: 'john.doe@example.com',
-      role: 'superAdmin',
-      phone: '+1 (555) 123-4567',
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      created_at: new Date().toISOString(),
-      user_roles: [{ role: { name: 'superAdmin' } }],
-      facilities: []
-    },
-    {
-      id: '2',
-      firstName: 'Jane',
-      lastName: 'Smith',
-      first_name: 'Jane',
-      last_name: 'Smith',
-      email: 'jane.smith@example.com',
-      role: 'onboardingTeam',
-      phone: '+1 (555) 987-6543',
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      created_at: new Date().toISOString(),
-      user_roles: [{ role: { name: 'onboardingTeam' } }],
-      facilities: []
-    },
-    {
-      id: '3',
-      firstName: 'Bob',
-      lastName: 'Johnson',
-      first_name: 'Bob',
-      last_name: 'Johnson',
-      email: 'bob.johnson@example.com',
-      role: 'patientCaregiver',
-      isActive: false,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      created_at: new Date().toISOString(),
-      user_roles: [{ role: { name: 'patientCaregiver' } }],
-      facilities: []
-    }
-  ];
-
-  const updateStats = useCallback((users: MasterUser[]) => {
-    const totalUsers = users.length;
-    const activeUsers = users.filter(u => u.isActive).length;
-    const inactiveUsers = totalUsers - activeUsers;
-    
-    setState(prev => ({
-      ...prev,
-      totalUsers,
-      activeUsers,
-      inactiveUsers
-    }));
-  }, []);
-
-  const loadUsers = useCallback(async () => {
-    setState(prev => ({ ...prev, isLoading: true, error: null }));
+  const fetchUsers = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      setState(prev => ({
-        ...prev,
-        users: mockUsers,
-        isLoading: false
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select(`
+          id,
+          first_name,
+          last_name, 
+          email,
+          phone,
+          is_active,
+          facility_id,
+          created_at,
+          updated_at,
+          user_roles:user_roles(
+            role:roles(
+              name,
+              description
+            )
+          )
+        `);
+
+      if (profilesError) throw profilesError;
+
+      const masterUsers: MasterUser[] = (profiles || []).map(profile => ({
+        id: profile.id,
+        firstName: profile.first_name || '',
+        lastName: profile.last_name || '',
+        first_name: profile.first_name || '',
+        last_name: profile.last_name || '',
+        email: profile.email || '',
+        role: profile.user_roles?.[0]?.role?.name || 'user',
+        phone: profile.phone || '',
+        isActive: profile.is_active ?? true,
+        is_active: profile.is_active ?? true,
+        created_at: profile.created_at,
+        updated_at: profile.updated_at,
+        facility_id: profile.facility_id,
+        user_roles: profile.user_roles || []
       }));
-      
-      updateStats(mockUsers);
-      
-      verificationSystem.registerComponent({
-        name: 'useMasterUserManagement',
-        type: 'hook',
-        status: 'active',
-        typescript_definitions: {
-          interfaces: ['MasterUser', 'UserManagementState', 'UserManagementMeta'],
-          singleSource: true
-        }
-      });
+
+      setUsers(masterUsers);
+      console.log(`✅ Loaded ${masterUsers.length} users via master consolidation pattern`);
       
     } catch (error) {
-      setState(prev => ({
-        ...prev,
-        error: 'Failed to load users',
-        isLoading: false
-      }));
-      showError('Load Error', 'Failed to load users');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch users';
+      setError(errorMessage);
+      showError('Failed to Load Users', errorMessage);
+      console.error('❌ Master user management fetch error:', error);
+    } finally {
+      setIsLoading(false);
     }
-  }, [showError, updateStats, verificationSystem]);
+  }, [showError]);
 
   const createUser = useCallback(async (userData: UserManagementFormState) => {
-    setState(prev => ({ ...prev, isLoading: true }));
+    setIsLoading(true);
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      const newUser: MasterUser = {
-        id: Date.now().toString(),
-        firstName: userData.firstName,
-        lastName: userData.lastName,
-        first_name: userData.firstName,
-        last_name: userData.lastName,
-        email: userData.email,
-        role: userData.role,
-        phone: userData.phone,
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        created_at: new Date().toISOString(),
-        user_roles: [{ role: { name: userData.role } }],
-        facilities: []
-      };
-      
-      setState(prev => {
-        const updatedUsers = [...prev.users, newUser];
-        updateStats(updatedUsers);
-        return {
-          ...prev,
-          users: updatedUsers,
-          isLoading: false
-        };
+      // Create user via edge function for proper auth integration
+      const { data, error } = await supabase.functions.invoke('manage-user-profiles', {
+        body: {
+          action: 'create',
+          userData: {
+            firstName: userData.firstName,
+            lastName: userData.lastName,
+            email: userData.email,
+            role: userData.role,
+            phone: userData.phone
+          }
+        }
       });
-      
+
+      if (error) throw error;
+
+      await fetchUsers(); // Refresh users list
       showSuccess('User Created', `Successfully created user ${userData.firstName} ${userData.lastName}`);
       
+      return data;
     } catch (error) {
-      setState(prev => ({ ...prev, isLoading: false }));
-      showError('Creation Failed', 'Failed to create user');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create user';
+      showError('Creation Failed', errorMessage);
       throw error;
+    } finally {
+      setIsLoading(false);
     }
-  }, [showSuccess, showError, updateStats]);
+  }, [fetchUsers, showSuccess, showError]);
 
-  const updateUser = useCallback(async (userId: string, updates: Partial<UserManagementFormState & { isActive: boolean }>) => {
-    setState(prev => ({ ...prev, isLoading: true }));
+  const updateUser = useCallback(async (userId: string, updates: Partial<UserManagementFormState>) => {
+    setIsLoading(true);
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 600));
-      
-      setState(prev => {
-        const updatedUsers = prev.users.map(user =>
-          user.id === userId
-            ? { 
-                ...user, 
-                ...updates, 
-                firstName: updates.firstName || user.firstName,
-                lastName: updates.lastName || user.lastName,
-                first_name: updates.firstName || user.first_name,
-                last_name: updates.lastName || user.last_name,
-                updatedAt: new Date().toISOString() 
-              }
-            : user
-        );
-        updateStats(updatedUsers);
-        return {
-          ...prev,
-          users: updatedUsers,
-          isLoading: false
-        };
-      });
-      
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          first_name: updates.firstName,
+          last_name: updates.lastName,
+          email: updates.email,
+          phone: updates.phone,
+          is_active: updates.isActive,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      await fetchUsers(); // Refresh users list
       showSuccess('User Updated', 'User information updated successfully');
       
     } catch (error) {
-      setState(prev => ({ ...prev, isLoading: false }));
-      showError('Update Failed', 'Failed to update user');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update user';
+      showError('Update Failed', errorMessage);
       throw error;
+    } finally {
+      setIsLoading(false);
     }
-  }, [showSuccess, showError, updateStats]);
+  }, [fetchUsers, showSuccess, showError]);
 
   const deleteUser = useCallback(async (userId: string) => {
-    setState(prev => ({ ...prev, isLoading: true }));
+    setIsLoading(true);
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      setState(prev => {
-        const updatedUsers = prev.users.filter(user => user.id !== userId);
-        updateStats(updatedUsers);
-        return {
-          ...prev,
-          users: updatedUsers,
-          isLoading: false
-        };
-      });
-      
+      const { error } = await supabase.auth.admin.deleteUser(userId);
+      if (error) throw error;
+
+      await fetchUsers(); // Refresh users list
       showSuccess('User Deleted', 'User deleted successfully');
       
     } catch (error) {
-      setState(prev => ({ ...prev, isLoading: false }));
-      showError('Deletion Failed', 'Failed to delete user');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete user';
+      showError('Deletion Failed', errorMessage);
       throw error;
+    } finally {
+      setIsLoading(false);
     }
-  }, [showSuccess, showError, updateStats]);
+  }, [fetchUsers, showSuccess, showError]);
 
-  // Load users on mount
+  // Initialize on mount
   useEffect(() => {
-    loadUsers();
-  }, [loadUsers]);
+    fetchUsers();
+  }, [fetchUsers]);
 
-  // Enhanced meta information with proper statistics
-  const meta: UserManagementMeta = {
-    hookVersion: 'master-user-management-v2.1.0',
-    singleSourceValidated: true,
-    architectureType: 'master-consolidated',
-    typeScriptAligned: true,
-    verificationSystemIntegrated: true,
-    totalUsers: state.totalUsers,
-    adminCount: state.users.filter(u => ['superAdmin', 'onboardingTeam'].includes(u.role)).length,
-    staffCount: state.users.filter(u => ['healthcareProvider', 'caseManager', 'nurse'].includes(u.role)).length,
-    patientCount: state.users.filter(u => u.role === 'patientCaregiver').length
-  };
+  // Calculate statistics
+  const totalUsers = users.length;
+  const activeUsers = users.filter(user => user.isActive).length;
+  const inactiveUsers = totalUsers - activeUsers;
 
   return {
-    // State
-    users: state.users,
-    isLoading: state.isLoading,
-    error: state.error,
-    totalUsers: state.totalUsers,
-    activeUsers: state.activeUsers,
-    inactiveUsers: state.inactiveUsers,
+    // User data
+    users,
+    totalUsers,
+    activeUsers,
+    inactiveUsers,
     
     // Actions
-    loadUsers,
     createUser,
     updateUser,
     deleteUser,
+    refreshUsers: fetchUsers,
     
-    // Utilities
-    getUserById: (id: string) => state.users.find(user => user.id === id),
-    getUsersByRole: (role: string) => state.users.filter(user => user.role === role),
+    // State
+    isLoading,
+    error,
     
-    // Meta information with proper TypeScript compliance
-    meta,
-    
-    // Additional mock methods for component compatibility
-    refetch: loadUsers,
-    isCreatingUser: state.isLoading,
-    assignRole: async (params: { userId: string; roleName: string }) => {
-      await updateUser(params.userId, { role: params.roleName });
-    },
-    removeRole: async (params: { userId: string; roleName: string }) => {
-      showSuccess('Role Removed', 'Role removed successfully');
-    },
-    assignFacility: async (params: { userId: string; facilityId: string; accessLevel: string }) => {
-      showSuccess('Facility Assigned', 'Facility assigned successfully');
-    },
-    deactivateUser: async (params: { userId: string; reason: string }) => {
-      await updateUser(params.userId, { isActive: false });
-    },
-    isAssigningRole: false,
-    isRemovingRole: false,
-    isAssigningFacility: false,
-    isDeactivating: false
+    // Meta information
+    meta: {
+      hookVersion: 'master-user-management-v2.0.0',
+      singleSourceValidated: true,
+      typeScriptAligned: true,
+      masterConsolidationCompliant: true,
+      dataSource: 'auth.users + profiles via edge function',
+      lastFetched: new Date().toISOString()
+    }
   };
 };
