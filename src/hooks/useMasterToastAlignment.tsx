@@ -2,7 +2,7 @@
 /**
  * MASTER TOAST ALIGNMENT - TYPESCRIPT COMPLIANCE VALIDATOR
  * Ensures toast components are properly aligned with TypeScript requirements
- * Version: master-toast-alignment-v1.0.0
+ * Version: master-toast-alignment-v1.1.0 - Complete method implementation
  */
 import { useMasterToast } from './useMasterToast';
 
@@ -57,9 +57,14 @@ export const useMasterToastAlignment = () => {
     return report;
   };
 
+  const analyzeToastAlignment = () => {
+    return validateToastAlignment();
+  };
+
   return {
     validateToastAlignment,
     fixToastAlignment,
+    analyzeToastAlignment,
     complianceScore: validateToastAlignment().complianceScore,
     
     // Access to master toast
@@ -67,7 +72,7 @@ export const useMasterToastAlignment = () => {
     showInfo,
     
     meta: {
-      alignmentVersion: 'master-toast-alignment-v1.0.0',
+      alignmentVersion: 'master-toast-alignment-v1.1.0',
       singleSourceValidated: true,
       typeScriptCompliant: true
     }

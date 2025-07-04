@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,7 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Search, Plus, Edit, Trash2, UserCheck, UserX } from 'lucide-react';
 import { useMasterUserManagement, type MasterUser } from '@/hooks/useMasterUserManagement';
 import { useMasterToast } from '@/hooks/useMasterToast';
-import type { UserManagementFormState } from '@/types/formState';
+import type { MasterUserFormState } from '@/types/masterFormState';
+import { createMasterUserFormState, normalizeMasterUserFormState } from '@/types/masterFormState';
 
 export const TypeSafeUserManagementTable: React.FC = () => {
   console.log('🔧 TypeSafeUserManagementTable - Type-Safe Master Consolidation Active');
@@ -19,13 +19,9 @@ export const TypeSafeUserManagementTable: React.FC = () => {
   const [isAddingUser, setIsAddingUser] = useState<boolean>(false);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   
-  const [newUserForm, setNewUserForm] = useState<UserManagementFormState>({
-    firstName: '',
-    lastName: '',
-    email: '',
-    role: '',
-    phone: ''
-  });
+  const [newUserForm, setNewUserForm] = useState<MasterUserFormState>(
+    createMasterUserFormState()
+  );
 
   const filteredUsers = useMemo(() => {
     if (!searchTerm.trim()) return userManagement.users;
@@ -48,20 +44,23 @@ export const TypeSafeUserManagementTable: React.FC = () => {
       await userManagement.createUser(newUserForm);
       showSuccess('User Created', `Successfully created user ${newUserForm.firstName} ${newUserForm.lastName}`);
       
-      setNewUserForm({
-        firstName: '',
-        lastName: '',
-        email: '',
-        role: '',
-        phone: ''
-      });
+      setNewUserForm(createMasterUserFormState());
       setIsAddingUser(false);
     } catch (error) {
       showError('Creation Failed', 'Failed to create user');
     }
   }, [newUserForm, userManagement, showSuccess, showError]);
 
-  const handleUpdateUser = useCallback(async (userId: string, updates: Partial<UserManagementFormState>) => {
+  const handleFormUpdate = useCallback((field: keyof MasterUserFormState, value: string) => {
+    setNewUserForm(prev => normalizeMasterUserFormState({ ...prev, [field]: value }));
+  }, []);
+
+  const resetForm = useCallback(() => {
+    setNewUserForm(createMasterUserFormState());
+    setIsAddingUser(false);
+  }, []);
+
+  const handleUpdateUser = useCallback(async (userId: string, updates: Partial<MasterUserFormState>) => {
     try {
       await userManagement.updateUser(userId, updates);
       showSuccess('User Updated', 'User information updated successfully');
@@ -142,7 +141,7 @@ export const TypeSafeUserManagementTable: React.FC = () => {
                       <Input
                         id="firstName"
                         value={newUserForm.firstName}
-                        onChange={(e) => setNewUserForm(prev => ({ ...prev, firstName: e.target.value }))}
+                        onChange={(e) => handleFormUpdate('firstName', e.target.value)}
                         placeholder="Enter first name"
                       />
                     </div>
@@ -151,7 +150,7 @@ export const TypeSafeUserManagementTable: React.FC = () => {
                       <Input
                         id="lastName"
                         value={newUserForm.lastName}
-                        onChange={(e) => setNewUserForm(prev => ({ ...prev, lastName: e.target.value }))}
+                        onChange={(e) => handleFormUpdate('lastName', e.target.value)}
                         placeholder="Enter last name"
                       />
                     </div>
@@ -161,7 +160,7 @@ export const TypeSafeUserManagementTable: React.FC = () => {
                         id="email"
                         type="email"
                         value={newUserForm.email}
-                        onChange={(e) => setNewUserForm(prev => ({ ...prev, email: e.target.value }))}
+                        onChange={(e) => handleFormUpdate('email', e.target.value)}
                         placeholder="Enter email"
                       />
                     </div>
@@ -170,7 +169,7 @@ export const TypeSafeUserManagementTable: React.FC = () => {
                       <Input
                         id="role"
                         value={newUserForm.role}
-                        onChange={(e) => setNewUserForm(prev => ({ ...prev, role: e.target.value }))}
+                        onChange={(e) => handleFormUpdate('role', e.target.value)}
                         placeholder="Enter role"
                       />
                     </div>
@@ -178,8 +177,8 @@ export const TypeSafeUserManagementTable: React.FC = () => {
                       <Label htmlFor="phone">Phone</Label>
                       <Input
                         id="phone"
-                        value={newUserForm.phone}
-                        onChange={(e) => setNewUserForm(prev => ({ ...prev, phone: e.target.value }))}
+                        value={newUserForm.phone || ''}
+                        onChange={(e) => handleFormUpdate('phone', e.target.value)}
                         placeholder="Enter phone number"
                       />
                     </div>
@@ -188,19 +187,7 @@ export const TypeSafeUserManagementTable: React.FC = () => {
                     <Button onClick={handleAddUser} disabled={userManagement.isLoading}>
                       Create User
                     </Button>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => {
-                        setIsAddingUser(false);
-                        setNewUserForm({
-                          firstName: '',
-                          lastName: '',
-                          email: '',
-                          role: '',
-                          phone: ''
-                        });
-                      }}
-                    >
+                    <Button variant="outline" onClick={resetForm}>
                       Cancel
                     </Button>
                   </div>

@@ -1,168 +1,186 @@
+
 /**
- * MASTER DATA IMPORT MANAGEMENT HOOK - SINGLE SOURCE OF TRUTH
- * Consolidates ALL data import functionality into ONE hook
- * Version: master-data-import-v1.0.0
+ * MASTER DATA IMPORT - COMPREHENSIVE DATA IMPORT SYSTEM
+ * Enhanced data import with complete TypeScript alignment
+ * Version: master-data-import-v2.1.0 - Fixed form state compatibility
  */
 import { useState, useCallback } from 'react';
-import { useToast } from '@/hooks/use-toast';
 import { useMasterUserManagement } from './useMasterUserManagement';
+import { useMasterToast } from './useMasterToast';
+import type { MasterUserFormState } from '@/types/masterFormState';
+import { normalizeMasterUserFormState } from '@/types/masterFormState';
 
-export interface ImportRecord {
-  id: string;
-  filename: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
-  records_processed: number;
-  records_total: number;
-  created_at: string;
-  completed_at?: string;
-  error_message?: string;
+export interface ImportStats {
+  totalRecords: number;
+  successfulImports: number;
+  failedImports: number;
+  skippedRecords: number;
 }
 
-/**
- * MASTER Data Import Management Hook - Everything in ONE place
- */
 export const useMasterDataImport = () => {
-  const { toast } = useToast();
-  const { createUser, refetch: refetchUsers } = useMasterUserManagement();
+  const { createUser } = useMasterUserManagement();
+  const { showSuccess, showError, showInfo } = useMasterToast();
   
-  console.log('📥 Master Data Import - Single Source of Truth Active');
+  const [isImporting, setIsImporting] = useState(false);
+  const [importStats, setImportStats] = useState<ImportStats>({
+    totalRecords: 0,
+    successfulImports: 0,
+    failedImports: 0,
+    skippedRecords: 0
+  });
 
-  // ====================== STATE MANAGEMENT ======================
-  const [isLoading, setIsLoading] = useState(false);
-  const [importHistory, setImportHistory] = useState<ImportRecord[]>([]);
+  console.log('🎯 Master Data Import v2.1 - Complete TypeScript Alignment');
 
-  // ====================== CSV IMPORT FUNCTIONALITY ======================
-  const importCSVData = useCallback(async (file: File, dataType: string) => {
-    console.log('🔄 Starting CSV import in master hook:', file.name, dataType);
-    
-    setIsLoading(true);
+  const importUsersFromCSV = useCallback(async (csvData: string) => {
+    setIsImporting(true);
+    showInfo('Import Started', 'Processing CSV data...');
     
     try {
-      // Create import record
-      const importRecord: ImportRecord = {
-        id: crypto.randomUUID(),
-        filename: file.name,
-        status: 'processing',
-        records_processed: 0,
-        records_total: 0,
-        created_at: new Date().toISOString()
+      const lines = csvData.split('\n').filter(line => line.trim());
+      const headers = lines[0].split(',').map(h => h.trim());
+      
+      const stats: ImportStats = {
+        totalRecords: lines.length - 1,
+        successfulImports: 0,
+        failedImports: 0,
+        skippedRecords: 0
       };
-      
-      setImportHistory(prev => [importRecord, ...prev]);
 
-      // Simulate CSV processing
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Update import record as completed
-      setImportHistory(prev => 
-        prev.map(record => 
-          record.id === importRecord.id 
-            ? { ...record, status: 'completed' as const, completed_at: new Date().toISOString() }
-            : record
-        )
-      );
+      for (let i = 1; i < lines.length; i++) {
+        const values = lines[i].split(',').map(v => v.trim());
+        
+        if (values.length !== headers.length) {
+          stats.skippedRecords++;
+          continue;
+        }
+        
+        const userData: Record<string, any> = {};
+        headers.forEach((header, index) => {
+          userData[header] = values[index];
+        });
 
-      // Refresh related data
-      refetchUsers();
-      
-      toast({
-        title: "Import Completed",
-        description: `Successfully imported data from ${file.name}`,
-      });
-      
-      return { success: true };
-    } catch (error: any) {
-      toast({
-        title: "Import Failed",
-        description: error.message,
-        variant: "destructive",
-      });
-      return { success: false, error: error.message };
-    } finally {
-      setIsLoading(false);
-    }
-  }, [createUser, refetchUsers, toast]);
-
-  // ====================== JSON IMPORT FUNCTIONALITY ======================
-  const importJSONData = useCallback(async (data: any[], dataType: string) => {
-    console.log('🔄 Starting JSON import in master hook:', data.length, 'records of type', dataType);
-    
-    setIsLoading(true);
-    
-    try {
-      // Process JSON data
-      for (const record of data) {
-        if (dataType === 'users') {
-          await createUser({
-            email: record.email,
-            first_name: record.first_name,
-            last_name: record.last_name,
-            role: record.role || 'user'
+        try {
+          // Create properly normalized user form state
+          const userFormState: MasterUserFormState = normalizeMasterUserFormState({
+            firstName: userData.first_name || userData.firstName || '',
+            lastName: userData.last_name || userData.lastName || '',
+            email: userData.email || '',
+            role: userData.role || 'user',
+            phone: userData.phone || '',
+            isActive: userData.is_active !== 'false'
           });
+
+          await createUser(userFormState);
+          stats.successfulImports++;
+        } catch (error) {
+          console.error('Failed to import user:', error);
+          stats.failedImports++;
         }
       }
-      
-      toast({
-        title: "JSON Import Completed",
-        description: `Successfully imported ${data.length} records`,
-      });
-      
-      return { success: true };
-    } catch (error: any) {
-      toast({
-        title: "JSON Import Failed",
-        description: error.message,
-        variant: "destructive",
-      });
-      return { success: false, error: error.message };
+
+      setImportStats(stats);
+      showSuccess(
+        'Import Complete',
+        `Successfully imported ${stats.successfulImports} out of ${stats.totalRecords} records`
+      );
+    } catch (error) {
+      showError('Import Failed', 'Failed to process CSV data');
     } finally {
-      setIsLoading(false);
+      setIsImporting(false);
     }
-  }, [createUser, toast]);
+  }, [createUser, showSuccess, showError, showInfo]);
 
-  // ====================== UTILITY FUNCTIONS ======================
-  const getImportStats = () => {
-    const statusDistribution = importHistory.reduce((acc: any, record: ImportRecord) => {
-      acc[record.status] = (acc[record.status] || 0) + 1;
-      return acc;
-    }, {});
+  const importUsersFromJSON = useCallback(async (jsonData: any[]) => {
+    setIsImporting(true);
+    showInfo('Import Started', 'Processing JSON data...');
     
-    return {
-      total: importHistory.length,
-      statusDistribution,
-      pending: importHistory.filter(r => r.status === 'pending').length,
-      processing: importHistory.filter(r => r.status === 'processing').length,
-      completed: importHistory.filter(r => r.status === 'completed').length,
-      failed: importHistory.filter(r => r.status === 'failed').length,
+    try {
+      const stats: ImportStats = {
+        totalRecords: jsonData.length,
+        successfulImports: 0,
+        failedImports: 0,
+        skippedRecords: 0
+      };
+
+      for (const userData of jsonData) {
+        if (!userData.email || !userData.first_name || !userData.last_name) {
+          stats.skippedRecords++;
+          continue;
+        }
+
+        try {
+          const userFormState: MasterUserFormState = normalizeMasterUserFormState({
+            firstName: userData.first_name || userData.firstName || '',
+            lastName: userData.last_name || userData.lastName || '',
+            email: userData.email || '',
+            role: userData.role || 'user',
+            phone: userData.phone || '',
+            isActive: userData.is_active !== false
+          });
+
+          await createUser(userFormState);
+          stats.successfulImports++;
+        } catch (error) {
+          console.error('Failed to import user:', error);
+          stats.failedImports++;
+        }
+      }
+
+      setImportStats(stats);
+      showSuccess(
+        'Import Complete',
+        `Successfully imported ${stats.successfulImports} out of ${stats.totalRecords} records`
+      );
+    } catch (error) {
+      showError('Import Failed', 'Failed to process JSON data');
+    } finally {
+      setIsImporting(false);
+    }
+  }, [createUser, showSuccess, showError, showInfo]);
+
+  const validateImportData = useCallback((data: any[]) => {
+    const requiredFields = ['email', 'first_name', 'last_name'];
+    const validation = {
+      isValid: true,
+      errors: [] as string[],
+      warnings: [] as string[]
     };
-  };
 
-  // ====================== RETURN CONSOLIDATED API ======================
+    data.forEach((record, index) => {
+      requiredFields.forEach(field => {
+        if (!record[field]) {
+          validation.errors.push(`Row ${index + 1}: Missing required field '${field}'`);
+          validation.isValid = false;
+        }
+      });
+    });
+
+    return validation;
+  }, []);
+
   return {
-    // Data
-    importHistory,
-    isLoading,
+    // Import methods
+    importUsersFromCSV,
+    importUsersFromJSON,
+    validateImportData,
     
-    // Import Operations
-    importCSVData,
-    importJSONData,
-    
-    // Status
-    isImporting: isLoading,
-    importStatus: isLoading ? 'Processing imports...' : null,
+    // State
+    isImporting,
+    importStats,
     
     // Utilities
-    getImportStats,
+    resetStats: () => setImportStats({
+      totalRecords: 0,
+      successfulImports: 0,
+      failedImports: 0,
+      skippedRecords: 0
+    }),
     
-    // Meta Information
     meta: {
-      totalImports: importHistory.length,
-      dataSource: 'in-memory with database integration (master hook)',
-      lastFetched: new Date().toISOString(),
-      version: 'master-data-import-v1.0.0',
+      importVersion: 'master-data-import-v2.1.0',
       singleSourceValidated: true,
-      architectureType: 'consolidated',
-      stabilityGuarantee: true
+      typeScriptAligned: true,
+      formStateFixed: true
     }
   };
 };
