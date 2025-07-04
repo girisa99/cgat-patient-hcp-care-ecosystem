@@ -73,13 +73,8 @@ export const MasterAuthForm: React.FC<MasterAuthFormProps> = ({
           description: "Redirecting to dashboard..."
         });
         
-        // Refresh auth state
+        // Refresh auth state - this will automatically trigger UI update
         await refreshAuth();
-        
-        // Call success callback
-        setTimeout(() => {
-          onSuccess?.();
-        }, 1500);
       }
     } catch (error) {
       console.error('💥 Login exception:', error);

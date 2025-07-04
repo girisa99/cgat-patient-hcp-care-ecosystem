@@ -42,7 +42,7 @@ const AppContent = () => {
   }
 
   if (!isAuthenticated) {
-    return <MasterAuthForm onSuccess={() => window.location.reload()} />;
+    return <MasterAuthForm />;
   }
 
   return (
