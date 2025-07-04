@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Search, RefreshCw, Plus, Shield, CheckCircle, AlertTriangle } from 'lucide-react';
 import { useMasterData } from '@/hooks/useMasterData';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
+import { useUnifiedDevelopmentLifecycle } from '@/hooks/useUnifiedDevelopmentLifecycle';
+import AccessDenied from '@/components/AccessDenied';
 
 const ActiveVerification: React.FC = () => {
   const { isAuthenticated, isLoading: authLoading, userRoles } = useMasterAuth();

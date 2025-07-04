@@ -7,9 +7,12 @@ import { Input } from '@/components/ui/input';
 import { Search, RefreshCw, Plus, Activity } from 'lucide-react';
 import { useMasterData } from '@/hooks/useMasterData';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
+import { useUnifiedDevelopmentLifecycle } from '@/hooks/useUnifiedDevelopmentLifecycle';
+import AccessDenied from '@/components/AccessDenied';
 
 const ApiServices: React.FC = () => {
   const { isAuthenticated, isLoading: authLoading, userRoles } = useMasterAuth();
+  const { navigation } = useUnifiedDevelopmentLifecycle();
   const { 
     apiServices, 
     isLoading, 
@@ -21,6 +24,11 @@ const ApiServices: React.FC = () => {
   const [searchQuery, setSearchQuery] = React.useState('');
 
   console.log('🔌 API Services Page - Master Data Integration');
+
+  // Role-based access guard
+  if (!navigation.hasAccess('/api-services')) {
+    return <AccessDenied />;
+  }
 
   if (authLoading || isLoading) {
     return (
