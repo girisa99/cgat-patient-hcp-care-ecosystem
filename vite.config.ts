@@ -11,6 +11,7 @@ export default defineConfig(({ mode }) => ({
     open: true,           // Auto-open browser
     strictPort: true,     // Use specified port
     cors: true,           // Enable CORS
+    allowedHosts: true,   // Allow all hosts (including ngrok)
   },
   plugins: [
     react(),
