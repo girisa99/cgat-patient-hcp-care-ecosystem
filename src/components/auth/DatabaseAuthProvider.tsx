@@ -122,9 +122,30 @@ export const DatabaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
           setUserRoles([]);
         } else if (profileData) {
           console.log('✅ Profile loaded:', profileData.first_name, profileData.last_name);
-          setProfile(profileData);
           
-          const roles = profileData.user_roles?.map((ur: any) => ur.role.name) || [];
+          // Handle the case where user_roles might be an error or valid data
+          let processedProfile: Profile;
+          let roles: string[] = [];
+          
+          if (Array.isArray(profileData.user_roles)) {
+            roles = profileData.user_roles.map((ur: any) => ur.role.name) || [];
+            processedProfile = {
+              ...profileData,
+              user_roles: profileData.user_roles
+            };
+          } else {
+            // Handle case where user_roles query failed
+            console.warn('⚠️ User roles query failed, using basic profile');
+            processedProfile = {
+              id: profileData.id,
+              first_name: profileData.first_name,
+              last_name: profileData.last_name,
+              email: profileData.email,
+              user_roles: []
+            };
+          }
+          
+          setProfile(processedProfile);
           setUserRoles(roles);
           console.log('👤 User roles set:', roles);
         }

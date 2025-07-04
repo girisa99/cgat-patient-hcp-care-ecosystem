@@ -1,6 +1,6 @@
 
 /**
- * MODULES HOOK - Real data management with proper interface
+ * MODULES HOOK - Real data management with proper interface - FIXED VERSION
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -77,7 +77,7 @@ export const useModules = () => {
     }
   });
 
-  const searchModules = (query: string) => {
+  const searchModules = (query: string = '') => {
     if (!query.trim()) return modules;
     
     const lowercaseQuery = query.toLowerCase();
@@ -102,8 +102,10 @@ export const useModules = () => {
     modules,
     isLoading,
     error,
-    createModule: createModuleMutation.mutate,
-    updateModule: updateModuleMutation.mutate,
+    createModule: (moduleData?: { name: string; description?: string }) => 
+      createModuleMutation.mutate(moduleData || { name: `Module ${Date.now()}` }),
+    updateModule: (updateData?: { id: string; name?: string; description?: string; is_active?: boolean }) => 
+      updateModuleMutation.mutate(updateData || { id: '', name: '' }),
     isCreatingModule: createModuleMutation.isPending,
     isUpdatingModule: updateModuleMutation.isPending,
     searchModules,
