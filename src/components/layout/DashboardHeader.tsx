@@ -1,11 +1,11 @@
 /**
- * DASHBOARD HEADER - User Welcome and Navigation
- * Professional header with logo, user info, and logout
+ * ENHANCED DASHBOARD HEADER - User Welcome and Navigation
+ * Professional header with GENIE branding, Cell Gene technology navigator, user info, and logout
  */
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { LogOut, User, Shield, Settings } from 'lucide-react';
+import { LogOut, User, Shield, Settings, Stethoscope } from 'lucide-react';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
 
 export const DashboardHeader: React.FC = () => {
@@ -32,6 +32,11 @@ export const DashboardHeader: React.FC = () => {
     if (userRoles.includes('superAdmin')) return 'Super Admin';
     if (userRoles.includes('admin')) return 'Administrator';
     if (userRoles.includes('onboardingTeam')) return 'Onboarding Team';
+    if (userRoles.includes('healthcareProvider')) return 'Healthcare Provider';
+    if (userRoles.includes('nurse')) return 'Nurse';
+    if (userRoles.includes('caseManager')) return 'Case Manager';
+    if (userRoles.includes('technicalServices')) return 'Technical Services';
+    if (userRoles.includes('patientCaregiver')) return 'Patient/Caregiver';
     if (userRoles.includes('user')) return 'User';
     return 'Team Member';
   };
@@ -39,6 +44,8 @@ export const DashboardHeader: React.FC = () => {
   const getRoleBadgeVariant = () => {
     if (userRoles.includes('superAdmin')) return 'destructive';
     if (userRoles.includes('admin')) return 'secondary';
+    if (userRoles.includes('healthcareProvider')) return 'default';
+    if (userRoles.includes('technicalServices')) return 'outline';
     return 'outline';
   };
 
@@ -61,19 +68,19 @@ export const DashboardHeader: React.FC = () => {
     <header className="bg-white shadow-sm border-b">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Logo and Welcome */}
+          {/* Enhanced Logo and Branding */}
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-3">
-              <div className="bg-blue-600 p-2 rounded-lg">
-                <img 
-                  src="/lovable-uploads/7b3ce1dc-c275-46ae-a0ca-f70f73094f01.png" 
-                  alt="GENIE Logo" 
-                  className="h-8 w-8"
-                />
+              <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-2 rounded-lg shadow-md">
+                <Stethoscope className="h-8 w-8 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">GENIE</h1>
-                <p className="text-xs text-gray-500">Healthcare Management</p>
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
+                  GENIE
+                </h1>
+                <p className="text-xs text-blue-600 font-medium">
+                  Cell, Gene Technology Navigator
+                </p>
               </div>
             </div>
             

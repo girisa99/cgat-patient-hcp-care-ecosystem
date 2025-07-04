@@ -1,7 +1,7 @@
 /**
- * MASTER DATA HOOK - SINGLE SOURCE OF TRUTH FOR ALL DATA
- * Consolidates users, facilities, modules, and API services
- * Version: master-data-v1.0.1 - Fixed infinite loading issues
+ * ENHANCED MASTER DATA HOOK - SINGLE SOURCE OF TRUTH FOR ALL DATA
+ * Consolidates users, facilities, modules, API services with full CRUD operations
+ * Version: master-data-v2.0.0 - Enhanced with comprehensive user management
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,8 +18,31 @@ export interface MasterUser {
   last_name: string;
   email: string;
   phone?: string;
+  is_email_verified: boolean;
+  facility_id?: string;
+  facility?: {
+    id: string;
+    name: string;
+    facility_type: string;
+  };
   created_at: string;
-  user_roles: Array<{ role: { name: string; description?: string } }>;
+  user_roles: Array<{ 
+    id: string;
+    role: { 
+      id: string;
+      name: string; 
+      description?: string;
+    };
+  }>;
+  assigned_modules?: Array<{
+    id: string;
+    module: {
+      id: string;
+      name: string;
+      description?: string;
+    };
+    access_level: string;
+  }>;
 }
 
 export interface MasterFacility {
@@ -61,7 +84,7 @@ export const useMasterData = () => {
   const { userRoles, isAuthenticated } = useMasterAuth();
   const queryClient = useQueryClient();
   
-  console.log('🏆 MASTER DATA - Single Source of Truth Active');
+  console.log('🏆 ENHANCED MASTER DATA - Single Source with Full CRUD Operations');
 
   // ====================== SINGLE CACHE INVALIDATION ======================
   const invalidateCache = useCallback(() => {
@@ -69,7 +92,7 @@ export const useMasterData = () => {
     queryClient.invalidateQueries({ queryKey: MASTER_DATA_CACHE_KEY });
   }, [queryClient]);
 
-  // ====================== FETCH ALL USERS ======================
+  // ====================== FETCH ALL USERS WITH ENHANCED DATA ======================
   const {
     data: users = [],
     isLoading: usersLoading,
@@ -77,13 +100,27 @@ export const useMasterData = () => {
   } = useQuery({
     queryKey: [...MASTER_DATA_CACHE_KEY, 'users'],
     queryFn: async (): Promise<MasterUser[]> => {
-      console.log('🔍 Fetching users from master data source...');
+      console.log('🔍 Fetching enhanced users data...');
       
       try {
-        // Step 1: Get basic profiles (no complex relationships)
+        // Step 1: Get profiles with facility data
         const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
-          .select('id, first_name, last_name, email, phone, created_at')
+          .select(`
+            id,
+            first_name,
+            last_name,
+            email,
+            phone,
+            is_email_verified,
+            facility_id,
+            created_at,
+            facilities (
+              id,
+              name,
+              facility_type
+            )
+          `)
           .order('created_at', { ascending: false });
 
         if (profilesError) {
@@ -96,13 +133,15 @@ export const useMasterData = () => {
           return [];
         }
 
-        // Step 2: Get user roles separately for all users
+        // Step 2: Get user roles with role details
         const userIds = profilesData.map(p => p.id);
         const { data: userRolesData, error: rolesError } = await supabase
           .from('user_roles')
           .select(`
+            id,
             user_id,
             roles (
+              id,
               name,
               description
             )
@@ -110,12 +149,33 @@ export const useMasterData = () => {
           .in('user_id', userIds);
 
         if (rolesError) {
-          console.warn('⚠️ User roles query failed, continuing without roles:', rolesError);
+          console.warn('⚠️ User roles query failed:', rolesError);
         }
 
-        // Step 3: Combine the data
-        const usersWithRoles = profilesData.map(profile => {
+        // Step 3: Get user module assignments
+        const { data: moduleAssignments, error: moduleError } = await supabase
+          .from('user_module_assignments')
+          .select(`
+            id,
+            user_id,
+            access_level,
+            modules (
+              id,
+              name,
+              description
+            )
+          `)
+          .in('user_id', userIds)
+          .eq('is_active', true);
+
+        if (moduleError) {
+          console.warn('⚠️ Module assignments query failed:', moduleError);
+        }
+
+        // Step 4: Combine all data
+        const enhancedUsers = profilesData.map(profile => {
           const userRoles = userRolesData?.filter(ur => ur.user_id === profile.id) || [];
+          const assignedModules = moduleAssignments?.filter(ma => ma.user_id === profile.id) || [];
           
           return {
             id: profile.id,
@@ -123,20 +183,34 @@ export const useMasterData = () => {
             last_name: profile.last_name || '',
             email: profile.email || '',
             phone: profile.phone || '',
+            is_email_verified: profile.is_email_verified || false,
+            facility_id: profile.facility_id,
+            facility: profile.facilities,
             created_at: profile.created_at || new Date().toISOString(),
             user_roles: userRoles.map(ur => ({
+              id: ur.id,
               role: {
+                id: ur.roles?.id || '',
                 name: ur.roles?.name || '',
                 description: ur.roles?.description || ''
               }
+            })),
+            assigned_modules: assignedModules.map(ma => ({
+              id: ma.id,
+              module: {
+                id: ma.modules?.id || '',
+                name: ma.modules?.name || '',
+                description: ma.modules?.description || ''
+              },
+              access_level: ma.access_level
             }))
           };
         });
         
-        console.log('✅ Users loaded successfully:', usersWithRoles.length);
-        return usersWithRoles;
+        console.log('✅ Enhanced users loaded successfully:', enhancedUsers.length);
+        return enhancedUsers;
       } catch (error) {
-        console.error('💥 Users fetch exception:', error);
+        console.error('💥 Enhanced users fetch exception:', error);
         throw error;
       }
     },
@@ -289,8 +363,15 @@ export const useMasterData = () => {
 
   // ====================== CREATE USER MUTATION ======================
   const createUserMutation = useMutation({
-    mutationFn: async (userData: { firstName: string; lastName: string; email: string; phone?: string }) => {
-      console.log('🔄 Creating user via MASTER DATA hook:', userData);
+    mutationFn: async (userData: { 
+      firstName: string; 
+      lastName: string; 
+      email: string; 
+      phone?: string;
+      facilityId?: string;
+      roleId?: string;
+    }) => {
+      console.log('🔄 Creating user via ENHANCED MASTER DATA hook:', userData);
       
       try {
         const { data, error } = await supabase.auth.admin.createUser({
@@ -305,7 +386,7 @@ export const useMasterData = () => {
 
         if (error) throw error;
 
-        // Also create profile
+        // Create profile with facility assignment
         const { error: profileError } = await supabase
           .from('profiles')
           .insert({
@@ -313,10 +394,24 @@ export const useMasterData = () => {
             first_name: userData.firstName,
             last_name: userData.lastName,
             email: userData.email,
-            phone: userData.phone || ''
+            phone: userData.phone || '',
+            facility_id: userData.facilityId || null,
+            is_email_verified: false
           });
 
         if (profileError) throw profileError;
+
+        // Assign role if specified
+        if (userData.roleId) {
+          const { error: roleError } = await supabase
+            .from('user_roles')
+            .insert({
+              user_id: data.user.id,
+              role_id: userData.roleId
+            });
+
+          if (roleError) throw roleError;
+        }
 
         return data;
       } catch (error) {
@@ -327,19 +422,35 @@ export const useMasterData = () => {
     onSuccess: () => {
       invalidateCache();
       showSuccess("User Created", "User has been created successfully");
-      console.log('✅ User created via MASTER DATA hook');
+      console.log('✅ User created via ENHANCED MASTER DATA hook');
     },
     onError: (error: any) => {
       showError("Creation Failed", error.message || "Failed to create user");
-      console.error('❌ User creation failed in MASTER DATA hook:', error);
+      console.error('❌ User creation failed in ENHANCED MASTER DATA hook:', error);
     }
   });
 
   // ====================== ASSIGN ROLE MUTATION ======================
   const assignRoleMutation = useMutation({
     mutationFn: async ({ userId, roleId }: { userId: string; roleId: string }) => {
-      console.log('🔄 Assigning role via MASTER DATA hook:', { userId, roleId });
+      console.log('🔄 Assigning role via ENHANCED MASTER DATA hook:', { userId, roleId });
       
+      // Check if role assignment already exists
+      const { data: existingRole, error: checkError } = await supabase
+        .from('user_roles')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('role_id', roleId)
+        .single();
+
+      if (checkError && checkError.code !== 'PGRST116') {
+        throw checkError;
+      }
+
+      if (existingRole) {
+        throw new Error('User already has this role assigned');
+      }
+
       const { error } = await supabase
         .from('user_roles')
         .insert({
@@ -352,23 +463,138 @@ export const useMasterData = () => {
     onSuccess: () => {
       invalidateCache();
       showSuccess("Role Assigned", "Role has been assigned successfully");
-      console.log('✅ Role assigned via MASTER DATA hook');
+      console.log('✅ Role assigned via ENHANCED MASTER DATA hook');
     },
     onError: (error: any) => {
       showError("Assignment Failed", error.message || "Failed to assign role");
-      console.error('❌ Role assignment failed in MASTER DATA hook:', error);
+      console.error('❌ Role assignment failed in ENHANCED MASTER DATA hook:', error);
+    }
+  });
+
+  // ====================== ASSIGN MODULE MUTATION ======================
+  const assignModuleMutation = useMutation({
+    mutationFn: async ({ 
+      userId, 
+      moduleId, 
+      accessLevel = 'read' 
+    }: { 
+      userId: string; 
+      moduleId: string; 
+      accessLevel?: string;
+    }) => {
+      console.log('🔄 Assigning module via ENHANCED MASTER DATA hook:', { userId, moduleId, accessLevel });
+      
+      const { error } = await supabase
+        .from('user_module_assignments')
+        .upsert({
+          user_id: userId,
+          module_id: moduleId,
+          access_level: accessLevel,
+          is_active: true
+        });
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      invalidateCache();
+      showSuccess("Module Assigned", "Module has been assigned successfully");
+      console.log('✅ Module assigned via ENHANCED MASTER DATA hook');
+    },
+    onError: (error: any) => {
+      showError("Assignment Failed", error.message || "Failed to assign module");
+      console.error('❌ Module assignment failed in ENHANCED MASTER DATA hook:', error);
+    }
+  });
+
+  // ====================== ASSIGN FACILITY MUTATION ======================
+  const assignFacilityMutation = useMutation({
+    mutationFn: async ({ userId, facilityId }: { userId: string; facilityId: string }) => {
+      console.log('🔄 Assigning facility via ENHANCED MASTER DATA hook:', { userId, facilityId });
+      
+      const { error } = await supabase
+        .from('profiles')
+        .update({ facility_id: facilityId })
+        .eq('id', userId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      invalidateCache();
+      showSuccess("Facility Assigned", "Facility has been assigned successfully");
+      console.log('✅ Facility assigned via ENHANCED MASTER DATA hook');
+    },
+    onError: (error: any) => {
+      showError("Assignment Failed", error.message || "Failed to assign facility");
+      console.error('❌ Facility assignment failed in ENHANCED MASTER DATA hook:', error);
+    }
+  });
+
+  // ====================== RESEND EMAIL VERIFICATION MUTATION ======================
+  const resendVerificationMutation = useMutation({
+    mutationFn: async ({ userId, email }: { userId: string; email: string }) => {
+      console.log('🔄 Resending email verification via ENHANCED MASTER DATA hook:', { userId, email });
+      
+      // Send verification email through Supabase Auth
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email
+      });
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      showSuccess("Verification Sent", "Email verification has been resent");
+      console.log('✅ Email verification resent via ENHANCED MASTER DATA hook');
+    },
+    onError: (error: any) => {
+      showError("Verification Failed", error.message || "Failed to resend verification email");
+      console.error('❌ Email verification failed in ENHANCED MASTER DATA hook:', error);
+    }
+  });
+
+  // ====================== DEACTIVATE USER MUTATION ======================
+  const deactivateUserMutation = useMutation({
+    mutationFn: async ({ userId }: { userId: string }) => {
+      console.log('🔄 Deactivating user via ENHANCED MASTER DATA hook:', { userId });
+      
+      // For now, we'll mark the profile as inactive by updating a custom field
+      // In a full implementation, you might want to disable the auth user
+      const { error } = await supabase
+        .from('profiles')
+        .update({ 
+          is_active: false,
+          deactivated_at: new Date().toISOString()
+        })
+        .eq('id', userId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      invalidateCache();
+      showSuccess("User Deactivated", "User has been deactivated successfully");
+      console.log('✅ User deactivated via ENHANCED MASTER DATA hook');
+    },
+    onError: (error: any) => {
+      showError("Deactivation Failed", error.message || "Failed to deactivate user");
+      console.error('❌ User deactivation failed in ENHANCED MASTER DATA hook:', error);
     }
   });
 
   // ====================== STATISTICS ======================
   const stats = useMemo(() => {
     const totalUsers = users.length;
-    const activeUsers = users.length; // All users are considered active
+    const activeUsers = users.length; // All users are considered active for now
+    const verifiedUsers = users.filter(u => u.is_email_verified).length;
+    const unverifiedUsers = users.filter(u => !u.is_email_verified).length;
+    
     const patientCount = users.filter(u => 
-      Array.isArray(u.user_roles) && u.user_roles.some(ur => ['patientCaregiver', 'user'].includes(ur.role?.name))
+      Array.isArray(u.user_roles) && u.user_roles.some(ur => ['patientCaregiver'].includes(ur.role?.name))
     ).length;
     const adminCount = users.filter(u => 
       Array.isArray(u.user_roles) && u.user_roles.some(ur => ['superAdmin', 'admin', 'onboardingTeam'].includes(ur.role?.name))
+    ).length;
+    const staffCount = users.filter(u => 
+      Array.isArray(u.user_roles) && u.user_roles.some(ur => ['healthcareProvider', 'nurse', 'caseManager', 'technicalServices'].includes(ur.role?.name))
     ).length;
     
     const totalFacilities = facilities.length;
@@ -385,8 +611,11 @@ export const useMasterData = () => {
     return {
       totalUsers,
       activeUsers,
+      verifiedUsers,
+      unverifiedUsers,
       patientCount,
       adminCount,
+      staffCount,
       totalFacilities,
       activeFacilities,
       totalModules,
@@ -405,7 +634,9 @@ export const useMasterData = () => {
     return users.filter(user => 
       user.first_name.toLowerCase().includes(lowercaseQuery) ||
       user.last_name.toLowerCase().includes(lowercaseQuery) ||
-      user.email.toLowerCase().includes(lowercaseQuery)
+      user.email.toLowerCase().includes(lowercaseQuery) ||
+      user.facility?.name?.toLowerCase().includes(lowercaseQuery) ||
+      user.user_roles.some(ur => ur.role.name.toLowerCase().includes(lowercaseQuery))
     );
   }, [users]);
 
@@ -421,7 +652,7 @@ export const useMasterData = () => {
 
   const getPatientUsers = useCallback(() => {
     return users.filter(user => 
-      Array.isArray(user.user_roles) && user.user_roles.some(ur => ['patientCaregiver', 'user'].includes(ur.role?.name))
+      Array.isArray(user.user_roles) && user.user_roles.some(ur => ['patientCaregiver'].includes(ur.role?.name))
     );
   }, [users]);
 
@@ -429,12 +660,16 @@ export const useMasterData = () => {
     return users; // Return all users for user management
   }, [users]);
 
+  const getUserById = useCallback((id: string) => {
+    return users.find(user => user.id === id);
+  }, [users]);
+
   // ====================== COMBINED LOADING AND ERROR STATES ======================
   const isLoading = usersLoading || facilitiesLoading || modulesLoading || apiServicesLoading || rolesLoading;
   const error = usersError || facilitiesError || modulesError || apiServicesError || rolesError;
 
   return {
-    // ===== SINGLE DATA SOURCES =====
+    // ===== ENHANCED DATA SOURCES =====
     users: getAllUsers(),
     patients: getPatientUsers(),
     facilities,
@@ -446,29 +681,40 @@ export const useMasterData = () => {
     isLoading,
     isCreatingUser: createUserMutation.isPending,
     isAssigningRole: assignRoleMutation.isPending,
+    isAssigningModule: assignModuleMutation.isPending,
+    isAssigningFacility: assignFacilityMutation.isPending,
+    isResendingVerification: resendVerificationMutation.isPending,
+    isDeactivatingUser: deactivateUserMutation.isPending,
     
     // ===== ERROR STATES =====
     error,
     
-    // ===== ACTIONS =====
+    // ===== ENHANCED ACTIONS =====
     createUser: createUserMutation.mutate,
     assignRole: assignRoleMutation.mutate,
+    assignModule: assignModuleMutation.mutate,
+    assignFacility: assignFacilityMutation.mutate,
+    resendEmailVerification: resendVerificationMutation.mutate,
+    deactivateUser: deactivateUserMutation.mutate,
     refreshData: invalidateCache,
     
     // ===== UTILITIES =====
     searchUsers,
     searchFacilities,
+    getUserById,
     
-    // ===== STATISTICS =====
+    // ===== ENHANCED STATISTICS =====
     stats,
     
     // ===== META INFORMATION =====
     meta: {
-      dataSource: 'SINGLE master data management system',
+      dataSource: 'ENHANCED master data management system',
       lastUpdated: new Date().toISOString(),
-      version: 'master-data-v1.0.1',
+      version: 'master-data-v2.0.0',
       singleSourceOfTruth: true,
       consolidatedOperations: true,
+      enhancedUserManagement: true,
+      fullCrudOperations: true,
       cacheKey: MASTER_DATA_CACHE_KEY.join('-'),
       hookCount: 1,
       architecturePrinciple: 'single-source-of-truth',
@@ -476,7 +722,15 @@ export const useMasterData = () => {
       isAuthenticated,
       queryOptimization: 'enabled',
       errorHandling: 'improved',
-      retryLogic: 'enabled'
+      retryLogic: 'enabled',
+      supportedOperations: [
+        'createUser',
+        'assignRole', 
+        'assignModule',
+        'assignFacility',
+        'resendEmailVerification',
+        'deactivateUser'
+      ]
     }
   };
 };
