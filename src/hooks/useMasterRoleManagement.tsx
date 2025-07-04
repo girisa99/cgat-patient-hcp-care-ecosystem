@@ -170,7 +170,6 @@ export const useMasterRoleManagement = () => {
         .insert({
           name: roleData.name,
           description: roleData.description,
-          is_active: true
         })
         .select()
         .single();
@@ -203,7 +202,11 @@ export const useMasterRoleManagement = () => {
       const { data, error } = await supabase
         .from('facilities')
         .insert({
-          ...facilityData,
+          name: facilityData.name,
+          facility_type: facilityData.facility_type,
+          address: facilityData.address,
+          phone: facilityData.phone,
+          email: facilityData.email,
           is_active: true
         })
         .select()

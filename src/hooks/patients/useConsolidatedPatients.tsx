@@ -1,54 +1,31 @@
 
 /**
- * CONSOLIDATED PATIENTS HOOK - FIXED TYPE ALIGNMENT
- * Version: consolidated-patients-v2.0.0 - Fixed property alignment
+ * CONSOLIDATED PATIENTS HOOK
+ * Uses real patient data hook as single source
  */
-import { useMasterUserManagement, type MasterUser } from '../useMasterUserManagement';
+import { useRealPatientData } from './useRealPatientData';
 
 export const useConsolidatedPatients = () => {
-  const masterUserManagement = useMasterUserManagement();
+  const realPatientData = useRealPatientData();
   
-  console.log('🔧 Consolidated Patients - Fixed Type Alignment v2.0');
-
-  const patients = masterUserManagement.users.filter(user => 
-    user.role.toLowerCase().includes('patient')
-  );
-
-  const convertToPatientFormat = (user: MasterUser) => ({
-    ...user,
-    patientId: user.id,
-    patientEmail: user.email,
-    patientName: `${user.firstName} ${user.lastName}`,
-    isActive: user.isActive, // FIXED - Use correct property name
-    dateOfBirth: user.phone, // Mock mapping
-    medicalRecordNumber: `MRN-${user.id.slice(0, 6)}`
-  });
-
-  const consolidatedPatients = patients.map(convertToPatientFormat);
+  console.log('🏥 Consolidated Patients - Using Real Patient Data');
+  console.log('🔍 Patient count from consolidated source:', realPatientData.patients.length);
 
   return {
-    patients: consolidatedPatients,
-    totalPatients: consolidatedPatients.length,
-    activePatients: consolidatedPatients.filter(p => p.isActive).length,
-    isLoading: masterUserManagement.isLoading,
-    error: masterUserManagement.error,
-    refetch: masterUserManagement.refetch,
+    patients: realPatientData.patients,
+    isLoading: realPatientData.isLoading,
+    error: realPatientData.error,
+    patientStats: realPatientData.patientStats,
     
-    // Patient-specific actions
-    searchPatients: (term: string) => 
-      consolidatedPatients.filter(patient =>
-        patient.patientName.toLowerCase().includes(term.toLowerCase()) ||
-        patient.patientEmail.toLowerCase().includes(term.toLowerCase())
-      ),
+    // Utilities
+    searchPatients: realPatientData.searchPatients,
+    getPatientById: realPatientData.getPatientById,
     
-    getPatientById: (id: string) => 
-      consolidatedPatients.find(p => p.id === id),
-    
+    // Meta information
     meta: {
-      dataSource: 'master-user-management',
-      patientConversion: 'consolidated',
-      hookVersion: 'consolidated-patients-v2.0.0',
-      typeAlignmentFixed: true
+      dataSource: 'real-patient-data-consolidated',
+      patientCount: realPatientData.patients.length,
+      hookVersion: 'consolidated-patients-v1.0.0'
     }
   };
 };

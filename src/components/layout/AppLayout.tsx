@@ -1,89 +1,25 @@
-import React, { ReactNode } from 'react';
-import { useAuthContext } from '@/components/auth/DatabaseAuthProvider';
-import { AppSidebar } from '@/components/sidebar/AppSidebar';
-import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar-database-aligned';
-import LoadingSpinner from '@/components/ui/LoadingSpinner';
-import { Button } from '@/components/ui/button';
-
-interface AppLayoutProps {
-  children: ReactNode;
-  title?: string;
-  showNavigation?: boolean;
-}
 
 /**
- * CENTRAL APP LAYOUT WITH SIDEBAR
- * Single source for consistent page layout with role-based sidebar navigation
+ * APP LAYOUT COMPONENT
+ * Simple layout wrapper for pages
  */
-export const AppLayout: React.FC<AppLayoutProps> = ({ 
-  children, 
-  title,
-  showNavigation = true 
-}) => {
-  const { isLoading, isAuthenticated, signOut, user } = useAuthContext();
-  
-  console.log('🏢 AppLayout Debug - isLoading:', isLoading, 'isAuthenticated:', isAuthenticated, 'user:', user?.email);
+import React from 'react';
 
-  // Loading state
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner size="lg" />
-        <span className="ml-3 text-muted-foreground">Loading...</span>
-      </div>
-    );
-  }
+interface AppLayoutProps {
+  title: string;
+  children: React.ReactNode;
+}
 
-  // Not authenticated - show simple layout
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 py-8">
-          {children}
-        </div>
-      </div>
-    );
-  }
-
-  // Authenticated layout with sidebar
+const AppLayout: React.FC<AppLayoutProps> = ({ title, children }) => {
   return (
-    <SidebarProvider defaultOpen={true}>
-      <div className="min-h-screen flex w-full">
-        {/* Sidebar */}
-        {showNavigation && <AppSidebar />}
-        
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col">
-          {/* Header */}
-          <header className="border-b bg-card">
-            <div className="flex items-center justify-between px-4 py-3">
-              <div className="flex items-center gap-4">
-                {showNavigation && <SidebarTrigger />}
-                {title && <h1 className="text-xl font-semibold">{title}</h1>}
-              </div>
-              <div className="flex items-center gap-4">
-                <span className="text-sm text-muted-foreground hidden md:block">
-                  {user?.email}
-                </span>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => signOut()}
-                  className="md:hidden"
-                >
-                  Sign Out
-                </Button>
-              </div>
-            </div>
-          </header>
-
-          {/* Page Content */}
-          <main className="flex-1 p-6 overflow-auto">
-            {children}
-          </main>
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">{title}</h1>
         </div>
+        {children}
       </div>
-    </SidebarProvider>
+    </div>
   );
 };
 
