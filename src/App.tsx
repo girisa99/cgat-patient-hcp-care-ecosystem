@@ -8,6 +8,7 @@ import { SidebarProvider } from "@/components/ui/sidebar-database-aligned";
 import { MasterAuthProvider, useMasterAuth } from "@/hooks/useMasterAuth";
 import { AppSidebar } from "@/components/sidebar/AppSidebar";
 import MasterAuthForm from "@/components/auth/MasterAuthForm";
+import RoleBasedRoute from "@/components/RoleBasedRoute";
 
 const queryClient = new QueryClient();
 
@@ -53,8 +54,8 @@ const AppContent = () => {
     return <MasterAuthForm />;
   }
 
-  // ✅ AUTHENTICATED - Show all pages (development-friendly)
-  console.log('� User authenticated - Loading full application with single source of truth');
+  // ✅ AUTHENTICATED - Apply proper RBAC with single source of truth
+  console.log('🔐 User authenticated - Loading application with enterprise RBAC security');
 
   return (
     <BrowserRouter>
@@ -69,19 +70,89 @@ const AppContent = () => {
               </div>
             }>
               <Routes>
-                {/* All pages accessible after authentication - Single Source of Truth */}
-                <Route path="/" element={<Index />} />
-                <Route path="/users" element={<Users />} />
-                <Route path="/patients" element={<Patients />} />
-                <Route path="/facilities" element={<Facilities />} />
-                <Route path="/modules" element={<SimpleModules />} />
-                <Route path="/api-services" element={<ApiServices />} />
-                <Route path="/testing" element={<Testing />} />
-                <Route path="/data-import" element={<DataImport />} />
-                <Route path="/active-verification" element={<ActiveVerification />} />
-                <Route path="/onboarding" element={<Onboarding />} />
-                <Route path="/security" element={<Security />} />
-                <Route path="/role-management" element={<RoleManagement />} />
+                {/* Dashboard - requires authentication */}
+                <Route path="/" element={
+                  <RoleBasedRoute path="/" requiredPermissions={['authenticated']}>
+                    <Index />
+                  </RoleBasedRoute>
+                } />
+                
+                {/* User Management - requires admin access */}
+                <Route path="/users" element={
+                  <RoleBasedRoute path="/users" requiredPermissions={['users.read', 'admin.access']}>
+                    <Users />
+                  </RoleBasedRoute>
+                } />
+                
+                {/* Patients - requires clinical access */}
+                <Route path="/patients" element={
+                  <RoleBasedRoute path="/patients" requiredPermissions={['patients.read', 'clinical.access']}>
+                    <Patients />
+                  </RoleBasedRoute>
+                } />
+                
+                {/* Facilities - requires admin access */}
+                <Route path="/facilities" element={
+                  <RoleBasedRoute path="/facilities" requiredPermissions={['facilities.read', 'admin.access']}>
+                    <Facilities />
+                  </RoleBasedRoute>
+                } />
+                
+                {/* Modules - requires admin access */}
+                <Route path="/modules" element={
+                  <RoleBasedRoute path="/modules" requiredPermissions={['modules.read', 'admin.access']}>
+                    <SimpleModules />
+                  </RoleBasedRoute>
+                } />
+                
+                {/* API Services - requires technical access */}
+                <Route path="/api-services" element={
+                  <RoleBasedRoute path="/api-services" requiredPermissions={['api.read', 'technical.access']}>
+                    <ApiServices />
+                  </RoleBasedRoute>
+                } />
+                
+                {/* Testing - requires technical access */}
+                <Route path="/testing" element={
+                  <RoleBasedRoute path="/testing" requiredPermissions={['testing.read', 'technical.access']}>
+                    <Testing />
+                  </RoleBasedRoute>
+                } />
+                
+                {/* Data Import - requires admin access */}
+                <Route path="/data-import" element={
+                  <RoleBasedRoute path="/data-import" requiredPermissions={['data.import', 'admin.access']}>
+                    <DataImport />
+                  </RoleBasedRoute>
+                } />
+                
+                {/* Active Verification - requires clinical access */}
+                <Route path="/active-verification" element={
+                  <RoleBasedRoute path="/active-verification" requiredPermissions={['verification.read', 'clinical.access']}>
+                    <ActiveVerification />
+                  </RoleBasedRoute>
+                } />
+                
+                {/* Onboarding - requires onboarding access */}
+                <Route path="/onboarding" element={
+                  <RoleBasedRoute path="/onboarding" requiredPermissions={['onboarding.read', 'onboarding.access']}>
+                    <Onboarding />
+                  </RoleBasedRoute>
+                } />
+                
+                {/* Security - requires admin access */}
+                <Route path="/security" element={
+                  <RoleBasedRoute path="/security" requiredPermissions={['security.read', 'admin.access']}>
+                    <Security />
+                  </RoleBasedRoute>
+                } />
+                
+                {/* Role Management - requires super admin access */}
+                <Route path="/role-management" element={
+                  <RoleBasedRoute path="/role-management" requiredPermissions={['roles.manage', 'superAdmin.access']}>
+                    <RoleManagement />
+                  </RoleBasedRoute>
+                } />
                 
                 {/* Catch all - redirect to dashboard */}
                 <Route path="*" element={<Navigate to="/" replace />} />
