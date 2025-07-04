@@ -138,8 +138,8 @@ export const SystemVerificationDashboard: React.FC = () => {
                 <span className="font-bold">{registryStats.totalEntries}</span>
               </div>
               <div className="flex justify-between">
-                <span>Active Entries</span>
-                <span className="font-bold text-green-600">{registryStats.activeEntries}</span>
+                <span>Active Services</span>
+                <span className="font-bold text-green-600">{registryStats.activeServices}</span>
               </div>
               <div className="flex justify-between">
                 <span>Consolidated Hooks</span>

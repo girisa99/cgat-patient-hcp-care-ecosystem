@@ -51,6 +51,8 @@ export interface RegistryStats {
 export const useMasterVerificationSystem = () => {
   const { showSuccess, showInfo } = useMasterToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
   const [registryEntries] = useState<RegistryEntry[]>([
     {
       id: '1',
@@ -159,9 +161,9 @@ export const useMasterVerificationSystem = () => {
 
   const runSystemVerification = async () => {
     setIsLoading(true);
+    setIsVerifying(true);
     
     try {
-      // Simulate verification process
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       const health = getSystemHealth();
@@ -181,7 +183,47 @@ export const useMasterVerificationSystem = () => {
       return health;
     } finally {
       setIsLoading(false);
+      setIsVerifying(false);
     }
+  };
+
+  const verifySystem = async (checkType: string) => {
+    setIsVerifying(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      return await runSystemVerification();
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const runValidation = async (validationType: string) => {
+    setIsValidating(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      const summary = getValidationSummary();
+      showInfo("Validation Complete", `Passed: ${summary.passedValidations}/${summary.totalValidations}`);
+      return summary;
+    } finally {
+      setIsValidating(false);
+    }
+  };
+
+  const learnFromSystem = () => {
+    const patterns = {
+      masterHooks: registryEntries.filter(e => e.name.startsWith('useMaster')).length,
+      activeComponents: registryEntries.filter(e => e.status === 'active').length,
+      typeCompliance: registryEntries.filter(e => e.typescript_definitions.typeCompliant).length
+    };
+    
+    return {
+      patterns,
+      insights: [
+        `Master hooks detected: ${patterns.masterHooks}`,
+        `Active components: ${patterns.activeComponents}`,
+        `TypeScript compliant: ${patterns.typeCompliance}`
+      ]
+    };
   };
 
   return {
@@ -190,12 +232,17 @@ export const useMasterVerificationSystem = () => {
     getValidationSummary,
     getRegistryStats,
     runSystemVerification,
+    verifySystem,
+    runValidation,
+    learnFromSystem,
     
     // Data
     registryEntries,
     
     // Status
     isLoading,
+    isVerifying,
+    isValidating,
     
     // Meta information
     meta: {

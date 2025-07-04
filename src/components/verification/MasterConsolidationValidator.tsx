@@ -36,7 +36,7 @@ export const MasterConsolidationValidator: React.FC = () => {
   ];
 
   const consolidationScore = Math.round(
-    (masterHooks.length / (masterHooks.length + 2)) * 100 // Assuming we should have all master hooks
+    (masterHooks.length / (masterHooks.length + 2)) * 100
   );
 
   const singleSourceValidation = {
