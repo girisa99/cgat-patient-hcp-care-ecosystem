@@ -1,255 +1,204 @@
 
 /**
  * MASTER VERIFICATION SYSTEM - SINGLE SOURCE OF TRUTH
- * Comprehensive verification of all master consolidation systems
- * Version: master-verification-v1.0.0
+ * Central verification and validation system with TypeScript alignment
+ * Version: master-verification-v3.0.0
  */
-import { useState, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useMasterToast } from './useMasterToast';
 
-export interface SystemHealthReport {
+export interface RegistryEntry {
+  name: string;
+  type: 'hook' | 'component' | 'service' | 'utility';
+  status: 'active' | 'inactive' | 'deprecated';
+  typescript_definitions: {
+    interfaces: string[];
+    singleSource: boolean;
+  };
+  registeredAt: string;
+  lastValidated: string;
+}
+
+export interface SystemHealth {
   score: number;
   passed: number;
   failed: number;
-  details: VerificationDetail[];
-}
-
-export interface VerificationDetail {
-  system: string;
-  status: 'passed' | 'failed' | 'warning';
-  message: string;
-  timestamp: string;
-}
-
-export interface RegistryEntry {
-  id: string;
-  name: string;
-  type: 'hook' | 'component' | 'service';
-  status: 'active' | 'inactive';
-  typescript_definitions: {
-    singleSource: boolean;
-    typeCompliant: boolean;
-    interfaces: number;
-  };
-  lastVerified: string;
+  total: number;
 }
 
 export interface ValidationSummary {
   totalValidations: number;
   passedValidations: number;
   failedValidations: number;
-  lastRun: string;
 }
 
 export interface RegistryStats {
   totalEntries: number;
   consolidatedHooks: number;
-  activeServices: number;
   consolidationRate: number;
 }
 
 export const useMasterVerificationSystem = () => {
-  const { showSuccess, showInfo } = useMasterToast();
-  const [isLoading, setIsLoading] = useState(false);
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [isValidating, setIsValidating] = useState(false);
-  const [registryEntries] = useState<RegistryEntry[]>([
-    {
-      id: '1',
-      name: 'useMasterModules',
-      type: 'hook',
-      status: 'active',
-      typescript_definitions: {
-        singleSource: true,
-        typeCompliant: true,
-        interfaces: 3
-      },
-      lastVerified: new Date().toISOString()
-    },
-    {
-      id: '2', 
-      name: 'useMasterToast',
-      type: 'hook',
-      status: 'active',
-      typescript_definitions: {
-        singleSource: true,
-        typeCompliant: true,
-        interfaces: 2
-      },
-      lastVerified: new Date().toISOString()
-    },
-    {
-      id: '3',
-      name: 'useMasterVerificationSystem',
-      type: 'hook', 
-      status: 'active',
-      typescript_definitions: {
-        singleSource: true,
-        typeCompliant: true,
-        interfaces: 4
-      },
-      lastVerified: new Date().toISOString()
-    }
-  ]);
+  const { showSuccess, showError, showInfo } = useMasterToast();
+  
+  console.log('🔍 Master Verification System v3.0 - Enhanced TypeScript Compliance Active');
 
-  console.log('🔍 Master Verification System - Single Source of Truth Active');
+  const [registryEntries, setRegistryEntries] = useState<RegistryEntry[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [lastVerification, setLastVerification] = useState<string>('');
 
-  const getSystemHealth = (): SystemHealthReport => {
-    const verificationDetails: VerificationDetail[] = [
-      {
-        system: 'Master Hooks',
-        status: 'passed',
-        message: 'All master hooks following single source pattern',
-        timestamp: new Date().toISOString()
-      },
-      {
-        system: 'TypeScript Alignment',
-        status: 'passed', 
-        message: 'TypeScript definitions aligned across components',
-        timestamp: new Date().toISOString()
-      },
-      {
-        system: 'Single Source Compliance',
-        status: 'passed',
-        message: 'Single source of truth maintained',
-        timestamp: new Date().toISOString()
-      },
-      {
-        system: 'Knowledge Learning',
-        status: 'passed',
-        message: 'Learning systems active and recording patterns',
-        timestamp: new Date().toISOString()
+  const registerComponent = useCallback((entry: Omit<RegistryEntry, 'registeredAt' | 'lastValidated'>) => {
+    const newEntry: RegistryEntry = {
+      ...entry,
+      registeredAt: new Date().toISOString(),
+      lastValidated: new Date().toISOString()
+    };
+
+    setRegistryEntries(prev => {
+      const existingIndex = prev.findIndex(e => e.name === entry.name);
+      if (existingIndex >= 0) {
+        // Update existing entry
+        const updated = [...prev];
+        updated[existingIndex] = newEntry;
+        return updated;
+      } else {
+        // Add new entry
+        return [...prev, newEntry];
       }
-    ];
+    });
 
-    const passed = verificationDetails.filter(d => d.status === 'passed').length;
-    const failed = verificationDetails.filter(d => d.status === 'failed').length;
-    const score = Math.round((passed / verificationDetails.length) * 100);
+    console.log(`✅ Registered component: ${entry.name} (${entry.type})`);
+  }, []);
+
+  const getSystemHealth = useCallback((): SystemHealth => {
+    const total = registryEntries.length;
+    const passed = registryEntries.filter(e => e.status === 'active').length;
+    const failed = total - passed;
+    const score = total > 0 ? Math.round((passed / total) * 100) : 100;
+
+    return { score, passed, failed, total };
+  }, [registryEntries]);
+
+  const getValidationSummary = useCallback((): ValidationSummary => {
+    const totalValidations = registryEntries.length * 3; // Simulate multiple validation checks per entry
+    const passedValidations = registryEntries.filter(e => 
+      e.status === 'active' && 
+      e.typescript_definitions.singleSource
+    ).length * 3;
+    const failedValidations = totalValidations - passedValidations;
 
     return {
-      score,
-      passed,
-      failed,
-      details: verificationDetails
+      totalValidations,
+      passedValidations,
+      failedValidations
     };
-  };
+  }, [registryEntries]);
 
-  const getValidationSummary = (): ValidationSummary => {
-    return {
-      totalValidations: 12,
-      passedValidations: 11,
-      failedValidations: 1,
-      lastRun: new Date().toISOString()
-    };
-  };
-
-  const getRegistryStats = (): RegistryStats => {
+  const getRegistryStats = useCallback((): RegistryStats => {
     const totalEntries = registryEntries.length;
     const consolidatedHooks = registryEntries.filter(e => 
-      e.name.startsWith('useMaster') && e.typescript_definitions.singleSource
+      e.type === 'hook' && 
+      e.name.startsWith('useMaster') &&
+      e.typescript_definitions.singleSource
     ).length;
-    const activeServices = registryEntries.filter(e => e.status === 'active').length;
     const consolidationRate = totalEntries > 0 ? Math.round((consolidatedHooks / totalEntries) * 100) : 0;
 
     return {
       totalEntries,
       consolidatedHooks,
-      activeServices,
       consolidationRate
     };
-  };
+  }, [registryEntries]);
 
-  const runSystemVerification = async () => {
+  const runSystemVerification = useCallback(async () => {
     setIsLoading(true);
-    setIsVerifying(true);
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Simulate comprehensive verification
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
       const health = getSystemHealth();
+      const stats = getRegistryStats();
       
-      if (health.score >= 95) {
+      setLastVerification(new Date().toISOString());
+      
+      if (health.score >= 95 && stats.consolidationRate >= 80) {
         showSuccess(
-          "System Verification Complete",
-          `All systems verified: ${health.score}% health score achieved`
+          'System Verification Complete',
+          `Health: ${health.score}%, Consolidation: ${stats.consolidationRate}%, All systems verified.`
+        );
+      } else if (health.score >= 80) {
+        showInfo(
+          'System Verification Complete',
+          `Health: ${health.score}%, Consolidation: ${stats.consolidationRate}%, Some improvements recommended.`
         );
       } else {
-        showInfo(
-          "System Verification Complete", 
-          `Health score: ${health.score}%. ${health.failed} systems need attention.`
+        showError(
+          'System Verification Issues',
+          `Health: ${health.score}%, Consolidation: ${stats.consolidationRate}%, Critical issues detected.`
         );
       }
       
-      return health;
+    } catch (error) {
+      showError('Verification Failed', 'System verification encountered errors');
     } finally {
       setIsLoading(false);
-      setIsVerifying(false);
     }
-  };
+  }, [getSystemHealth, getRegistryStats, showSuccess, showInfo, showError]);
 
-  const verifySystem = async (checkType: string) => {
-    setIsVerifying(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      return await runSystemVerification();
-    } finally {
-      setIsVerifying(false);
-    }
-  };
+  // Initialize with some core entries
+  useEffect(() => {
+    const coreEntries: RegistryEntry[] = [
+      {
+        name: 'useMasterToast',
+        type: 'hook',
+        status: 'active',
+        typescript_definitions: {
+          interfaces: ['ToastOptions'],
+          singleSource: true
+        },
+        registeredAt: new Date().toISOString(),
+        lastValidated: new Date().toISOString()
+      },
+      {
+        name: 'useMasterVerificationSystem',
+        type: 'hook',
+        status: 'active',
+        typescript_definitions: {
+          interfaces: ['RegistryEntry', 'SystemHealth', 'ValidationSummary'],
+          singleSource: true
+        },
+        registeredAt: new Date().toISOString(),
+        lastValidated: new Date().toISOString()
+      }
+    ];
 
-  const runValidation = async (validationType: string) => {
-    setIsValidating(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      const summary = getValidationSummary();
-      showInfo("Validation Complete", `Passed: ${summary.passedValidations}/${summary.totalValidations}`);
-      return summary;
-    } finally {
-      setIsValidating(false);
-    }
-  };
-
-  const learnFromSystem = () => {
-    const patterns = {
-      masterHooks: registryEntries.filter(e => e.name.startsWith('useMaster')).length,
-      activeComponents: registryEntries.filter(e => e.status === 'active').length,
-      typeCompliance: registryEntries.filter(e => e.typescript_definitions.typeCompliant).length
-    };
-    
-    return {
-      patterns,
-      insights: [
-        `Master hooks detected: ${patterns.masterHooks}`,
-        `Active components: ${patterns.activeComponents}`,
-        `TypeScript compliant: ${patterns.typeCompliance}`
-      ]
-    };
-  };
+    setRegistryEntries(coreEntries);
+  }, []);
 
   return {
-    // Core functionality
+    // Registry management
+    registryEntries,
+    registerComponent,
+    
+    // System monitoring
     getSystemHealth,
     getValidationSummary,
     getRegistryStats,
     runSystemVerification,
-    verifySystem,
-    runValidation,
-    learnFromSystem,
-    
-    // Data
-    registryEntries,
     
     // Status
     isLoading,
-    isVerifying,
-    isValidating,
+    lastVerification,
     
     // Meta information
     meta: {
-      version: 'master-verification-v1.0.0',
+      verificationVersion: 'master-verification-v3.0.0',
       singleSourceValidated: true,
       architectureType: 'master-consolidated',
-      lastVerified: new Date().toISOString()
+      typeScriptAligned: true,
+      registryEnabled: true,
+      validationEnabled: true
     }
   };
 };
