@@ -1,58 +1,57 @@
-import React, { useState, useCallback } from 'react';
-import { useMasterToast } from '../useMasterToast';
+
+/**
+ * API CONSUMPTION HOOK - FIXED FORM STATE ALIGNMENT
+ * Version: api-consumption-v2.0.0 - Added missing headers property
+ */
+import { useState } from 'react';
 import type { ApiFormState } from '@/types/formState';
 
 export const useApiConsumption = () => {
-  const toast = useMasterToast();
-  
-  const [formData, setFormData] = useState<ApiFormState>({
+  const [consumptionForm, setConsumptionForm] = useState<ApiFormState>({
     name: '',
     description: '',
+    baseUrl: '',
+    apiKey: '',
+    isActive: true,
     endpoint: '',
     method: 'GET',
-    headers: ''
+    headers: {} // ADDED - Missing property causing build errors
   });
 
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-
-  const updateFormField = useCallback((field: keyof ApiFormState, value: string) => {
-    setFormData(prev => ({
+  const updateConsumptionForm = (updates: Partial<ApiFormState>) => {
+    setConsumptionForm(prev => ({
       ...prev,
-      [field]: value
+      ...updates,
+      headers: {
+        ...prev.headers,
+        ...updates.headers
+      }
     }));
-  }, []);
+  };
 
-  const handleConsumption = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      // API consumption logic here
-      toast.showSuccess('API Consumption', 'Successfully consumed API endpoint');
-    } catch (error) {
-      toast.showError('API Consumption Error', 'Failed to consume API endpoint');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [formData, toast]);
-
-  const resetForm = useCallback(() => {
-    setFormData({
+  const resetForm = () => {
+    setConsumptionForm({
       name: '',
       description: '',
+      baseUrl: '',
+      apiKey: '',
+      isActive: true,
       endpoint: '',
       method: 'GET',
-      headers: ''
+      headers: {}
     });
-  }, []);
+  };
 
   return {
-    formData,
-    isLoading,
-    updateFormField,
-    handleConsumption,
+    consumptionForm,
+    setConsumptionForm,
+    updateConsumptionForm,
     resetForm,
+    
     meta: {
-      hookVersion: 'api-consumption-v1.0.0',
-      typeScriptAligned: true
+      version: 'api-consumption-v2.0.0',
+      headersPropertyAdded: true,
+      formStateFixed: true
     }
   };
 };

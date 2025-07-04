@@ -2,7 +2,7 @@
 /**
  * MASTER FORM STATE TYPES - SINGLE SOURCE OF TRUTH
  * All form state definitions point to master implementations
- * Version: form-state-types-v10.0.0 - Complete property alignment and pattern fixes
+ * Version: form-state-types-v11.0.0 - Complete property alignment with missing headers property
  */
 
 // Re-export master types as single source of truth
@@ -37,7 +37,8 @@ export interface ApiFormState {
   apiKey?: string;
   isActive: boolean;
   endpoint?: string;
-  method?: string; // ADDED - identified by pattern recognition
+  method?: string;
+  headers?: Record<string, string>; // ADDED - Missing property causing build errors
 }
 
 // Enhanced PublishFormState with missing properties
@@ -48,7 +49,7 @@ export interface PublishFormState {
   isPublic: boolean;
   category?: string;
   content?: string;
-  tags?: string[]; // ADDED - identified by usage patterns
+  tags: string[]; // FIXED - Changed from optional to required array
 }
 
 // Enhanced PatientFormState with complete dual compatibility
@@ -77,9 +78,9 @@ export interface AdminRealtimeState {
   activeUsers: number;
   systemHealth: 'healthy' | 'degraded' | 'critical';
   lastUpdate?: string;
-  connectedUsers?: string; // ADDED - identified by pattern
-  activeConnections?: string; // ADDED - identified by pattern
-  systemLoad?: number; // ADDED - identified by pattern
+  connectedUsers?: string;
+  activeConnections?: string;
+  systemLoad?: number;
 }
 
 export interface ApiConsumptionTriggerState {

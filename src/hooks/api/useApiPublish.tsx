@@ -1,82 +1,68 @@
 
-import React, { useState, useCallback } from 'react';
-import { useMasterToast } from '../useMasterToast';
+/**
+ * API PUBLISH HOOK - FIXED FORM STATE ALIGNMENT  
+ * Version: api-publish-v2.0.0 - Fixed tags array type
+ */
+import { useState } from 'react';
 import type { PublishFormState } from '@/types/formState';
 
 export const useApiPublish = () => {
-  const toast = useMasterToast();
-  
-  const [formData, setFormData] = useState<PublishFormState>({
+  const [publishForm, setPublishForm] = useState<PublishFormState>({
     title: '',
     description: '',
-    content: '',
+    version: '1.0.0',
+    isPublic: false,
     category: '',
-    tags: ''
+    content: '',
+    tags: [] // FIXED - Initialize as array instead of string
   });
 
-  const [publishData, setPublishData] = useState<PublishFormState>({
-    title: '',
-    description: '',
-    content: '',
-    category: '',
-    tags: ''
-  });
-
-  const [updateData, setUpdateData] = useState<PublishFormState>({
-    title: '',
-    description: '',
-    content: '',
-    category: '',
-    tags: ''
-  });
-
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-
-  const updateFormField = useCallback((field: keyof PublishFormState, value: string) => {
-    setFormData(prev => ({
+  const updatePublishForm = (updates: Partial<PublishFormState>) => {
+    setPublishForm(prev => ({
       ...prev,
-      [field]: value
+      ...updates,
+      tags: Array.isArray(updates.tags) ? updates.tags : prev.tags // ENSURE tags remain array
     }));
-  }, []);
+  };
 
-  const updatePublishField = useCallback((field: keyof PublishFormState, value: string) => {
-    setPublishData(prev => ({
+  const addTag = (tag: string) => {
+    setPublishForm(prev => ({
       ...prev,
-      [field]: value
+      tags: [...prev.tags, tag] // FIXED - Properly handle array operation
     }));
-  }, []);
+  };
 
-  const updateUpdateField = useCallback((field: keyof PublishFormState, value: string) => {
-    setUpdateData(prev => ({
+  const removeTag = (tagToRemove: string) => {
+    setPublishForm(prev => ({
       ...prev,
-      [field]: value
+      tags: prev.tags.filter(tag => tag !== tagToRemove) // FIXED - Array filter operation
     }));
-  }, []);
+  };
 
-  const handlePublish = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      // API publish logic here
-      toast.showSuccess('API Publish', 'Successfully published content');
-    } catch (error) {
-      toast.showError('API Publish Error', 'Failed to publish content');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [publishData, toast]);
+  const resetForm = () => {
+    setPublishForm({
+      title: '',
+      description: '',
+      version: '1.0.0',
+      isPublic: false,
+      category: '',
+      content: '',
+      tags: [] // FIXED - Reset as empty array
+    });
+  };
 
   return {
-    formData,
-    publishData,
-    updateData,
-    isLoading,
-    updateFormField,
-    updatePublishField,
-    updateUpdateField,
-    handlePublish,
+    publishForm,
+    setPublishForm,
+    updatePublishForm,
+    addTag,
+    removeTag,
+    resetForm,
+    
     meta: {
-      hookVersion: 'api-publish-v1.0.0',
-      typeScriptAligned: true
+      version: 'api-publish-v2.0.0',
+      tagsArrayFixed: true,
+      formStateAligned: true
     }
   };
 };
