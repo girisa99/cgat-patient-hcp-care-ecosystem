@@ -1,11 +1,14 @@
+
 import React, { useState, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Plus, Edit, Trash2, UserCheck, UserX } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { Search, Plus, UserCheck, UserX, Trash2 } from 'lucide-react';
 import { useMasterUserManagement, type MasterUser } from '@/hooks/useMasterUserManagement';
 import { useMasterToast } from '@/hooks/useMasterToast';
 import type { UserManagementFormState } from '@/types/formState';
+import { normalizeMasterFormState } from '@/types/formState';
 
 export const MasterUserManagementTable: React.FC = () => {
   console.log('🔧 MasterUserManagementTable - Master Consolidation Pattern Active');
@@ -45,7 +48,8 @@ export const MasterUserManagementTable: React.FC = () => {
     }
 
     try {
-      await userManagement.createUser(newUserForm);
+      const normalizedForm = normalizeMasterFormState(newUserForm);
+      await userManagement.createUser(normalizedForm);
       showSuccess('User Created', `Successfully created user ${newUserForm.firstName} ${newUserForm.lastName}`);
       
       setNewUserForm({
@@ -65,7 +69,8 @@ export const MasterUserManagementTable: React.FC = () => {
 
   const handleUpdateUser = useCallback(async (userId: string, updates: Partial<UserManagementFormState>) => {
     try {
-      await userManagement.updateUser(userId, updates);
+      const normalizedUpdates = normalizeMasterFormState(updates);
+      await userManagement.updateUser(userId, normalizedUpdates);
       showSuccess('User Updated', 'User information updated successfully');
       setEditingUserId(null);
     } catch (error) {
@@ -152,25 +157,25 @@ export const MasterUserManagementTable: React.FC = () => {
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">First Name *</label>
+                      <Label htmlFor="firstName">First Name *</Label>
                       <Input
                         id="firstName"
                         value={newUserForm.firstName}
-                        onChange={(e) => setNewUserForm(prev => ({ ...prev, firstName: e.target.value }))}
+                        onChange={(e) => setNewUserForm(prev => normalizeMasterFormState({ ...prev, firstName: e.target.value }))}
                         placeholder="Enter first name"
                       />
                     </div>
                     <div>
-                      <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">Last Name *</label>
+                      <Label htmlFor="lastName">Last Name *</Label>
                       <Input
                         id="lastName"
                         value={newUserForm.lastName}
-                        onChange={(e) => setNewUserForm(prev => ({ ...prev, lastName: e.target.value }))}
+                        onChange={(e) => setNewUserForm(prev => normalizeMasterFormState({ ...prev, lastName: e.target.value }))}
                         placeholder="Enter last name"
                       />
                     </div>
                     <div>
-                      <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                      <Label htmlFor="email">Email *</Label>
                       <Input
                         id="email"
                         type="email"
@@ -180,7 +185,7 @@ export const MasterUserManagementTable: React.FC = () => {
                       />
                     </div>
                     <div>
-                      <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">Role *</label>
+                      <Label htmlFor="role">Role *</Label>
                       <Input
                         id="role"
                         value={newUserForm.role}
@@ -189,7 +194,7 @@ export const MasterUserManagementTable: React.FC = () => {
                       />
                     </div>
                     <div>
-                      <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                      <Label htmlFor="phone">Phone</Label>
                       <Input
                         id="phone"
                         value={newUserForm.phone}
@@ -206,15 +211,7 @@ export const MasterUserManagementTable: React.FC = () => {
                       variant="outline" 
                       onClick={() => {
                         setIsAddingUser(false);
-                        setNewUserForm({
-                          firstName: '',
-                          lastName: '',
-                          first_name: '',
-                          last_name: '',
-                          email: '',
-                          role: '',
-                          phone: ''
-                        });
+                        resetForm();
                       }}
                     >
                       Cancel
