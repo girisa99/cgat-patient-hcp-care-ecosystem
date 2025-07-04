@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -53,7 +54,7 @@ export const CleanUserManagementTable: React.FC = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  // ALL useState hooks MUST be called unconditionally with proper typing
+  // ALL useState hooks MUST be called unconditionally with PROPER TYPING
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [showAddUserDialog, setShowAddUserDialog] = useState<boolean>(false);
