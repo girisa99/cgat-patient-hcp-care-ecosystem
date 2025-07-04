@@ -2,7 +2,7 @@
 /**
  * MASTER FORM STATE TYPES - SINGLE SOURCE OF TRUTH
  * All form state definitions point to master implementations
- * Version: form-state-types-v9.0.0 - Complete missing property coverage
+ * Version: form-state-types-v10.0.0 - Complete property alignment and pattern fixes
  */
 
 // Re-export master types as single source of truth
@@ -29,14 +29,15 @@ export interface FacilityManagementFormState {
   is_active?: boolean;
 }
 
-// Enhanced ApiFormState with missing properties from learning system
+// Enhanced ApiFormState with missing properties identified by verification system
 export interface ApiFormState {
   name: string;
   description?: string;
   baseUrl?: string;
   apiKey?: string;
   isActive: boolean;
-  endpoint?: string; // ADDED - identified by pattern recognition
+  endpoint?: string;
+  method?: string; // ADDED - identified by pattern recognition
 }
 
 // Enhanced PublishFormState with missing properties
@@ -46,20 +47,21 @@ export interface PublishFormState {
   version: string;
   isPublic: boolean;
   category?: string;
-  content?: string; // ADDED - identified by usage patterns
+  content?: string;
+  tags?: string[]; // ADDED - identified by usage patterns
 }
 
 // Enhanced PatientFormState with complete dual compatibility
 export interface PatientFormState {
   firstName: string;
   lastName: string;
-  first_name: string; // ADDED - dual compatibility requirement
-  last_name: string; // ADDED - dual compatibility requirement
+  first_name: string;
+  last_name: string;
   email: string;
   phone?: string;
   dateOfBirth?: string;
   medicalRecordNumber?: string;
-  isActive: boolean; // ADDED - standard pattern requirement
+  isActive: boolean;
 }
 
 export interface SharedModuleState {
@@ -69,11 +71,15 @@ export interface SharedModuleState {
   configuration?: Record<string, any>;
 }
 
+// Enhanced AdminRealtimeState with missing properties
 export interface AdminRealtimeState {
   isConnected: boolean;
   activeUsers: number;
   systemHealth: 'healthy' | 'degraded' | 'critical';
   lastUpdate?: string;
+  connectedUsers?: string; // ADDED - identified by pattern
+  activeConnections?: string; // ADDED - identified by pattern
+  systemLoad?: number; // ADDED - identified by pattern
 }
 
 export interface ApiConsumptionTriggerState {

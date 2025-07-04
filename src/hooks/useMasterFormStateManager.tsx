@@ -1,44 +1,34 @@
 
 /**
- * MASTER FORM STATE MANAGER - COMPLETE DUAL COMPATIBILITY
- * Centralized form state management with comprehensive TypeScript alignment
- * Version: master-form-state-manager-v2.0.0
+ * MASTER FORM STATE MANAGER - SINGLE SOURCE OF TRUTH
+ * Consolidated form state management with full TypeScript compliance
+ * Version: master-form-state-manager-v1.0.0
  */
 import { useState, useCallback } from 'react';
-import type { MasterUserFormState } from '@/types/masterFormState';
-import { normalizeMasterUserFormState, createMasterUserFormState } from '@/types/masterFormState';
+import { MasterUserFormState, normalizeMasterUserFormState } from '@/types/masterFormState';
 
-export const useMasterFormStateManager = (initialState?: Partial<MasterUserFormState>) => {
-  const [formState, setFormState] = useState<MasterUserFormState>(
-    createMasterUserFormState(initialState)
+export const useMasterFormStateManager = (initialData?: Partial<MasterUserFormState>) => {
+  const [formState, setFormState] = useState<MasterUserFormState>(() => 
+    normalizeMasterUserFormState(initialData || {})
   );
 
   const updateFormState = useCallback((updates: Partial<MasterUserFormState>) => {
     setFormState(prev => normalizeMasterUserFormState({ ...prev, ...updates }));
   }, []);
 
-  const resetFormState = useCallback((newState?: Partial<MasterUserFormState>) => {
-    setFormState(createMasterUserFormState(newState));
+  const resetFormState = useCallback(() => {
+    setFormState(normalizeMasterUserFormState({}));
   }, []);
 
-  const setCompleteFormState = useCallback((newState: MasterUserFormState) => {
-    setFormState(normalizeMasterUserFormState(newState));
-  }, []);
+  const isFormValid = formState.firstName.trim() !== '' && 
+                     formState.lastName.trim() !== '' && 
+                     formState.email.trim() !== '' &&
+                     formState.role.trim() !== '';
 
   return {
     formState,
     updateFormState,
     resetFormState,
-    setCompleteFormState,
-    
-    // Utility getters
-    isFormValid: !!(formState.firstName && formState.lastName && formState.email && formState.role),
-    hasChanges: JSON.stringify(formState) !== JSON.stringify(createMasterUserFormState(initialState)),
-    
-    meta: {
-      managerVersion: 'master-form-state-manager-v2.0.0',
-      singleSourceValidated: true,
-      dualCompatibilityComplete: true
-    }
+    isFormValid
   };
 };
