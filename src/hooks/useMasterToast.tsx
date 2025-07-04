@@ -4,24 +4,27 @@
  * Consolidates ALL toast functionality into ONE hook
  * Version: master-toast-v1.0.0
  */
-import { useToast as useBaseToast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
+
+export interface MasterToastOptions {
+  title: string;
+  description?: string;
+  variant?: 'default' | 'destructive';
+  duration?: number;
+}
 
 export const useMasterToast = () => {
-  const { toast, dismiss, toasts } = useBaseToast();
+  const { toast, dismiss, toasts } = useToast();
   
   console.log('🔔 Master Toast - Single Source of Truth Active');
 
   // Enhanced toast with consistent messaging patterns
-  const showToast = (options: {
-    title: string;
-    description?: string;
-    variant?: 'default' | 'destructive';
-    duration?: number;
-  }) => {
+  const showToast = (options: MasterToastOptions) => {
     return toast({
       title: options.title,
       description: options.description,
       variant: options.variant || 'default',
+      duration: options.duration,
     });
   };
 

@@ -1,13 +1,14 @@
+
 /**
  * MASTER MODULES MANAGEMENT HOOK - SINGLE SOURCE OF TRUTH
- * Consolidates ALL modules functionality into ONE hook
+ * Consolidates ALL module functionality into ONE hook
  * Version: master-modules-v1.0.0
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { useMasterToast } from '@/hooks/useMasterToast';
 
-// SINGLE CACHE KEY for all modules operations
+// SINGLE CACHE KEY for all module operations
 const MASTER_MODULES_CACHE_KEY = ['master-modules'];
 
 export interface Module {
@@ -19,21 +20,23 @@ export interface Module {
   updated_at: string;
 }
 
-/**
- * MASTER Modules Management Hook - Everything in ONE place
- */
 export const useMasterModules = () => {
-  const { toast } = useToast();
+  const { showSuccess, showError } = useMasterToast();
   const queryClient = useQueryClient();
   
   console.log('📦 Master Modules - Single Source of Truth Active');
+
+  // ====================== CACHE INVALIDATION HELPER ======================
+  const invalidateCache = () => {
+    console.log('🔄 Invalidating master modules cache...');
+    queryClient.invalidateQueries({ queryKey: MASTER_MODULES_CACHE_KEY });
+  };
 
   // ====================== DATA FETCHING ======================
   const {
     data: modules = [],
     isLoading,
     error,
-    refetch
   } = useQuery({
     queryKey: MASTER_MODULES_CACHE_KEY,
     queryFn: async (): Promise<Module[]> => {
@@ -43,180 +46,173 @@ export const useMasterModules = () => {
         .from('modules')
         .select('*')
         .order('name');
-      
-      if (error) {
-        console.error('❌ Error fetching modules:', error);
-        throw error;
-      }
-      
-      console.log('✅ Modules fetched from master source:', data?.length || 0);
+
+      if (error) throw error;
       return data || [];
     },
-    retry: 1,
     staleTime: 300000, // 5 minutes
     refetchOnWindowFocus: false,
-    refetchOnMount: false,
   });
 
-  // ====================== CACHE INVALIDATION HELPER ======================
-  const invalidateCache = () => {
-    console.log('🔄 Invalidating master modules cache...');
-    queryClient.invalidateQueries({ queryKey: MASTER_MODULES_CACHE_KEY });
-  };
-
-  // ====================== MODULE CREATION ======================
+  // ====================== CREATE MUTATION ======================
   const createModuleMutation = useMutation({
-    mutationFn: async (moduleData: {
-      name: string;
-      description?: string;
-    }) => {
-      console.log('🔄 Creating module in master hook:', moduleData.name);
+    mutationFn: async (moduleData: Omit<Module, 'id' | 'created_at' | 'updated_at'>) => {
+      console.log('🔄 Creating module:', moduleData);
       
       const { data, error } = await supabase
         .from('modules')
-        .insert({
-          ...moduleData,
-          is_active: true
-        })
+        .insert(moduleData)
         .select()
         .single();
 
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (newModule) => {
       invalidateCache();
-      toast({
-        title: "Module Created",
-        description: "New module has been created successfully.",
-      });
+      showSuccess("Module Created", `${newModule.name} has been created successfully.`);
     },
     onError: (error: any) => {
-      toast({
-        title: "Module Creation Failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      showError("Creation Failed", error.message || "Failed to create module");
     }
   });
 
-  // ====================== MODULE UPDATE ======================
+  // ====================== UPDATE MUTATION ======================
   const updateModuleMutation = useMutation({
-    mutationFn: async ({ moduleId, updates }: { moduleId: string; updates: Partial<Module> }) => {
-      console.log('🔄 Updating module in master hook:', moduleId);
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<Module> }) => {
+      console.log('🔄 Updating module:', id, updates);
       
       const { data, error } = await supabase
         .from('modules')
         .update(updates)
-        .eq('id', moduleId)
+        .eq('id', id)
         .select()
         .single();
 
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (updatedModule) => {
       invalidateCache();
-      toast({
-        title: "Module Updated",
-        description: "Module has been updated successfully.",
-      });
+      showSuccess("Module Updated", `${updatedModule.name} has been updated successfully.`);
     },
     onError: (error: any) => {
-      toast({
-        title: "Module Update Failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      showError("Update Failed", error.message || "Failed to update module");
     }
   });
 
-  // ====================== MODULE DEACTIVATION ======================
-  const deactivateModuleMutation = useMutation({
-    mutationFn: async (moduleId: string) => {
-      console.log('🔄 Deactivating module in master hook:', moduleId);
+  // ====================== DELETE MUTATION ======================
+  const deleteModuleMutation = useMutation({
+    mutationFn: async (id: string) => {
+      console.log('🔄 Deleting module:', id);
       
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('modules')
-        .update({ is_active: false })
-        .eq('id', moduleId)
-        .select()
-        .single();
+        .delete()
+        .eq('id', id);
 
       if (error) throw error;
-      return data;
+      return id;
     },
     onSuccess: () => {
       invalidateCache();
-      toast({
-        title: "Module Deactivated",
-        description: "Module has been deactivated successfully.",
-      });
+      showSuccess("Module Deleted", "Module has been deleted successfully.");
     },
     onError: (error: any) => {
-      toast({
-        title: "Module Deactivation Failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      showError("Deletion Failed", error.message || "Failed to delete module");
     }
   });
 
   // ====================== UTILITY FUNCTIONS ======================
-  const searchModules = (query: string): Module[] => {
-    if (!query.trim()) return modules;
-    
-    return modules.filter((module: Module) => 
-      module.name?.toLowerCase().includes(query.toLowerCase()) ||
-      module.description?.toLowerCase().includes(query.toLowerCase())
-    );
-  };
+  const getActiveModules = () => modules.filter(m => m.is_active);
+  const getModuleById = (id: string) => modules.find(m => m.id === id);
+  const getModuleByName = (name: string) => modules.find(m => m.name === name);
 
-  const getModuleStats = () => {
+  // ====================== VERIFICATION SYSTEM ======================
+  const verifyModuleIntegrity = () => {
+    const totalModules = modules.length;
+    const activeModules = getActiveModules().length;
+    const hasValidNames = modules.every(m => m.name && m.name.trim().length > 0);
+    
     return {
-      total: modules.length,
-      active: modules.filter(m => m.is_active).length,
-      inactive: modules.filter(m => !m.is_active).length,
+      isHealthy: hasValidNames && totalModules > 0,
+      totalModules,
+      activeModules,
+      validationsPassed: hasValidNames ? 1 : 0,
+      issues: hasValidNames ? [] : ['Some modules have invalid names']
     };
   };
 
-  // ====================== RETURN CONSOLIDATED API ======================
+  // ====================== KNOWLEDGE LEARNING SYSTEM ======================
+  const learnFromModules = () => {
+    const patterns = {
+      namingPatterns: modules.map(m => m.name),
+      activityRatio: modules.length > 0 ? (getActiveModules().length / modules.length) : 0,
+      commonDescriptionPatterns: modules
+        .filter(m => m.description)
+        .map(m => m.description?.length || 0)
+    };
+    
+    return {
+      patterns,
+      insights: [
+        `Total modules managed: ${modules.length}`,
+        `Activity ratio: ${Math.round(patterns.activityRatio * 100)}%`,
+        `Average description length: ${patterns.commonDescriptionPatterns.length > 0 
+          ? Math.round(patterns.commonDescriptionPatterns.reduce((a, b) => a + b, 0) / patterns.commonDescriptionPatterns.length) 
+          : 0} characters`
+      ]
+    };
+  };
+
   return {
     // Data
     modules,
+    activeModules: getActiveModules(),
+    
+    // Loading states
     isLoading,
+    isCreating: createModuleMutation.isPending,
+    isUpdating: updateModuleMutation.isPending,
+    isDeleting: deleteModuleMutation.isPending,
+    
+    // Errors
     error,
-    refetch,
     
-    // Module Management
+    // Actions
     createModule: createModuleMutation.mutate,
-    isCreatingModule: createModuleMutation.isPending,
-    
     updateModule: updateModuleMutation.mutate,
-    isUpdatingModule: updateModuleMutation.isPending,
-    
-    deactivateModule: deactivateModuleMutation.mutate,
-    isDeactivatingModule: deactivateModuleMutation.isPending,
+    deleteModule: deleteModuleMutation.mutate,
     
     // Utilities
-    searchModules,
-    getModuleStats,
+    getModuleById,
+    getModuleByName,
     
-    // Aliases for backward compatibility
-    data: modules,
-    loading: isLoading,
+    // Verification & Validation
+    verifyModuleIntegrity,
+    
+    // Knowledge Learning
+    learnFromModules,
+    
+    // Registry information
+    registryInfo: {
+      totalEntries: modules.length,
+      activeEntries: getActiveModules().length,
+      lastUpdated: new Date().toISOString()
+    },
     
     // Meta Information
     meta: {
-      totalModules: modules.length,
-      activeModules: modules.filter(m => m.is_active).length,
-      dataSource: 'modules table (master hook)',
-      lastFetched: new Date().toISOString(),
+      dataSource: 'master modules system (consolidated)',
+      lastUpdated: new Date().toISOString(),
       version: 'master-modules-v1.0.0',
       singleSourceValidated: true,
-      architectureType: 'consolidated',
+      architectureType: 'master-consolidated',
       cacheKey: MASTER_MODULES_CACHE_KEY.join('-'),
-      stabilityGuarantee: true
+      verificationEnabled: true,
+      validationEnabled: true,
+      registryEnabled: true,
+      knowledgeLearningEnabled: true
     }
   };
 };
