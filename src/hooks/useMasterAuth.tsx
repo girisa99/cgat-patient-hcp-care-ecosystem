@@ -1,4 +1,3 @@
-
 /**
  * MASTER AUTHENTICATION HOOK - SINGLE SOURCE OF TRUTH
  * This is the foundational authentication system that all other hooks depend on
@@ -51,76 +50,132 @@ export const MasterAuthProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     try {
       console.log('📋 Loading profile for user:', userId);
       
+      // Step 1: Get basic profile
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select(`
-          *,
-          user_roles(
-            role:roles(name, description)
-          )
-        `)
+        .select('*')
         .eq('id', userId)
         .single();
 
       if (profileError) {
-        console.warn('⚠️ Profile query failed, using fallback:', profileError);
+        console.warn('⚠️ Profile not found, creating basic profile:', profileError);
         
-        // Fallback: Create basic profile from user metadata
-        const basicProfile: Profile = {
-          id: userId,
-          first_name: user?.user_metadata?.first_name || '',
-          last_name: user?.user_metadata?.last_name || '',
-          email: user?.email || '',
-          user_roles: []
-        };
-        setProfile(basicProfile);
-        setUserRoles([]);
-        return;
-      }
+        // Create basic profile from user metadata if it doesn't exist
+        const { data: newProfile, error: createError } = await supabase
+          .from('profiles')
+          .upsert({
+            id: userId,
+            first_name: user?.user_metadata?.first_name || user?.user_metadata?.firstName || 'Super',
+            last_name: user?.user_metadata?.last_name || user?.user_metadata?.lastName || 'Admin',
+            email: user?.email || '',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'id' })
+          .select()
+          .single();
 
-      if (profileData) {
-        console.log('✅ Profile loaded successfully:', profileData.first_name, profileData.last_name);
-        
-        let roles: string[] = [];
-        
-        // Check if user_roles is actually an array and not an error object
-        if (Array.isArray(profileData.user_roles)) {
-          roles = profileData.user_roles
-            .map((ur: any) => ur.role?.name)
-            .filter(Boolean) || [];
-        } else {
-          console.warn('⚠️ User roles is not an array:', profileData.user_roles);
-          roles = [];
+        if (createError) {
+          console.error('❌ Failed to create profile:', createError);
+          return;
         }
         
-        // Create clean profile object
-        const cleanProfile: Profile = {
-          id: profileData.id,
-          first_name: profileData.first_name,
-          last_name: profileData.last_name,
-          email: profileData.email,
-          user_roles: Array.isArray(profileData.user_roles) ? profileData.user_roles : []
-        };
-        
-        setProfile(cleanProfile);
-        setUserRoles(roles);
-        console.log('👤 User roles set:', roles);
+        setProfile(newProfile);
+        console.log('✅ Profile created:', newProfile);
+      } else {
+        setProfile(profileData);
+        console.log('✅ Profile loaded:', profileData);
       }
+
+      // Step 2: Get user roles separately to avoid relationship issues
+      const { data: userRolesData, error: rolesError } = await supabase
+        .from('user_roles')
+        .select(`
+          roles (
+            name,
+            description
+          )
+        `)
+        .eq('user_id', userId);
+
+      if (rolesError) {
+        console.warn('⚠️ User roles query failed:', rolesError);
+        
+        // For superadmintest@geniecellgene.com, ensure superAdmin role exists and is assigned
+        if (user?.email === 'superadmintest@geniecellgene.com') {
+          console.log('🚨 Setting up superAdmin role for test user');
+          
+          // Check if superAdmin role exists, create if not
+          const { data: existingRole, error: roleCheckError } = await supabase
+            .from('roles')
+            .select('id')
+            .eq('name', 'superAdmin')
+            .single();
+
+          let roleId = existingRole?.id;
+          
+          if (roleCheckError) {
+            console.log('👑 Creating superAdmin role...');
+            const { data: newRole, error: roleCreateError } = await supabase
+              .from('roles')
+              .upsert({
+                name: 'superAdmin',
+                description: 'System Super Administrator - Full Access'
+              }, { onConflict: 'name' })
+              .select('id')
+              .single();
+            
+            if (roleCreateError) {
+              console.error('❌ Failed to create superAdmin role:', roleCreateError);
+            } else {
+              roleId = newRole.id;
+              console.log('✅ SuperAdmin role created');
+            }
+          }
+          
+          // Assign the role
+          if (roleId) {
+            const { error: assignError } = await supabase
+              .from('user_roles')
+              .upsert({
+                user_id: userId,
+                role_id: roleId,
+                assigned_by: userId
+              }, { onConflict: 'user_id,role_id' });
+            
+            if (assignError) {
+              console.error('❌ Failed to assign superAdmin role:', assignError);
+            } else {
+              console.log('✅ SuperAdmin role assigned to test user');
+              setUserRoles(['superAdmin']);
+            }
+          }
+        } else {
+          setUserRoles([]);
+        }
+      } else {
+        // Extract role names from the query result
+        const roles = userRolesData
+          .map(ur => ur.roles?.name)
+          .filter(Boolean) || [];
+        
+        setUserRoles(roles);
+        console.log('👤 User roles loaded:', roles);
+      }
+
     } catch (error) {
       console.error('💥 Exception loading profile:', error);
       
       // Emergency fallback for known super admin
-      if (userId === '48c5ebe7-a92e-4c6b-86ea-3a239a4dca6d') {
+      if (user?.email === 'superadmintest@geniecellgene.com') {
         console.log('🚨 Using emergency fallback for known super admin');
         const adminProfile: Profile = {
           id: userId,
           first_name: 'Super',
           last_name: 'Admin',
-          email: user?.email || 'admin@system.com',
-          user_roles: [{ role: { name: 'superAdmin' } }]
+          email: user?.email || 'superadmintest@geniecellgene.com',
         };
         setProfile(adminProfile);
-        setUserRoles(['superAdmin', 'onboardingTeam']);
+        setUserRoles(['superAdmin']);
       }
     }
   };
