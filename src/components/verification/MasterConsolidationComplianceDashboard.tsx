@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, AlertTriangle } from 'lucide-react';
+import { CheckCircle } from 'lucide-react';
 import { useMasterConsolidationValidator } from '@/hooks/useMasterConsolidationValidator';
 
 export const MasterConsolidationComplianceDashboard: React.FC = () => {
@@ -71,21 +71,20 @@ export const MasterConsolidationComplianceDashboard: React.FC = () => {
                 </Badge>
               </div>
               <div className="flex items-center justify-between">
-                <span>Timeline:</span>
-                <span className="text-sm text-muted-foreground">{plan.timeline}</span>
+                <span>Architecture:</span>
+                <span className="text-xs text-gray-500">{plan.architectureType}</span>
               </div>
             </div>
+          </div>
 
-            <div className="mt-4">
-              <h5 className="font-medium mb-2">Next Steps:</h5>
-              <ul className="space-y-1">
-                {plan.nextSteps.map((step, index) => (
-                  <li key={index} className="flex items-start gap-2">
-                    <AlertTriangle className="h-4 w-4 text-blue-500 mt-0.5" />
-                    <span className="text-sm">{step}</span>
-                  </li>
-                ))}
-              </ul>
+          <div className="mt-6">
+            <h4 className="font-medium mb-3">Next Steps</h4>
+            <div className="space-y-1">
+              {plan.nextSteps.map((step, index) => (
+                <div key={index} className="text-sm text-gray-600">
+                  {step}
+                </div>
+              ))}
             </div>
           </div>
         </CardContent>

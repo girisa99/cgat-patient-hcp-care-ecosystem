@@ -1,107 +1,103 @@
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useToast } from '@/hooks/use-toast';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useMasterToast } from './useMasterToast';
 
 interface ApiKey {
   id: string;
   name: string;
-  key_value: string;
-  is_active: boolean;
+  key_prefix: string;
+  type: string;
+  status: string;
+  permissions: string[];
+  modules: string[];
   created_at: string;
-  last_used_at?: string;
-  user_id: string;
+  last_used?: string;
+  usage_count: number;
 }
 
 export const useApiKeys = () => {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { showSuccess, showError } = useMasterToast();
 
-  const {
-    data: apiKeys,
-    isLoading,
-    error
-  } = useQuery({
-    queryKey: ['api-keys'],
-    queryFn: async (): Promise<ApiKey[]> => {
-      console.log('🔍 Fetching API keys...');
-      
-      // For now, return mock data since we don't have the table set up
-      return [
-        {
-          id: '1',
-          name: 'Production API Key',
-          key_value: 'sk_live_1234567890abcdef1234567890abcdef12345678',
-          is_active: true,
-          created_at: new Date().toISOString(),
-          last_used_at: new Date().toISOString(),
-          user_id: 'current-user'
-        }
-      ];
-    },
-    staleTime: 60000
-  });
+  console.log('🎯 API Keys Hook - Real Database Integration');
 
-  const createApiKeyMutation = useMutation({
-    mutationFn: async (name: string): Promise<ApiKey> => {
-      console.log('🔑 Creating new API key:', name);
+  const fetchApiKeys = async () => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const { data, error } = await supabase
+        .from('api_keys')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
       
-      // Generate a mock API key
-      const newKey: ApiKey = {
-        id: Date.now().toString(),
-        name,
-        key_value: `sk_${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`,
-        is_active: true,
-        created_at: new Date().toISOString(),
-        user_id: 'current-user'
-      };
-      
-      return newKey;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['api-keys'] });
-      toast({
-        title: "API Key Created",
-        description: "Your new API key has been created successfully.",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Creation Failed",
-        description: error.message || "Failed to create API key.",
-        variant: "destructive",
-      });
+      setApiKeys(data || []);
+      showSuccess('API keys loaded from database');
+    } catch (err) {
+      const errorMessage = 'Failed to fetch API keys from database';
+      setError(errorMessage);
+      showError(errorMessage);
+    } finally {
+      setIsLoading(false);
     }
-  });
+  };
 
-  const deleteApiKeyMutation = useMutation({
-    mutationFn: async (keyId: string) => {
-      console.log('🗑️ Deleting API key:', keyId);
-      return keyId;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['api-keys'] });
-      toast({
-        title: "API Key Deleted",
-        description: "The API key has been deleted successfully.",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Deletion Failed",
-        description: error.message || "Failed to delete API key.",
-        variant: "destructive",
-      });
+  const createApiKey = async (keyData: Partial<ApiKey>) => {
+    try {
+      const { data, error } = await supabase
+        .from('api_keys')
+        .insert([keyData])
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      await fetchApiKeys();
+      showSuccess('API key created successfully');
+      return data;
+    } catch (err) {
+      showError('Failed to create API key');
+      throw err;
     }
-  });
+  };
+
+  const deleteApiKey = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('api_keys')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      
+      await fetchApiKeys();
+      showSuccess('API key deleted successfully');
+    } catch (err) {
+      showError('Failed to delete API key');
+      throw err;
+    }
+  };
+
+  useEffect(() => {
+    fetchApiKeys();
+  }, []);
 
   return {
     apiKeys,
     isLoading,
     error,
-    createApiKey: createApiKeyMutation.mutate,
-    deleteApiKey: deleteApiKeyMutation.mutate,
-    isCreating: createApiKeyMutation.isPending,
-    isDeleting: deleteApiKeyMutation.isPending
+    fetchApiKeys,
+    createApiKey,
+    deleteApiKey,
+    meta: {
+      version: 'api-keys-v2.0.0',
+      realDataOnly: true,
+      dataSource: 'supabase-api-keys-table'
+    }
   };
 };

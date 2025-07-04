@@ -1,14 +1,14 @@
 
 import React from 'react';
-import { MasterUserTable } from '@/components/users/MasterUserTable';
+import { RealDataUserTable } from '@/components/users/RealDataUserTable';
 
 /**
- * MASTER USER MANAGEMENT TABLE - REFACTORED FOR SMALLER COMPONENTS
- * Now uses focused, smaller components following master consolidation principles
- * Version: master-user-management-table-v3.0.0
+ * MASTER USER MANAGEMENT TABLE - REAL DATA ONLY
+ * Uses consolidated real data components following architecture principles
+ * Version: master-user-management-table-v4.0.0
  */
 export const MasterUserManagementTable: React.FC = () => {
-  console.log('🔧 MasterUserManagementTable - Using refactored smaller components');
+  console.log('🔧 MasterUserManagementTable - Real data integration active');
   
-  return <MasterUserTable />;
+  return <RealDataUserTable />;
 };
