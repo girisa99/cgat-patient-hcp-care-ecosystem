@@ -8,7 +8,7 @@ import { Search, Plus, UserCheck, UserX, Trash2 } from 'lucide-react';
 import { useMasterUserManagement, type MasterUser } from '@/hooks/useMasterUserManagement';
 import { useMasterToast } from '@/hooks/useMasterToast';
 import type { UserManagementFormState } from '@/types/formState';
-import { normalizeMasterFormState } from '@/types/formState';
+import { normalizeMasterFormState, createMasterFormState } from '@/types/formState';
 
 export const MasterUserManagementTable: React.FC = () => {
   console.log('🔧 MasterUserManagementTable - Master Consolidation Pattern Active');
@@ -20,15 +20,9 @@ export const MasterUserManagementTable: React.FC = () => {
   const [isAddingUser, setIsAddingUser] = useState<boolean>(false);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   
-  const [newUserForm, setNewUserForm] = useState<UserManagementFormState>({
-    firstName: '',
-    lastName: '',
-    first_name: '',
-    last_name: '',
-    email: '',
-    role: '',
-    phone: ''
-  });
+  const [newUserForm, setNewUserForm] = useState<UserManagementFormState>(
+    createMasterFormState()
+  );
 
   const filteredUsers = useMemo(() => {
     if (!searchTerm.trim()) return userManagement.users;
@@ -52,15 +46,7 @@ export const MasterUserManagementTable: React.FC = () => {
       await userManagement.createUser(normalizedForm);
       showSuccess('User Created', `Successfully created user ${newUserForm.firstName} ${newUserForm.lastName}`);
       
-      setNewUserForm({
-        firstName: '',
-        lastName: '',
-        first_name: '',
-        last_name: '',
-        email: '',
-        role: '',
-        phone: ''
-      });
+      setNewUserForm(createMasterFormState());
       setIsAddingUser(false);
     } catch (error) {
       showError('Creation Failed', 'Failed to create user');
@@ -99,15 +85,7 @@ export const MasterUserManagementTable: React.FC = () => {
   }, [userManagement, showSuccess, showError]);
 
   const resetForm = () => {
-    setNewUserForm({
-      firstName: '',
-      lastName: '',
-      first_name: '',
-      last_name: '',
-      email: '',
-      role: '',
-      phone: ''
-    });
+    setNewUserForm(createMasterFormState());
   };
 
   if (userManagement.isLoading) {
@@ -197,7 +175,7 @@ export const MasterUserManagementTable: React.FC = () => {
                       <Label htmlFor="phone">Phone</Label>
                       <Input
                         id="phone"
-                        value={newUserForm.phone}
+                        value={newUserForm.phone || ''}
                         onChange={(e) => setNewUserForm(prev => ({ ...prev, phone: e.target.value }))}
                         placeholder="Enter phone number"
                       />
