@@ -1,18 +1,30 @@
 
 /**
  * MASTER USER MANAGEMENT TABLE - SINGLE SOURCE OF TRUTH
- * Complete user management interface with real data
+ * Complete user management interface with real data - FIXED INTERFACES
  */
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Users, UserPlus, Settings } from 'lucide-react';
+import { Users, UserPlus, Settings, RefreshCw } from 'lucide-react';
 import { useMasterUserManagement } from '@/hooks/useMasterUserManagement';
 
 export const MasterUserManagementTable: React.FC = () => {
-  const { users, isLoading, getUserStats } = useMasterUserManagement();
+  const { 
+    users, 
+    isLoading, 
+    getUserStats,
+    fetchUsers // This now maps to invalidateCache
+  } = useMasterUserManagement();
+  
   const stats = getUserStats();
+
+  console.log('🎯 Master User Management Table - FIXED INTERFACE ALIGNMENT');
+
+  const handleRefresh = () => {
+    fetchUsers(); // Calls invalidateCache to refresh data
+  };
 
   if (isLoading) {
     return (
@@ -27,13 +39,45 @@ export const MasterUserManagementTable: React.FC = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Users className="h-5 w-5" />
-          Master User Management ({users.length} users)
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Master User Management ({users.length} users)
+          </div>
+          <Button
+            onClick={handleRefresh}
+            variant="outline"
+            size="sm"
+            disabled={isLoading}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
         </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
+          {/* Stats Summary */}
+          <div className="grid grid-cols-4 gap-4 mb-6">
+            <div className="text-center">
+              <div className="text-2xl font-bold">{stats.totalUsers}</div>
+              <div className="text-sm text-muted-foreground">Total Users</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold">{stats.activeUsers}</div>
+              <div className="text-sm text-muted-foreground">Active</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold">{stats.adminCount}</div>
+              <div className="text-sm text-muted-foreground">Admins</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold">{stats.patientCount}</div>
+              <div className="text-sm text-muted-foreground">Patients</div>
+            </div>
+          </div>
+
           {users.length === 0 ? (
             <div className="text-center p-8 text-muted-foreground">
               <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
@@ -61,6 +105,9 @@ export const MasterUserManagementTable: React.FC = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
+                    <Badge variant={user.is_active ? 'default' : 'secondary'}>
+                      {user.is_active ? 'Active' : 'Inactive'}
+                    </Badge>
                     <Button variant="outline" size="sm">
                       <Settings className="h-4 w-4" />
                     </Button>
