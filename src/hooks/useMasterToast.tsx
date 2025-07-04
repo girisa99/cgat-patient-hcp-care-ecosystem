@@ -1,56 +1,37 @@
 
 /**
  * MASTER TOAST HOOK - SINGLE SOURCE OF TRUTH
- * Centralized toast notifications with TypeScript alignment
+ * Unified toast functionality with TypeScript alignment
  * Version: master-toast-v1.0.0
  */
-import { useToast } from './use-toast';
-
-export interface ToastOptions {
-  title: string;
-  description: string;
-  variant?: 'default' | 'destructive';
-  duration?: number;
-}
+import { useToast } from '@/hooks/use-toast';
 
 export const useMasterToast = () => {
   const { toast } = useToast();
   
-  console.log('🔔 Master Toast v1.0 - Single Source Toast System Active');
+  console.log('🎯 Master Toast - Single Source of Truth Active');
 
-  const showSuccess = (title: string, description: string, duration = 3000) => {
+  const showSuccess = (title: string, description?: string) => {
     toast({
       title,
       description,
-      variant: 'default',
-      duration
+      variant: "default",
     });
   };
 
-  const showError = (title: string, description: string, duration = 5000) => {
+  const showError = (title: string, description?: string) => {
     toast({
       title,
       description,
-      variant: 'destructive',
-      duration
+      variant: "destructive",
     });
   };
 
-  const showInfo = (title: string, description: string, duration = 4000) => {
+  const showInfo = (title: string, description?: string) => {
     toast({
       title,
       description,
-      variant: 'default',
-      duration
-    });
-  };
-
-  const showToast = (options: ToastOptions) => {
-    toast({
-      title: options.title,
-      description: options.description,
-      variant: options.variant || 'default',
-      duration: options.duration || 3000
+      variant: "default",
     });
   };
 
@@ -58,9 +39,8 @@ export const useMasterToast = () => {
     showSuccess,
     showError,
     showInfo,
-    showToast,
+    toast,
     
-    // Meta information
     meta: {
       toastVersion: 'master-toast-v1.0.0',
       singleSourceValidated: true,

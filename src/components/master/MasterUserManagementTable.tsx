@@ -3,7 +3,6 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Search, Plus, Edit, Trash2, UserCheck, UserX } from 'lucide-react';
 import { useMasterUserManagement, type MasterUser } from '@/hooks/useMasterUserManagement';
 import { useMasterToast } from '@/hooks/useMasterToast';
@@ -138,7 +137,7 @@ export const MasterUserManagementTable: React.FC = () => {
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="firstName">First Name *</Label>
+                      <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">First Name *</label>
                       <Input
                         id="firstName"
                         value={newUserForm.firstName}
@@ -147,7 +146,7 @@ export const MasterUserManagementTable: React.FC = () => {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="lastName">Last Name *</Label>
+                      <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">Last Name *</label>
                       <Input
                         id="lastName"
                         value={newUserForm.lastName}
@@ -156,7 +155,7 @@ export const MasterUserManagementTable: React.FC = () => {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="email">Email *</Label>
+                      <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
                       <Input
                         id="email"
                         type="email"
@@ -166,7 +165,7 @@ export const MasterUserManagementTable: React.FC = () => {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="role">Role *</Label>
+                      <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">Role *</label>
                       <Input
                         id="role"
                         value={newUserForm.role}
@@ -175,7 +174,7 @@ export const MasterUserManagementTable: React.FC = () => {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="phone">Phone</Label>
+                      <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
                       <Input
                         id="phone"
                         value={newUserForm.phone}
@@ -251,27 +250,16 @@ export const MasterUserManagementTable: React.FC = () => {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => setEditingUserId(user.id)}
-                            >
-                              <Edit className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
                               onClick={() => handleToggleUserStatus(user.id, user.isActive)}
                             >
-                              {user.isActive ? (
-                                <UserX className="h-3 w-3" />
-                              ) : (
-                                <UserCheck className="h-3 w-3" />
-                              )}
+                              {user.isActive ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
                             </Button>
                             <Button
                               size="sm"
                               variant="outline"
                               onClick={() => handleDeleteUser(user.id)}
                             >
-                              <Trash2 className="h-3 w-3" />
+                              <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
                         </td>
@@ -280,34 +268,6 @@ export const MasterUserManagementTable: React.FC = () => {
                   )}
                 </tbody>
               </table>
-            </div>
-
-            {/* Summary Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-              <Card>
-                <CardContent className="p-4 text-center">
-                  <div className="text-2xl font-bold text-blue-600">
-                    {userManagement.totalUsers}
-                  </div>
-                  <div className="text-sm text-gray-600">Total Users</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4 text-center">
-                  <div className="text-2xl font-bold text-green-600">
-                    {userManagement.activeUsers}
-                  </div>
-                  <div className="text-sm text-gray-600">Active Users</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4 text-center">
-                  <div className="text-2xl font-bold text-red-600">
-                    {userManagement.inactiveUsers}
-                  </div>
-                  <div className="text-sm text-gray-600">Inactive Users</div>
-                </CardContent>
-              </Card>
             </div>
           </div>
         </CardContent>
