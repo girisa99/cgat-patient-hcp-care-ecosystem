@@ -2,7 +2,7 @@
 /**
  * MASTER FORM STATE TYPES - SINGLE SOURCE OF TRUTH
  * Unified form state definitions for master consolidation compliance
- * Version: form-state-types-v2.0.0 - Complete TypeScript alignment
+ * Version: form-state-types-v3.0.0 - Complete dual compatibility alignment
  */
 
 export interface UserManagementFormState {
@@ -20,6 +20,8 @@ export interface UserManagementFormState {
 export interface OnboardingFormState {
   firstName: string;
   lastName: string;
+  first_name: string;
+  last_name: string;
   email: string;
   role: string;
   phone?: string;

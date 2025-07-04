@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,6 +20,8 @@ export const MasterUserManagementTable: React.FC = () => {
   const [newUserForm, setNewUserForm] = useState<UserManagementFormState>({
     firstName: '',
     lastName: '',
+    first_name: '',
+    last_name: '',
     email: '',
     role: '',
     phone: ''
@@ -50,6 +51,8 @@ export const MasterUserManagementTable: React.FC = () => {
       setNewUserForm({
         firstName: '',
         lastName: '',
+        first_name: '',
+        last_name: '',
         email: '',
         role: '',
         phone: ''
@@ -89,6 +92,18 @@ export const MasterUserManagementTable: React.FC = () => {
       showError('Status Update Failed', 'Failed to update user status');
     }
   }, [userManagement, showSuccess, showError]);
+
+  const resetForm = () => {
+    setNewUserForm({
+      firstName: '',
+      lastName: '',
+      first_name: '',
+      last_name: '',
+      email: '',
+      role: '',
+      phone: ''
+    });
+  };
 
   if (userManagement.isLoading) {
     return (
@@ -194,6 +209,8 @@ export const MasterUserManagementTable: React.FC = () => {
                         setNewUserForm({
                           firstName: '',
                           lastName: '',
+                          first_name: '',
+                          last_name: '',
                           email: '',
                           role: '',
                           phone: ''
