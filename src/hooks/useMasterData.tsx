@@ -1,4 +1,3 @@
-
 /**
  * MASTER DATA HOOK - SINGLE SOURCE OF TRUTH FOR ALL DATA
  * Consolidates users, facilities, modules, and API services
@@ -212,6 +211,127 @@ export const useMasterData = () => {
     }
   });
 
+  // ====================== CREATE FACILITY MUTATION ======================
+  const createFacilityMutation = useMutation({
+    mutationFn: async (facilityData: { name: string; facilityType: string; address?: string; phone?: string; email?: string }) => {
+      console.log('🏗️ Creating facility via MASTER DATA hook:', facilityData);
+
+      const { data, error } = await supabase
+        .from('facilities')
+        .insert({
+          ...( {
+            id: crypto.randomUUID(),
+            name: facilityData.name,
+            facility_type: (facilityData.facilityType as any) || 'treatmentFacility',
+            address: facilityData.address || '',
+            phone: facilityData.phone || '',
+            email: facilityData.email || '',
+            is_active: true
+          } as any ),
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      invalidateCache();
+      showSuccess('Facility Created', 'Facility has been created successfully');
+    },
+    onError: (error: any) => {
+      showError('Creation Failed', error.message || 'Failed to create facility');
+    }
+  });
+
+  // ====================== CREATE MODULE MUTATION ======================
+  const createModuleMutation = useMutation({
+    mutationFn: async (moduleData: { name: string; description?: string }) => {
+      console.log('🧩 Creating module via MASTER DATA hook:', moduleData);
+
+      const { data, error } = await supabase
+        .from('modules')
+        .insert({
+          id: crypto.randomUUID(),
+          name: moduleData.name,
+          description: moduleData.description || '',
+          is_active: true
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      invalidateCache();
+      showSuccess('Module Created', 'Module has been created successfully');
+    },
+    onError: (error: any) => {
+      showError('Creation Failed', error.message || 'Failed to create module');
+    }
+  });
+
+  // ====================== CREATE API SERVICE MUTATION ======================
+  const createApiServiceMutation = useMutation({
+    mutationFn: async (serviceData: { name: string; type: string; description?: string }) => {
+      console.log('🔌 Creating API service via MASTER DATA hook:', serviceData);
+
+      const { data, error } = await supabase
+        .from('api_integration_registry')
+        .insert({
+          ...( {
+            id: crypto.randomUUID(),
+            name: serviceData.name,
+            type: serviceData.type,
+            description: serviceData.description || '',
+            status: 'active'
+          } as any )
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      invalidateCache();
+      showSuccess('API Service Created', 'Service has been created successfully');
+    },
+    onError: (error: any) => {
+      showError('Creation Failed', error.message || 'Failed to create service');
+    }
+  });
+
+  // ====================== CREATE PATIENT MUTATION ======================
+  const createPatientMutation = useMutation({
+    mutationFn: async (patientData: { firstName: string; lastName: string; email: string }) => {
+      console.log('❤️ Creating patient via MASTER DATA hook:', patientData);
+
+      const newUserId = crypto.randomUUID();
+      const { data, error } = await supabase
+        .from('profiles')
+        .insert({
+          id: newUserId,
+          first_name: patientData.firstName,
+          last_name: patientData.lastName,
+          email: patientData.email
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      invalidateCache();
+      showSuccess('Patient Created', 'Patient has been created successfully');
+    },
+    onError: (error: any) => {
+      showError('Creation Failed', error.message || 'Failed to create patient');
+    }
+  });
+
   // ====================== STATISTICS ======================
   const stats = useMemo(() => {
     const totalUsers = users.length;
@@ -278,12 +398,20 @@ export const useMasterData = () => {
     // ===== LOADING STATES =====
     isLoading: usersLoading || facilitiesLoading || modulesLoading || apiServicesLoading,
     isCreatingUser: createUserMutation.isPending,
+    isCreatingFacility: createFacilityMutation.isPending,
+    isCreatingModule: createModuleMutation.isPending,
+    isCreatingApiService: createApiServiceMutation.isPending,
+    isCreatingPatient: createPatientMutation.isPending,
     
     // ===== ERROR STATES =====
     error: usersError || facilitiesError || modulesError || apiServicesError,
     
     // ===== ACTIONS =====
     createUser: createUserMutation.mutate,
+    createFacility: createFacilityMutation.mutate,
+    createModule: createModuleMutation.mutate,
+    createApiService: createApiServiceMutation.mutate,
+    createPatient: createPatientMutation.mutate,
     refreshData: invalidateCache,
     
     // ===== UTILITIES =====
