@@ -1,10 +1,10 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { useMasterToast } from '@/hooks/useMasterToast';
 
 export const useModuleMutations = () => {
-  const { toast } = useToast();
+  const { showSuccess, showError } = useMasterToast();
   const queryClient = useQueryClient();
 
   const createModuleMutation = useMutation({
@@ -23,17 +23,10 @@ export const useModuleMutations = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['modules'] });
-      toast({
-        title: "Module Created",
-        description: "New module has been created successfully.",
-      });
+      showSuccess("Module Created", "New module has been created successfully.");
     },
     onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create module",
-        variant: "destructive",
-      });
+      showError("Error", error.message || "Failed to create module");
     }
   });
 
@@ -51,17 +44,10 @@ export const useModuleMutations = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['modules'] });
-      toast({
-        title: "Module Updated",
-        description: "Module has been updated successfully.",
-      });
+      showSuccess("Module Updated", "Module has been updated successfully.");
     },
     onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update module",
-        variant: "destructive",
-      });
+      showError("Error", error.message || "Failed to update module");
     }
   });
 
