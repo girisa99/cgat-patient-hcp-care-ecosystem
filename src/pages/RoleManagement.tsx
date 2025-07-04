@@ -1,12 +1,19 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Shield, Users, Building2, Package } from 'lucide-react';
 import { useMasterRoleManagement } from '@/hooks/useMasterRoleManagement';
+import { useUnifiedDevelopmentLifecycle } from '@/hooks/useUnifiedDevelopmentLifecycle';
+import AccessDenied from '@/components/AccessDenied';
 
 const RoleManagement: React.FC = () => {
+  const { navigation } = useUnifiedDevelopmentLifecycle();
   const masterRole = useMasterRoleManagement();
+
+  // Role-based access guard
+  if (!navigation.hasAccess('/role-management')) {
+    return <AccessDenied />;
+  }
 
   return (
     <div className="p-6 space-y-6">
