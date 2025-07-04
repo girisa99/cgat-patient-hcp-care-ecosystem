@@ -1,255 +1,233 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { 
-  CheckCircle, 
-  AlertTriangle, 
-  XCircle,
-  Database,
-  Code,
-  Layers,
-  GitBranch
-} from 'lucide-react';
-import { useMasterVerificationSystem } from '@/hooks/useMasterVerificationSystem';
-import { useTypeScriptAlignment } from '@/hooks/useTypeScriptAlignment';
+import { CheckCircle, AlertCircle, XCircle, RefreshCw } from 'lucide-react';
+import { useMasterConsolidationValidator } from '@/hooks/useMasterConsolidationValidator';
+import { useMasterToast } from '@/hooks/useMasterToast';
 
 export const MasterConsolidationValidator: React.FC = () => {
-  const verificationSystem = useMasterVerificationSystem();
-  const typeAlignment = useTypeScriptAlignment();
+  const consolidationValidator = useMasterConsolidationValidator();
+  const { showSuccess, showInfo, showError } = useMasterToast();
   
-  const systemHealth = verificationSystem.getSystemHealth();
-  const alignmentReport = typeAlignment.analyzeTypeAlignment();
-  const recommendations = typeAlignment.generateTypeScriptRecommendations();
+  const [isValidating, setIsValidating] = useState(false);
+  const [lastValidation, setLastValidation] = useState<Date | null>(null);
 
-  // Master Hook Analysis
-  const masterHooks = [
-    'useMasterUserManagement',
-    'useMasterModules', 
-    'useMasterApiServices',
-    'useMasterTesting',
-    'useMasterDataImport',
-    'useMasterOnboarding',
-    'useMasterVerificationSystem'
-  ];
+  console.log('🎯 Master Consolidation Validator - Fixed Method Signatures');
 
-  const consolidationScore = Math.round(
-    (masterHooks.length / (masterHooks.length + 2)) * 100
-  );
+  // Fixed method calls - no parameters
+  const runFullValidation = async () => {
+    setIsValidating(true);
+    
+    try {
+      const report = consolidationValidator.runConsolidationValidation();
+      const ensureResult = consolidationValidator.ensureConsolidation();
+      const enforceResult = consolidationValidator.enforceConsolidation();
+      
+      const overallScore = Math.round((report.overallCompliance + ensureResult.overallCompliance + enforceResult.overallCompliance) / 3);
+      
+      if (overallScore >= 95) {
+        showSuccess(
+          '🎉 Perfect Master Consolidation Achieved',
+          `Overall Score: ${overallScore}%. All systems aligned with master consolidation principles.`
+        );
+      } else if (overallScore >= 85) {
+        showInfo(
+          'Excellent Consolidation Status',
+          `Overall Score: ${overallScore}%. Minor optimizations available.`
+        );
+      } else {
+        showError(
+          'Consolidation Issues Detected',
+          `Overall Score: ${overallScore}%. Critical issues require attention.`
+        );
+      }
+      
+      setLastValidation(new Date());
+    } catch (error) {
+      showError('Validation Failed', 'Error occurred during consolidation validation');
+    } finally {
+      setIsValidating(false);
+    }
+  };
 
-  const singleSourceValidation = {
-    score: alignmentReport.singleSourceCompliance.score,
-    violations: alignmentReport.singleSourceCompliance.violations,
-    consolidated: alignmentReport.singleSourceCompliance.score === 100
+  // Auto-run validation on component mount
+  useEffect(() => {
+    runFullValidation();
+  }, []);
+
+  const report = consolidationValidator.validateConsolidation();
+  const plan = consolidationValidator.createConsolidationPlan();
+
+  const overallScore = report.overallCompliance;
+
+  const getScoreColor = (score: number) => {
+    if (score >= 95) return 'text-green-600';
+    if (score >= 85) return 'text-yellow-600';
+    return 'text-red-600';
+  };
+
+  const getScoreIcon = (score: number) => {
+    if (score >= 95) return <CheckCircle className="h-5 w-5 text-green-600" />;
+    if (score >= 85) return <AlertCircle className="h-5 w-5 text-yellow-600" />;
+    return <XCircle className="h-5 w-5 text-red-600" />;
   };
 
   return (
     <div className="space-y-6">
-      {/* Master Consolidation Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center">
-              <Layers className="h-6 w-6 text-blue-600" />
-              <div className="ml-3">
-                <p className="text-sm font-medium text-muted-foreground">Consolidation</p>
-                <p className="text-xl font-bold">{consolidationScore}%</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center">
-              <Database className="h-6 w-6 text-green-600" />
-              <div className="ml-3">
-                <p className="text-sm font-medium text-muted-foreground">Single Source</p>
-                <p className="text-xl font-bold">{singleSourceValidation.score}%</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center">
-              <Code className="h-6 w-6 text-purple-600" />
-              <div className="ml-3">
-                <p className="text-sm font-medium text-muted-foreground">TypeScript</p>
-                <p className="text-xl font-bold">{alignmentReport.hookConsistency.score}%</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center">
-              <GitBranch className="h-6 w-6 text-orange-600" />
-              <div className="ml-3">
-                <p className="text-sm font-medium text-muted-foreground">System Health</p>
-                <p className="text-xl font-bold">{systemHealth.score}%</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Master Hook Validation */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Layers className="h-5 w-5" />
-            Master Hook Consolidation Status
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {getScoreIcon(overallScore)}
+              <span>Master Consolidation Validator</span>
+            </div>
+            <Button 
+              onClick={runFullValidation}
+              disabled={isValidating}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${isValidating ? 'animate-spin' : ''}`} />
+              {isValidating ? 'Validating...' : 'Run Validation'}
+            </Button>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            {masterHooks.map((hookName, index) => (
-              <div key={hookName} className="flex items-center justify-between p-3 border rounded">
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="h-4 w-4 text-green-600" />
-                  <span className="font-medium">{hookName}</span>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Overall Score */}
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className={`text-3xl font-bold ${getScoreColor(overallScore)}`}>
+                  {overallScore}%
                 </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="default">Active</Badge>
-                  <Badge variant="secondary">Consolidated</Badge>
+                <div className="text-sm text-gray-600">Overall Compliance</div>
+                <Badge variant={overallScore >= 95 ? 'default' : overallScore >= 85 ? 'secondary' : 'destructive'}>
+                  {overallScore >= 95 ? 'Perfect' : overallScore >= 85 ? 'Good' : 'Needs Work'}
+                </Badge>
+              </CardContent>
+            </Card>
+
+            {/* Consolidated Hooks */}
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className={`text-2xl font-bold ${getScoreColor(report.masterHookCompliance.score)}`}>
+                  {report.consolidatedHooks}
                 </div>
-              </div>
-            ))}
+                <div className="text-sm text-gray-600">Consolidated Hooks</div>
+                <div className="text-xs text-gray-500 mt-1">
+                  Total: {report.totalHooks}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Single Source */}
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className={`text-2xl font-bold ${getScoreColor(report.score)}`}>
+                  {report.score}%
+                </div>
+                <div className="text-sm text-gray-600">Single Source</div>
+                <div className="text-xs text-gray-500 mt-1">
+                  TypeScript: {report.typeScriptAligned ? 'Aligned' : 'Issues'}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Validations */}
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className={`text-2xl font-bold ${getScoreColor(90)}`}>
+                  {report.validationsPassed}
+                </div>
+                <div className="text-sm text-gray-600">Validations</div>
+                <div className="text-xs text-gray-500 mt-1">
+                  Knowledge: {report.knowledgeLearningActive ? 'Active' : 'Inactive'}
+                </div>
+              </CardContent>
+            </Card>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Single Source of Truth Validation */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Database className="h-5 w-5" />
-            Single Source of Truth Compliance
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span>Compliance Score</span>
-              <Badge variant={singleSourceValidation.consolidated ? "default" : "secondary"}>
-                {singleSourceValidation.score}%
-              </Badge>
+          {/* Detailed Status */}
+          <div className="mt-6 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">Master Hook Compliance</CardTitle>
+                </CardHeader>
+                <CardContent className="p-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Compliance Score</span>
+                      <Badge variant={report.masterHookCompliance.isCompliant ? 'default' : 'destructive'}>
+                        {report.masterHookCompliance.score}%
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Activated Hooks</span>
+                      <span className="font-medium">{report.masterHookCompliance.activatedHooks.length}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Missing Hooks</span>
+                      <span className="font-medium">{report.masterHookCompliance.missingHooks.length}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">Consolidation Plan</CardTitle>
+                </CardHeader>
+                <CardContent className="p-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Current Status</span>
+                      <Badge variant="default">{plan.currentStatus}</Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Priority</span>
+                      <Badge variant={plan.priority === 'high' ? 'destructive' : 'secondary'}>
+                        {plan.priority}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Architecture</span>
+                      <span className="text-xs text-gray-500">{plan.architectureType}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-            <Progress value={singleSourceValidation.score} />
-            
-            {singleSourceValidation.violations.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="font-medium text-orange-600">Violations to Address:</h4>
-                {singleSourceValidation.violations.map((violation, index) => (
-                  <div key={index} className="flex items-start gap-2">
-                    <AlertTriangle className="h-4 w-4 text-orange-500 mt-0.5" />
-                    <span className="text-sm">{violation}</span>
+          </div>
+
+          {/* Registry Entries */}
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle className="text-sm">Registry Entries</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {report.registryEntries.map((entry) => (
+                  <div key={entry.id} className="flex items-center justify-between p-2 border rounded">
+                    <span className="font-medium text-sm">{entry.name}</span>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary">{entry.type}</Badge>
+                      <Badge variant={entry.status === 'active' ? 'default' : 'secondary'}>
+                        {entry.status}
+                      </Badge>
+                    </div>
                   </div>
                 ))}
               </div>
-            )}
-            
-            {singleSourceValidation.consolidated && (
-              <div className="flex items-center gap-2 text-green-600">
-                <CheckCircle className="h-4 w-4" />
-                <span className="text-sm">All data access follows single source principle</span>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
 
-      {/* TypeScript Alignment */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Code className="h-5 w-5" />
-            TypeScript Alignment Report
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="grid grid-cols-3 gap-4 text-center">
-              <div>
-                <div className="text-2xl font-bold text-blue-600">
-                  {alignmentReport.hookConsistency.score}%
-                </div>
-                <div className="text-sm text-muted-foreground">Hook Consistency</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-green-600">
-                  {alignmentReport.interfaceAlignment.score}%
-                </div>
-                <div className="text-sm text-muted-foreground">Interface Alignment</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-purple-600">
-                  {alignmentReport.singleSourceCompliance.score}%
-                </div>
-                <div className="text-sm text-muted-foreground">Single Source</div>
-              </div>
+          {lastValidation && (
+            <div className="mt-4 text-xs text-gray-500 text-center">
+              Last validation: {lastValidation.toLocaleString()}
             </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Recommendations */}
-      {recommendations.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5" />
-              Master Consolidation Recommendations
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {recommendations.map((recommendation, index) => (
-                <div key={index} className="flex items-start gap-2">
-                  <AlertTriangle className="h-4 w-4 text-blue-500 mt-0.5" />
-                  <span className="text-sm">{recommendation}</span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Consolidation Actions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-3">
-            <Button 
-              onClick={() => verificationSystem.verifySystem('master_consolidation_check')}
-              disabled={verificationSystem.isVerifying}
-            >
-              {verificationSystem.isVerifying ? 'Verifying...' : 'Verify Master Consolidation'}
-            </Button>
-            <Button 
-              variant="outline"
-              onClick={() => verificationSystem.runValidation('single_source_validation')}
-              disabled={verificationSystem.isValidating}
-            >
-              {verificationSystem.isValidating ? 'Validating...' : 'Validate Single Source'}
-            </Button>
-            <Button 
-              variant="outline"
-              onClick={() => {
-                const learnings = verificationSystem.learnFromSystem();
-                console.log('Master Consolidation Learnings:', learnings);
-              }}
-            >
-              Analyze Consolidation Patterns
-            </Button>
-          </div>
+          )}
         </CardContent>
       </Card>
     </div>
