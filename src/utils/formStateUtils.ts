@@ -1,38 +1,45 @@
 
 /**
- * FORM STATE UTILITIES - DUAL COMPATIBILITY HELPERS
- * Ensures complete TypeScript alignment for all form state operations
- * Version: form-state-utils-v1.0.0
+ * MASTER FORM STATE UTILITIES - CONSOLIDATED REAL DATA ONLY
+ * Version: master-form-state-utils-v2.0.0 - Fixed interface consistency
  */
-import type { MasterUserFormState } from '@/types/masterFormState';
-import { normalizeMasterUserFormState } from '@/types/masterFormState';
+import { MasterUserFormState } from '@/types/formState';
 
-// Helper to create complete form state from partial data
-export const createCompleteFormState = (partial: Partial<MasterUserFormState> = {}): MasterUserFormState => {
-  return normalizeMasterUserFormState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    role: '',
-    phone: '',
-    isActive: true,
-    termsAccepted: false,
-    ...partial
+export const createMasterFormState = (initialData?: Partial<MasterUserFormState>): MasterUserFormState => {
+  return {
+    firstName: initialData?.firstName || '',
+    lastName: initialData?.lastName || '',
+    email: initialData?.email || '',
+    phone: initialData?.phone || '',
+    role: initialData?.role || 'user',
+    facilityId: initialData?.facilityId || '',
+    isActive: initialData?.isActive ?? true,
+    // Remove termsAccepted as it's not part of MasterUserFormState interface
+  };
+};
+
+export const normalizeMasterFormState = (data: any): MasterUserFormState => {
+  return createMasterFormState({
+    firstName: data?.firstName || data?.first_name || '',
+    lastName: data?.lastName || data?.last_name || '',
+    email: data?.email || '',
+    phone: data?.phone || '',
+    role: data?.role || 'user',
+    facilityId: data?.facilityId || data?.facility_id || '',
+    isActive: data?.isActive ?? data?.is_active ?? true,
   });
 };
 
-// Helper to update form state while maintaining dual compatibility
-export const updateFormState = (current: MasterUserFormState, updates: Partial<MasterUserFormState>): MasterUserFormState => {
-  return normalizeMasterUserFormState({ ...current, ...updates });
-};
-
-// Helper to convert simple form data to complete form state
-export const convertToMasterFormState = (simpleForm: {
-  firstName?: string;
-  lastName?: string;
-  email?: string;
-  role?: string;
-  phone?: string;
-}): MasterUserFormState => {
-  return createCompleteFormState(simpleForm);
+export const validateMasterFormState = (state: MasterUserFormState): { isValid: boolean; errors: string[] } => {
+  const errors: string[] = [];
+  
+  if (!state.firstName.trim()) errors.push('First name is required');
+  if (!state.lastName.trim()) errors.push('Last name is required');
+  if (!state.email.trim()) errors.push('Email is required');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(state.email)) errors.push('Valid email is required');
+  
+  return {
+    isValid: errors.length === 0,
+    errors
+  };
 };
