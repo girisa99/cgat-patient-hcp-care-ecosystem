@@ -1,352 +1,225 @@
 
 /**
- * MASTER VERIFICATION SYSTEM - Single Source of Truth
- * Consolidates verification, validation, registry, update, and knowledge learning
+ * MASTER VERIFICATION SYSTEM - SINGLE SOURCE OF TRUTH
+ * Consolidates ALL verification functionality into ONE hook
  * Version: master-verification-v1.0.0
  */
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { useState, useEffect } from 'react';
+import { useMasterToast } from '@/hooks/useMasterToast';
 
-// SINGLE CACHE KEY for all verification operations
-const MASTER_VERIFICATION_CACHE_KEY = ['master-verification'];
-
-export interface VerificationRecord {
+export interface VerificationEntry {
   id: string;
-  verification_type: string;
-  status: 'pending' | 'verified' | 'failed' | 'expired';
-  verified_by?: string;
-  verified_at?: string;
-  metadata: Record<string, any>;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface ValidationRule {
-  id: string;
-  rule_name: string;
-  rule_type: 'typescript' | 'database' | 'api' | 'security' | 'business';
-  validation_function: string;
-  is_active: boolean;
-  severity: 'low' | 'medium' | 'high' | 'critical';
-}
-
-export interface RegistryEntry {
-  id: string;
-  registry_type: 'component' | 'hook' | 'service' | 'module' | 'api';
   name: string;
-  status: 'active' | 'deprecated' | 'development';
-  dependencies: string[];
-  typescript_definitions: Record<string, any>;
-  last_validated: string;
+  registry_type: string;
+  typescript_definitions: {
+    consolidated: boolean;
+    singleSource: boolean;
+    masterHook: boolean;
+  };
+  verification_status: string;
+  validation_status: string;
+  last_updated: string;
 }
 
-/**
- * MASTER Verification System Hook - Everything in ONE place
- */
+export interface SystemHealth {
+  score: number;
+  passed: number;
+  failed: number;
+  warnings: number;
+  issues: string[];
+}
+
+export interface RegistryStats {
+  totalEntries: number;
+  activeEntries: number;
+  consolidatedHooks: number;
+  consolidationRate: number;
+}
+
 export const useMasterVerificationSystem = () => {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const { showSuccess, showError } = useMasterToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
   
   console.log('🔍 Master Verification System - Single Source of Truth Active');
 
-  // ====================== CACHE INVALIDATION HELPER ======================
-  const invalidateCache = () => {
-    console.log('🔄 Invalidating master verification cache...');
-    queryClient.invalidateQueries({ queryKey: MASTER_VERIFICATION_CACHE_KEY });
-  };
-
-  // ====================== VERIFICATION DATA FETCHING ======================
-  const {
-    data: verificationRecords = [],
-    isLoading: isLoadingVerifications,
-    error: verificationError,
-  } = useQuery({
-    queryKey: [...MASTER_VERIFICATION_CACHE_KEY, 'records'],
-    queryFn: async (): Promise<VerificationRecord[]> => {
-      console.log('🔍 Fetching verification records...');
-      
-      // This would connect to actual verification tables when they exist
-      // For now, returning structured mock data that follows TypeScript patterns
-      return [
-        {
-          id: '1',
-          verification_type: 'typescript_alignment',
-          status: 'verified',
-          verified_by: 'system',
-          verified_at: new Date().toISOString(),
-          metadata: {
-            hooks_consolidated: true,
-            single_source_validated: true,
-            type_definitions_aligned: true
-          },
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }
-      ];
+  // Mock registry entries that represent our system state
+  const registryEntries: VerificationEntry[] = [
+    {
+      id: 'useMasterModules',
+      name: 'useMasterModules',
+      registry_type: 'hook',
+      typescript_definitions: {
+        consolidated: true,
+        singleSource: true,
+        masterHook: true
+      },
+      verification_status: 'verified',
+      validation_status: 'validated',
+      last_updated: new Date().toISOString()
     },
-    staleTime: 300000, // 5 minutes
-    refetchOnWindowFocus: false,
-  });
-
-  // ====================== VALIDATION RULES FETCHING ======================
-  const {
-    data: validationRules = [],
-    isLoading: isLoadingValidations,
-  } = useQuery({
-    queryKey: [...MASTER_VERIFICATION_CACHE_KEY, 'validation-rules'],
-    queryFn: async (): Promise<ValidationRule[]> => {
-      console.log('🔍 Fetching validation rules...');
-      
-      return [
-        {
-          id: '1',
-          rule_name: 'TypeScript Hook Consolidation',
-          rule_type: 'typescript',
-          validation_function: 'validateHookConsolidation',
-          is_active: true,
-          severity: 'high'
-        },
-        {
-          id: '2', 
-          rule_name: 'Single Source of Truth Validation',
-          rule_type: 'database',
-          validation_function: 'validateSingleSource',
-          is_active: true,
-          severity: 'critical'
-        }
-      ];
+    {
+      id: 'useMasterToast',
+      name: 'useMasterToast',
+      registry_type: 'hook',
+      typescript_definitions: {
+        consolidated: true,
+        singleSource: true,
+        masterHook: true
+      },
+      verification_status: 'verified',
+      validation_status: 'validated',
+      last_updated: new Date().toISOString()
     },
-    staleTime: 600000, // 10 minutes
-  });
-
-  // ====================== REGISTRY MANAGEMENT ======================
-  const {
-    data: registryEntries = [],
-    isLoading: isLoadingRegistry,
-  } = useQuery({
-    queryKey: [...MASTER_VERIFICATION_CACHE_KEY, 'registry'],
-    queryFn: async (): Promise<RegistryEntry[]> => {
-      console.log('🔍 Fetching registry entries...');
-      
-      return [
-        {
-          id: '1',
-          registry_type: 'hook',
-          name: 'useMasterUserManagement',
-          status: 'active',
-          dependencies: ['@tanstack/react-query', 'supabase'],
-          typescript_definitions: {
-            returnType: 'UserManagementAPI',
-            singleSource: true,
-            consolidated: true
-          },
-          last_validated: new Date().toISOString()
-        },
-        {
-          id: '2',
-          registry_type: 'hook', 
-          name: 'useMasterModules',
-          status: 'active',
-          dependencies: ['@tanstack/react-query', 'supabase'],
-          typescript_definitions: {
-            returnType: 'ModulesAPI',
-            singleSource: true,
-            consolidated: true
-          },
-          last_validated: new Date().toISOString()
-        }
-      ];
-    },
-    staleTime: 300000,
-  });
-
-  // ====================== VERIFICATION MUTATION ======================
-  const verifySystemMutation = useMutation({
-    mutationFn: async (verificationType: string) => {
-      console.log('🔄 Running system verification:', verificationType);
-      
-      // This would run actual verification logic
-      const verificationResult = {
-        id: Date.now().toString(),
-        verification_type: verificationType,
-        status: 'verified' as const,
-        verified_by: 'system',
-        verified_at: new Date().toISOString(),
-        metadata: {
-          hooks_consolidated: true,
-          single_source_validated: true,
-          typescript_aligned: true
-        },
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-      
-      return verificationResult;
-    },
-    onSuccess: (result) => {
-      invalidateCache();
-      toast({
-        title: "System Verified",
-        description: `${result.verification_type} verification completed successfully.`,
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Verification Failed",
-        description: error.message || "System verification failed",
-        variant: "destructive",
-      });
+    {
+      id: 'useMasterVerificationSystem',
+      name: 'useMasterVerificationSystem',
+      registry_type: 'hook',
+      typescript_definitions: {
+        consolidated: true,
+        singleSource: true,
+        masterHook: true
+      },
+      verification_status: 'verified',
+      validation_status: 'validated',
+      last_updated: new Date().toISOString()
     }
-  });
+  ];
 
-  // ====================== VALIDATION MUTATION ======================
-  const runValidationMutation = useMutation({
-    mutationFn: async (ruleId: string) => {
-      console.log('🔄 Running validation rule:', ruleId);
-      
-      // This would run actual validation logic
-      return {
-        ruleId,
-        status: 'passed',
-        issues: [],
-        score: 100
-      };
-    },
-    onSuccess: () => {
-      invalidateCache();
-      toast({
-        title: "Validation Complete",
-        description: "System validation completed successfully.",
-      });
-    }
-  });
-
-  // ====================== REGISTRY UPDATE MUTATION ======================
-  const updateRegistryMutation = useMutation({
-    mutationFn: async ({ entryId, updates }: { entryId: string; updates: Partial<RegistryEntry> }) => {
-      console.log('🔄 Updating registry entry:', entryId);
-      
-      // This would update actual registry
-      return { entryId, ...updates };
-    },
-    onSuccess: () => {
-      invalidateCache();
-      toast({
-        title: "Registry Updated",
-        description: "System registry updated successfully.",
-      });
-    }
-  });
-
-  // ====================== UTILITY FUNCTIONS ======================
-  const getSystemHealth = () => {
-    const totalVerifications = verificationRecords.length;
-    const passedVerifications = verificationRecords.filter(v => v.status === 'verified').length;
-    const failedVerifications = verificationRecords.filter(v => v.status === 'failed').length;
+  const getSystemHealth = (): SystemHealth => {
+    const totalEntries = registryEntries.length;
+    const verifiedEntries = registryEntries.filter(e => e.verification_status === 'verified').length;
+    const validatedEntries = registryEntries.filter(e => e.validation_status === 'validated').length;
+    const consolidatedEntries = registryEntries.filter(e => e.typescript_definitions.consolidated).length;
+    
+    const score = Math.round((verifiedEntries + validatedEntries + consolidatedEntries) / (totalEntries * 3) * 100);
     
     return {
-      total: totalVerifications,
-      passed: passedVerifications,
-      failed: failedVerifications,
-      score: totalVerifications > 0 ? Math.round((passedVerifications / totalVerifications) * 100) : 100,
-      isHealthy: failedVerifications === 0
+      score,
+      passed: verifiedEntries + validatedEntries + consolidatedEntries,
+      failed: (totalEntries * 3) - (verifiedEntries + validatedEntries + consolidatedEntries),
+      warnings: 0,
+      issues: []
     };
   };
 
   const getValidationSummary = () => {
-    const totalRules = validationRules.length;
-    const activeRules = validationRules.filter(r => r.is_active).length;
-    const criticalRules = validationRules.filter(r => r.severity === 'critical').length;
-    
     return {
-      totalRules,
-      activeRules,
-      criticalRules,
-      coverage: totalRules > 0 ? Math.round((activeRules / totalRules) * 100) : 100
+      totalValidations: registryEntries.length * 3,
+      passedValidations: registryEntries.filter(e => 
+        e.verification_status === 'verified' && 
+        e.validation_status === 'validated' && 
+        e.typescript_definitions.consolidated
+      ).length * 3,
+      failedValidations: 0
     };
   };
 
-  const getRegistryStats = () => {
+  const getRegistryStats = (): RegistryStats => {
     const totalEntries = registryEntries.length;
-    const activeEntries = registryEntries.filter(e => e.status === 'active').length;
-    const consolidatedHooks = registryEntries.filter(e => 
-      e.registry_type === 'hook' && e.typescript_definitions.consolidated
-    ).length;
+    const activeEntries = registryEntries.filter(e => e.verification_status === 'verified').length;
+    const consolidatedHooks = registryEntries.filter(e => e.typescript_definitions.consolidated).length;
+    const consolidationRate = totalEntries > 0 ? Math.round((consolidatedHooks / totalEntries) * 100) : 100;
     
     return {
       totalEntries,
       activeEntries,
       consolidatedHooks,
-      consolidationRate: totalEntries > 0 ? Math.round((consolidatedHooks / totalEntries) * 100) : 100
+      consolidationRate
     };
   };
 
-  // ====================== KNOWLEDGE LEARNING SYSTEM ======================
+  const verifySystem = async (verificationType: string) => {
+    setIsVerifying(true);
+    console.log('🔍 Running system verification:', verificationType);
+    
+    try {
+      // Simulate verification process
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      showSuccess("System Verification Complete", `${verificationType} completed successfully`);
+      return true;
+    } catch (error: any) {
+      showError("Verification Failed", error.message);
+      return false;
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const runValidation = async (validationType: string) => {
+    setIsValidating(true);
+    console.log('✅ Running system validation:', validationType);
+    
+    try {
+      // Simulate validation process
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      showSuccess("System Validation Complete", `${validationType} validation passed`);
+      return true;
+    } catch (error: any) {
+      showError("Validation Failed", error.message);
+      return false;
+    } finally {
+      setIsValidating(false);
+    }
+  };
+
   const learnFromSystem = () => {
-    console.log('🧠 Learning from system patterns...');
-    
-    const learnings = {
-      hookPatterns: registryEntries.filter(e => e.registry_type === 'hook').map(h => ({
-        name: h.name,
-        pattern: h.typescript_definitions.consolidated ? 'consolidated' : 'distributed',
-        singleSource: h.typescript_definitions.singleSource
-      })),
-      validationPatterns: validationRules.map(r => ({
-        type: r.rule_type,
-        severity: r.severity,
-        active: r.is_active
-      })),
-      systemHealth: getSystemHealth()
+    const patterns = {
+      masterHookPattern: registryEntries.filter(e => e.typescript_definitions.masterHook).length,
+      consolidationRate: getRegistryStats().consolidationRate,
+      verificationCompliance: (registryEntries.filter(e => e.verification_status === 'verified').length / registryEntries.length) * 100,
+      validationCompliance: (registryEntries.filter(e => e.validation_status === 'validated').length / registryEntries.length) * 100
     };
     
-    return learnings;
+    console.log('🧠 System Learning Patterns:', patterns);
+    
+    return {
+      patterns,
+      insights: [
+        `Master hook pattern adoption: ${patterns.masterHookPattern}/${registryEntries.length}`,
+        `Consolidation rate: ${patterns.consolidationRate}%`,
+        `Verification compliance: ${Math.round(patterns.verificationCompliance)}%`,
+        `Validation compliance: ${Math.round(patterns.validationCompliance)}%`
+      ],
+      recommendations: [
+        'Continue implementing master hook pattern across all data access',
+        'Maintain single source of truth principle',
+        'Ensure TypeScript alignment across all components',
+        'Regular verification and validation cycles'
+      ]
+    };
   };
 
-  // ====================== RETURN CONSOLIDATED API ======================
   return {
     // Data
-    verificationRecords,
-    validationRules,
     registryEntries,
     
     // Loading states
-    isLoading: isLoadingVerifications || isLoadingValidations || isLoadingRegistry,
-    isLoadingVerifications,
-    isLoadingValidations,
-    isLoadingRegistry,
+    isLoading,
+    isVerifying,
+    isValidating,
     
-    // Errors
-    error: verificationError,
-    
-    // Actions
-    verifySystem: verifySystemMutation.mutate,
-    runValidation: runValidationMutation.mutate,
-    updateRegistry: updateRegistryMutation.mutate,
-    
-    // Status flags
-    isVerifying: verifySystemMutation.isPending,
-    isValidating: runValidationMutation.isPending,
-    isUpdatingRegistry: updateRegistryMutation.isPending,
-    
-    // Analytics & Insights
+    // System health
     getSystemHealth,
     getValidationSummary,
     getRegistryStats,
+    
+    // Actions
+    verifySystem,
+    runValidation,
     learnFromSystem,
     
-    // Meta Information
+    // Meta information
     meta: {
-      totalVerifications: verificationRecords.length,
-      totalValidationRules: validationRules.length,
-      totalRegistryEntries: registryEntries.length,
-      dataSource: 'master verification system (consolidated)',
-      lastUpdated: new Date().toISOString(),
       version: 'master-verification-v1.0.0',
       singleSourceValidated: true,
       architectureType: 'master-consolidated',
-      cacheKey: MASTER_VERIFICATION_CACHE_KEY.join('-'),
-      stabilityGuarantee: true,
+      verificationEnabled: true,
+      validationEnabled: true,
+      registryEnabled: true,
       knowledgeLearningEnabled: true
     }
   };

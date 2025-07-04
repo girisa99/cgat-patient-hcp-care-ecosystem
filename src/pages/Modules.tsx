@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Package, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Plus, Package, CheckCircle } from 'lucide-react';
 import { useMasterModules } from '@/hooks/useMasterModules';
 import { MasterConsolidationStatus } from '@/components/verification/MasterConsolidationStatus';
 
@@ -45,7 +45,6 @@ const Modules: React.FC = () => {
   };
 
   const integrity = masterModules.verifyModuleIntegrity();
-  const learnings = masterModules.learnFromModules();
 
   return (
     <AppLayout title="Master Modules Management">
@@ -73,7 +72,6 @@ const Modules: React.FC = () => {
           <TabsList>
             <TabsTrigger value="modules">Modules ({masterModules.modules.length})</TabsTrigger>
             <TabsTrigger value="verification">Master Consolidation</TabsTrigger>
-            <TabsTrigger value="system">System Health</TabsTrigger>
           </TabsList>
 
           <TabsContent value="modules" className="space-y-4">
@@ -159,127 +157,39 @@ const Modules: React.FC = () => {
           <TabsContent value="verification">
             <MasterConsolidationStatus />
           </TabsContent>
-
-          <TabsContent value="system" className="space-y-4">
-            {/* System Health */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5" />
-                    System Health
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span>Status:</span>
-                      <Badge variant={integrity.isHealthy ? "default" : "destructive"}>
-                        {integrity.isHealthy ? "Healthy" : "Issues"}
-                      </Badge>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Total Modules:</span>
-                      <span>{integrity.totalModules}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Active Modules:</span>
-                      <span>{integrity.activeModules}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Validations Passed:</span>
-                      <span>{integrity.validationsPassed}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Registry Info</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span>Total Entries:</span>
-                      <span>{masterModules.registryInfo.totalEntries}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Active Entries:</span>
-                      <span>{masterModules.registryInfo.activeEntries}</span>
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      Last Updated: {new Date(masterModules.registryInfo.lastUpdated).toLocaleString()}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Learning Insights</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {learnings.insights.map((insight, index) => (
-                      <div key={index} className="text-sm">
-                        {insight}
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Meta Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Master Consolidation Meta</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                  <div>
-                    <div className="font-medium">Version</div>
-                    <div className="text-muted-foreground">{masterModules.meta.version}</div>
-                  </div>
-                  <div>
-                    <div className="font-medium">Architecture</div>
-                    <div className="text-muted-foreground">{masterModules.meta.architectureType}</div>
-                  </div>
-                  <div>
-                    <div className="font-medium">Single Source</div>
-                    <div className="text-green-600">
-                      {masterModules.meta.singleSourceValidated ? '✅ Validated' : '❌ Invalid'}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="font-medium">Cache Key</div>
-                    <div className="text-muted-foreground font-mono text-xs">{masterModules.meta.cacheKey}</div>
-                  </div>
-                </div>
-                
-                <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                    <span>Verification Enabled</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                    <span>Validation Enabled</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                    <span>Registry Enabled</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                    <span>Knowledge Learning Enabled</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
         </Tabs>
+
+        {/* System Meta Information */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5" />
+              Master Consolidation Status
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div>
+                <div className="font-medium">Version</div>
+                <div className="text-muted-foreground">{masterModules.meta.version}</div>
+              </div>
+              <div>
+                <div className="font-medium">Architecture</div>
+                <div className="text-muted-foreground">{masterModules.meta.architectureType}</div>
+              </div>
+              <div>
+                <div className="font-medium">Single Source</div>
+                <div className="text-green-600">
+                  {masterModules.meta.singleSourceValidated ? '✅ Validated' : '❌ Invalid'}
+                </div>
+              </div>
+              <div>
+                <div className="font-medium">Cache Strategy</div>
+                <div className="text-muted-foreground font-mono text-xs">{masterModules.meta.cacheKey}</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </AppLayout>
   );
