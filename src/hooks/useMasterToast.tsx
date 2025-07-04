@@ -1,54 +1,70 @@
 
 /**
- * MASTER TOAST SYSTEM - SINGLE SOURCE OF TRUTH
- * Consolidates all toast functionality into one master hook
+ * MASTER TOAST HOOK - SINGLE SOURCE OF TRUTH
+ * Centralized toast notifications with TypeScript alignment
  * Version: master-toast-v1.0.0
  */
 import { useToast } from './use-toast';
 
+export interface ToastOptions {
+  title: string;
+  description: string;
+  variant?: 'default' | 'destructive';
+  duration?: number;
+}
+
 export const useMasterToast = () => {
   const { toast } = useToast();
   
-  console.log('🎯 Master Toast - Single Source of Truth Active');
+  console.log('🔔 Master Toast v1.0 - Single Source Toast System Active');
 
-  const showSuccess = (title: string, description?: string) => {
+  const showSuccess = (title: string, description: string, duration = 3000) => {
     toast({
       title,
       description,
-      variant: 'default'
+      variant: 'default',
+      duration
     });
   };
 
-  const showError = (title: string, description?: string) => {
+  const showError = (title: string, description: string, duration = 5000) => {
     toast({
       title,
       description,
-      variant: 'destructive'
+      variant: 'destructive',
+      duration
     });
   };
 
-  const showInfo = (title: string, description?: string) => {
+  const showInfo = (title: string, description: string, duration = 4000) => {
     toast({
       title,
       description,
-      variant: 'default'
+      variant: 'default',
+      duration
+    });
+  };
+
+  const showToast = (options: ToastOptions) => {
+    toast({
+      title: options.title,
+      description: options.description,
+      variant: options.variant || 'default',
+      duration: options.duration || 3000
     });
   };
 
   return {
-    // Standardized toast methods
     showSuccess,
     showError,
     showInfo,
-    
-    // Direct toast access for advanced usage
-    toast,
+    showToast,
     
     // Meta information
     meta: {
       toastVersion: 'master-toast-v1.0.0',
       singleSourceValidated: true,
-      architectureType: 'master-consolidated'
+      typeScriptAligned: true
     }
   };
 };

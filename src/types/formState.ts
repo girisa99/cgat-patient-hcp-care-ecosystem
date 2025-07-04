@@ -1,75 +1,64 @@
 
 /**
  * MASTER FORM STATE TYPES - SINGLE SOURCE OF TRUTH
- * Prevents TypeScript "never" type inference issues
- * Version: master-form-state-types-v2.0.0 - Enhanced with proper form state definitions
+ * TypeScript definitions for all form states across the application
+ * Version: master-form-state-v1.0.0
  */
-
-export interface ApiFormState {
-  name: string;
-  description: string;  
-  endpoint: string;
-  method: string;
-  headers: string;
-}
-
-export interface PublishFormState {
-  title: string;
-  description: string;
-  content: string;
-  category: string;
-  tags: string;
-}
-
-export interface PatientFormState {
-  firstName: string;
-  lastName: string;
-  dateOfBirth: string;
-  email: string;
-  phone: string;
-}
-
-export interface SharedModuleState {
-  selectedModule: string;
-  isActive: boolean;
-  configuration: string;
-}
 
 export interface UserManagementFormState {
   firstName: string;
   lastName: string;
   email: string;
   role: string;
-  phone: string;
+  phone?: string;
+  isActive?: boolean;
 }
 
-// Enhanced form state interfaces for comprehensive TypeScript alignment
-export interface NewUserForm {
+export interface FacilityFormState {
+  name: string;
+  address: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  phone?: string;
+  email?: string;
+  isActive?: boolean;
+}
+
+export interface ModuleFormState {
+  name: string;
+  description?: string;
+  isActive?: boolean;
+  permissions?: string[];
+}
+
+export interface PatientFormState {
   firstName: string;
   lastName: string;
   email: string;
-  role: string;
-  phone: string;
+  phone?: string;
+  dateOfBirth?: string;
+  facilityId?: string;
 }
 
-export interface AdminRealtimeState {
-  connectedUsers: string;
-  activeConnections: string;
-  systemLoad: number;
+// Base form state interface for consistency
+export interface BaseFormState {
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-export interface ApiConsumptionTriggerState {
-  apiName: string;
-  triggerType: string;
-  endpoint: string;
-  method: string;
-  payload: string;
+// Form validation state
+export interface FormValidationState {
+  isValid: boolean;
+  errors: Record<string, string>;
+  touched: Record<string, boolean>;
 }
 
-export interface ApiIntegrationState {
-  integrationName: string;
-  apiUrl: string;
-  authMethod: string;
-  headers: string;
-  timeout: string;
+// Master form meta information
+export interface FormStateMeta {
+  version: string;
+  singleSourceValidated: boolean;
+  typeScriptAligned: boolean;
+  lastUpdated: string;
 }
