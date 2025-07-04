@@ -6,7 +6,7 @@ import { componentTagger } from "lovable-tagger";
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
-    host: "genie.local",  // Professional healthcare domain
+    host: "localhost",    // Fallback to localhost for now
     port: 5173,           // Standard development port
     open: true,           // Auto-open browser
     strictPort: true,     // Don't try other ports if 5173 is busy
