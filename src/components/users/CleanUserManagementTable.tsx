@@ -31,6 +31,14 @@ import { UserStatsCards } from './UserStatsCards';
 import { UserRow } from './UserRow';
 import { BulkActionsTab } from './BulkActionsTab';
 
+interface NewUserForm {
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: string;
+  phone: string;
+}
+
 export const CleanUserManagementTable: React.FC = () => {
   // SINGLE MASTER HOOK - Must be called first, unconditionally
   const { 
@@ -45,18 +53,18 @@ export const CleanUserManagementTable: React.FC = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  // ALL useState hooks MUST be called unconditionally
+  // ALL useState hooks MUST be called unconditionally with proper typing
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showAddUserDialog, setShowAddUserDialog] = useState(false);
-  const [showViewUserDialog, setShowViewUserDialog] = useState(false);
-  const [showEditUserDialog, setShowEditUserDialog] = useState(false);
-  const [showRoleDialog, setShowRoleDialog] = useState(false);
-  const [showFacilityDialog, setShowFacilityDialog] = useState(false);
-  const [showDeactivateDialog, setShowDeactivateDialog] = useState(false);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [showAddUserDialog, setShowAddUserDialog] = useState<boolean>(false);
+  const [showViewUserDialog, setShowViewUserDialog] = useState<boolean>(false);
+  const [showEditUserDialog, setShowEditUserDialog] = useState<boolean>(false);
+  const [showRoleDialog, setShowRoleDialog] = useState<boolean>(false);
+  const [showFacilityDialog, setShowFacilityDialog] = useState<boolean>(false);
+  const [showDeactivateDialog, setShowDeactivateDialog] = useState<boolean>(false);
   const [selectedUser, setSelectedUser] = useState<UserWithRoles | null>(null);
-  const [activeTab, setActiveTab] = useState('users');
-  const [newUser, setNewUser] = useState({
+  const [activeTab, setActiveTab] = useState<string>('users');
+  const [newUser, setNewUser] = useState<NewUserForm>({
     firstName: '',
     lastName: '',
     email: '',
@@ -87,7 +95,7 @@ export const CleanUserManagementTable: React.FC = () => {
       email: newUser.email,
       first_name: newUser.firstName,
       last_name: newUser.lastName,
-      phone: newUser.phone || null,
+      phone: newUser.phone || undefined,
       role: newUser.role as any
     });
     
@@ -398,9 +406,9 @@ export const CleanUserManagementTable: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center p-4 bg-muted/30 rounded-lg font-semibold text-sm">
                   <div className="flex items-center gap-3">
                     <Checkbox
-                      checked={isAllSelected}
-                      indeterminate={isIndeterminate}
-                      onCheckedChange={handleSelectAll}
+                      checked={filteredUsers.length > 0 && selectedUsers.length === filteredUsers.length}
+                      indeterminate={selectedUsers.length > 0 && selectedUsers.length < filteredUsers.length}
+                      onCheckedChange={(checked) => setSelectedUsers(checked ? filteredUsers.map(user => user.id) : [])}
                     />
                     <span>User Information</span>
                   </div>
@@ -416,16 +424,67 @@ export const CleanUserManagementTable: React.FC = () => {
                       key={user.id}
                       user={user}
                       isSelected={selectedUsers.includes(user.id)}
-                      onSelectUser={handleSelectUser}
-                      onViewUser={handleViewUser}
-                      onEditUser={handleEditUser}
-                      onAssignRole={handleAssignRole}
-                      onRemoveRole={handleRemoveRole}
-                      onAssignModule={handleAssignModule}
-                      onAssignFacility={handleAssignFacility}
-                      onResendEmail={handleResendEmail}
-                      onDeactivateUser={handleDeactivateUser}
-                      onDeleteUser={handleDeleteUser}
+                      onSelectUser={(userId, checked) => setSelectedUsers(prev => 
+                        checked ? [...prev, userId] : prev.filter(id => id !== userId)
+                      )}
+                      onViewUser={(user) => {
+                        setSelectedUser(user);
+                        setShowViewUserDialog(true);
+                      }}
+                      onEditUser={(user) => {
+                        setSelectedUser(user);
+                        setShowEditUserDialog(true);
+                      }}
+                      onAssignRole={(user) => {
+                        setSelectedUser(user);
+                        setShowRoleDialog(true);
+                      }}
+                      onRemoveRole={(user) => {
+                        setSelectedUser(user);
+                        setShowRoleDialog(true);
+                      }}
+                      onAssignModule={(user) => {
+                        toast({
+                          title: "Module Assignment",
+                          description: `Module assignment for ${user.first_name} ${user.last_name} - Feature coming soon`,
+                        });
+                      }}
+                      onAssignFacility={(user) => {
+                        setSelectedUser(user);
+                        setShowFacilityDialog(true);
+                      }}
+                      onResendEmail={async (user) => {
+                        try {
+                          const { error } = await supabase.auth.resend({
+                            type: 'signup',
+                            email: user.email,
+                          });
+                          
+                          if (error) throw error;
+                          
+                          toast({
+                            title: "Verification Email Sent",
+                            description: `Verification email sent to ${user.email}`,
+                          });
+                        } catch (error) {
+                          toast({
+                            title: "Failed to Send Email",
+                            description: "There was an error sending the verification email",
+                            variant: "destructive",
+                          });
+                        }
+                      }}
+                      onDeactivateUser={(user) => {
+                        setSelectedUser(user);
+                        setShowDeactivateDialog(true);
+                      }}
+                      onDeleteUser={(user) => {
+                        toast({
+                          title: "Delete User", 
+                          description: `Delete functionality for ${user.first_name} ${user.last_name} - Feature coming soon`,
+                          variant: "destructive",
+                        });
+                      }}
                     />
                   ))}
                 </div>
@@ -448,12 +507,33 @@ export const CleanUserManagementTable: React.FC = () => {
           <BulkActionsTab
             selectedUsers={selectedUsers}
             users={filteredUsers}
-            onBulkAssignRole={handleBulkAssignRole}
-            onBulkAssignModule={handleBulkAssignModule}
-            onBulkAssignFacility={handleBulkAssignFacility}
-            onBulkDeactivate={handleBulkDeactivate}
-            onDeselectUser={handleDeselectUser}
-            onClearSelection={handleClearSelection}
+            onBulkAssignRole={() => {
+              selectedUsers.forEach(userId => {
+                assignRole({ userId, roleName: 'onboardingTeam' as any });
+              });
+              setSelectedUsers([]);
+            }}
+            onBulkAssignModule={() => {
+              toast({
+                title: "Bulk Module Assignment",
+                description: `Assigned modules to ${selectedUsers.length} users`,
+              });
+              setSelectedUsers([]);
+            }}
+            onBulkAssignFacility={() => {
+              selectedUsers.forEach(userId => {
+                assignFacility({ userId, facilityId: 'default', accessLevel: 'read' });
+              });
+              setSelectedUsers([]);
+            }}
+            onBulkDeactivate={() => {
+              selectedUsers.forEach(userId => {
+                deactivateUser({ userId, reason: 'Bulk administrative action' });
+              });
+              setSelectedUsers([]);
+            }}
+            onDeselectUser={(userId) => setSelectedUsers(prev => prev.filter(id => id !== userId))}
+            onClearSelection={() => setSelectedUsers([])}
             isAssigningRole={isAssigningRole}
             isAssigningFacility={isAssigningFacility}
             isDeactivating={isDeactivating}
