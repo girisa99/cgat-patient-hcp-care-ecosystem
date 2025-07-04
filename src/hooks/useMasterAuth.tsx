@@ -6,25 +6,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-
-interface Profile {
-  id: string;
-  first_name?: string;
-  last_name?: string;
-  email: string;
-  user_roles?: Array<{ role: { name: string; description?: string } }>;
-}
-
-interface MasterAuthContext {
-  user: User | null;
-  session: Session | null;
-  profile: Profile | null;
-  userRoles: string[];
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  signOut: () => Promise<void>;
-  refreshAuth: () => Promise<void>;
-}
+import { MasterProfile, MasterAuthContext } from '@/types/masterTypes';
 
 const AuthContext = createContext<MasterAuthContext | undefined>(undefined);
 
@@ -39,7 +21,7 @@ export const useMasterAuth = () => {
 export const MasterAuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [profile, setProfile] = useState<MasterProfile | null>(null);
   const [userRoles, setUserRoles] = useState<string[]>([]);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -190,18 +172,20 @@ export const MasterAuthProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     } catch (error) {
       console.error('💥 Exception loading profile:', error);
       
-      // Emergency fallback for known super admin
-      if (user?.email === 'superadmintest@geniecellgene.com') {
-        console.log('🚨 Using emergency fallback for known super admin');
-        const adminProfile: Profile = {
-          id: userId,
-          first_name: 'Super',
-          last_name: 'Admin',
-          email: user?.email || 'superadmintest@geniecellgene.com',
-        };
-        setProfile(adminProfile);
-        setUserRoles(['superAdmin']);
-      }
+              // Emergency fallback for known super admin
+        if (user?.email === 'superadmintest@geniecellgene.com') {
+          console.log('🚨 Using emergency fallback for known super admin');
+          const adminProfile: MasterProfile = {
+            id: userId,
+            first_name: 'Super',
+            last_name: 'Admin',
+            email: user?.email || 'superadmintest@geniecellgene.com',
+            is_email_verified: true,
+            created_at: new Date().toISOString(),
+          };
+          setProfile(adminProfile);
+          setUserRoles(['superAdmin']);
+        }
     }
   };
 
