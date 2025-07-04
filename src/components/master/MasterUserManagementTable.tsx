@@ -7,8 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Search, Plus, UserCheck, UserX, Trash2 } from 'lucide-react';
 import { useMasterUserManagement, type MasterUser } from '@/hooks/useMasterUserManagement';
 import { useMasterToast } from '@/hooks/useMasterToast';
+import { useMasterFormStateManager } from '@/hooks/useMasterFormStateManager';
 import type { UserManagementFormState } from '@/types/formState';
-import { normalizeMasterFormState, createMasterFormState } from '@/types/formState';
 
 export const MasterUserManagementTable: React.FC = () => {
   console.log('🔧 MasterUserManagementTable - Master Consolidation Pattern Active');
@@ -20,9 +20,13 @@ export const MasterUserManagementTable: React.FC = () => {
   const [isAddingUser, setIsAddingUser] = useState<boolean>(false);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   
-  const [newUserForm, setNewUserForm] = useState<UserManagementFormState>(
-    createMasterFormState()
-  );
+  // Use master form state manager for complete TypeScript alignment
+  const {
+    formState: newUserForm,
+    updateFormState,
+    resetFormState,
+    isFormValid
+  } = useMasterFormStateManager();
 
   const filteredUsers = useMemo(() => {
     if (!searchTerm.trim()) return userManagement.users;
@@ -36,27 +40,25 @@ export const MasterUserManagementTable: React.FC = () => {
   }, [userManagement.users, searchTerm]);
 
   const handleAddUser = useCallback(async () => {
-    if (!newUserForm.firstName || !newUserForm.lastName || !newUserForm.email || !newUserForm.role) {
+    if (!isFormValid) {
       showError('Validation Error', 'Please fill in all required fields');
       return;
     }
 
     try {
-      const normalizedForm = normalizeMasterFormState(newUserForm);
-      await userManagement.createUser(normalizedForm);
+      await userManagement.createUser(newUserForm);
       showSuccess('User Created', `Successfully created user ${newUserForm.firstName} ${newUserForm.lastName}`);
       
-      setNewUserForm(createMasterFormState());
+      resetFormState();
       setIsAddingUser(false);
     } catch (error) {
       showError('Creation Failed', 'Failed to create user');
     }
-  }, [newUserForm, userManagement, showSuccess, showError]);
+  }, [newUserForm, userManagement, showSuccess, showError, isFormValid, resetFormState]);
 
   const handleUpdateUser = useCallback(async (userId: string, updates: Partial<UserManagementFormState>) => {
     try {
-      const normalizedUpdates = normalizeMasterFormState(updates);
-      await userManagement.updateUser(userId, normalizedUpdates);
+      await userManagement.updateUser(userId, updates);
       showSuccess('User Updated', 'User information updated successfully');
       setEditingUserId(null);
     } catch (error) {
@@ -83,10 +85,6 @@ export const MasterUserManagementTable: React.FC = () => {
       showError('Status Update Failed', 'Failed to update user status');
     }
   }, [userManagement, showSuccess, showError]);
-
-  const resetForm = () => {
-    setNewUserForm(createMasterFormState());
-  };
 
   if (userManagement.isLoading) {
     return (
@@ -139,7 +137,7 @@ export const MasterUserManagementTable: React.FC = () => {
                       <Input
                         id="firstName"
                         value={newUserForm.firstName}
-                        onChange={(e) => setNewUserForm(prev => normalizeMasterFormState({ ...prev, firstName: e.target.value }))}
+                        onChange={(e) => updateFormState({ firstName: e.target.value })}
                         placeholder="Enter first name"
                       />
                     </div>
@@ -148,7 +146,7 @@ export const MasterUserManagementTable: React.FC = () => {
                       <Input
                         id="lastName"
                         value={newUserForm.lastName}
-                        onChange={(e) => setNewUserForm(prev => normalizeMasterFormState({ ...prev, lastName: e.target.value }))}
+                        onChange={(e) => updateFormState({ lastName: e.target.value })}
                         placeholder="Enter last name"
                       />
                     </div>
@@ -158,7 +156,7 @@ export const MasterUserManagementTable: React.FC = () => {
                         id="email"
                         type="email"
                         value={newUserForm.email}
-                        onChange={(e) => setNewUserForm(prev => ({ ...prev, email: e.target.value }))}
+                        onChange={(e) => updateFormState({ email: e.target.value })}
                         placeholder="Enter email"
                       />
                     </div>
@@ -167,7 +165,7 @@ export const MasterUserManagementTable: React.FC = () => {
                       <Input
                         id="role"
                         value={newUserForm.role}
-                        onChange={(e) => setNewUserForm(prev => ({ ...prev, role: e.target.value }))}
+                        onChange={(e) => updateFormState({ role: e.target.value })}
                         placeholder="Enter role"
                       />
                     </div>
@@ -176,20 +174,20 @@ export const MasterUserManagementTable: React.FC = () => {
                       <Input
                         id="phone"
                         value={newUserForm.phone || ''}
-                        onChange={(e) => setNewUserForm(prev => ({ ...prev, phone: e.target.value }))}
+                        onChange={(e) => updateFormState({ phone: e.target.value })}
                         placeholder="Enter phone number"
                       />
                     </div>
                   </div>
                   <div className="flex gap-2 mt-4">
-                    <Button onClick={handleAddUser} disabled={userManagement.isLoading}>
+                    <Button onClick={handleAddUser} disabled={userManagement.isLoading || !isFormValid}>
                       Create User
                     </Button>
                     <Button 
                       variant="outline" 
                       onClick={() => {
                         setIsAddingUser(false);
-                        resetForm();
+                        resetFormState();
                       }}
                     >
                       Cancel

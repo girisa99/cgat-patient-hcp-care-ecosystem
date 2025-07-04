@@ -2,7 +2,7 @@
 /**
  * MASTER FORM STATE TYPES - SINGLE SOURCE OF TRUTH
  * Unified form state definitions for master consolidation compliance
- * Version: form-state-types-v5.0.0 - Complete TypeScript alignment and dual compatibility
+ * Version: form-state-types-v6.0.0 - Complete TypeScript alignment and dual compatibility
  */
 
 export interface UserManagementFormState {
@@ -73,6 +73,15 @@ export const createMasterFormState = (
     last_name: lastName,
     email,
     role,
-    phone
+    phone,
+    isActive: true,
+    facility_id: undefined,
+    termsAccepted: false
   };
+};
+
+// Master form state creation with full dual compatibility
+export const createCompleteFormState = (data: Partial<UserManagementFormState> = {}): UserManagementFormState => {
+  const baseState = createMasterFormState();
+  return normalizeMasterFormState({ ...baseState, ...data });
 };
