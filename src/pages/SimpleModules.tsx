@@ -1,258 +1,176 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Package, CheckCircle, Shield, Database } from 'lucide-react';
-import { useSingleMasterModules } from '@/hooks/useSingleMasterModules';
+import { Search, RefreshCw, Plus, Package } from 'lucide-react';
+import { useMasterData } from '@/hooks/useMasterData';
+import { useMasterAuth } from '@/hooks/useMasterAuth';
 
 const SimpleModules: React.FC = () => {
-  const singleModules = useSingleMasterModules();
+  const { isAuthenticated, isLoading: authLoading, userRoles } = useMasterAuth();
+  const { 
+    modules, 
+    isLoading, 
+    error, 
+    refreshData, 
+    stats 
+  } = useMasterData();
   
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [newModule, setNewModule] = useState({
-    name: '',
-    description: '',
-    is_active: true
-  });
+  const [searchQuery, setSearchQuery] = React.useState('');
 
-  console.log('📦 Simple Modules Page - Using SINGLE MASTER HOOK ONLY');
-  console.log('🏆 Hook Count: 1 (Single Source of Truth)');
-  console.log('📊 Real modules count:', singleModules.modules.length);
+  console.log('📦 Modules Page - Master Data Integration');
 
-  const handleCreateModule = () => {
-    if (newModule.name.trim()) {
-      singleModules.createModule(newModule);
-      setNewModule({ name: '', description: '', is_active: true });
-      setShowCreateForm(false);
-    }
-  };
+  if (authLoading || isLoading) {
+    return (
+      <div className="p-6">
+        <div className="text-center">
+          <div className="text-muted-foreground">Loading modules...</div>
+        </div>
+      </div>
+    );
+  }
 
-  const integrity = singleModules.verifyModuleIntegrity();
-  const stats = singleModules.getModuleStats();
+  if (!isAuthenticated) {
+    return (
+      <div className="p-6">
+        <Card>
+          <CardContent className="p-8 text-center">
+            <div className="text-muted-foreground">Please log in to view modules</div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6">
+        <Card>
+          <CardContent className="p-8 text-center">
+            <div className="text-red-600">Error loading modules: {error.message}</div>
+            <Button onClick={refreshData} className="mt-4">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Retry
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const filteredModules = modules.filter(module =>
+    module.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (module.description && module.description.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header with SINGLE SOURCE confirmation */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Single Master Modules System</h1>
-          <p className="text-muted-foreground">
-            🏆 SINGLE SOURCE OF TRUTH - Only 1 hook used: {singleModules.modules.length} modules
-          </p>
+    <div className="p-6">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold tracking-tight">Module Management</h1>
+        <p className="text-muted-foreground">
+          Configure and manage system modules and features
+        </p>
+      </div>
+
+      {/* Stats Summary */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="text-center p-4 bg-blue-50 rounded-lg">
+          <div className="text-2xl font-bold text-blue-600">{stats.totalModules}</div>
+          <div className="text-sm text-blue-600">Total Modules</div>
         </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="default" className="flex items-center gap-1">
-            <Shield className="h-3 w-3" />
-            1 Hook Only
-          </Badge>
-          <Badge variant="default" className="flex items-center gap-1">
-            <Database className="h-3 w-3" />
-            Single Source: {singleModules.modules.length}
-          </Badge>
-          <Button onClick={() => setShowCreateForm(true)} disabled={singleModules.isCreating}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Module
-          </Button>
+        <div className="text-center p-4 bg-green-50 rounded-lg">
+          <div className="text-2xl font-bold text-green-600">{stats.activeModules}</div>
+          <div className="text-sm text-green-600">Active</div>
+        </div>
+        <div className="text-center p-4 bg-orange-50 rounded-lg">
+          <div className="text-2xl font-bold text-orange-600">{stats.totalModules - stats.activeModules}</div>
+          <div className="text-sm text-orange-600">Inactive</div>
+        </div>
+        <div className="text-center p-4 bg-purple-50 rounded-lg">
+          <div className="text-2xl font-bold text-purple-600">{userRoles.length}</div>
+          <div className="text-sm text-purple-600">Your Roles</div>
         </div>
       </div>
 
-      {/* SINGLE SOURCE OF TRUTH Status Card */}
-      <Card className="border-green-200 bg-green-50/50">
+      <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-green-800">
-            <CheckCircle className="h-5 w-5" />
-            ✅ SINGLE SOURCE OF TRUTH ACHIEVED - Hook Consolidation Complete
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Package className="h-5 w-5" />
+              System Modules ({filteredModules.length})
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={refreshData}
+                variant="outline"
+                size="sm"
+                disabled={isLoading}
+                className="flex items-center gap-2"
+              >
+                <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+              <Button
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Add Module
+              </Button>
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-green-600">1</div>
-              <div className="text-sm text-gray-600">Total Hooks</div>
-              <div className="text-xs text-gray-500">useSingleMasterModules</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-green-600">{singleModules.modules.length}</div>
-              <div className="text-sm text-gray-600">Modules</div>
-              <div className="text-xs text-gray-500">Same Source</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-green-600">100%</div>
-              <div className="text-sm text-gray-600">Consistency</div>
-              <div className="text-xs text-gray-500">No Discrepancy</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-green-600">0</div>
-              <div className="text-sm text-gray-600">Duplicate Hooks</div>
-              <div className="text-xs text-gray-500">All Eliminated</div>
-            </div>
-          </div>
-          
-          <div className="mt-4 p-3 bg-white rounded border">
-            <div className="text-sm font-medium mb-2">✅ SINGLE SOURCE PRINCIPLES ACHIEVED:</div>
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <span>✅ Only 1 Hook (was 6)</span>
-              <span>✅ Unified Routing</span>
-              <span>✅ Streamlined Permissions</span>
-              <span>✅ Streamlined Role Assignment</span>
-              <span>✅ Streamlined Facility Assignment</span>
-              <span>✅ Streamlined User Assignment</span>
-              <span>✅ Streamlined Module Addition</span>
-              <span>✅ No Mock/Test/Duplicate Data</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Module Creation Form */}
-      {showCreateForm && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Create New Module (via Single Hook)</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="module-name">Module Name</Label>
+          <div className="space-y-4">
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
-                id="module-name"
-                value={newModule.name}
-                onChange={(e) => setNewModule(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="Enter module name"
+                placeholder="Search modules..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
               />
             </div>
-            <div>
-              <Label htmlFor="module-description">Description</Label>
-              <Textarea
-                id="module-description"
-                value={newModule.description}
-                onChange={(e) => setNewModule(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Enter module description"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <Button onClick={handleCreateModule} disabled={singleModules.isCreating}>
-                {singleModules.isCreating ? 'Creating...' : 'Create Module'}
-              </Button>
-              <Button variant="outline" onClick={() => setShowCreateForm(false)}>
-                Cancel
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
-      {/* Modules List using SINGLE HOOK */}
-      <Tabs defaultValue="all" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="all">All Modules</TabsTrigger>
-          <TabsTrigger value="active">Active</TabsTrigger>
-          <TabsTrigger value="inactive">Inactive</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="all">
-          <Card>
-            <CardHeader>
-              <CardTitle>All Modules - Single Hook Source ({singleModules.modules.length})</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {singleModules.isLoading ? (
-                <div className="text-center p-8">Loading modules from SINGLE source...</div>
-              ) : (
-                <div className="space-y-4">
-                  {singleModules.modules.map((module) => (
-                    <div key={module.id} className="flex items-center justify-between p-4 border rounded">
-                      <div>
-                        <h3 className="font-medium">{module.name}</h3>
-                        <p className="text-sm text-gray-600">{module.description || 'No description'}</p>
-                        <p className="text-xs text-gray-500">Created: {new Date(module.created_at).toLocaleDateString()}</p>
-                      </div>
+            {/* Modules List */}
+            {filteredModules.length === 0 ? (
+              <div className="text-center p-8 text-muted-foreground">
+                <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No modules found</p>
+                {searchQuery && (
+                  <p className="text-sm">Try adjusting your search terms</p>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {filteredModules.map((module) => (
+                  <div key={module.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50">
+                    <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <Badge variant={module.is_active ? "default" : "secondary"}>
+                        <div className="font-medium">{module.name}</div>
+                        <Badge variant={module.is_active ? 'default' : 'secondary'}>
                           {module.is_active ? 'Active' : 'Inactive'}
                         </Badge>
-                        <Button variant="outline" size="sm">
-                          Edit
-                        </Button>
+                      </div>
+                      {module.description && (
+                        <div className="text-sm text-muted-foreground mt-1">{module.description}</div>
+                      )}
+                      <div className="text-xs text-muted-foreground mt-2">
+                        Created: {new Date(module.created_at).toLocaleDateString()}
                       </div>
                     </div>
-                  ))}
-                  {singleModules.modules.length === 0 && (
-                    <div className="text-center p-8 text-gray-500">
-                      No modules found in SINGLE source
-                    </div>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="active">
-          <Card>
-            <CardHeader>
-              <CardTitle>Active Modules - Single Hook Source ({singleModules.activeModules.length})</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {singleModules.activeModules.map((module) => (
-                  <div key={module.id} className="flex items-center justify-between p-4 border rounded">
-                    <div>
-                      <h3 className="font-medium">{module.name}</h3>
-                      <p className="text-sm text-gray-600">{module.description || 'No description'}</p>
-                    </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant="default">Active</Badge>
                       <Button variant="outline" size="sm">
-                        Edit
+                        Configure
                       </Button>
                     </div>
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="inactive">
-          <Card>
-            <CardHeader>
-              <CardTitle>Inactive Modules - Single Hook Source</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {singleModules.modules.filter(m => !m.is_active).map((module) => (
-                  <div key={module.id} className="flex items-center justify-between p-4 border rounded">
-                    <div>
-                      <h3 className="font-medium">{module.name}</h3>
-                      <p className="text-sm text-gray-600">{module.description || 'No description'}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary">Inactive</Badge>
-                      <Button variant="outline" size="sm">
-                        Activate
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-
-      {/* Single Source Verification */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <span>🏆 Data Source: {singleModules.meta.dataSource}</span>
-            <span>🏆 Version: {singleModules.meta.version}</span>
-            <span>🏆 Hook Count: {singleModules.meta.hookCount} (Single Source)</span>
-            <span>🏆 Modules: {singleModules.modules.length}</span>
+            )}
           </div>
         </CardContent>
       </Card>

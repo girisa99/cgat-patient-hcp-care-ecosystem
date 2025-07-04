@@ -1,68 +1,40 @@
 
-import { useAuthContext } from '@/components/auth/DatabaseAuthProvider';
-import { useSimpleRouting } from './useSimpleRouting';
-import { useModules } from './useModules';
-import { useUserSettings } from './useUserSettings';
-import { useMemo } from 'react';
+import { useMasterData } from './useMasterData';
+import { useMasterAuth } from './useMasterAuth';
 
+/**
+ * Intelligent routing hook - MASTER DATA INTEGRATION
+ */
 export const useIntelligentRouting = () => {
-  const { userRoles, isAuthenticated, isLoading } = useAuthContext();
-  const { performRouting, getDefaultRoute } = useSimpleRouting({ 
-    userRoles, 
-    isAuthenticated 
-  });
-  const { userModules } = useModules();
-  const { userPreferences, updatePreferences } = useUserSettings();
+  console.log('🚀 Intelligent Routing - Master data integration active');
+  
+  const authData = useMasterAuth();
+  const masterData = useMasterData();
 
-  // Mock module progress data
-  const moduleProgress = useMemo(() => [
-    {
-      moduleId: 'users',
-      lastPath: '/users',
-      timestamp: new Date().toISOString(),
-      visitCount: 5
-    },
-    {
-      moduleId: 'patients',
-      lastPath: '/patients',
-      timestamp: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
-      visitCount: 3
-    },
-    {
-      moduleId: 'facilities',
-      lastPath: '/facilities',
-      timestamp: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
-      visitCount: 2
-    }
-  ], []);
-
-  const getAccessibleModules = useMemo(() => {
-    return () => {
-      return userModules || [];
+  const moduleProgress = masterData.modules.reduce((acc, module) => {
+    acc[module.name] = {
+      completed: module.is_active ? 100 : 0,
+      total: 100,
+      status: module.is_active ? 'completed' : 'pending'
     };
-  }, [userModules]);
-
-  const canAccessUnifiedDashboard = useMemo(() => {
-    return userRoles.includes('superAdmin') || userRoles.includes('onboardingTeam');
-  }, [userRoles]);
-
-  const hasMultipleModules = useMemo(() => {
-    return (userModules?.length || 0) > 1;
-  }, [userModules]);
-
-  const updateUserPreferences = (preferences: any) => {
-    updatePreferences(preferences);
-  };
+    return acc;
+  }, {} as Record<string, any>);
 
   return {
-    performRouting,
-    getDefaultRoute,
-    isLoading,
-    userPreferences,
-    updateUserPreferences,
-    canAccessUnifiedDashboard,
-    hasMultipleModules,
-    getAccessibleModules,
-    moduleProgress
+    // Module progress based on actual data
+    moduleProgress,
+    
+    // Navigation recommendations based on user roles
+    recommendedRoutes: authData.userRoles.includes('superAdmin') 
+      ? ['/users', '/modules', '/facilities', '/api-services']
+      : ['/dashboard', '/patients'],
+    
+    // Meta information
+    meta: {
+      dataSource: 'master_data_intelligent_routing',
+      hookVersion: 'master-routing-v1.0.0',
+      userRoles: authData.userRoles,
+      totalModules: masterData.stats.totalModules
+    }
   };
 };

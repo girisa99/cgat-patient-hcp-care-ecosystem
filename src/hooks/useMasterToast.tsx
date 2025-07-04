@@ -28,9 +28,18 @@ export const useMasterToast = () => {
     });
   };
 
+  const showWarning = (title: string, description?: string) => {
+    toast({
+      title,
+      description,
+      variant: "destructive",
+    });
+  };
+
   return {
     showSuccess,
     showError,
     showInfo,
+    showWarning,
   };
 };

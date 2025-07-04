@@ -6,7 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar-database-aligned";
-import { DatabaseAuthProvider } from "@/components/auth/DatabaseAuthProvider";
+import { MasterAuthProvider } from "@/hooks/useMasterAuth";
 import { AppSidebar } from "@/components/sidebar/AppSidebar";
 
 const queryClient = new QueryClient();
@@ -27,7 +27,7 @@ const Security = lazy(() => import("./pages/Security"));
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <DatabaseAuthProvider>
+    <MasterAuthProvider>
       <TooltipProvider>
         <Toaster />
         <Sonner />
@@ -57,7 +57,7 @@ const App = () => (
           </SidebarProvider>
         </BrowserRouter>
       </TooltipProvider>
-    </DatabaseAuthProvider>
+    </MasterAuthProvider>
   </QueryClientProvider>
 );
 
