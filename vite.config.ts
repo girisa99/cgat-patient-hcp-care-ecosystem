@@ -6,10 +6,10 @@ import { componentTagger } from "lovable-tagger";
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
-    host: "0.0.0.0",      // Accept connections from any source
+    host: "genie.local",  // Professional healthcare domain
     port: 5173,           // Standard development port
-    open: false,          // Don't auto-open browser (manual access)
-    strictPort: false,    // Try other ports if 5173 is busy
+    open: true,           // Auto-open browser
+    strictPort: true,     // Use specified port
     cors: true,           // Enable CORS
   },
   plugins: [
