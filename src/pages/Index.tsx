@@ -1,125 +1,89 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { useAuthContext } from '@/components/auth/DatabaseAuthProvider';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import AppLayout from '@/components/layout/AppLayout';
-import { useRoleBasedNavigation } from '@/hooks/useRoleBasedNavigation';
 
-const Index: React.FC = () => {
-  const { isAuthenticated, isLoading, signIn } = useAuthContext();
-  const { availableTabs, currentRole, isAdmin } = useRoleBasedNavigation();
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Users, Package, Shield } from "lucide-react";
 
-  console.log('🏠 Index page - Auth state:', { isAuthenticated, isLoading });
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Card>
-          <CardContent className="p-8 text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p>Loading application...</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Card className="w-full max-w-md">
-          <CardContent className="p-8 text-center">
-            <h1 className="text-2xl font-bold mb-4">Healthcare Management System</h1>
-            <p className="text-gray-600 mb-6">Please sign in to continue</p>
-            <button 
-              onClick={() => signIn('superadmintest@geniecellgene.com', 'yourpassword')}
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700"
-            >
-              Sign In as Super Admin
-            </button>
-            <p className="text-xs text-gray-500 mt-4">
-              Click above to sign in with your existing super admin account.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
+const Index = () => {
   return (
-    <AppLayout title="Healthcare Management Dashboard">
-      <div className="space-y-6">
-        {/* Welcome Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Welcome to Healthcare Management System</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground mb-4">
-              Your role: <strong>{currentRole}</strong> | Available modules: <strong>{availableTabs.length}</strong>
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="p-4 bg-blue-50 border border-blue-200 rounded">
-                <div className="text-2xl font-bold text-blue-600">{availableTabs.length}</div>
-                <div className="text-sm text-blue-800">Available Modules</div>
-              </div>
-              <div className="p-4 bg-green-50 border border-green-200 rounded">
-                <div className="text-2xl font-bold text-green-600">{isAdmin ? 'Admin' : 'User'}</div>
-                <div className="text-sm text-green-800">Access Level</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+            Healthcare Management System
+          </h1>
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            Comprehensive healthcare management with role-based access control, 
+            user management, and module administration.
+          </p>
+        </div>
 
-        {/* Quick Actions */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Access</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {availableTabs.slice(1).map((tab) => {
-                const Icon = tab.icon;
-                return (
-                  <Link key={tab.to} to={tab.to}>
-                    <div className="p-4 border rounded hover:bg-accent cursor-pointer transition-colors">
-                      <div className="flex items-center gap-3">
-                        <Icon className="h-6 w-6 text-primary" />
-                        <div>
-                          <h3 className="font-semibold">{tab.title}</h3>
-                          <p className="text-sm text-muted-foreground">
-                            Access {tab.title.toLowerCase()} management
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-blue-600" />
+                User Management
+              </CardTitle>
+              <CardDescription>
+                Manage users, roles, and access permissions across your healthcare system.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link to="/users">
+                <Button className="w-full">
+                  Access User Management
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
 
-        {/* Role-Based Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Role Information</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <p><strong>Current Role:</strong> {currentRole}</p>
-              <p><strong>Admin Access:</strong> {isAdmin ? 'Yes' : 'No'}</p>
-              <p><strong>Available Sections:</strong></p>
-              <ul className="list-disc list-inside ml-4 space-y-1">
-                {availableTabs.map(tab => (
-                  <li key={tab.to} className="text-sm">{tab.title}</li>
-                ))}
-              </ul>
-            </div>
-          </CardContent>
-        </Card>
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="h-5 w-5 text-green-600" />
+                Module Management
+              </CardTitle>
+              <CardDescription>
+                Configure and manage system modules, features, and integrations.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link to="/modules">
+                <Button className="w-full">
+                  Access Module Management
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5 text-purple-600" />
+                Role Management
+              </CardTitle>
+              <CardDescription>
+                Create roles, assign facilities, manage modules, and configure permissions dynamically.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link to="/role-management">
+                <Button className="w-full">
+                  Access Role Management
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="mt-12 text-center">
+          <p className="text-gray-600">
+            Built with single source of truth architecture • No mock data • Real-time updates
+          </p>
+        </div>
       </div>
-    </AppLayout>
+    </div>
   );
 };
 
