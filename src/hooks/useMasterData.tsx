@@ -77,7 +77,11 @@ export const useMasterData = () => {
       const { data, error } = await supabase
         .from('profiles')
         .select(`
-          *,
+          id,
+          first_name,
+          last_name,
+          email,
+          created_at,
           user_roles(
             role:roles(name, description)
           ),
@@ -86,7 +90,19 @@ export const useMasterData = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      
+      // Clean and validate the data
+      const cleanedData = (data || []).map(user => ({
+        id: user.id,
+        first_name: user.first_name || '',
+        last_name: user.last_name || '',
+        email: user.email || '',
+        created_at: user.created_at || new Date().toISOString(),
+        user_roles: Array.isArray(user.user_roles) ? user.user_roles : [],
+        facilities: user.facilities
+      }));
+      
+      return cleanedData;
     },
     enabled: isAuthenticated,
     staleTime: 300000,
@@ -162,14 +178,18 @@ export const useMasterData = () => {
     refetchOnWindowFocus: false,
   });
 
-  // ====================== CREATE USER MUTATION ======================
+  // ====================== CREATE USER MUTATION (Fixed) ======================
   const createUserMutation = useMutation({
     mutationFn: async (userData: { firstName: string; lastName: string; email: string; phone?: string }) => {
       console.log('🔄 Creating user via MASTER DATA hook:', userData);
       
+      // Generate a unique ID for the new user
+      const newUserId = crypto.randomUUID();
+      
       const { data, error } = await supabase
         .from('profiles')
         .insert({
+          id: newUserId,
           first_name: userData.firstName,
           last_name: userData.lastName,
           email: userData.email,
@@ -197,10 +217,10 @@ export const useMasterData = () => {
     const totalUsers = users.length;
     const activeUsers = users.length; // Assuming all are active for now
     const patientCount = users.filter(u => 
-      u.user_roles.some(ur => ur.role.name === 'patientCaregiver')
+      Array.isArray(u.user_roles) && u.user_roles.some(ur => ur.role.name === 'patientCaregiver')
     ).length;
     const adminCount = users.filter(u => 
-      u.user_roles.some(ur => ['superAdmin', 'onboardingTeam'].includes(ur.role.name))
+      Array.isArray(u.user_roles) && u.user_roles.some(ur => ['superAdmin', 'onboardingTeam'].includes(ur.role.name))
     ).length;
     
     const totalFacilities = facilities.length;

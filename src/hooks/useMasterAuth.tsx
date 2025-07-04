@@ -83,13 +83,26 @@ export const MasterAuthProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         
         let roles: string[] = [];
         
+        // Check if user_roles is actually an array and not an error object
         if (Array.isArray(profileData.user_roles)) {
           roles = profileData.user_roles
             .map((ur: any) => ur.role?.name)
             .filter(Boolean) || [];
+        } else {
+          console.warn('⚠️ User roles is not an array:', profileData.user_roles);
+          roles = [];
         }
         
-        setProfile(profileData);
+        // Create clean profile object
+        const cleanProfile: Profile = {
+          id: profileData.id,
+          first_name: profileData.first_name,
+          last_name: profileData.last_name,
+          email: profileData.email,
+          user_roles: Array.isArray(profileData.user_roles) ? profileData.user_roles : []
+        };
+        
+        setProfile(cleanProfile);
         setUserRoles(roles);
         console.log('👤 User roles set:', roles);
       }
@@ -107,7 +120,7 @@ export const MasterAuthProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           user_roles: [{ role: { name: 'superAdmin' } }]
         };
         setProfile(adminProfile);
-        setUserRoles(['superAdmin', 'onboardingTeam']); // Give full access
+        setUserRoles(['superAdmin', 'onboardingTeam']);
       }
     }
   };
