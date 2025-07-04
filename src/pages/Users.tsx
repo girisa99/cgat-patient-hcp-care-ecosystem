@@ -6,9 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Users as UsersIcon, UserPlus, RefreshCw, Search, Eye, Shield, UserX } from 'lucide-react';
+import { Users as UsersIcon, UserPlus, RefreshCw, Search, Eye, Shield, UserX, Edit, Trash2 } from 'lucide-react';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { useMasterData } from '@/hooks/useMasterData';
+import { DataTable, ColumnConfig } from '@/components/ui/DataTable';
+import { ActionButton, BulkActionConfig } from '@/components/ui/ActionButton';
 
 const Users: React.FC = () => {
   const { isAuthenticated, isLoading: authLoading } = useMasterAuth();
@@ -42,6 +44,122 @@ const Users: React.FC = () => {
   const [selectedRole, setSelectedRole] = useState<string>('');
 
   console.log('👥 Users Page - Master Data Integration (Single Source)');
+
+  // Define table columns following the architectural pattern
+  const columns: ColumnConfig[] = [
+    {
+      key: 'name',
+      label: 'Name',
+      render: (_, row) => (
+        <div className="font-medium">
+          {row.first_name} {row.last_name}
+        </div>
+      ),
+      className: 'font-medium'
+    },
+    {
+      key: 'email',
+      label: 'Email',
+      sortable: true,
+      render: (value) => (
+        <div className="text-sm text-muted-foreground">{value}</div>
+      )
+    },
+    {
+      key: 'phone',
+      label: 'Phone',
+      render: (value) => (
+        <div className="text-sm text-muted-foreground">
+          {value ? `📞 ${value}` : '-'}
+        </div>
+      )
+    },
+    {
+      key: 'roles',
+      label: 'Roles',
+      render: (_, row) => (
+        <div className="flex flex-wrap gap-1">
+          {row.user_roles?.map((ur: any, index: number) => (
+            <Badge key={index} variant="outline" className="text-xs">
+              {ur.role?.name || 'Unknown Role'}
+            </Badge>
+          ))}
+          {(!row.user_roles || row.user_roles.length === 0) && (
+            <Badge variant="secondary" className="text-xs">No roles</Badge>
+          )}
+        </div>
+      )
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: () => (
+        <Badge variant="default">Active</Badge>
+      )
+    },
+    {
+      key: 'created_at',
+      label: 'Created',
+      render: (value) => value ? new Date(value).toLocaleDateString() : '-',
+      sortable: true
+    }
+  ];
+
+  // Individual row actions following the architectural pattern
+  const renderRowActions = (user: any) => (
+    <div className="flex items-center gap-2">
+      <ActionButton
+        icon={Eye}
+        label="View"
+        onClick={() => console.log('Viewing user:', user.id)}
+        variant="outline"
+        size="sm"
+      />
+      <ActionButton
+        icon={Shield}
+        label="Assign Role"
+        onClick={() => {
+          setSelectedUser(user);
+          setIsAssignRoleOpen(true);
+        }}
+        variant="outline"
+        size="sm"
+      />
+      <ActionButton
+        icon={UserX}
+        label="Deactivate"
+        onClick={() => handleDeactivateUser(user)}
+        variant="outline"
+        size="sm"
+      />
+    </div>
+  );
+
+  // Bulk actions following the architectural pattern
+  const bulkActions: BulkActionConfig[] = [
+    {
+      id: 'assign-role',
+      label: 'Assign Role',
+      icon: Shield,
+      handler: (selectedIds) => console.log('Bulk assign role:', selectedIds),
+      permission: 'users.write'
+    },
+    {
+      id: 'deactivate',
+      label: 'Deactivate',
+      icon: UserX,
+      handler: (selectedIds) => console.log('Bulk deactivate:', selectedIds),
+      permission: 'users.write'
+    },
+    {
+      id: 'delete',
+      label: 'Delete',
+      icon: Trash2,
+      handler: (selectedIds) => console.log('Bulk delete:', selectedIds),
+      permission: 'users.delete',
+      variant: 'destructive'
+    }
+  ];
 
   const handleAddUser = () => {
     if (!newUser.firstName || !newUser.lastName || !newUser.email) {
@@ -174,10 +292,13 @@ const Users: React.FC = () => {
               </Button>
               <Dialog open={isAddUserOpen} onOpenChange={setIsAddUserOpen}>
                 <DialogTrigger asChild>
-                  <Button size="sm" className="flex items-center gap-2">
-                    <UserPlus className="h-4 w-4" />
-                    Add User
-                  </Button>
+                  <ActionButton
+                    icon={UserPlus}
+                    label="Add User"
+                    onClick={() => {}}
+                    variant="default"
+                    size="sm"
+                  />
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
@@ -247,73 +368,21 @@ const Users: React.FC = () => {
               />
             </div>
 
-            {/* Users List */}
-            {filteredUsers.length === 0 ? (
-              <div className="text-center p-8 text-muted-foreground">
-                <UsersIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No users found</p>
-                {searchQuery && (
-                  <p className="text-sm">Try adjusting your search terms</p>
-                )}
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {filteredUsers.map((user) => (
-                  <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <div className="font-medium">
-                          {user.first_name} {user.last_name}
-                        </div>
-                      </div>
-                      <div className="text-sm text-muted-foreground">{user.email}</div>
-                      {user.phone && (
-                        <div className="text-sm text-muted-foreground">📞 {user.phone}</div>
-                      )}
-                      <div className="flex gap-1 mt-1">
-                        {user.user_roles?.map((ur, index) => (
-                          <Badge key={index} variant="outline" className="text-xs">
-                            {ur.role?.name || 'Unknown Role'}
-                          </Badge>
-                        ))}
-                        {(!user.user_roles || user.user_roles.length === 0) && (
-                          <Badge variant="secondary" className="text-xs">No roles</Badge>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="default">Active</Badge>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => {
-                          console.log('Viewing user:', user.id);
-                        }}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => {
-                          setSelectedUser(user);
-                          setIsAssignRoleOpen(true);
-                        }}
-                      >
-                        <Shield className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleDeactivateUser(user)}
-                      >
-                        <UserX className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            {/* Users Table - Using reusable DataTable component */}
+            <DataTable
+              data={filteredUsers}
+              columns={columns}
+              actions={renderRowActions}
+              bulkActions={bulkActions}
+              permissions={['users.read', 'users.write', 'users.delete']} // Default permissions
+              searchable={false} // We already have search above
+              sortable={true}
+              pagination={true}
+              pageSize={10}
+              loading={isLoading}
+              emptyMessage="No users found"
+              onRefresh={refreshData}
+            />
           </div>
         </CardContent>
       </Card>
