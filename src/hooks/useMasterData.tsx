@@ -1,7 +1,6 @@
-
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 // Define types for the data structures
@@ -121,6 +120,49 @@ export function useMasterData() {
     // TODO: implement real data refresh
     console.log('Refreshing data...');
     invalidateCache();
+  }, []);
+
+  /* ----------------------------------------- Fetch Users */
+  const fetchUsers = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('
+          id,
+          email,
+          first_name,
+          last_name,
+          phone,
+          created_at,
+          is_active,
+          user_roles: user_roles ( role: roles ( name, description ) )
+        ');
+
+      if (error) throw error;
+
+      // Supabase returns nested arrays; normalise to MasterUser[]
+      const normalised = (data as any[]).map((p) => ({
+        ...p,
+        user_roles: (p.user_roles || []).map((ur: any) => ({
+          role: ur.role,
+        })),
+      })) as MasterUser[];
+
+      setUsers(normalised);
+    } catch (err) {
+      setError((err as Error).message);
+      console.error('[MasterData] fetchUsers failed', err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // initial load
+  useEffect(() => {
+    fetchUsers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /* -------------------------------------------------- Users */
