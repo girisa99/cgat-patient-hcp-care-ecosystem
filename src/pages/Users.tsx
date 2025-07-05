@@ -437,7 +437,7 @@ const Users: React.FC = () => {
       <AppLayout title="User Management">
         <Card>
           <CardContent className="p-8 text-center">
-            <div className="text-red-600 mb-4">Error loading users: {error.message}</div>
+            <div className="text-red-600 mb-4">Error loading users: {error}</div>
             <Button onClick={refreshData} variant="outline">
               <RefreshCw className="h-4 w-4 mr-2" />
               Retry
