@@ -18,7 +18,9 @@ const ApiServices: React.FC = () => {
     isLoading, 
     error, 
     refreshData, 
-    stats 
+    stats,
+    createApiService,
+    isCreatingApiService
   } = useMasterData();
   
   const [searchQuery, setSearchQuery] = React.useState('');
@@ -29,6 +31,14 @@ const ApiServices: React.FC = () => {
   if (!navigation.hasAccess('/api-services')) {
     return <AccessDenied />;
   }
+
+  const handleCreateApiService = () => {
+    createApiService({
+      name: `API Service ${Date.now()}`,
+      type: 'REST',
+      description: 'Auto-generated API service for testing'
+    });
+  };
 
   if (authLoading || isLoading) {
     return (
