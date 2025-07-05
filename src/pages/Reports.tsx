@@ -1,10 +1,15 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileText, BarChart3, TrendingUp, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import AppLayout from '@/components/layout/AppLayout';
+import { useRoleBasedNavigation } from '@/hooks/useRoleBasedNavigation';
+import AccessDenied from '@/components/AccessDenied';
 
 const Reports: React.FC = () => {
+  const { hasAccess } = useRoleBasedNavigation();
+  if (!hasAccess('/reports')) return <AccessDenied />;
+
   const reportTypes = [
     {
       title: 'User Activity Report',
@@ -27,6 +32,7 @@ const Reports: React.FC = () => {
   ];
 
   return (
+    <AppLayout title="Reports">
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Reports</h1>
@@ -80,6 +86,7 @@ const Reports: React.FC = () => {
         </CardContent>
       </Card>
     </div>
+    </AppLayout>
   );
 };
 

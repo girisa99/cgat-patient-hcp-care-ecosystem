@@ -342,7 +342,16 @@ export function useMasterData() {
       setIsLoading(true);
       setError(null);
       try {
-        console.log('API Service creation requested:', service);
+        const { error } = await supabase.from('api_integration_registry').insert({
+          name: service.name,
+          description: service.description,
+          type: service.type,
+          category: 'integration',
+          purpose: 'internal',
+          direction: 'outbound',
+          status: 'active',
+        });
+        if (error) throw error;
         invalidateCache();
       } catch (err) {
         setError((err as Error).message);
