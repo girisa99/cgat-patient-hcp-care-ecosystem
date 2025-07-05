@@ -50,7 +50,7 @@ export const useUserManagementPage = () => {
     },
     
     // Status flags - MASTER DATA
-    isCreatingUser: masterData.isCreatingUser,
+    isCreatingUser: masterData.isCreatingUser || masterData.isLoading,
     isAssigningRole: false,
     isRemovingRole: false,
     isAssigningFacility: false,

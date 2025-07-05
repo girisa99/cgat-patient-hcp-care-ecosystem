@@ -27,6 +27,7 @@ export interface Facility {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  facility_type: string;
 }
 
 export interface ApiService {
@@ -37,6 +38,7 @@ export interface ApiService {
   base_url?: string;
   created_at: string;
   updated_at: string;
+  type: string;
 }
 
 export interface Module {
@@ -76,6 +78,8 @@ export function useMasterData() {
     staffCount: users.filter(u => 
       u.user_roles.some(ur => ['caseManager', 'nurse', 'provider'].includes(ur.role.name))
     ).length,
+    activeApiServices: apiServices.filter(s => s.status === 'active'),
+    activeModules: modules.filter(m => m.is_active),
   };
 
   // Search helpers (temporary no-op implementations)
@@ -109,6 +113,12 @@ export function useMasterData() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (supabase as any).revalidate?.(); // optional
   };
+
+  const refreshData = useCallback(() => {
+    // TODO: implement real data refresh
+    console.log('Refreshing data...');
+    invalidateCache();
+  }, []);
 
   /* -------------------------------------------------- Users */
   const createUser = useCallback(
@@ -194,12 +204,54 @@ export function useMasterData() {
     []
   );
 
+  /* -------------------------------------------------- API Services */
+  const createApiService = useCallback(
+    async (service: { name: string; description?: string; type: string }) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        console.log('API Service creation requested:', service);
+        invalidateCache();
+      } catch (err) {
+        setError((err as Error).message);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    []
+  );
+
+  /* -------------------------------------------------- Modules */
+  const createModule = useCallback(
+    async (module: { name: string; description?: string }) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const { error } = await supabase.from("modules").insert({
+          name: module.name,
+          description: module.description,
+          is_active: true,
+        });
+        if (error) throw error;
+        invalidateCache();
+      } catch (err) {
+        setError((err as Error).message);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    []
+  );
+
   return {
     /* mutations */
     createUser,
     deactivateUser,
     createFacility,
     createPatient,
+    createApiService,
+    createModule,
+    refreshData,
 
     /* live read-models */
     users,
@@ -216,5 +268,8 @@ export function useMasterData() {
     /* ui state */
     isLoading,
     error,
+    isCreatingUser: isLoading,
+    isCreatingApiService: isLoading,
+    isCreatingModule: isLoading,
   };
 }
