@@ -131,11 +131,13 @@ const ApiServices: React.FC = () => {
                 Refresh
               </Button>
               <Button
+                onClick={handleCreateApiService}
+                disabled={isCreatingApiService}
                 size="sm"
                 className="flex items-center gap-2"
               >
                 <Plus className="h-4 w-4" />
-                Add Service
+                {isCreatingApiService ? 'Creating...' : 'Add Service'}
               </Button>
             </div>
           </CardTitle>
