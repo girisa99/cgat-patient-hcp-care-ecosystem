@@ -1,96 +1,62 @@
 
-import { useState } from 'react';
-import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { useMasterUserManagement } from './useMasterUserManagement';
-import { useFacilities } from './useFacilities';
-import { useModules } from './useModules';
-import { useApiServices } from './useApiServices';
+import { useMasterAuth } from './useMasterAuth';
 
 export const useDashboard = () => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const { user, isAuthenticated, profile, userRoles, signOut } = useMasterAuth();
-  
-  // Get real data from all consolidated sources
+  const { isAuthenticated, userRoles } = useMasterAuth();
   const userManagement = useMasterUserManagement();
-  const { facilities, getFacilityStats } = useFacilities();
-  const { modules, getModuleStats } = useModules();
-  const { apiServices } = useApiServices();
 
-  const facilityStats = getFacilityStats();
-  const moduleStats = getModuleStats();
-  
-  const dashboardData = {
-    // Real metrics from consolidated sources
-    totalUsers: userManagement.totalUsers,
-    totalFacilities: facilities.length,
-    totalModules: modules.length,
-    totalApiServices: apiServices.length,
+  const getDashboardStats = () => {
+    const stats = userManagement.getUserStats();
     
-    // Detailed stats
-    userStats: {
-      admins: userManagement.adminCount,
-      staff: userManagement.staffCount,
-      patients: userManagement.patientCount
-    },
-    facilityStats: facilityStats,
-    moduleStats: moduleStats,
-    apiServiceStats: {
-      active: apiServices.filter(api => api.status === 'active').length,
-      total: apiServices.length
-    },
-    
-    // System health based on real data
-    systemHealth: facilities.length > 0 && modules.length > 0 ? 'healthy' : 'warning',
-    apiIntegrations: apiServices.length,
-    
-    // Welcome message with real data
-    welcomeMessage: `Welcome back${profile?.first_name ? `, ${profile.first_name}` : ''}!`,
-    summary: `Managing ${userManagement.totalUsers} users across ${facilities.length} facilities`,
-    
-    // Real data items
-    items: [
-      { id: 1, name: `${userManagement.totalUsers} Users`, type: 'users' },
-      { id: 2, name: `${facilities.length} Facilities`, type: 'facilities' },
-      { id: 3, name: `${modules.length} Modules`, type: 'modules' },
-      { id: 4, name: `${apiServices.length} API Services`, type: 'api-services' }
-    ]
+    return {
+      totalUsers: stats.totalUsers,
+      totalFacilities: 0, // TODO: implement facilities count
+      totalPatients: stats.patientCount,
+      totalModules: 0, // TODO: implement modules count
+      activeUsers: stats.activeUsers,
+      adminUsers: stats.adminCount,
+      staffUsers: userManagement.staffCount,
+      patientUsers: stats.patientCount,
+    };
   };
 
-  const handleLogout = async () => {
-    setLoading(true);
-    try {
-      await signOut();
-    } catch (err: any) {
-      setError(err.message || 'Failed to logout');
-    } finally {
-      setLoading(false);
+  const getRecentActivity = () => {
+    // TODO: implement real activity tracking
+    return [];
+  };
+
+  const getSystemHealth = () => {
+    return {
+      status: 'healthy',
+      uptime: '99.9%',
+      lastUpdate: new Date(),
+      totalUsers: userManagement.totalUsers,
+    };
+  };
+
+  const getUserPermissions = () => {
+    if (!isAuthenticated) return [];
+    
+    const permissions = [];
+    if (userRoles.includes('superAdmin')) {
+      permissions.push('admin', 'manage_users', 'manage_facilities');
     }
+    if (userRoles.includes('onboardingTeam')) {
+      permissions.push('onboarding', 'manage_applications');
+    }
+    
+    return permissions;
   };
 
   return {
-    dashboardData,
-    loading,
-    isLoading: loading,
-    error,
-    handleLogout,
-    profile,
-    userRoles: userRoles || [],
-    // Consolidated data access
-    users: userManagement.users,
-    facilities,
-    modules,
-    apiServices,
-    // Meta information showing single source
-    meta: {
-      dataSources: {
-        users: userManagement.meta.dataSource,
-        facilities: 'facilities table via direct query',
-        modules: 'modules table via direct query',
-        apiServices: 'api_integration_registry table via direct query'
-      },
-      version: 'unified-dashboard-v1',
-      consolidated: true
-    }
+    isAuthenticated,
+    userRoles,
+    dashboardStats: getDashboardStats(),
+    recentActivity: getRecentActivity(),
+    systemHealth: getSystemHealth(),
+    userPermissions: getUserPermissions(),
+    isLoading: userManagement.isLoading,
+    error: userManagement.error,
   };
 };

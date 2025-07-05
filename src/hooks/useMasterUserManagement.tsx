@@ -23,7 +23,7 @@ export const useMasterUserManagement = () => {
     error: masterData.error,
 
     // Additional properties expected by components
-    isCreatingUser: false,
+    isCreatingUser: masterData.isLoading,
     
     // Actions
     createUser: masterData.createUser,
@@ -40,6 +40,10 @@ export const useMasterUserManagement = () => {
     // Utilities
     getUserStats,
     fetchUsers,
+    totalUsers: masterData.stats.totalUsers,
+    adminCount: masterData.stats.adminCount,
+    staffCount: masterData.stats.staffCount,
+    patientCount: masterData.stats.patientCount,
 
     // Meta
     meta: {
