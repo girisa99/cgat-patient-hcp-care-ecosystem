@@ -10,6 +10,9 @@ interface MasterAuthContextType {
   permissions: string[];
   availableModules: string[];
   profile: any; // Add profile property
+  facilityIds: string[]; // Tenant isolation
+  activeFacilityId: string | null;
+  setActiveFacilityId: (id: string | null) => void;
   refreshAuth: () => Promise<void>; // Add refreshAuth method
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -22,6 +25,8 @@ export function MasterAuthProvider({ children }: { children: React.ReactNode }) 
   const [userRoles, setUserRoles] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
+  const [facilityIds, setFacilityIds] = useState<string[]>([]);
+  const [activeFacilityId, setActiveFacilityId] = useState<string | null>(null);
 
   console.log('🔐 MASTER AUTH - Initializing single source of truth');
 
@@ -109,13 +114,28 @@ export function MasterAuthProvider({ children }: { children: React.ReactNode }) 
   };
 
   const fetchUserFacilities = async (userId: string) => {
-    // Implementation of fetchUserFacilities
+    try {
+      const { data, error } = await supabase
+        .from('user_facilities')
+        .select('facility_id, is_primary')
+        .eq('user_id', userId);
+
+      if (error) throw error;
+      const ids = (data as any[]).map((r) => r.facility_id);
+      setFacilityIds(ids);
+      const primary = (data as any[]).find((r) => r.is_primary)?.facility_id;
+      setActiveFacilityId(primary ?? ids[0] ?? null);
+      console.log('[Auth] facilities linked to user', ids);
+    } catch (err) {
+      console.error('[Auth] Error fetching user facilities:', err);
+    }
   };
 
   const refreshAuth = async () => {
     if (user) {
       await fetchUserRoles(user.id);
       await fetchUserProfile(user.id);
+      await fetchUserFacilities(user.id);
     }
   };
 
@@ -160,6 +180,9 @@ export function MasterAuthProvider({ children }: { children: React.ReactNode }) 
     permissions: [],
     availableModules: [],
     profile,
+    facilityIds,
+    activeFacilityId,
+    setActiveFacilityId,
     refreshAuth,
     signIn,
     signOut,
