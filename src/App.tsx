@@ -1,10 +1,10 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { navItems } from "./nav-items";
+import { SidebarProvider } from '@/components/ui/sidebar-database-aligned';
+import { AppSidebar } from '@/components/sidebar/AppSidebar';
 import Index from "./pages/Index";
 import Users from "./pages/Users";
 import Patients from "./pages/Patients";
@@ -28,20 +28,29 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/users" element={<Users />} />
-            <Route path="/patients" element={<Patients />} />
-            <Route path="/facilities" element={<Facilities />} />
-            <Route path="/onboarding" element={<Onboarding />} />
-            <Route path="/modules" element={<Modules />} />
-            <Route path="/api-services" element={<ApiServices />} />
-            <Route path="/ngrok" element={<NgrokIntegration />} />
-            <Route path="/security" element={<Security />} />
-            <Route path="/reports" element={<Reports />} />
-            <Route path="/testing" element={<Testing />} />
-            <Route path="/role-management" element={<RoleManagement />} />
-          </Routes>
+          <SidebarProvider>
+            <div className="flex min-h-screen w-full">
+              {/* Sidebar */}
+              <AppSidebar />
+              {/* Main Content Area */}
+              <div className="flex-1 min-h-screen bg-gray-50">
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/users" element={<Users />} />
+                  <Route path="/patients" element={<Patients />} />
+                  <Route path="/facilities" element={<Facilities />} />
+                  <Route path="/onboarding" element={<Onboarding />} />
+                  <Route path="/modules" element={<Modules />} />
+                  <Route path="/api-services" element={<ApiServices />} />
+                  <Route path="/ngrok" element={<NgrokIntegration />} />
+                  <Route path="/security" element={<Security />} />
+                  <Route path="/reports" element={<Reports />} />
+                  <Route path="/testing" element={<Testing />} />
+                  <Route path="/role-management" element={<RoleManagement />} />
+                </Routes>
+              </div>
+            </div>
+          </SidebarProvider>
         </BrowserRouter>
       </TooltipProvider>
     </MasterAuthProvider>
