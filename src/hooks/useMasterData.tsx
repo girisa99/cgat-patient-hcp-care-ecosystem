@@ -424,14 +424,102 @@ export function useMasterData() {
     }
   }, []);
 
-  const resendEmailVerification = useCallback(async () => {
-    console.log('Resend email verification - to be implemented');
+  /* -------------------------------------------------- Update User */
+  const updateUser = useCallback(async (userId: string, fields: Partial<MasterUser>) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update(fields as any)
+        .eq('id', userId);
+      if (error) throw error;
+      invalidateCache();
+      await fetchUsers();
+    } catch (err) {
+      setError((err as Error).message);
+      console.error('[MasterData] updateUser failed', err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  /* -------------------------------------------------- Remove Role / Facility / Module */
+  const removeRole = useCallback(async (payload: { userId: string; roleId: string }) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const { error } = await supabase.from('user_roles')
+        .delete()
+        .eq('user_id', payload.userId)
+        .eq('role_id', payload.roleId);
+      if (error) throw error;
+      invalidateCache();
+      await fetchUsers();
+    } catch (err) {
+      setError((err as Error).message);
+      console.error('[MasterData] removeRole failed', err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const removeFacility = useCallback(async (payload: { userId: string; facilityId: string }) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const { error } = await supabase.from('user_facilities')
+        .delete()
+        .eq('user_id', payload.userId)
+        .eq('facility_id', payload.facilityId);
+      if (error) throw error;
+      invalidateCache();
+      await fetchUsers();
+    } catch (err) {
+      setError((err as Error).message);
+      console.error('[MasterData] removeFacility failed', err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const removeModule = useCallback(async (payload: { userId: string; moduleId: string }) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const { error } = await supabase.from('user_module_assignments')
+        .delete()
+        .eq('user_id', payload.userId)
+        .eq('module_id', payload.moduleId);
+      if (error) throw error;
+      invalidateCache();
+      await fetchUsers();
+    } catch (err) {
+      setError((err as Error).message);
+      console.error('[MasterData] removeModule failed', err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  /* -------------------------------------------------- Resend Email Verification */
+  const resendEmailVerification = useCallback(async (payload: { userId: string; email: string }) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      // If you have a Supabase function or external service trigger it here
+      // Placeholder: just console log
+      console.log('Resend verification email to', payload.email);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   return {
     /* mutations */
     createUser,
     deactivateUser,
+    updateUser,
     createFacility,
     createPatient,
     createApiService,
@@ -440,6 +528,9 @@ export function useMasterData() {
     assignRole, // Add for compatibility
     assignModule,
     assignFacility,
+    removeRole,
+    removeFacility,
+    removeModule,
     resendEmailVerification,
 
     /* live read-models */
@@ -464,5 +555,6 @@ export function useMasterData() {
     isAssigningModule: false,
     isAssigningFacility: false,
     isResendingVerification: false,
+    isUpdatingUser: false,
   };
 }
