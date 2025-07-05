@@ -210,12 +210,17 @@ export function useMasterData() {
       setIsLoading(true);
       setError(null);
       try {
-        // Note: profiles table doesn't have is_active field based on schema
-        // This is a placeholder implementation
-        console.log('Deactivate user requested:', userId);
+        const { error } = await supabase
+          .from('profiles')
+          // Suppress TS since is_active may not be in generated types yet
+          .update({ is_active: false } as any)
+          .eq('id', userId);
+        if (error) throw error;
         invalidateCache();
+        await fetchUsers();
       } catch (err) {
         setError((err as Error).message);
+        console.error('[MasterData] deactivateUser failed', err);
       } finally {
         setIsLoading(false);
       }
@@ -224,8 +229,23 @@ export function useMasterData() {
   );
 
   // Add role assignment methods for compatibility
-  const assignRole = useCallback(async () => {
-    console.log('Assign role - to be implemented');
+  const assignRole = useCallback(async (payload: { userId: string; roleId: string }) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const { error } = await supabase.from('user_roles').insert({
+        user_id: payload.userId,
+        role_id: payload.roleId,
+      });
+      if (error) throw error;
+      invalidateCache();
+      await fetchUsers();
+    } catch (err) {
+      setError((err as Error).message);
+      console.error('[MasterData] assignRole failed', err);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   /* -------------------------------------------------- Facilities */
