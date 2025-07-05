@@ -61,6 +61,9 @@ export function useMasterData() {
   const [apiServices, setApiServices] = useState<ApiService[]>([]);
   const [modules, setModules] = useState<Module[]>([]);
 
+  // Add roles for compatibility
+  const roles = [];
+
   // Stats derived from collections
   const stats = {
     totalUsers: users.length,
@@ -162,6 +165,11 @@ export function useMasterData() {
     []
   );
 
+  // Add role assignment methods for compatibility
+  const assignRole = useCallback(async () => {
+    console.log('Assign role - to be implemented');
+  }, []);
+
   /* -------------------------------------------------- Facilities */
   const createFacility = useCallback(
     async (facility: { name: string; address?: string; phone?: string }) => {
@@ -252,12 +260,14 @@ export function useMasterData() {
     createApiService,
     createModule,
     refreshData,
+    assignRole, // Add for compatibility
 
     /* live read-models */
     users,
     facilities,
     apiServices,
     modules,
+    roles, // Add for compatibility
     stats,
     meta,
 

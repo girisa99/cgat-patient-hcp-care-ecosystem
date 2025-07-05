@@ -4,7 +4,7 @@ import { navItems } from '@/nav-items';
 import { useMasterAuth } from './useMasterAuth';
 
 export const useRoleBasedNavigation = () => {
-  const { userRoles, isAuthenticated } = useMasterAuth();
+  const { userRoles, isAuthenticated, user, profile } = useMasterAuth();
 
   const getVisibleNavItems = useMemo(() => {
     if (!isAuthenticated) {
@@ -55,6 +55,13 @@ export const useRoleBasedNavigation = () => {
 
     const allowedRoles = roleAccess[cleanPath as keyof typeof roleAccess] || [];
     return userRoles.some(role => allowedRoles.includes(role));
+  };
+
+  const hasPermission = (permission: string) => {
+    // Simple permission check based on roles
+    if (userRoles.includes('superAdmin')) return true;
+    // Add more permission logic as needed
+    return false;
   };
 
   const getNavItemsByRole = () => {
@@ -122,6 +129,27 @@ export const useRoleBasedNavigation = () => {
     return '/';
   };
 
+  // Current role (primary role)
+  const currentRole = userRoles.length > 0 ? userRoles[0] : null;
+  
+  // Admin checks
+  const isAdmin = userRoles.includes('onboardingTeam') || userRoles.includes('superAdmin');
+  const isSuperAdmin = userRoles.includes('superAdmin');
+
+  // Available tabs (mapped from visible nav items)
+  const availableTabs = getVisibleNavItems.map(item => ({
+    ...item,
+    to: item.url,
+  }));
+
+  // Role stats
+  const roleStats = {
+    totalRoles: userRoles.length,
+    primaryRole: currentRole,
+    isAdmin,
+    isSuperAdmin,
+  };
+
   // Transform navigation items to match expected format
   const transformedNavItems = getVisibleNavItems.map(item => ({
     ...item,
@@ -129,13 +157,30 @@ export const useRoleBasedNavigation = () => {
   }));
 
   return {
+    // Core navigation
     visibleNavItems: getVisibleNavItems,
     transformedNavItems,
+    availableTabs,
+    
+    // User info
+    user,
+    profile,
+    currentRole,
+    roleStats,
+    
+    // Permission checks
     hasAccess,
+    hasPermission,
+    isAdmin,
+    isSuperAdmin,
+    
+    // Utility functions
     getNavItemsByRole,
     getFilteredNavItems,
     isAccessibleRoute,
     getRedirectPath,
+    
+    // Auth state
     userRoles,
     isAuthenticated,
   };
