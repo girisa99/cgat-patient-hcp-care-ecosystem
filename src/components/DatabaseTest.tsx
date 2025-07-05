@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -143,7 +144,7 @@ const DatabaseTest: React.FC = () => {
     // Test 7: Check if check_user_has_role function exists
     try {
       const { data, error } = await supabase.rpc('check_user_has_role', {
-        user_id: '00000000-0000-0000-0000-000000000000',
+        check_user_id: '00000000-0000-0000-0000-000000000000',
         role_name: 'superAdmin'
       });
       
@@ -168,32 +169,9 @@ const DatabaseTest: React.FC = () => {
 
   const createMissingFunction = async () => {
     try {
-      // Create the missing check_user_has_role function
-      const { error } = await supabase.rpc('sql', {
-        query: `
-          CREATE OR REPLACE FUNCTION public.check_user_has_role(user_id uuid, role_name text)
-          RETURNS boolean
-          LANGUAGE sql
-          STABLE SECURITY DEFINER
-          SET search_path = ''
-          AS $$
-            SELECT EXISTS (
-              SELECT 1
-              FROM public.user_roles ur
-              JOIN public.roles r ON r.id = ur.role_id
-              WHERE ur.user_id = user_id
-              AND r.name = role_name
-            );
-          $$;
-        `
-      });
-
-      if (error) {
-        console.error('Failed to create function:', error);
-      } else {
-        console.log('Function created successfully');
-        runTests(); // Re-run tests
-      }
+      // Note: Cannot execute raw SQL through RPC, this would need to be done through migrations
+      console.log('Function creation would need to be done through database migrations');
+      runTests(); // Re-run tests
     } catch (error) {
       console.error('Exception creating function:', error);
     }

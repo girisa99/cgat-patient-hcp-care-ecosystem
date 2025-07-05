@@ -34,3 +34,7 @@ export function Toaster() {
     </ToastProvider>
   )
 }
+
+export function GlobalToaster() {
+  return <Toaster />;
+}

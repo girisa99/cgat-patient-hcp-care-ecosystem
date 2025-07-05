@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { LucideIcon, Loader2 } from 'lucide-react';
@@ -7,7 +8,7 @@ export interface ActionButtonProps {
   label: string;
   onClick: () => void;
   variant?: 'default' | 'outline' | 'destructive' | 'secondary' | 'ghost';
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'lg' | 'icon';
   disabled?: boolean;
   loading?: boolean;
   className?: string;

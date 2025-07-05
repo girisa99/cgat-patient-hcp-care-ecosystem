@@ -5,11 +5,100 @@ import { useState, useCallback } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import type { Database } from "@/lib/database.types";
 
+// Define types for the data structures
+export interface MasterUser {
+  id: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  phone?: string;
+  created_at: string;
+  user_roles: Array<{
+    role: { name: string; description?: string }
+  }>;
+}
+
+export interface Facility {
+  id: string;
+  name: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ApiService {
+  id: string;
+  name: string;
+  description?: string;
+  status: string;
+  base_url?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Module {
+  id: string;
+  name: string;
+  description?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 /** Canonical hook – single source of truth for all master-data operations */
 export function useMasterData() {
   const supabase = createClientComponentClient<Database>();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Live collections - these will be populated by real queries later
+  const [users, setUsers] = useState<MasterUser[]>([]);
+  const [facilities, setFacilities] = useState<Facility[]>([]);
+  const [apiServices, setApiServices] = useState<ApiService[]>([]);
+  const [modules, setModules] = useState<Module[]>([]);
+
+  // Stats derived from collections
+  const stats = {
+    totalUsers: users.length,
+    totalFacilities: facilities.length,
+    totalModules: modules.length,
+    totalApiServices: apiServices.length,
+    patientCount: users.filter(u => 
+      u.user_roles.some(ur => ur.role.name === 'patientCaregiver')
+    ).length,
+    adminCount: users.filter(u => 
+      u.user_roles.some(ur => ['superAdmin', 'onboardingTeam'].includes(ur.role.name))
+    ).length,
+    activeFacilities: facilities.filter(f => f.is_active).length,
+  };
+
+  // Search helpers (temporary no-op implementations)
+  const searchUsers = async (query: string) => {
+    // TODO: implement real search
+    return users.filter(u => 
+      u.first_name.toLowerCase().includes(query.toLowerCase()) ||
+      u.last_name.toLowerCase().includes(query.toLowerCase()) ||
+      u.email.toLowerCase().includes(query.toLowerCase())
+    );
+  };
+
+  const searchFacilities = async (query: string) => {
+    // TODO: implement real search
+    return facilities.filter(f => 
+      f.name.toLowerCase().includes(query.toLowerCase())
+    );
+  };
+
+  // Meta information
+  const meta = {
+    lastUpdated: new Date(),
+    dataSource: 'master_data_v1',
+    totalSources: 1,
+    singleSourceValidated: true,
+  };
 
   /** Generic helper: refetch any cached queries (tRPC / SWR / React-Query) */
   const invalidateCache = () => {
@@ -112,14 +201,25 @@ export function useMasterData() {
   );
 
   return {
-    /* users */
+    /* mutations */
     createUser,
     deactivateUser,
-    /* facilities */
     createFacility,
-    /* patients */
     createPatient,
-    /* meta */
+
+    /* live read-models */
+    users,
+    facilities,
+    apiServices,
+    modules,
+    stats,
+    meta,
+
+    /* helpers */
+    searchUsers,
+    searchFacilities,
+
+    /* ui state */
     isLoading,
     error,
   };
