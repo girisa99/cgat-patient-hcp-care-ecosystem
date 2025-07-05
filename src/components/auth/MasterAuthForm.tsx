@@ -82,8 +82,10 @@ export const MasterAuthForm: React.FC<MasterAuthFormProps> = ({
           description: "Redirecting to dashboard..."
         });
         
-        // Refresh auth state - this will automatically trigger UI update
-        await refreshAuth();
+        // Refresh auth state - ensure we pass the newly signed-in user id so
+        // roles, profile & facilities are fetched immediately before the
+        // auth listener fires (helps slow connections)
+        await refreshAuth(data.user.id);
         navigate('/', { replace: true });
       }
     } catch (error) {
@@ -154,7 +156,7 @@ export const MasterAuthForm: React.FC<MasterAuthFormProps> = ({
             title: "Account Created",
             description: "Account created successfully! Redirecting..."
           });
-          await refreshAuth();
+          await refreshAuth(data.user.id);
           navigate('/', { replace: true });
         } else {
           toast({

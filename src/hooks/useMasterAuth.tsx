@@ -13,7 +13,7 @@ interface MasterAuthContextType {
   facilityIds: string[]; // Tenant isolation
   activeFacilityId: string | null;
   setActiveFacilityId: (id: string | null) => void;
-  refreshAuth: () => Promise<void>; // Add refreshAuth method
+  refreshAuth: (userId?: string) => Promise<void>; // Add refreshAuth method
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -85,7 +85,7 @@ export function MasterAuthProvider({ children }: { children: React.ReactNode }) 
       console.warn('[Auth] RPC get_user_roles failed or not present – falling back to direct select');
       const { data: rows, error } = await supabase
         .from('user_roles')
-        .select(' role:roles ( name )')
+        .select('role:roles(name)')
         .eq('user_id', userId);
 
       if (error) throw error;
@@ -131,11 +131,12 @@ export function MasterAuthProvider({ children }: { children: React.ReactNode }) 
     }
   };
 
-  const refreshAuth = async () => {
-    if (user) {
-      await fetchUserRoles(user.id);
-      await fetchUserProfile(user.id);
-      await fetchUserFacilities(user.id);
+  const refreshAuth = async (userId?: string) => {
+    const targetId = userId ?? user?.id;
+    if (targetId) {
+      await fetchUserRoles(targetId);
+      await fetchUserProfile(targetId);
+      await fetchUserFacilities(targetId);
     }
   };
 
