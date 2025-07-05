@@ -18,7 +18,7 @@ import Reports from "./pages/Reports";
 import Testing from "./pages/Testing";
 import RoleManagement from "./pages/RoleManagement";
 import Login from "./pages/Login";
-import ProtectedRoute from "./components/ProtectedRoute";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { MasterAuthProvider } from './hooks/useMasterAuth';
 
 const queryClient = new QueryClient();
@@ -39,17 +39,17 @@ const App = () => (
                 <Routes>
                   <Route path="/login" element={<Login />} />
                   <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-                  <Route path="/users" element={<Users />} />
-                  <Route path="/patients" element={<Patients />} />
-                  <Route path="/facilities" element={<Facilities />} />
-                  <Route path="/onboarding" element={<Onboarding />} />
-                  <Route path="/modules" element={<Modules />} />
-                  <Route path="/api-services" element={<ApiServices />} />
-                  <Route path="/ngrok" element={<NgrokIntegration />} />
-                  <Route path="/security" element={<Security />} />
-                  <Route path="/reports" element={<Reports />} />
-                  <Route path="/testing" element={<Testing />} />
-                  <Route path="/role-management" element={<RoleManagement />} />
+                  <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
+                  <Route path="/patients" element={<ProtectedRoute><Patients /></ProtectedRoute>} />
+                  <Route path="/facilities" element={<ProtectedRoute><Facilities /></ProtectedRoute>} />
+                  <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+                  <Route path="/modules" element={<ProtectedRoute><Modules /></ProtectedRoute>} />
+                  <Route path="/api-services" element={<ProtectedRoute><ApiServices /></ProtectedRoute>} />
+                  <Route path="/ngrok" element={<ProtectedRoute><NgrokIntegration /></ProtectedRoute>} />
+                  <Route path="/security" element={<ProtectedRoute><Security /></ProtectedRoute>} />
+                  <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+                  <Route path="/testing" element={<ProtectedRoute><Testing /></ProtectedRoute>} />
+                  <Route path="/role-management" element={<ProtectedRoute><RoleManagement /></ProtectedRoute>} />
                 </Routes>
               </div>
             </div>
