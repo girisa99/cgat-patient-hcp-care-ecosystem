@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { LucideIcon, Loader2 } from 'lucide-react';
@@ -14,7 +13,7 @@ export interface ActionButtonProps {
   className?: string;
 }
 
-export const ActionButton: React.FC<ActionButtonProps> = ({
+export const ActionButton = React.forwardRef<HTMLButtonElement, ActionButtonProps>(({
   icon: Icon,
   label,
   onClick,
@@ -23,9 +22,10 @@ export const ActionButton: React.FC<ActionButtonProps> = ({
   disabled = false,
   loading = false,
   className = ''
-}) => {
+}, ref) => {
   return (
     <Button
+      ref={ref}
       variant={variant}
       size={size}
       onClick={onClick}
@@ -40,7 +40,8 @@ export const ActionButton: React.FC<ActionButtonProps> = ({
       <span>{label}</span>
     </Button>
   );
-};
+});
+ActionButton.displayName = 'ActionButton';
 
 export interface BulkActionConfig {
   id: string;

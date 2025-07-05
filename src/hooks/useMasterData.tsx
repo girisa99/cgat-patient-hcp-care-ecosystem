@@ -153,8 +153,23 @@ export function useMasterData() {
 
       setUsers(normalised);
     } catch (err) {
-      setError((err as Error).message);
       console.error('[MasterData] fetchUsers failed', err);
+      // Fallback: fetch profiles without join if FK not present yet
+      try {
+        const { data: profilesOnly, error: fallbackErr } = await supabase
+          .from('profiles')
+          .select('*');
+        if (fallbackErr) throw fallbackErr;
+        const mapped = (profilesOnly as any[]).map((p) => ({
+          ...p,
+          is_active: true,
+          user_roles: [],
+        })) as MasterUser[];
+        setUsers(mapped);
+      } catch (fallbackErr) {
+        setError((fallbackErr as Error).message);
+        console.error('[MasterData] fallback fetchUsers failed', fallbackErr);
+      }
     } finally {
       setIsLoading(false);
     }
