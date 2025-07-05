@@ -138,7 +138,7 @@ export function useMasterData() {
           phone,
           created_at,
           is_active,
-          user_roles:user_roles ( role:roles ( name, description ) )
+          user_roles ( role:roles ( name, description ) )
         `);
 
       if (error) throw error;
