@@ -7,9 +7,12 @@ import { Input } from '@/components/ui/input';
 import { Search, RefreshCw, Plus, Shield, Lock, Key, AlertTriangle } from 'lucide-react';
 import { useMasterData } from '@/hooks/useMasterData';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
+import { useUnifiedDevelopmentLifecycle } from '@/hooks/useUnifiedDevelopmentLifecycle';
+import AccessDenied from '@/components/AccessDenied';
 
 const Security: React.FC = () => {
   const { isAuthenticated, isLoading: authLoading, userRoles } = useMasterAuth();
+  const { navigation } = useUnifiedDevelopmentLifecycle();
   const { 
     users,
     isLoading, 
@@ -21,6 +24,11 @@ const Security: React.FC = () => {
   const [searchQuery, setSearchQuery] = React.useState('');
 
   console.log('🔒 Security Page - Master Data Integration');
+
+  // Role-based access guard
+  if (!navigation.hasAccess('/security')) {
+    return <AccessDenied />;
+  }
 
   if (authLoading || isLoading) {
     return (
