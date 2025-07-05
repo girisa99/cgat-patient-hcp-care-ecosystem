@@ -1,4 +1,3 @@
-
 import {
   HomeIcon,
   Users,
@@ -73,6 +72,16 @@ export const navItems = [
   {
     title: "Role Management",
     url: "/role-management",
+    icon: BarChart3,
+  },
+  {
+    title: "Data Import",
+    url: "/data-import",
+    icon: Globe,
+  },
+  {
+    title: "Verification",
+    url: "/active-verification",
     icon: BarChart3,
   },
 ];
