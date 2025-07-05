@@ -49,6 +49,12 @@ export interface Module {
   updated_at: string;
 }
 
+export interface Role {
+  id: string;
+  name: string;
+  description?: string | null;
+}
+
 /** Canonical hook – single source of truth for all master-data operations */
 export function useMasterData() {
   const [isLoading, setIsLoading] = useState(false);
@@ -59,9 +65,7 @@ export function useMasterData() {
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [apiServices, setApiServices] = useState<ApiService[]>([]);
   const [modules, setModules] = useState<Module[]>([]);
-
-  // Add roles for compatibility
-  const roles = [];
+  const [roles, setRoles] = useState<Role[]>([]);
 
   // Stats derived from collections
   const stats = {
@@ -175,9 +179,51 @@ export function useMasterData() {
     }
   }, []);
 
+  /* ----------------------------------------- Fetch Roles */
+  const fetchRoles = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('roles')
+        .select('*');
+      if (error) throw error;
+      setRoles(data as Role[]);
+    } catch (err) {
+      console.error('[MasterData] fetchRoles failed', err);
+    }
+  }, []);
+
+  /* ----------------------------------------- Fetch Facilities */
+  const fetchFacilities = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('facilities')
+        .select('*');
+      if (error) throw error;
+      setFacilities(data as Facility[]);
+    } catch (err) {
+      console.error('[MasterData] fetchFacilities failed', err);
+    }
+  }, []);
+
+  /* ----------------------------------------- Fetch Modules */
+  const fetchModules = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('modules')
+        .select('*');
+      if (error) throw error;
+      setModules(data as Module[]);
+    } catch (err) {
+      console.error('[MasterData] fetchModules failed', err);
+    }
+  }, []);
+
   // initial load
   useEffect(() => {
     fetchUsers();
+    fetchRoles();
+    fetchFacilities();
+    fetchModules();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -329,12 +375,44 @@ export function useMasterData() {
     []
   );
 
-  const assignModule = useCallback(async () => {
-    console.log('Assign module - to be implemented');
+  const assignModule = useCallback(async (payload: { userId: string; moduleId: string; accessLevel: string }) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const { error } = await supabase.from('user_module_assignments').insert({
+        user_id: payload.userId,
+        module_id: payload.moduleId,
+        is_active: true,
+        assigned_at: new Date().toISOString(),
+      });
+      if (error) throw error;
+      invalidateCache();
+    } catch (err) {
+      setError((err as Error).message);
+      console.error('[MasterData] assignModule failed', err);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
-  const assignFacility = useCallback(async () => {
-    console.log('Assign facility - to be implemented');
+  const assignFacility = useCallback(async (payload: { userId: string; facilityId: string }) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const { error } = await supabase.from('user_facilities').insert({
+        user_id: payload.userId,
+        facility_id: payload.facilityId,
+        is_primary: false,
+        created_at: new Date().toISOString(),
+      });
+      if (error) throw error;
+      invalidateCache();
+    } catch (err) {
+      setError((err as Error).message);
+      console.error('[MasterData] assignFacility failed', err);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   const resendEmailVerification = useCallback(async () => {
