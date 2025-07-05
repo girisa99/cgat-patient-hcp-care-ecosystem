@@ -58,7 +58,12 @@ export const useSecurePatientData = () => {
         const { data, error } = await query;
         if (error) throw error;
 
-        setPatientData(data as PatientData[]);
+        // Keep only profiles that include the patientCaregiver role
+        const filtered = (data as any[]).filter((p) => {
+          const roles = p.user_roles || [];
+          return roles.some((r: any) => r.role?.name === 'patientCaregiver');
+        });
+        setPatientData(filtered as PatientData[]);
       } catch (err) {
         console.error('Error fetching patient data:', err);
         setError(err as Error);
