@@ -20,6 +20,7 @@ import RoleManagement from "./pages/RoleManagement";
 import Login from "./pages/Login";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { MasterAuthProvider } from './hooks/useMasterAuth';
+import { useMasterAuth } from '@/hooks/useMasterAuth';
 
 const queryClient = new QueryClient();
 
@@ -32,8 +33,11 @@ const App = () => (
         <BrowserRouter>
           <SidebarProvider>
             <div className="flex min-h-screen w-full">
-              {/* Sidebar */}
-              <AppSidebar />
+              {/* Sidebar (only when authenticated) */}
+              {(() => {
+                const { isAuthenticated } = useMasterAuth();
+                return isAuthenticated ? <AppSidebar /> : null;
+              })()}
               {/* Main Content Area */}
               <div className="flex-1 min-h-screen bg-gray-50">
                 <Routes>

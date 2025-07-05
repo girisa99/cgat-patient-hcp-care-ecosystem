@@ -6,13 +6,12 @@ export const useRoleBasedNavigation = () => {
   const { userRoles, isAuthenticated, user, profile } = useMasterAuth();
 
   const getVisibleNavItems = useMemo(() => {
-    // If not authenticated, assume development mode and expose all nav items for easier testing
     if (!isAuthenticated) {
-      return navItems; // dev mode unauthenticated fallback (should be removed in prod)
+      return [];
     }
 
     if (isAuthenticated && userRoles.length === 0) {
-      // Authenticated but no roles found -> fallback to show all pages until roles configured
+      // Authenticated but no roles yet – allow all pages temporarily until roles are assigned
       return navItems;
     }
 
