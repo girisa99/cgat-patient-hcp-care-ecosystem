@@ -229,18 +229,34 @@ export function useMasterData() {
 
   /* -------------------------------------------------- Users */
   const createUser = useCallback(
-    async (user: { firstName: string; lastName: string; email: string }) => {
+    async (user: { firstName: string; lastName: string; email: string; phone?: string; facilityId?: string; roleId?: string }) => {
       setIsLoading(true);
       setError(null);
       try {
+        const newId = crypto.randomUUID();
         // Create user profile - note: we can't create auth users directly
         const { error } = await supabase.from("profiles").insert({
-          id: crypto.randomUUID(), // Generate a UUID for the profile
+          id: newId,
           first_name: user.firstName,
           last_name: user.lastName,
           email: user.email,
+          phone: user.phone ?? null,
         });
         if (error) throw error;
+
+        // Add optional role link
+        if (user.roleId) {
+          await supabase.from('user_roles').insert({
+            user_id: newId, role_id: user.roleId,
+          });
+        }
+
+        // Add optional facility link
+        if (user.facilityId) {
+          await supabase.from('user_facilities').insert({
+            user_id: newId, facility_id: user.facilityId,
+          });
+        }
         invalidateCache();
       } catch (err) {
         setError((err as Error).message);
