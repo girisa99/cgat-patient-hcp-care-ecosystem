@@ -3031,18 +3031,21 @@ export type Database = {
           created_at: string | null
           description: string | null
           id: string
+          is_default: boolean | null
           name: Database["public"]["Enums"]["user_role"]
         }
         Insert: {
           created_at?: string | null
           description?: string | null
           id?: string
+          is_default?: boolean | null
           name: Database["public"]["Enums"]["user_role"]
         }
         Update: {
           created_at?: string | null
           description?: string | null
           id?: string
+          is_default?: boolean | null
           name?: Database["public"]["Enums"]["user_role"]
         }
         Relationships: []

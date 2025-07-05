@@ -8,8 +8,10 @@ interface MasterAuthContextType {
   userRoles: string[];
   isAuthenticated: boolean;
   isLoading: boolean;
-  permissions: string[];  // Add stub permissions
-  availableModules: string[];  // Add stub available modules
+  permissions: string[];
+  availableModules: string[];
+  profile: any; // Add profile property
+  refreshAuth: () => Promise<void>; // Add refreshAuth method
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -20,6 +22,7 @@ export function MasterAuthProvider({ children }: { children: React.ReactNode }) 
   const [user, setUser] = useState<User | null>(null);
   const [userRoles, setUserRoles] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [profile, setProfile] = useState<any>(null);
 
   console.log('🔐 MASTER AUTH - Initializing single source of truth');
 
@@ -31,6 +34,11 @@ export function MasterAuthProvider({ children }: { children: React.ReactNode }) 
       setUser(session?.user ?? null);
       setIsLoading(false);
       console.log('🔄 Auth state changed: INITIAL_SESSION', session?.user?.email ?? 'undefined');
+      
+      if (session?.user) {
+        fetchUserRoles(session.user.id);
+        fetchUserProfile(session.user.id);
+      }
     });
 
     // Listen for auth changes
@@ -43,8 +51,10 @@ export function MasterAuthProvider({ children }: { children: React.ReactNode }) 
         // Fetch user roles when user signs in
         if (session?.user) {
           fetchUserRoles(session.user.id);
+          fetchUserProfile(session.user.id);
         } else {
           setUserRoles([]);
+          setProfile(null);
         }
       }
     );
@@ -58,10 +68,34 @@ export function MasterAuthProvider({ children }: { children: React.ReactNode }) 
         check_user_id: userId
       });
       
-      setUserRoles(roles || []);
+      // Extract role names from the response
+      const roleNames = roles?.map((role: { role_name: string }) => role.role_name) || [];
+      setUserRoles(roleNames);
     } catch (error) {
       console.error('Error fetching user roles:', error);
       setUserRoles([]);
+    }
+  };
+
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      setProfile(profileData);
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      setProfile(null);
+    }
+  };
+
+  const refreshAuth = async () => {
+    if (user) {
+      await fetchUserRoles(user.id);
+      await fetchUserProfile(user.id);
     }
   };
 
@@ -77,13 +111,14 @@ export function MasterAuthProvider({ children }: { children: React.ReactNode }) 
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
     setUserRoles([]);
+    setProfile(null);
   };
 
   // Log current state for debugging
   const currentState = {
     isAuthenticated: !!user,
     userEmail: user?.email ?? 'undefined',
-    profileName: user ? `${user.user_metadata?.firstName || ''} ${user.user_metadata?.lastName || ''}`.trim() || 'No profile' : 'No profile',
+    profileName: profile ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'No profile' : 'No profile',
     userRoles,
     isLoading,
   };
@@ -102,8 +137,10 @@ export function MasterAuthProvider({ children }: { children: React.ReactNode }) 
     userRoles,
     isAuthenticated: !!user,
     isLoading,
-    permissions: [], // Stub permissions array
-    availableModules: [], // Stub available modules array
+    permissions: [],
+    availableModules: [],
+    profile,
+    refreshAuth,
     signIn,
     signOut,
   };

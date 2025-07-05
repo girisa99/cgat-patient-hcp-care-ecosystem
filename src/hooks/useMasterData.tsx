@@ -12,7 +12,7 @@ export interface MasterUser {
   last_name: string;
   phone?: string;
   created_at: string;
-  is_active: boolean;  // Add this property
+  is_active: boolean;
   user_roles: Array<{
     role: { name: string; description?: string }
   }>;
@@ -72,6 +72,10 @@ export function useMasterData() {
       u.user_roles.some(ur => ['superAdmin', 'onboardingTeam'].includes(ur.role.name))
     ).length,
     activeFacilities: facilities.filter(f => f.is_active).length,
+    activeUsers: users.filter(u => u.is_active).length,
+    staffCount: users.filter(u => 
+      u.user_roles.some(ur => ['caseManager', 'nurse', 'provider'].includes(ur.role.name))
+    ).length,
   };
 
   // Search helpers (temporary no-op implementations)
@@ -97,7 +101,7 @@ export function useMasterData() {
     dataSource: 'master_data_v1',
     totalSources: 1,
     singleSourceValidated: true,
-    version: 'v1.0.0',  // Add version property
+    version: 'v1.0.0',
   };
 
   /** Generic helper: refetch any cached queries (tRPC / SWR / React-Query) */
@@ -112,13 +116,12 @@ export function useMasterData() {
       setIsLoading(true);
       setError(null);
       try {
-        const { error } = await supabase.from("profiles").insert([
-          {
-            first_name: user.firstName,
-            last_name: user.lastName,
-            email: user.email,
-          },
-        ]);
+        // Create user profile - note: we can't create auth users directly
+        const { error } = await supabase.from("profiles").insert({
+          first_name: user.firstName,
+          last_name: user.lastName,
+          email: user.email,
+        });
         if (error) throw error;
         invalidateCache();
       } catch (err) {
@@ -127,7 +130,7 @@ export function useMasterData() {
         setIsLoading(false);
       }
     },
-    [supabase]
+    []
   );
 
   const deactivateUser = useCallback(
@@ -147,7 +150,7 @@ export function useMasterData() {
         setIsLoading(false);
       }
     },
-    [supabase]
+    []
   );
 
   /* -------------------------------------------------- Facilities */
@@ -156,14 +159,13 @@ export function useMasterData() {
       setIsLoading(true);
       setError(null);
       try {
-        const { error } = await supabase.from("facilities").insert([
-          {
-            name: facility.name,
-            address: facility.address,
-            phone: facility.phone,
-            is_active: true,
-          },
-        ]);
+        const { error } = await supabase.from("facilities").insert({
+          name: facility.name,
+          address: facility.address,
+          phone: facility.phone,
+          is_active: true,
+          facility_type: 'treatmentFacility' as const, // Add required facility_type
+        });
         if (error) throw error;
         invalidateCache();
       } catch (err) {
@@ -172,7 +174,7 @@ export function useMasterData() {
         setIsLoading(false);
       }
     },
-    [supabase]
+    []
   );
 
   /* -------------------------------------------------- Patients */
@@ -190,7 +192,7 @@ export function useMasterData() {
         setIsLoading(false);
       }
     },
-    [supabase]
+    []
   );
 
   return {
