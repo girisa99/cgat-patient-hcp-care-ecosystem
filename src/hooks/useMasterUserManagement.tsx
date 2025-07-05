@@ -9,7 +9,24 @@ import { useMasterAuth } from './useMasterAuth';
 import { useMasterToast } from './useMasterToast';
 
 export const useMasterUserManagement = () => {
-  const { users, createUser, isCreatingUser, searchUsers, stats, isLoading, refreshData } = useMasterData();
+  const { 
+    users, 
+    createUser, 
+    isCreatingUser, 
+    searchUsers, 
+    stats, 
+    isLoading, 
+    refreshData,
+    deactivateUser,
+    assignRole,
+    removeRole,
+    assignFacility,
+    isDeactivating,
+    isAssigningRole,
+    isRemovingRole,
+    isAssigningFacility,
+    error
+  } = useMasterData();
   const { userRoles } = useMasterAuth();
   const { showSuccess, showError } = useMasterToast();
 
@@ -71,6 +88,14 @@ export const useMasterUserManagement = () => {
     
     // Loading states
     isLoading,
+    isCreatingUser,
+    isDeactivating,
+    isAssigningRole,
+    isRemovingRole,
+    isAssigningFacility,
+    
+    // Error state
+    error,
     
     // Actions
     createUser: handleCreateUser,
@@ -78,9 +103,10 @@ export const useMasterUserManagement = () => {
     updateUser,
     deleteUser,
     searchUsers,
-    
-    // Status
-    isCreatingUser,
+    deactivateUser,
+    assignRole,
+    removeRole,
+    assignFacility,
     
     // Utilities
     getUsersByRole: (role: string) => users.filter(u => 

@@ -1,3 +1,4 @@
+
 /**
  * MASTER DATA HOOK - SINGLE SOURCE OF TRUTH FOR ALL DATA
  * Consolidates users, facilities, modules, and API services
@@ -357,7 +358,9 @@ export const useMasterData = () => {
       
       const { data, error } = await supabase
         .from('profiles')
-        .update({ is_active: false })
+        .update({ 
+          updated_at: new Date().toISOString()
+        })
         .eq('id', userId)
         .select()
         .single();
