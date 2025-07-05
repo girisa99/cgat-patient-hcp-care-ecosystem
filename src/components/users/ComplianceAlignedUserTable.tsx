@@ -29,7 +29,7 @@ export const ComplianceAlignedUserTable: React.FC = () => {
           {users.map((user) => (
             <TableRow key={user.id}>
               <TableCell className="font-medium">
-                {user.firstName} {user.lastName}
+                {user.first_name} {user.last_name}
               </TableCell>
               <TableCell>{user.email}</TableCell>
               <TableCell>
@@ -38,8 +38,8 @@ export const ComplianceAlignedUserTable: React.FC = () => {
                 </Badge>
               </TableCell>
               <TableCell>
-                <Badge variant={user.isActive ? "default" : "secondary"}>
-                  {user.isActive ? 'Active' : 'Inactive'}
+                <Badge variant={user.is_active ? "default" : "secondary"}>
+                  {user.is_active ? 'Active' : 'Inactive'}
                 </Badge>
               </TableCell>
               <TableCell>

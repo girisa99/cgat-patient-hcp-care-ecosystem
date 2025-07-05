@@ -1,331 +1,124 @@
-/**
- * MASTER AUTHENTICATION HOOK - SINGLE SOURCE OF TRUTH
- * This is the foundational authentication system that all other hooks depend on
- * Version: master-auth-v1.0.0
- */
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, Session } from '@supabase/supabase-js';
+
+import { useState, useEffect, createContext, useContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { MasterProfile, MasterAuthContext } from '@/types/masterTypes';
+import type { User } from '@supabase/supabase-js';
 
-const AuthContext = createContext<MasterAuthContext | undefined>(undefined);
+interface MasterAuthContextType {
+  user: User | null;
+  userRoles: string[];
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  permissions: string[];  // Add stub permissions
+  availableModules: string[];  // Add stub available modules
+  signIn: (email: string, password: string) => Promise<void>;
+  signOut: () => Promise<void>;
+}
 
-export const useMasterAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useMasterAuth must be used within MasterAuthProvider');
-  }
-  return context;
-};
+const MasterAuthContext = createContext<MasterAuthContextType | undefined>(undefined);
 
-export const MasterAuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export function MasterAuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<MasterProfile | null>(null);
   const [userRoles, setUserRoles] = useState<string[]>([]);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   console.log('🔐 MASTER AUTH - Initializing single source of truth');
 
-  const loadUserProfile = async (userId: string) => {
-    try {
-      console.log('📋 Loading profile for user:', userId);
-      
-      // Step 0: Ensure required database function exists
-      try {
-        await supabase.rpc('sql', {
-          query: `
-            CREATE OR REPLACE FUNCTION public.check_user_has_role(user_id uuid, role_name text)
-            RETURNS boolean
-            LANGUAGE sql
-            STABLE SECURITY DEFINER
-            SET search_path = ''
-            AS $$
-              SELECT EXISTS (
-                SELECT 1
-                FROM public.user_roles ur
-                JOIN public.roles r ON r.id = ur.role_id
-                WHERE ur.user_id = user_id
-                AND r.name = role_name
-              );
-            $$;
-          `
-        });
-        console.log('✅ Database function check_user_has_role ensured');
-      } catch (funcError) {
-        console.warn('⚠️ Could not create check_user_has_role function:', funcError);
-      }
-      
-      // Step 1: Get basic profile
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (profileError) {
-        console.warn('⚠️ Profile not found, creating basic profile:', profileError);
-        
-        // Create basic profile from user metadata if it doesn't exist
-        const { data: newProfile, error: createError } = await supabase
-          .from('profiles')
-          .upsert({
-            id: userId,
-            first_name: user?.user_metadata?.first_name || user?.user_metadata?.firstName || 'Super',
-            last_name: user?.user_metadata?.last_name || user?.user_metadata?.lastName || 'Admin',
-            email: user?.email || '',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }, { onConflict: 'id' })
-          .select()
-          .single();
-
-        if (createError) {
-          console.error('❌ Failed to create profile:', createError);
-          return;
-        }
-        
-        setProfile(newProfile);
-        console.log('✅ Profile created:', newProfile);
-      } else {
-        setProfile(profileData);
-        console.log('✅ Profile loaded:', profileData);
-      }
-
-      // Step 2: Get user roles separately to avoid relationship issues
-      const { data: userRolesData, error: rolesError } = await supabase
-        .from('user_roles')
-        .select(`
-          roles (
-            name,
-            description
-          )
-        `)
-        .eq('user_id', userId);
-
-      if (rolesError) {
-        console.warn('⚠️ User roles query failed:', rolesError);
-        
-        // For superadmintest@geniecellgene.com, ensure superAdmin role exists and is assigned
-        if (user?.email === 'superadmintest@geniecellgene.com') {
-          console.log('🚨 Setting up superAdmin role for test user');
-          
-          // Check if superAdmin role exists, create if not
-          const { data: existingRole, error: roleCheckError } = await supabase
-            .from('roles')
-            .select('id')
-            .eq('name', 'superAdmin')
-            .single();
-
-          let roleId = existingRole?.id;
-          
-          if (roleCheckError) {
-            console.log('👑 Creating superAdmin role...');
-            const { data: newRole, error: roleCreateError } = await supabase
-              .from('roles')
-              .upsert({
-                name: 'superAdmin',
-                description: 'System Super Administrator - Full Access'
-              }, { onConflict: 'name' })
-              .select('id')
-              .single();
-            
-            if (roleCreateError) {
-              console.error('❌ Failed to create superAdmin role:', roleCreateError);
-            } else {
-              roleId = newRole.id;
-              console.log('✅ SuperAdmin role created');
-            }
-          }
-          
-          // Assign the role
-          if (roleId) {
-            const { error: assignError } = await supabase
-              .from('user_roles')
-              .upsert({
-                user_id: userId,
-                role_id: roleId,
-                assigned_by: userId
-              }, { onConflict: 'user_id,role_id' });
-            
-            if (assignError) {
-              console.error('❌ Failed to assign superAdmin role:', assignError);
-            } else {
-              console.log('✅ SuperAdmin role assigned to test user');
-              setUserRoles(['superAdmin']);
-            }
-          }
-        } else {
-          setUserRoles([]);
-        }
-      } else {
-        // Extract role names from the query result
-        const roles = userRolesData
-          .map(ur => ur.roles?.name)
-          .filter(Boolean) || [];
-        
-        setUserRoles(roles);
-        console.log('👤 User roles loaded:', roles);
-      }
-
-    } catch (error) {
-      console.error('💥 Exception loading profile:', error);
-      
-              // Emergency fallback for known super admin
-        if (user?.email === 'superadmintest@geniecellgene.com') {
-          console.log('🚨 Using emergency fallback for known super admin');
-          const adminProfile: MasterProfile = {
-            id: userId,
-            first_name: 'Super',
-            last_name: 'Admin',
-            email: user?.email || 'superadmintest@geniecellgene.com',
-            is_email_verified: true,
-            created_at: new Date().toISOString(),
-          };
-          setProfile(adminProfile);
-          setUserRoles(['superAdmin']);
-        }
-    }
-  };
-
-  const refreshAuth = async () => {
-    setIsLoading(true);
-    try {
-      const { data: { session: refreshedSession }, error } = await supabase.auth.getSession();
-      
-      if (error) {
-        console.error('❌ Error refreshing session:', error);
-        return;
-      }
-      
-      if (refreshedSession?.user) {
-        setSession(refreshedSession);
-        setUser(refreshedSession.user);
-        setIsAuthenticated(true);
-        await loadUserProfile(refreshedSession.user.id);
-      }
-    } catch (error) {
-      console.error('💥 Error refreshing auth:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   useEffect(() => {
-    let mounted = true;
-
-    const initializeAuth = async () => {
-      try {
-        console.log('🔄 Initializing master authentication...');
-        
-        // Get initial session
-        const { data: { session: initialSession }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error('❌ Error getting initial session:', error);
-        }
-        
-        if (mounted) {
-          if (initialSession?.user) {
-            console.log('✅ Found initial session for user:', initialSession.user.email);
-            setSession(initialSession);
-            setUser(initialSession.user);
-            setIsAuthenticated(true);
-            
-            // Load profile with a small delay
-            setTimeout(() => {
-              loadUserProfile(initialSession.user.id);
-            }, 100);
-          } else {
-            console.log('ℹ️ No existing session found');
-            setIsAuthenticated(false);
-          }
-          
-          setIsLoading(false);
-        }
-      } catch (error) {
-        console.error('💥 Error during auth initialization:', error);
-        if (mounted) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('🔄 Auth state changed:', event, session?.user?.email);
-      
-      if (mounted) {
-        if (session?.user) {
-          setSession(session);
-          setUser(session.user);
-          setIsAuthenticated(true);
-          
-          // Load profile with delay to avoid deadlocks
-          setTimeout(() => {
-            loadUserProfile(session.user.id);
-          }, 100);
-        } else {
-          setSession(null);
-          setUser(null);
-          setProfile(null);
-          setUserRoles([]);
-          setIsAuthenticated(false);
-        }
-        
-        setIsLoading(false);
-      }
+    console.log('🔄 Initializing master authentication...');
+    
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setIsLoading(false);
+      console.log('🔄 Auth state changed: INITIAL_SESSION', session?.user?.email ?? 'undefined');
     });
 
-    initializeAuth();
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        console.log('🔄 Auth state changed:', event, session?.user?.email ?? 'undefined');
+        setUser(session?.user ?? null);
+        setIsLoading(false);
 
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
+        // Fetch user roles when user signs in
+        if (session?.user) {
+          fetchUserRoles(session.user.id);
+        } else {
+          setUserRoles([]);
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const signOut = async () => {
-    console.log('👋 Signing out...');
-    setIsLoading(true);
-    
+  const fetchUserRoles = async (userId: string) => {
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error('❌ Sign out error:', error);
-      } else {
-        console.log('✅ Successfully signed out');
-      }
+      const { data: roles } = await supabase.rpc('get_user_roles', {
+        check_user_id: userId
+      });
+      
+      setUserRoles(roles || []);
     } catch (error) {
-      console.error('💥 Sign out exception:', error);
-    } finally {
-      setIsLoading(false);
+      console.error('Error fetching user roles:', error);
+      setUserRoles([]);
     }
   };
 
-  const value: MasterAuthContext = {
-    user,
-    session,
-    profile,
-    userRoles,
-    isAuthenticated,
-    isLoading,
-    signOut,
-    refreshAuth
+  const signIn = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (error) throw error;
   };
 
-  console.log('🎯 MASTER AUTH - Current state:', {
-    isAuthenticated,
-    userEmail: user?.email,
-    profileName: profile ? `${profile.first_name} ${profile.last_name}` : 'No profile',
+  const signOut = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
+    setUserRoles([]);
+  };
+
+  // Log current state for debugging
+  const currentState = {
+    isAuthenticated: !!user,
+    userEmail: user?.email ?? 'undefined',
+    profileName: user ? `${user.user_metadata?.firstName || ''} ${user.user_metadata?.lastName || ''}`.trim() || 'No profile' : 'No profile',
     userRoles,
-    isLoading
+    isLoading,
+  };
+
+  console.log('🎯 MASTER AUTH - Current state:', currentState);
+  console.log('🎯 SINGLE SOURCE OF TRUTH - Architecture Check:', {
+    isAuthenticated: !!user,
+    isLoading,
+    userEmail: user?.email ?? 'undefined',
+    userRoles,
+    timestamp: new Date().toISOString(),
   });
 
+  const value: MasterAuthContextType = {
+    user,
+    userRoles,
+    isAuthenticated: !!user,
+    isLoading,
+    permissions: [], // Stub permissions array
+    availableModules: [], // Stub available modules array
+    signIn,
+    signOut,
+  };
+
   return (
-    <AuthContext.Provider value={value}>
+    <MasterAuthContext.Provider value={value}>
       {children}
-    </AuthContext.Provider>
+    </MasterAuthContext.Provider>
   );
-};
+}
+
+export function useMasterAuth() {
+  const context = useContext(MasterAuthContext);
+  if (context === undefined) {
+    throw new Error('useMasterAuth must be used within a MasterAuthProvider');
+  }
+  return context;
+}

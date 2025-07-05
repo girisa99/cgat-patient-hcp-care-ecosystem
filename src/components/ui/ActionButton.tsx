@@ -8,7 +8,7 @@ export interface ActionButtonProps {
   label: string;
   onClick: () => void;
   variant?: 'default' | 'outline' | 'destructive' | 'secondary' | 'ghost';
-  size?: 'sm' | 'lg' | 'icon';
+  size?: 'sm' | 'lg' | 'icon' | 'default';
   disabled?: boolean;
   loading?: boolean;
   className?: string;
