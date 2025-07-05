@@ -1,123 +1,120 @@
 
 import React from 'react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Edit, Trash2, UserCheck, UserX } from 'lucide-react';
-import type { MasterUser } from '@/hooks/useMasterUserManagement';
+import { Button } from '@/components/ui/button';
+import { Users, UserPlus, Settings, RefreshCw } from 'lucide-react';
+import { useMasterUserManagement } from '@/hooks/useMasterUserManagement';
+import { MasterUser } from '@/hooks/useMasterData';
 
-interface TypeSafeUserTableProps {
-  users: MasterUser[];
-  onEdit?: (user: MasterUser) => void;
-  onDelete?: (userId: string) => void;
-  onToggleStatus?: (userId: string, isActive: boolean) => void;
-  isLoading?: boolean;
-}
+export const TypeSafeUserTable: React.FC = () => {
+  const { 
+    users, 
+    isLoading, 
+    getUserStats,
+    fetchUsers
+  } = useMasterUserManagement();
+  
+  const stats = getUserStats();
 
-export const TypeSafeUserTable: React.FC<TypeSafeUserTableProps> = ({
-  users,
-  onEdit,
-  onDelete,
-  onToggleStatus,
-  isLoading = false
-}) => {
+  console.log('📊 Type-Safe User Table - Using proper types');
+
+  const handleRefresh = () => {
+    fetchUsers();
+  };
+
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <div className="text-center">Loading users...</div>
-      </div>
-    );
-  }
-
-  if (users.length === 0) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <div className="text-center text-gray-500">No users found</div>
-      </div>
+      <Card>
+        <CardContent className="p-8 text-center">
+          <div className="text-muted-foreground">Loading users...</div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="border rounded-lg">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Email</TableHead>
-            <TableHead>Role</TableHead>
-            <TableHead>Phone</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {users.map((user) => (
-            <TableRow key={user.id}>
-              <TableCell>
-                <div className="font-medium">
-                  {user.firstName} {user.lastName}
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Type-Safe User Table ({users.length} users)
+          </div>
+          <Button
+            onClick={handleRefresh}
+            variant="outline"
+            size="sm"
+            disabled={isLoading}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          {/* Stats Summary */}
+          <div className="grid grid-cols-4 gap-4 mb-6">
+            <div className="text-center">
+              <div className="text-2xl font-bold">{stats.totalUsers}</div>
+              <div className="text-sm text-muted-foreground">Total Users</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold">{stats.activeUsers}</div>
+              <div className="text-sm text-muted-foreground">Active</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold">{stats.adminCount}</div>
+              <div className="text-sm text-muted-foreground">Admins</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold">{stats.patientCount}</div>
+              <div className="text-sm text-muted-foreground">Patients</div>
+            </div>
+          </div>
+
+          {users.length === 0 ? (
+            <div className="text-center p-8 text-muted-foreground">
+              <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>No users found</p>
+              <Button className="mt-4">
+                <UserPlus className="h-4 w-4 mr-2" />
+                Add First User
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {users.map((user: MasterUser) => (
+                <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex-1">
+                    <div className="font-medium">
+                      {user.first_name} {user.last_name}
+                    </div>
+                    <div className="text-sm text-muted-foreground">{user.email}</div>
+                    <div className="flex gap-1 mt-1">
+                      {user.user_roles.map((ur, index) => (
+                        <Badge key={index} variant="outline" className="text-xs">
+                          {ur.role.name}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={user.is_active ? 'default' : 'secondary'}>
+                      {user.is_active ? 'Active' : 'Inactive'}
+                    </Badge>
+                    <Button variant="outline" size="sm">
+                      <Settings className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-              </TableCell>
-              <TableCell>
-                <div className="text-sm text-gray-600">{user.email}</div>
-              </TableCell>
-              <TableCell>
-                <Badge variant="secondary">{user.role}</Badge>
-              </TableCell>
-              <TableCell>
-                <div className="text-sm">{user.phone || 'N/A'}</div>
-              </TableCell>
-              <TableCell>
-                <Badge variant={user.isActive ? 'default' : 'destructive'}>
-                  {user.isActive ? 'Active' : 'Inactive'}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                <div className="flex items-center gap-2">
-                  {onEdit && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onEdit(user)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                  )}
-                  {onToggleStatus && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onToggleStatus(user.id, user.isActive)}
-                    >
-                      {user.isActive ? (
-                        <UserX className="h-4 w-4" />
-                      ) : (
-                        <UserCheck className="h-4 w-4" />
-                      )}
-                    </Button>
-                  )}
-                  {onDelete && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onDelete(user.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 };
