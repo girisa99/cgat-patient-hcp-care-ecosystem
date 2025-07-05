@@ -80,6 +80,8 @@ export function useMasterData() {
     staffCount: users.filter(u => 
       u.user_roles.some(ur => ['caseManager', 'nurse', 'provider'].includes(ur.role.name))
     ).length,
+    verifiedUsers: users.filter(u => (u as any).is_email_verified).length,
+    unverifiedUsers: users.filter(u => !(u as any).is_email_verified).length,
     activeApiServices: apiServices.filter(s => s.status === 'active'),
     activeModules: modules.filter(m => m.is_active),
   };
@@ -293,6 +295,18 @@ export function useMasterData() {
     []
   );
 
+  const assignModule = useCallback(async () => {
+    console.log('Assign module - to be implemented');
+  }, []);
+
+  const assignFacility = useCallback(async () => {
+    console.log('Assign facility - to be implemented');
+  }, []);
+
+  const resendEmailVerification = useCallback(async () => {
+    console.log('Resend email verification - to be implemented');
+  }, []);
+
   return {
     /* mutations */
     createUser,
@@ -303,6 +317,9 @@ export function useMasterData() {
     createModule,
     refreshData,
     assignRole, // Add for compatibility
+    assignModule,
+    assignFacility,
+    resendEmailVerification,
 
     /* live read-models */
     users,
@@ -323,5 +340,8 @@ export function useMasterData() {
     isCreatingUser: isLoading,
     isCreatingApiService: isLoading,
     isCreatingModule: isLoading,
+    isAssigningModule: false,
+    isAssigningFacility: false,
+    isResendingVerification: false,
   };
 }
