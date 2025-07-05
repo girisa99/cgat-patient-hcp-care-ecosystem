@@ -252,7 +252,7 @@ export function useMasterData() {
   );
 
   const deactivateUser = useCallback(
-    async (userId: string) => {
+    async ({ userId }: { userId: string }) => {
       setIsLoading(true);
       setError(null);
       try {
@@ -556,5 +556,7 @@ export function useMasterData() {
     isAssigningFacility: false,
     isResendingVerification: false,
     isUpdatingUser: false,
+    isAssigningRole: false,
+    isDeactivatingUser: false,
   };
 }
