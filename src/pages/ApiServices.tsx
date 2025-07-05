@@ -7,20 +7,38 @@ import { Input } from '@/components/ui/input';
 import { Search, RefreshCw, Plus, Activity } from 'lucide-react';
 import { useMasterData } from '@/hooks/useMasterData';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
+import { useUnifiedDevelopmentLifecycle } from '@/hooks/useUnifiedDevelopmentLifecycle';
+import AccessDenied from '@/components/AccessDenied';
 
 const ApiServices: React.FC = () => {
   const { isAuthenticated, isLoading: authLoading, userRoles } = useMasterAuth();
+  const { navigation } = useUnifiedDevelopmentLifecycle();
   const { 
     apiServices, 
     isLoading, 
     error, 
     refreshData, 
-    stats 
+    stats,
+    createApiService,
+    isCreatingApiService
   } = useMasterData();
   
   const [searchQuery, setSearchQuery] = React.useState('');
 
   console.log('🔌 API Services Page - Master Data Integration');
+
+  // Role-based access guard
+  if (!navigation.hasAccess('/api-services')) {
+    return <AccessDenied />;
+  }
+
+  const handleCreateApiService = () => {
+    createApiService({
+      name: `API Service ${Date.now()}`,
+      type: 'REST',
+      description: 'Auto-generated API service for testing'
+    });
+  };
 
   if (authLoading || isLoading) {
     return (
@@ -113,11 +131,13 @@ const ApiServices: React.FC = () => {
                 Refresh
               </Button>
               <Button
+                onClick={handleCreateApiService}
+                disabled={isCreatingApiService}
                 size="sm"
                 className="flex items-center gap-2"
               >
                 <Plus className="h-4 w-4" />
-                Add Service
+                {isCreatingApiService ? 'Creating...' : 'Add Service'}
               </Button>
             </div>
           </CardTitle>

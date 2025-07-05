@@ -1,113 +1,118 @@
 
-/**
- * REAL DATA USER TABLE - NO MOCK DATA
- * Uses only real data from database via master consolidation system
- * Version: real-data-user-table-v1.0.0
- */
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Users, UserPlus, Settings, RefreshCw } from 'lucide-react';
 import { useMasterUserManagement } from '@/hooks/useMasterUserManagement';
-import { RefreshCw, UserPlus, Edit, Trash2 } from 'lucide-react';
 
 export const RealDataUserTable: React.FC = () => {
-  const {
-    users,
-    isLoading,
-    fetchUsers,
-    createUser,
-    updateUser,
-    deleteUser,
-    totalUsers,
-    activeUsers
+  const { 
+    users, 
+    isLoading, 
+    getUserStats,
+    fetchUsers
   } = useMasterUserManagement();
+  
+  const stats = getUserStats();
 
-  console.log('🎯 Real Data User Table - Database Integration Only');
+  console.log('📊 Real Data User Table - Live Database');
 
-  // Fixed method calls - no parameters as required by master hook
-  const handleRefresh = async () => {
-    await fetchUsers();
+  const handleRefresh = () => {
+    fetchUsers();
   };
 
-  const handleCreateUser = async () => {
-    await createUser();
-  };
-
-  const handleUpdateUser = async () => {
-    await updateUser();
-  };
-
-  const handleDeleteUser = async () => {
-    await deleteUser();
-  };
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="p-8 text-center">
+          <div className="text-muted-foreground">Loading users...</div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <Card className="w-full">
+    <Card>
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span>User Management - Real Data</span>
-            <Badge variant="secondary">{totalUsers} users</Badge>
-            <Badge variant="default">{activeUsers} active</Badge>
+            <Users className="h-5 w-5" />
+            Real Data User Table ({users.length} users)
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              onClick={handleRefresh}
-              variant="outline"
-              size="sm"
-              disabled={isLoading}
-            >
-              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-              {isLoading ? 'Loading...' : 'Refresh'}
-            </Button>
-            <Button onClick={handleCreateUser} size="sm">
-              <UserPlus className="h-4 w-4 mr-2" />
-              Add User
-            </Button>
-          </div>
+          <Button
+            onClick={handleRefresh}
+            variant="outline"
+            size="sm"
+            disabled={isLoading}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {users.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            {isLoading ? 'Loading users from database...' : 'No users found in database'}
+        <div className="space-y-4">
+          {/* Stats Summary */}
+          <div className="grid grid-cols-4 gap-4 mb-6">
+            <div className="text-center">
+              <div className="text-2xl font-bold">{stats.totalUsers}</div>
+              <div className="text-sm text-muted-foreground">Total Users</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold">{stats.activeUsers}</div>
+              <div className="text-sm text-muted-foreground">Active</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold">{stats.adminCount}</div>
+              <div className="text-sm text-muted-foreground">Admins</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold">{stats.patientCount}</div>
+              <div className="text-sm text-muted-foreground">Patients</div>
+            </div>
           </div>
-        ) : (
-          <div className="space-y-4">
-            {users.map((user) => (
-              <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="flex-1">
-                  <div className="font-medium">
-                    {user.firstName} {user.lastName}
+
+          {users.length === 0 ? (
+            <div className="text-center p-8 text-muted-foreground">
+              <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>No users found</p>
+              <Button className="mt-4">
+                <UserPlus className="h-4 w-4 mr-2" />
+                Add First User
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {users.map((user) => (
+                <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex-1">
+                    <div className="font-medium">
+                      {user.first_name} {user.last_name}
+                    </div>
+                    <div className="text-sm text-muted-foreground">{user.email}</div>
+                    <div className="flex gap-1 mt-1">
+                      {user.user_roles.map((ur, index) => (
+                        <Badge key={index} variant="outline" className="text-xs">
+                          {ur.role.name}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
-                  <div className="text-sm text-gray-500">{user.email}</div>
-                  <div className="flex items-center gap-2 mt-1">
-                    {user.role && <Badge variant="outline">{user.role}</Badge>}
-                    <Badge variant={user.isActive ? 'default' : 'secondary'}>
-                      {user.isActive ? 'Active' : 'Inactive'}
+                  <div className="flex items-center gap-2">
+                    <Badge variant={user.is_active ? 'default' : 'secondary'}>
+                      {user.is_active ? 'Active' : 'Inactive'}
                     </Badge>
-                    {user.created_at && (
-                      <span className="text-xs text-gray-400">
-                        Created: {new Date(user.created_at).toLocaleDateString()}
-                      </span>
-                    )}
+                    <Button variant="outline" size="sm">
+                      <Settings className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button onClick={handleUpdateUser} variant="outline" size="sm">
-                    <Edit className="h-3 w-3 mr-1" />
-                    Edit
-                  </Button>
-                  <Button onClick={handleDeleteUser} variant="outline" size="sm">
-                    <Trash2 className="h-3 w-3 mr-1" />
-                    Delete
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );

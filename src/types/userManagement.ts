@@ -38,7 +38,7 @@ export interface MasterUser {
   first_name: string;
   last_name: string;
   email: string;
-  role: string;
+  role?: string;
   phone?: string;
   isActive: boolean;
   is_active?: boolean;

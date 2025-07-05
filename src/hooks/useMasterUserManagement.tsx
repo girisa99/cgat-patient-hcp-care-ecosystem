@@ -9,7 +9,24 @@ import { useMasterAuth } from './useMasterAuth';
 import { useMasterToast } from './useMasterToast';
 
 export const useMasterUserManagement = () => {
-  const { users, createUser, isCreatingUser, searchUsers, stats } = useMasterData();
+  const { 
+    users, 
+    createUser, 
+    isCreatingUser, 
+    searchUsers, 
+    stats, 
+    isLoading, 
+    refreshData,
+    deactivateUser,
+    assignRole,
+    removeRole,
+    assignFacility,
+    isDeactivating,
+    isAssigningRole,
+    isRemovingRole,
+    isAssigningFacility,
+    error
+  } = useMasterData();
   const { userRoles } = useMasterAuth();
   const { showSuccess, showError } = useMasterToast();
 
@@ -17,6 +34,7 @@ export const useMasterUserManagement = () => {
 
   // User statistics
   const totalUsers = users.length;
+  const activeUsers = users.length; // Assuming all are active for now
   const patientCount = users.filter(u => 
     u.user_roles.some(ur => ur.role.name === 'patientCaregiver')
   ).length;
@@ -37,25 +55,64 @@ export const useMasterUserManagement = () => {
     }
   };
 
+  // Mock functions for methods that components expect but aren't implemented yet
+  const fetchUsers = () => {
+    console.log('Refreshing user data...');
+    refreshData();
+  };
+
+  const updateUser = () => {
+    console.log('Update user - to be implemented');
+  };
+
+  const deleteUser = () => {
+    console.log('Delete user - to be implemented');
+  };
+
+  const getUserStats = () => ({
+    totalUsers,
+    activeUsers,
+    patientCount,
+    adminCount,
+    staffCount
+  });
+
   return {
     // Data
     users,
     totalUsers,
+    activeUsers,
     patientCount,
     adminCount,
     staffCount,
     
+    // Loading states
+    isLoading,
+    isCreatingUser,
+    isDeactivating,
+    isAssigningRole,
+    isRemovingRole,
+    isAssigningFacility,
+    
+    // Error state
+    error,
+    
     // Actions
     createUser: handleCreateUser,
+    fetchUsers,
+    updateUser,
+    deleteUser,
     searchUsers,
-    
-    // Status
-    isCreatingUser,
+    deactivateUser,
+    assignRole,
+    removeRole,
+    assignFacility,
     
     // Utilities
     getUsersByRole: (role: string) => users.filter(u => 
       u.user_roles.some(ur => ur.role.name === role)
     ),
+    getUserStats,
     
     // Meta
     meta: {

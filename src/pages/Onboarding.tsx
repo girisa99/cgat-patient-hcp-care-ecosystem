@@ -7,9 +7,12 @@ import { Input } from '@/components/ui/input';
 import { Search, RefreshCw, Plus, UserCheck } from 'lucide-react';
 import { useMasterData } from '@/hooks/useMasterData';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
+import { useUnifiedDevelopmentLifecycle } from '@/hooks/useUnifiedDevelopmentLifecycle';
+import AccessDenied from '@/components/AccessDenied';
 
 const Onboarding: React.FC = () => {
   const { isAuthenticated, isLoading: authLoading, userRoles } = useMasterAuth();
+  const { navigation } = useUnifiedDevelopmentLifecycle();
   const { 
     users, 
     facilities,
@@ -22,6 +25,11 @@ const Onboarding: React.FC = () => {
   const [searchQuery, setSearchQuery] = React.useState('');
 
   console.log('🚀 Onboarding Page - Master Data Integration');
+
+  // Role-based access guard
+  if (!navigation.hasAccess('/onboarding')) {
+    return <AccessDenied />;
+  }
 
   if (authLoading || isLoading) {
     return (

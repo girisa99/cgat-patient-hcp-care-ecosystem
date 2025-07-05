@@ -7,9 +7,12 @@ import { Input } from '@/components/ui/input';
 import { Search, RefreshCw, Plus, Upload, Download, FileText } from 'lucide-react';
 import { useMasterData } from '@/hooks/useMasterData';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
+import { useUnifiedDevelopmentLifecycle } from '@/hooks/useUnifiedDevelopmentLifecycle';
+import AccessDenied from '@/components/AccessDenied';
 
 const DataImport: React.FC = () => {
   const { isAuthenticated, isLoading: authLoading, userRoles } = useMasterAuth();
+  const { navigation } = useUnifiedDevelopmentLifecycle();
   const { 
     isLoading, 
     error, 
@@ -20,6 +23,11 @@ const DataImport: React.FC = () => {
   const [searchQuery, setSearchQuery] = React.useState('');
 
   console.log('📊 Data Import Page - Master Data Integration');
+
+  // Role-based access guard
+  if (!navigation.hasAccess('/data-import')) {
+    return <AccessDenied />;
+  }
 
   if (authLoading || isLoading) {
     return (

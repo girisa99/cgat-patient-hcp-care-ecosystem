@@ -8,23 +8,46 @@ import { useMasterData } from './useMasterData';
 import { useMasterAuth } from './useMasterAuth';
 
 export const useMasterRoleManagement = () => {
-  const { modules, users, isLoading } = useMasterData();
+  const { modules, users, facilities, isLoading } = useMasterData();
   const { userRoles } = useMasterAuth();
 
   console.log('🔐 Master Role Management - Single source of truth active');
 
   // Active modules
   const activeModules = modules.filter(m => m.is_active);
+  const activeFacilities = facilities.filter(f => f.is_active);
+  
+  // Mock roles data (since we don't have a roles table query yet)
+  const roles = [
+    { id: '1', name: 'superAdmin', description: 'Super Administrator', is_active: true },
+    { id: '2', name: 'onboardingTeam', description: 'Onboarding Team', is_active: true },
+    { id: '3', name: 'patientCaregiver', description: 'Patient Caregiver', is_active: true }
+  ];
+  
+  const activeRoles = roles.filter(r => r.is_active);
+  
+  // Mock permissions data
+  const permissions = [
+    { id: '1', name: 'user_management', description: 'Manage users' },
+    { id: '2', name: 'facility_management', description: 'Manage facilities' },
+    { id: '3', name: 'module_management', description: 'Manage modules' },
+    { id: '4', name: 'role_management', description: 'Manage roles' }
+  ];
 
   // Role-based access
   const hasRole = (role: string) => userRoles.includes(role);
   const isAdmin = hasRole('superAdmin') || hasRole('onboardingTeam');
 
   return {
-    // Data
+    // Data - now includes all required fields
     modules,
     activeModules,
     users,
+    facilities,
+    activeFacilities,
+    roles,
+    activeRoles,
+    permissions,
     
     // Status
     isLoading,
@@ -39,7 +62,12 @@ export const useMasterRoleManagement = () => {
       dataSource: 'master_data_consolidated',
       version: 'master-role-management-v1.0.0',
       moduleCount: modules.length,
-      activeModuleCount: activeModules.length
+      activeModuleCount: activeModules.length,
+      facilityCount: facilities.length,
+      activeFacilityCount: activeFacilities.length,
+      roleCount: roles.length,
+      activeRoleCount: activeRoles.length,
+      permissionCount: permissions.length
     }
   };
 };

@@ -7,9 +7,12 @@ import { Input } from '@/components/ui/input';
 import { Search, RefreshCw, Plus, Shield, CheckCircle, AlertTriangle } from 'lucide-react';
 import { useMasterData } from '@/hooks/useMasterData';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
+import { useUnifiedDevelopmentLifecycle } from '@/hooks/useUnifiedDevelopmentLifecycle';
+import AccessDenied from '@/components/AccessDenied';
 
 const ActiveVerification: React.FC = () => {
   const { isAuthenticated, isLoading: authLoading, userRoles } = useMasterAuth();
+  const { navigation } = useUnifiedDevelopmentLifecycle();
   const { 
     users,
     facilities,
@@ -22,6 +25,11 @@ const ActiveVerification: React.FC = () => {
   const [searchQuery, setSearchQuery] = React.useState('');
 
   console.log('🔍 Active Verification Page - Master Data Integration');
+
+  // Role-based access guard
+  if (!navigation.hasAccess('/active-verification')) {
+    return <AccessDenied />;
+  }
 
   if (authLoading || isLoading) {
     return (

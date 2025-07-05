@@ -15,12 +15,21 @@ const SimpleModules: React.FC = () => {
     isLoading, 
     error, 
     refreshData, 
-    stats 
+    stats,
+    createModule,
+    isCreatingModule
   } = useMasterData();
   
   const [searchQuery, setSearchQuery] = React.useState('');
 
   console.log('📦 Modules Page - Master Data Integration');
+
+  const handleCreateModule = () => {
+    createModule({
+      name: `New Module ${Date.now()}`,
+      description: 'Auto-generated module for testing'
+    });
+  };
 
   if (authLoading || isLoading) {
     return (
@@ -113,11 +122,13 @@ const SimpleModules: React.FC = () => {
                 Refresh
               </Button>
               <Button
+                onClick={handleCreateModule}
+                disabled={isCreatingModule}
                 size="sm"
                 className="flex items-center gap-2"
               >
                 <Plus className="h-4 w-4" />
-                Add Module
+                {isCreatingModule ? 'Creating...' : 'Add Module'}
               </Button>
             </div>
           </CardTitle>
