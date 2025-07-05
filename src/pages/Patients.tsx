@@ -16,12 +16,22 @@ const Patients: React.FC = () => {
     error, 
     refreshData, 
     searchUsers,
-    stats
+    stats,
+    createPatient,
+    isCreatingPatient
   } = useMasterData();
   
   const [searchQuery, setSearchQuery] = React.useState('');
 
   console.log('🏥 Patients Page - Master Data Integration');
+
+  const handleCreatePatient = () => {
+    createPatient({
+      firstName: `Patient ${Date.now()}`,
+      lastName: 'Test',
+      email: `patient${Date.now()}@example.com`
+    });
+  };
 
   if (authLoading || isLoading) {
     return (
@@ -120,11 +130,13 @@ const Patients: React.FC = () => {
                 Refresh
               </Button>
               <Button
+                onClick={handleCreatePatient}
+                disabled={isCreatingPatient}
                 size="sm"
                 className="flex items-center gap-2"
               >
                 <Plus className="h-4 w-4" />
-                Add Patient
+                {isCreatingPatient ? 'Creating...' : 'Add Patient'}
               </Button>
             </div>
           </CardTitle>

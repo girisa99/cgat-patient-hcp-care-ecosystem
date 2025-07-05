@@ -16,12 +16,24 @@ const Facilities: React.FC = () => {
     error, 
     refreshData, 
     searchFacilities,
-    stats
+    stats,
+    createFacility,
+    isCreatingFacility
   } = useMasterData();
   
   const [searchQuery, setSearchQuery] = React.useState('');
 
   console.log('🏥 Facilities Page - Master Data Integration');
+
+  const handleCreateFacility = () => {
+    createFacility({
+      name: `New Facility ${Date.now()}`,
+      facilityType: 'treatmentFacility',
+      address: '123 Healthcare St',
+      phone: '555-0123',
+      email: `facility${Date.now()}@example.com`
+    });
+  };
 
   if (authLoading || isLoading) {
     return (
@@ -111,11 +123,13 @@ const Facilities: React.FC = () => {
                 Refresh
               </Button>
               <Button
+                onClick={handleCreateFacility}
+                disabled={isCreatingFacility}
                 size="sm"
                 className="flex items-center gap-2"
               >
                 <Plus className="h-4 w-4" />
-                Add Facility
+                {isCreatingFacility ? 'Creating...' : 'Add Facility'}
               </Button>
             </div>
           </CardTitle>
