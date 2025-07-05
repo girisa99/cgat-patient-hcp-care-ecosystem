@@ -1,4 +1,3 @@
-
 /**
  * MASTER ROLE MANAGEMENT HOOK - SINGLE SOURCE OF TRUTH
  * Consolidates all role and module management functionality
@@ -8,7 +7,7 @@ import { useMasterData } from './useMasterData';
 import { useMasterAuth } from './useMasterAuth';
 
 export const useMasterRoleManagement = () => {
-  const { modules, users, facilities, isLoading } = useMasterData();
+  const { modules, users, facilities, roles, isLoading, createModule, isCreatingModule } = useMasterData();
   const { userRoles } = useMasterAuth();
 
   console.log('🔐 Master Role Management - Single source of truth active');
@@ -16,15 +15,6 @@ export const useMasterRoleManagement = () => {
   // Active modules
   const activeModules = modules.filter(m => m.is_active);
   const activeFacilities = facilities.filter(f => f.is_active);
-  
-  // Mock roles data (since we don't have a roles table query yet)
-  const roles = [
-    { id: '1', name: 'superAdmin', description: 'Super Administrator', is_active: true },
-    { id: '2', name: 'onboardingTeam', description: 'Onboarding Team', is_active: true },
-    { id: '3', name: 'patientCaregiver', description: 'Patient Caregiver', is_active: true }
-  ];
-  
-  const activeRoles = roles.filter(r => r.is_active);
   
   // Mock permissions data
   const permissions = [
@@ -46,7 +36,7 @@ export const useMasterRoleManagement = () => {
     facilities,
     activeFacilities,
     roles,
-    activeRoles,
+    activeRoles: roles,
     permissions,
     
     // Status
@@ -66,8 +56,12 @@ export const useMasterRoleManagement = () => {
       facilityCount: facilities.length,
       activeFacilityCount: activeFacilities.length,
       roleCount: roles.length,
-      activeRoleCount: activeRoles.length,
+      activeRoleCount: roles.length,
       permissionCount: permissions.length
-    }
+    },
+
+    // Module operations
+    createModule,
+    isCreatingModule
   };
 };
