@@ -17,6 +17,8 @@ import Security from "./pages/Security";
 import Reports from "./pages/Reports";
 import Testing from "./pages/Testing";
 import RoleManagement from "./pages/RoleManagement";
+import Login from "./pages/Login";
+import ProtectedRoute from "./components/ProtectedRoute";
 import { MasterAuthProvider } from './hooks/useMasterAuth';
 
 const queryClient = new QueryClient();
@@ -35,7 +37,8 @@ const App = () => (
               {/* Main Content Area */}
               <div className="flex-1 min-h-screen bg-gray-50">
                 <Routes>
-                  <Route path="/" element={<Index />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
                   <Route path="/users" element={<Users />} />
                   <Route path="/patients" element={<Patients />} />
                   <Route path="/facilities" element={<Facilities />} />
