@@ -24,44 +24,45 @@ import { useMasterAuth } from '@/hooks/useMasterAuth';
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <MasterAuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <SidebarProvider>
-            <div className="flex min-h-screen w-full">
-              {/* Sidebar (only when authenticated) */}
-              {(() => {
-                const { isAuthenticated } = useMasterAuth();
-                return isAuthenticated ? <AppSidebar /> : null;
-              })()}
-              {/* Main Content Area */}
-              <div className="flex-1 min-h-screen bg-gray-50">
-                <Routes>
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-                  <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
-                  <Route path="/patients" element={<ProtectedRoute><Patients /></ProtectedRoute>} />
-                  <Route path="/facilities" element={<ProtectedRoute><Facilities /></ProtectedRoute>} />
-                  <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
-                  <Route path="/modules" element={<ProtectedRoute><Modules /></ProtectedRoute>} />
-                  <Route path="/api-services" element={<ProtectedRoute><ApiServices /></ProtectedRoute>} />
-                  <Route path="/ngrok" element={<ProtectedRoute><NgrokIntegration /></ProtectedRoute>} />
-                  <Route path="/security" element={<ProtectedRoute><Security /></ProtectedRoute>} />
-                  <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
-                  <Route path="/testing" element={<ProtectedRoute><Testing /></ProtectedRoute>} />
-                  <Route path="/role-management" element={<ProtectedRoute><RoleManagement /></ProtectedRoute>} />
-                </Routes>
+const App = () => {
+  const { isAuthenticated } = useMasterAuth();
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <MasterAuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <SidebarProvider>
+              <div className="flex min-h-screen w-full">
+                {/* Sidebar (only when authenticated) */}
+                {isAuthenticated && <AppSidebar />}
+                {/* Main Content Area */}
+                <div className="flex-1 min-h-screen bg-gray-50">
+                  <Routes>
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+                    <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
+                    <Route path="/patients" element={<ProtectedRoute><Patients /></ProtectedRoute>} />
+                    <Route path="/facilities" element={<ProtectedRoute><Facilities /></ProtectedRoute>} />
+                    <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+                    <Route path="/modules" element={<ProtectedRoute><Modules /></ProtectedRoute>} />
+                    <Route path="/api-services" element={<ProtectedRoute><ApiServices /></ProtectedRoute>} />
+                    <Route path="/ngrok" element={<ProtectedRoute><NgrokIntegration /></ProtectedRoute>} />
+                    <Route path="/security" element={<ProtectedRoute><Security /></ProtectedRoute>} />
+                    <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+                    <Route path="/testing" element={<ProtectedRoute><Testing /></ProtectedRoute>} />
+                    <Route path="/role-management" element={<ProtectedRoute><RoleManagement /></ProtectedRoute>} />
+                  </Routes>
+                </div>
               </div>
-            </div>
-          </SidebarProvider>
-        </BrowserRouter>
-      </TooltipProvider>
-    </MasterAuthProvider>
-  </QueryClientProvider>
-);
+            </SidebarProvider>
+          </BrowserRouter>
+        </TooltipProvider>
+      </MasterAuthProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
