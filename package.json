@@ -9,7 +9,8 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "lint:strict": "eslint . --max-warnings 10000",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "tunnel": "ngrok http 5173 --log=stdout --log-format=logfmt"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -86,6 +87,7 @@
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.35.1",
-    "vite": "^5.4.19"
+    "vite": "^5.4.19",
+    "ngrok": "^4.3.3"
   }
 }
