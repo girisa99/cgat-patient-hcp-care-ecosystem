@@ -5,8 +5,9 @@
  */
 
 // Authentication - Single Source
-export { useDatabaseAuth } from './useDatabaseAuth';
-export { useAuthContext } from '@/components/auth/DatabaseAuthProvider';
+// Legacy hooks removed - use useMasterAuth instead
+// export { useDatabaseAuth } from './useDatabaseAuth';
+// export { useAuthContext } from '@/components/auth/DatabaseAuthProvider';
 
 // User Management - Single Source  
 export { useMasterUserManagement } from './useMasterUserManagement';

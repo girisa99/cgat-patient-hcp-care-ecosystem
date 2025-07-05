@@ -1,9 +1,9 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAuthContext } from '@/components/auth/DatabaseAuthProvider';
+import { useMasterAuth } from '@/hooks/useMasterAuth';
 
 const SimpleUnifiedDashboard: React.FC = () => {
-  const { user } = useAuthContext();
+  const { user } = useMasterAuth();
 
   console.log('🎯 Simple Unified Dashboard - Rendering for user:', user?.id);
 

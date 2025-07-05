@@ -1,7 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useRoleBasedNavigation } from '@/hooks/useRoleBasedNavigation';
-import { useAuthContext } from '@/components/auth/DatabaseAuthProvider';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
@@ -15,8 +14,7 @@ interface RoleBasedNavigationProps {
  */
 export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ className = '' }) => {
   const location = useLocation();
-  const { user, profile } = useAuthContext();
-  const { availableTabs, currentRole, isAdmin, isSuperAdmin } = useRoleBasedNavigation();
+  const { user, profile, availableTabs, currentRole, isAdmin, isSuperAdmin } = useRoleBasedNavigation();
 
   if (!user) {
     return null;

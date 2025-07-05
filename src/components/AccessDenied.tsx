@@ -1,12 +1,14 @@
-import React from 'react';
+import React from "react";
 
-const AccessDenied: React.FC = () => (
-  <div className="p-6">
-    <div className="text-center">
-      <h2 className="text-2xl font-bold text-red-600">Access Denied</h2>
-      <p className="text-muted-foreground mt-2">You do not have permission to view this page.</p>
+/** Reusable message shown when the current user lacks permission. */
+export default function AccessDenied() {
+  return (
+    <div className="flex h-full w-full flex-col items-center justify-center gap-4 p-10 text-center">
+      <h1 className="text-2xl font-semibold text-destructive">Access Denied</h1>
+      <p className="max-w-md text-muted-foreground">
+        You don’t have permission to view this page.<br />
+        Please contact an administrator if you believe this is a mistake.
+      </p>
     </div>
-  </div>
-);
-
-export default AccessDenied;
+  );
+}

@@ -1,11 +1,11 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuthContext } from '@/components/auth/DatabaseAuthProvider';
+import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { TreatmentCenterOnboarding } from '@/types/onboarding';
 
 export const useSavedApplications = () => {
-  const { user } = useAuthContext();
+  const { user } = useMasterAuth();
 
   const { data: savedApplications, isLoading, error, refetch } = useQuery({
     queryKey: ['saved-onboarding-applications', user?.id],

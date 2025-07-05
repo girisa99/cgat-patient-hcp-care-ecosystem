@@ -5,7 +5,8 @@
  */
 
 export { useFacilities } from '../useFacilities';
-export { useFacilityData } from './useFacilityData';
+// Legacy hook removed - use useMasterData instead
+// export { useFacilityData } from './useFacilityData';
 // useFacilityMutations removed - use useMasterFacilities instead
 
 // This ensures all facilities imports use the same consolidated approach

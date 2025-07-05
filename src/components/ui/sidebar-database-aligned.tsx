@@ -9,7 +9,7 @@ import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { useAuthContext } from '@/components/auth/DatabaseAuthProvider';
+import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { useRoleBasedNavigation } from '@/hooks/useRoleBasedNavigation';
 
 // Database-aligned interfaces following verification standards
@@ -304,8 +304,36 @@ export function AppSidebar() {
   const { collapsed } = useSidebar()
   const location = useLocation()
   const currentPath = location.pathname
-  const { user, profile, signOut } = useAuthContext()
-  const { availableTabs, currentRole, isAdmin, isSuperAdmin } = useRoleBasedNavigation()
+  const { user, profile, signOut } = useMasterAuth()
+  
+  // Use role-based navigation with fallback
+  let availableTabs, currentRole, isAdmin, isSuperAdmin;
+  try {
+    const navigation = useRoleBasedNavigation()
+    availableTabs = navigation.availableTabs
+    currentRole = navigation.currentRole
+    isAdmin = navigation.isAdmin
+    isSuperAdmin = navigation.isSuperAdmin
+  } catch (error) {
+    console.warn('🔧 Role-based navigation failed, using fallback navigation');
+    // Fallback navigation for all authenticated users
+    availableTabs = [
+      { title: 'Dashboard', to: '/', icon: () => '🏠' },
+      { title: 'Users', to: '/users', icon: () => '👥' },
+      { title: 'Patients', to: '/patients', icon: () => '🏥' },
+      { title: 'Facilities', to: '/facilities', icon: () => '🏢' },
+      { title: 'Modules', to: '/modules', icon: () => '📦' },
+      { title: 'API Services', to: '/api-services', icon: () => '🔗' },
+      { title: 'Testing', to: '/testing', icon: () => '🧪' },
+      { title: 'Data Import', to: '/data-import', icon: () => '📊' },
+      { title: 'Verification', to: '/active-verification', icon: () => '✅' },
+      { title: 'Onboarding', to: '/onboarding', icon: () => '🚀' },
+      { title: 'Security', to: '/security', icon: () => '🔒' }
+    ]
+    currentRole = 'Developer'
+    isAdmin = true
+    isSuperAdmin = false
+  }
 
   const isActive = (path: string) => currentPath === path
 

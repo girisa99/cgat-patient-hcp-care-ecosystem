@@ -1,253 +1,131 @@
-
 import { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuthContext } from '@/components/auth/DatabaseAuthProvider';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
+import { useMasterAuth } from '@/hooks/useMasterAuth';
 
-interface UserPreferences {
-  id?: string;
-  user_id?: string;
-  auto_route: boolean;
-  preferred_dashboard: 'unified' | 'module-specific';
-  default_module?: string;
-  theme_preference: 'light' | 'dark' | 'system';
-  language: string;
-  timezone: string;
-}
-
-interface NotificationPreferences {
-  id?: string;
-  user_id?: string;
-  email_notifications: boolean;
-  push_notifications: boolean;
-  sms_notifications: boolean;
-  security_alerts: boolean;
-  system_updates: boolean;
-  module_updates: boolean;
-  marketing_emails: boolean;
-  notification_frequency: 'immediate' | 'daily' | 'weekly' | 'monthly';
-  quiet_hours_start?: string;
-  quiet_hours_end?: string;
-}
-
-interface SecuritySettings {
-  id?: string;
-  user_id?: string;
-  two_factor_enabled: boolean;
-  session_timeout_minutes: number;
-  password_last_changed?: string;
-  login_notifications: boolean;
-  suspicious_activity_alerts: boolean;
-  device_tracking: boolean;
-  api_access_logging: boolean;
-  ip_whitelist: string[];
-  trusted_devices: any[];
+interface UserSettings {
+  id: string;
+  notifications_enabled: boolean;
+  theme_preference: string;
+  language_preference: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export const useUserSettings = () => {
-  const { user } = useAuthContext();
-  const queryClient = useQueryClient();
+  const [settings, setSettings] = useState<UserSettings | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
-  // Fetch user preferences
-  const { data: userPreferences, isLoading: preferencesLoading } = useQuery({
-    queryKey: ['userPreferences', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
-
+  // Load user settings from database
+  const loadSettings = async (userId: string) => {
+    try {
+      setLoading(true);
       const { data, error } = await supabase
-        .from('user_preferences')
+        .from('user_settings')
         .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
+        .eq('user_id', userId)
+        .single();
 
       if (error && error.code !== 'PGRST116') {
-        throw error;
+        console.error('Error loading user settings:', error);
+        setError(error.message);
+        return;
       }
 
-      // If no preferences exist, create default ones
-      if (!data) {
-        const { data: newPrefs, error: insertError } = await supabase
-          .from('user_preferences')
-          .insert([{ user_id: user.id }])
-          .select()
-          .single();
+      setSettings(data);
+      setError(null);
+    } catch (err: any) {
+      console.error('Exception loading user settings:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        if (insertError) throw insertError;
-        return newPrefs;
-      }
+  // Update user settings
+  const updateSettings = async (updates: Partial<UserSettings>) => {
+    if (!settings || !user) return;
 
-      return data;
-    },
-    enabled: !!user?.id,
-  });
-
-  // Fetch notification preferences
-  const { data: notificationPreferences, isLoading: notificationsLoading } = useQuery({
-    queryKey: ['notificationPreferences', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
-
+    try {
       const { data, error } = await supabase
-        .from('notification_preferences')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (error && error.code !== 'PGRST116') {
-        throw error;
-      }
-
-      // If no preferences exist, create default ones
-      if (!data) {
-        const { data: newPrefs, error: insertError } = await supabase
-          .from('notification_preferences')
-          .insert([{ user_id: user.id }])
-          .select()
-          .single();
-
-        if (insertError) throw insertError;
-        return newPrefs;
-      }
-
-      return data;
-    },
-    enabled: !!user?.id,
-  });
-
-  // Fetch security settings
-  const { data: securitySettings, isLoading: securityLoading } = useQuery({
-    queryKey: ['securitySettings', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
-
-      const { data, error } = await supabase
-        .from('security_settings')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (error && error.code !== 'PGRST116') {
-        throw error;
-      }
-
-      // If no settings exist, create default ones
-      if (!data) {
-        const { data: newSettings, error: insertError } = await supabase
-          .from('security_settings')
-          .insert([{ user_id: user.id }])
-          .select()
-          .single();
-
-        if (insertError) throw insertError;
-        return newSettings;
-      }
-
-      return data;
-    },
-    enabled: !!user?.id,
-  });
-
-  // Update user preferences mutation
-  const updatePreferencesMutation = useMutation({
-    mutationFn: async (updates: Partial<UserPreferences>) => {
-      if (!user?.id) throw new Error('User not authenticated');
-
-      const { data, error } = await supabase
-        .from('user_preferences')
-        .update(updates)
+        .from('user_settings')
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString()
+        })
         .eq('user_id', user.id)
         .select()
         .single();
 
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['userPreferences'] });
-      toast.success('Preferences updated successfully');
-    },
-    onError: (error) => {
-      console.error('Error updating preferences:', error);
-      toast.error('Failed to update preferences');
-    },
-  });
-
-  // Update notification preferences mutation with Twilio integration
-  const updateNotificationsMutation = useMutation({
-    mutationFn: async (updates: Partial<NotificationPreferences>) => {
-      if (!user?.id) throw new Error('User not authenticated');
-
-      const { data, error } = await supabase
-        .from('notification_preferences')
-        .update(updates)
-        .eq('user_id', user.id)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      // Send notification about preference changes via Twilio if enabled
-      if (data.sms_notifications && updates.sms_notifications !== undefined) {
-        try {
-          await supabase.functions.invoke('twilio-notifications', {
-            body: {
-              type: 'sms',
-              to: user.phone || '',
-              message: 'Your notification preferences have been updated successfully.',
-              userId: user.id,
-            },
-          });
-        } catch (error) {
-          console.log('Failed to send SMS confirmation:', error);
-        }
+      if (error) {
+        console.error('Error updating settings:', error);
+        toast({
+          title: "Error",
+          description: "Failed to update settings",
+          variant: "destructive",
+        });
+        return;
       }
 
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notificationPreferences'] });
-      toast.success('Notification preferences updated successfully');
-    },
-    onError: (error) => {
-      console.error('Error updating notification preferences:', error);
-      toast.error('Failed to update notification preferences');
-    },
-  });
+      setSettings(data);
+      toast({
+        title: "Success",
+        description: "Settings updated successfully",
+      });
+    } catch (err: any) {
+      console.error('Exception updating settings:', err);
+      toast({
+        title: "Error",
+        description: "Failed to update settings",
+        variant: "destructive",
+      });
+    }
+  };
 
-  // Update security settings mutation
-  const updateSecurityMutation = useMutation({
-    mutationFn: async (updates: Partial<SecuritySettings>) => {
-      if (!user?.id) throw new Error('User not authenticated');
-
+  // Initialize settings for new user
+  const createDefaultSettings = async (userId: string) => {
+    try {
       const { data, error } = await supabase
-        .from('security_settings')
-        .update(updates)
-        .eq('user_id', user.id)
+        .from('user_settings')
+        .insert({
+          user_id: userId,
+          notifications_enabled: true,
+          theme_preference: 'light',
+          language_preference: 'en'
+        })
         .select()
         .single();
 
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['securitySettings'] });
-      toast.success('Security settings updated successfully');
-    },
-    onError: (error) => {
-      console.error('Error updating security settings:', error);
-      toast.error('Failed to update security settings');
-    },
-  });
+      if (error) {
+        console.error('Error creating default settings:', error);
+        return;
+      }
+
+      setSettings(data);
+    } catch (err: any) {
+      console.error('Exception creating default settings:', err);
+    }
+  };
+
+  const { user } = useMasterAuth();
+
+  useEffect(() => {
+    if (user?.id) {
+      loadSettings(user.id);
+    } else {
+      setSettings(null);
+      setLoading(false);
+    }
+  }, [user?.id]);
 
   return {
-    userPreferences,
-    notificationPreferences,
-    securitySettings,
-    isLoading: preferencesLoading || notificationsLoading || securityLoading,
-    updatePreferences: updatePreferencesMutation.mutate,
-    updateNotifications: updateNotificationsMutation.mutate,
-    updateSecurity: updateSecurityMutation.mutate,
-    isUpdating: updatePreferencesMutation.isPending || updateNotificationsMutation.isPending || updateSecurityMutation.isPending,
+    settings,
+    loading,
+    error,
+    updateSettings,
+    createDefaultSettings,
+    refetch: () => user?.id && loadSettings(user.id)
   };
 };
