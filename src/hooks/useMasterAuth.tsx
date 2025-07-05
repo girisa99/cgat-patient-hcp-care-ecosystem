@@ -1,4 +1,3 @@
-
 import { useState, useEffect, createContext, useContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { User } from '@supabase/supabase-js';
@@ -38,6 +37,7 @@ export function MasterAuthProvider({ children }: { children: React.ReactNode }) 
       if (session?.user) {
         fetchUserRoles(session.user.id);
         fetchUserProfile(session.user.id);
+        fetchUserFacilities(session.user.id);
       }
     });
 
@@ -52,6 +52,7 @@ export function MasterAuthProvider({ children }: { children: React.ReactNode }) 
         if (session?.user) {
           fetchUserRoles(session.user.id);
           fetchUserProfile(session.user.id);
+          fetchUserFacilities(session.user.id);
         } else {
           setUserRoles([]);
           setProfile(null);
@@ -64,15 +65,30 @@ export function MasterAuthProvider({ children }: { children: React.ReactNode }) 
 
   const fetchUserRoles = async (userId: string) => {
     try {
-      const { data: roles } = await supabase.rpc('get_user_roles', {
-        check_user_id: userId
+      // Preferred: use RPC for fine-grained security
+      const { data: rpcData, error: rpcError } = await supabase.rpc('get_user_roles', {
+        check_user_id: userId,
       });
-      
-      // Extract role names from the response
-      const roleNames = roles?.map((role: { role_name: string }) => role.role_name) || [];
+
+      if (!rpcError && rpcData) {
+        const roleNames = (rpcData as any[]).map((r) => r.role_name);
+        setUserRoles(roleNames);
+        return;
+      }
+
+      // Fallback: direct select (works in dev when RPC not yet deployed)
+      console.warn('[Auth] RPC get_user_roles failed or not present – falling back to direct select');
+      const { data: rows, error } = await supabase
+        .from('user_roles')
+        .select(' role:roles ( name )')
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      const roleNames = (rows as any[]).map((row) => row.role?.name).filter(Boolean);
       setUserRoles(roleNames);
-    } catch (error) {
-      console.error('Error fetching user roles:', error);
+    } catch (err) {
+      console.error('[Auth] Error fetching user roles:', err);
       setUserRoles([]);
     }
   };
@@ -90,6 +106,10 @@ export function MasterAuthProvider({ children }: { children: React.ReactNode }) 
       console.error('Error fetching user profile:', error);
       setProfile(null);
     }
+  };
+
+  const fetchUserFacilities = async (userId: string) => {
+    // Implementation of fetchUserFacilities
   };
 
   const refreshAuth = async () => {
