@@ -14,12 +14,23 @@ const MASTER_DATA_CACHE_KEY = ['master-data'];
 
 export interface MasterUser {
   id: string;
+  firstName: string;
+  lastName: string;
   first_name: string;
   last_name: string;
   email: string;
+  role?: string;
+  phone?: string;
+  isActive: boolean;
+  is_active?: boolean;
   created_at: string;
-  user_roles: Array<{ role: { name: string; description?: string } }>;
+  updated_at?: string;
+  facility_id?: string;
+  email_confirmed_at?: string;
+  last_sign_in_at?: string;
+  email_confirmed?: boolean;
   facilities?: any;
+  user_roles: Array<{ role: { name: string; description?: string } }>;
 }
 
 export interface MasterFacility {
@@ -90,15 +101,22 @@ export const useMasterData = () => {
 
       if (error) throw error;
       
-      // Clean and validate the data
+      // Clean and validate the data, transforming to MasterUser format
       const cleanedData = (data || []).map(user => ({
         id: user.id,
+        firstName: user.first_name || '',
+        lastName: user.last_name || '',
         first_name: user.first_name || '',
         last_name: user.last_name || '',
         email: user.email || '',
+        isActive: true, // Default to active
+        is_active: true,
         created_at: user.created_at || new Date().toISOString(),
         user_roles: Array.isArray(user.user_roles) ? user.user_roles : [],
-        facilities: user.facilities
+        facilities: user.facilities,
+        role: Array.isArray(user.user_roles) && user.user_roles.length > 0 
+          ? user.user_roles[0].role.name 
+          : undefined
       }));
       
       return cleanedData;
