@@ -87,8 +87,8 @@ export function useMasterData() {
   };
 
   // Search helpers (temporary no-op implementations)
-  const searchUsers = async (query: string) => {
-    // TODO: implement real search
+  const searchUsers = (query: string) => {
+    // Simple client-side search; replace with Supabase full-text later
     return users.filter(u => 
       u.first_name.toLowerCase().includes(query.toLowerCase()) ||
       u.last_name.toLowerCase().includes(query.toLowerCase()) ||
@@ -96,8 +96,7 @@ export function useMasterData() {
     );
   };
 
-  const searchFacilities = async (query: string) => {
-    // TODO: implement real search
+  const searchFacilities = (query: string) => {
     return facilities.filter(f => 
       f.name.toLowerCase().includes(query.toLowerCase())
     );
