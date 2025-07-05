@@ -15,7 +15,9 @@ const SimpleModules: React.FC = () => {
     isLoading, 
     error, 
     refreshData, 
-    stats 
+    stats,
+    createModule,
+    isCreatingModule
   } = useMasterData();
   
   const [searchQuery, setSearchQuery] = React.useState('');
