@@ -61,7 +61,7 @@ const SimplePatients: React.FC = () => {
               <Activity className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{patientStats.recentPatients}</div>
+              <div className="text-2xl font-bold">{patientStats.recentPatients || 0}</div>
               <p className="text-xs text-muted-foreground">
                 Last 30 days
               </p>
@@ -82,15 +82,15 @@ const SimplePatients: React.FC = () => {
                 {patients.map((patient) => (
                   <div key={patient.id} className="flex items-center justify-between p-4 border rounded">
                     <div>
-                      <h3 className="font-medium">{patient.firstName} {patient.lastName}</h3>
+                      <h3 className="font-medium">{patient.first_name} {patient.last_name}</h3>
                       <p className="text-sm text-gray-600">{patient.email}</p>
                       <p className="text-xs text-gray-500">
-                        Role: {patient.user_roles[0]?.role?.name || 'Patient'} | 
+                        Patient | 
                         Created: {new Date(patient.created_at).toLocaleDateString()}
                       </p>
                     </div>
-                    <Badge variant={patient.isActive ? "default" : "secondary"}>
-                      {patient.isActive ? 'Active' : 'Inactive'}
+                    <Badge variant={patient.is_active ? "default" : "secondary"}>
+                      {patient.is_active ? 'Active' : 'Inactive'}
                     </Badge>
                   </div>
                 ))}

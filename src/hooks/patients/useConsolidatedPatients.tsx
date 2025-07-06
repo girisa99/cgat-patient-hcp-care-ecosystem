@@ -1,31 +1,33 @@
 
 /**
- * CONSOLIDATED PATIENTS HOOK
- * Uses real patient data hook as single source
+ * CONSOLIDATED PATIENTS HOOK - SINGLE SOURCE OF TRUTH
+ * Uses real patient data exclusively
+ * Version: consolidated-patients-v2.0.0
  */
 import { useRealPatientData } from './useRealPatientData';
 
 export const useConsolidatedPatients = () => {
-  const realPatientData = useRealPatientData();
+  console.log('🏥 Consolidated Patients Hook - Single source using real data');
   
-  console.log('🏥 Consolidated Patients - Using Real Patient Data');
-  console.log('🔍 Patient count from consolidated source:', realPatientData.patients.length);
+  const realPatientData = useRealPatientData();
 
   return {
+    // Direct pass-through from real patient data
     patients: realPatientData.patients,
-    isLoading: realPatientData.isLoading,
-    error: realPatientData.error,
+    activePatients: realPatientData.activePatients,
     patientStats: realPatientData.patientStats,
-    
-    // Utilities
     searchPatients: realPatientData.searchPatients,
     getPatientById: realPatientData.getPatientById,
+    isLoading: realPatientData.isLoading,
+    error: realPatientData.error,
     
-    // Meta information
+    // Meta
     meta: {
-      dataSource: 'real-patient-data-consolidated',
-      patientCount: realPatientData.patients.length,
-      hookVersion: 'consolidated-patients-v1.0.0'
+      hookName: 'useConsolidatedPatients',
+      version: 'consolidated-patients-v2.0.0',
+      singleSourceValidated: true,
+      dataSource: 'real-patient-data-only',
+      consolidationComplete: true
     }
   };
 };

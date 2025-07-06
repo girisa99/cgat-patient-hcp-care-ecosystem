@@ -9,10 +9,24 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useMasterToast } from './useMasterToast';
 
+export interface Facility {
+  id: string;
+  name: string;
+  facility_type: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  license_number?: string;
+  npi_number?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export const useMasterFacilities = () => {
   console.log('🏥 Master Facilities Hook - Single source of truth');
   
-  const { facilities, isLoading, error } = useRealFacilities();
+  const { facilities, isLoading, error, refetch } = useRealFacilities();
   const { showSuccess, showError } = useMasterToast();
   const queryClient = useQueryClient();
   
@@ -59,6 +73,27 @@ export const useMasterFacilities = () => {
     }
   });
 
+  const deactivateFacilityMutation = useMutation({
+    mutationFn: async (facilityId: string) => {
+      const { data, error } = await supabase
+        .from('facilities')
+        .update({ is_active: false })
+        .eq('id', facilityId)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['real-facilities'] });
+      showSuccess('Facility Deactivated', 'Facility deactivated successfully');
+    },
+    onError: (error: any) => {
+      showError('Deactivation Failed', error.message);
+    }
+  });
+
   const facilityStats = {
     total: facilities.length,
     active: activeFacilities.length,
@@ -66,8 +101,14 @@ export const useMasterFacilities = () => {
     byType: facilities.reduce((acc, f) => {
       acc[f.facility_type] = (acc[f.facility_type] || 0) + 1;
       return acc;
+    }, {} as Record<string, number>),
+    typeDistribution: facilities.reduce((acc, f) => {
+      acc[f.facility_type] = (acc[f.facility_type] || 0) + 1;
+      return acc;
     }, {} as Record<string, number>)
   };
+
+  const getFacilityStats = () => facilityStats;
 
   return {
     // Core data
@@ -78,7 +119,9 @@ export const useMasterFacilities = () => {
     // Loading states
     isLoading,
     isCreating: createFacilityMutation.isPending,
+    isCreatingFacility: createFacilityMutation.isPending,
     isUpdating: updateFacilityMutation.isPending,
+    isDeactivatingFacility: deactivateFacilityMutation.isPending,
     
     // Error state
     error,
@@ -86,6 +129,11 @@ export const useMasterFacilities = () => {
     // Actions
     createFacility: (data: any) => createFacilityMutation.mutate(data),
     updateFacility: (data: { id: string; updates: any }) => updateFacilityMutation.mutate(data),
+    deactivateFacility: (id: string) => deactivateFacilityMutation.mutate(id),
+    
+    // Utilities
+    getFacilityStats,
+    refetch,
     
     // Meta
     meta: {

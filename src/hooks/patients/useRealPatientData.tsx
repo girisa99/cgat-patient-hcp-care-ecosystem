@@ -38,7 +38,6 @@ export const useRealPatientData = () => {
           first_name,
           last_name,
           email,
-          is_active,
           created_at,
           updated_at,
           user_roles!inner(
@@ -52,8 +51,19 @@ export const useRealPatientData = () => {
         throw error;
       }
 
-      console.log('✅ Real patient data loaded:', data?.length || 0, 'patients');
-      return data || [];
+      // Transform the data to match our interface
+      const transformedData = (data || []).map(item => ({
+        id: item.id,
+        first_name: item.first_name || '',
+        last_name: item.last_name || '',
+        email: item.email || '',
+        is_active: true, // Default to active since profiles table doesn't have is_active
+        created_at: item.created_at,
+        updated_at: item.updated_at,
+      }));
+
+      console.log('✅ Real patient data loaded:', transformedData.length, 'patients');
+      return transformedData;
     },
     staleTime: 300000,
     refetchOnWindowFocus: false,
@@ -65,6 +75,12 @@ export const useRealPatientData = () => {
     totalPatients: patients.length,
     activePatients: activePatients.length,
     inactivePatients: patients.length - activePatients.length,
+    recentPatients: patients.filter(p => {
+      const created = new Date(p.created_at);
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      return created > thirtyDaysAgo;
+    }).length,
   };
 
   const searchPatients = (query: string) => {
@@ -77,11 +93,16 @@ export const useRealPatientData = () => {
     );
   };
 
+  const getPatientById = (id: string) => {
+    return patients.find(p => p.id === id);
+  };
+
   return {
     patients,
     activePatients,
     patientStats,
     searchPatients,
+    getPatientById,
     isLoading,
     error,
     

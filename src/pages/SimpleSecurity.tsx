@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AppLayout from '@/components/layout/AppLayout';
@@ -8,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 const SimpleSecurity: React.FC = () => {
   console.log('🔒 Simple Security page rendering');
   const { currentRole, isSuperAdmin, hasAccess } = useRoleBasedNavigation();
-  const { securityEvents, apiKeys, securityStats, isLoading } = useMasterSecurity();
+  const { securityEvents, securityStats, isLoading } = useMasterSecurity();
 
   return (
     <AppLayout title="Security Dashboard">

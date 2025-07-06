@@ -59,10 +59,15 @@ export const useMasterTestingSuite = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: (results) => {
+    onSuccess: (results: any) => {
       queryClient.invalidateQueries({ queryKey: ['master-test-cases'] });
       queryClient.invalidateQueries({ queryKey: ['master-test-executions'] });
-      showSuccess('Test Suite Executed', `Executed ${results.total_tests} tests with ${results.passed_tests} passing`);
+      
+      // Handle the results safely
+      const totalTests = results?.total_tests || 0;
+      const passedTests = results?.passed_tests || 0;
+      
+      showSuccess('Test Suite Executed', `Executed ${totalTests} tests with ${passedTests} passing`);
     },
     onError: (error: any) => {
       showError('Test Execution Failed', error.message);

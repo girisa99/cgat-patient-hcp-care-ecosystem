@@ -82,12 +82,13 @@ export const useMasterOnboarding = () => {
     }
   });
 
+  // Use the actual status field from the database schema
   const onboardingStats = {
     total: onboardingApplications.length,
-    pending: onboardingApplications.filter(app => app.application_status === 'pending').length,
-    approved: onboardingApplications.filter(app => app.application_status === 'approved').length,
-    rejected: onboardingApplications.filter(app => app.application_status === 'rejected').length,
-    inProgress: onboardingApplications.filter(app => app.application_status === 'in_progress').length,
+    pending: onboardingApplications.filter(app => app.status === 'pending').length,
+    approved: onboardingApplications.filter(app => app.status === 'approved').length,
+    rejected: onboardingApplications.filter(app => app.status === 'rejected').length,
+    inProgress: onboardingApplications.filter(app => app.status === 'in_progress').length,
   };
 
   return {
