@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -191,12 +190,12 @@ export const NgrokDashboard: React.FC = () => {
             </div>
 
             <div className="bg-blue-50 p-3 rounded-md border border-blue-200">
-              <p className="text-sm font-medium text-blue-800 mb-2">📋 Next Steps:</p>
+              <p className="text-sm font-medium text-blue-800 mb-2">📋 Important Notes:</p>
               <ul className="text-sm text-blue-700 space-y-1 list-disc list-inside ml-2">
-                <li>Your Lovable app should now be accessible at <strong>https://dev.geniecellgene.com</strong></li>
-                <li>Use the Web Interface at <strong>http://127.0.0.1:4040</strong> to monitor requests</li>
-                <li>Keep this PowerShell window open to maintain the tunnel</li>
-                <li>Test webhooks and API endpoints using your permanent domain</li>
+                <li><strong>No CNAME needed:</strong> Your reserved domain handles DNS automatically</li>
+                <li><strong>Webhooks:</strong> External services can send webhooks to your domain</li>
+                <li><strong>GitHub Sync:</strong> Code changes from Cursor/VS Code will sync to Lovable</li>
+                <li><strong>Database Updates:</strong> Schema changes need to be made in Lovable</li>
               </ul>
             </div>
           </div>
