@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -29,7 +30,7 @@ export const NgrokDashboard: React.FC = () => {
 
   const [newTunnelConfig, setNewTunnelConfig] = useState({
     name: '',
-    addr: 'localhost:8080',
+    addr: 'localhost:4040',
     proto: 'http',
     inspect: true
   });
@@ -80,7 +81,7 @@ export const NgrokDashboard: React.FC = () => {
       await createTunnel(newTunnelConfig);
       setNewTunnelConfig({
         name: '',
-        addr: 'localhost:8080',
+        addr: 'localhost:4040',
         proto: 'http',
         inspect: true
       });
@@ -143,7 +144,7 @@ export const NgrokDashboard: React.FC = () => {
         <div>
           <h1 className="text-3xl font-bold">Ngrok Integration Dashboard</h1>
           <p className="text-muted-foreground">
-            Domain: {PERMANENT_DOMAIN} → Lovable App on port 8080
+            Domain: {PERMANENT_DOMAIN} → Lovable App on port 4040
           </p>
         </div>
         <div className="flex items-center space-x-2">
@@ -161,31 +162,33 @@ export const NgrokDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Success Status Alert */}
-      <Alert>
-        <CheckCircle className="h-4 w-4" />
-        <AlertTitle>🎉 Tunnel Successfully Configured!</AlertTitle>
+      {/* Port Configuration Alert */}
+      <Alert variant="destructive">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertTitle>⚠️ Port Configuration Issue Detected</AlertTitle>
         <AlertDescription>
           <div className="space-y-3 mt-2">
-            <p><strong>Excellent!</strong> Your ngrok tunnel is now properly configured and running.</p>
+            <p><strong>Error ERR_NGROK_8012:</strong> Your Lovable app is not running on port 8080.</p>
             
-            <div className="bg-green-50 p-3 rounded-md border border-green-200">
-              <h4 className="font-semibold text-green-800 mb-2">✅ Current Configuration:</h4>
-              <div className="text-sm text-green-700 space-y-1">
-                <p><strong>Status:</strong> Online and Connected</p>
-                <p><strong>Forwarding:</strong> https://{PERMANENT_DOMAIN} → http://localhost:8080</p>
-                <p><strong>Target:</strong> Your Lovable application (port 8080)</p>
+            <div className="bg-red-50 p-3 rounded-md border border-red-200">
+              <h4 className="font-semibold text-red-800 mb-2">🔧 Solution:</h4>
+              <div className="text-sm text-red-700 space-y-2">
+                <p><strong>1. Stop your current ngrok tunnel</strong> (Ctrl+C in terminal)</p>
+                <p><strong>2. Check Lovable's actual port:</strong> Look at your Lovable preview URL - it should show something like localhost:4040</p>
+                <p><strong>3. Restart ngrok with the correct port:</strong></p>
+                <code className="block bg-gray-100 p-2 rounded text-black mt-1">
+                  ngrok http --url=dev.geniecellgene.com 4040
+                </code>
+                <p className="text-xs text-red-600 mt-2">
+                  ⚠️ Replace 4040 with whatever port your Lovable app is actually running on
+                </p>
               </div>
             </div>
 
             <div className="flex space-x-2">
-              <Button size="sm" onClick={() => window.open(`https://${PERMANENT_DOMAIN}`, '_blank')}>
-                <ExternalLink className="h-4 w-4 mr-2" />
-                Visit Your Live App
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => copyToClipboard(`https://${PERMANENT_DOMAIN}`)}>
+              <Button size="sm" variant="outline" onClick={() => copyToClipboard('ngrok http --url=dev.geniecellgene.com 4040')}>
                 <Copy className="h-4 w-4 mr-2" />
-                Copy Domain URL
+                Copy Correct Command
               </Button>
             </div>
           </div>
@@ -208,9 +211,9 @@ export const NgrokDashboard: React.FC = () => {
                 placeholder={`https://${PERMANENT_DOMAIN}`}
                 value={`https://${PERMANENT_DOMAIN}`}
                 readOnly
-                className="flex-1 bg-green-50 border-green-200"
+                className="flex-1 bg-yellow-50 border-yellow-200"
               />
-              <Badge variant="default">DNS Active</Badge>
+              <Badge variant="destructive">Port Mismatch</Badge>
             </div>
           </div>
           
@@ -229,9 +232,9 @@ export const NgrokDashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-blue-50 p-3 rounded-md border border-blue-200">
-            <p className="text-sm text-blue-700">
-              <strong>Status:</strong> Your tunnel is running correctly. Visit your domain to see your live application!
+          <div className="bg-yellow-50 p-3 rounded-md border border-yellow-200">
+            <p className="text-sm text-yellow-700">
+              <strong>Status:</strong> Tunnel configured but port mismatch detected. Please restart ngrok with the correct port.
             </p>
           </div>
         </CardContent>
@@ -261,11 +264,11 @@ export const NgrokDashboard: React.FC = () => {
         <CardContent>
           {tunnels.length === 0 ? (
             <div className="text-center py-8">
-              <Terminal className="h-12 w-12 mx-auto text-blue-500 mb-4" />
-              <p className="text-blue-600 font-medium">Refresh to see your active tunnel</p>
+              <Terminal className="h-12 w-12 mx-auto text-yellow-500 mb-4" />
+              <p className="text-yellow-600 font-medium">No active tunnels detected</p>
               <div className="text-sm text-muted-foreground mt-2 space-y-1">
-                <p className="block">🎯 Your app should be live at: <strong>https://{PERMANENT_DOMAIN}</strong></p>
-                <p className="block">✅ Tunnel configured correctly for your Lovable application!</p>
+                <p>🎯 Expected: <strong>https://{PERMANENT_DOMAIN}</strong></p>
+                <p>⚠️ Issue: Port 8080 not accessible - check Lovable's actual port</p>
               </div>
             </div>
           ) : (
@@ -279,8 +282,11 @@ export const NgrokDashboard: React.FC = () => {
                       {tunnel.public_url.includes(PERMANENT_DOMAIN) && (
                         <Badge variant="default">Your Domain</Badge>
                       )}
+                      {tunnel.config.addr.includes('4040') && (
+                        <Badge variant="outline">Correct Port</Badge>
+                      )}
                       {tunnel.config.addr.includes('8080') && (
-                        <Badge variant="outline">Lovable App</Badge>
+                        <Badge variant="destructive">Wrong Port</Badge>
                       )}
                     </div>
                     <p className="text-sm text-muted-foreground">
@@ -337,7 +343,7 @@ export const NgrokDashboard: React.FC = () => {
               <Label htmlFor="tunnel-addr">Local Address</Label>
               <Input
                 id="tunnel-addr"
-                placeholder="localhost:3000"
+                placeholder="localhost:4040"
                 value={newTunnelConfig.addr}
                 onChange={(e) => setNewTunnelConfig(prev => ({ ...prev, addr: e.target.value }))}
               />
