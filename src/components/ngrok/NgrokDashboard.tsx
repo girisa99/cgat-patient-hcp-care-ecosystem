@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -177,7 +176,7 @@ export const NgrokDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Ngrok Inspect Interface Alert */}
+      {/* Updated Ngrok Inspect Interface Alert */}
       {hasAnyDomainTunnel && (
         <Alert>
           <Info className="h-4 w-4" />
@@ -189,20 +188,23 @@ export const NgrokDashboard: React.FC = () => {
               <div className="bg-blue-50 p-3 rounded-md border border-blue-200">
                 <h4 className="font-semibold text-blue-800 mb-2">🔧 To Access Your Actual Application:</h4>
                 <div className="text-sm text-blue-700 space-y-2">
-                  <p><strong>Option 1:</strong> Click the "Visit Site" button on the ngrok inspect page</p>
-                  <p><strong>Option 2:</strong> Add <code className="bg-blue-100 px-1 rounded">/ngrok-skip-browser-warning</code> to your URL:</p>
+                  <p><strong>Option 1 (Recommended):</strong> Click the "Visit Site" button on the ngrok inspect page</p>
+                  <p><strong>Option 2:</strong> Add the query parameter to bypass the warning:</p>
                   <code className="block bg-gray-100 p-2 rounded text-black mt-1">
-                    https://{PERMANENT_DOMAIN}/ngrok-skip-browser-warning
+                    https://{PERMANENT_DOMAIN}?ngrok-skip-browser-warning=true
                   </code>
                   <p><strong>Option 3:</strong> Restart ngrok with inspect disabled:</p>
                   <code className="block bg-gray-100 p-2 rounded text-black mt-1">
                     ngrok http --url=dev.geniecellgene.com --inspect=false 4040
                   </code>
+                  <p className="text-xs text-red-600 mt-2">
+                    ⚠️ Note: The path `/ngrok-skip-browser-warning` doesn't work - use the query parameter instead!
+                  </p>
                 </div>
               </div>
 
               <div className="flex space-x-2">
-                <Button size="sm" variant="outline" onClick={() => copyToClipboard(`https://${PERMANENT_DOMAIN}/ngrok-skip-browser-warning`)}>
+                <Button size="sm" variant="outline" onClick={() => copyToClipboard(`https://${PERMANENT_DOMAIN}?ngrok-skip-browser-warning=true`)}>
                   <Copy className="h-4 w-4 mr-2" />
                   Copy Direct Link
                 </Button>
