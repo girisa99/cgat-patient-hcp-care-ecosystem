@@ -1,4 +1,3 @@
-
 /**
  * MASTER DATA HOOK - SINGLE SOURCE OF TRUTH
  * Consolidates all data access across the application
@@ -15,6 +14,8 @@ interface User {
   email: string;
   created_at: string;
   updated_at: string;
+  is_active?: boolean;
+  phone?: string;
   user_roles: {
     role: {
       name: string;
@@ -75,8 +76,8 @@ export const useMasterData = () => {
           email,
           created_at,
           updated_at,
-          user_roles!inner(
-            role:roles!inner(name)
+          user_roles(
+            role:roles(name)
           )
         `);
 
@@ -86,7 +87,11 @@ export const useMasterData = () => {
       }
 
       console.log('✅ Users loaded:', data?.length || 0);
-      return data || [];
+      return (data || []).map(user => ({
+        ...user,
+        is_active: true, // Default value since field might not exist
+        user_roles: user.user_roles || []
+      }));
     },
     staleTime: 300000,
     refetchOnWindowFocus: false,
@@ -184,24 +189,24 @@ export const useMasterData = () => {
 
   const stats = {
     totalUsers: users.length,
-    activeUsers: users.length, // All users are considered active in this simplified version
+    activeUsers: users.filter(u => u.is_active !== false).length,
     totalApiServices: apiServices.length,
     activeApiServices: apiServices.filter(s => s.status === 'active'),
     patientUsers: users.filter(u => 
-      u.user_roles.some(ur => ur.role.name === 'patientCaregiver')
+      u.user_roles.some(ur => ur.role?.name === 'patientCaregiver')
     ).length,
     totalFacilities: facilities.length,
     activeFacilities: facilities.filter(f => f.is_active).length,
     totalModules: modules.length,
     activeModules: modules.filter(m => m.is_active).length,
     adminCount: users.filter(u => 
-      u.user_roles.some(ur => ur.role.name === 'superAdmin')
+      u.user_roles.some(ur => ur.role?.name === 'superAdmin')
     ).length,
     staffCount: users.filter(u => 
-      u.user_roles.some(ur => ['onboardingTeam', 'facilityAdmin'].includes(ur.role.name))
+      u.user_roles.some(ur => ['onboardingTeam', 'facilityAdmin'].includes(ur.role?.name || ''))
     ).length,
     patientCount: users.filter(u => 
-      u.user_roles.some(ur => ur.role.name === 'patientCaregiver')
+      u.user_roles.some(ur => ur.role?.name === 'patientCaregiver')
     ).length,
   };
 
@@ -211,6 +216,12 @@ export const useMasterData = () => {
     queryClient.invalidateQueries({ queryKey: ['master-facilities'] });
     queryClient.invalidateQueries({ queryKey: ['master-modules'] });
   };
+
+  const searchUsers = (query: string) => users.filter(u => 
+    u.first_name.toLowerCase().includes(query.toLowerCase()) ||
+    u.last_name.toLowerCase().includes(query.toLowerCase()) ||
+    u.email.toLowerCase().includes(query.toLowerCase())
+  );
 
   return {
     // Core data
@@ -237,6 +248,7 @@ export const useMasterData = () => {
     // Actions
     createApiService: (data: any) => createApiServiceMutation.mutate(data),
     refreshData,
+    searchUsers,
     
     // Additional actions (placeholders for full implementation)
     createUser: () => console.log('Create user - to be implemented'),
