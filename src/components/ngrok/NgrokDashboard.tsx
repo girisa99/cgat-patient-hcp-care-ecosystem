@@ -6,7 +6,6 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useNgrokIntegration } from '@/hooks/useNgrokIntegration';
 import { Globe, RefreshCw, TestTube, Settings, ExternalLink, AlertCircle, CheckCircle, Copy, Terminal, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -184,51 +183,63 @@ export const NgrokDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* DNS Status Alert */}
-      <Alert>
-        <AlertTriangle className="h-4 w-4" />
-        <AlertTitle>DNS Configuration Status</AlertTitle>
-        <AlertDescription>
-          <div className="space-y-4">
-            <div className="bg-blue-50 p-4 rounded-md border border-blue-200">
-              <h4 className="font-semibold text-blue-800 mb-2">✅ DNS Configuration Complete!</h4>
-              <p className="text-sm text-blue-700 mb-3">
-                Great! You've updated your DNS records. Now we need to wait for DNS propagation.
-              </p>
+      {/* Ngrok Inspect Issue Alert */}
+      <Card className="border-red-200 bg-red-50">
+        <CardHeader>
+          <CardTitle className="text-red-800 flex items-center">
+            <AlertTriangle className="h-5 w-5 mr-2" />
+            Ngrok Inspect Page Issue Detected
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="text-red-700">
+            <p className="mb-3">
+              <strong>Issue:</strong> Your domain is showing the ngrok inspect interface instead of your application.
+            </p>
+            
+            <div className="bg-white p-4 rounded-md border border-red-200 mb-4">
+              <h4 className="font-semibold text-red-800 mb-2">🔧 Solution:</h4>
+              <p className="text-sm mb-3">You need to restart ngrok with the correct configuration:</p>
               
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-blue-800">What happens next:</p>
-                <ul className="text-sm text-blue-700 space-y-1 list-disc list-inside ml-4">
-                  <li>DNS changes typically take 5-30 minutes to propagate</li>
-                  <li>Sometimes it can take up to 2-4 hours globally</li>
-                  <li>Your ngrok tunnel should keep running during this time</li>
+              <div className="bg-gray-900 text-green-400 p-3 rounded font-mono text-sm mb-3">
+                <div className="mb-1"># Stop your current ngrok process (Ctrl+C)</div>
+                <div className="mb-1"># Then run this command instead:</div>
+                <div className="text-white">ngrok http --url={PERMANENT_DOMAIN} 4040</div>
+              </div>
+              
+              <div className="text-sm space-y-2">
+                <p><strong>Key points:</strong></p>
+                <ul className="list-disc list-inside ml-4 space-y-1 text-red-600">
+                  <li>Make sure your Lovable app is running on port 4040</li>
+                  <li>The <code>--url</code> flag forces ngrok to use your domain directly</li>
+                  <li>This bypasses the inspect interface completely</li>
+                  <li>Your app should then be accessible at: <strong>https://{PERMANENT_DOMAIN}</strong></li>
                 </ul>
               </div>
+            </div>
 
-              <div className="mt-4 flex space-x-2">
-                <Button size="sm" onClick={testDomainConnection}>
-                  <Globe className="h-4 w-4 mr-2" />
-                  Test Domain Connection
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => window.open(`https://${PERMANENT_DOMAIN}`, '_blank')}>
-                  <ExternalLink className="h-4 w-4 mr-2" />
-                  Try Opening Domain
-                </Button>
+            <div className="bg-blue-50 p-3 rounded-md border border-blue-200">
+              <h4 className="font-semibold text-blue-800 mb-2">📋 Checklist:</h4>
+              <div className="text-sm text-blue-700 space-y-1">
+                <div>✅ DNS records configured</div>
+                <div>✅ Domain accessible</div>
+                <div>❌ <strong>Need to fix:</strong> Restart ngrok with correct command</div>
               </div>
             </div>
 
-            <div className="bg-green-50 p-3 rounded-md border border-green-200">
-              <h4 className="font-semibold text-green-800 mb-2">🎯 Your Current Setup:</h4>
-              <div className="text-sm text-green-700 space-y-1">
-                <p><strong>Domain:</strong> {PERMANENT_DOMAIN}</p>
-                <p><strong>CNAME Target:</strong> {CNAME_VALUE}</p>
-                <p><strong>Local Port:</strong> 4040</p>
-                <p><strong>Command Running:</strong> <code>ngrok http --url={PERMANENT_DOMAIN} 4040</code></p>
-              </div>
+            <div className="mt-4 flex space-x-2">
+              <Button size="sm" onClick={() => window.open(`https://${PERMANENT_DOMAIN}`, '_blank')}>
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Test Domain After Fix
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => copyToClipboard(`ngrok http --url=${PERMANENT_DOMAIN} 4040`)}>
+                <Copy className="h-4 w-4 mr-2" />
+                Copy Correct Command
+              </Button>
             </div>
           </div>
-        </AlertDescription>
-      </Alert>
+        </CardContent>
+      </Card>
 
       {/* Connection Settings */}
       <Card>
@@ -246,9 +257,9 @@ export const NgrokDashboard: React.FC = () => {
                 placeholder={`https://${PERMANENT_DOMAIN}`}
                 value={`https://${PERMANENT_DOMAIN}`}
                 readOnly
-                className="flex-1 bg-blue-50 border-blue-200"
+                className="flex-1 bg-green-50 border-green-200"
               />
-              <Badge variant="secondary">DNS Configured - Propagating</Badge>
+              <Badge variant="default">DNS Active</Badge>
             </div>
           </div>
           
@@ -269,7 +280,7 @@ export const NgrokDashboard: React.FC = () => {
 
           <div className="bg-yellow-50 p-3 rounded-md border border-yellow-200">
             <p className="text-sm text-yellow-700">
-              <strong>Status:</strong> DNS records updated, waiting for propagation. Keep your ngrok tunnel running.
+              <strong>Status:</strong> Domain is accessible but showing inspect interface. Restart ngrok with the correct command above.
             </p>
           </div>
         </CardContent>
@@ -281,12 +292,11 @@ export const NgrokDashboard: React.FC = () => {
             <div className="space-y-2">
               <p className="text-yellow-600 font-medium">Connection Status: {error}</p>
               <div className="text-sm text-yellow-500 space-y-1">
-                <p><strong>This is normal during DNS propagation:</strong></p>
+                <p><strong>This might be normal:</strong></p>
                 <ul className="list-disc list-inside ml-4 space-y-1">
-                  <li>DNS records are still propagating globally</li>
-                  <li>Your domain may not be accessible yet</li>
-                  <li>Keep your ngrok tunnel running</li>
-                  <li>Try testing again in 10-15 minutes</li>
+                  <li>Ngrok API might not be accessible through inspect interface</li>
+                  <li>Once you restart with the correct command, this should resolve</li>
+                  <li>Your domain is working, just needs the right ngrok configuration</li>
                 </ul>
               </div>
             </div>
@@ -308,12 +318,12 @@ export const NgrokDashboard: React.FC = () => {
         <CardContent>
           {tunnels.length === 0 ? (
             <div className="text-center py-8">
-              <AlertCircle className="h-12 w-12 mx-auto text-blue-500 mb-4" />
-              <p className="text-blue-600 font-medium">Waiting for tunnel detection</p>
+              <Terminal className="h-12 w-12 mx-auto text-blue-500 mb-4" />
+              <p className="text-blue-600 font-medium">Restart ngrok to see tunnels here</p>
               <div className="text-sm text-muted-foreground mt-2 space-y-1">
-                <p className="block">✅ DNS configured, waiting for propagation</p>
-                <p className="block">🔄 Keep running: <code className="bg-gray-100 px-1 rounded">ngrok http --url={PERMANENT_DOMAIN} 4040</code></p>
-                <p className="block">⏱️ Test again in 10-15 minutes</p>
+                <p className="block">🔄 Run: <code className="bg-gray-100 px-2 py-1 rounded">ngrok http --url={PERMANENT_DOMAIN} 4040</code></p>
+                <p className="block">🎯 Your app will be at: <strong>https://{PERMANENT_DOMAIN}</strong></p>
+                <p className="block">✅ No more inspect interface!</p>
               </div>
             </div>
           ) : (
@@ -427,7 +437,7 @@ export const NgrokDashboard: React.FC = () => {
             Webhook Testing
           </CardTitle>
           <CardDescription>
-            Test webhook endpoints (available once DNS propagation is complete)
+            Test webhook endpoints (available once ngrok is properly configured)
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
