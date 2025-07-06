@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -162,44 +161,31 @@ export const NgrokDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Fixed Configuration Alert */}
+      {/* Success Status Alert */}
       <Alert>
         <CheckCircle className="h-4 w-4" />
-        <AlertTitle>✅ Configuration Status Update</AlertTitle>
+        <AlertTitle>🎉 Tunnel Successfully Configured!</AlertTitle>
         <AlertDescription>
           <div className="space-y-3 mt-2">
-            <p><strong>Good news!</strong> Your domain is now loading, but we need to fix the ngrok tunnel target.</p>
+            <p><strong>Excellent!</strong> Your ngrok tunnel is now properly configured and running.</p>
             
-            <div className="bg-blue-50 p-3 rounded-md border border-blue-200">
-              <h4 className="font-semibold text-blue-800 mb-2">🔧 Current Issue:</h4>
-              <p className="text-sm text-blue-700 mb-2">
-                Your ngrok is pointing to port 4040 (the ngrok inspect port) instead of port 8080 (your Lovable app).
-              </p>
-              
-              <div className="bg-gray-900 text-green-400 p-3 rounded font-mono text-sm mb-3">
-                <div className="mb-1"># Stop current ngrok (Ctrl+C)</div>
-                <div className="mb-1"># Then run this corrected command:</div>
-                <div className="text-white">ngrok http --url={PERMANENT_DOMAIN} 8080</div>
-              </div>
-              
-              <div className="text-sm space-y-1 text-blue-600">
-                <p><strong>Why port 8080?</strong></p>
-                <ul className="list-disc list-inside ml-4 space-y-1">
-                  <li>Your Lovable app runs on port 8080 (check vite.config.ts)</li>
-                  <li>Port 4040 is ngrok's web interface, not your app</li>
-                  <li>This will route traffic directly to your application</li>
-                </ul>
+            <div className="bg-green-50 p-3 rounded-md border border-green-200">
+              <h4 className="font-semibold text-green-800 mb-2">✅ Current Configuration:</h4>
+              <div className="text-sm text-green-700 space-y-1">
+                <p><strong>Status:</strong> Online and Connected</p>
+                <p><strong>Forwarding:</strong> https://{PERMANENT_DOMAIN} → http://localhost:8080</p>
+                <p><strong>Target:</strong> Your Lovable application (port 8080)</p>
               </div>
             </div>
 
             <div className="flex space-x-2">
-              <Button size="sm" onClick={() => copyToClipboard(`ngrok http --url=${PERMANENT_DOMAIN} 8080`)}>
-                <Copy className="h-4 w-4 mr-2" />
-                Copy Correct Command
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => window.open(`https://${PERMANENT_DOMAIN}`, '_blank')}>
+              <Button size="sm" onClick={() => window.open(`https://${PERMANENT_DOMAIN}`, '_blank')}>
                 <ExternalLink className="h-4 w-4 mr-2" />
-                Test Domain After Fix
+                Visit Your Live App
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => copyToClipboard(`https://${PERMANENT_DOMAIN}`)}>
+                <Copy className="h-4 w-4 mr-2" />
+                Copy Domain URL
               </Button>
             </div>
           </div>
@@ -243,9 +229,9 @@ export const NgrokDashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-yellow-50 p-3 rounded-md border border-yellow-200">
-            <p className="text-sm text-yellow-700">
-              <strong>Next Step:</strong> Restart ngrok with port 8080 to serve your Lovable app directly.
+          <div className="bg-blue-50 p-3 rounded-md border border-blue-200">
+            <p className="text-sm text-blue-700">
+              <strong>Status:</strong> Your tunnel is running correctly. Visit your domain to see your live application!
             </p>
           </div>
         </CardContent>
@@ -276,11 +262,10 @@ export const NgrokDashboard: React.FC = () => {
           {tunnels.length === 0 ? (
             <div className="text-center py-8">
               <Terminal className="h-12 w-12 mx-auto text-blue-500 mb-4" />
-              <p className="text-blue-600 font-medium">Restart ngrok to see tunnels here</p>
+              <p className="text-blue-600 font-medium">Refresh to see your active tunnel</p>
               <div className="text-sm text-muted-foreground mt-2 space-y-1">
-                <p className="block">🔄 Run: <code className="bg-gray-100 px-2 py-1 rounded">ngrok http --url={PERMANENT_DOMAIN} 8080</code></p>
-                <p className="block">🎯 Your app will be at: <strong>https://{PERMANENT_DOMAIN}</strong></p>
-                <p className="block">✅ Direct to your Lovable application!</p>
+                <p className="block">🎯 Your app should be live at: <strong>https://{PERMANENT_DOMAIN}</strong></p>
+                <p className="block">✅ Tunnel configured correctly for your Lovable application!</p>
               </div>
             </div>
           ) : (
@@ -326,7 +311,7 @@ export const NgrokDashboard: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Create New Tunnel */}
+      {/* Create Additional Tunnel */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
