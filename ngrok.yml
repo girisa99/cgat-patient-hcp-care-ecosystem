@@ -1,0 +1,8 @@
+authtoken: ${NGROK_AUTHTOKEN}
+region: us
+
+tunnels:
+  vite-dev:
+    addr: 5173
+    proto: http
+    inspect: false

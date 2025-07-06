@@ -1,7 +1,6 @@
-
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 // Define types for the data structures
@@ -50,6 +49,12 @@ export interface Module {
   updated_at: string;
 }
 
+export interface Role {
+  id: string;
+  name: string;
+  description?: string | null;
+}
+
 /** Canonical hook – single source of truth for all master-data operations */
 export function useMasterData() {
   const [isLoading, setIsLoading] = useState(false);
@@ -60,9 +65,7 @@ export function useMasterData() {
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [apiServices, setApiServices] = useState<ApiService[]>([]);
   const [modules, setModules] = useState<Module[]>([]);
-
-  // Add roles for compatibility
-  const roles = [];
+  const [roles, setRoles] = useState<Role[]>([]);
 
   // Stats derived from collections
   const stats = {
@@ -81,13 +84,15 @@ export function useMasterData() {
     staffCount: users.filter(u => 
       u.user_roles.some(ur => ['caseManager', 'nurse', 'provider'].includes(ur.role.name))
     ).length,
+    verifiedUsers: users.filter(u => (u as any).is_email_verified).length,
+    unverifiedUsers: users.filter(u => !(u as any).is_email_verified).length,
     activeApiServices: apiServices.filter(s => s.status === 'active'),
     activeModules: modules.filter(m => m.is_active),
   };
 
   // Search helpers (temporary no-op implementations)
-  const searchUsers = async (query: string) => {
-    // TODO: implement real search
+  const searchUsers = (query: string) => {
+    // Simple client-side search; replace with Supabase full-text later
     return users.filter(u => 
       u.first_name.toLowerCase().includes(query.toLowerCase()) ||
       u.last_name.toLowerCase().includes(query.toLowerCase()) ||
@@ -95,8 +100,7 @@ export function useMasterData() {
     );
   };
 
-  const searchFacilities = async (query: string) => {
-    // TODO: implement real search
+  const searchFacilities = (query: string) => {
     return facilities.filter(f => 
       f.name.toLowerCase().includes(query.toLowerCase())
     );
@@ -123,20 +127,136 @@ export function useMasterData() {
     invalidateCache();
   }, []);
 
+  /* ----------------------------------------- Fetch Users */
+  const fetchUsers = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select(`
+          id,
+          email,
+          first_name,
+          last_name,
+          phone,
+          created_at,
+          is_active,
+          user_roles ( role:roles ( name, description ) )
+        `);
+
+      if (error) throw error;
+
+      // Supabase returns nested arrays; normalise to MasterUser[]
+      const normalised = (data as any[]).map((p) => ({
+        ...p,
+        user_roles: (p.user_roles || []).map((ur: any) => ({
+          role: ur.role,
+        })),
+      })) as MasterUser[];
+
+      setUsers(normalised);
+    } catch (err) {
+      console.error('[MasterData] fetchUsers failed', err);
+      // Fallback: fetch profiles without join if FK not present yet
+      try {
+        const { data: profilesOnly, error: fallbackErr } = await supabase
+          .from('profiles')
+          .select('*');
+        if (fallbackErr) throw fallbackErr;
+        const mapped = (profilesOnly as any[]).map((p) => ({
+          ...p,
+          is_active: true,
+          user_roles: [],
+        })) as MasterUser[];
+        setUsers(mapped);
+      } catch (fallbackErr) {
+        setError((fallbackErr as Error).message);
+        console.error('[MasterData] fallback fetchUsers failed', fallbackErr);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  /* ----------------------------------------- Fetch Roles */
+  const fetchRoles = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('roles')
+        .select('*');
+      if (error) throw error;
+      setRoles(data as Role[]);
+    } catch (err) {
+      console.error('[MasterData] fetchRoles failed', err);
+    }
+  }, []);
+
+  /* ----------------------------------------- Fetch Facilities */
+  const fetchFacilities = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('facilities')
+        .select('*');
+      if (error) throw error;
+      setFacilities(data as Facility[]);
+    } catch (err) {
+      console.error('[MasterData] fetchFacilities failed', err);
+    }
+  }, []);
+
+  /* ----------------------------------------- Fetch Modules */
+  const fetchModules = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('modules')
+        .select('*');
+      if (error) throw error;
+      setModules(data as Module[]);
+    } catch (err) {
+      console.error('[MasterData] fetchModules failed', err);
+    }
+  }, []);
+
+  // initial load
+  useEffect(() => {
+    fetchUsers();
+    fetchRoles();
+    fetchFacilities();
+    fetchModules();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   /* -------------------------------------------------- Users */
   const createUser = useCallback(
-    async (user: { firstName: string; lastName: string; email: string }) => {
+    async (user: { firstName: string; lastName: string; email: string; phone?: string; facilityId?: string; roleId?: string }) => {
       setIsLoading(true);
       setError(null);
       try {
+        const newId = crypto.randomUUID();
         // Create user profile - note: we can't create auth users directly
         const { error } = await supabase.from("profiles").insert({
-          id: crypto.randomUUID(), // Generate a UUID for the profile
+          id: newId,
           first_name: user.firstName,
           last_name: user.lastName,
           email: user.email,
+          phone: user.phone ?? null,
         });
         if (error) throw error;
+
+        // Add optional role link
+        if (user.roleId) {
+          await supabase.from('user_roles').insert({
+            user_id: newId, role_id: user.roleId,
+          });
+        }
+
+        // Add optional facility link
+        if (user.facilityId) {
+          await supabase.from('user_facilities').insert({
+            user_id: newId, facility_id: user.facilityId,
+          });
+        }
         invalidateCache();
       } catch (err) {
         setError((err as Error).message);
@@ -148,16 +268,21 @@ export function useMasterData() {
   );
 
   const deactivateUser = useCallback(
-    async (userId: string) => {
+    async ({ userId }: { userId: string }) => {
       setIsLoading(true);
       setError(null);
       try {
-        // Note: profiles table doesn't have is_active field based on schema
-        // This is a placeholder implementation
-        console.log('Deactivate user requested:', userId);
+        const { error } = await supabase
+          .from('profiles')
+          // Suppress TS since is_active may not be in generated types yet
+          .update({ is_active: false } as any)
+          .eq('id', userId);
+        if (error) throw error;
         invalidateCache();
+        await fetchUsers();
       } catch (err) {
         setError((err as Error).message);
+        console.error('[MasterData] deactivateUser failed', err);
       } finally {
         setIsLoading(false);
       }
@@ -166,8 +291,23 @@ export function useMasterData() {
   );
 
   // Add role assignment methods for compatibility
-  const assignRole = useCallback(async () => {
-    console.log('Assign role - to be implemented');
+  const assignRole = useCallback(async (payload: { userId: string; roleId: string }) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const { error } = await supabase.from('user_roles').insert({
+        user_id: payload.userId,
+        role_id: payload.roleId,
+      });
+      if (error) throw error;
+      invalidateCache();
+      await fetchUsers();
+    } catch (err) {
+      setError((err as Error).message);
+      console.error('[MasterData] assignRole failed', err);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   /* -------------------------------------------------- Facilities */
@@ -218,7 +358,16 @@ export function useMasterData() {
       setIsLoading(true);
       setError(null);
       try {
-        console.log('API Service creation requested:', service);
+        const { error } = await supabase.from('api_integration_registry').insert({
+          name: service.name,
+          description: service.description,
+          type: service.type,
+          category: 'integration',
+          purpose: 'internal',
+          direction: 'outbound',
+          status: 'active',
+        });
+        if (error) throw error;
         invalidateCache();
       } catch (err) {
         setError((err as Error).message);
@@ -251,16 +400,154 @@ export function useMasterData() {
     []
   );
 
+  const assignModule = useCallback(async (payload: { userId: string; moduleId: string; accessLevel: string }) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const { error } = await supabase.from('user_module_assignments').insert({
+        user_id: payload.userId,
+        module_id: payload.moduleId,
+        is_active: true,
+        assigned_at: new Date().toISOString(),
+      });
+      if (error) throw error;
+      invalidateCache();
+    } catch (err) {
+      setError((err as Error).message);
+      console.error('[MasterData] assignModule failed', err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const assignFacility = useCallback(async (payload: { userId: string; facilityId: string }) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const { error } = await supabase.from('user_facilities').insert({
+        user_id: payload.userId,
+        facility_id: payload.facilityId,
+        is_primary: false,
+        created_at: new Date().toISOString(),
+      });
+      if (error) throw error;
+      invalidateCache();
+    } catch (err) {
+      setError((err as Error).message);
+      console.error('[MasterData] assignFacility failed', err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  /* -------------------------------------------------- Update User */
+  const updateUser = useCallback(async (userId: string, fields: Partial<MasterUser>) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update(fields as any)
+        .eq('id', userId);
+      if (error) throw error;
+      invalidateCache();
+      await fetchUsers();
+    } catch (err) {
+      setError((err as Error).message);
+      console.error('[MasterData] updateUser failed', err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  /* -------------------------------------------------- Remove Role / Facility / Module */
+  const removeRole = useCallback(async (payload: { userId: string; roleId: string }) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const { error } = await supabase.from('user_roles')
+        .delete()
+        .eq('user_id', payload.userId)
+        .eq('role_id', payload.roleId);
+      if (error) throw error;
+      invalidateCache();
+      await fetchUsers();
+    } catch (err) {
+      setError((err as Error).message);
+      console.error('[MasterData] removeRole failed', err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const removeFacility = useCallback(async (payload: { userId: string; facilityId: string }) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const { error } = await supabase.from('user_facilities')
+        .delete()
+        .eq('user_id', payload.userId)
+        .eq('facility_id', payload.facilityId);
+      if (error) throw error;
+      invalidateCache();
+      await fetchUsers();
+    } catch (err) {
+      setError((err as Error).message);
+      console.error('[MasterData] removeFacility failed', err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const removeModule = useCallback(async (payload: { userId: string; moduleId: string }) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const { error } = await supabase.from('user_module_assignments')
+        .delete()
+        .eq('user_id', payload.userId)
+        .eq('module_id', payload.moduleId);
+      if (error) throw error;
+      invalidateCache();
+      await fetchUsers();
+    } catch (err) {
+      setError((err as Error).message);
+      console.error('[MasterData] removeModule failed', err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  /* -------------------------------------------------- Resend Email Verification */
+  const resendEmailVerification = useCallback(async (payload: { userId: string; email: string }) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      // If you have a Supabase function or external service trigger it here
+      // Placeholder: just console log
+      console.log('Resend verification email to', payload.email);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   return {
     /* mutations */
     createUser,
     deactivateUser,
+    updateUser,
     createFacility,
     createPatient,
     createApiService,
     createModule,
     refreshData,
     assignRole, // Add for compatibility
+    assignModule,
+    assignFacility,
+    removeRole,
+    removeFacility,
+    removeModule,
+    resendEmailVerification,
 
     /* live read-models */
     users,
@@ -281,5 +568,11 @@ export function useMasterData() {
     isCreatingUser: isLoading,
     isCreatingApiService: isLoading,
     isCreatingModule: isLoading,
+    isAssigningModule: false,
+    isAssigningFacility: false,
+    isResendingVerification: false,
+    isUpdatingUser: false,
+    isAssigningRole: false,
+    isDeactivatingUser: false,
   };
 }

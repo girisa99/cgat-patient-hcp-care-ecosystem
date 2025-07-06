@@ -23,7 +23,8 @@ import {
   Puzzle,
   CheckCircle,
   XCircle,
-  AlertCircle
+  AlertCircle,
+  X,
 } from 'lucide-react';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { useMasterData } from '@/hooks/useMasterData';
@@ -54,7 +55,10 @@ const Users: React.FC = () => {
     isAssigningModule,
     isAssigningFacility,
     isResendingVerification,
-    isDeactivatingUser
+    isDeactivatingUser,
+    removeRole,
+    removeModule,
+    updateUser
   } = useMasterData();
   
   // Dialog states
@@ -65,6 +69,8 @@ const Users: React.FC = () => {
   const [isAssignFacilityOpen, setIsAssignFacilityOpen] = useState(false);
   const [isViewUserOpen, setIsViewUserOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isEditUserOpen, setIsEditUserOpen] = useState(false);
+  const [editUserForm, setEditUserForm] = useState<any>(null);
   
   // Form states
   const [newUser, setNewUser] = useState({
@@ -245,6 +251,21 @@ const Users: React.FC = () => {
         variant="outline"
         size="sm"
       />
+      <ActionButton
+        icon={Edit}
+        label="Edit"
+        onClick={() => {
+          setSelectedUser(user);
+          setEditUserForm({
+            first_name: user.first_name,
+            last_name: user.last_name,
+            phone: user.phone || '',
+          });
+          setIsEditUserOpen(true);
+        }}
+        variant="outline"
+        size="sm"
+      />
     </div>
   );
 
@@ -254,35 +275,59 @@ const Users: React.FC = () => {
       id: 'assign-role',
       label: 'Assign Role',
       icon: Shield,
-      handler: (selectedIds) => console.log('Bulk assign role:', selectedIds),
+      handler: async (selectedIds) => {
+        const roleId = prompt('Enter roleId to assign to selected users');
+        if (!roleId) return;
+        await Promise.all(selectedIds.map(id => assignRole({ userId: id, roleId })));
+        refreshData();
+      },
       permission: 'users.write'
     },
     {
       id: 'assign-module',
       label: 'Assign Module',
       icon: Puzzle,
-      handler: (selectedIds) => console.log('Bulk assign module:', selectedIds),
+      handler: async (selectedIds) => {
+        const moduleId = prompt('Enter moduleId to assign');
+        if (!moduleId) return;
+        await Promise.all(selectedIds.map(id => assignModule({ userId: id, moduleId, accessLevel: 'read' })));
+        refreshData();
+      },
       permission: 'users.write'
     },
     {
       id: 'assign-facility',
       label: 'Assign Facility',
       icon: Building,
-      handler: (selectedIds) => console.log('Bulk assign facility:', selectedIds),
+      handler: async (selectedIds) => {
+        const facilityId = prompt('Enter facilityId to assign');
+        if (!facilityId) return;
+        await Promise.all(selectedIds.map(id => assignFacility({ userId: id, facilityId })));
+        refreshData();
+      },
       permission: 'users.write'
     },
     {
       id: 'resend-verification',
       label: 'Resend Verification',
       icon: Mail,
-      handler: (selectedIds) => console.log('Bulk resend verification:', selectedIds),
+      handler: async (selectedIds) => {
+        await Promise.all(selectedIds.map(id => {
+          const user = users.find(u => u.id === id);
+          if (user) return resendEmailVerification({ userId: id, email: user.email });
+        }));
+      },
       permission: 'users.write'
     },
     {
       id: 'deactivate',
       label: 'Deactivate',
       icon: UserX,
-      handler: (selectedIds) => console.log('Bulk deactivate:', selectedIds),
+      handler: async (selectedIds) => {
+        if (!confirm(`Deactivate ${selectedIds.length} users?`)) return;
+        await Promise.all(selectedIds.map(id => deactivateUser({ userId: id })));
+        refreshData();
+      },
       permission: 'users.write'
     }
   ];
@@ -392,7 +437,7 @@ const Users: React.FC = () => {
       <AppLayout title="User Management">
         <Card>
           <CardContent className="p-8 text-center">
-            <div className="text-red-600 mb-4">Error loading users: {error.message}</div>
+            <div className="text-red-600 mb-4">Error loading users: {error}</div>
             <Button onClick={refreshData} variant="outline">
               <RefreshCw className="h-4 w-4 mr-2" />
               Retry
@@ -647,8 +692,9 @@ const Users: React.FC = () => {
                     <Label>Assigned Roles</Label>
                     <div className="flex flex-wrap gap-2 mt-2">
                       {selectedUser.user_roles?.map((ur: any, index: number) => (
-                        <Badge key={index} variant="outline">
+                        <Badge key={index} variant="outline" className="flex items-center gap-1">
                           {ur.role?.name}
+                          <X className="h-3 w-3 cursor-pointer" onClick={() => removeRole({ userId: selectedUser.id, roleId: ur.role_id || ur.role?.id })} />
                         </Badge>
                       ))}
                       {(!selectedUser.user_roles || selectedUser.user_roles.length === 0) && (
@@ -665,9 +711,12 @@ const Users: React.FC = () => {
                       {selectedUser.assigned_modules?.map((ma: any, index: number) => (
                         <div key={index} className="flex items-center justify-between p-2 border rounded">
                           <span className="text-sm">{ma.module?.name}</span>
-                          <Badge variant="outline" className="text-xs">
-                            {ma.access_level}
-                          </Badge>
+                          <div className="flex items-center gap-1">
+                            <Badge variant="outline" className="text-xs">
+                              {ma.access_level}
+                            </Badge>
+                            <X className="h-3 w-3 cursor-pointer" onClick={() => removeModule({ userId: selectedUser.id, moduleId: ma.module_id || ma.module?.id })} />
+                          </div>
                         </div>
                       ))}
                       {(!selectedUser.assigned_modules || selectedUser.assigned_modules.length === 0) && (
@@ -790,6 +839,43 @@ const Users: React.FC = () => {
                 {isAssigningFacility ? 'Assigning...' : 'Assign Facility'}
               </Button>
             </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit User Dialog */}
+        <Dialog open={isEditUserOpen} onOpenChange={setIsEditUserOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Edit User</DialogTitle>
+            </DialogHeader>
+            {editUserForm && selectedUser && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="edit-first">First Name</Label>
+                    <Input id="edit-first" value={editUserForm.first_name} onChange={(e) => setEditUserForm({ ...editUserForm, first_name: e.target.value })} />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-last">Last Name</Label>
+                    <Input id="edit-last" value={editUserForm.last_name} onChange={(e) => setEditUserForm({ ...editUserForm, last_name: e.target.value })} />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="edit-phone">Phone</Label>
+                  <Input id="edit-phone" value={editUserForm.phone} onChange={(e) => setEditUserForm({ ...editUserForm, phone: e.target.value })} />
+                </div>
+                <Button onClick={async () => {
+                  await updateUser(selectedUser.id, {
+                    first_name: editUserForm.first_name,
+                    last_name: editUserForm.last_name,
+                    phone: editUserForm.phone,
+                  } as any);
+                  setIsEditUserOpen(false);
+                }}>
+                  Save
+                </Button>
+              </div>
+            )}
           </DialogContent>
         </Dialog>
       </div>

@@ -1,10 +1,10 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { navItems } from "./nav-items";
+import { SidebarProvider } from '@/components/ui/sidebar-database-aligned';
+import { AppSidebar } from '@/components/sidebar/AppSidebar';
 import Index from "./pages/Index";
 import Users from "./pages/Users";
 import Patients from "./pages/Patients";
@@ -17,9 +17,43 @@ import Security from "./pages/Security";
 import Reports from "./pages/Reports";
 import Testing from "./pages/Testing";
 import RoleManagement from "./pages/RoleManagement";
+import Login from "./pages/Login";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { MasterAuthProvider } from './hooks/useMasterAuth';
+import { useMasterAuth } from '@/hooks/useMasterAuth';
 
 const queryClient = new QueryClient();
+
+const AppContent = () => {
+  const { isAuthenticated } = useMasterAuth();
+
+  return (
+    <BrowserRouter>
+      <SidebarProvider>
+        <div className="flex min-h-screen w-full">
+          {isAuthenticated && <AppSidebar />}
+          <div className="flex-1 min-h-screen bg-gray-50">
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+              <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
+              <Route path="/patients" element={<ProtectedRoute><Patients /></ProtectedRoute>} />
+              <Route path="/facilities" element={<ProtectedRoute><Facilities /></ProtectedRoute>} />
+              <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+              <Route path="/modules" element={<ProtectedRoute><Modules /></ProtectedRoute>} />
+              <Route path="/api-services" element={<ProtectedRoute><ApiServices /></ProtectedRoute>} />
+              <Route path="/ngrok" element={<ProtectedRoute><NgrokIntegration /></ProtectedRoute>} />
+              <Route path="/security" element={<ProtectedRoute><Security /></ProtectedRoute>} />
+              <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+              <Route path="/testing" element={<ProtectedRoute><Testing /></ProtectedRoute>} />
+              <Route path="/role-management" element={<ProtectedRoute><RoleManagement /></ProtectedRoute>} />
+            </Routes>
+          </div>
+        </div>
+      </SidebarProvider>
+    </BrowserRouter>
+  );
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -27,22 +61,7 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/users" element={<Users />} />
-            <Route path="/patients" element={<Patients />} />
-            <Route path="/facilities" element={<Facilities />} />
-            <Route path="/onboarding" element={<Onboarding />} />
-            <Route path="/modules" element={<Modules />} />
-            <Route path="/api-services" element={<ApiServices />} />
-            <Route path="/ngrok" element={<NgrokIntegration />} />
-            <Route path="/security" element={<Security />} />
-            <Route path="/reports" element={<Reports />} />
-            <Route path="/testing" element={<Testing />} />
-            <Route path="/role-management" element={<RoleManagement />} />
-          </Routes>
-        </BrowserRouter>
+        <AppContent />
       </TooltipProvider>
     </MasterAuthProvider>
   </QueryClientProvider>

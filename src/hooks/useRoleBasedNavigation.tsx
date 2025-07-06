@@ -1,4 +1,3 @@
-
 import { useMemo } from 'react';
 import { navItems } from '@/nav-items';
 import { useMasterAuth } from './useMasterAuth';
@@ -9,6 +8,11 @@ export const useRoleBasedNavigation = () => {
   const getVisibleNavItems = useMemo(() => {
     if (!isAuthenticated) {
       return [];
+    }
+
+    if (isAuthenticated && userRoles.length === 0) {
+      // Authenticated but no roles yet – allow all pages temporarily until roles are assigned
+      return navItems;
     }
 
     // Define role-based access

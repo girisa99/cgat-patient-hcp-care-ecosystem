@@ -1,4 +1,3 @@
-
 import { ReactNode, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
@@ -15,10 +14,10 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   console.log('🛡️ ProtectedRoute check:', { isLoading, isAuthenticated, hasUser: !!user });
 
   useEffect(() => {
-    // Only redirect if not loading and not authenticated - redirect to index instead of login
+    // Only redirect if not loading and not authenticated - redirect to login instead of index
     if (!isLoading && !isAuthenticated) {
-      console.log('🔄 Redirecting to index for authentication...');
-      navigate('/', { replace: true });
+      console.log('🔄 Redirecting to login for authentication...');
+      navigate('/login', { replace: true });
     }
   }, [isLoading, isAuthenticated, navigate]);
 

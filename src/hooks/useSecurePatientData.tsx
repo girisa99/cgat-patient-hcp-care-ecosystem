@@ -1,6 +1,6 @@
-
 import { useState, useEffect } from 'react';
 import { useMasterAuth } from './useMasterAuth';
+import { supabase } from '@/integrations/supabase/client';
 
 // Define basic patient data structure
 interface PatientData {
@@ -45,10 +45,25 @@ export const useSecurePatientData = () => {
       setError(null);
 
       try {
-        // Since there's no patient_data table in the schema, we'll return empty data
-        // In a real implementation, this would query the appropriate patient table
-        console.log('Patient data access requested with access level:', accessLevel);
-        setPatientData([]);
+        let query = supabase
+          .from('profiles')
+          .select('id, first_name, last_name, email, phone, created_at');
+
+        if (userRoles.includes('patientCaregiver')) {
+          // A patient can only see their own profile
+          query = query.eq('id', user?.id as string);
+        }
+
+        // If we want to restrict onboardingTeam to only active patients, add filters
+        const { data, error } = await query;
+        if (error) throw error;
+
+        // Keep only profiles that include the patientCaregiver role
+        const filtered = (data as any[]).filter((p) => {
+          const roles = p.user_roles || [];
+          return roles.some((r: any) => r.role?.name === 'patientCaregiver');
+        });
+        setPatientData(filtered as PatientData[]);
       } catch (err) {
         console.error('Error fetching patient data:', err);
         setError(err as Error);
@@ -58,6 +73,7 @@ export const useSecurePatientData = () => {
     };
 
     fetchPatientData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasPatientAccess, accessLevel, user?.id]);
 
   return {

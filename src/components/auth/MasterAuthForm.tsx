@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
 import HealthcareAuthLayout from './HealthcareAuthLayout';
+import { useNavigate } from 'react-router-dom';
 
 interface MasterAuthFormProps {
   onSuccess?: () => void;
@@ -24,10 +25,11 @@ export const MasterAuthForm: React.FC<MasterAuthFormProps> = ({
   onSuccess,
   defaultTab = 'login'
 }) => {
-  const { isLoading: authLoading, refreshAuth } = useMasterAuth();
+  const { isLoading: authLoading, refreshAuth, isAuthenticated } = useMasterAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>(defaultTab);
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
 
   // Login form state
   const [loginData, setLoginData] = useState({
@@ -43,6 +45,13 @@ export const MasterAuthForm: React.FC<MasterAuthFormProps> = ({
     firstName: '',
     lastName: ''
   });
+
+  // If already authenticated, redirect to dashboard
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      navigate('/', { replace: true });
+    }
+  }, [authLoading, isAuthenticated, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,8 +82,11 @@ export const MasterAuthForm: React.FC<MasterAuthFormProps> = ({
           description: "Redirecting to dashboard..."
         });
         
-        // Refresh auth state - this will automatically trigger UI update
-        await refreshAuth();
+        // Refresh auth state - ensure we pass the newly signed-in user id so
+        // roles, profile & facilities are fetched immediately before the
+        // auth listener fires (helps slow connections)
+        await refreshAuth(data.user.id);
+        navigate('/', { replace: true });
       }
     } catch (error) {
       console.error('💥 Login exception:', error);
@@ -144,7 +156,8 @@ export const MasterAuthForm: React.FC<MasterAuthFormProps> = ({
             title: "Account Created",
             description: "Account created successfully! Redirecting..."
           });
-          await refreshAuth();
+          await refreshAuth(data.user.id);
+          navigate('/', { replace: true });
         } else {
           toast({
             title: "Account Created",

@@ -1,4 +1,3 @@
-
 /**
  * SINGLE MASTER MODULES HOOK - USES MASTER ROLE MANAGEMENT
  * This ensures single source of truth for all module operations
@@ -48,9 +47,11 @@ export const useSingleMasterModules = () => {
 
   // Create module function
   const createModule = (moduleData: { name: string; description?: string; is_active?: boolean }) => {
-    console.log('📦 Creating module via single master hook:', moduleData);
-    // This would need to be implemented in the master hook
-    console.log('⚠️ Module creation not implemented in master hook yet');
+    if (masterRoleData.createModule) {
+      masterRoleData.createModule(moduleData);
+    } else {
+      console.warn('createModule not available');
+    }
   };
 
   return {
@@ -60,7 +61,7 @@ export const useSingleMasterModules = () => {
     
     // Loading states
     isLoading: masterRoleData.isLoading,
-    isCreating: false, // Would need to be added to master hook
+    isCreating: masterRoleData.isCreatingModule ?? false,
     
     // Actions
     createModule,
