@@ -2,20 +2,12 @@
 /**
  * SINGLE MASTER MODULES HOOK - ULTIMATE SINGLE SOURCE OF TRUTH
  * This is the ONLY hook that should be used for modules across the entire application
- * Eliminates ALL other module hooks to achieve true single source architecture
+ * Uses aligned TypeScript types that match database schema exactly
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useMasterToast } from './useMasterToast';
-
-export interface Module {
-  id: string;
-  name: string;
-  description?: string;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-}
+import type { DatabaseModule, ModuleCreateInput, ModuleUpdateInput, ModuleStats, ModuleIntegrityCheck } from '@/types/modules';
 
 export const useSingleMasterModules = () => {
   const { showSuccess, showError } = useMasterToast();
@@ -29,7 +21,7 @@ export const useSingleMasterModules = () => {
   // SINGLE DATA SOURCE - REAL DATABASE ONLY
   const { data: modules = [], isLoading, error } = useQuery({
     queryKey: CACHE_KEY,
-    queryFn: async (): Promise<Module[]> => {
+    queryFn: async (): Promise<DatabaseModule[]> => {
       console.log('📡 Fetching from REAL database - NO MOCK DATA');
       
       const { data, error } = await supabase
@@ -49,16 +41,16 @@ export const useSingleMasterModules = () => {
     refetchOnWindowFocus: false,
   });
 
-  // SINGLE CREATE MUTATION
+  // SINGLE CREATE MUTATION - ALIGNED WITH DATABASE SCHEMA
   const createModuleMutation = useMutation({
-    mutationFn: async (moduleData: { name: string; description?: string; is_active?: boolean }) => {
+    mutationFn: async (moduleData: ModuleCreateInput) => {
       console.log('➕ Creating module via REAL database');
       
       const { data, error } = await supabase
         .from('modules')
         .insert({
           name: moduleData.name,
-          description: moduleData.description,
+          description: moduleData.description || null,
           is_active: moduleData.is_active ?? true
         })
         .select()
@@ -76,12 +68,15 @@ export const useSingleMasterModules = () => {
     }
   });
 
-  // SINGLE UPDATE MUTATION
+  // SINGLE UPDATE MUTATION - ALIGNED WITH DATABASE SCHEMA
   const updateModuleMutation = useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: Partial<Module> }) => {
+    mutationFn: async ({ id, updates }: { id: string; updates: ModuleUpdateInput }) => {
       const { data, error } = await supabase
         .from('modules')
-        .update(updates)
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', id)
         .select()
         .single();
@@ -98,17 +93,17 @@ export const useSingleMasterModules = () => {
     }
   });
 
-  // UTILITIES - ALL FROM SINGLE SOURCE
+  // UTILITIES - ALL FROM SINGLE SOURCE WITH ALIGNED TYPES
   const activeModules = modules.filter(m => m.is_active);
-  const getModuleById = (id: string) => modules.find(m => m.id === id);
+  const getModuleById = (id: string): DatabaseModule | undefined => modules.find(m => m.id === id);
   
-  const getModuleStats = () => ({
+  const getModuleStats = (): ModuleStats => ({
     total: modules.length,
     active: activeModules.length,
     inactive: modules.length - activeModules.length
   });
 
-  const searchModules = (query: string) => {
+  const searchModules = (query: string): DatabaseModule[] => {
     if (!query.trim()) return modules;
     const lowercaseQuery = query.toLowerCase();
     return modules.filter(m => 
@@ -117,8 +112,8 @@ export const useSingleMasterModules = () => {
     );
   };
 
-  // INTEGRITY VERIFICATION
-  const verifyModuleIntegrity = () => {
+  // INTEGRITY VERIFICATION - DATABASE ALIGNED
+  const verifyModuleIntegrity = (): ModuleIntegrityCheck => {
     const hasValidNames = modules.every(m => m.name && m.name.trim().length > 0);
     return {
       isHealthy: hasValidNames,
@@ -129,7 +124,7 @@ export const useSingleMasterModules = () => {
   };
 
   return {
-    // CORE DATA - SINGLE SOURCE
+    // CORE DATA - SINGLE SOURCE WITH ALIGNED TYPES
     modules,
     activeModules,
     
@@ -141,13 +136,12 @@ export const useSingleMasterModules = () => {
     // ERROR STATE
     error,
     
-    // ACTIONS - SINGLE SOURCE
-    createModule: (data: { name: string; description?: string; is_active?: boolean }) => 
-      createModuleMutation.mutate(data),
-    updateModule: (data: { id: string; updates: Partial<Module> }) => 
+    // ACTIONS - SINGLE SOURCE WITH ALIGNED TYPES
+    createModule: (data: ModuleCreateInput) => createModuleMutation.mutate(data),
+    updateModule: (data: { id: string; updates: ModuleUpdateInput }) => 
       updateModuleMutation.mutate(data),
     
-    // UTILITIES - SINGLE SOURCE
+    // UTILITIES - SINGLE SOURCE WITH ALIGNED TYPES
     getModuleById,
     getModuleStats,
     searchModules,
@@ -157,14 +151,16 @@ export const useSingleMasterModules = () => {
     meta: {
       dataSource: 'modules table (real database)',
       hookName: 'useSingleMasterModules',
-      version: 'single-source-v1.0',
+      version: 'single-source-v1.0-aligned',
       cacheKey: CACHE_KEY.join('-'),
       noMockData: true,
       singleSourceValidated: true,
       hookCount: 1,
       duplicateHooksEliminated: true,
       realDatabaseOnly: true,
-      multiTenantReady: true
+      multiTenantReady: true,
+      typescriptDatabaseAligned: true,
+      namingConventionAligned: true
     }
   };
 };
