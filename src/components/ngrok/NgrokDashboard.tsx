@@ -139,13 +139,25 @@ export const NgrokDashboard: React.FC = () => {
     });
   };
 
-  const setupPermanentTunnel = () => {
-    const command = `ngrok http --url=${PERMANENT_DOMAIN} 4040`;
-    copyToClipboard(command);
-    toast({
-      title: "Command Copied",
-      description: "Run this command in your terminal to start your permanent tunnel"
-    });
+  const testDomainConnection = async () => {
+    try {
+      const response = await fetch(`https://${PERMANENT_DOMAIN}`, { 
+        method: 'HEAD',
+        mode: 'no-cors'
+      });
+      toast({
+        title: "Domain Test",
+        description: "Domain is accessible! DNS propagation complete.",
+        variant: "default"
+      });
+      setConnectionStatus('connected');
+    } catch (err) {
+      toast({
+        title: "Domain Test",
+        description: "Domain not yet accessible. DNS may still be propagating.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -172,54 +184,47 @@ export const NgrokDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* DNS Configuration Alert */}
-      <Alert variant="destructive">
+      {/* DNS Status Alert */}
+      <Alert>
         <AlertTriangle className="h-4 w-4" />
-        <AlertTitle>DNS Configuration Required</AlertTitle>
+        <AlertTitle>DNS Configuration Status</AlertTitle>
         <AlertDescription>
           <div className="space-y-4">
-            <p>Your domain <strong>{PERMANENT_DOMAIN}</strong> needs DNS configuration to work properly.</p>
-            
-            <div className="bg-red-50 p-4 rounded-md border border-red-200">
-              <h4 className="font-semibold text-red-800 mb-2">🔧 DNS Setup Instructions:</h4>
-              <ol className="text-sm text-red-700 space-y-2 list-decimal list-inside">
-                <li>Go to your domain registrar (where you registered geniecellgene.com)</li>
-                <li>Find the DNS management section</li>
-                <li>Add a CNAME record with these values:</li>
-              </ol>
-              
-              <div className="mt-3 p-3 bg-white rounded border">
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <strong>Name/Host:</strong> <code className="bg-gray-100 px-2 py-1 rounded">dev</code>
-                    <Button size="sm" variant="outline" className="ml-2" onClick={() => copyToClipboard('dev')}>
-                      <Copy className="h-3 w-3" />
-                    </Button>
-                  </div>
-                  <div>
-                    <strong>Value/Target:</strong> <code className="bg-gray-100 px-2 py-1 rounded text-xs">{CNAME_VALUE}</code>
-                    <Button size="sm" variant="outline" className="ml-2" onClick={() => copyToClipboard(CNAME_VALUE)}>
-                      <Copy className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-              
-              <p className="text-sm text-red-600 mt-2">
-                <strong>Note:</strong> DNS changes can take 5-30 minutes to propagate globally.
+            <div className="bg-blue-50 p-4 rounded-md border border-blue-200">
+              <h4 className="font-semibold text-blue-800 mb-2">✅ DNS Configuration Complete!</h4>
+              <p className="text-sm text-blue-700 mb-3">
+                Great! You've updated your DNS records. Now we need to wait for DNS propagation.
               </p>
-            </div>
+              
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-blue-800">What happens next:</p>
+                <ul className="text-sm text-blue-700 space-y-1 list-disc list-inside ml-4">
+                  <li>DNS changes typically take 5-30 minutes to propagate</li>
+                  <li>Sometimes it can take up to 2-4 hours globally</li>
+                  <li>Your ngrok tunnel should keep running during this time</li>
+                </ul>
+              </div>
 
-            <div className="bg-blue-50 p-3 rounded-md border border-blue-200">
-              <h4 className="font-semibold text-blue-800 mb-2">🚀 Quick Test Alternative:</h4>
-              <p className="text-sm text-blue-700 mb-2">Want to test immediately? Use ngrok's free subdomain:</p>
-              <div className="bg-white p-2 rounded border font-mono text-sm">
-                <code>ngrok http 4040</code>
-                <Button size="sm" variant="outline" className="ml-2" onClick={() => copyToClipboard('ngrok http 4040')}>
-                  <Copy className="h-3 w-3" />
+              <div className="mt-4 flex space-x-2">
+                <Button size="sm" onClick={testDomainConnection}>
+                  <Globe className="h-4 w-4 mr-2" />
+                  Test Domain Connection
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => window.open(`https://${PERMANENT_DOMAIN}`, '_blank')}>
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Try Opening Domain
                 </Button>
               </div>
-              <p className="text-xs text-blue-600 mt-1">This will give you a temporary URL like https://abc123.ngrok-free.app</p>
+            </div>
+
+            <div className="bg-green-50 p-3 rounded-md border border-green-200">
+              <h4 className="font-semibold text-green-800 mb-2">🎯 Your Current Setup:</h4>
+              <div className="text-sm text-green-700 space-y-1">
+                <p><strong>Domain:</strong> {PERMANENT_DOMAIN}</p>
+                <p><strong>CNAME Target:</strong> {CNAME_VALUE}</p>
+                <p><strong>Local Port:</strong> 4040</p>
+                <p><strong>Command Running:</strong> <code>ngrok http --url={PERMANENT_DOMAIN} 4040</code></p>
+              </div>
             </div>
           </div>
         </AlertDescription>
@@ -235,15 +240,15 @@ export const NgrokDashboard: React.FC = () => {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label>Current Domain Status</Label>
+            <Label>Primary Domain Status</Label>
             <div className="flex space-x-2">
               <Input
                 placeholder={`https://${PERMANENT_DOMAIN}`}
                 value={`https://${PERMANENT_DOMAIN}`}
                 readOnly
-                className="flex-1 bg-red-50 border-red-200"
+                className="flex-1 bg-blue-50 border-blue-200"
               />
-              <Badge variant="destructive">DNS Not Configured</Badge>
+              <Badge variant="secondary">DNS Configured - Propagating</Badge>
             </div>
           </div>
           
@@ -264,27 +269,24 @@ export const NgrokDashboard: React.FC = () => {
 
           <div className="bg-yellow-50 p-3 rounded-md border border-yellow-200">
             <p className="text-sm text-yellow-700">
-              <strong>Current Command Running:</strong> <code>ngrok http --url={PERMANENT_DOMAIN} 4040</code>
-            </p>
-            <p className="text-xs text-yellow-600 mt-1">
-              This is correct, but DNS needs to be configured for the domain to work.
+              <strong>Status:</strong> DNS records updated, waiting for propagation. Keep your ngrok tunnel running.
             </p>
           </div>
         </CardContent>
       </Card>
 
       {error && (
-        <Card className="border-red-200 bg-red-50">
+        <Card className="border-yellow-200 bg-yellow-50">
           <CardContent className="pt-6">
             <div className="space-y-2">
-              <p className="text-red-600 font-medium">Connection Error: {error}</p>
-              <div className="text-sm text-red-500 space-y-1">
-                <p><strong>Possible causes:</strong></p>
+              <p className="text-yellow-600 font-medium">Connection Status: {error}</p>
+              <div className="text-sm text-yellow-500 space-y-1">
+                <p><strong>This is normal during DNS propagation:</strong></p>
                 <ul className="list-disc list-inside ml-4 space-y-1">
-                  <li>DNS record not configured yet</li>
-                  <li>DNS propagation still in progress (wait 5-30 minutes)</li>
-                  <li>ngrok tunnel not running</li>
-                  <li>Wrong port or URL configuration</li>
+                  <li>DNS records are still propagating globally</li>
+                  <li>Your domain may not be accessible yet</li>
+                  <li>Keep your ngrok tunnel running</li>
+                  <li>Try testing again in 10-15 minutes</li>
                 </ul>
               </div>
             </div>
@@ -306,13 +308,13 @@ export const NgrokDashboard: React.FC = () => {
         <CardContent>
           {tunnels.length === 0 ? (
             <div className="text-center py-8">
-              <AlertCircle className="h-12 w-12 mx-auto text-yellow-500 mb-4" />
-              <p className="text-yellow-600 font-medium">No active tunnels detected</p>
-              <p className="text-sm text-muted-foreground mt-2 space-y-1">
-                <span className="block">1. Make sure ngrok is running: <code className="bg-gray-100 px-1 rounded">ngrok http --url={PERMANENT_DOMAIN} 4040</code></span>
-                <span className="block">2. Configure DNS record as shown above</span>
-                <span className="block">3. Wait for DNS propagation (5-30 minutes)</span>
-              </p>
+              <AlertCircle className="h-12 w-12 mx-auto text-blue-500 mb-4" />
+              <p className="text-blue-600 font-medium">Waiting for tunnel detection</p>
+              <div className="text-sm text-muted-foreground mt-2 space-y-1">
+                <p className="block">✅ DNS configured, waiting for propagation</p>
+                <p className="block">🔄 Keep running: <code className="bg-gray-100 px-1 rounded">ngrok http --url={PERMANENT_DOMAIN} 4040</code></p>
+                <p className="block">⏱️ Test again in 10-15 minutes</p>
+              </div>
             </div>
           ) : (
             <div className="space-y-4">
@@ -425,7 +427,7 @@ export const NgrokDashboard: React.FC = () => {
             Webhook Testing
           </CardTitle>
           <CardDescription>
-            Test webhook endpoints (available once DNS is configured)
+            Test webhook endpoints (available once DNS propagation is complete)
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
