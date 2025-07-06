@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -5,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Alert } from '@/components/ui/alert';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useNgrokIntegration } from '@/hooks/useNgrokIntegration';
 import { Globe, RefreshCw, TestTube, Settings, ExternalLink, AlertCircle, CheckCircle } from 'lucide-react';
 
@@ -27,7 +28,7 @@ export const NgrokDashboard: React.FC = () => {
 
   const [newTunnelConfig, setNewTunnelConfig] = useState({
     name: '',
-    addr: 'localhost:3000',
+    addr: 'localhost:5173', // Updated to match Vite dev server port
     proto: 'http',
     inspect: true
   });
@@ -72,7 +73,7 @@ export const NgrokDashboard: React.FC = () => {
       await createTunnel(newTunnelConfig);
       setNewTunnelConfig({
         name: '',
-        addr: 'localhost:3000',
+        addr: 'localhost:5173', // Updated to match Vite dev server port
         proto: 'http',
         inspect: true
       });
@@ -129,10 +130,12 @@ export const NgrokDashboard: React.FC = () => {
       {connectionStatus === 'failed' && (
         <Alert>
           <AlertCircle className="h-4 w-4" />
-          <div>
-            <p>Unable to connect to ngrok. Make sure ngrok is running locally on port 4040, or provide a custom tunnel URL below.</p>
-            <p><strong>Quick fix:</strong> Run <code>ngrok http 3000</code> in your terminal and try refreshing.</p>
-          </div>
+          <AlertDescription>
+            <div>
+              <p>Unable to connect to ngrok. Make sure ngrok is running locally on port 4040, or provide a custom tunnel URL below.</p>
+              <p><strong>Quick fix:</strong> Run <code>ngrok http 5173</code> in your terminal (note: port 5173 for Vite dev server) and try refreshing.</p>
+            </div>
+          </AlertDescription>
         </Alert>
       )}
 
@@ -246,7 +249,7 @@ export const NgrokDashboard: React.FC = () => {
               <Label htmlFor="tunnel-addr">Local Address</Label>
               <Input
                 id="tunnel-addr"
-                placeholder="localhost:3000"
+                placeholder="localhost:5173"
                 value={newTunnelConfig.addr}
                 onChange={(e) => setNewTunnelConfig(prev => ({ ...prev, addr: e.target.value }))}
               />

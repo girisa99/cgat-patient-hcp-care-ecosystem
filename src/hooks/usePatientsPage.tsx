@@ -1,55 +1,33 @@
 
 /**
- * PATIENTS PAGE HOOK - FIXED VERSION WITH REAL DATA
- * Uses real patient data instead of filtered user data
- * Version: patients-page-v5.0.0
+ * PATIENTS PAGE HOOK - SINGLE SOURCE OF TRUTH
+ * Consolidates patient page functionality
+ * Version: patients-page-v1.0.0
  */
-import { useRealPatientData } from './patients/useRealPatientData';
-import { useCallback } from 'react';
+import { useConsolidatedPatients } from './patients/useConsolidatedPatients';
 
 export const usePatientsPage = () => {
-  console.log('🔒 Patients Page Hook - Fixed Version v5.0 (Real Data Only)');
+  console.log('📄 Patients Page Hook - Single source of truth');
   
-  const realPatientData = useRealPatientData();
-  
-  const viewPatient = useCallback((patient: any) => {
-    console.log('👁️ Viewing patient:', patient.id, patient.email);
-    // Implement view functionality
-  }, []);
-
-  const editPatient = useCallback((patient: any) => {
-    console.log('✏️ Editing patient:', patient.id, patient.email);
-    // Implement edit functionality
-  }, []);
-
-  const deactivatePatient = useCallback((patient: any) => {
-    console.log('🚫 Deactivating patient:', patient.id, patient.email);
-    // Implement deactivate functionality
-  }, []);
+  const consolidatedData = useConsolidatedPatients();
 
   return {
-    // Real patient data
-    patients: realPatientData.patients,
-    isLoading: realPatientData.isLoading,
-    error: realPatientData.error,
+    // Direct pass-through from consolidated patients
+    patients: consolidatedData.patients,
+    activePatients: consolidatedData.activePatients,
+    patientStats: consolidatedData.patientStats,
+    searchPatients: consolidatedData.searchPatients,
+    getPatientById: consolidatedData.getPatientById,
+    isLoading: consolidatedData.isLoading,
+    error: consolidatedData.error,
     
-    // Real patient stats
-    patientStats: realPatientData.patientStats,
-    
-    // Patient-specific methods
-    getPatients: () => realPatientData.patients,
-    searchPatients: realPatientData.searchPatients,
-    viewPatient,
-    editPatient,
-    deactivatePatient,
-    
-    // Meta information
+    // Meta
     meta: {
-      patientCount: realPatientData.patientStats.totalPatients,
-      dataSource: 'real-patient-data-only',
-      hookVersion: 'patients-page-v5.0.0',
-      realDataValidated: true,
-      noMockData: true
+      hookName: 'usePatientsPage',
+      version: 'patients-page-v1.0.0',
+      singleSourceValidated: true,
+      dataSource: 'consolidated-patients',
+      pageReady: true
     }
   };
 };
