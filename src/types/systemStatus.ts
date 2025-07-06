@@ -1,5 +1,4 @@
 
-
 export interface ComprehensiveSystemStatus {
   totalUsers: number;
   totalFacilities: number;
