@@ -28,7 +28,7 @@ export const NgrokDashboard: React.FC = () => {
 
   const [newTunnelConfig, setNewTunnelConfig] = useState({
     name: '',
-    addr: 'localhost:5173', // Updated to match Vite dev server port
+    addr: 'localhost:4040',
     proto: 'http',
     inspect: true
   });
@@ -73,7 +73,7 @@ export const NgrokDashboard: React.FC = () => {
       await createTunnel(newTunnelConfig);
       setNewTunnelConfig({
         name: '',
-        addr: 'localhost:5173', // Updated to match Vite dev server port
+        addr: 'localhost:4040',
         proto: 'http',
         inspect: true
       });
@@ -133,13 +133,13 @@ export const NgrokDashboard: React.FC = () => {
           <AlertDescription>
             <div>
               <p>Unable to connect to ngrok. Make sure ngrok is running locally on port 4040, or provide a custom tunnel URL below.</p>
-              <p><strong>Quick fix:</strong> Run <code>ngrok http 5173</code> in your terminal (note: port 5173 for Vite dev server) and try refreshing.</p>
+              <p><strong>Quick fix:</strong> Run <code>ngrok http 4040</code> in your terminal and try refreshing.</p>
             </div>
           </AlertDescription>
         </Alert>
       )}
 
-      {/* Custom API URL Input */}
+      {/* Connection Settings */}
       <Card>
         <CardHeader>
           <CardTitle>Connection Settings</CardTitle>
@@ -249,7 +249,7 @@ export const NgrokDashboard: React.FC = () => {
               <Label htmlFor="tunnel-addr">Local Address</Label>
               <Input
                 id="tunnel-addr"
-                placeholder="localhost:5173"
+                placeholder="localhost:4040"
                 value={newTunnelConfig.addr}
                 onChange={(e) => setNewTunnelConfig(prev => ({ ...prev, addr: e.target.value }))}
               />

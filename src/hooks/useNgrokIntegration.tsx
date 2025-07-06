@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -56,7 +57,7 @@ export const useNgrokIntegration = () => {
     tunnels: {}
   });
 
-  // Updated to use localhost API by default, with fallback to external URL
+  // Updated to use localhost:4040 API by default
   const getTunnels = useCallback(async (ngrokApiUrl?: string) => {
     setIsLoading(true);
     setError(null);

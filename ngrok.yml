@@ -4,6 +4,6 @@ region: us
 
 tunnels:
   vite-dev:
-    addr: 5173
+    addr: 4040
     proto: http
     inspect: false
