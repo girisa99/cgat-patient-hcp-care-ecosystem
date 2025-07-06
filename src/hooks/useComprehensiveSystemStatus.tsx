@@ -34,7 +34,7 @@ export function useComprehensiveSystemStatus() {
     return {
       totalUsers: stats.totalUsers,
       totalFacilities: stats.totalFacilities,
-      totalModules: totalModules,
+      totalModules: totalModules, // Now correctly included
       totalApiServices: stats.totalApiServices,
       activeUsers: stats.activeUsers,
       activeFacilities: stats.activeFacilities,
