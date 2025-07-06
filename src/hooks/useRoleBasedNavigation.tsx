@@ -10,61 +10,82 @@ export const useRoleBasedNavigation = () => {
       return [];
     }
 
-    if (isAuthenticated && userRoles.length === 0) {
-      // Authenticated but no roles yet – allow all pages temporarily until roles are assigned
+    // During development, show all pages if no roles are assigned yet
+    // This prevents the app from being unusable during setup
+    if (userRoles.length === 0) {
+      console.log('🚧 Development mode: No roles assigned, showing all navigation items');
       return navItems;
     }
 
-    // Define role-based access
+    // Define role-based access - more permissive for development
     const roleAccess = {
       dashboard: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'provider', 'patientCaregiver'],
       users: ['superAdmin', 'onboardingTeam'],
-      patients: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'provider'],
+      patients: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'provider', 'patientCaregiver'],
       facilities: ['superAdmin', 'onboardingTeam'],
       onboarding: ['superAdmin', 'onboardingTeam'],
       modules: ['superAdmin', 'onboardingTeam'],
       'api-services': ['superAdmin', 'onboardingTeam'],
-      ngrok: ['superAdmin'],
+      ngrok: ['superAdmin', 'onboardingTeam'],
       security: ['superAdmin'],
       reports: ['superAdmin', 'onboardingTeam', 'caseManager'],
-      testing: ['superAdmin'],
+      testing: ['superAdmin', 'onboardingTeam'],
       'role-management': ['superAdmin'],
+      'data-import': ['superAdmin', 'onboardingTeam'],
+      'active-verification': ['superAdmin', 'onboardingTeam'],
     };
 
     return navItems.filter(item => {
       const path = item.url.replace('/', '') || 'dashboard';
       const allowedRoles = roleAccess[path as keyof typeof roleAccess] || [];
-      return userRoles.some(role => allowedRoles.includes(role));
+      const hasAccess = userRoles.some(role => allowedRoles.includes(role));
+      
+      // For development, log which items are being filtered
+      if (!hasAccess) {
+        console.log(`🚫 Navigation filtered: ${item.title} (requires: ${allowedRoles.join(', ')}, have: ${userRoles.join(', ')})`);
+      }
+      
+      return hasAccess;
     });
   }, [userRoles, isAuthenticated]);
 
   const hasAccess = (path: string) => {
     if (!isAuthenticated) return false;
     
+    // During development, allow access if no roles assigned
+    if (userRoles.length === 0) {
+      console.log('🚧 Development mode: Allowing access to', path);
+      return true;
+    }
+    
     const cleanPath = path.replace('/', '') || 'dashboard';
     const roleAccess = {
       dashboard: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'provider', 'patientCaregiver'],
       users: ['superAdmin', 'onboardingTeam'],
-      patients: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'provider'],
+      patients: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'provider', 'patientCaregiver'],
       facilities: ['superAdmin', 'onboardingTeam'],
       onboarding: ['superAdmin', 'onboardingTeam'],
       modules: ['superAdmin', 'onboardingTeam'],
       'api-services': ['superAdmin', 'onboardingTeam'],
-      ngrok: ['superAdmin'],
+      ngrok: ['superAdmin', 'onboardingTeam'],
       security: ['superAdmin'],
       reports: ['superAdmin', 'onboardingTeam', 'caseManager'],
-      testing: ['superAdmin'],
+      testing: ['superAdmin', 'onboardingTeam'],
       'role-management': ['superAdmin'],
+      'data-import': ['superAdmin', 'onboardingTeam'],
+      'active-verification': ['superAdmin', 'onboardingTeam'],
     };
 
     const allowedRoles = roleAccess[cleanPath as keyof typeof roleAccess] || [];
     return userRoles.some(role => allowedRoles.includes(role));
   };
 
+  
   const hasPermission = (permission: string) => {
     // Simple permission check based on roles
     if (userRoles.includes('superAdmin')) return true;
-    // Add more permission logic as needed
+    // During development, be more permissive
+    if (userRoles.length === 0) return true;
     return false;
   };
 
@@ -75,16 +96,18 @@ export const useRoleBasedNavigation = () => {
         const roleAccess = {
           dashboard: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'provider', 'patientCaregiver'],
           users: ['superAdmin', 'onboardingTeam'],
-          patients: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'provider'],
+          patients: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'provider', 'patientCaregiver'],
           facilities: ['superAdmin', 'onboardingTeam'],
           onboarding: ['superAdmin', 'onboardingTeam'],
           modules: ['superAdmin', 'onboardingTeam'],
           'api-services': ['superAdmin', 'onboardingTeam'],
-          ngrok: ['superAdmin'],
+          ngrok: ['superAdmin', 'onboardingTeam'],
           security: ['superAdmin'],
           reports: ['superAdmin', 'onboardingTeam', 'caseManager'],
-          testing: ['superAdmin'],
+          testing: ['superAdmin', 'onboardingTeam'],
           'role-management': ['superAdmin'],
+          'data-import': ['superAdmin', 'onboardingTeam'],
+          'active-verification': ['superAdmin', 'onboardingTeam'],
         };
         
         const allowedRoles = roleAccess[path as keyof typeof roleAccess] || [];
@@ -96,27 +119,7 @@ export const useRoleBasedNavigation = () => {
 
   const getFilteredNavItems = () => {
     if (!isAuthenticated) return [];
-    
-    return navItems.filter(item => {
-      const path = item.url.replace('/', '') || 'dashboard';
-      const roleAccess = {
-        dashboard: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'provider', 'patientCaregiver'],
-        users: ['superAdmin', 'onboardingTeam'],
-        patients: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'provider'],
-        facilities: ['superAdmin', 'onboardingTeam'],
-        onboarding: ['superAdmin', 'onboardingTeam'],
-        modules: ['superAdmin', 'onboardingTeam'],
-        'api-services': ['superAdmin', 'onboardingTeam'],
-        ngrok: ['superAdmin'],
-        security: ['superAdmin'],
-        reports: ['superAdmin', 'onboardingTeam', 'caseManager'],
-        testing: ['superAdmin'],
-        'role-management': ['superAdmin'],
-      };
-      
-      const allowedRoles = roleAccess[path as keyof typeof roleAccess] || [];
-      return userRoles.some(role => allowedRoles.includes(role));
-    });
+    return getVisibleNavItems;
   };
 
   const isAccessibleRoute = (routePath: string) => {

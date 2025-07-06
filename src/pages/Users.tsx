@@ -1,885 +1,308 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Users as UsersIcon, 
-  UserPlus, 
-  RefreshCw, 
-  Search, 
-  Eye, 
-  Shield, 
-  UserX, 
-  Edit, 
-  Trash2,
-  Mail,
-  MailCheck,
-  Building,
-  Puzzle,
-  CheckCircle,
-  XCircle,
-  AlertCircle,
-  X,
-} from 'lucide-react';
-import { useMasterAuth } from '@/hooks/useMasterAuth';
-import { useMasterData } from '@/hooks/useMasterData';
-import { DataTable, ColumnConfig } from '@/components/ui/DataTable';
-import { ActionButton, BulkActionConfig } from '@/components/ui/ActionButton';
-import AppLayout from '@/components/layout/AppLayout';
 
-const Users: React.FC = () => {
-  const { isAuthenticated, isLoading: authLoading } = useMasterAuth();
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { 
+  Users as UsersIcon, UserPlus, RefreshCw, Mail, Phone,
+  Calendar, AlertCircle, CheckCircle
+} from "lucide-react";
+import { useMasterData } from '@/hooks/useMasterData';
+import { useMasterAuth } from '@/hooks/useMasterAuth';
+import DashboardHeader from "@/components/layout/DashboardHeader";
+
+const Users = () => {
+  const { user: authUser, userRoles, isAuthenticated } = useMasterAuth();
   const { 
     users, 
-    roles,
-    facilities,
-    modules,
     isLoading, 
-    error, 
-    createUser,
-    assignRole,
-    assignModule,
-    assignFacility,
-    resendEmailVerification,
-    deactivateUser,
-    refreshData, 
-    searchUsers,
+    error,
     stats,
-    isCreatingUser,
-    isAssigningRole,
-    isAssigningModule,
-    isAssigningFacility,
-    isResendingVerification,
-    isDeactivatingUser,
-    removeRole,
-    removeModule,
-    updateUser
+    refreshData
   } = useMasterData();
-  
-  // Dialog states
-  const [isAddUserOpen, setIsAddUserOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<any>(null);
-  const [isAssignRoleOpen, setIsAssignRoleOpen] = useState(false);
-  const [isAssignModuleOpen, setIsAssignModuleOpen] = useState(false);
-  const [isAssignFacilityOpen, setIsAssignFacilityOpen] = useState(false);
-  const [isViewUserOpen, setIsViewUserOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isEditUserOpen, setIsEditUserOpen] = useState(false);
-  const [editUserForm, setEditUserForm] = useState<any>(null);
-  
-  // Form states
-  const [newUser, setNewUser] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    facilityId: '',
-    roleId: ''
+
+  console.log('👥 Users Page - Current state:', {
+    isAuthenticated,
+    userCount: users.length,
+    isLoading,
+    error,
+    currentUser: authUser?.email
   });
-  const [selectedRole, setSelectedRole] = useState<string>('');
-  const [selectedModule, setSelectedModule] = useState<string>('');
-  const [selectedModuleAccess, setSelectedModuleAccess] = useState<string>('read');
-  const [selectedFacility, setSelectedFacility] = useState<string>('');
 
-  console.log('👥 Enhanced Users Page - Complete User Management System');
-
-  // Enhanced table columns with all required fields
-  const columns: ColumnConfig[] = [
-    {
-      key: 'name',
-      label: 'Name',
-      render: (_, row) => (
-        <div>
-          <div className="font-medium text-gray-900">
-            {row.first_name} {row.last_name}
-          </div>
-          <div className="text-sm text-gray-500">{row.email}</div>
-        </div>
-      ),
-      className: 'font-medium'
-    },
-    {
-      key: 'verification',
-      label: 'Verification',
-      render: (_, row) => (
-        <div className="flex items-center gap-2">
-          {row.is_email_verified ? (
-            <Badge variant="default" className="text-xs bg-green-100 text-green-800">
-              <CheckCircle className="h-3 w-3 mr-1" />
-              Verified
-            </Badge>
-          ) : (
-            <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-800">
-              <AlertCircle className="h-3 w-3 mr-1" />
-              Unverified
-            </Badge>
-          )}
-        </div>
-      )
-    },
-    {
-      key: 'roles',
-      label: 'Roles',
-      render: (_, row) => (
-        <div className="flex flex-wrap gap-1">
-          {row.user_roles?.map((ur: any, index: number) => (
-            <Badge key={index} variant="outline" className="text-xs">
-              {ur.role?.name || 'Unknown Role'}
-            </Badge>
-          ))}
-          {(!row.user_roles || row.user_roles.length === 0) && (
-            <Badge variant="secondary" className="text-xs text-gray-500">No roles</Badge>
-          )}
-        </div>
-      )
-    },
-    {
-      key: 'facility',
-      label: 'Facility',
-      render: (_, row) => (
-        <div className="text-sm">
-          {row.facility ? (
-            <div>
-              <div className="font-medium">{row.facility.name}</div>
-              <div className="text-gray-500 capitalize">{row.facility.facility_type}</div>
-            </div>
-          ) : (
-            <span className="text-gray-400">No facility</span>
-          )}
-        </div>
-      )
-    },
-    {
-      key: 'modules',
-      label: 'Modules Assigned',
-      render: (_, row) => (
-        <div className="flex flex-wrap gap-1">
-          {row.assigned_modules?.slice(0, 3).map((ma: any, index: number) => (
-            <Badge key={index} variant="outline" className="text-xs">
-              {ma.module?.name}
-            </Badge>
-          ))}
-          {row.assigned_modules?.length > 3 && (
-            <Badge variant="secondary" className="text-xs">
-              +{row.assigned_modules.length - 3} more
-            </Badge>
-          )}
-          {(!row.assigned_modules || row.assigned_modules.length === 0) && (
-            <span className="text-xs text-gray-400">No modules</span>
-          )}
-        </div>
-      )
-    },
-    {
-      key: 'phone',
-      label: 'Phone',
-      render: (value) => (
-        <div className="text-sm text-gray-600">
-          {value || <span className="text-gray-400">-</span>}
-        </div>
-      )
-    },
-    {
-      key: 'created_at',
-      label: 'Created',
-      render: (value) => value ? new Date(value).toLocaleDateString() : '-',
-      sortable: true
-    }
-  ];
-
-  // Enhanced individual row actions
-  const renderRowActions = (user: any) => (
-    <div className="flex items-center gap-1">
-      <ActionButton
-        icon={Eye}
-        label="View"
-        onClick={() => {
-          setSelectedUser(user);
-          setIsViewUserOpen(true);
-        }}
-        variant="outline"
-        size="sm"
-      />
-      <ActionButton
-        icon={Shield}
-        label="Assign Role"
-        onClick={() => {
-          setSelectedUser(user);
-          setIsAssignRoleOpen(true);
-        }}
-        variant="outline"
-        size="sm"
-      />
-      <ActionButton
-        icon={Puzzle}
-        label="Assign Module"
-        onClick={() => {
-          setSelectedUser(user);
-          setIsAssignModuleOpen(true);
-        }}
-        variant="outline"
-        size="sm"
-      />
-      <ActionButton
-        icon={Building}
-        label="Assign Facility"
-        onClick={() => {
-          setSelectedUser(user);
-          setIsAssignFacilityOpen(true);
-        }}
-        variant="outline"
-        size="sm"
-      />
-      {!user.is_email_verified && (
-        <ActionButton
-          icon={Mail}
-          label="Resend Verification"
-          onClick={() => handleResendVerification(user)}
-          variant="outline"
-          size="sm"
-        />
-      )}
-      <ActionButton
-        icon={UserX}
-        label="Deactivate"
-        onClick={() => handleDeactivateUser(user)}
-        variant="outline"
-        size="sm"
-      />
-      <ActionButton
-        icon={Edit}
-        label="Edit"
-        onClick={() => {
-          setSelectedUser(user);
-          setEditUserForm({
-            first_name: user.first_name,
-            last_name: user.last_name,
-            phone: user.phone || '',
-          });
-          setIsEditUserOpen(true);
-        }}
-        variant="outline"
-        size="sm"
-      />
-    </div>
-  );
-
-  // Enhanced bulk actions
-  const bulkActions: BulkActionConfig[] = [
-    {
-      id: 'assign-role',
-      label: 'Assign Role',
-      icon: Shield,
-      handler: async (selectedIds) => {
-        const roleId = prompt('Enter roleId to assign to selected users');
-        if (!roleId) return;
-        await Promise.all(selectedIds.map(id => assignRole({ userId: id, roleId })));
-        refreshData();
-      },
-      permission: 'users.write'
-    },
-    {
-      id: 'assign-module',
-      label: 'Assign Module',
-      icon: Puzzle,
-      handler: async (selectedIds) => {
-        const moduleId = prompt('Enter moduleId to assign');
-        if (!moduleId) return;
-        await Promise.all(selectedIds.map(id => assignModule({ userId: id, moduleId, accessLevel: 'read' })));
-        refreshData();
-      },
-      permission: 'users.write'
-    },
-    {
-      id: 'assign-facility',
-      label: 'Assign Facility',
-      icon: Building,
-      handler: async (selectedIds) => {
-        const facilityId = prompt('Enter facilityId to assign');
-        if (!facilityId) return;
-        await Promise.all(selectedIds.map(id => assignFacility({ userId: id, facilityId })));
-        refreshData();
-      },
-      permission: 'users.write'
-    },
-    {
-      id: 'resend-verification',
-      label: 'Resend Verification',
-      icon: Mail,
-      handler: async (selectedIds) => {
-        await Promise.all(selectedIds.map(id => {
-          const user = users.find(u => u.id === id);
-          if (user) return resendEmailVerification({ userId: id, email: user.email });
-        }));
-      },
-      permission: 'users.write'
-    },
-    {
-      id: 'deactivate',
-      label: 'Deactivate',
-      icon: UserX,
-      handler: async (selectedIds) => {
-        if (!confirm(`Deactivate ${selectedIds.length} users?`)) return;
-        await Promise.all(selectedIds.map(id => deactivateUser({ userId: id })));
-        refreshData();
-      },
-      permission: 'users.write'
-    }
-  ];
-
-  // Enhanced handlers
-  const handleAddUser = () => {
-    if (!newUser.firstName || !newUser.lastName || !newUser.email) {
-      return;
-    }
-
-    createUser({
-      firstName: newUser.firstName,
-      lastName: newUser.lastName,
-      email: newUser.email,
-      phone: newUser.phone,
-      facilityId: newUser.facilityId || undefined,
-      roleId: newUser.roleId || undefined
-    });
-
-    setIsAddUserOpen(false);
-    setNewUser({ firstName: '', lastName: '', email: '', phone: '', facilityId: '', roleId: '' });
+  const handleRefresh = () => {
+    console.log('🔄 Refreshing users data...');
+    refreshData();
   };
 
-  const handleAssignRole = () => {
-    if (!selectedUser || !selectedRole) return;
-
-    assignRole({
-      userId: selectedUser.id,
-      roleId: selectedRole
-    });
-
-    setIsAssignRoleOpen(false);
-    setSelectedRole('');
-  };
-
-  const handleAssignModule = () => {
-    if (!selectedUser || !selectedModule) return;
-
-    assignModule({
-      userId: selectedUser.id,
-      moduleId: selectedModule,
-      accessLevel: selectedModuleAccess
-    });
-
-    setIsAssignModuleOpen(false);
-    setSelectedModule('');
-    setSelectedModuleAccess('read');
-  };
-
-  const handleAssignFacility = () => {
-    if (!selectedUser || !selectedFacility) return;
-
-    assignFacility({
-      userId: selectedUser.id,
-      facilityId: selectedFacility
-    });
-
-    setIsAssignFacilityOpen(false);
-    setSelectedFacility('');
-  };
-
-  const handleResendVerification = (user: any) => {
-    resendEmailVerification({
-      userId: user.id,
-      email: user.email
-    });
-  };
-
-  const handleDeactivateUser = (user: any) => {
-    if (!confirm(`Are you sure you want to deactivate ${user.first_name} ${user.last_name}?`)) {
-      return;
-    }
-    
-    deactivateUser({ userId: user.id });
-  };
-
-  const filteredUsers = searchUsers(searchQuery);
-
-  // Loading state
-  if (authLoading || isLoading) {
-    return (
-      <AppLayout title="User Management">
-        <div className="text-center py-12">
-          <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
-          <div className="text-muted-foreground">Loading users...</div>
-        </div>
-      </AppLayout>
-    );
-  }
-
-  // Not authenticated
   if (!isAuthenticated) {
     return (
-      <AppLayout title="User Management">
-        <Card>
-          <CardContent className="p-8 text-center">
-            <div className="text-muted-foreground">Please log in to view users</div>
-          </CardContent>
-        </Card>
-      </AppLayout>
+      <div className="min-h-screen bg-gray-50">
+        <DashboardHeader />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <Card className="border-0 shadow-sm bg-yellow-50 border-yellow-200">
+            <CardHeader>
+              <CardTitle className="text-yellow-800 flex items-center space-x-2">
+                <AlertCircle className="h-5 w-5" />
+                <span>Authentication Required</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-yellow-700">
+                You need to be logged in to view users.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     );
   }
 
-  // Error state
-  if (error) {
+  if (isLoading) {
     return (
-      <AppLayout title="User Management">
-        <Card>
-          <CardContent className="p-8 text-center">
-            <div className="text-red-600 mb-4">Error loading users: {error}</div>
-            <Button onClick={refreshData} variant="outline">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Retry
-            </Button>
-          </CardContent>
-        </Card>
-      </AppLayout>
+      <div className="min-h-screen bg-gray-50">
+        <DashboardHeader />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="animate-pulse space-y-8">
+            <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="bg-white p-6 rounded-lg shadow-sm border">
+                  <div className="h-6 bg-gray-200 rounded mb-4"></div>
+                  <div className="h-8 bg-gray-200 rounded mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded"></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
     );
   }
 
   return (
-    <AppLayout title="User Management">
-      <div className="space-y-6">
-        {/* Enhanced Stats Summary */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <div className="text-2xl font-bold text-blue-600">{stats.totalUsers}</div>
-            <div className="text-sm text-blue-600">Total Users</div>
+    <div className="min-h-screen bg-gray-50">
+      <DashboardHeader />
+      
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header Section */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                User Management
+              </h1>
+              <p className="text-lg text-gray-600">
+                Manage users and their access to the system
+              </p>
+            </div>
+            <Button
+              onClick={handleRefresh}
+              variant="outline"
+              disabled={isLoading}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
           </div>
-          <div className="text-center p-4 bg-green-50 rounded-lg border border-green-200">
-            <div className="text-2xl font-bold text-green-600">{stats.verifiedUsers}</div>
-            <div className="text-sm text-green-600">Verified</div>
-          </div>
-          <div className="text-center p-4 bg-orange-50 rounded-lg border border-orange-200">
-            <div className="text-2xl font-bold text-orange-600">{stats.unverifiedUsers}</div>
-            <div className="text-sm text-orange-600">Unverified</div>
-          </div>
-          <div className="text-center p-4 bg-purple-50 rounded-lg border border-purple-200">
-            <div className="text-2xl font-bold text-purple-600">{stats.adminCount}</div>
-            <div className="text-sm text-purple-600">Admins</div>
-          </div>
-          <div className="text-center p-4 bg-teal-50 rounded-lg border border-teal-200">
-            <div className="text-2xl font-bold text-teal-600">{stats.staffCount}</div>
-            <div className="text-sm text-teal-600">Staff</div>
+          
+          <div className="flex items-center space-x-2 mt-3">
+            <Badge variant="outline" className="text-sm">
+              Total Users: {stats.totalUsers}
+            </Badge>
+            <Badge variant="outline" className="text-sm">
+              Active: {stats.activeUsers}
+            </Badge>
+            {userRoles.length > 0 && (
+              <Badge variant="default" className="text-sm">
+                Your Role: {userRoles.join(', ')}
+              </Badge>
+            )}
           </div>
         </div>
 
-        {/* Main Users Table Card */}
-        <Card>
+        {/* Error Display */}
+        {error && (
+          <Card className="border-0 shadow-sm bg-red-50 border-red-200 mb-6">
+            <CardHeader>
+              <CardTitle className="text-red-800 flex items-center space-x-2">
+                <AlertCircle className="h-5 w-5" />
+                <span>Error Loading Users</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-red-700">{error}</p>
+              <Button onClick={handleRefresh} className="mt-4" variant="outline">
+                Try Again
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+              <UsersIcon className="h-4 w-4 text-blue-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-600">{stats.totalUsers}</div>
+              <p className="text-xs text-muted-foreground">
+                Registered in system
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Active Users</CardTitle>
+              <CheckCircle className="h-4 w-4 text-green-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">{stats.activeUsers}</div>
+              <p className="text-xs text-muted-foreground">
+                Currently active
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Administrators</CardTitle>
+              <UsersIcon className="h-4 w-4 text-purple-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-purple-600">{stats.adminCount}</div>
+              <p className="text-xs text-muted-foreground">
+                Admin users
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Patients</CardTitle>
+              <UsersIcon className="h-4 w-4 text-pink-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-pink-600">{stats.patientCount}</div>
+              <p className="text-xs text-muted-foreground">
+                Patient users
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Users List */}
+        <Card className="border-0 shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center space-x-2">
                 <UsersIcon className="h-5 w-5" />
-                User Management ({filteredUsers.length} users)
+                <span>All Users ({users.length})</span>
               </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  onClick={refreshData}
-                  variant="outline"
-                  size="sm"
-                  disabled={isLoading}
-                  className="flex items-center gap-2"
-                >
-                  <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-                  Refresh
-                </Button>
-                
-                {/* Enhanced Add User Dialog */}
-                <Dialog open={isAddUserOpen} onOpenChange={setIsAddUserOpen}>
-                  <DialogTrigger asChild>
-                    <ActionButton
-                      icon={UserPlus}
-                      label="Add User"
-                      onClick={() => {}}
-                      variant="default"
-                      size="sm"
-                    />
-                  </DialogTrigger>
-                  <DialogContent className="max-w-md">
-                    <DialogHeader>
-                      <DialogTitle>Add New User</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="firstName">First Name *</Label>
-                          <Input
-                            id="firstName"
-                            value={newUser.firstName}
-                            onChange={(e) => setNewUser(prev => ({ ...prev, firstName: e.target.value }))}
-                            placeholder="First name"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="lastName">Last Name *</Label>
-                          <Input
-                            id="lastName"
-                            value={newUser.lastName}
-                            onChange={(e) => setNewUser(prev => ({ ...prev, lastName: e.target.value }))}
-                            placeholder="Last name"
-                          />
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="email">Email *</Label>
-                        <Input
-                          id="email"
-                          type="email"
-                          value={newUser.email}
-                          onChange={(e) => setNewUser(prev => ({ ...prev, email: e.target.value }))}
-                          placeholder="Email address"
-                        />
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="phone">Phone</Label>
-                        <Input
-                          id="phone"
-                          value={newUser.phone}
-                          onChange={(e) => setNewUser(prev => ({ ...prev, phone: e.target.value }))}
-                          placeholder="Phone number"
-                        />
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="roleId">Initial Role</Label>
-                        <Select value={newUser.roleId} onValueChange={(value) => setNewUser(prev => ({ ...prev, roleId: value }))}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a role (optional)" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {roles.map((role) => (
-                              <SelectItem key={role.id} value={role.id}>
-                                {role.name} {role.description && `- ${role.description}`}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="facilityId">Facility</Label>
-                        <Select value={newUser.facilityId} onValueChange={(value) => setNewUser(prev => ({ ...prev, facilityId: value }))}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a facility (optional)" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {facilities.map((facility) => (
-                              <SelectItem key={facility.id} value={facility.id}>
-                                {facility.name} ({facility.facility_type})
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      
-                      <Button 
-                        onClick={handleAddUser} 
-                        disabled={isCreatingUser || !newUser.firstName || !newUser.lastName || !newUser.email}
-                        className="w-full"
-                      >
-                        {isCreatingUser ? 'Creating...' : 'Create User'}
-                      </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              </div>
+              <Button size="sm">
+                <UserPlus className="h-4 w-4 mr-2" />
+                Add User
+              </Button>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {/* Enhanced Search */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <Input
-                  placeholder="Search users by name, email, role, or facility..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
+            {users.length === 0 ? (
+              <div className="text-center py-12 text-gray-500">
+                <UsersIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <h3 className="font-semibold mb-2">No Users Found</h3>
+                <p className="text-sm mb-4">
+                  {error ? 'There was an error loading users.' : 'No users have been created yet.'}
+                </p>
+                <Button onClick={handleRefresh}>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Refresh
+                </Button>
               </div>
-
-              {/* Enhanced Users Table */}
-              <DataTable
-                data={filteredUsers}
-                columns={columns}
-                actions={renderRowActions}
-                bulkActions={bulkActions}
-                permissions={['users.read', 'users.write', 'users.delete']}
-                searchable={false}
-                sortable={true}
-                pagination={true}
-                pageSize={10}
-                loading={isLoading}
-                emptyMessage="No users found"
-                onRefresh={refreshData}
-              />
-            </div>
+            ) : (
+              <div className="space-y-4">
+                {users.map((user) => (
+                  <div key={user.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border hover:bg-gray-100 transition-colors">
+                    <div className="flex items-center space-x-4">
+                      <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
+                        <UsersIcon className="h-5 w-5 text-blue-600" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2">
+                          <h3 className="font-semibold text-gray-900">
+                            {user.first_name} {user.last_name}
+                          </h3>
+                          <Badge 
+                            variant={user.is_active ? "default" : "secondary"}
+                            className="text-xs"
+                          >
+                            {user.is_active ? 'Active' : 'Inactive'}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center space-x-4 mt-1">
+                          <div className="flex items-center space-x-1 text-sm text-gray-600">
+                            <Mail className="h-3 w-3" />
+                            <span>{user.email}</span>
+                          </div>
+                          {user.phone && (
+                            <div className="flex items-center space-x-1 text-sm text-gray-600">
+                              <Phone className="h-3 w-3" />
+                              <span>{user.phone}</span>
+                            </div>
+                          )}
+                          <div className="flex items-center space-x-1 text-sm text-gray-600">
+                            <Calendar className="h-3 w-3" />
+                            <span>{new Date(user.created_at).toLocaleDateString()}</span>
+                          </div>
+                        </div>
+                        <div className="flex gap-1 mt-2">
+                          {user.user_roles.map((ur, index) => (
+                            <Badge key={index} variant="outline" className="text-xs">
+                              {ur.role.name}
+                            </Badge>
+                          ))}
+                          {user.user_roles.length === 0 && (
+                            <Badge variant="secondary" className="text-xs">
+                              No roles assigned
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Button variant="outline" size="sm">
+                        Edit
+                      </Button>
+                      <Button variant="outline" size="sm" disabled={!user.is_active}>
+                        {user.is_active ? 'Deactivate' : 'Activate'}
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {/* View User Dialog */}
-        <Dialog open={isViewUserOpen} onOpenChange={setIsViewUserOpen}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>User Details</DialogTitle>
-            </DialogHeader>
-            {selectedUser && (
-              <Tabs defaultValue="general" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="general">General</TabsTrigger>
-                  <TabsTrigger value="roles">Roles</TabsTrigger>
-                  <TabsTrigger value="modules">Modules</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="general" className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label>Name</Label>
-                      <div className="text-sm font-medium">{selectedUser.first_name} {selectedUser.last_name}</div>
-                    </div>
-                    <div>
-                      <Label>Email</Label>
-                      <div className="text-sm">{selectedUser.email}</div>
-                    </div>
-                    <div>
-                      <Label>Phone</Label>
-                      <div className="text-sm">{selectedUser.phone || 'Not provided'}</div>
-                    </div>
-                    <div>
-                      <Label>Email Verification</Label>
-                      <div className="flex items-center gap-2">
-                        {selectedUser.is_email_verified ? (
-                          <Badge variant="default" className="bg-green-100 text-green-800">
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                            Verified
-                          </Badge>
-                        ) : (
-                          <Badge variant="secondary" className="bg-orange-100 text-orange-800">
-                            <AlertCircle className="h-3 w-3 mr-1" />
-                            Unverified
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                    <div>
-                      <Label>Facility</Label>
-                      <div className="text-sm">
-                        {selectedUser.facility ? `${selectedUser.facility.name} (${selectedUser.facility.facility_type})` : 'No facility assigned'}
-                      </div>
-                    </div>
-                    <div>
-                      <Label>Created</Label>
-                      <div className="text-sm">{new Date(selectedUser.created_at).toLocaleDateString()}</div>
-                    </div>
-                  </div>
-                </TabsContent>
-                
-                <TabsContent value="roles" className="space-y-4">
-                  <div>
-                    <Label>Assigned Roles</Label>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {selectedUser.user_roles?.map((ur: any, index: number) => (
-                        <Badge key={index} variant="outline" className="flex items-center gap-1">
-                          {ur.role?.name}
-                          <X className="h-3 w-3 cursor-pointer" onClick={() => removeRole({ userId: selectedUser.id, roleId: ur.role_id || ur.role?.id })} />
-                        </Badge>
-                      ))}
-                      {(!selectedUser.user_roles || selectedUser.user_roles.length === 0) && (
-                        <div className="text-sm text-gray-500">No roles assigned</div>
-                      )}
-                    </div>
-                  </div>
-                </TabsContent>
-                
-                <TabsContent value="modules" className="space-y-4">
-                  <div>
-                    <Label>Assigned Modules</Label>
-                    <div className="space-y-2 mt-2">
-                      {selectedUser.assigned_modules?.map((ma: any, index: number) => (
-                        <div key={index} className="flex items-center justify-between p-2 border rounded">
-                          <span className="text-sm">{ma.module?.name}</span>
-                          <div className="flex items-center gap-1">
-                            <Badge variant="outline" className="text-xs">
-                              {ma.access_level}
-                            </Badge>
-                            <X className="h-3 w-3 cursor-pointer" onClick={() => removeModule({ userId: selectedUser.id, moduleId: ma.module_id || ma.module?.id })} />
-                          </div>
-                        </div>
-                      ))}
-                      {(!selectedUser.assigned_modules || selectedUser.assigned_modules.length === 0) && (
-                        <div className="text-sm text-gray-500">No modules assigned</div>
-                      )}
-                    </div>
-                  </div>
-                </TabsContent>
-              </Tabs>
-            )}
-          </DialogContent>
-        </Dialog>
-
-        {/* Assign Role Dialog */}
-        <Dialog open={isAssignRoleOpen} onOpenChange={setIsAssignRoleOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Assign Role to {selectedUser?.first_name} {selectedUser?.last_name}</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="role">Select Role</Label>
-                <Select value={selectedRole} onValueChange={setSelectedRole}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose a role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {roles.map((role) => (
-                      <SelectItem key={role.id} value={role.id}>
-                        {role.name} {role.description && `- ${role.description}`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button 
-                onClick={handleAssignRole} 
-                disabled={isAssigningRole || !selectedRole}
-                className="w-full"
-              >
-                {isAssigningRole ? 'Assigning...' : 'Assign Role'}
-              </Button>
+        {/* Development Info */}
+        <Card className="border-0 shadow-sm bg-blue-50 border-blue-200 mt-8">
+          <CardHeader>
+            <CardTitle className="text-blue-800">🚧 Development Status</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-sm text-blue-700 space-y-1">
+              <p><strong>Database Connection:</strong> {error ? '❌ Error' : '✅ Connected'}</p>
+              <p><strong>Data Source:</strong> Supabase profiles table</p>
+              <p><strong>Users Loaded:</strong> {users.length}</p>
+              <p><strong>Current User:</strong> {authUser?.email || 'Not logged in'}</p>
+              <p><strong>User Roles:</strong> {userRoles.length > 0 ? userRoles.join(', ') : 'None assigned'}</p>
             </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Assign Module Dialog */}
-        <Dialog open={isAssignModuleOpen} onOpenChange={setIsAssignModuleOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Assign Module to {selectedUser?.first_name} {selectedUser?.last_name}</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="module">Select Module</Label>
-                <Select value={selectedModule} onValueChange={setSelectedModule}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose a module" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {modules.map((module) => (
-                      <SelectItem key={module.id} value={module.id}>
-                        {module.name} {module.description && `- ${module.description}`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="accessLevel">Access Level</Label>
-                <Select value={selectedModuleAccess} onValueChange={setSelectedModuleAccess}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose access level" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="read">Read</SelectItem>
-                    <SelectItem value="write">Write</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button 
-                onClick={handleAssignModule} 
-                disabled={isAssigningModule || !selectedModule}
-                className="w-full"
-              >
-                {isAssigningModule ? 'Assigning...' : 'Assign Module'}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Assign Facility Dialog */}
-        <Dialog open={isAssignFacilityOpen} onOpenChange={setIsAssignFacilityOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Assign Facility to {selectedUser?.first_name} {selectedUser?.last_name}</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="facility">Select Facility</Label>
-                <Select value={selectedFacility} onValueChange={setSelectedFacility}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose a facility" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {facilities.map((facility) => (
-                      <SelectItem key={facility.id} value={facility.id}>
-                        {facility.name} ({facility.facility_type})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button 
-                onClick={handleAssignFacility} 
-                disabled={isAssigningFacility || !selectedFacility}
-                className="w-full"
-              >
-                {isAssigningFacility ? 'Assigning...' : 'Assign Facility'}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Edit User Dialog */}
-        <Dialog open={isEditUserOpen} onOpenChange={setIsEditUserOpen}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Edit User</DialogTitle>
-            </DialogHeader>
-            {editUserForm && selectedUser && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="edit-first">First Name</Label>
-                    <Input id="edit-first" value={editUserForm.first_name} onChange={(e) => setEditUserForm({ ...editUserForm, first_name: e.target.value })} />
-                  </div>
-                  <div>
-                    <Label htmlFor="edit-last">Last Name</Label>
-                    <Input id="edit-last" value={editUserForm.last_name} onChange={(e) => setEditUserForm({ ...editUserForm, last_name: e.target.value })} />
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor="edit-phone">Phone</Label>
-                  <Input id="edit-phone" value={editUserForm.phone} onChange={(e) => setEditUserForm({ ...editUserForm, phone: e.target.value })} />
-                </div>
-                <Button onClick={async () => {
-                  await updateUser(selectedUser.id, {
-                    first_name: editUserForm.first_name,
-                    last_name: editUserForm.last_name,
-                    phone: editUserForm.phone,
-                  } as any);
-                  setIsEditUserOpen(false);
-                }}>
-                  Save
-                </Button>
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
+          </CardContent>
+        </Card>
       </div>
-    </AppLayout>
+    </div>
   );
 };
 

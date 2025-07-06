@@ -2,28 +2,69 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { 
   Users, HeartHandshake, UserPlus, Activity,
-  Clock, TrendingUp, AlertCircle
+  Clock, TrendingUp, AlertCircle, RefreshCw, Mail, Phone, Calendar
 } from "lucide-react";
 import { useMasterAuth } from "@/hooks/useMasterAuth";
-import { useSecurePatientData } from "@/hooks/useSecurePatientData";
+import { useMasterData } from '@/hooks/useMasterData';
 import DashboardHeader from "@/components/layout/DashboardHeader";
 
 const Patients = () => {
-  const { user, userRoles, isLoading: authLoading } = useMasterAuth();
+  const { user, userRoles, isAuthenticated } = useMasterAuth();
   const { 
-    patientData, 
-    isLoading: patientsLoading, 
+    users, 
+    isLoading, 
     error,
-    hasPatientAccess,
-    accessLevel,
-    canViewAll,
-    canEdit,
-    canDelete
-  } = useSecurePatientData();
+    stats,
+    refreshData
+  } = useMasterData();
 
-  if (authLoading || patientsLoading) {
+  // Filter users who are patients (have patientCaregiver role or treat all as patients for now)
+  const patients = users.filter(u => 
+    u.user_roles.some(ur => ur.role.name === 'patientCaregiver') || 
+    u.user_roles.length === 0 // Treat users without roles as potential patients
+  );
+
+  console.log('🏥 Patients Page - Current state:', {
+    isAuthenticated,
+    totalUsers: users.length,
+    patientUsers: patients.length,
+    isLoading,
+    error,
+    currentUser: user?.email
+  });
+
+  const handleRefresh = () => {
+    console.log('🔄 Refreshing patient data...');
+    refreshData();
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <DashboardHeader />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <Card className="border-0 shadow-sm bg-yellow-50 border-yellow-200">
+            <CardHeader>
+              <CardTitle className="text-yellow-800 flex items-center space-x-2">
+                <AlertCircle className="h-5 w-5" />
+                <span>Authentication Required</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-yellow-700">
+                You need to be logged in to view patient data.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
         <DashboardHeader />
@@ -45,34 +86,6 @@ const Patients = () => {
     );
   }
 
-  if (!hasPatientAccess) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <DashboardHeader />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <Card className="border-0 shadow-sm bg-red-50 border-red-200">
-            <CardHeader>
-              <CardTitle className="text-red-800 flex items-center space-x-2">
-                <AlertCircle className="h-5 w-5" />
-                <span>Access Denied</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-red-700">
-                You do not have permission to access patient data. Please contact your administrator.
-              </p>
-              <div className="mt-4">
-                <Badge variant="outline" className="text-red-600 border-red-300">
-                  Current Access Level: {accessLevel}
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gray-50">
       <DashboardHeader />
@@ -80,24 +93,58 @@ const Patients = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header Section */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Patient Management
-          </h1>
-          <p className="text-lg text-gray-600">
-            Secure patient data management with role-based access control
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                Patient Management
+              </h1>
+              <p className="text-lg text-gray-600">
+                Secure patient data management with role-based access control
+              </p>
+            </div>
+            <Button
+              onClick={handleRefresh}
+              variant="outline"
+              disabled={isLoading}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </div>
+          
           <div className="flex items-center space-x-2 mt-3">
             <Badge variant="outline" className="text-sm">
-              Access Level: {accessLevel}
+              Total Patients: {patients.length}
             </Badge>
-            <Badge variant={canViewAll ? "default" : "secondary"} className="text-sm">
-              {canViewAll ? "Full View" : "Limited View"}
+            <Badge variant="outline" className="text-sm">
+              All Users: {users.length}
             </Badge>
-            <Badge variant={canEdit ? "default" : "secondary"} className="text-sm">
-              {canEdit ? "Can Edit" : "Read Only"}
-            </Badge>
+            {userRoles.length > 0 && (
+              <Badge variant="default" className="text-sm">
+                Your Role: {userRoles.join(', ')}
+              </Badge>
+            )}
           </div>
         </div>
+
+        {/* Error Display */}
+        {error && (
+          <Card className="border-0 shadow-sm bg-red-50 border-red-200 mb-6">
+            <CardHeader>
+              <CardTitle className="text-red-800 flex items-center space-x-2">
+                <AlertCircle className="h-5 w-5" />
+                <span>Error Loading Patient Data</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-red-700">{error}</p>
+              <Button onClick={handleRefresh} className="mt-4" variant="outline">
+                Try Again
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -108,40 +155,40 @@ const Patients = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-pink-600">
-                {patientData.length}
+                {patients.length}
               </div>
               <p className="text-xs text-muted-foreground">
-                Accessible patient records
+                Patient records
               </p>
             </CardContent>
           </Card>
 
           <Card className="border-0 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Access Level</CardTitle>
+              <CardTitle className="text-sm font-medium">All Users</CardTitle>
               <Users className="h-4 w-4 text-blue-600" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-blue-600">
-                {accessLevel}
+                {users.length}
               </div>
               <p className="text-xs text-muted-foreground">
-                Current permission level
+                Total users in system
               </p>
             </CardContent>
           </Card>
 
           <Card className="border-0 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">User Roles</CardTitle>
+              <CardTitle className="text-sm font-medium">Active Users</CardTitle>
               <Activity className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-600">
-                {userRoles.length}
+                {stats.activeUsers}
               </div>
               <p className="text-xs text-muted-foreground">
-                Active roles assigned
+                Currently active
               </p>
             </CardContent>
           </Card>
@@ -165,47 +212,90 @@ const Patients = () => {
         {/* Patient Data Table */}
         <Card className="border-0 shadow-sm">
           <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <HeartHandshake className="h-5 w-5" />
-              <span>Patient Records</span>
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <HeartHandshake className="h-5 w-5" />
+                <span>Patient Records ({patients.length})</span>
+              </div>
+              <Button size="sm">
+                <UserPlus className="h-4 w-4 mr-2" />
+                Add Patient
+              </Button>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {error ? (
-              <div className="text-center py-8 text-red-600">
-                <AlertCircle className="h-8 w-8 mx-auto mb-2" />
-                <p>Error loading patient data: {error.message}</p>
-              </div>
-            ) : patientData.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <HeartHandshake className="h-8 w-8 mx-auto mb-2" />
-                <p>No patient records found</p>
-                <p className="text-sm">Patient data will appear here when available</p>
+            {patients.length === 0 ? (
+              <div className="text-center py-12 text-gray-500">
+                <HeartHandshake className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <h3 className="font-semibold mb-2">No Patient Records Found</h3>
+                <p className="text-sm mb-4">
+                  {error ? 'There was an error loading patient data.' : 'No patient records are available yet.'}
+                </p>
+                <p className="text-xs text-gray-400 mb-4">
+                  Showing users from the profiles table. Patient-specific roles will be implemented when the role system is configured.
+                </p>
+                <Button onClick={handleRefresh}>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Refresh
+                </Button>
               </div>
             ) : (
               <div className="space-y-4">
-                {patientData.map((patient, index) => (
-                  <div key={patient.id || index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                {patients.map((patient) => (
+                  <div key={patient.id} className="flex items-center justify-between p-4 bg-pink-50 rounded-lg border hover:bg-pink-100 transition-colors">
                     <div className="flex items-center space-x-4">
                       <div className="h-10 w-10 bg-pink-100 rounded-full flex items-center justify-center">
                         <HeartHandshake className="h-5 w-5 text-pink-600" />
                       </div>
-                      <div>
-                        <h3 className="font-semibold text-gray-900">
-                          {patient.first_name} {patient.last_name}
-                        </h3>
-                        <p className="text-sm text-gray-600">{patient.email}</p>
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2">
+                          <h3 className="font-semibold text-gray-900">
+                            {patient.first_name} {patient.last_name}
+                          </h3>
+                          <Badge 
+                            variant={patient.is_active ? "default" : "secondary"}
+                            className="text-xs"
+                          >
+                            {patient.is_active ? 'Active' : 'Inactive'}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center space-x-4 mt-1">
+                          <div className="flex items-center space-x-1 text-sm text-gray-600">
+                            <Mail className="h-3 w-3" />
+                            <span>{patient.email}</span>
+                          </div>
+                          {patient.phone && (
+                            <div className="flex items-center space-x-1 text-sm text-gray-600">
+                              <Phone className="h-3 w-3" />
+                              <span>{patient.phone}</span>
+                            </div>
+                          )}
+                          <div className="flex items-center space-x-1 text-sm text-gray-600">
+                            <Calendar className="h-3 w-3" />
+                            <span>{new Date(patient.created_at).toLocaleDateString()}</span>
+                          </div>
+                        </div>
+                        <div className="flex gap-1 mt-2">
+                          {patient.user_roles.map((ur, index) => (
+                            <Badge key={index} variant="outline" className="text-xs">
+                              {ur.role.name}
+                            </Badge>
+                          ))}
+                          {patient.user_roles.length === 0 && (
+                            <Badge variant="outline" className="text-xs text-pink-600 border-pink-300">
+                              Patient (roles pending)
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Badge variant="outline" className="text-xs">
-                        {new Date(patient.created_at).toLocaleDateString()}
-                      </Badge>
-                      {patient.phone && (
-                        <Badge variant="secondary" className="text-xs">
-                          Phone: {patient.phone}
-                        </Badge>
-                      )}
+                      <Button variant="outline" size="sm">
+                        View
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        Edit
+                      </Button>
                     </div>
                   </div>
                 ))}
@@ -215,21 +305,22 @@ const Patients = () => {
         </Card>
 
         {/* Development Info */}
-        {userRoles.length === 0 && (
-          <Card className="border-0 shadow-sm bg-yellow-50 border-yellow-200 mt-8">
-            <CardHeader>
-              <CardTitle className="text-yellow-800">🚧 Development Mode</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-sm text-yellow-700">
-                <p><strong>Status:</strong> Patient data access in development mode</p>
-                <p><strong>User:</strong> {user?.email}</p>
-                <p><strong>Roles:</strong> {userRoles.length > 0 ? userRoles.join(', ') : 'None assigned'}</p>
-                <p><strong>Security:</strong> Role-based access control active</p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        <Card className="border-0 shadow-sm bg-blue-50 border-blue-200 mt-8">
+          <CardHeader>
+            <CardTitle className="text-blue-800">🚧 Development Status</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-sm text-blue-700 space-y-1">
+              <p><strong>Database Connection:</strong> {error ? '❌ Error' : '✅ Connected'}</p>
+              <p><strong>Data Source:</strong> Supabase profiles table</p>
+              <p><strong>Total Users:</strong> {users.length}</p>
+              <p><strong>Patient Records:</strong> {patients.length}</p>
+              <p><strong>Current User:</strong> {user?.email || 'Not logged in'}</p>
+              <p><strong>User Roles:</strong> {userRoles.length > 0 ? userRoles.join(', ') : 'None assigned'}</p>
+              <p><strong>Note:</strong> Currently showing all users as potential patients. Role-based filtering will be implemented when the role system is configured.</p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

@@ -3939,42 +3939,6 @@ export type Database = {
           },
         ]
       }
-      user_facilities: {
-        Row: {
-          user_id: string
-          facility_id: string
-          is_primary: boolean | null
-          created_at: string | null
-        }
-        Insert: {
-          user_id: string
-          facility_id: string
-          is_primary?: boolean | null
-          created_at?: string | null
-        }
-        Update: {
-          user_id?: string
-          facility_id?: string
-          is_primary?: boolean | null
-          created_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_facilities_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_facilities_facility_id_fkey"
-            columns: ["facility_id"]
-            isOneToOne: false
-            referencedRelation: "facilities"
-            referencedColumns: ["id"]
-          },
-        ]
-      },
     }
     Views: {
       [_ in never]: never
