@@ -7,7 +7,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useMasterToast } from './useMasterToast';
 
-interface User {
+export interface MasterUser {
   id: string;
   first_name: string;
   last_name: string;
@@ -22,6 +22,8 @@ interface User {
     };
   }[];
 }
+
+interface User extends MasterUser {}
 
 interface ApiService {
   id: string;
@@ -89,9 +91,9 @@ export const useMasterData = () => {
       console.log('✅ Users loaded:', data?.length || 0);
       return (data || []).map(user => ({
         ...user,
-        is_active: true, // Default value since field might not exist
-        user_roles: user.user_roles || []
-      }));
+        is_active: true,
+        user_roles: Array.isArray(user.user_roles) ? user.user_roles : []
+      })) as User[];
     },
     staleTime: 300000,
     refetchOnWindowFocus: false,
