@@ -16,4 +16,38 @@ export interface ComprehensiveSystemStatus {
   isLoading: boolean;
   error: string | null;
   lastUpdated: Date;
+  overallHealth: string;
+  workingModules: number;
+  userManagement: {
+    moduleName: string;
+    isWorking: boolean;
+    dataCount: number;
+    issues: string[];
+  };
+  facilities: {
+    moduleName: string;
+    isWorking: boolean;
+    dataCount: number;
+    issues: string[];
+  };
+  modules: {
+    moduleName: string;
+    isWorking: boolean;
+    dataCount: number;
+    issues: string[];
+  };
+  apiIntegrations: {
+    moduleName: string;
+    isWorking: boolean;
+    dataCount: number;
+    issues: string[];
+  };
+  adminVerification: {
+    moduleName: string;
+    isWorking: boolean;
+    dataCount: number;
+    issues: string[];
+  };
+  recommendations: string[];
+  totalIssues: number;
 }
