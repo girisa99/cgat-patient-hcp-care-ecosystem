@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useNgrokIntegration } from '@/hooks/useNgrokIntegration';
 import { Globe, RefreshCw, TestTube, Settings, ExternalLink, AlertCircle, CheckCircle, Copy, Terminal, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -29,7 +30,7 @@ export const NgrokDashboard: React.FC = () => {
 
   const [newTunnelConfig, setNewTunnelConfig] = useState({
     name: '',
-    addr: 'localhost:4040',
+    addr: 'localhost:8080',
     proto: 'http',
     inspect: true
   });
@@ -43,7 +44,6 @@ export const NgrokDashboard: React.FC = () => {
   const CNAME_VALUE = '3malrwhuaftqxamqn.4ab7lasb3cwnlc5r8.ngrok-cname.com';
 
   useEffect(() => {
-    // Check local ngrok first
     const checkConnection = async () => {
       setConnectionStatus('checking');
       try {
@@ -81,7 +81,7 @@ export const NgrokDashboard: React.FC = () => {
       await createTunnel(newTunnelConfig);
       setNewTunnelConfig({
         name: '',
-        addr: 'localhost:4040',
+        addr: 'localhost:8080',
         proto: 'http',
         inspect: true
       });
@@ -138,34 +138,13 @@ export const NgrokDashboard: React.FC = () => {
     });
   };
 
-  const testDomainConnection = async () => {
-    try {
-      const response = await fetch(`https://${PERMANENT_DOMAIN}`, { 
-        method: 'HEAD',
-        mode: 'no-cors'
-      });
-      toast({
-        title: "Domain Test",
-        description: "Domain is accessible! DNS propagation complete.",
-        variant: "default"
-      });
-      setConnectionStatus('connected');
-    } catch (err) {
-      toast({
-        title: "Domain Test",
-        description: "Domain not yet accessible. DNS may still be propagating.",
-        variant: "destructive"
-      });
-    }
-  };
-
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Ngrok Integration Dashboard</h1>
           <p className="text-muted-foreground">
-            Permanent development tunnel: {PERMANENT_DOMAIN} → localhost:4040
+            Domain: {PERMANENT_DOMAIN} → Lovable App on port 8080
           </p>
         </div>
         <div className="flex items-center space-x-2">
@@ -183,63 +162,49 @@ export const NgrokDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Ngrok Inspect Issue Alert */}
-      <Card className="border-red-200 bg-red-50">
-        <CardHeader>
-          <CardTitle className="text-red-800 flex items-center">
-            <AlertTriangle className="h-5 w-5 mr-2" />
-            Ngrok Inspect Page Issue Detected
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="text-red-700">
-            <p className="mb-3">
-              <strong>Issue:</strong> Your domain is showing the ngrok inspect interface instead of your application.
-            </p>
+      {/* Fixed Configuration Alert */}
+      <Alert>
+        <CheckCircle className="h-4 w-4" />
+        <AlertTitle>✅ Configuration Status Update</AlertTitle>
+        <AlertDescription>
+          <div className="space-y-3 mt-2">
+            <p><strong>Good news!</strong> Your domain is now loading, but we need to fix the ngrok tunnel target.</p>
             
-            <div className="bg-white p-4 rounded-md border border-red-200 mb-4">
-              <h4 className="font-semibold text-red-800 mb-2">🔧 Solution:</h4>
-              <p className="text-sm mb-3">You need to restart ngrok with the correct configuration:</p>
+            <div className="bg-blue-50 p-3 rounded-md border border-blue-200">
+              <h4 className="font-semibold text-blue-800 mb-2">🔧 Current Issue:</h4>
+              <p className="text-sm text-blue-700 mb-2">
+                Your ngrok is pointing to port 4040 (the ngrok inspect port) instead of port 8080 (your Lovable app).
+              </p>
               
               <div className="bg-gray-900 text-green-400 p-3 rounded font-mono text-sm mb-3">
-                <div className="mb-1"># Stop your current ngrok process (Ctrl+C)</div>
-                <div className="mb-1"># Then run this command instead:</div>
-                <div className="text-white">ngrok http --url={PERMANENT_DOMAIN} 4040</div>
+                <div className="mb-1"># Stop current ngrok (Ctrl+C)</div>
+                <div className="mb-1"># Then run this corrected command:</div>
+                <div className="text-white">ngrok http --url={PERMANENT_DOMAIN} 8080</div>
               </div>
               
-              <div className="text-sm space-y-2">
-                <p><strong>Key points:</strong></p>
-                <ul className="list-disc list-inside ml-4 space-y-1 text-red-600">
-                  <li>Make sure your Lovable app is running on port 4040</li>
-                  <li>The <code>--url</code> flag forces ngrok to use your domain directly</li>
-                  <li>This bypasses the inspect interface completely</li>
-                  <li>Your app should then be accessible at: <strong>https://{PERMANENT_DOMAIN}</strong></li>
+              <div className="text-sm space-y-1 text-blue-600">
+                <p><strong>Why port 8080?</strong></p>
+                <ul className="list-disc list-inside ml-4 space-y-1">
+                  <li>Your Lovable app runs on port 8080 (check vite.config.ts)</li>
+                  <li>Port 4040 is ngrok's web interface, not your app</li>
+                  <li>This will route traffic directly to your application</li>
                 </ul>
               </div>
             </div>
 
-            <div className="bg-blue-50 p-3 rounded-md border border-blue-200">
-              <h4 className="font-semibold text-blue-800 mb-2">📋 Checklist:</h4>
-              <div className="text-sm text-blue-700 space-y-1">
-                <div>✅ DNS records configured</div>
-                <div>✅ Domain accessible</div>
-                <div>❌ <strong>Need to fix:</strong> Restart ngrok with correct command</div>
-              </div>
-            </div>
-
-            <div className="mt-4 flex space-x-2">
-              <Button size="sm" onClick={() => window.open(`https://${PERMANENT_DOMAIN}`, '_blank')}>
-                <ExternalLink className="h-4 w-4 mr-2" />
-                Test Domain After Fix
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => copyToClipboard(`ngrok http --url=${PERMANENT_DOMAIN} 4040`)}>
+            <div className="flex space-x-2">
+              <Button size="sm" onClick={() => copyToClipboard(`ngrok http --url=${PERMANENT_DOMAIN} 8080`)}>
                 <Copy className="h-4 w-4 mr-2" />
                 Copy Correct Command
               </Button>
+              <Button size="sm" variant="outline" onClick={() => window.open(`https://${PERMANENT_DOMAIN}`, '_blank')}>
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Test Domain After Fix
+              </Button>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </AlertDescription>
+      </Alert>
 
       {/* Connection Settings */}
       <Card>
@@ -280,28 +245,20 @@ export const NgrokDashboard: React.FC = () => {
 
           <div className="bg-yellow-50 p-3 rounded-md border border-yellow-200">
             <p className="text-sm text-yellow-700">
-              <strong>Status:</strong> Domain is accessible but showing inspect interface. Restart ngrok with the correct command above.
+              <strong>Next Step:</strong> Restart ngrok with port 8080 to serve your Lovable app directly.
             </p>
           </div>
         </CardContent>
       </Card>
 
       {error && (
-        <Card className="border-yellow-200 bg-yellow-50">
-          <CardContent className="pt-6">
-            <div className="space-y-2">
-              <p className="text-yellow-600 font-medium">Connection Status: {error}</p>
-              <div className="text-sm text-yellow-500 space-y-1">
-                <p><strong>This might be normal:</strong></p>
-                <ul className="list-disc list-inside ml-4 space-y-1">
-                  <li>Ngrok API might not be accessible through inspect interface</li>
-                  <li>Once you restart with the correct command, this should resolve</li>
-                  <li>Your domain is working, just needs the right ngrok configuration</li>
-                </ul>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Connection Issue</AlertTitle>
+          <AlertDescription>
+            {typeof error === 'string' ? error : 'Unable to connect to ngrok API'}
+          </AlertDescription>
+        </Alert>
       )}
 
       {/* Active Tunnels */}
@@ -321,9 +278,9 @@ export const NgrokDashboard: React.FC = () => {
               <Terminal className="h-12 w-12 mx-auto text-blue-500 mb-4" />
               <p className="text-blue-600 font-medium">Restart ngrok to see tunnels here</p>
               <div className="text-sm text-muted-foreground mt-2 space-y-1">
-                <p className="block">🔄 Run: <code className="bg-gray-100 px-2 py-1 rounded">ngrok http --url={PERMANENT_DOMAIN} 4040</code></p>
+                <p className="block">🔄 Run: <code className="bg-gray-100 px-2 py-1 rounded">ngrok http --url={PERMANENT_DOMAIN} 8080</code></p>
                 <p className="block">🎯 Your app will be at: <strong>https://{PERMANENT_DOMAIN}</strong></p>
-                <p className="block">✅ No more inspect interface!</p>
+                <p className="block">✅ Direct to your Lovable application!</p>
               </div>
             </div>
           ) : (
@@ -337,8 +294,8 @@ export const NgrokDashboard: React.FC = () => {
                       {tunnel.public_url.includes(PERMANENT_DOMAIN) && (
                         <Badge variant="default">Your Domain</Badge>
                       )}
-                      {tunnel.config.addr.includes('4040') && (
-                        <Badge variant="outline">Main App</Badge>
+                      {tunnel.config.addr.includes('8080') && (
+                        <Badge variant="outline">Lovable App</Badge>
                       )}
                     </div>
                     <p className="text-sm text-muted-foreground">

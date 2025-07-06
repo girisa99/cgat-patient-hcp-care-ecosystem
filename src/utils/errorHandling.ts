@@ -32,3 +32,10 @@ export function getLength(value: unknown): number {
   
   return 0;
 }
+
+/**
+ * Utility function to render error messages safely in React components
+ */
+export function renderErrorMessage(error: unknown): string {
+  return getErrorMessage(error);
+}
