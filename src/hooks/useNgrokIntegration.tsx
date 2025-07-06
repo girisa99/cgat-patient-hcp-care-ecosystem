@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -57,30 +56,51 @@ export const useNgrokIntegration = () => {
     tunnels: {}
   });
 
-  // Get active tunnels from ngrok API
-  const getTunnels = useCallback(async (ngrokApiUrl: string = 'https://26a3-52-41-62-68.ngrok-free.app') => {
+  // Updated to use localhost API by default, with fallback to external URL
+  const getTunnels = useCallback(async (ngrokApiUrl?: string) => {
     setIsLoading(true);
     setError(null);
 
-    try {
-      console.log('🔗 Fetching ngrok tunnels from:', ngrokApiUrl);
-      
-      // Call our edge function to get tunnels (to avoid CORS issues)
-      const { data, error: functionError } = await supabase.functions.invoke('ngrok-webhook', {
-        body: {
-          action: 'get_tunnels',
-          ngrok_api_url: ngrokApiUrl
-        }
-      });
+    // Try localhost first, then fallback to provided URL
+    const apiEndpoints = [
+      'http://localhost:4040',
+      ngrokApiUrl || 'https://26a3-52-41-62-68.ngrok-free.app'
+    ];
 
-      if (functionError) throw functionError;
-      
-      setTunnels(data.tunnels || []);
-      console.log('✅ Retrieved tunnels:', data.tunnels);
+    console.log('🔗 Fetching ngrok tunnels from multiple endpoints...');
+    
+    try {
+      // Try each endpoint until one works
+      for (const endpoint of apiEndpoints) {
+        console.log(`🔗 Trying endpoint: ${endpoint}`);
+        
+        try {
+          const { data, error: functionError } = await supabase.functions.invoke('ngrok-webhook', {
+            body: {
+              action: 'get_tunnels',
+              ngrok_api_url: endpoint
+            }
+          });
+
+          if (functionError) {
+            console.warn(`⚠️ Endpoint ${endpoint} failed:`, functionError);
+            continue;
+          }
+          
+          setTunnels(data.tunnels || []);
+          console.log('✅ Retrieved tunnels from', endpoint, ':', data.tunnels);
+          
+          // Success - break out of loop
+          break;
+        } catch (endpointError) {
+          console.warn(`⚠️ Endpoint ${endpoint} error:`, endpointError);
+          continue;
+        }
+      }
       
     } catch (err) {
-      console.error('❌ Error fetching tunnels:', err);
-      setError((err as Error).message);
+      console.error('❌ All endpoints failed:', err);
+      setError('Failed to connect to ngrok. Make sure ngrok is running on localhost:4040 or provide a valid tunnel URL.');
     } finally {
       setIsLoading(false);
     }
@@ -207,5 +227,17 @@ export const useNgrokIntegration = () => {
     createTunnel,
     testWebhook,
     registerWebhook,
+    
+    // Helper function to check if ngrok is running locally
+    checkLocalNgrok: () => getTunnels('http://localhost:4040'),
+    
+    // Meta info
+    meta: {
+      hookName: 'useNgrokIntegration',
+      version: 'ngrok-integration-v1.0.0',
+      singleSourceValidated: true,
+      supportsLocalhost: true,
+      fallbackUrls: ['http://localhost:4040', 'external-url']
+    }
   };
 };

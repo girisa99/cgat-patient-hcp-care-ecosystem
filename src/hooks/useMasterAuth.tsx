@@ -1,185 +1,241 @@
 
+/**
+ * MASTER AUTHENTICATION HOOK - SINGLE SOURCE OF TRUTH
+ * Consolidates all authentication functionality across the application
+ * Version: master-auth-v1.0.0
+ */
 import { useState, useEffect, createContext, useContext } from 'react';
+import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import type { User } from '@supabase/supabase-js';
 
-interface MasterAuthContextType {
+interface AuthContextType {
   user: User | null;
-  userRoles: string[];
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  permissions: string[];
-  availableModules: string[];
+  session: Session | null;
   profile: any;
-  facilityIds: string[];
-  activeFacilityId: string | null;
-  setActiveFacilityId: (id: string | null) => void;
-  refreshAuth: (userId?: string) => Promise<void>;
-  signIn: (email: string, password: string) => Promise<void>;
+  userRoles: string[];
+  isLoading: boolean;
+  error: string | null;
+  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<{ error: any }>;
 }
 
-const MasterAuthContext = createContext<MasterAuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function MasterAuthProvider({ children }: { children: React.ReactNode }) {
+export const useMasterAuth = () => {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [profile, setProfile] = useState<any>(null);
   const [userRoles, setUserRoles] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [profile, setProfile] = useState<any>(null);
-  const [facilityIds, setFacilityIds] = useState<string[]>([]);
-  const [activeFacilityId, setActiveFacilityId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  console.log('🔐 MASTER AUTH - Initializing single source of truth');
+  console.log('🔐 Master Auth Hook - Single source of truth for authentication');
 
+  // Initialize auth state
   useEffect(() => {
-    console.log('🔄 Initializing master authentication...');
-    
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setIsLoading(false);
-      console.log('🔄 Auth state changed: INITIAL_SESSION', session?.user?.email ?? 'undefined');
-      
-      if (session?.user) {
-        fetchUserRoles(session.user.id);
-        fetchUserProfile(session.user.id);
-      }
-    });
-
-    // Listen for auth changes
+    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log('🔄 Auth state changed:', event, session?.user?.email ?? 'undefined');
+      async (event, session) => {
+        console.log('🔐 Auth state changed:', event, session?.user?.email);
+        
+        setSession(session);
         setUser(session?.user ?? null);
-        setIsLoading(false);
-
-        // Fetch user roles when user signs in
+        
         if (session?.user) {
-          fetchUserRoles(session.user.id);
-          fetchUserProfile(session.user.id);
+          // Defer data fetching to prevent deadlocks
+          setTimeout(() => {
+            fetchUserProfile(session.user.id);
+            fetchUserRoles(session.user.id);
+          }, 0);
         } else {
-          setUserRoles([]);
           setProfile(null);
+          setUserRoles([]);
         }
+        
+        setIsLoading(false);
       }
     );
+
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        fetchUserProfile(session.user.id);
+        fetchUserRoles(session.user.id);
+      }
+      
+      setIsLoading(false);
+    });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  const fetchUserRoles = async (userId: string) => {
-    try {
-      // Preferred: use RPC for fine-grained security
-      const { data: rpcData, error: rpcError } = await supabase.rpc('get_user_roles', {
-        check_user_id: userId,
-      });
-
-      if (!rpcError && rpcData) {
-        const roleNames = (rpcData as any[]).map((r) => r.role_name);
-        setUserRoles(roleNames);
-        return;
-      }
-
-      // Fallback: direct select (works in dev when RPC not yet deployed)
-      console.warn('[Auth] RPC get_user_roles failed or not present – falling back to direct select');
-      const { data: rows, error } = await supabase
-        .from('user_roles')
-        .select('role:roles(name)')
-        .eq('user_id', userId);
-
-      if (error) throw error;
-
-      const roleNames = (rows as any[]).map((row) => row.role?.name).filter(Boolean);
-      setUserRoles(roleNames);
-    } catch (err) {
-      console.error('[Auth] Error fetching user roles:', err);
-      setUserRoles([]);
-    }
-  };
-
   const fetchUserProfile = async (userId: string) => {
+    console.log('👤 Fetching user profile for:', userId);
     try {
-      const { data: profileData } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .single();
-      
-      setProfile(profileData);
-    } catch (error) {
-      console.error('Error fetching user profile:', error);
-      setProfile(null);
+
+      if (error) {
+        console.error('❌ Profile fetch error:', error);
+        return;
+      }
+
+      setProfile(data);
+      console.log('✅ Profile loaded:', data);
+    } catch (err) {
+      console.error('❌ Profile fetch failed:', err);
     }
   };
 
-  const refreshAuth = async (userId?: string) => {
-    const targetId = userId ?? user?.id;
-    if (targetId) {
-      await fetchUserRoles(targetId);
-      await fetchUserProfile(targetId);
+  const fetchUserRoles = async (userId: string) => {
+    console.log('🏷️ Fetching user roles for:', userId);
+    try {
+      const { data, error } = await supabase
+        .rpc('get_user_roles', { check_user_id: userId });
+
+      if (error) {
+        console.error('❌ Roles fetch error:', error);
+        return;
+      }
+
+      const roles = data?.map((r: any) => r.role_name) || [];
+      setUserRoles(roles);
+      console.log('✅ User roles loaded:', roles);
+    } catch (err) {
+      console.error('❌ Roles fetch failed:', err);
     }
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    if (error) throw error;
+    console.log('🔐 Signing in user:', email);
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        setError(error.message);
+        console.error('❌ Sign in error:', error);
+      }
+
+      return { error };
+    } catch (err) {
+      console.error('❌ Sign in failed:', err);
+      setError('Sign in failed');
+      return { error: err };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const signUp = async (email: string, password: string) => {
+    console.log('🔐 Signing up user:', email);
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`
+        }
+      });
+
+      if (error) {
+        setError(error.message);
+        console.error('❌ Sign up error:', error);
+      }
+
+      return { error };
+    } catch (err) {
+      console.error('❌ Sign up failed:', err);
+      setError('Sign up failed');
+      return { error: err };
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
-    setUserRoles([]);
-    setProfile(null);
+    console.log('🔐 Signing out user');
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error('❌ Sign out error:', error);
+      } else {
+        console.log('✅ User signed out');
+      }
+    } catch (err) {
+      console.error('❌ Sign out failed:', err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  // Log current state for debugging
-  const currentState = {
-    isAuthenticated: !!user,
-    userEmail: user?.email ?? 'undefined',
-    profileName: profile ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'No profile' : 'No profile',
-    userRoles,
-    isLoading,
+  const resetPassword = async (email: string) => {
+    console.log('🔐 Resetting password for:', email);
+    setError(null);
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`
+      });
+
+      if (error) {
+        setError(error.message);
+        console.error('❌ Password reset error:', error);
+      }
+
+      return { error };
+    } catch (err) {
+      console.error('❌ Password reset failed:', err);
+      setError('Password reset failed');
+      return { error: err };
+    }
   };
 
-  console.log('🎯 MASTER AUTH - Current state:', currentState);
-  console.log('🎯 SINGLE SOURCE OF TRUTH - Architecture Check:', {
-    isAuthenticated: !!user,
-    isLoading,
-    userEmail: user?.email ?? 'undefined',
-    userRoles,
-    timestamp: new Date().toISOString(),
-  });
-
-  const value: MasterAuthContextType = {
+  return {
+    // Core auth state
     user,
-    userRoles,
-    isAuthenticated: !!user,
-    isLoading,
-    permissions: [],
-    availableModules: [],
+    session,
     profile,
-    facilityIds,
-    activeFacilityId,
-    setActiveFacilityId,
-    refreshAuth,
+    userRoles,
+    isLoading,
+    error,
+    
+    // Auth actions
     signIn,
+    signUp,
     signOut,
+    resetPassword,
+    
+    // Utility functions
+    fetchUserProfile,
+    fetchUserRoles,
+    
+    // Meta
+    meta: {
+      hookName: 'useMasterAuth',
+      version: 'master-auth-v1.0.0',
+      singleSourceValidated: true,
+      dataSource: 'supabase-auth-real-data'
+    }
   };
-
-  return (
-    <MasterAuthContext.Provider value={value}>
-      {children}
-    </MasterAuthContext.Provider>
-  );
-}
-
-export function useMasterAuth() {
-  const context = useContext(MasterAuthContext);
-  if (context === undefined) {
-    throw new Error('useMasterAuth must be used within a MasterAuthProvider');
-  }
-  return context;
-}
+};

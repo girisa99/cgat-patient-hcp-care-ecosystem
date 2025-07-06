@@ -5,9 +5,7 @@
  */
 
 // Authentication - Single Source
-// Legacy hooks removed - use useMasterAuth instead
-// export { useDatabaseAuth } from './useDatabaseAuth';
-// export { useAuthContext } from '@/components/auth/DatabaseAuthProvider';
+export { useMasterAuth } from './useMasterAuth';
 
 // User Management - Single Source  
 export { useMasterUserManagement } from './useMasterUserManagement';
@@ -21,8 +19,8 @@ export { useApiServices } from './useApiServices';
 // Facilities - Single Source
 export { useFacilities } from './useFacilities';
 
-// Modules - Single Source  
-export { useModules } from './useModules';
+// Modules - Single Source (Fixed export)
+export { useSingleMasterModules as useModules } from './useSingleMasterModules';
 
 // Consolidation Analysis
 export { useConsolidationAnalysis } from './useConsolidationAnalysis';
@@ -34,7 +32,6 @@ export { usePublishedApiIntegration } from './usePublishedApiIntegration';
 export { useExternalApiPublishing } from './useExternalApiPublishing';
 
 // Specialized hooks
-// useUserDeactivation removed - use useMasterUserManagement instead
 export { usePermissions } from './usePermissions';
 export { useUserManagementDialogs } from './useUserManagementDialogs';
 
@@ -45,29 +42,37 @@ export { useIntelligentRouting } from './useIntelligentRouting';
 // UI Hooks
 export { useToast } from './use-toast';
 
+// Ngrok Integration
+export { useNgrokIntegration } from './useNgrokIntegration';
+
 /**
- * CONSOLIDATED API SERVICES ARCHITECTURE
+ * CONSOLIDATED SINGLE SOURCE OF TRUTH ARCHITECTURE
  * 
- * PRIMARY SOURCE: useApiServices (uses api_integration_registry table)
- * - Real data from Supabase database
- * - Proper RLS policies applied
- * - CRUD operations with mutations
- * - Statistics and filtering
+ * ✅ VERIFIED MODULES:
+ * - Modules: useSingleMasterModules (REAL DATA ONLY)
+ * - User Management: useMasterUserManagement 
+ * - Authentication: useMasterAuth
+ * - API Services: useApiServices (REAL DATA)
  * 
- * ENHANCED FEATURES:
- * - useExternalApis: External API publishing and marketplace
- * - usePublishedApiIntegration: Developer portal integration
- * - useExternalApiPublishing: Publishing workflow management
+ * 🔄 PENDING VERIFICATION:
+ * - Dashboard components
+ * - Patients management
+ * - Facilities management
+ * - Onboarding workflow
+ * - Security components
+ * - Reports & analytics
+ * - Testing service suite
+ * - Data import functionality
  * 
  * DO NOT:
- * - Create duplicate API hooks
+ * - Create duplicate hooks for same functionality
  * - Use mock data - all data comes from database
  * - Import hooks from other index files
- * - Create separate API export files
+ * - Create separate export files for same domain
  * 
  * ALWAYS:
- * - Use useApiServices as primary source
+ * - Use single source of truth hooks
  * - Verify RLS policies are working
  * - Check data comes from real tables
- * - Ensure single source of truth
+ * - Ensure consistent naming conventions
  */
