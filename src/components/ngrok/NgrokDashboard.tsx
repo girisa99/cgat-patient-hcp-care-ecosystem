@@ -138,6 +138,17 @@ export const NgrokDashboard: React.FC = () => {
     });
   };
 
+  // Check if ngrok is properly configured with correct port
+  const hasCorrectTunnel = tunnels.some(tunnel => 
+    tunnel.public_url.includes(PERMANENT_DOMAIN) && 
+    tunnel.config.addr.includes('4040')
+  );
+
+  const hasWrongPortTunnel = tunnels.some(tunnel => 
+    tunnel.public_url.includes(PERMANENT_DOMAIN) && 
+    tunnel.config.addr.includes('8080')
+  );
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -162,38 +173,54 @@ export const NgrokDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Port Configuration Alert */}
-      <Alert variant="destructive">
-        <AlertTriangle className="h-4 w-4" />
-        <AlertTitle>⚠️ Port Configuration Issue Detected</AlertTitle>
-        <AlertDescription>
-          <div className="space-y-3 mt-2">
-            <p><strong>Error ERR_NGROK_8012:</strong> Your Lovable app is not running on port 8080.</p>
-            
-            <div className="bg-red-50 p-3 rounded-md border border-red-200">
-              <h4 className="font-semibold text-red-800 mb-2">🔧 Solution:</h4>
-              <div className="text-sm text-red-700 space-y-2">
-                <p><strong>1. Stop your current ngrok tunnel</strong> (Ctrl+C in terminal)</p>
-                <p><strong>2. Check Lovable's actual port:</strong> Look at your Lovable preview URL - it should show something like localhost:4040</p>
-                <p><strong>3. Restart ngrok with the correct port:</strong></p>
-                <code className="block bg-gray-100 p-2 rounded text-black mt-1">
-                  ngrok http --url=dev.geniecellgene.com 4040
-                </code>
-                <p className="text-xs text-red-600 mt-2">
-                  ⚠️ Replace 4040 with whatever port your Lovable app is actually running on
-                </p>
+      {/* Success Alert - Show when ngrok is properly configured */}
+      {hasCorrectTunnel && (
+        <Alert>
+          <CheckCircle className="h-4 w-4" />
+          <AlertTitle>✅ Perfect! Ngrok is properly configured</AlertTitle>
+          <AlertDescription>
+            <div className="space-y-2 mt-2">
+              <p><strong>Success:</strong> Your tunnel is running correctly on port 4040.</p>
+              <p>Your Lovable app should now be accessible at: <strong>https://{PERMANENT_DOMAIN}</strong></p>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Error Alert - Show when there's a port mismatch */}
+      {hasWrongPortTunnel && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>⚠️ Port Configuration Issue Detected</AlertTitle>
+          <AlertDescription>
+            <div className="space-y-3 mt-2">
+              <p><strong>Error ERR_NGROK_8012:</strong> Your Lovable app is not running on port 8080.</p>
+              
+              <div className="bg-red-50 p-3 rounded-md border border-red-200">
+                <h4 className="font-semibold text-red-800 mb-2">🔧 Solution:</h4>
+                <div className="text-sm text-red-700 space-y-2">
+                  <p><strong>1. Stop your current ngrok tunnel</strong> (Ctrl+C in terminal)</p>
+                  <p><strong>2. Check Lovable's actual port:</strong> Look at your Lovable preview URL - it should show something like localhost:4040</p>
+                  <p><strong>3. Restart ngrok with the correct port:</strong></p>
+                  <code className="block bg-gray-100 p-2 rounded text-black mt-1">
+                    ngrok http --url=dev.geniecellgene.com 4040
+                  </code>
+                  <p className="text-xs text-red-600 mt-2">
+                    ⚠️ Replace 4040 with whatever port your Lovable app is actually running on
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex space-x-2">
+                <Button size="sm" variant="outline" onClick={() => copyToClipboard('ngrok http --url=dev.geniecellgene.com 4040')}>
+                  <Copy className="h-4 w-4 mr-2" />
+                  Copy Correct Command
+                </Button>
               </div>
             </div>
-
-            <div className="flex space-x-2">
-              <Button size="sm" variant="outline" onClick={() => copyToClipboard('ngrok http --url=dev.geniecellgene.com 4040')}>
-                <Copy className="h-4 w-4 mr-2" />
-                Copy Correct Command
-              </Button>
-            </div>
-          </div>
-        </AlertDescription>
-      </Alert>
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Connection Settings */}
       <Card>
@@ -211,9 +238,11 @@ export const NgrokDashboard: React.FC = () => {
                 placeholder={`https://${PERMANENT_DOMAIN}`}
                 value={`https://${PERMANENT_DOMAIN}`}
                 readOnly
-                className="flex-1 bg-yellow-50 border-yellow-200"
+                className={`flex-1 ${hasCorrectTunnel ? 'bg-green-50 border-green-200' : hasWrongPortTunnel ? 'bg-yellow-50 border-yellow-200' : 'bg-gray-50'}`}
               />
-              <Badge variant="destructive">Port Mismatch</Badge>
+              <Badge variant={hasCorrectTunnel ? 'default' : hasWrongPortTunnel ? 'destructive' : 'secondary'}>
+                {hasCorrectTunnel ? 'Active' : hasWrongPortTunnel ? 'Port Mismatch' : 'Not Connected'}
+              </Badge>
             </div>
           </div>
           
@@ -232,9 +261,27 @@ export const NgrokDashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-yellow-50 p-3 rounded-md border border-yellow-200">
-            <p className="text-sm text-yellow-700">
-              <strong>Status:</strong> Tunnel configured but port mismatch detected. Please restart ngrok with the correct port.
+          <div className={`p-3 rounded-md border ${
+            hasCorrectTunnel 
+              ? 'bg-green-50 border-green-200' 
+              : hasWrongPortTunnel 
+                ? 'bg-yellow-50 border-yellow-200' 
+                : 'bg-gray-50 border-gray-200'
+          }`}>
+            <p className={`text-sm ${
+              hasCorrectTunnel 
+                ? 'text-green-700' 
+                : hasWrongPortTunnel 
+                  ? 'text-yellow-700' 
+                  : 'text-gray-700'
+            }`}>
+              <strong>Status:</strong> {
+                hasCorrectTunnel 
+                  ? 'Tunnel is properly configured and active on port 4040!' 
+                  : hasWrongPortTunnel 
+                    ? 'Tunnel configured but port mismatch detected. Please restart ngrok with the correct port.' 
+                    : 'No active tunnel detected. Please start ngrok.'
+              }
             </p>
           </div>
         </CardContent>
@@ -268,7 +315,7 @@ export const NgrokDashboard: React.FC = () => {
               <p className="text-yellow-600 font-medium">No active tunnels detected</p>
               <div className="text-sm text-muted-foreground mt-2 space-y-1">
                 <p>🎯 Expected: <strong>https://{PERMANENT_DOMAIN}</strong></p>
-                <p>⚠️ Issue: Port 8080 not accessible - check Lovable's actual port</p>
+                <p>⚠️ Please make sure ngrok is running with the correct command</p>
               </div>
             </div>
           ) : (

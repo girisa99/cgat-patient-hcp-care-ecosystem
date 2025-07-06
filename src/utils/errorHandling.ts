@@ -39,3 +39,10 @@ export function getLength(value: unknown): number {
 export function renderErrorMessage(error: unknown): string {
   return getErrorMessage(error);
 }
+
+/**
+ * Utility function to safely render errors in React components
+ */
+export function ErrorDisplay({ error }: { error: unknown }) {
+  return <div className="text-red-600">{renderErrorMessage(error)}</div>;
+}
