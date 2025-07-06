@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useNgrokIntegration } from '@/hooks/useNgrokIntegration';
-import { Globe, RefreshCw, TestTube, Settings, ExternalLink, AlertCircle, CheckCircle, Copy, Terminal, AlertTriangle } from 'lucide-react';
+import { Globe, RefreshCw, TestTube, Settings, ExternalLink, AlertCircle, CheckCircle, Copy, Terminal, AlertTriangle, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export const NgrokDashboard: React.FC = () => {
@@ -149,6 +149,10 @@ export const NgrokDashboard: React.FC = () => {
     tunnel.config.addr.includes('8080')
   );
 
+  const hasAnyDomainTunnel = tunnels.some(tunnel => 
+    tunnel.public_url.includes(PERMANENT_DOMAIN)
+  );
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -173,6 +177,45 @@ export const NgrokDashboard: React.FC = () => {
         </div>
       </div>
 
+      {/* Ngrok Inspect Interface Alert */}
+      {hasAnyDomainTunnel && (
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertTitle>📋 Seeing Ngrok Inspect Interface Instead of Your App?</AlertTitle>
+          <AlertDescription>
+            <div className="space-y-3 mt-2">
+              <p><strong>This is normal behavior!</strong> Ngrok shows the inspect interface by default to help with debugging.</p>
+              
+              <div className="bg-blue-50 p-3 rounded-md border border-blue-200">
+                <h4 className="font-semibold text-blue-800 mb-2">🔧 To Access Your Actual Application:</h4>
+                <div className="text-sm text-blue-700 space-y-2">
+                  <p><strong>Option 1:</strong> Click the "Visit Site" button on the ngrok inspect page</p>
+                  <p><strong>Option 2:</strong> Add <code className="bg-blue-100 px-1 rounded">/ngrok-skip-browser-warning</code> to your URL:</p>
+                  <code className="block bg-gray-100 p-2 rounded text-black mt-1">
+                    https://{PERMANENT_DOMAIN}/ngrok-skip-browser-warning
+                  </code>
+                  <p><strong>Option 3:</strong> Restart ngrok with inspect disabled:</p>
+                  <code className="block bg-gray-100 p-2 rounded text-black mt-1">
+                    ngrok http --url=dev.geniecellgene.com --inspect=false 4040
+                  </code>
+                </div>
+              </div>
+
+              <div className="flex space-x-2">
+                <Button size="sm" variant="outline" onClick={() => copyToClipboard(`https://${PERMANENT_DOMAIN}/ngrok-skip-browser-warning`)}>
+                  <Copy className="h-4 w-4 mr-2" />
+                  Copy Direct Link
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => copyToClipboard('ngrok http --url=dev.geniecellgene.com --inspect=false 4040')}>
+                  <Copy className="h-4 w-4 mr-2" />
+                  Copy No-Inspect Command
+                </Button>
+              </div>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Success Alert - Show when ngrok is properly configured */}
       {hasCorrectTunnel && (
         <Alert>
@@ -182,6 +225,7 @@ export const NgrokDashboard: React.FC = () => {
             <div className="space-y-2 mt-2">
               <p><strong>Success:</strong> Your tunnel is running correctly on port 4040.</p>
               <p>Your Lovable app should now be accessible at: <strong>https://{PERMANENT_DOMAIN}</strong></p>
+              <p className="text-sm text-gray-600">If you see the ngrok inspect page, use the solutions above to access your app directly.</p>
             </div>
           </AlertDescription>
         </Alert>
