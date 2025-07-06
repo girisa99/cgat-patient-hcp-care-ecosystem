@@ -29,7 +29,7 @@ export const NgrokDashboard: React.FC = () => {
 
   const [newTunnelConfig, setNewTunnelConfig] = useState({
     name: '',
-    addr: 'localhost:4040',
+    addr: 'localhost:8080',
     proto: 'http',
     inspect: true
   });
@@ -40,7 +40,6 @@ export const NgrokDashboard: React.FC = () => {
   });
 
   const PERMANENT_DOMAIN = 'dev.geniecellgene.com';
-  const CNAME_VALUE = '3malrwhuaftqxamqn.4ab7lasb3cwnlc5r8.ngrok-cname.com';
 
   useEffect(() => {
     const checkConnection = async () => {
@@ -80,7 +79,7 @@ export const NgrokDashboard: React.FC = () => {
       await createTunnel(newTunnelConfig);
       setNewTunnelConfig({
         name: '',
-        addr: 'localhost:4040',
+        addr: 'localhost:8080',
         proto: 'http',
         inspect: true
       });
@@ -140,12 +139,12 @@ export const NgrokDashboard: React.FC = () => {
   // Check if ngrok is properly configured with correct port
   const hasCorrectTunnel = tunnels.some(tunnel => 
     tunnel.public_url.includes(PERMANENT_DOMAIN) && 
-    tunnel.config.addr.includes('4040')
+    tunnel.config.addr.includes('8080')
   );
 
   const hasWrongPortTunnel = tunnels.some(tunnel => 
     tunnel.public_url.includes(PERMANENT_DOMAIN) && 
-    tunnel.config.addr.includes('8080')
+    !tunnel.config.addr.includes('8080')
   );
 
   const hasAnyDomainTunnel = tunnels.some(tunnel => 
@@ -158,7 +157,7 @@ export const NgrokDashboard: React.FC = () => {
         <div>
           <h1 className="text-3xl font-bold">Ngrok Integration Dashboard</h1>
           <p className="text-muted-foreground">
-            Domain: {PERMANENT_DOMAIN} → Lovable App on port 4040
+            Domain: {PERMANENT_DOMAIN} → Lovable App on port 8080
           </p>
         </div>
         <div className="flex items-center space-x-2">
@@ -176,47 +175,61 @@ export const NgrokDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Updated Ngrok Inspect Interface Alert */}
-      {hasAnyDomainTunnel && (
-        <Alert>
-          <Info className="h-4 w-4" />
-          <AlertTitle>📋 Seeing Ngrok Inspect Interface Instead of Your App?</AlertTitle>
-          <AlertDescription>
-            <div className="space-y-3 mt-2">
-              <p><strong>This is normal behavior!</strong> Ngrok shows the inspect interface by default to help with debugging.</p>
-              
-              <div className="bg-blue-50 p-3 rounded-md border border-blue-200">
-                <h4 className="font-semibold text-blue-800 mb-2">🔧 To Access Your Actual Application:</h4>
-                <div className="text-sm text-blue-700 space-y-2">
-                  <p><strong>Option 1 (Recommended):</strong> Click the "Visit Site" button on the ngrok inspect page</p>
-                  <p><strong>Option 2:</strong> Add the query parameter to bypass the warning:</p>
-                  <code className="block bg-gray-100 p-2 rounded text-black mt-1">
-                    https://{PERMANENT_DOMAIN}?ngrok-skip-browser-warning=true
-                  </code>
-                  <p><strong>Option 3:</strong> Restart ngrok with inspect disabled:</p>
-                  <code className="block bg-gray-100 p-2 rounded text-black mt-1">
-                    ngrok http --url=dev.geniecellgene.com --inspect=false 4040
-                  </code>
-                  <p className="text-xs text-red-600 mt-2">
-                    ⚠️ Note: The path `/ngrok-skip-browser-warning` doesn't work - use the query parameter instead!
-                  </p>
+      {/* CRITICAL: Ngrok Inspect Bypass Instructions */}
+      <Alert className="border-blue-200 bg-blue-50">
+        <Info className="h-4 w-4" />
+        <AlertTitle>🚨 SOLUTION: Bypass Ngrok Inspect Interface</AlertTitle>
+        <AlertDescription>
+          <div className="space-y-4 mt-3">
+            <p className="font-semibold text-blue-800">Since you're still seeing the inspect page, here are the EXACT steps to access your app:</p>
+            
+            <div className="bg-white p-4 rounded-md border border-blue-200">
+              <h4 className="font-bold text-blue-900 mb-3">🎯 METHOD 1: Direct Browser Access (RECOMMENDED)</h4>
+              <div className="space-y-2 text-sm">
+                <p><strong>1.</strong> Open a NEW incognito/private browser window</p>
+                <p><strong>2.</strong> Go directly to this URL:</p>
+                <div className="bg-gray-100 p-2 rounded font-mono text-xs break-all">
+                  https://{PERMANENT_DOMAIN}?ngrok-skip-browser-warning=true
                 </div>
+                <p><strong>3.</strong> If it STILL shows inspect page, click the "Visit Site" button</p>
               </div>
-
-              <div className="flex space-x-2">
-                <Button size="sm" variant="outline" onClick={() => copyToClipboard(`https://${PERMANENT_DOMAIN}?ngrok-skip-browser-warning=true`)}>
-                  <Copy className="h-4 w-4 mr-2" />
+              <div className="flex gap-2 mt-3">
+                <Button size="sm" onClick={() => copyToClipboard(`https://${PERMANENT_DOMAIN}?ngrok-skip-browser-warning=true`)}>
+                  <Copy className="h-3 w-3 mr-1" />
                   Copy Direct Link
                 </Button>
-                <Button size="sm" variant="outline" onClick={() => copyToClipboard('ngrok http --url=dev.geniecellgene.com --inspect=false 4040')}>
-                  <Copy className="h-4 w-4 mr-2" />
-                  Copy No-Inspect Command
+                <Button size="sm" variant="outline" onClick={() => window.open(`https://${PERMANENT_DOMAIN}?ngrok-skip-browser-warning=true`, '_blank')}>
+                  <ExternalLink className="h-3 w-3 mr-1" />
+                  Open Direct Link
                 </Button>
               </div>
             </div>
-          </AlertDescription>
-        </Alert>
-      )}
+
+            <div className="bg-white p-4 rounded-md border border-blue-200">
+              <h4 className="font-bold text-blue-900 mb-3">🔧 METHOD 2: Restart Ngrok Without Inspect</h4>
+              <div className="space-y-2 text-sm">
+                <p><strong>1.</strong> Stop your current ngrok (Ctrl+C)</p>
+                <p><strong>2.</strong> Run this EXACT command:</p>
+                <div className="bg-gray-100 p-2 rounded font-mono text-xs">
+                  ngrok http --url=dev.geniecellgene.com --inspect=false 8080
+                </div>
+                <p><strong>3.</strong> Then go to: https://{PERMANENT_DOMAIN}</p>
+              </div>
+              <Button size="sm" variant="outline" onClick={() => copyToClipboard('ngrok http --url=dev.geniecellgene.com --inspect=false 8080')}>
+                <Copy className="h-3 w-3 mr-1" />
+                Copy Command
+              </Button>
+            </div>
+
+            <div className="bg-yellow-50 p-3 rounded-md border border-yellow-200">
+              <p className="text-sm text-yellow-800">
+                <strong>⚠️ Important:</strong> The ngrok inspect interface is designed to show by default. 
+                Even with correct setup, you may see it initially. Use the methods above to bypass it completely.
+              </p>
+            </div>
+          </div>
+        </AlertDescription>
+      </Alert>
 
       {/* Success Alert - Show when ngrok is properly configured */}
       {hasCorrectTunnel && (
@@ -225,9 +238,8 @@ export const NgrokDashboard: React.FC = () => {
           <AlertTitle>✅ Perfect! Ngrok is properly configured</AlertTitle>
           <AlertDescription>
             <div className="space-y-2 mt-2">
-              <p><strong>Success:</strong> Your tunnel is running correctly on port 4040.</p>
-              <p>Your Lovable app should now be accessible at: <strong>https://{PERMANENT_DOMAIN}</strong></p>
-              <p className="text-sm text-gray-600">If you see the ngrok inspect page, use the solutions above to access your app directly.</p>
+              <p><strong>Success:</strong> Your tunnel is running correctly on port 8080.</p>
+              <p>Use the bypass methods above to access your app directly at: <strong>https://{PERMANENT_DOMAIN}</strong></p>
             </div>
           </AlertDescription>
         </Alert>
@@ -240,29 +252,23 @@ export const NgrokDashboard: React.FC = () => {
           <AlertTitle>⚠️ Port Configuration Issue Detected</AlertTitle>
           <AlertDescription>
             <div className="space-y-3 mt-2">
-              <p><strong>Error ERR_NGROK_8012:</strong> Your Lovable app is not running on port 8080.</p>
+              <p><strong>Error:</strong> Your ngrok tunnel is not pointing to port 8080 where your Lovable app is running.</p>
               
               <div className="bg-red-50 p-3 rounded-md border border-red-200">
                 <h4 className="font-semibold text-red-800 mb-2">🔧 Solution:</h4>
                 <div className="text-sm text-red-700 space-y-2">
                   <p><strong>1. Stop your current ngrok tunnel</strong> (Ctrl+C in terminal)</p>
-                  <p><strong>2. Check Lovable's actual port:</strong> Look at your Lovable preview URL - it should show something like localhost:4040</p>
-                  <p><strong>3. Restart ngrok with the correct port:</strong></p>
+                  <p><strong>2. Restart ngrok with the correct port:</strong></p>
                   <code className="block bg-gray-100 p-2 rounded text-black mt-1">
-                    ngrok http --url=dev.geniecellgene.com 4040
+                    ngrok http --url=dev.geniecellgene.com 8080
                   </code>
-                  <p className="text-xs text-red-600 mt-2">
-                    ⚠️ Replace 4040 with whatever port your Lovable app is actually running on
-                  </p>
                 </div>
               </div>
 
-              <div className="flex space-x-2">
-                <Button size="sm" variant="outline" onClick={() => copyToClipboard('ngrok http --url=dev.geniecellgene.com 4040')}>
-                  <Copy className="h-4 w-4 mr-2" />
-                  Copy Correct Command
-                </Button>
-              </div>
+              <Button size="sm" variant="outline" onClick={() => copyToClipboard('ngrok http --url=dev.geniecellgene.com 8080')}>
+                <Copy className="h-4 w-4 mr-2" />
+                Copy Correct Command
+              </Button>
             </div>
           </AlertDescription>
         </Alert>
@@ -323,10 +329,10 @@ export const NgrokDashboard: React.FC = () => {
             }`}>
               <strong>Status:</strong> {
                 hasCorrectTunnel 
-                  ? 'Tunnel is properly configured and active on port 4040!' 
+                  ? 'Tunnel is properly configured and active on port 8080!' 
                   : hasWrongPortTunnel 
-                    ? 'Tunnel configured but port mismatch detected. Please restart ngrok with the correct port.' 
-                    : 'No active tunnel detected. Please start ngrok.'
+                    ? 'Tunnel configured but port mismatch detected. Please restart ngrok with port 8080.' 
+                    : 'No active tunnel detected. Please start ngrok with: ngrok http --url=dev.geniecellgene.com 8080'
               }
             </p>
           </div>
