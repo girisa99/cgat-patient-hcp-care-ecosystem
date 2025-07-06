@@ -82,13 +82,14 @@ export const useMasterOnboarding = () => {
     }
   });
 
-  // Use the actual status field from the database schema
+  // Use the actual status field from the database schema - checking valid enum values
   const onboardingStats = {
     total: onboardingApplications.length,
-    pending: onboardingApplications.filter(app => app.status === 'pending').length,
+    draft: onboardingApplications.filter(app => app.status === 'draft').length,
+    submitted: onboardingApplications.filter(app => app.status === 'submitted').length,
     approved: onboardingApplications.filter(app => app.status === 'approved').length,
     rejected: onboardingApplications.filter(app => app.status === 'rejected').length,
-    inProgress: onboardingApplications.filter(app => app.status === 'in_progress').length,
+    under_review: onboardingApplications.filter(app => app.status === 'under_review').length,
   };
 
   return {

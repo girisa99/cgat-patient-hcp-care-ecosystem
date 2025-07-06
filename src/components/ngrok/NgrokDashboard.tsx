@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Alert } from '@/components/ui/alert';
 import { useNgrokIntegration } from '@/hooks/useNgrokIntegration';
 import { Globe, RefreshCw, TestTube, Settings, ExternalLink, AlertCircle, CheckCircle } from 'lucide-react';
 
@@ -130,11 +129,10 @@ export const NgrokDashboard: React.FC = () => {
       {connectionStatus === 'failed' && (
         <Alert>
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Unable to connect to ngrok. Make sure ngrok is running locally on port 4040, or provide a custom tunnel URL below.
-            <br />
-            <strong>Quick fix:</strong> Run <code>ngrok http 3000</code> in your terminal and try refreshing.
-          </AlertDescription>
+          <div>
+            <p>Unable to connect to ngrok. Make sure ngrok is running locally on port 4040, or provide a custom tunnel URL below.</p>
+            <p><strong>Quick fix:</strong> Run <code>ngrok http 3000</code> in your terminal and try refreshing.</p>
+          </div>
         </Alert>
       )}
 
