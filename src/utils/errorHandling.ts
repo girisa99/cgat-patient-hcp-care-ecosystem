@@ -1,4 +1,6 @@
 
+import React from 'react';
+
 /**
  * Utility function to extract error message from various error types
  */
@@ -43,8 +45,6 @@ export function renderErrorMessage(error: unknown): string {
 /**
  * Utility function to safely render errors in React components
  */
-import React from 'react';
-
 export function ErrorDisplay({ error }: { error: unknown }) {
   return <div className="text-red-600">{renderErrorMessage(error)}</div>;
 }
