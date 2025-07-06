@@ -1,3 +1,4 @@
+
 import { useState, useEffect, createContext, useContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { User } from '@supabase/supabase-js';
@@ -9,11 +10,11 @@ interface MasterAuthContextType {
   isLoading: boolean;
   permissions: string[];
   availableModules: string[];
-  profile: any; // Add profile property
-  facilityIds: string[]; // Tenant isolation
+  profile: any;
+  facilityIds: string[];
   activeFacilityId: string | null;
   setActiveFacilityId: (id: string | null) => void;
-  refreshAuth: (userId?: string) => Promise<void>; // Add refreshAuth method
+  refreshAuth: (userId?: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -42,7 +43,6 @@ export function MasterAuthProvider({ children }: { children: React.ReactNode }) 
       if (session?.user) {
         fetchUserRoles(session.user.id);
         fetchUserProfile(session.user.id);
-        fetchUserFacilities(session.user.id);
       }
     });
 
@@ -57,7 +57,6 @@ export function MasterAuthProvider({ children }: { children: React.ReactNode }) 
         if (session?.user) {
           fetchUserRoles(session.user.id);
           fetchUserProfile(session.user.id);
-          fetchUserFacilities(session.user.id);
         } else {
           setUserRoles([]);
           setProfile(null);
@@ -113,30 +112,11 @@ export function MasterAuthProvider({ children }: { children: React.ReactNode }) 
     }
   };
 
-  const fetchUserFacilities = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('user_facilities')
-        .select('facility_id, is_primary')
-        .eq('user_id', userId);
-
-      if (error) throw error;
-      const ids = (data as any[]).map((r) => r.facility_id);
-      setFacilityIds(ids);
-      const primary = (data as any[]).find((r) => r.is_primary)?.facility_id;
-      setActiveFacilityId(primary ?? ids[0] ?? null);
-      console.log('[Auth] facilities linked to user', ids);
-    } catch (err) {
-      console.error('[Auth] Error fetching user facilities:', err);
-    }
-  };
-
   const refreshAuth = async (userId?: string) => {
     const targetId = userId ?? user?.id;
     if (targetId) {
       await fetchUserRoles(targetId);
       await fetchUserProfile(targetId);
-      await fetchUserFacilities(targetId);
     }
   };
 

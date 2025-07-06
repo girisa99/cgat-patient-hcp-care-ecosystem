@@ -1,3 +1,4 @@
+
 import { useMemo } from 'react';
 import { navItems } from '@/nav-items';
 import { useMasterAuth } from './useMasterAuth';
@@ -149,12 +150,13 @@ export const useRoleBasedNavigation = () => {
     to: item.url,
   }));
 
-  // Role stats
+  // Role stats with proper interface
   const roleStats = {
     totalRoles: userRoles.length,
-    primaryRole: currentRole,
+    primaryRole: currentRole || 'none',
     isAdmin,
     isSuperAdmin,
+    roleLevel: isAdmin ? 'admin' : 'user', // Add roleLevel property
   };
 
   // Transform navigation items to match expected format
