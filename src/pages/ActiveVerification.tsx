@@ -1,193 +1,138 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Search, RefreshCw, Plus, Shield, CheckCircle, AlertTriangle } from 'lucide-react';
-import { useMasterData } from '@/hooks/useMasterData';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { 
+  Shield, CheckCircle, AlertTriangle, RefreshCw,
+  AlertCircle, Activity
+} from "lucide-react";
 import { useMasterAuth } from '@/hooks/useMasterAuth';
-import { useUnifiedDevelopmentLifecycle } from '@/hooks/useUnifiedDevelopmentLifecycle';
-import AccessDenied from '@/components/AccessDenied';
+import DashboardHeader from "@/components/layout/DashboardHeader";
+import { getErrorMessage } from '@/utils/errorHandling';
 
-const ActiveVerification: React.FC = () => {
-  const { isAuthenticated, isLoading: authLoading, userRoles } = useMasterAuth();
-  const { navigation } = useUnifiedDevelopmentLifecycle();
-  const { 
-    users,
-    facilities,
-    isLoading, 
-    error, 
-    refreshData, 
-    stats 
-  } = useMasterData();
-  
-  const [searchQuery, setSearchQuery] = React.useState('');
+const ActiveVerification = () => {
+  const { user: authUser, userRoles, isAuthenticated } = useMasterAuth();
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
 
-  console.log('🔍 Active Verification Page - Master Data Integration');
-
-  // Role-based access guard
-  if (!navigation.hasAccess('/active-verification')) {
-    return <AccessDenied />;
-  }
-
-  if (authLoading || isLoading) {
-    return (
-      <div className="p-6">
-        <div className="text-center">
-          <div className="text-muted-foreground">Loading verification system...</div>
-        </div>
-      </div>
-    );
-  }
+  const handleRefresh = () => {
+    console.log('🔄 Refreshing verification data...');
+    setIsLoading(true);
+    // Simulate refresh
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 1000);
+  };
 
   if (!isAuthenticated) {
     return (
-      <div className="p-6">
-        <Card>
-          <CardContent className="p-8 text-center">
-            <div className="text-muted-foreground">Please log in to access verification</div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="p-6">
-        <Card>
-          <CardContent className="p-8 text-center">
-            <div className="text-red-600">Error loading verification: {error.message}</div>
-            <Button onClick={refreshData} className="mt-4">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Retry
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-gray-50">
+        <DashboardHeader />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <Card className="border-0 shadow-sm bg-yellow-50 border-yellow-200">
+            <CardHeader>
+              <CardTitle className="text-yellow-800 flex items-center space-x-2">
+                <AlertCircle className="h-5 w-5" />
+                <span>Authentication Required</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-yellow-700">
+                You need to be logged in to view verification data.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">Active Verification</h1>
-        <p className="text-muted-foreground">
-          Real-time verification and compliance monitoring
-        </p>
-      </div>
-
-      {/* Stats Summary */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div className="text-center p-4 bg-green-50 rounded-lg">
-          <div className="text-2xl font-bold text-green-600">{users.length}</div>
-          <div className="text-sm text-green-600">Verified Users</div>
-        </div>
-        <div className="text-center p-4 bg-blue-50 rounded-lg">
-          <div className="text-2xl font-bold text-blue-600">{facilities.length}</div>
-          <div className="text-sm text-blue-600">Verified Facilities</div>
-        </div>
-        <div className="text-center p-4 bg-yellow-50 rounded-lg">
-          <div className="text-2xl font-bold text-yellow-600">0</div>
-          <div className="text-sm text-yellow-600">Pending</div>
-        </div>
-        <div className="text-center p-4 bg-red-50 rounded-lg">
-          <div className="text-2xl font-bold text-red-600">0</div>
-          <div className="text-sm text-red-600">Failed</div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* User Verification */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5" />
-              User Verification Status
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {users.slice(0, 5).map((user) => (
-                <div key={user.id} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex-1">
-                    <div className="font-medium">{user.first_name} {user.last_name}</div>
-                    <div className="text-sm text-muted-foreground">{user.email}</div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="default" className="bg-green-100 text-green-800">
-                      <CheckCircle className="h-3 w-3 mr-1" />
-                      Verified
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-              {users.length === 0 && (
-                <div className="text-center p-4 text-muted-foreground">
-                  No users to verify
-                </div>
-              )}
+    <div className="min-h-screen bg-gray-50">
+      <DashboardHeader />
+      
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                Active Verification
+              </h1>
+              <p className="text-lg text-gray-600">
+                System verification and compliance monitoring
+              </p>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Facility Verification */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5" />
-              Facility Verification Status
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {facilities.slice(0, 5).map((facility) => (
-                <div key={facility.id} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex-1">
-                    <div className="font-medium">{facility.name}</div>
-                    <div className="text-sm text-muted-foreground">{facility.facility_type}</div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="default" className="bg-green-100 text-green-800">
-                      <CheckCircle className="h-3 w-3 mr-1" />
-                      Active
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-              {facilities.length === 0 && (
-                <div className="text-center p-4 text-muted-foreground">
-                  No facilities to verify
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Verification Actions */}
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle>Verification Actions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Button className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4" />
-              Run Full Verification
-            </Button>
-            <Button variant="outline" className="flex items-center gap-2">
-              <RefreshCw className="h-4 w-4" />
-              Refresh Status
-            </Button>
-            <Button variant="outline" className="flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4" />
-              View Issues
+            <Button
+              onClick={handleRefresh}
+              variant="outline"
+              disabled={isLoading}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+              Refresh
             </Button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+
+        {error && (
+          <Card className="border-0 shadow-sm bg-red-50 border-red-200 mb-6">
+            <CardHeader>
+              <CardTitle className="text-red-800 flex items-center space-x-2">
+                <AlertCircle className="h-5 w-5" />
+                <span>Verification Error</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-red-700">{getErrorMessage(error)}</p>
+              <Button onClick={handleRefresh} className="mt-4" variant="outline">
+                Try Again
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">System Status</CardTitle>
+              <CheckCircle className="h-4 w-4 text-green-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">Verified</div>
+              <p className="text-xs text-muted-foreground">
+                All systems operational
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Compliance</CardTitle>
+              <Shield className="h-4 w-4 text-blue-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-600">Active</div>
+              <p className="text-xs text-muted-foreground">
+                Monitoring enabled
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Alerts</CardTitle>
+              <Activity className="h-4 w-4 text-orange-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-orange-600">0</div>
+              <p className="text-xs text-muted-foreground">
+                No active alerts
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 };

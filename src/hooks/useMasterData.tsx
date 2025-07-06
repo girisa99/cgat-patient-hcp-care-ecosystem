@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
@@ -44,7 +43,7 @@ export interface ApiService {
 export interface Module {
   id: string;
   name: string;
-  description?: string;
+  description?: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -68,7 +67,6 @@ export function useMasterData() {
   const [modules, setModules] = useState<Module[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
 
-  // Stats derived from collections
   const stats = {
     totalUsers: users.length,
     totalFacilities: facilities.length,
@@ -91,7 +89,6 @@ export function useMasterData() {
     activeModules: modules.filter(m => m.is_active),
   };
 
-  // Search helpers
   const searchUsers = (query: string) => {
     return users.filter(u => 
       u.first_name.toLowerCase().includes(query.toLowerCase()) ||
@@ -106,7 +103,6 @@ export function useMasterData() {
     );
   };
 
-  // Meta information with version property
   const meta = {
     lastUpdated: new Date(),
     dataSource: 'master_data_v1',
@@ -115,7 +111,6 @@ export function useMasterData() {
     version: 'v1.0.0',
   };
 
-  /** Generic helper: refetch any cached queries */
   const invalidateCache = () => {
     console.log('🔄 Cache invalidated - refreshing data');
   };
@@ -126,16 +121,15 @@ export function useMasterData() {
     fetchRoles();
     fetchFacilities();
     fetchModules();
+    fetchApiServices();
     invalidateCache();
   }, []);
 
-  /* ----------------------------------------- Fetch Users */
   const fetchUsers = useCallback(async () => {
     console.log('👥 Fetching users from profiles table...');
     setIsLoading(true);
     setError(null);
     try {
-      // Fetch from profiles table with basic fields
       const { data, error } = await supabase
         .from('profiles')
         .select(`
@@ -154,7 +148,6 @@ export function useMasterData() {
 
       console.log('✅ Fetched profiles:', data?.length || 0);
 
-      // Map to MasterUser format, handling missing role data
       const normalised = (data || []).map((p) => ({
         id: p.id,
         email: p.email || '',
@@ -162,8 +155,8 @@ export function useMasterData() {
         last_name: p.last_name || '',
         phone: p.phone || '',
         created_at: p.created_at || new Date().toISOString(),
-        is_active: true, // Default to active since profiles don't have this field
-        user_roles: [], // Will be populated when roles are implemented
+        is_active: true,
+        user_roles: [],
       })) as MasterUser[];
 
       setUsers(normalised);
@@ -171,14 +164,12 @@ export function useMasterData() {
     } catch (err) {
       console.error('[MasterData] fetchUsers failed:', err);
       setError((err as Error).message);
-      // Set empty array on error to prevent app crashes
       setUsers([]);
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  /* ----------------------------------------- Fetch Roles */
   const fetchRoles = useCallback(async () => {
     console.log('🏷️ Fetching roles...');
     try {
@@ -188,7 +179,6 @@ export function useMasterData() {
       
       if (error) {
         console.warn('[MasterData] roles table not found or accessible:', error.message);
-        // Set default roles for development
         setRoles([
           { id: '1', name: 'superAdmin', description: 'Super Administrator' },
           { id: '2', name: 'onboardingTeam', description: 'Onboarding Team' },
@@ -201,11 +191,10 @@ export function useMasterData() {
       console.log('✅ Roles loaded:', data?.length || 0);
     } catch (err) {
       console.error('[MasterData] fetchRoles failed:', err);
-      setRoles([]); // Set empty array on error
+      setRoles([]);
     }
   }, []);
 
-  /* ----------------------------------------- Fetch Facilities */
   const fetchFacilities = useCallback(async () => {
     console.log('🏥 Fetching facilities...');
     try {
@@ -227,7 +216,6 @@ export function useMasterData() {
     }
   }, []);
 
-  /* ----------------------------------------- Fetch Modules */
   const fetchModules = useCallback(async () => {
     console.log('📦 Fetching modules...');
     try {
@@ -237,7 +225,6 @@ export function useMasterData() {
       
       if (error) {
         console.warn('[MasterData] modules table not found or accessible:', error.message);
-        // Set some default modules for development
         setModules([
           { id: '1', name: 'User Management', description: 'Manage users and roles', is_active: true, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
           { id: '2', name: 'Patient Management', description: 'Manage patient data', is_active: true, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
@@ -254,6 +241,41 @@ export function useMasterData() {
     }
   }, []);
 
+  const fetchApiServices = useCallback(async () => {
+    console.log('🔌 Fetching API services...');
+    try {
+      // For now, we'll use mock data as the API services table structure may vary
+      const mockApiServices: ApiService[] = [
+        {
+          id: '1',
+          name: 'User Management API',
+          description: 'API for user management operations',
+          status: 'active',
+          base_url: '/api/users',
+          type: 'REST',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        },
+        {
+          id: '2',
+          name: 'Patient Data API',
+          description: 'API for patient data operations',
+          status: 'active',
+          base_url: '/api/patients',
+          type: 'REST',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
+      ];
+      
+      setApiServices(mockApiServices);
+      console.log('✅ API Services loaded:', mockApiServices.length);
+    } catch (err) {
+      console.error('[MasterData] fetchApiServices failed:', err);
+      setApiServices([]);
+    }
+  }, []);
+
   // Initial load with error handling
   useEffect(() => {
     console.log('🚀 Initializing master data fetch...');
@@ -261,7 +283,8 @@ export function useMasterData() {
     fetchRoles();
     fetchFacilities();
     fetchModules();
-  }, [fetchUsers, fetchRoles, fetchFacilities, fetchModules]);
+    fetchApiServices();
+  }, [fetchUsers, fetchRoles, fetchFacilities, fetchModules, fetchApiServices]);
 
   const createUser = useCallback(
     async (user: { firstName: string; lastName: string; email: string; phone?: string; facilityId?: string; roleId?: string }) => {
@@ -280,7 +303,7 @@ export function useMasterData() {
         if (error) throw error;
 
         console.log('✅ User created successfully');
-        await fetchUsers(); // Refresh users list
+        await fetchUsers();
         invalidateCache();
       } catch (err) {
         console.error('[MasterData] createUser failed:', err);
@@ -298,7 +321,6 @@ export function useMasterData() {
       setIsLoading(true);
       setError(null);
       try {
-        // Since profiles table doesn't have is_active, we'll just log this for now
         console.log('⚠️ User deactivation not implemented - profiles table has no is_active field');
         
         console.log('✅ User deactivation logged');
@@ -360,7 +382,35 @@ export function useMasterData() {
     [fetchModules]
   );
 
-  // Placeholder methods for compatibility
+  const createApiService = useCallback(
+    async (apiService: { name: string; description?: string; base_url?: string; type?: string }) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        // For now, add to mock data since we don't have a real API services table
+        const newService: ApiService = {
+          id: crypto.randomUUID(),
+          name: apiService.name,
+          description: apiService.description || '',
+          status: 'active',
+          base_url: apiService.base_url || '',
+          type: apiService.type || 'REST',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        
+        setApiServices(prev => [...prev, newService]);
+        console.log('✅ API Service created successfully');
+        invalidateCache();
+      } catch (err) {
+        setError((err as Error).message);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    []
+  );
+
   const assignRole = useCallback(async (payload: { userId: string; roleId: string }) => {
     console.log('🏷️ Role assignment not yet implemented:', payload);
   }, []);
@@ -379,6 +429,7 @@ export function useMasterData() {
     deactivateUser,
     createFacility,
     createModule,
+    createApiService,
     refreshData,
     assignRole,
     assignModule,
