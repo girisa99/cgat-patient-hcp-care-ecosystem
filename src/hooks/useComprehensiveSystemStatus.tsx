@@ -1,178 +1,107 @@
 
-import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useState, useEffect, useCallback } from 'react';
+import { useMasterData } from '@/hooks/useMasterData';
+import { ComprehensiveSystemStatus } from '@/types/systemStatus';
 
-interface SystemModuleStatus {
-  moduleName: string;
-  isWorking: boolean;
-  dataCount: number;
-  lastActivity: string | null;
-  issues: string[];
-}
-
-interface ComprehensiveSystemStatus {
-  overallHealth: 'healthy' | 'warning' | 'critical';
-  workingModules: number;
-  totalModules: number;
-  userManagement: SystemModuleStatus;
-  facilities: SystemModuleStatus;
-  modules: SystemModuleStatus;
-  apiIntegrations: SystemModuleStatus;
-  adminVerification: SystemModuleStatus;
-  recommendations: string[];
-  totalIssues: number;
-}
-
-export const useComprehensiveSystemStatus = () => {
-  const [systemStatus, setSystemStatus] = useState<ComprehensiveSystemStatus | null>(null);
+export function useComprehensiveSystemStatus() {
+  const { users, facilities, modules, apiServices, stats, isLoading, error } = useMasterData();
   const [isChecking, setIsChecking] = useState(false);
+  const [systemStatus, setSystemStatus] = useState<ComprehensiveSystemStatus | null>(null);
 
-  const checkSystemStatus = async (): Promise<ComprehensiveSystemStatus> => {
-    console.log('🔍 Checking comprehensive system status...');
-    
-    // Check User Management
-    const userManagement = await checkModule('User Management', 'profiles', async () => {
-      const { data, error } = await supabase.from('profiles').select('count', { count: 'exact', head: true });
-      return { data, error };
-    });
+  const calculateSystemStatus = useCallback((): ComprehensiveSystemStatus => {
+    const totalModules = modules.length;
+    const activeModulesCount = modules.filter(m => m.is_active).length;
+    const workingModules = activeModulesCount;
 
-    // Check Facilities
-    const facilities = await checkModule('Facilities', 'facilities', async () => {
-      const { data, error } = await supabase.from('facilities').select('count', { count: 'exact', head: true });
-      return { data, error };
-    });
-
-    // Check Modules
-    const modules = await checkModule('Modules', 'modules', async () => {
-      const { data, error } = await supabase.from('modules').select('count', { count: 'exact', head: true });
-      return { data, error };
-    });
-
-    // Check API Integrations
-    const apiIntegrations = await checkModule('API Integrations', 'api_integration_registry', async () => {
-      const { data, error } = await supabase.from('api_integration_registry').select('count', { count: 'exact', head: true });
-      return { data, error };
-    });
-
-    // Check Admin Verification
-    const adminVerification = await checkModule('Admin Verification', 'audit_logs', async () => {
-      const { data, error } = await supabase.from('audit_logs').select('count', { count: 'exact', head: true });
-      return { data, error };
-    });
-
-    const moduleStatuses = [userManagement, facilities, modules, apiIntegrations, adminVerification];
-    const workingModules = moduleStatuses.filter(m => m.isWorking).length;
-    const totalModules = moduleStatuses.length;
-    const totalIssues = moduleStatuses.reduce((sum, module) => sum + module.issues.length, 0);
-
-    // Determine overall health
-    let overallHealth: 'healthy' | 'warning' | 'critical';
-    const healthPercentage = (workingModules / totalModules) * 100;
-    
-    if (healthPercentage >= 80 && totalIssues === 0) {
-      overallHealth = 'healthy';
-    } else if (healthPercentage >= 60) {
-      overallHealth = 'warning';
-    } else {
+    let overallHealth = 'healthy';
+    if (workingModules < totalModules * 0.5) {
       overallHealth = 'critical';
+    } else if (workingModules < totalModules * 0.8) {
+      overallHealth = 'warning';
     }
 
-    // Generate recommendations
     const recommendations: string[] = [];
-    if (workingModules < totalModules) {
-      recommendations.push(`${totalModules - workingModules} modules need attention`);
+    if (users.length === 0) {
+      recommendations.push('No users found - consider importing user data');
     }
-    if (totalIssues > 0) {
-      recommendations.push(`${totalIssues} issues detected across modules`);
+    if (facilities.length === 0) {
+      recommendations.push('No facilities configured - add healthcare facilities');
     }
-    if (overallHealth === 'healthy') {
-      recommendations.push('System is ready for Phase 2 implementation');
-    }
-
-    return {
-      overallHealth,
-      workingModules,
-      totalModules,
-      userManagement,
-      facilities,
-      modules,
-      apiIntegrations,
-      adminVerification,
-      recommendations,
-      totalIssues
-    };
-  };
-
-  const checkModule = async (
-    moduleName: string, 
-    tableName: string, 
-    queryFn: () => Promise<{ data: any; error: any }>
-  ): Promise<SystemModuleStatus> => {
-    const issues: string[] = [];
-    let isWorking = true;
-    let dataCount = 0;
-    let lastActivity: string | null = null;
-
-    try {
-      const { data, error } = await queryFn();
-      
-      if (error) {
-        issues.push(`Database connection error: ${error.message}`);
-        isWorking = false;
-      } else {
-        dataCount = data || 0;
-      }
-
-      // Check for recent activity
-      try {
-        const { data: recentData } = await supabase
-          .from(tableName)
-          .select('created_at')
-          .order('created_at', { ascending: false })
-          .limit(1);
-        
-        if (recentData && recentData.length > 0) {
-          lastActivity = recentData[0].created_at;
-        }
-      } catch (err) {
-        // Non-critical error for recent activity check
-      }
-
-    } catch (err) {
-      issues.push(`Module check failed: ${err}`);
-      isWorking = false;
+    if (modules.length === 0) {
+      recommendations.push('No modules available - configure system modules');
     }
 
     return {
-      moduleName,
-      isWorking,
-      dataCount,
-      lastActivity,
-      issues
+      totalUsers: stats.totalUsers,
+      totalFacilities: stats.totalFacilities,
+      totalModules: totalModules,
+      totalApiServices: stats.totalApiServices,
+      activeUsers: stats.activeUsers,
+      activeFacilities: stats.activeFacilities,
+      activeModules: activeModulesCount,
+      activeApiServices: stats.activeApiServices.length,
+      patientCount: stats.patientCount,
+      adminCount: stats.adminCount,
+      staffCount: stats.staffCount,
+      verifiedUsers: stats.verifiedUsers,
+      unverifiedUsers: stats.unverifiedUsers,
+      isLoading: isLoading,
+      error: error,
+      lastUpdated: new Date(),
+      overallHealth: overallHealth,
+      workingModules: workingModules,
+      userManagement: {
+        moduleName: 'User Management',
+        isWorking: users.length > 0,
+        dataCount: users.length,
+        issues: users.length === 0 ? ['No users found'] : []
+      },
+      facilities: {
+        moduleName: 'Facilities',
+        isWorking: facilities.length > 0,
+        dataCount: facilities.length,
+        issues: facilities.length === 0 ? ['No facilities configured'] : []
+      },
+      modules: {
+        moduleName: 'Modules',
+        isWorking: modules.length > 0,
+        dataCount: modules.length,
+        issues: modules.length === 0 ? ['No modules available'] : []
+      },
+      apiIntegrations: {
+        moduleName: 'API Integrations',
+        isWorking: apiServices.length > 0,
+        dataCount: apiServices.length,
+        issues: apiServices.length === 0 ? ['No API services configured'] : []
+      },
+      adminVerification: {
+        moduleName: 'Admin Verification',
+        isWorking: stats.adminCount > 0,
+        dataCount: stats.adminCount,
+        issues: stats.adminCount === 0 ? ['No admin users found'] : []
+      },
+      recommendations: recommendations,
+      totalIssues: recommendations.length
     };
-  };
+  }, [users, facilities, modules, apiServices, stats, isLoading, error]);
 
-  const recheckStatus = async () => {
+  const recheckStatus = useCallback(async () => {
     setIsChecking(true);
-    try {
-      const status = await checkSystemStatus();
-      setSystemStatus(status);
-    } catch (error) {
-      console.error('Failed to check system status:', error);
-    } finally {
-      setIsChecking(false);
-    }
-  };
+    // Simulate some checking time
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    const newStatus = calculateSystemStatus();
+    setSystemStatus(newStatus);
+    setIsChecking(false);
+  }, [calculateSystemStatus]);
 
-  // Initial check on mount
   useEffect(() => {
-    recheckStatus();
-  }, []);
+    const status = calculateSystemStatus();
+    setSystemStatus(status);
+  }, [calculateSystemStatus]);
 
   return {
     systemStatus,
     isChecking,
     recheckStatus
   };
-};
+}
