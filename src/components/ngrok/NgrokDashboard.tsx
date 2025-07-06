@@ -126,6 +126,22 @@ export const NgrokDashboard: React.FC = () => {
         </div>
       </div>
 
+      {/* Stable URL Configuration Alert */}
+      <Alert>
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          <div className="space-y-2">
+            <p><strong>Stable URL Configuration for Testing:</strong></p>
+            <p>Since you've upgraded to a paid ngrok plan, you can set up a stable subdomain:</p>
+            <ol className="list-decimal list-inside space-y-1 text-sm">
+              <li>Run: <code className="bg-gray-100 px-1 rounded">ngrok http 4040 --domain=your-chosen-subdomain.ngrok-free.app</code></li>
+              <li>Or configure your ngrok.yml with a reserved domain from your dashboard</li>
+              <li>Your application will be accessible at the same URL throughout testing</li>
+            </ol>
+          </div>
+        </AlertDescription>
+      </Alert>
+
       {/* Connection Status Alert */}
       {connectionStatus === 'failed' && (
         <Alert>
@@ -144,13 +160,13 @@ export const NgrokDashboard: React.FC = () => {
         <CardHeader>
           <CardTitle>Connection Settings</CardTitle>
           <CardDescription>
-            Configure your ngrok API endpoint
+            Configure your ngrok API endpoint (Port 4040 for stable testing)
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex space-x-2">
             <Input
-              placeholder="Enter custom ngrok URL (e.g., https://your-tunnel.ngrok.io)"
+              placeholder="Enter your stable ngrok URL (e.g., https://your-subdomain.ngrok-free.app)"
               value={customApiUrl}
               onChange={(e) => setCustomApiUrl(e.target.value)}
               className="flex-1"
@@ -160,7 +176,7 @@ export const NgrokDashboard: React.FC = () => {
             </Button>
           </div>
           <p className="text-sm text-muted-foreground">
-            Leave empty to use localhost:4040 (default ngrok web interface)
+            Leave empty to use localhost:4040 (default ngrok web interface). For stable testing, use your reserved ngrok domain.
           </p>
         </CardContent>
       </Card>
@@ -181,7 +197,7 @@ export const NgrokDashboard: React.FC = () => {
             Active Tunnels ({tunnels.length})
           </CardTitle>
           <CardDescription>
-            Currently active ngrok tunnels
+            Currently active ngrok tunnels (Port 4040 for your application)
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -190,7 +206,7 @@ export const NgrokDashboard: React.FC = () => {
               <Globe className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <p className="text-muted-foreground">No active tunnels found</p>
               <p className="text-sm text-muted-foreground mt-2">
-                Start ngrok to see your tunnels here
+                Start ngrok with: <code>ngrok http 4040</code>
               </p>
             </div>
           ) : (
@@ -201,6 +217,9 @@ export const NgrokDashboard: React.FC = () => {
                     <div className="flex items-center space-x-2">
                       <h3 className="font-medium">{tunnel.name}</h3>
                       <Badge variant="secondary">{tunnel.proto}</Badge>
+                      {tunnel.config.addr.includes('4040') && (
+                        <Badge variant="default">Main App</Badge>
+                      )}
                     </div>
                     <p className="text-sm text-muted-foreground">
                       {tunnel.config.addr} → {tunnel.public_url}
@@ -231,7 +250,7 @@ export const NgrokDashboard: React.FC = () => {
             Create New Tunnel
           </CardTitle>
           <CardDescription>
-            Configure a new ngrok tunnel for your local development
+            Configure a new ngrok tunnel for your local development (Use port 4040 for main app)
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -240,7 +259,7 @@ export const NgrokDashboard: React.FC = () => {
               <Label htmlFor="tunnel-name">Tunnel Name</Label>
               <Input
                 id="tunnel-name"
-                placeholder="my-app"
+                placeholder="stable-app"
                 value={newTunnelConfig.name}
                 onChange={(e) => setNewTunnelConfig(prev => ({ ...prev, name: e.target.value }))}
               />
@@ -299,7 +318,7 @@ export const NgrokDashboard: React.FC = () => {
             <Label htmlFor="webhook-url">Webhook URL</Label>
             <Input
               id="webhook-url"
-              placeholder="https://your-tunnel.ngrok.io/webhook"
+              placeholder="https://your-stable-tunnel.ngrok-free.app/webhook"
               value={webhookTest.url}
               onChange={(e) => setWebhookTest(prev => ({ ...prev, url: e.target.value }))}
             />

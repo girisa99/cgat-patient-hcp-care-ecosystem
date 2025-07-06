@@ -3,6 +3,13 @@ authtoken: ${NGROK_AUTHTOKEN}
 region: us
 
 tunnels:
+  stable-app:
+    addr: 4040
+    proto: http
+    inspect: false
+    hostname: your-stable-subdomain.ngrok-free.app
+    
+  # Fallback tunnel without subdomain for compatibility
   vite-dev:
     addr: 4040
     proto: http

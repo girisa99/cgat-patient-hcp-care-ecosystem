@@ -13,7 +13,6 @@ interface User {
   first_name: string;
   last_name: string;
   email: string;
-  is_active: boolean;
   created_at: string;
   updated_at: string;
   user_roles: {
@@ -30,6 +29,27 @@ interface ApiService {
   type: string;
   status: string;
   base_url?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface Facility {
+  id: string;
+  name: string;
+  facility_type: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+interface Module {
+  id: string;
+  name: string;
+  description?: string;
+  is_active: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -53,7 +73,6 @@ export const useMasterData = () => {
           first_name,
           last_name,
           email,
-          is_active,
           created_at,
           updated_at,
           user_roles!inner(
@@ -96,6 +115,52 @@ export const useMasterData = () => {
     refetchOnWindowFocus: false,
   });
 
+  // Fetch facilities
+  const { data: facilities = [], isLoading: facilitiesLoading, error: facilitiesError } = useQuery({
+    queryKey: ['master-facilities'],
+    queryFn: async (): Promise<Facility[]> => {
+      console.log('🏢 Fetching facilities');
+      
+      const { data, error } = await supabase
+        .from('facilities')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('❌ Error fetching facilities:', error);
+        throw error;
+      }
+
+      console.log('✅ Facilities loaded:', data?.length || 0);
+      return data || [];
+    },
+    staleTime: 300000,
+    refetchOnWindowFocus: false,
+  });
+
+  // Fetch modules
+  const { data: modules = [], isLoading: modulesLoading, error: modulesError } = useQuery({
+    queryKey: ['master-modules'],
+    queryFn: async (): Promise<Module[]> => {
+      console.log('🧩 Fetching modules');
+      
+      const { data, error } = await supabase
+        .from('modules')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('❌ Error fetching modules:', error);
+        throw error;
+      }
+
+      console.log('✅ Modules loaded:', data?.length || 0);
+      return data || [];
+    },
+    staleTime: 300000,
+    refetchOnWindowFocus: false,
+  });
+
   // Create API service mutation
   const createApiServiceMutation = useMutation({
     mutationFn: async (serviceData: any) => {
@@ -119,10 +184,23 @@ export const useMasterData = () => {
 
   const stats = {
     totalUsers: users.length,
-    activeUsers: users.filter(u => u.is_active).length,
+    activeUsers: users.length, // All users are considered active in this simplified version
     totalApiServices: apiServices.length,
     activeApiServices: apiServices.filter(s => s.status === 'active'),
     patientUsers: users.filter(u => 
+      u.user_roles.some(ur => ur.role.name === 'patientCaregiver')
+    ).length,
+    totalFacilities: facilities.length,
+    activeFacilities: facilities.filter(f => f.is_active).length,
+    totalModules: modules.length,
+    activeModules: modules.filter(m => m.is_active).length,
+    adminCount: users.filter(u => 
+      u.user_roles.some(ur => ur.role.name === 'superAdmin')
+    ).length,
+    staffCount: users.filter(u => 
+      u.user_roles.some(ur => ['onboardingTeam', 'facilityAdmin'].includes(ur.role.name))
+    ).length,
+    patientCount: users.filter(u => 
       u.user_roles.some(ur => ur.role.name === 'patientCaregiver')
     ).length,
   };
@@ -130,27 +208,42 @@ export const useMasterData = () => {
   const refreshData = () => {
     queryClient.invalidateQueries({ queryKey: ['master-users'] });
     queryClient.invalidateQueries({ queryKey: ['master-api-services'] });
+    queryClient.invalidateQueries({ queryKey: ['master-facilities'] });
+    queryClient.invalidateQueries({ queryKey: ['master-modules'] });
   };
 
   return {
     // Core data
     users,
     apiServices,
+    facilities,
+    modules,
     stats,
     
     // Loading states
-    isLoading: usersLoading || apiServicesLoading,
+    isLoading: usersLoading || apiServicesLoading || facilitiesLoading || modulesLoading,
     usersLoading,
     apiServicesLoading,
+    facilitiesLoading,
+    modulesLoading,
     
     // Error states
-    error: usersError || apiServicesError,
+    error: usersError || apiServicesError || facilitiesError || modulesError,
     usersError,
     apiServicesError,
+    facilitiesError,
+    modulesError,
     
     // Actions
     createApiService: (data: any) => createApiServiceMutation.mutate(data),
     refreshData,
+    
+    // Additional actions (placeholders for full implementation)
+    createUser: () => console.log('Create user - to be implemented'),
+    deactivateUser: () => console.log('Deactivate user - to be implemented'),
+    searchFacilities: (query: string) => facilities.filter(f => 
+      f.name.toLowerCase().includes(query.toLowerCase())
+    ),
     
     // Meta
     meta: {
