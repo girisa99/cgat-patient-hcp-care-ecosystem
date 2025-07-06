@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -143,7 +142,7 @@ export const NgrokDashboard: React.FC = () => {
     copyToClipboard(command);
     toast({
       title: "Command Copied",
-      description: "Run this command to start your permanent tunnel"
+      description: "Run this command in your terminal to start your permanent tunnel"
     });
   };
 
@@ -171,20 +170,18 @@ export const NgrokDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Domain Setup with Correct Command */}
+      {/* Command Instructions */}
       <Alert>
         <Terminal className="h-4 w-4" />
         <AlertDescription>
           <div className="space-y-4">
             <div>
-              <h4 className="font-semibold text-green-800">✅ Domain Registered Successfully!</h4>
-              <p className="text-sm mt-1">Your domain <strong>{PERMANENT_DOMAIN}</strong> is registered with CNAME record</p>
+              <h4 className="font-semibold text-green-800 mb-2">✅ Run This Command in Your Terminal</h4>
+              <p className="text-sm mb-3">Open your terminal/command prompt and run:</p>
             </div>
             
             <div className="bg-green-50 p-4 rounded-md border border-green-200">
-              <p className="text-sm font-medium mb-3 text-green-800">🎯 Correct Command for Your Setup:</p>
-              
-              <div className="flex items-center gap-2 p-3 bg-black text-green-400 rounded font-mono text-sm">
+              <div className="flex items-center gap-2 p-3 bg-black text-green-400 rounded font-mono text-sm mb-3">
                 <code>ngrok http --url={PERMANENT_DOMAIN} 4040</code>
                 <Button 
                   size="sm" 
@@ -196,23 +193,23 @@ export const NgrokDashboard: React.FC = () => {
                 </Button>
               </div>
               
-              <div className="mt-3 space-y-2 text-sm text-green-700">
-                <p><strong>Key differences from the error command:</strong></p>
+              <div className="space-y-2 text-sm text-green-700">
+                <p><strong>Make sure:</strong></p>
                 <ul className="list-disc list-inside space-y-1 ml-2">
-                  <li>Using port <code className="bg-green-100 px-1 rounded">4040</code> (your app port) instead of 80</li>
-                  <li>Using <code className="bg-green-100 px-1 rounded">--url</code> flag with your domain</li>
-                  <li>Domain format: <code className="bg-green-100 px-1 rounded">{PERMANENT_DOMAIN}</code></li>
+                  <li>Your app is running on <code className="bg-green-100 px-1 rounded">localhost:4040</code></li>
+                  <li>You're running the command from the same machine as your app</li>
+                  <li>Your ngrok account has the domain reserved</li>
                 </ul>
               </div>
             </div>
 
             <div className="bg-yellow-50 p-3 rounded-md border border-yellow-200">
-              <p className="text-sm font-medium text-yellow-800 mb-2">🔧 Troubleshooting err_ngrok_425:</p>
-              <ul className="text-xs text-yellow-700 space-y-1 list-disc list-inside">
-                <li>Error 425 usually means port mismatch - use port 4040, not 80</li>
-                <li>Make sure your app is running on localhost:4040</li>
-                <li>Verify domain is properly reserved in your ngrok dashboard</li>
-                <li>Use the exact command above with --url flag</li>
+              <p className="text-sm font-medium text-yellow-800 mb-2">🔧 Still Getting err_ngrok_425?</p>
+              <p className="text-sm text-yellow-700 mb-2">Please share:</p>
+              <ul className="text-xs text-yellow-700 space-y-1 list-disc list-inside ml-2">
+                <li>The exact CNAME value ngrok gave you when you reserved the domain</li>
+                <li>Confirm your app is actually running on localhost:4040</li>
+                <li>Try running: <code className="bg-yellow-100 px-1 rounded">curl localhost:4040</code> to test</li>
               </ul>
             </div>
           </div>
@@ -225,10 +222,10 @@ export const NgrokDashboard: React.FC = () => {
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
             <div className="space-y-2">
-              <p><strong>Connection Failed - Follow These Steps:</strong></p>
+              <p><strong>Connection Failed - Troubleshooting Steps:</strong></p>
               <ol className="list-decimal list-inside space-y-1 text-sm">
-                <li>Make sure your app is running on port 4040</li>
-                <li>Run the corrected command: <code className="bg-red-100 px-1 rounded">ngrok http --url={PERMANENT_DOMAIN} 4040</code></li>
+                <li>Ensure your app is running on port 4040</li>
+                <li>Run the command in terminal: <code className="bg-red-100 px-1 rounded">ngrok http --url={PERMANENT_DOMAIN} 4040</code></li>
                 <li>Wait for "Session Status: online" message</li>
                 <li>Then refresh this dashboard</li>
               </ol>
@@ -242,7 +239,7 @@ export const NgrokDashboard: React.FC = () => {
         <CardHeader>
           <CardTitle>Connection Settings</CardTitle>
           <CardDescription>
-            Your permanent domain is configured - use the command above to connect
+            Your permanent domain is configured - use the terminal command above to connect
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
