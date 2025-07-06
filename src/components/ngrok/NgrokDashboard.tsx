@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -5,9 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useNgrokIntegration } from '@/hooks/useNgrokIntegration';
-import { Globe, RefreshCw, TestTube, Settings, ExternalLink, AlertCircle, CheckCircle, Copy, Terminal } from 'lucide-react';
+import { Globe, RefreshCw, TestTube, Settings, ExternalLink, AlertCircle, CheckCircle, Copy, Terminal, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export const NgrokDashboard: React.FC = () => {
@@ -40,6 +41,7 @@ export const NgrokDashboard: React.FC = () => {
   });
 
   const PERMANENT_DOMAIN = 'dev.geniecellgene.com';
+  const CNAME_VALUE = '3malrwhuaftqxamqn.4ab7lasb3cwnlc5r8.ngrok-cname.com';
 
   useEffect(() => {
     // Check local ngrok first
@@ -133,7 +135,7 @@ export const NgrokDashboard: React.FC = () => {
     navigator.clipboard.writeText(text);
     toast({
       title: "Copied",
-      description: "Command copied to clipboard"
+      description: "Text copied to clipboard"
     });
   };
 
@@ -170,33 +172,54 @@ export const NgrokDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Success Status */}
-      <Alert>
-        <CheckCircle className="h-4 w-4" />
+      {/* DNS Configuration Alert */}
+      <Alert variant="destructive">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertTitle>DNS Configuration Required</AlertTitle>
         <AlertDescription>
-          <div className="space-y-2">
-            <div>
-              <h4 className="font-semibold text-green-800 mb-2">🎉 Tunnel Successfully Running!</h4>
-              <p className="text-sm mb-2">Your ngrok tunnel is now active and forwarding requests:</p>
-            </div>
+          <div className="space-y-4">
+            <p>Your domain <strong>{PERMANENT_DOMAIN}</strong> needs DNS configuration to work properly.</p>
             
-            <div className="bg-green-50 p-4 rounded-md border border-green-200">
-              <div className="space-y-2 text-sm">
-                <p><strong>✅ Status:</strong> Online</p>
-                <p><strong>🌐 Public URL:</strong> <code className="bg-green-100 px-2 py-1 rounded">https://dev.geniecellgene.com</code></p>
-                <p><strong>🔗 Forwarding to:</strong> <code className="bg-green-100 px-2 py-1 rounded">http://localhost:4040</code></p>
-                <p><strong>🖥️ Web Interface:</strong> <code className="bg-green-100 px-2 py-1 rounded">http://127.0.0.1:4040</code></p>
+            <div className="bg-red-50 p-4 rounded-md border border-red-200">
+              <h4 className="font-semibold text-red-800 mb-2">🔧 DNS Setup Instructions:</h4>
+              <ol className="text-sm text-red-700 space-y-2 list-decimal list-inside">
+                <li>Go to your domain registrar (where you registered geniecellgene.com)</li>
+                <li>Find the DNS management section</li>
+                <li>Add a CNAME record with these values:</li>
+              </ol>
+              
+              <div className="mt-3 p-3 bg-white rounded border">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <strong>Name/Host:</strong> <code className="bg-gray-100 px-2 py-1 rounded">dev</code>
+                    <Button size="sm" variant="outline" className="ml-2" onClick={() => copyToClipboard('dev')}>
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                  </div>
+                  <div>
+                    <strong>Value/Target:</strong> <code className="bg-gray-100 px-2 py-1 rounded text-xs">{CNAME_VALUE}</code>
+                    <Button size="sm" variant="outline" className="ml-2" onClick={() => copyToClipboard(CNAME_VALUE)}>
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
               </div>
+              
+              <p className="text-sm text-red-600 mt-2">
+                <strong>Note:</strong> DNS changes can take 5-30 minutes to propagate globally.
+              </p>
             </div>
 
             <div className="bg-blue-50 p-3 rounded-md border border-blue-200">
-              <p className="text-sm font-medium text-blue-800 mb-2">📋 Important Notes:</p>
-              <ul className="text-sm text-blue-700 space-y-1 list-disc list-inside ml-2">
-                <li><strong>No CNAME needed:</strong> Your reserved domain handles DNS automatically</li>
-                <li><strong>Webhooks:</strong> External services can send webhooks to your domain</li>
-                <li><strong>GitHub Sync:</strong> Code changes from Cursor/VS Code will sync to Lovable</li>
-                <li><strong>Database Updates:</strong> Schema changes need to be made in Lovable</li>
-              </ul>
+              <h4 className="font-semibold text-blue-800 mb-2">🚀 Quick Test Alternative:</h4>
+              <p className="text-sm text-blue-700 mb-2">Want to test immediately? Use ngrok's free subdomain:</p>
+              <div className="bg-white p-2 rounded border font-mono text-sm">
+                <code>ngrok http 4040</code>
+                <Button size="sm" variant="outline" className="ml-2" onClick={() => copyToClipboard('ngrok http 4040')}>
+                  <Copy className="h-3 w-3" />
+                </Button>
+              </div>
+              <p className="text-xs text-blue-600 mt-1">This will give you a temporary URL like https://abc123.ngrok-free.app</p>
             </div>
           </div>
         </AlertDescription>
@@ -207,34 +230,64 @@ export const NgrokDashboard: React.FC = () => {
         <CardHeader>
           <CardTitle>Connection Settings</CardTitle>
           <CardDescription>
-            Your permanent domain is configured and active
+            Configure your ngrok tunnel connection
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex space-x-2">
-            <Input
-              placeholder="https://dev.geniecellgene.com"
-              value={`https://${PERMANENT_DOMAIN}`}
-              readOnly
-              className="flex-1 bg-green-50 border-green-200"
-            />
-            <Button onClick={handleRefresh} disabled={isLoading}>
-              Connect
-            </Button>
+          <div className="space-y-2">
+            <Label>Current Domain Status</Label>
+            <div className="flex space-x-2">
+              <Input
+                placeholder={`https://${PERMANENT_DOMAIN}`}
+                value={`https://${PERMANENT_DOMAIN}`}
+                readOnly
+                className="flex-1 bg-red-50 border-red-200"
+              />
+              <Badge variant="destructive">DNS Not Configured</Badge>
+            </div>
           </div>
-          <p className="text-sm text-green-600">
-            ✅ Your tunnel is running at: https://{PERMANENT_DOMAIN}
-          </p>
+          
+          <div className="space-y-2">
+            <Label>Alternative: Test with ngrok URL</Label>
+            <div className="flex space-x-2">
+              <Input
+                placeholder="Enter ngrok URL (e.g., https://abc123.ngrok-free.app)"
+                value={customApiUrl}
+                onChange={(e) => setCustomApiUrl(e.target.value)}
+                className="flex-1"
+              />
+              <Button onClick={handleRefresh} disabled={isLoading}>
+                Connect
+              </Button>
+            </div>
+          </div>
+
+          <div className="bg-yellow-50 p-3 rounded-md border border-yellow-200">
+            <p className="text-sm text-yellow-700">
+              <strong>Current Command Running:</strong> <code>ngrok http --url={PERMANENT_DOMAIN} 4040</code>
+            </p>
+            <p className="text-xs text-yellow-600 mt-1">
+              This is correct, but DNS needs to be configured for the domain to work.
+            </p>
+          </div>
         </CardContent>
       </Card>
 
       {error && (
         <Card className="border-red-200 bg-red-50">
           <CardContent className="pt-6">
-            <p className="text-red-600">Connection Error: {error}</p>
-            <p className="text-sm text-red-500 mt-2">
-              Make sure to run: <code>ngrok http --url={PERMANENT_DOMAIN} 4040</code>
-            </p>
+            <div className="space-y-2">
+              <p className="text-red-600 font-medium">Connection Error: {error}</p>
+              <div className="text-sm text-red-500 space-y-1">
+                <p><strong>Possible causes:</strong></p>
+                <ul className="list-disc list-inside ml-4 space-y-1">
+                  <li>DNS record not configured yet</li>
+                  <li>DNS propagation still in progress (wait 5-30 minutes)</li>
+                  <li>ngrok tunnel not running</li>
+                  <li>Wrong port or URL configuration</li>
+                </ul>
+              </div>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -247,16 +300,18 @@ export const NgrokDashboard: React.FC = () => {
             Active Tunnels ({tunnels.length})
           </CardTitle>
           <CardDescription>
-            Your permanent domain tunnel is active and running
+            Manage your active ngrok tunnels
           </CardDescription>
         </CardHeader>
         <CardContent>
           {tunnels.length === 0 ? (
             <div className="text-center py-8">
-              <CheckCircle className="h-12 w-12 mx-auto text-green-500 mb-4" />
-              <p className="text-green-600 font-medium">Tunnel is running successfully!</p>
-              <p className="text-sm text-muted-foreground mt-2">
-                Tunnel data will appear here once the dashboard can connect to the ngrok API
+              <AlertCircle className="h-12 w-12 mx-auto text-yellow-500 mb-4" />
+              <p className="text-yellow-600 font-medium">No active tunnels detected</p>
+              <p className="text-sm text-muted-foreground mt-2 space-y-1">
+                <span className="block">1. Make sure ngrok is running: <code className="bg-gray-100 px-1 rounded">ngrok http --url={PERMANENT_DOMAIN} 4040</code></span>
+                <span className="block">2. Configure DNS record as shown above</span>
+                <span className="block">3. Wait for DNS propagation (5-30 minutes)</span>
               </p>
             </div>
           ) : (
@@ -310,7 +365,7 @@ export const NgrokDashboard: React.FC = () => {
             Create Additional Tunnel
           </CardTitle>
           <CardDescription>
-            Your main domain is configured - create additional tunnels if needed
+            Create additional tunnels for other services
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -370,7 +425,7 @@ export const NgrokDashboard: React.FC = () => {
             Webhook Testing
           </CardTitle>
           <CardDescription>
-            Test webhook endpoints using your domain: {PERMANENT_DOMAIN}
+            Test webhook endpoints (available once DNS is configured)
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
