@@ -1,5 +1,5 @@
 
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from '@/hooks/use-toast';
 
 export const useMasterToast = () => {
   const { toast } = useToast();
@@ -8,7 +8,7 @@ export const useMasterToast = () => {
     toast({
       title,
       description,
-      variant: "default",
+      variant: 'default',
     });
   };
 
@@ -16,7 +16,7 @@ export const useMasterToast = () => {
     toast({
       title,
       description,
-      variant: "destructive",
+      variant: 'destructive',
     });
   };
 
@@ -24,15 +24,7 @@ export const useMasterToast = () => {
     toast({
       title,
       description,
-      variant: "default",
-    });
-  };
-
-  const showWarning = (title: string, description?: string) => {
-    toast({
-      title,
-      description,
-      variant: "destructive",
+      variant: 'default',
     });
   };
 
@@ -40,6 +32,6 @@ export const useMasterToast = () => {
     showSuccess,
     showError,
     showInfo,
-    showWarning,
+    toast,
   };
 };

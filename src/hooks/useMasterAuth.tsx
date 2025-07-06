@@ -2,9 +2,9 @@
 /**
  * MASTER AUTHENTICATION HOOK - SINGLE SOURCE OF TRUTH
  * Consolidates all authentication functionality across the application
- * Version: master-auth-v1.0.0
+ * Version: master-auth-v2.0.0
  */
-import { useState, useEffect, createContext, useContext } from 'react';
+import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -14,16 +14,18 @@ interface AuthContextType {
   profile: any;
   userRoles: string[];
   isLoading: boolean;
+  isAuthenticated: boolean;
   error: string | null;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: any }>;
+  refreshAuth: (userId?: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const useMasterAuth = () => {
+export const MasterAuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<any>(null);
@@ -31,7 +33,9 @@ export const useMasterAuth = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  console.log('🔐 Master Auth Hook - Single source of truth for authentication');
+  console.log('🔐 Master Auth Provider - Single source of truth for authentication');
+
+  const isAuthenticated = !!user && !!session;
 
   // Initialize auth state
   useEffect(() => {
@@ -111,6 +115,14 @@ export const useMasterAuth = () => {
       console.log('✅ User roles loaded:', roles);
     } catch (err) {
       console.error('❌ Roles fetch failed:', err);
+    }
+  };
+
+  const refreshAuth = async (userId?: string) => {
+    const targetUserId = userId || user?.id;
+    if (targetUserId) {
+      await fetchUserProfile(targetUserId);
+      await fetchUserRoles(targetUserId);
     }
   };
 
@@ -211,31 +223,32 @@ export const useMasterAuth = () => {
     }
   };
 
-  return {
-    // Core auth state
+  const contextValue: AuthContextType = {
     user,
     session,
     profile,
     userRoles,
     isLoading,
+    isAuthenticated,
     error,
-    
-    // Auth actions
     signIn,
     signUp,
     signOut,
     resetPassword,
-    
-    // Utility functions
-    fetchUserProfile,
-    fetchUserRoles,
-    
-    // Meta
-    meta: {
-      hookName: 'useMasterAuth',
-      version: 'master-auth-v1.0.0',
-      singleSourceValidated: true,
-      dataSource: 'supabase-auth-real-data'
-    }
+    refreshAuth,
   };
+
+  return (
+    <AuthContext.Provider value={contextValue}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export const useMasterAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useMasterAuth must be used within a MasterAuthProvider');
+  }
+  return context;
 };

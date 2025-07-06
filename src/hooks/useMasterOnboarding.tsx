@@ -1,146 +1,119 @@
+
 /**
- * MASTER ONBOARDING MANAGEMENT HOOK - SINGLE SOURCE OF TRUTH
- * Consolidates ALL onboarding functionality into ONE hook
+ * MASTER ONBOARDING HOOK - SINGLE SOURCE OF TRUTH
+ * Consolidates all onboarding functionality
  * Version: master-onboarding-v1.0.0
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { useMasterToast } from './useMasterToast';
+import { useMasterAuth } from './useMasterAuth';
 
-// SINGLE CACHE KEY for all onboarding operations
-const MASTER_ONBOARDING_CACHE_KEY = ['master-onboarding'];
-
-export interface OnboardingWorkflow {
-  id: string;
-  legal_name: string | null;
-  status: 'draft' | 'submitted' | 'under_review' | 'approved' | 'rejected';
-  user_id: string;
-  created_at: string;
-  updated_at: string;
-}
-
-/**
- * MASTER Onboarding Management Hook - Everything in ONE place
- */
 export const useMasterOnboarding = () => {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
+  console.log('🚀 Master Onboarding Hook - Single source of truth');
   
-  console.log('🚀 Master Onboarding - Single Source of Truth Active');
+  const { showSuccess, showError } = useMasterToast();
+  const { user } = useMasterAuth();
+  const queryClient = useQueryClient();
 
-  // ====================== DATA FETCHING ======================
-  const {
-    data: onboardingWorkflows = [],
-    isLoading,
-    error,
-    refetch
-  } = useQuery({
-    queryKey: MASTER_ONBOARDING_CACHE_KEY,
-    queryFn: async (): Promise<OnboardingWorkflow[]> => {
-      console.log('🔍 Fetching onboarding workflows from single source...');
+  const { data: onboardingApplications = [], isLoading, error } = useQuery({
+    queryKey: ['master-onboarding'],
+    queryFn: async () => {
+      console.log('📡 Fetching onboarding applications from real database');
       
       const { data, error } = await supabase
         .from('treatment_center_onboarding')
         .select('*')
         .order('created_at', { ascending: false });
-      
+
       if (error) {
-        console.error('❌ Error fetching onboarding workflows:', error);
+        console.error('❌ Error fetching onboarding applications:', error);
         throw error;
       }
-      
-      console.log('✅ Onboarding workflows fetched from master source:', data?.length || 0);
+
+      console.log('✅ Onboarding applications loaded:', data?.length || 0);
       return data || [];
     },
-    retry: 1,
-    staleTime: 300000, // 5 minutes
+    staleTime: 300000,
     refetchOnWindowFocus: false,
-    refetchOnMount: false,
   });
 
-  // ====================== CACHE INVALIDATION HELPER ======================
-  const invalidateCache = () => {
-    console.log('🔄 Invalidating master onboarding cache...');
-    queryClient.invalidateQueries({ queryKey: MASTER_ONBOARDING_CACHE_KEY });
-  };
-
-  // ====================== ONBOARDING WORKFLOW CREATION ======================
-  const createWorkflowMutation = useMutation({
-    mutationFn: async (workflowData: {
-      legal_name: string;
-      user_id: string;
-    }) => {
-      console.log('🔄 Creating onboarding workflow in master hook:', workflowData.legal_name);
-      
+  const createApplicationMutation = useMutation({
+    mutationFn: async (applicationData: any) => {
       const { data, error } = await supabase
         .from('treatment_center_onboarding')
         .insert({
-          ...workflowData,
-          status: 'draft' as const
+          ...applicationData,
+          user_id: user?.id
         })
         .select()
         .single();
-
+      
       if (error) throw error;
       return data;
     },
     onSuccess: () => {
-      invalidateCache();
-      toast({
-        title: "Onboarding Workflow Created",
-        description: "New onboarding workflow has been created successfully.",
-      });
+      queryClient.invalidateQueries({ queryKey: ['master-onboarding'] });
+      showSuccess('Application Created', 'Onboarding application created successfully');
     },
     onError: (error: any) => {
-      toast({
-        title: "Workflow Creation Failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      showError('Creation Failed', error.message);
     }
   });
 
-  // ====================== UTILITY FUNCTIONS ======================
-  const getOnboardingStats = () => {
-    const statusDistribution = onboardingWorkflows.reduce((acc: any, workflow: OnboardingWorkflow) => {
-      acc[workflow.status] = (acc[workflow.status] || 0) + 1;
-      return acc;
-    }, {});
-    
-    return {
-      total: onboardingWorkflows.length,
-      statusDistribution,
-      inProgress: onboardingWorkflows.filter(w => w.status === 'under_review').length,
-      pending: onboardingWorkflows.filter(w => w.status === 'submitted').length,
-      completed: onboardingWorkflows.filter(w => w.status === 'approved').length,
-    };
+  const updateApplicationMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: any }) => {
+      const { data, error } = await supabase
+        .from('treatment_center_onboarding')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['master-onboarding'] });
+      showSuccess('Application Updated', 'Application updated successfully');
+    },
+    onError: (error: any) => {
+      showError('Update Failed', error.message);
+    }
+  });
+
+  const onboardingStats = {
+    total: onboardingApplications.length,
+    pending: onboardingApplications.filter(app => app.application_status === 'pending').length,
+    approved: onboardingApplications.filter(app => app.application_status === 'approved').length,
+    rejected: onboardingApplications.filter(app => app.application_status === 'rejected').length,
+    inProgress: onboardingApplications.filter(app => app.application_status === 'in_progress').length,
   };
 
-  // ====================== RETURN CONSOLIDATED API ======================
   return {
-    // Data
-    onboardingWorkflows,
+    // Core data
+    onboardingApplications,
+    onboardingStats,
+    
+    // Loading states
     isLoading,
+    isCreating: createApplicationMutation.isPending,
+    isUpdating: updateApplicationMutation.isPending,
+    
+    // Error state
     error,
-    refetch,
     
-    // Onboarding Management
-    createWorkflow: createWorkflowMutation.mutate,
-    isCreatingWorkflow: createWorkflowMutation.isPending,
+    // Actions
+    createApplication: (data: any) => createApplicationMutation.mutate(data),
+    updateApplication: (data: { id: string; updates: any }) => updateApplicationMutation.mutate(data),
     
-    // Utilities
-    getOnboardingStats,
-    
-    // Meta Information
+    // Meta
     meta: {
-      totalWorkflows: onboardingWorkflows.length,
-      dataSource: 'treatment_center_onboarding table (master hook)',
-      lastFetched: new Date().toISOString(),
+      hookName: 'useMasterOnboarding',
       version: 'master-onboarding-v1.0.0',
       singleSourceValidated: true,
-      architectureType: 'consolidated',
-      cacheKey: MASTER_ONBOARDING_CACHE_KEY.join('-'),
-      stabilityGuarantee: true
+      duplicateHooksEliminated: true,
+      dataSource: 'treatment_center_onboarding-table-real-data'
     }
   };
 };
