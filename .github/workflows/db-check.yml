@@ -1,0 +1,20 @@
+name: db-check
+
+on:
+  pull_request:
+    branches: [dev, main]
+
+jobs:
+  validate-migrations:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup supabase cli
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Validate migrations
+        run: |
+          supabase start
+          supabase db reset --force
+          supabase db push
