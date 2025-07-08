@@ -11,6 +11,7 @@
     "lint:strict": "eslint . --max-warnings 10000",
     "preview": "vite preview",
     "tunnel": "ngrok http 5173 --log=stdout --log-format=logfmt",
+    "test:unit": "vitest run",
     "test:e2e": "E2E_BASE_URL=$E2E_BASE_URL npx playwright test"
   },
   "dependencies": {
@@ -90,6 +91,7 @@
     "typescript-eslint": "^8.35.1",
     "vite": "^5.4.19",
     "ngrok": "^4.3.3",
-    "@playwright/test": "^1.44.1"
+    "@playwright/test": "^1.44.1",
+    "vitest": "^1.5.0"
   }
 }
