@@ -1,7 +1,8 @@
-import { defineConfig } from 'vitest/config';
+/// <reference types="vitest" />
+import { defineConfig, UserConfigExport } from 'vitest/config';
 import path from 'path';
 
-export default defineConfig({
+export default defineConfig(<UserConfigExport>{
   test: {
     globals: true,
     environment: 'jsdom',
