@@ -1,4 +1,4 @@
-
+/* eslint-env node */
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
@@ -8,9 +8,10 @@ import { componentTagger } from "lovable-tagger";
 export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
-    port: 8080,
+    // Use 5173 by default to match ngrok tunnel; allow override via $PORT
+    port: Number(process.env.PORT || 5173),
     // Allow access from any host (e.g., ngrok) during development
-    allowedHosts: true,
+    allowedHosts: ["localhost", "dev.geniecellgene.com"],
   },
   plugins: [
     react(),
