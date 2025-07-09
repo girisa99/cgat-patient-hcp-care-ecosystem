@@ -11,7 +11,6 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
 const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
 
 if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
-  // eslint-disable-next-line no-console
   console.warn(
     "[Supabase] Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY env vars.\n" +
     "Auth hooks will remain unauthenticated until these are provided."
