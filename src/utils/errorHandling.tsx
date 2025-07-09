@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 /**
@@ -14,7 +13,7 @@ export function getErrorMessage(error: unknown): string {
   }
   
   if (error && typeof error === 'object' && 'message' in error) {
-    return String(error.message);
+    return String((error as { message: unknown }).message);
   }
   
   return 'An unknown error occurred';
@@ -43,7 +42,7 @@ export function renderErrorMessage(error: unknown): string {
 }
 
 /**
- * Utility function to safely render errors in React components
+ * Utility React component to display errors
  */
 export function ErrorDisplay({ error }: { error: unknown }) {
   return <div className="text-red-600">{renderErrorMessage(error)}</div>;
