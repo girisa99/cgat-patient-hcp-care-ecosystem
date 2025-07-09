@@ -1,0 +1,40 @@
+name: Supabase DB Migrate
+
+# Run on every push to long-lived branches
+on:
+  push:
+    branches: [ main, dev, test ]
+
+permissions:
+  contents: read
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_ID:   ${{ secrets.SUPABASE_PROJECT_ID }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: 1.169.0
+
+      - name: Select DB schema based on branch
+        id: schema
+        run: |
+          case "${GITHUB_REF_NAME}" in
+            main)  echo "schema=public"       >> "$GITHUB_OUTPUT" ;;
+            dev)   echo "schema=public_dev"   >> "$GITHUB_OUTPUT" ;;
+            test)  echo "schema=public_test"  >> "$GITHUB_OUTPUT" ;;
+            *)     echo "schema=public_dev"   >> "$GITHUB_OUTPUT" ;; # default
+          esac
+
+      - name: Push migrations to remote project
+        run: |
+          supabase db push --schema "${{ steps.schema.outputs.schema }}" --remote
