@@ -4,7 +4,7 @@
     "useDefineForClassFields": true,
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "module": "ESNext",
-    "moduleResolution": "Bundler",
+    "moduleResolution": "bundler",
     "esModuleInterop": true,
     "skipLibCheck": true,
 
@@ -26,7 +26,7 @@
     "paths": {
       "@/*": ["./src/*"]
     },
-    "types": ["react", "react/jsx-runtime"]
+    "types": ["node", "react", "react/jsx-runtime", "vite/client", "vitest"]
   },
   "include": ["src"]
 }
