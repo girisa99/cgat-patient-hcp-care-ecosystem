@@ -7,8 +7,10 @@ import type { Database } from './types';
 //  VITE_SUPABASE_URL="https://xxxx.supabase.co"
 //  VITE_SUPABASE_ANON_KEY="your_anon_public_key"
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
+const {
+  VITE_SUPABASE_URL: SUPABASE_URL,
+  VITE_SUPABASE_ANON_KEY: SUPABASE_PUBLISHABLE_KEY,
+} = import.meta.env;
 
 if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
   console.warn(
