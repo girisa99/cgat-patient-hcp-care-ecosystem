@@ -1,5 +1,5 @@
 import { useMasterAuth } from './useMasterAuth';
-import { useTenant } from './useTenant';
+import { useTenant } from '@/hooks/useTenant';
 
 /**
  * useRBAC
