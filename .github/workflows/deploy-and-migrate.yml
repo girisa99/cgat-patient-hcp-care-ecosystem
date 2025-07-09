@@ -1,1 +1,70 @@
-THIS SHOULD BE A LINTER ERROR
+name: Deploy & Migrate
+
+on:
+  push:
+    branches:
+      - dev
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [ ] # if you want to depend on ci job add it
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
+
+      # --------------------------------------------------
+      # Static site deploy (example: Netlify). Replace
+      # with your provider or Docker push as needed.
+      # --------------------------------------------------
+      - name: Deploy to Netlify (staging)
+        if: github.ref == 'refs/heads/dev'
+        uses: nwtgck/actions-netlify@v2
+        with:
+          publish-dir: ./dist
+          production-deploy: false
+          deploy-message: 'Preview – ${{ github.sha }}'
+          netlify-auth-token: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          netlify-site-id: ${{ secrets.NETLIFY_SITE_ID_STAGING }}
+
+      - name: Deploy to Netlify (production)
+        if: github.ref == 'refs/heads/main'
+        uses: nwtgck/actions-netlify@v2
+        with:
+          publish-dir: ./dist
+          production-deploy: true
+          deploy-message: 'Prod – ${{ github.sha }}'
+          netlify-auth-token: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          netlify-site-id: ${{ secrets.NETLIFY_SITE_ID_PROD }}
+
+  migrate:
+    runs-on: ubuntu-latest
+    needs: deploy
+
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF:  ${{ secrets.SUPABASE_PROJECT_REF }}
+      SUPABASE_DB_PASSWORD:  ${{ secrets.SUPABASE_DB_PASSWORD }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Supabase CLI
+        run: npm install -g supabase
+
+      - name: Push latest migrations to Supabase
+        run: |
+          supabase link --project-ref $SUPABASE_PROJECT_REF --password $SUPABASE_DB_PASSWORD
+          supabase db push --non-interactive
