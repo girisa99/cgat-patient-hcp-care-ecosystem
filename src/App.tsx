@@ -21,6 +21,7 @@ import Login from "./pages/Login";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { MasterAuthProvider } from './hooks/useMasterAuth';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
+import { TenantProvider } from './hooks/useTenant';
 
 const queryClient = new QueryClient();
 
@@ -58,11 +59,13 @@ const AppContent = () => {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <MasterAuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <AppContent />
-      </TooltipProvider>
+      <TenantProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <AppContent />
+        </TooltipProvider>
+      </TenantProvider>
     </MasterAuthProvider>
   </QueryClientProvider>
 );
