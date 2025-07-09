@@ -24,8 +24,8 @@ jobs:
       - name: Start Vite dev server
         run: npm run dev &
       - name: Wait for dev server
-        run: npx wait-on http://localhost:5173 --timeout 10000
+        run: npx wait-on http://localhost:8080 --timeout 10000
       - name: Run E2E tests
         env:
-          E2E_BASE_URL: http://localhost:5173
+          E2E_BASE_URL: http://localhost:8080
         run: npm run test:e2e
