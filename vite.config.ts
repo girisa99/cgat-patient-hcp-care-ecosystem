@@ -1,7 +1,7 @@
 /* eslint-env node */
 import { defineConfig, type ConfigEnv } from "vite";
 import react from "@vitejs/plugin-react-swc";
-import path from "path";
+import * as path from "path";
 import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/

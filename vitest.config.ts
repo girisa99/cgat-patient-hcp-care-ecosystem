@@ -1,6 +1,6 @@
 /// <reference types="vitest" />
 import { defineConfig, UserConfigExport } from 'vitest/config';
-import path from 'path';
+import * as path from 'path';
 
 export default defineConfig(<UserConfigExport>{
   test: {
