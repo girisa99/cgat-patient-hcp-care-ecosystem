@@ -10,7 +10,7 @@
     "lint": "eslint .",
     "lint:strict": "eslint . --max-warnings 10000",
     "preview": "vite preview",
-	"tunnel": "ngrok http 8080 --hostname=dev.geniecellgene.com --authtoken=$NGROK_AUTHTOKEN --log=stdout --log-format=logfmt",
+	"tunnel": "ngrok http 8080 --hostname=dev.geniecellgene.com --authtoken=2zPwW4XpNud9Yh2xoyF30yPjzMh_6S8v6FQjPvbckAf5SX36a --log=stdout --log-format=logfmt",
     "test:e2e": "E2E_BASE_URL=$E2E_BASE_URL npx playwright test"
   },
   "dependencies": {
