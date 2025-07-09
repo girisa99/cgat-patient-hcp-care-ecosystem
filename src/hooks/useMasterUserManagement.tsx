@@ -1,4 +1,3 @@
-
 import { useMasterData } from './useMasterData';
 
 export const useMasterUserManagement = () => {
@@ -12,8 +11,8 @@ export const useMasterUserManagement = () => {
   });
 
   const fetchUsers = () => {
-    // TODO: Implement actual user fetching
-    console.log('Fetching users...');
+    console.log('🔄 Refreshing users via MasterData');
+    masterData.refreshData();
   };
 
   return {

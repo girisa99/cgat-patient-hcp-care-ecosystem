@@ -1,19 +1,20 @@
-
 import { useMasterUserManagement } from './useMasterUserManagement';
 import { useMasterAuth } from './useMasterAuth';
+import { useMasterData } from './useMasterData';
 
 export const useDashboard = () => {
   const { isAuthenticated, userRoles } = useMasterAuth();
   const userManagement = useMasterUserManagement();
+  const { stats: masterStats } = useMasterData();
 
   const getDashboardStats = () => {
     const stats = userManagement.getUserStats();
     
     return {
       totalUsers: stats.totalUsers,
-      totalFacilities: 0, // TODO: implement facilities count
+      totalFacilities: masterStats.totalFacilities,
       totalPatients: stats.patientCount,
-      totalModules: 0, // TODO: implement modules count
+      totalModules: masterStats.totalModules,
       activeUsers: stats.activeUsers,
       adminUsers: stats.adminCount,
       staffUsers: userManagement.staffCount,
