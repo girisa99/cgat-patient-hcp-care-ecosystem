@@ -1,54 +1,71 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useMasterAuth } from './useMasterAuth';
 
+export interface Tenant {
+  id: string;
+  name: string;
+  schema: string; // Postgres schema to use, e.g. public, public_dev, org_123
+}
+
 interface TenantContextType {
-  tenant: string | null;
-  tenants: string[];
-  setTenant: (tenant: string) => void;
+  tenant: Tenant | null;
   isLoading: boolean;
+  setTenant: (tenant: Tenant) => void;
 }
 
 const TenantContext = createContext<TenantContextType | undefined>(undefined);
 
 export const TenantProvider = ({ children }: { children: ReactNode }) => {
   const { profile, isAuthenticated } = useMasterAuth();
-  const [tenant, setTenant] = useState<string | null>(null);
-  const [tenants, setTenants] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [tenant, setTenantState] = useState<Tenant | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Derive tenant info from the user profile or metadata. In a full
-  // implementation you might query a `user_tenants` table. For now we look for
-  // `tenant_id` or `schema` fields on the profile.
+  // Load tenant from user profile or localStorage
   useEffect(() => {
-    if (!isAuthenticated) {
-      setTenant(null);
-      setTenants([]);
-      setIsLoading(false);
-      return;
-    }
+    const loadTenant = async () => {
+      setIsLoading(true);
+      try {
+        // 1. Try localStorage override (let the user switch orgs in future)
+        const cached = localStorage.getItem('activeTenant');
+        if (cached) {
+          setTenantState(JSON.parse(cached));
+          return;
+        }
 
-    // Attempt to determine current tenant.
-    const tenantFromProfile = (profile as any)?.tenant_id || (profile as any)?.schema;
-    const availableTenants: string[] = [];
-    if (tenantFromProfile) availableTenants.push(tenantFromProfile);
+        // 2. Derive from profile if available
+        if (isAuthenticated && profile?.org_id) {
+          // Example mapping ‑ adapt to your table structure
+          setTenantState({
+            id: profile.org_id,
+            name: profile.org_name || 'Default Tenant',
+            schema: profile.schema || 'public',
+          });
+          return;
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-    setTenant(tenantFromProfile ?? null);
-    setTenants(availableTenants);
-    setIsLoading(false);
-  }, [profile, isAuthenticated]);
+    loadTenant();
+  }, [isAuthenticated, profile]);
 
-  const value: TenantContextType = {
-    tenant,
-    tenants,
-    setTenant,
-    isLoading,
+  const setTenant = (t: Tenant) => {
+    localStorage.setItem('activeTenant', JSON.stringify(t));
+    setTenantState(t);
   };
 
-  return <TenantContext.Provider value={value}>{children}</TenantContext.Provider>;
+  return (
+    <TenantContext.Provider value={{ tenant, isLoading, setTenant }}>
+      {children}
+    </TenantContext.Provider>
+  );
 };
 
 export const useTenant = () => {
   const ctx = useContext(TenantContext);
-  if (!ctx) throw new Error('useTenant must be used within a TenantProvider');
+  if (!ctx) {
+    throw new Error('useTenant must be used within a TenantProvider');
+  }
   return ctx;
 };
