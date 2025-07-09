@@ -1,4 +1,4 @@
-name: Supabase DB Migrate
+name: Supabase Migrate
 
 # Run on every push to long-lived branches
 on:
@@ -25,16 +25,16 @@ jobs:
         with:
           version: 1.169.0
 
-      - name: Select DB schema based on branch
+      - name: Pick schema based on branch
         id: schema
         run: |
-          case "${GITHUB_REF_NAME}" in
-            main)  echo "schema=public"       >> "$GITHUB_OUTPUT" ;;
-            dev)   echo "schema=public_dev"   >> "$GITHUB_OUTPUT" ;;
-            test)  echo "schema=public_test"  >> "$GITHUB_OUTPUT" ;;
-            *)     echo "schema=public_dev"   >> "$GITHUB_OUTPUT" ;; # default
-          esac
+          if [ "$GITHUB_REF_NAME" = "main" ]; then
+            echo "schema=public"   >> "$GITHUB_OUTPUT"
+          elif [ "$GITHUB_REF_NAME" = "dev" ]; then
+            echo "schema=public_dev"   >> "$GITHUB_OUTPUT"
+          else
+            echo "schema=public_test"  >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Push migrations to remote project
-        run: |
-          supabase db push --schema "${{ steps.schema.outputs.schema }}" --remote
+        run: supabase db push --schema "${{ steps.schema.outputs.schema }}" --remote
