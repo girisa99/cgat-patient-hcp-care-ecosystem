@@ -3,7 +3,7 @@ region: us
 
 tunnels:
   dev-geniecellgene:
-    addr: 5173
+    addr: 8080
     proto: http
     inspect: false
     hostname: dev.geniecellgene.com
