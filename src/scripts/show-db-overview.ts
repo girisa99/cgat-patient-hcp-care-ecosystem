@@ -1,7 +1,7 @@
 #!/usr/bin/env ts-node
 /// <reference types="node" />
 import 'dotenv/config';
-import { postgresAdapter } from '@/utils/db/PostgresAdapter';
+import { postgresAdapter } from '../utils/db/PostgresAdapter';
 
 (async () => {
   console.log('📊 Generating database overview...');
