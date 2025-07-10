@@ -10,7 +10,11 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
     // Allow access from any host (e.g., ngrok) during development
-    allowedHosts: true,
+    allowedHosts: [
+      'localhost',
+      '127.0.0.1',
+      'dev.geniecellgene.com',
+    ],
   },
   plugins: [
     react(),
