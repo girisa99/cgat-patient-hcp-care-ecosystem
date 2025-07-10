@@ -1,16 +1,15 @@
-
 authtoken: ${NGROK_AUTHTOKEN}
 region: us
 
 tunnels:
   dev-geniecellgene:
-    addr: 4040
+    addr: 8080
     proto: http
     inspect: false
     hostname: dev.geniecellgene.com
     
   # Fallback tunnel without subdomain for compatibility
   vite-dev:
-    addr: 4040
+    addr: 5173
     proto: http
     inspect: false

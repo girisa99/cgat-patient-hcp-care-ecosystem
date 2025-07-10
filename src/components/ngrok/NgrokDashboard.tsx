@@ -381,10 +381,10 @@ export const NgrokDashboard: React.FC = () => {
                       {tunnel.public_url.includes(PERMANENT_DOMAIN) && (
                         <Badge variant="default">Your Domain</Badge>
                       )}
-                      {tunnel.config.addr.includes('4040') && (
+                      {tunnel.config.addr.includes('8080') && (
                         <Badge variant="outline">Correct Port</Badge>
                       )}
-                      {tunnel.config.addr.includes('8080') && (
+                      {tunnel.config.addr.includes('4040') && (
                         <Badge variant="destructive">Wrong Port</Badge>
                       )}
                     </div>
@@ -442,7 +442,7 @@ export const NgrokDashboard: React.FC = () => {
               <Label htmlFor="tunnel-addr">Local Address</Label>
               <Input
                 id="tunnel-addr"
-                placeholder="localhost:4040"
+                placeholder="localhost:8080"
                 value={newTunnelConfig.addr}
                 onChange={(e) => setNewTunnelConfig(prev => ({ ...prev, addr: e.target.value }))}
               />
