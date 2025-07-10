@@ -1,4 +1,4 @@
-THIS SHOULD BE A LINTER ERRORauthtoken: ${NGROK_AUTHTOKEN}
+authtoken: ${NGROK_AUTHTOKEN}
 region: us
 
 tunnels:
