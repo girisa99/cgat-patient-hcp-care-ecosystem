@@ -1,6 +1,6 @@
 
 import * as React from "react"
-import { cva } from "class-variance-authority"
+import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const alertVariants = cva(
@@ -19,14 +19,10 @@ const alertVariants = cva(
   }
 )
 
-type AlertVariant = "default" | "destructive";
-
-interface AlertProps extends React.HTMLAttributes<HTMLDivElement> {
-  variant?: AlertVariant;
-}
+interface AlertProps extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof alertVariants> {}
 
 const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
-  ({ className, variant = "default", children, ...rest }, ref) => (
+  ({ className, variant, children, ...rest }, ref) => (
     <div
       ref={ref}
       role="alert"
