@@ -1,3 +1,5 @@
+version: "2"
+
 authtoken: ${NGROK_AUTHTOKEN}
 region: us
 
@@ -7,9 +9,3 @@ tunnels:
     proto: http
     inspect: false
     hostname: dev.geniecellgene.com
-    
-  # Fallback tunnel without subdomain for compatibility
-  vite-dev:
-    addr: 5173
-    proto: http
-    inspect: false
