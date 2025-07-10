@@ -3,35 +3,25 @@
 import 'dotenv/config';
 import { postgresAdapter } from '@/utils/db/PostgresAdapter';
 
-(async function main() {
-  try {
-    console.log('📊 Generating database overview...');
-
-    const tables = await postgresAdapter.getTableList();
-    if (tables.length === 0) {
-      console.warn('⚠️  No tables found in the public schema.');
-      return;
-    }
-
-    for (const tableName of tables) {
-      const [{ count }] = await postgresAdapter.query<{ count: string }>(
-        `SELECT COUNT(*)::int AS count FROM ${tableName}`
-      );
-      const sampleRows = await postgresAdapter.query<any>(
-        `SELECT * FROM ${tableName} LIMIT 5`
-      );
-
-      console.log(`\n──────── Table: ${tableName} (rows: ${count}) ────────`);
-      if (sampleRows.length === 0) {
-        console.log('   (no rows)');
-      } else {
-        console.table(sampleRows);
-      }
-    }
-
-    console.log('\n✅ Database overview complete.');
-  } catch (err) {
-    console.error('❌ Failed to generate database overview:', err);
-    process.exit(1);
+(async () => {
+  console.log('📊 Generating database overview...');
+  const tables = await postgresAdapter.getTableList();
+  if (tables.length === 0) {
+    console.warn('⚠️  No tables found in the public schema.');
+    return;
   }
+
+  for (const table of tables) {
+    const [{ count }] = await postgresAdapter.query<{ count: string }>(
+      `SELECT COUNT(*)::int AS count FROM ${table}`
+    );
+    const sampleRows = await postgresAdapter.query<Record<string, unknown>>(
+      `SELECT * FROM ${table} LIMIT 5`
+    );
+
+    console.log(`\n──────── Table: ${table} (rows: ${count}) ────────`);
+    console.table(sampleRows);
+  }
+
+  console.log('\n✅ Database overview complete.');
 })();
