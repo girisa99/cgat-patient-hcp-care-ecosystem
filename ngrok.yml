@@ -1,4 +1,7 @@
+HEAD
 THIS SHOULD BE A LINTER ERRORauthtoken: ${NGROK_AUTHTOKEN}
+authtoken:'2zPwW4XpNud9Yh2xoyF30yPjzMh_6S8v6FQjPvbckAf5SX36a'
+ee38b61 (feat: stable Supabase setup, toast notifications, Playwright toast tests)
 region: us
 
 tunnels:
@@ -7,7 +10,6 @@ tunnels:
     proto: http
     inspect: false
     hostname: dev.geniecellgene.com
-    
   # Fallback tunnel without subdomain for compatibility
   vite-dev:
     addr: 5173

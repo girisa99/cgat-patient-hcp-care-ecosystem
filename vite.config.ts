@@ -6,16 +6,15 @@ import { componentTagger } from "lovable-tagger";
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
-<<<<<<< HEAD
+HEAD
     host: "::",
-    port: 8080,
+    port: 5173,
     // Hosts allowed to access the dev server
     allowedHosts: ["localhost", "dev.geniecellgene.com"],
-=======
   host: "0.0.0.0",
-  port: 8080,                               
+  port: 5173,                               
   allowedHosts: ["localhost", "dev.geniecellgene.com"],
->>>>>>> 0f86293 (chore(dev): dev server & tunnel on port 8080)
+ 0f86293 (chore(dev): dev server & tunnel on port 5173)
   },
   plugins: [
     react(),
