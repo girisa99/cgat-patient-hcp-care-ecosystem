@@ -1,0 +1,14 @@
+version: "2"
+authtoken: ${NGROK_AUTHTOKEN}   # or remove this line if authtoken already stored globally
+region: us                      # or your preferred region
+
+tunnels:
+  dev-geniecellgene:            # tunnel name (any alias you like)
+    proto: http
+    addr: 5173
+    hostname: dev.geniecellgene.com
+  # Fallback tunnel without subdomain for compatibility
+  vite-dev:
+    addr: 5173
+    proto: http
+    inspect: false
