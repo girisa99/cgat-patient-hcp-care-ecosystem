@@ -3,7 +3,7 @@ import React from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { useRoleBasedNavigation } from '@/hooks/useRoleBasedNavigation';
 import { Card, CardContent } from '@/components/ui/card';
-import { CompleteUserManagementTable } from '@/components/users/CompleteUserManagementTable';
+import { MasterUserManagementTable } from '@/components/master/MasterUserManagementTable';
 
 const SimpleUsers: React.FC = () => {
   console.log('👥 Simple Users page - Using Complete User Management Table');
@@ -25,7 +25,7 @@ const SimpleUsers: React.FC = () => {
 
   return (
     <AppLayout title="User Management">
-      <CompleteUserManagementTable />
+      <MasterUserManagementTable />
     </AppLayout>
   );
 };

@@ -1,13 +1,13 @@
 
 /**
- * CLEAN USER MANAGEMENT TABLE - REDIRECTS TO COMPLETE VERSION
- * Maintains compatibility while using the complete functionality
+ * CLEAN USER MANAGEMENT TABLE - REDIRECTS TO MASTER VERSION
+ * Maintains compatibility while using the consolidated master functionality
  */
 import React from 'react';
-import { CompleteUserManagementTable } from './CompleteUserManagementTable';
+import { MasterUserManagementTable } from '@/components/master/MasterUserManagementTable';
 
 export const CleanUserManagementTable: React.FC = () => {
-  console.log('🔄 CleanUserManagementTable - Redirecting to CompleteUserManagementTable');
+  console.log('🔄 CleanUserManagementTable - Redirecting to MasterUserManagementTable');
   
-  return <CompleteUserManagementTable />;
+  return <MasterUserManagementTable />;
 };
