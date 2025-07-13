@@ -8,6 +8,7 @@ import { SidebarProvider } from '@/components/ui/sidebar-database-aligned';
 import { AppSidebar } from '@/components/sidebar/AppSidebar';
 import { MasterAuthProvider } from './hooks/useMasterAuth';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
+import { TenantProvider } from '@/contexts/TenantContext';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { generateRoutes } from '@/utils/routing/RouteGenerator';
 import { initializeRoutes } from '@/utils/routing/routes';
@@ -41,11 +42,13 @@ const AppContent = () => {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <MasterAuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <AppContent />
-      </TooltipProvider>
+      <TenantProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <AppContent />
+        </TooltipProvider>
+      </TenantProvider>
     </MasterAuthProvider>
   </QueryClientProvider>
 );

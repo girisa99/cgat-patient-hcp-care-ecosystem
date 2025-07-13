@@ -1,6 +1,6 @@
 import { ComponentType } from 'react';
 
-// Route configuration interface
+// Route configuration interface with multi-tenant support
 export interface RouteConfig {
   path: string;
   component: ComponentType<any>;
@@ -14,6 +14,13 @@ export interface RouteConfig {
   isPublic?: boolean;
   isActive?: boolean;
   metadata?: Record<string, any>;
+  
+  // MULTI-TENANT ENHANCEMENTS
+  tenantScoped?: boolean;          // Requires facility context
+  crossTenant?: boolean;           // Can access multiple facilities
+  facilityTypes?: string[];        // Allowed facility types
+  facilityPermission?: 'read' | 'write' | 'admin'; // Required facility permission level
+  requireFacilityContext?: boolean; // Must have active facility selected
 }
 
 // Route registry class for centralized route management
@@ -78,35 +85,59 @@ class RouteRegistryManager {
   }
 
   /**
-   * Get routes accessible by user roles
+   * Get routes accessible by user roles and facility context
    */
-  getAccessibleRoutes(userRoles: string[]): RouteConfig[] {
+  getAccessibleRoutes(userRoles: string[], currentFacilityId?: string, isSuperAdmin: boolean = false): RouteConfig[] {
     return this.getAllRoutes().filter(route => {
+      // Public routes are always accessible
       if (route.isPublic) return true;
-      if (!route.allowedRoles || route.allowedRoles.length === 0) return true;
-      return route.allowedRoles.some(role => userRoles.includes(role));
+      
+      // Check basic role access
+      if (route.allowedRoles && route.allowedRoles.length > 0) {
+        const hasRole = route.allowedRoles.some(role => userRoles.includes(role));
+        if (!hasRole && !isSuperAdmin) return false;
+      }
+      
+      // Check facility-specific access
+      if (route.tenantScoped && !route.crossTenant) {
+        // Single tenant routes require facility context
+        if (!currentFacilityId && !isSuperAdmin) return false;
+      }
+      
+      return true;
     });
   }
 
   /**
-   * Check if user can access a specific route
+   * Check if user can access a specific route with tenant context
    */
-  canAccess(path: string, userRoles: string[]): boolean {
+  canAccess(path: string, userRoles: string[], currentFacilityId?: string, isSuperAdmin: boolean = false): boolean {
     const route = this.getRoute(path);
     if (!route) return false;
     if (route.isPublic) return true;
-    if (!route.allowedRoles || route.allowedRoles.length === 0) return true;
-    return route.allowedRoles.some(role => userRoles.includes(role));
+    
+    // Check role access
+    if (route.allowedRoles && route.allowedRoles.length > 0) {
+      const hasRole = route.allowedRoles.some(role => userRoles.includes(role));
+      if (!hasRole && !isSuperAdmin) return false;
+    }
+    
+    // Check tenant access
+    if (route.tenantScoped && !route.crossTenant && !currentFacilityId && !isSuperAdmin) {
+      return false;
+    }
+    
+    return true;
   }
 
   /**
-   * Get navigation items for sidebar/menu
+   * Get navigation items for sidebar/menu with tenant context
    */
-  getNavigationItems(userRoles: string[]): Array<{
+  getNavigationItems(userRoles: string[], currentFacilityId?: string, isSuperAdmin: boolean = false): Array<{
     category: string;
     routes: RouteConfig[];
   }> {
-    const accessible = this.getAccessibleRoutes(userRoles);
+    const accessible = this.getAccessibleRoutes(userRoles, currentFacilityId, isSuperAdmin);
     const grouped = new Map<string, RouteConfig[]>();
 
     accessible.forEach(route => {

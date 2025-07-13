@@ -46,7 +46,7 @@ export const initializeRoutes = () => {
     icon: 'LayoutDashboard',
   });
 
-  // USER MANAGEMENT
+  // USER MANAGEMENT - Multi-tenant aware
   RouteRegistry.register({
     path: '/users',
     component: Users,
@@ -56,9 +56,10 @@ export const initializeRoutes = () => {
     allowedRoles: ['superAdmin', 'onboardingTeam'],
     category: 'management',
     icon: 'Users',
+    crossTenant: true, // Can manage users across facilities
   });
 
-  // PATIENT MANAGEMENT
+  // PATIENT MANAGEMENT - Tenant-scoped
   RouteRegistry.register({
     path: '/patients',
     component: Patients,
@@ -68,9 +69,13 @@ export const initializeRoutes = () => {
     allowedRoles: ['superAdmin', 'onboardingTeam', 'staff'],
     category: 'management',
     icon: 'Heart',
+    tenantScoped: true,           // Requires facility context
+    facilityPermission: 'read',   // Minimum facility permission
+    facilityTypes: ['treatmentFacility'], // Only treatment facilities
+    requireFacilityContext: true,
   });
 
-  // FACILITY MANAGEMENT
+  // FACILITY MANAGEMENT - Cross-tenant for admins
   RouteRegistry.register({
     path: '/facilities',
     component: Facilities,
@@ -80,6 +85,7 @@ export const initializeRoutes = () => {
     allowedRoles: ['superAdmin', 'onboardingTeam'],
     category: 'management',
     icon: 'Building',
+    crossTenant: true, // Can manage all facilities
   });
 
   // ONBOARDING

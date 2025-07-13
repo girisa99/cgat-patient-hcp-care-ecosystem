@@ -43,6 +43,9 @@ export const generateRoutes = (): React.ReactElement => {
           <ProtectedRoute
             requiredRoles={config.allowedRoles}
             requiredPermissions={config.requiredPermissions}
+            facilityAccess={config.facilityPermission}
+            requireFacilityContext={config.requireFacilityContext}
+            allowedFacilityTypes={config.facilityTypes}
           >
             {element}
           </ProtectedRoute>
@@ -72,17 +75,17 @@ export const useCurrentRoute = () => {
   };
 };
 
-// Hook to get navigation items based on user roles
-export const useNavigationItems = (userRoles: string[] = []) => {
-  return RouteRegistry.getNavigationItems(userRoles);
+// Hook to get navigation items based on user roles and tenant context
+export const useNavigationItems = (userRoles: string[] = [], currentFacilityId?: string, isSuperAdmin: boolean = false) => {
+  return RouteRegistry.getNavigationItems(userRoles, currentFacilityId, isSuperAdmin);
 };
 
-// Utility to check route access
+// Utility to check route access with tenant context
 export const useRouteAccess = () => {
   return {
-    canAccess: (path: string, userRoles: string[]) => 
-      RouteRegistry.canAccess(path, userRoles),
-    getAccessibleRoutes: (userRoles: string[]) => 
-      RouteRegistry.getAccessibleRoutes(userRoles),
+    canAccess: (path: string, userRoles: string[], currentFacilityId?: string, isSuperAdmin: boolean = false) => 
+      RouteRegistry.canAccess(path, userRoles, currentFacilityId, isSuperAdmin),
+    getAccessibleRoutes: (userRoles: string[], currentFacilityId?: string, isSuperAdmin: boolean = false) => 
+      RouteRegistry.getAccessibleRoutes(userRoles, currentFacilityId, isSuperAdmin),
   };
 };
