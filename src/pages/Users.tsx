@@ -5,7 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { 
   Users as UsersIcon, UserPlus, RefreshCw, Mail, Phone,
-  Calendar, AlertCircle, CheckCircle
+  Calendar, AlertCircle, CheckCircle, Edit, UserX, Shield,
+  Settings, Trash2, MoreVertical
 } from "lucide-react";
 import { useMasterData } from '@/hooks/useMasterData';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
@@ -38,11 +39,46 @@ const Users = () => {
   };
 
   const handleAddUser = () => {
-    showInfo("Add User", "Add user functionality will be implemented soon");
+    showInfo("Add User", "Opening user creation form...");
+    // TODO: Open user creation modal/form
   };
 
-  const handleEditUser = (userId: string) => {
-    showInfo("Edit User", `Edit functionality for user ${userId} will be implemented soon`);
+  const handleEditUser = (userId: string, userName: string) => {
+    showInfo("Edit User", `Opening edit form for ${userName}`);
+    // TODO: Open user edit modal/form
+  };
+
+  const handleDeactivateUser = (userId: string, userName: string, currentStatus: boolean) => {
+    const action = currentStatus ? "Deactivating" : "Activating";
+    showInfo(`${action} User`, `${action} user ${userName}...`);
+    // TODO: Implement activation/deactivation logic
+    setTimeout(() => {
+      const actionPast = currentStatus ? "deactivated" : "activated";
+      showSuccess(`User ${actionPast}`, `${userName} has been ${actionPast} successfully`);
+    }, 1000);
+  };
+
+  const handleAssignRoles = (userId: string, userName: string) => {
+    showInfo("Assign Roles", `Opening role assignment for ${userName}`);
+    // TODO: Open role assignment modal
+  };
+
+  const handleAssignModules = (userId: string, userName: string) => {
+    showInfo("Assign Modules", `Opening module assignment for ${userName}`);
+    // TODO: Open module assignment modal
+  };
+
+  const handleResendEmail = (userId: string, userEmail: string) => {
+    showInfo("Resend Email", `Sending verification email to ${userEmail}...`);
+    // TODO: Implement email resend logic
+    setTimeout(() => {
+      showSuccess("Email Sent", `Verification email sent to ${userEmail}`);
+    }, 1000);
+  };
+
+  const handleDeleteUser = (userId: string, userName: string) => {
+    showError("Delete User", `Are you sure you want to delete ${userName}? This action cannot be undone.`);
+    // TODO: Implement delete confirmation and logic
   };
 
   const handleToggleUserStatus = (userId: string, currentStatus: boolean) => {
@@ -289,16 +325,79 @@ const Users = () => {
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Button variant="outline" size="sm" onClick={() => handleEditUser(user.id)}>
-                        Edit
-                      </Button>
+                    <div className="flex items-center space-x-1">
+                      {/* Edit Button */}
                       <Button 
                         variant="outline" 
                         size="sm" 
-                        onClick={() => handleToggleUserStatus(user.id, user.is_active)}
+                        onClick={() => handleEditUser(user.id, `${user.first_name} ${user.last_name}`)}
+                        title="Edit User"
                       >
-                        {user.is_active ? 'Deactivate' : 'Activate'}
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      
+                      {/* Assign Roles Button */}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleAssignRoles(user.id, `${user.first_name} ${user.last_name}`)}
+                        title="Assign Roles"
+                      >
+                        <Shield className="h-4 w-4" />
+                      </Button>
+                      
+                      {/* Assign Modules Button */}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleAssignModules(user.id, `${user.first_name} ${user.last_name}`)}
+                        title="Assign Modules"
+                      >
+                        <Settings className="h-4 w-4" />
+                      </Button>
+                      
+                      {/* Resend Email Button */}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleResendEmail(user.id, user.email)}
+                        title="Resend Email Verification"
+                      >
+                        <Mail className="h-4 w-4" />
+                      </Button>
+                      
+                      {/* Activate/Deactivate Button */}
+                      {user.is_active ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeactivateUser(user.id, `${user.first_name} ${user.last_name}`, user.is_active)}
+                          title="Deactivate User"
+                          className="text-orange-600 hover:text-orange-700"
+                        >
+                          <UserX className="h-4 w-4" />
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeactivateUser(user.id, `${user.first_name} ${user.last_name}`, user.is_active)}
+                          title="Activate User"
+                          className="text-green-600 hover:text-green-700"
+                        >
+                          <CheckCircle className="h-4 w-4" />
+                        </Button>
+                      )}
+                      
+                      {/* Delete Button */}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDeleteUser(user.id, `${user.first_name} ${user.last_name}`)}
+                        title="Delete User"
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>

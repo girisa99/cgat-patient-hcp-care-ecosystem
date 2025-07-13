@@ -20,6 +20,10 @@ export const CompleteUserManagementTable: React.FC = () => {
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const stats = getUserStats();
 
+  console.log('🎯 CompleteUserManagementTable - ENHANCED WITH TOAST FUNCTIONALITY');
+  console.log('📊 Users loaded:', users.length);
+  console.log('🍞 Toast functions available:', { showSuccess: !!showSuccess, showError: !!showError, showInfo: !!showInfo });
+
   // Action handlers with toast notifications
   const handleAddUser = () => {
     showInfo("Add User", "Opening user creation form...");
