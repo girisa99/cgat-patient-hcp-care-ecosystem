@@ -34,7 +34,7 @@ export const ComplianceAlignedUserTable: React.FC = () => {
               <TableCell>{user.email}</TableCell>
               <TableCell>
                 <Badge variant="secondary">
-                  {user.user_roles[0]?.role?.name || 'user'}
+                  {user.user_roles[0]?.roles?.name || 'user'}
                 </Badge>
               </TableCell>
               <TableCell>

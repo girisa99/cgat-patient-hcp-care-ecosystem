@@ -17,7 +17,7 @@ export interface MasterUser {
   is_active?: boolean;
   phone?: string;
   user_roles: {
-    role: {
+    roles: {
       name: string;
     };
   }[];
@@ -78,8 +78,8 @@ export const useMasterData = () => {
           email,
           created_at,
           updated_at,
-          user_roles(
-            roles(name)
+          user_roles!user_roles_user_id_fkey(
+            roles!user_roles_role_id_fkey(name)
           )
         `);
 
@@ -195,20 +195,20 @@ export const useMasterData = () => {
     totalApiServices: apiServices.length,
     activeApiServices: apiServices.filter(s => s.status === 'active'),
     patientUsers: users.filter(u => 
-      u.user_roles.some(ur => ur.role?.name === 'patientCaregiver')
+      u.user_roles.some(ur => ur.roles?.name === 'patientCaregiver')
     ).length,
     totalFacilities: facilities.length,
     activeFacilities: facilities.filter(f => f.is_active).length,
     totalModules: modules.length,
     activeModules: modules.filter(m => m.is_active).length,
     adminCount: users.filter(u => 
-      u.user_roles.some(ur => ur.role?.name === 'superAdmin')
+      u.user_roles.some(ur => ur.roles?.name === 'superAdmin')
     ).length,
     staffCount: users.filter(u => 
-      u.user_roles.some(ur => ['onboardingTeam', 'facilityAdmin'].includes(ur.role?.name || ''))
+      u.user_roles.some(ur => ['onboardingTeam', 'facilityAdmin'].includes(ur.roles?.name || ''))
     ).length,
     patientCount: users.filter(u => 
-      u.user_roles.some(ur => ur.role?.name === 'patientCaregiver')
+      u.user_roles.some(ur => ur.roles?.name === 'patientCaregiver')
     ).length,
   };
 

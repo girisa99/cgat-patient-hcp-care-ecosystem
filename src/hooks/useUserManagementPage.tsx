@@ -29,13 +29,13 @@ export const useUserManagementPage = () => {
     
     // Specialized filters - MASTER DATA
     getPatients: () => masterData.users.filter(u => 
-      u.user_roles.some(ur => ur.role.name === 'patientCaregiver')
+      u.user_roles.some(ur => ur.roles.name === 'patientCaregiver')
     ),
     getStaff: () => masterData.users.filter(u => 
-      u.user_roles.some(ur => ['staff', 'technicalServices'].includes(ur.role.name))
+      u.user_roles.some(ur => ['staff', 'technicalServices'].includes(ur.roles.name))
     ),
     getAdmins: () => masterData.users.filter(u => 
-      u.user_roles.some(ur => ['superAdmin', 'onboardingTeam'].includes(ur.role.name))
+      u.user_roles.some(ur => ['superAdmin', 'onboardingTeam'].includes(ur.roles.name))
     ),
     
     // Dialog states - simplified for now

@@ -224,7 +224,7 @@ const UnifiedUserManagementComponent = () => {
                       <div className="flex flex-wrap gap-1">
                         {user.user_roles.map((roleObj, index) => (
                           <Badge key={index} variant="outline" className="text-xs">
-                            {roleObj.role.name}
+                            {roleObj.roles.name}
                           </Badge>
                         ))}
                         {user.user_roles.length === 0 && (

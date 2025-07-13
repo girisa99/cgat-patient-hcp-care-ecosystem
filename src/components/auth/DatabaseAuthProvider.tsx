@@ -128,7 +128,7 @@ export const DatabaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
           let roles: string[] = [];
           
           if (Array.isArray(profileData.user_roles)) {
-            roles = profileData.user_roles.map((ur: any) => ur.role.name) || [];
+            roles = profileData.user_roles.map((ur: any) => ur.roles.name) || [];
             processedProfile = {
               ...profileData,
               user_roles: profileData.user_roles

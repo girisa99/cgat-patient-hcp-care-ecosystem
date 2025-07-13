@@ -30,7 +30,7 @@ const RoleManagement = () => {
 
   // Extract roles from users
   const roles = users.flatMap(user => 
-    user.user_roles.map(ur => ur.role.name)
+    user.user_roles.map(ur => ur.roles.name)
   ).filter((role, index, arr) => arr.indexOf(role) === index);
 
   console.log('🔐 Role Management - Current state:', {

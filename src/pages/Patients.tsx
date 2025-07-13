@@ -23,7 +23,7 @@ const Patients = () => {
 
   // Filter users who are patients (have patientCaregiver role or treat all as patients for now)
   const patients = users.filter(u => 
-    u.user_roles.some(ur => ur.role.name === 'patientCaregiver') || 
+    u.user_roles.some(ur => ur.roles.name === 'patientCaregiver') || 
     u.user_roles.length === 0 // Treat users without roles as potential patients
   );
 
@@ -280,7 +280,7 @@ const Patients = () => {
                         <div className="flex gap-1 mt-2">
                           {patient.user_roles.map((ur, index) => (
                             <Badge key={index} variant="outline" className="text-xs">
-                              {ur.role.name}
+                              {ur.roles.name}
                             </Badge>
                           ))}
                           {patient.user_roles.length === 0 && (

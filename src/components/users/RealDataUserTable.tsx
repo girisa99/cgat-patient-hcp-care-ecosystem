@@ -95,7 +95,7 @@ export const RealDataUserTable: React.FC = () => {
                     <div className="flex gap-1 mt-1">
                       {user.user_roles.map((ur, index) => (
                         <Badge key={index} variant="outline" className="text-xs">
-                          {ur.role.name}
+                          {ur.roles.name}
                         </Badge>
                       ))}
                     </div>

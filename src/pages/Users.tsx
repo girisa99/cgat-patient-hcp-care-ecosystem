@@ -262,7 +262,7 @@ const Users = () => {
                         <div className="flex gap-1 mt-2">
                           {user.user_roles.map((ur, index) => (
                             <Badge key={index} variant="outline" className="text-xs">
-                              {ur.role.name}
+                              {ur.roles.name}
                             </Badge>
                           ))}
                           {user.user_roles.length === 0 && (
