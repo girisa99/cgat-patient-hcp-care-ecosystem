@@ -65,7 +65,7 @@ export const useMasterData = () => {
   const { data: users = [], isLoading: usersLoading, error: usersError } = useQuery({
     queryKey: ['master-users'],
     queryFn: async (): Promise<User[]> => {
-      console.log('👥 Fetching users from profiles table');
+      // Fetching users from profiles table
       
       // First, get profiles
       const { data: profiles, error: profilesError } = await supabase
@@ -106,7 +106,7 @@ export const useMasterData = () => {
           .map(ur => ({ roles: ur.roles }))
       }));
 
-      console.log('✅ Users loaded:', usersWithRoles.length);
+      // Users loaded successfully
       return usersWithRoles as User[];
     },
     staleTime: 300000,

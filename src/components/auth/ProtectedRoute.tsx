@@ -11,7 +11,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { isLoading, isAuthenticated, user } = useMasterAuth();
   const navigate = useNavigate();
 
-  console.log('🛡️ ProtectedRoute check:', { isLoading, isAuthenticated, hasUser: !!user });
+  // ProtectedRoute check
 
   useEffect(() => {
     // Only redirect if not loading and not authenticated - redirect to login instead of index

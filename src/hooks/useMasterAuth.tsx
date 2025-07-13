@@ -33,13 +33,13 @@ export const MasterAuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  console.log('🔐 Master Auth Provider - Single source of truth for authentication');
+  // Master Auth Provider - Single source of truth for authentication
 
   const isAuthenticated = !!user && !!session;
 
   // Initialize auth state
   useEffect(() => {
-    console.log('🔐 Initializing Master Auth...');
+    // Initializing Master Auth
     
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
