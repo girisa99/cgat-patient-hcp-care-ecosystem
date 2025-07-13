@@ -35,54 +35,55 @@ export const MasterUserManagementTable: React.FC = () => {
 
   // Action handlers with toast notifications and actual functionality
   const handleAddUser = () => {
-    showInfo("Add User", "Opening user creation form...");
-    createUser();
+    // For demo purposes, create a test user
+    const testUserData = {
+      email: `testuser${Date.now()}@example.com`,
+      first_name: 'Test',
+      last_name: 'User',
+      password: 'TempPassword123!'
+    };
+    showInfo("Add User", "Creating test user...");
+    createUser(testUserData);
   };
 
   const handleEditUser = (userId: string, userName: string) => {
     setSelectedUser(userId);
-    showInfo("Edit User", `Opening edit form for ${userName}`);
+    showInfo("Edit User", `Edit functionality for ${userName} is coming soon`);
     // TODO: Open user edit modal/form
   };
 
-  const handleDeactivateUser = async (userId: string, userName: string) => {
-    try {
-      showInfo("Deactivate User", `Deactivating user ${userName}...`);
-      await deactivateUser();
-      showSuccess("User Deactivated", `${userName} has been deactivated successfully`);
-    } catch (error) {
-      showError("Deactivation Failed", `Failed to deactivate ${userName}`);
-    }
+  const handleDeactivateUser = (userId: string, userName: string) => {
+    showInfo("Deactivate User", `Deactivating user ${userName}...`);
+    deactivateUser(userId);
   };
 
   const handleAssignRoles = (userId: string, userName: string) => {
-    showInfo("Assign Roles", `Opening role assignment for ${userName}`);
-    assignRole(); // Placeholder call
+    showInfo("Assign Roles", `Role assignment for ${userName} is coming soon`);
+    // For demo, we would need to show role selection modal
+    // assignRole(userId, selectedRoleId);
   };
 
   const handleAssignModules = (userId: string, userName: string) => {
-    showInfo("Assign Modules", `Opening module assignment for ${userName}`);
+    showInfo("Assign Modules", `Module assignment for ${userName} is coming soon`);
     // TODO: Implement module assignment
   };
 
   const handleResendEmail = (userId: string, userEmail: string) => {
-    showInfo("Resend Email", `Sending verification email to ${userEmail}...`);
-    setTimeout(() => {
-      showSuccess("Email Sent", `Verification email sent to ${userEmail}`);
-    }, 1000);
+    showInfo("Resend Email", `Email resend functionality for ${userEmail} is coming soon`);
+    // TODO: Implement email resend via Supabase admin API or edge function
   };
 
   const handleDeleteUser = (userId: string, userName: string) => {
-    showError("Delete User", `Are you sure you want to delete ${userName}? This action cannot be undone.`);
-    // TODO: Implement delete confirmation and logic
+    if (window.confirm(`Are you sure you want to delete ${userName}? This action cannot be undone.`)) {
+      showInfo("Delete User", `Deleting user ${userName}...`);
+      // TODO: Implement actual delete functionality
+      showError("Feature Not Available", "User deletion is disabled for safety");
+    }
   };
 
   const handleRefresh = () => {
     showInfo("Refreshing", "Updating user data...");
     fetchUsers();
-    setTimeout(() => {
-      showSuccess("Data Updated", "User list has been refreshed");
-    }, 500);
   };
 
   if (isLoading) {
