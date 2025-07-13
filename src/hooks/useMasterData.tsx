@@ -58,8 +58,6 @@ interface Module {
 }
 
 export const useMasterData = () => {
-  console.log('📊 Master Data Hook - Single source of truth for all data');
-  
   const { showSuccess, showError } = useMasterToast();
   const queryClient = useQueryClient();
 

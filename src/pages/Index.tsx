@@ -22,14 +22,7 @@ const Index = () => {
     refreshData
   } = useMasterData();
 
-  console.log('🏠 Dashboard - Current state:', {
-    isAuthenticated,
-    totalUsers: users.length,
-    totalApiServices: apiServices.length,
-    isLoading,
-    error,
-    currentUser: user?.email
-  });
+  // Removed console.log to prevent render loops
 
   const handleRefresh = () => {
     console.log('🔄 Refreshing dashboard data...');
