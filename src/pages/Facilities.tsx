@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { useMasterFacilities, Facility } from '@/hooks/useMasterFacilities';
+import { useMasterToast } from '@/hooks/useMasterToast';
 import AccessDenied from '@/components/AccessDenied';
 import { DataTable, ColumnConfig } from '@/components/ui/DataTable';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 
 export default function Facilities() {
   const { userRoles } = useMasterAuth();
+  const { showSuccess, showError, showInfo } = useMasterToast();
   const {
     facilities,
     isLoading,
@@ -39,7 +41,10 @@ export default function Facilities() {
   });
 
   const handleCreate = () => {
-    if (!newFacility.name) return;
+    if (!newFacility.name) {
+      showError("Validation Error", "Facility name is required");
+      return;
+    }
     createFacility({
       name: newFacility.name,
       facility_type: newFacility.facility_type,
@@ -48,6 +53,7 @@ export default function Facilities() {
     });
     setIsAddOpen(false);
     setNewFacility({ name: '', facility_type: 'treatmentFacility', address: '', phone: '' });
+    showSuccess("Facility Created", `${newFacility.name} has been created successfully`);
   };
 
   const columns: ColumnConfig[] = [
@@ -64,6 +70,11 @@ export default function Facilities() {
     },
   ];
 
+  const handleDeactivate = (facility: Facility) => {
+    deactivateFacility(facility.id);
+    showInfo("Facility Deactivated", `${facility.name} has been deactivated`);
+  };
+
   const renderActions = (row: Facility) => (
     <div className="flex gap-1">
       {row.is_active && (
@@ -71,7 +82,7 @@ export default function Facilities() {
           size="sm"
           variant="outline"
           disabled={isDeactivatingFacility}
-          onClick={() => deactivateFacility(row.id)}
+          onClick={() => handleDeactivate(row)}
         >
           Deactivate
         </Button>

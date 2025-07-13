@@ -9,10 +9,12 @@ import {
 } from "lucide-react";
 import { useMasterData } from '@/hooks/useMasterData';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
+import { useMasterToast } from '@/hooks/useMasterToast';
 import DashboardHeader from "@/components/layout/DashboardHeader";
 
 const Users = () => {
   const { user: authUser, userRoles, isAuthenticated } = useMasterAuth();
+  const { showSuccess, showError, showInfo } = useMasterToast();
   const { 
     users, 
     isLoading, 
@@ -32,6 +34,20 @@ const Users = () => {
   const handleRefresh = () => {
     console.log('🔄 Refreshing users data...');
     refreshData();
+    showInfo("Refreshing Data", "User data is being refreshed...");
+  };
+
+  const handleAddUser = () => {
+    showInfo("Add User", "Add user functionality will be implemented soon");
+  };
+
+  const handleEditUser = (userId: string) => {
+    showInfo("Edit User", `Edit functionality for user ${userId} will be implemented soon`);
+  };
+
+  const handleToggleUserStatus = (userId: string, currentStatus: boolean) => {
+    const action = currentStatus ? "deactivate" : "activate";
+    showInfo("Toggle User Status", `${action} functionality for user will be implemented soon`);
   };
 
   if (!isAuthenticated) {
@@ -204,7 +220,7 @@ const Users = () => {
                 <UsersIcon className="h-5 w-5" />
                 <span>All Users ({users.length})</span>
               </div>
-              <Button size="sm">
+              <Button size="sm" onClick={handleAddUser}>
                 <UserPlus className="h-4 w-4 mr-2" />
                 Add User
               </Button>
@@ -274,10 +290,14 @@ const Users = () => {
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" onClick={() => handleEditUser(user.id)}>
                         Edit
                       </Button>
-                      <Button variant="outline" size="sm" disabled={!user.is_active}>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => handleToggleUserStatus(user.id, user.is_active)}
+                      >
                         {user.is_active ? 'Deactivate' : 'Activate'}
                       </Button>
                     </div>

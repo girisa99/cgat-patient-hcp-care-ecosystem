@@ -10,9 +10,11 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Package, CheckCircle, Shield, Database } from 'lucide-react';
 import { useSingleMasterModules } from '@/hooks/useSingleMasterModules';
+import { useMasterToast } from '@/hooks/useMasterToast';
 
 const Modules: React.FC = () => {
   const { hasAccess } = useRoleBasedNavigation();
+  const { showSuccess, showError, showInfo } = useMasterToast();
   
   // ✅ VERIFIED: Using the CORRECT single source of truth hook
   const {
@@ -59,7 +61,21 @@ const Modules: React.FC = () => {
       createModule(newModule);
       setNewModule({ name: '', description: '', is_active: true });
       setShowCreateForm(false);
+      showSuccess("Module Created", `${newModule.name} has been created successfully`);
+    } else {
+      showError("Validation Error", "Module name is required");
     }
+  };
+
+  const handleEditModule = (moduleId: string) => {
+    const module = getModuleById(moduleId);
+    showInfo("Edit Module", `Edit functionality for ${module?.name || 'module'} will be implemented soon`);
+  };
+
+  const handleToggleModule = (moduleId: string) => {
+    const module = getModuleById(moduleId);
+    const action = module?.is_active ? "deactivate" : "activate";
+    showInfo("Toggle Module", `${action} functionality for ${module?.name || 'module'} will be implemented soon`);
   };
 
   const integrity = verifyModuleIntegrity();
@@ -206,7 +222,7 @@ const Modules: React.FC = () => {
                           <Badge variant={module.is_active ? "default" : "secondary"}>
                             {module.is_active ? 'Active' : 'Inactive'}
                           </Badge>
-                          <Button variant="outline" size="sm">
+                          <Button variant="outline" size="sm" onClick={() => handleEditModule(module.id)}>
                             Edit
                           </Button>
                         </div>
@@ -238,9 +254,9 @@ const Modules: React.FC = () => {
                       </div>
                       <div className="flex items-center gap-2">
                         <Badge variant="default">Active</Badge>
-                        <Button variant="outline" size="sm">
-                          Edit
-                        </Button>
+                          <Button variant="outline" size="sm" onClick={() => handleEditModule(module.id)}>
+                            Edit
+                          </Button>
                       </div>
                     </div>
                   ))}
@@ -264,7 +280,7 @@ const Modules: React.FC = () => {
                       </div>
                       <div className="flex items-center gap-2">
                         <Badge variant="secondary">Inactive</Badge>
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" onClick={() => handleToggleModule(module.id)}>
                           Activate
                         </Button>
                       </div>

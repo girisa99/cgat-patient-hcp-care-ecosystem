@@ -9,10 +9,12 @@ import {
 } from "lucide-react";
 import { useMasterAuth } from "@/hooks/useMasterAuth";
 import { useMasterData } from '@/hooks/useMasterData';
+import { useMasterToast } from '@/hooks/useMasterToast';
 import DashboardHeader from "@/components/layout/DashboardHeader";
 
 const Patients = () => {
   const { user, userRoles, isAuthenticated } = useMasterAuth();
+  const { showSuccess, showError, showInfo } = useMasterToast();
   const { 
     users, 
     isLoading, 
@@ -39,6 +41,19 @@ const Patients = () => {
   const handleRefresh = () => {
     console.log('🔄 Refreshing patient data...');
     refreshData();
+    showInfo("Refreshing Data", "Patient data is being refreshed...");
+  };
+
+  const handleAddPatient = () => {
+    showInfo("Add Patient", "Add patient functionality will be implemented soon");
+  };
+
+  const handleViewPatient = (patientId: string) => {
+    showInfo("View Patient", `View functionality for patient ${patientId} will be implemented soon`);
+  };
+
+  const handleEditPatient = (patientId: string) => {
+    showInfo("Edit Patient", `Edit functionality for patient ${patientId} will be implemented soon`);
   };
 
   if (!isAuthenticated) {
@@ -219,7 +234,7 @@ const Patients = () => {
                 <HeartHandshake className="h-5 w-5" />
                 <span>Patient Records ({patients.length})</span>
               </div>
-              <Button size="sm">
+              <Button size="sm" onClick={handleAddPatient}>
                 <UserPlus className="h-4 w-4 mr-2" />
                 Add Patient
               </Button>
@@ -292,10 +307,10 @@ const Patients = () => {
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" onClick={() => handleViewPatient(patient.id)}>
                         View
                       </Button>
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" onClick={() => handleEditPatient(patient.id)}>
                         Edit
                       </Button>
                     </div>
