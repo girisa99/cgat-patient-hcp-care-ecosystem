@@ -69,7 +69,8 @@ export const useMasterData = () => {
     queryFn: async (): Promise<User[]> => {
       console.log('👥 Fetching users from profiles table');
       
-      const { data, error } = await supabase
+      // First, get profiles
+      const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select(`
           id,
@@ -77,23 +78,38 @@ export const useMasterData = () => {
           last_name,
           email,
           created_at,
-          updated_at,
-          user_roles!user_roles_user_id_fkey(
-            roles!user_roles_role_id_fkey(name)
-          )
+          updated_at
         `);
 
-      if (error) {
-        console.error('❌ Error fetching users:', error);
-        throw error;
+      if (profilesError) {
+        console.error('❌ Error fetching profiles:', profilesError);
+        throw profilesError;
       }
 
-      console.log('✅ Users loaded:', data?.length || 0);
-      return (data || []).map(user => ({
-        ...user,
+      // Then, get user roles with role names
+      const { data: userRoles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select(`
+          user_id,
+          roles!user_roles_role_id_fkey(name)
+        `);
+
+      if (rolesError) {
+        console.error('❌ Error fetching user roles:', rolesError);
+        throw rolesError;
+      }
+
+      // Combine profiles with their roles
+      const usersWithRoles = (profiles || []).map(profile => ({
+        ...profile,
         is_active: true,
-        user_roles: Array.isArray(user.user_roles) ? user.user_roles : []
-      })) as User[];
+        user_roles: (userRoles || [])
+          .filter(ur => ur.user_id === profile.id)
+          .map(ur => ({ roles: ur.roles }))
+      }));
+
+      console.log('✅ Users loaded:', usersWithRoles.length);
+      return usersWithRoles as User[];
     },
     staleTime: 300000,
     refetchOnWindowFocus: false,
