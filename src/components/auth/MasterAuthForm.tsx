@@ -13,7 +13,7 @@ import { Loader2, Shield, Mail, Lock, User, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
-import HealthcareAuthLayout from './HealthcareAuthLayout';
+import HealthcareAuthLayoutWithLogo from './HealthcareAuthLayoutWithLogo';
 import { useNavigate } from 'react-router-dom';
 
 interface MasterAuthFormProps {
@@ -191,19 +191,19 @@ export const MasterAuthForm: React.FC<MasterAuthFormProps> = ({
 
   if (authLoading) {
     return (
-      <HealthcareAuthLayout>
+      <HealthcareAuthLayoutWithLogo>
         <div className="flex items-center justify-center p-8">
           <div className="text-center">
             <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
             <p className="text-gray-600">Checking authentication...</p>
           </div>
         </div>
-      </HealthcareAuthLayout>
+      </HealthcareAuthLayoutWithLogo>
     );
   }
 
   return (
-    <HealthcareAuthLayout>
+    <HealthcareAuthLayoutWithLogo>
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold">Welcome to GENIE</CardTitle>
@@ -385,7 +385,7 @@ export const MasterAuthForm: React.FC<MasterAuthFormProps> = ({
           </div>
         </CardContent>
       </Card>
-    </HealthcareAuthLayout>
+    </HealthcareAuthLayoutWithLogo>
   );
 };
 
