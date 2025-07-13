@@ -39,39 +39,55 @@ export const MasterAuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Initialize auth state
   useEffect(() => {
+    console.log('🔐 Initializing Master Auth...');
+    
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('🔐 Auth state changed:', event, session?.user?.email);
+        console.log('🔐 Session details:', { hasSession: !!session, hasUser: !!session?.user });
         
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
+          console.log('✅ User authenticated, fetching profile...');
           // Defer data fetching to prevent deadlocks
           setTimeout(() => {
             fetchUserProfile(session.user.id);
             fetchUserRoles(session.user.id);
           }, 0);
         } else {
+          console.log('❌ No user session found');
           setProfile(null);
           setUserRoles([]);
         }
         
         setIsLoading(false);
+        console.log('🔐 Auth loading complete');
       }
     );
 
     // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    console.log('🔍 Checking for existing session...');
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      console.log('🔍 Session check result:', { hasSession: !!session, error });
+      
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
+        console.log('✅ Existing session found');
         fetchUserProfile(session.user.id);
         fetchUserRoles(session.user.id);
+      } else {
+        console.log('❌ No existing session');
       }
       
+      setIsLoading(false);
+      console.log('🔐 Initial auth check complete');
+    }).catch((err) => {
+      console.error('❌ Session check failed:', err);
       setIsLoading(false);
     });
 
