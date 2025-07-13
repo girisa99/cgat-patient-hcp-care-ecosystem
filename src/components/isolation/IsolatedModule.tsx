@@ -193,6 +193,130 @@ export const PatientManagementModule: React.FC<{ children: ReactNode }> = ({ chi
   </IsolatedModule>
 );
 
+// API Services Module
+export const APIServicesModule: React.FC<{ children: ReactNode }> = ({ children }) => (
+  <IsolatedModule
+    moduleName="API Services"
+    permissions={['api_management', 'api_read', 'api_write', 'api_keys']}
+    settings={{ 
+      rateLimitMonitoring: true,
+      enableVersioning: true,
+      enableAnalytics: true,
+      enableDeveloperPortal: true
+    }}
+    loadingTimeout={8000}
+  >
+    {children}
+  </IsolatedModule>
+);
+
+// Testing Service Suite Module
+export const TestingServiceSuiteModule: React.FC<{ children: ReactNode }> = ({ children }) => (
+  <IsolatedModule
+    moduleName="Testing Service Suite"
+    permissions={['testing_read', 'testing_write', 'testing_execute', 'testing_admin']}
+    settings={{ 
+      cfrPart11Compliance: true,
+      autoTestGeneration: true,
+      performanceMonitoring: true,
+      testReportGeneration: true,
+      validationLevels: ['IQ', 'OQ', 'PQ']
+    }}
+    loadingTimeout={15000}
+  >
+    {children}
+  </IsolatedModule>
+);
+
+// Data Import Module
+export const DataImportModule: React.FC<{ children: ReactNode }> = ({ children }) => (
+  <IsolatedModule
+    moduleName="Data Import"
+    permissions={['data_import', 'data_read', 'data_write', 'data_validate']}
+    settings={{ 
+      maxFileSize: '100MB',
+      supportedFormats: ['CSV', 'Excel', 'JSON', 'XML'],
+      enableValidation: true,
+      enablePreview: true,
+      batchProcessing: true
+    }}
+    loadingTimeout={20000}
+  >
+    {children}
+  </IsolatedModule>
+);
+
+// Customer Onboarding Module (specialized for customer role)
+export const CustomerOnboardingModule: React.FC<{ children: ReactNode }> = ({ children }) => (
+  <IsolatedModule
+    moduleName="Customer Onboarding"
+    permissions={['customer_onboarding', 'customer_read', 'customer_write']}
+    settings={{ 
+      workflowEnabled: true,
+      documentUpload: true,
+      complianceChecks: true,
+      financialAssessment: true,
+      contractManagement: true,
+      autoNotifications: true
+    }}
+    loadingTimeout={10000}
+  >
+    {children}
+  </IsolatedModule>
+);
+
+// Analytics & Reporting Module
+export const AnalyticsReportingModule: React.FC<{ children: ReactNode }> = ({ children }) => (
+  <IsolatedModule
+    moduleName="Analytics & Reporting"
+    permissions={['analytics_read', 'reports_read', 'reports_generate']}
+    settings={{ 
+      realTimeAnalytics: true,
+      exportFormats: ['PDF', 'Excel', 'CSV'],
+      dashboardCustomization: true,
+      scheduledReports: true
+    }}
+    loadingTimeout={12000}
+  >
+    {children}
+  </IsolatedModule>
+);
+
+// Developer Portal Module
+export const DeveloperPortalModule: React.FC<{ children: ReactNode }> = ({ children }) => (
+  <IsolatedModule
+    moduleName="Developer Portal"
+    permissions={['developer_portal', 'api_documentation', 'api_keys']}
+    settings={{ 
+      interactiveDocumentation: true,
+      codeExamples: true,
+      apiKeyManagement: true,
+      usageAnalytics: true,
+      sandboxEnvironment: true
+    }}
+    loadingTimeout={8000}
+  >
+    {children}
+  </IsolatedModule>
+);
+
+// Marketplace Module
+export const MarketplaceModule: React.FC<{ children: ReactNode }> = ({ children }) => (
+  <IsolatedModule
+    moduleName="Marketplace"
+    permissions={['marketplace_read', 'marketplace_publish', 'marketplace_manage']}
+    settings={{ 
+      apiListings: true,
+      verificationSystem: true,
+      ratingSystem: true,
+      monetization: true
+    }}
+    loadingTimeout={10000}
+  >
+    {children}
+  </IsolatedModule>
+);
+
 // High-order component for easy module wrapping
 export const withModuleIsolation = <P extends object>(
   Component: React.ComponentType<P>,
