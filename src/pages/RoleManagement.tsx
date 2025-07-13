@@ -22,11 +22,16 @@ interface ExtendedRole {
 const RoleManagement = () => {
   const { user: authUser, userRoles, isAuthenticated } = useMasterAuth();
   const { 
-    roles, 
+    users, 
     isLoading, 
     error,
     refreshData
   } = useMasterData();
+
+  // Extract roles from users
+  const roles = users.flatMap(user => 
+    user.user_roles.map(ur => ur.role.name)
+  ).filter((role, index, arr) => arr.indexOf(role) === index);
 
   console.log('🔐 Role Management - Current state:', {
     isAuthenticated,
@@ -42,8 +47,10 @@ const RoleManagement = () => {
   };
 
   // Convert roles to extended format
-  const extendedRoles: ExtendedRole[] = roles.map(role => ({
-    ...role,
+  const extendedRoles: ExtendedRole[] = roles.map((roleName, index) => ({
+    id: `role-${index}`,
+    name: roleName,
+    description: `${roleName} role`,
     is_active: true // Default to active since base roles don't have this field
   }));
 
@@ -144,7 +151,9 @@ const RoleManagement = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-red-700">{error}</p>
+              <p className="text-red-700">
+                {typeof error === 'string' ? error : error?.message || 'An error occurred while loading roles'}
+              </p>
               <Button onClick={handleRefresh} className="mt-4" variant="outline">
                 Try Again
               </Button>

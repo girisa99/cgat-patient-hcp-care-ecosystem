@@ -131,7 +131,9 @@ const Users = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-red-700">{error}</p>
+              <p className="text-red-700">
+                {typeof error === 'string' ? error : error?.message || 'An error occurred while loading users'}
+              </p>
               <Button onClick={handleRefresh} className="mt-4" variant="outline">
                 Try Again
               </Button>

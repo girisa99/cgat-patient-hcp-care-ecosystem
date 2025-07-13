@@ -112,7 +112,7 @@ const SimpleModules = () => {
               Total Modules: {stats.totalModules}
             </Badge>
             <Badge variant="outline" className="text-sm">
-              Active: {stats.activeModules.length}
+              Active: {stats.activeModules || 0}
             </Badge>
             {userRoles.length > 0 && (
               <Badge variant="default" className="text-sm">
