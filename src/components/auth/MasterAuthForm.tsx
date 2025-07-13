@@ -25,6 +25,7 @@ export const MasterAuthForm: React.FC<MasterAuthFormProps> = ({
   onSuccess,
   defaultTab = 'login'
 }) => {
+  console.log('🔐 MasterAuthForm component rendering...');
   const { isLoading: authLoading, refreshAuth, isAuthenticated } = useMasterAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>(defaultTab);

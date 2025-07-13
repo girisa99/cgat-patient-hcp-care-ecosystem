@@ -16,7 +16,9 @@ import { initializeRoutes } from '@/utils/routing/routes';
 const queryClient = new QueryClient();
 
 const AppContent = () => {
+  console.log('🚀 AppContent component mounting...');
   const { isAuthenticated } = useMasterAuth();
+  console.log('🔐 AppContent authentication state:', isAuthenticated);
 
   // Initialize routes on app start
   React.useEffect(() => {
