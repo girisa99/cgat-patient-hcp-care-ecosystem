@@ -65,7 +65,7 @@ export const useMasterData = () => {
   const { data: users = [], isLoading: usersLoading, error: usersError } = useQuery({
     queryKey: ['master-users'],
     queryFn: async (): Promise<User[]> => {
-      // Fetching users from profiles table
+      console.log('👥 Fetching users from profiles table');
       
       // First, get profiles
       const { data: profiles, error: profilesError } = await supabase
@@ -84,6 +84,8 @@ export const useMasterData = () => {
         throw profilesError;
       }
 
+      console.log('✅ Profiles fetched:', profiles?.length || 0);
+
       // Then, get user roles with role names
       const { data: userRoles, error: rolesError } = await supabase
         .from('user_roles')
@@ -94,8 +96,11 @@ export const useMasterData = () => {
 
       if (rolesError) {
         console.error('❌ Error fetching user roles:', rolesError);
-        throw rolesError;
+        // Don't throw - continue without roles
+        console.warn('Continuing without roles data');
       }
+
+      console.log('✅ User roles fetched:', userRoles?.length || 0);
 
       // Combine profiles with their roles
       const usersWithRoles = (profiles || []).map(profile => ({
@@ -106,7 +111,7 @@ export const useMasterData = () => {
           .map(ur => ({ roles: ur.roles }))
       }));
 
-      // Users loaded successfully
+      console.log('✅ Users with roles combined:', usersWithRoles.length);
       return usersWithRoles as User[];
     },
     staleTime: 300000,
