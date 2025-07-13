@@ -4,10 +4,15 @@
  * All application hooks consolidated to prevent duplication
  */
 
-// Authentication - Single Source
-export { useMasterAuth } from './useMasterAuth';
+// MASTER APPLICATION - SINGLE SOURCE OF TRUTH FOR EVERYTHING
+export { useMasterApplication } from './useMasterApplication';
 
-// User Management - Single Source  
+// Core Master Hooks (consolidated into useMasterApplication)
+export { useMasterAuth } from './useMasterAuth';
+export { useMasterData } from './useMasterData';
+export { useMasterToast } from './useMasterToast';
+
+// Legacy User Management - Single Source (use useMasterApplication instead)
 export { useMasterUserManagement } from './useMasterUserManagement';
 
 // Dashboard - Single Source (FIXED)
@@ -59,10 +64,15 @@ export { useIntelligentRouting } from './useIntelligentRouting';
 
 // UI Hooks
 export { useToast } from './use-toast';
-export { useMasterToast } from './useMasterToast';
 
 /**
  * ✅ SINGLE SOURCE OF TRUTH ARCHITECTURE - COMPLETE!
+ * 
+ * 🌟 MASTER APPLICATION CONSOLIDATION:
+ * - MAIN: useMasterApplication (NEW - CONSOLIDATES EVERYTHING)
+ * - Authentication: useMasterAuth (CORE)
+ * - Data Management: useMasterData (CORE)
+ * - Toast Notifications: useMasterToast (CORE)
  * 
  * 🎉 ALL MODULES CONSOLIDATED:
  * - Dashboard: useMasterDashboard (FIXED - consolidated data sources)
@@ -75,8 +85,7 @@ export { useMasterToast } from './useMasterToast';
  * - Data Import: useMasterDataImport (FIXED - consolidated)
  * - Ngrok Integration: useNgrokIntegration (FIXED - localhost verification)
  * - Modules: useSingleMasterModules (VERIFIED)
- * - User Management: useMasterUserManagement (VERIFIED)
- * - Authentication: useMasterAuth (VERIFIED)
+ * - User Management: useMasterUserManagement (LEGACY - use useMasterApplication)
  * - API Services: useApiServices (VERIFIED)
  * 
  * 🚀 ARCHITECTURE BENEFITS:

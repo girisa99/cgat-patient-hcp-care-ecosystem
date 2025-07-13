@@ -12,7 +12,7 @@ import {
   Users, UserPlus, Settings, RefreshCw, Edit, UserX, Shield, 
   Mail, Trash2 
 } from 'lucide-react';
-import { useRealUserManagement } from '@/hooks/useRealUserManagement';
+import { useMasterUserManagement } from '@/hooks/useMasterUserManagement';
 
 export const MasterUserManagementTable: React.FC = () => {
   const { 
@@ -30,7 +30,7 @@ export const MasterUserManagementTable: React.FC = () => {
     isDeactivating,
     isAssigningRole,
     isRemovingRole
-  } = useRealUserManagement();
+  } = useMasterUserManagement();
   
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const stats = getUserStats();

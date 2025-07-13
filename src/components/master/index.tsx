@@ -4,12 +4,14 @@
  * All master consolidation components and systems
  */
 
-// Main master user management component
-export { MasterUserManagementTable } from './MasterUserManagementTable';
+// MASTER APPLICATION TABLE - SINGLE SOURCE OF TRUTH FOR ALL MANAGEMENT
+export { MasterApplicationTable } from './MasterApplicationTable';
 
-// Master compliance validation component  
+// Legacy components (use MasterApplicationTable instead)
+export { MasterUserManagementTable } from './MasterUserManagementTable';
 export { MasterComplianceValidator } from './MasterComplianceValidator';
 
-// Backward compatibility - all point to master components
-export { MasterUserManagementTable as EnhancedUserManagementTable } from './MasterUserManagementTable';
-export { MasterUserManagementTable as ConsolidatedUserTable } from './MasterUserManagementTable';
+// Backward compatibility - all point to consolidated component
+export { MasterApplicationTable as EnhancedUserManagementTable } from './MasterApplicationTable';
+export { MasterApplicationTable as ConsolidatedUserTable } from './MasterApplicationTable';
+export { MasterApplicationTable as UnifiedManagementInterface } from './MasterApplicationTable';
