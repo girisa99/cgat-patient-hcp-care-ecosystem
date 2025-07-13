@@ -35,13 +35,8 @@ export const ProtectedMasterAuthForm: React.FC<ProtectedMasterAuthFormProps> = (
     }
   }, []);
 
-  // Create isolated wrapper
-  const IsolatedMasterAuthForm = componentProtection.createIsolationWrapper(
-    'MasterAuthForm',
-    MasterAuthForm
-  );
-
-  return <IsolatedMasterAuthForm {...props} />;
+  // Temporarily bypass isolation wrapper to fix rendering issues
+  return <MasterAuthForm {...props} />;
 };
 
 export default ProtectedMasterAuthForm;
