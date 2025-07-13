@@ -57,60 +57,49 @@ export const MasterAuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Initialize auth state
   useEffect(() => {
-    // Initializing Master Auth
+    let isInitialized = false;
     
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('🔐 Auth state changed:', event, session?.user?.email);
-        console.log('🔐 Session details:', { hasSession: !!session, hasUser: !!session?.user });
         
         setSession(session);
         setUser(session?.user ?? null);
         
-        if (session?.user) {
-          console.log('✅ User authenticated, fetching profile...');
-          // Defer data fetching to prevent deadlocks
+        if (session?.user && !isInitialized) {
+          // Only fetch data on initial load, not on every auth change
           setTimeout(() => {
             fetchUserProfile(session.user.id);
             fetchUserRoles(session.user.id);
           }, 0);
-        } else {
-          console.log('❌ No user session found');
+          isInitialized = true;
+        } else if (!session?.user) {
           setProfile(null);
           setUserRoles([]);
+          isInitialized = false;
         }
         
         setIsLoading(false);
-        console.log('🔐 Auth loading complete');
       }
     );
 
-    // Check for existing session
-    console.log('🔍 Checking for existing session...');
+    // Check for existing session ONCE
     supabase.auth.getSession().then(({ data: { session }, error }) => {
-      console.log('🔍 Session check result:', { hasSession: !!session, error });
-      
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        console.log('✅ Existing session found');
-        fetchUserProfile(session.user.id);
-        fetchUserRoles(session.user.id);
-      } else {
-        console.log('❌ No existing session');
+      if (error) {
+        console.error('❌ Session check failed:', error);
+        setIsLoading(false);
+        return;
       }
       
-      setIsLoading(false);
-      console.log('🔐 Initial auth check complete');
-    }).catch((err) => {
-      console.error('❌ Session check failed:', err);
-      setIsLoading(false);
+      // The auth state change listener will handle the rest
+      if (!session) {
+        setIsLoading(false);
+      }
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, []); // Remove dependencies to prevent re-runs
 
   const fetchUserProfile = async (userId: string) => {
     console.log('👤 Fetching user profile for:', userId);

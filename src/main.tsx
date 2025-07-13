@@ -2,16 +2,10 @@ import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 
-// 👉 Initialize background services (Registry Fix Agent, etc.)
-import { startBackgroundServices } from './bootstrap';
-import './utils/stability/ComponentProtection';
-import './utils/stability/AuthStabilityConfig';
+// Simplified bootstrap - disable complex stability systems temporarily
 
-console.log('🚀 Starting main.tsx...');
+console.log('🚀 Starting simplified app...');
 
-// Ensure background services start once
-startBackgroundServices();
-
-console.log('🚀 About to render App...');
 createRoot(document.getElementById("root")!).render(<App />);
+
 console.log('✅ App rendered successfully');
