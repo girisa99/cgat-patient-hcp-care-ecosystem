@@ -4,11 +4,7 @@ import ProtectedMasterAuthForm from '@/components/auth/ProtectedMasterAuthForm';
 const Login: React.FC = () => {
   console.log('🔐 Login page component rendering...');
   
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <ProtectedMasterAuthForm />
-    </div>
-  );
+  return <ProtectedMasterAuthForm />;
 };
 
 export default Login;
