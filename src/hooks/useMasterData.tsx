@@ -79,7 +79,7 @@ export const useMasterData = () => {
           created_at,
           updated_at,
           user_roles(
-            role:roles(name)
+            roles(name)
           )
         `);
 
