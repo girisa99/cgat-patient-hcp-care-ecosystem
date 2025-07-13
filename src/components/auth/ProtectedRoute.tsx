@@ -5,13 +5,19 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 interface ProtectedRouteProps {
   children: ReactNode;
+  requiredRoles?: string[];
+  requiredPermissions?: string[];
 }
 
-const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const { isLoading, isAuthenticated, user } = useMasterAuth();
+const ProtectedRoute = ({ children, requiredRoles, requiredPermissions }: ProtectedRouteProps) => {
+  const { isLoading, isAuthenticated, user, userRoles } = useMasterAuth();
   const navigate = useNavigate();
 
   // ProtectedRoute check
+
+  // Check role-based access
+  const hasRequiredRole = !requiredRoles || requiredRoles.length === 0 || 
+    requiredRoles.some(role => userRoles.includes(role));
 
   useEffect(() => {
     // Only redirect if not loading and not authenticated - redirect to login instead of index
@@ -19,7 +25,12 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
       console.log('🔄 Redirecting to login for authentication...');
       navigate('/login', { replace: true });
     }
-  }, [isLoading, isAuthenticated, navigate]);
+    // Check role access after authentication
+    else if (!isLoading && isAuthenticated && !hasRequiredRole) {
+      console.log('🚫 Insufficient permissions, redirecting to home...');
+      navigate('/', { replace: true });
+    }
+  }, [isLoading, isAuthenticated, hasRequiredRole, navigate]);
 
   // Show loading spinner while checking auth
   if (isLoading) {
@@ -39,6 +50,17 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner size="lg" />
         <span className="ml-3 text-gray-600">Redirecting to login...</span>
+      </div>
+    );
+  }
+
+  // If authenticated but lacks required roles
+  if (!hasRequiredRole) {
+    console.log('🚫 Insufficient permissions, redirecting...');
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner size="lg" />
+        <span className="ml-3 text-gray-600">Insufficient permissions...</span>
       </div>
     );
   }

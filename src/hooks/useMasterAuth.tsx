@@ -32,10 +32,28 @@ export const MasterAuthProvider = ({ children }: { children: ReactNode }) => {
   const [userRoles, setUserRoles] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   // Master Auth Provider - Single source of truth for authentication
 
   const isAuthenticated = !!user && !!session;
+
+  // Retry mechanism for failed auth operations
+  const retryAuth = async () => {
+    if (retryCount < 3) {
+      setRetryCount(prev => prev + 1);
+      setError(null);
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (data.session) {
+          setSession(data.session);
+          setUser(data.session.user);
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to retry authentication');
+      }
+    }
+  };
 
   // Initialize auth state
   useEffect(() => {
