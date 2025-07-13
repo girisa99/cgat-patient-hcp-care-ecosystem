@@ -14,6 +14,9 @@ import {
   Mail, Trash2, Building2, Package, Zap, Database
 } from 'lucide-react';
 import { useMasterApplication } from '@/hooks/useMasterApplication';
+import { CreateUserForm } from '@/components/forms/CreateUserForm';
+import { CreateFacilityForm } from '@/components/forms/CreateFacilityForm';
+import { CreateModuleForm } from '@/components/forms/CreateModuleForm';
 
 export const MasterApplicationTable: React.FC = () => {
   const {
@@ -31,45 +34,57 @@ export const MasterApplicationTable: React.FC = () => {
   
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('users');
+  
+  // Form dialog states
+  const [showCreateUser, setShowCreateUser] = useState(false);
+  const [showCreateFacility, setShowCreateFacility] = useState(false);
+  const [showCreateModule, setShowCreateModule] = useState(false);
 
   console.log('🌟 Master Application Table - Single consolidated interface');
 
   // User management handlers
   const handleAddUser = () => {
-    toastManagement.showInfo('Add User', 'Opening user creation form...');
-    // TODO: Open user creation modal
+    setShowCreateUser(true);
   };
 
   const handleEditUser = (userId: string, userName: string) => {
     toastManagement.showInfo('Edit User', `Opening edit form for ${userName}`);
     setSelectedUser(userId);
+    // TODO: Implement edit modal
   };
 
   const handleDeactivateUser = (userId: string, userName: string) => {
-    userManagement.deactivateUser(userId);
+    if (confirm(`Are you sure you want to deactivate ${userName}?`)) {
+      userManagement.deactivateUser(userId);
+    }
   };
 
   const handleAssignRole = (userId: string, userName: string) => {
     toastManagement.showInfo('Assign Roles', `Opening role assignment for ${userName}`);
+    // TODO: Implement role assignment modal
   };
 
   const handleDeleteUser = (userId: string, userName: string) => {
-    toastManagement.showError('Delete User', `Deletion of ${userName} will be implemented`);
+    if (confirm(`Are you sure you want to delete ${userName}? This action cannot be undone.`)) {
+      toastManagement.showError('Delete User', `User deletion will be implemented with proper cascading`);
+      // TODO: Implement proper user deletion with cascade handling
+    }
   };
 
   // Facility management handlers
   const handleAddFacility = () => {
-    toastManagement.showInfo('Add Facility', 'Opening facility creation form...');
+    setShowCreateFacility(true);
   };
 
   // Module management handlers  
   const handleAddModule = () => {
-    toastManagement.showInfo('Add Module', 'Opening module creation form...');
+    setShowCreateModule(true);
   };
 
   // API service handlers
   const handleAddApiService = () => {
     toastManagement.showInfo('Add API Service', 'Opening API service creation form...');
+    // TODO: Implement API service creation
   };
 
   if (!authManagement.isAuthenticated) {
@@ -394,6 +409,24 @@ export const MasterApplicationTable: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Form Dialogs */}
+      <CreateUserForm 
+        open={showCreateUser} 
+        onOpenChange={setShowCreateUser}
+      />
+      
+      <CreateFacilityForm 
+        open={showCreateFacility} 
+        onOpenChange={setShowCreateFacility}
+        onSuccess={refreshApplication}
+      />
+      
+      <CreateModuleForm 
+        open={showCreateModule} 
+        onOpenChange={setShowCreateModule}
+        onSuccess={refreshApplication}
+      />
     </div>
   );
 };
