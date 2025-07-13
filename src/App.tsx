@@ -17,13 +17,16 @@ const queryClient = new QueryClient();
 
 const AppContent = () => {
   const { isAuthenticated } = useMasterAuth();
+  console.log('🔐 AppContent - isAuthenticated:', isAuthenticated);
 
   // Initialize routes once on app start
   React.useEffect(() => {
+    console.log('🚀 Initializing routes...');
     initializeRoutes();
   }, []);
 
   const routes = generateRoutes();
+  console.log('🗂️ Generated routes:', routes);
 
   return (
     <ErrorBoundary>
