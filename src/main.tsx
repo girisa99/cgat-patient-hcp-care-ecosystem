@@ -4,6 +4,8 @@ import './index.css'
 
 // 👉 Initialize background services (Registry Fix Agent, etc.)
 import { startBackgroundServices } from './bootstrap';
+import './utils/stability/ComponentProtection';
+import './utils/stability/AuthStabilityConfig';
 
 console.log('🚀 Starting main.tsx...');
 

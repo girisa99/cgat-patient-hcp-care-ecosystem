@@ -13,6 +13,7 @@ import Security from '@/pages/Security';
 import Reports from '@/pages/Reports';
 import Testing from '@/pages/Testing';
 import RoleManagement from '@/pages/RoleManagement';
+import Stability from '@/pages/Stability';
 import Login from '@/pages/Login';
 
 /**
@@ -182,6 +183,18 @@ export const initializeRoutes = () => {
     allowedRoles: ['superAdmin'],
     category: 'admin',
     icon: 'UserCog',
+  });
+
+  // STABILITY MONITORING
+  RouteRegistry.register({
+    path: '/stability',
+    component: Stability,
+    title: 'Stability Monitor',
+    description: 'Component protection and stability monitoring',
+    requiresAuth: true,
+    allowedRoles: ['superAdmin'],
+    category: 'admin',
+    icon: 'Shield',
   });
 
   console.log('✅ All routes registered successfully');
