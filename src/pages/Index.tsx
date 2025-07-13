@@ -12,6 +12,8 @@ import { useMasterData } from '@/hooks/useMasterData';
 import DashboardHeader from "@/components/layout/DashboardHeader";
 
 const Index = () => {
+  console.log('📊 Index component rendering...');
+  
   const { user, userRoles, isAuthenticated } = useMasterAuth();
   const { 
     users, 
@@ -22,7 +24,8 @@ const Index = () => {
     refreshData
   } = useMasterData();
 
-  // Removed console.log to prevent render loops
+  console.log('📊 Index - Auth state:', { isAuthenticated, user: user?.email, userRoles });
+  console.log('📊 Index - Data state:', { isLoading, error: error?.toString(), usersCount: users.length });
 
   const handleRefresh = () => {
     console.log('🔄 Refreshing dashboard data...');

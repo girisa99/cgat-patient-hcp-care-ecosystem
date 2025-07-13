@@ -20,8 +20,15 @@ const AppContent = () => {
 
   // Initialize routes on app start
   React.useEffect(() => {
+    console.log('🚀 AppContent mounted, initializing routes...');
     initializeRoutes();
   }, []);
+
+  console.log('🖥️ AppContent render - isAuthenticated:', isAuthenticated);
+
+  console.log('🗂️ About to generate routes...');
+  const routes = generateRoutes();
+  console.log('✅ Routes generated:', routes);
 
   return (
     <ErrorBoundary>
@@ -30,7 +37,7 @@ const AppContent = () => {
           <div className="flex min-h-screen w-full">
             {isAuthenticated && <AppSidebar />}
             <div className="flex-1 min-h-screen bg-gray-50">
-              {generateRoutes()}
+              {routes}
             </div>
           </div>
         </SidebarProvider>
