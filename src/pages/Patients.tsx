@@ -21,7 +21,7 @@ const Patients = () => {
     error,
     stats,
     refreshData
-  } = useMasterData();
+  } = useMasterData(isAuthenticated);
 
   // Filter users who are patients (have patientCaregiver role or treat all as patients for now)
   const patients = users.filter(u => 

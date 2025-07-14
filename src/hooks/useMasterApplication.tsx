@@ -13,7 +13,7 @@ export const useMasterApplication = () => {
   
   // Consolidate all master hooks into one
   const auth = useMasterAuth();
-  const data = useMasterData();
+  const data = useMasterData(auth.isAuthenticated);
   const toast = useMasterToast();
 
   // Unified state

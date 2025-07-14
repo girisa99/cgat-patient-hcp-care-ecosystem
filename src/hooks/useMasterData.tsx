@@ -57,7 +57,7 @@ interface Module {
   updated_at: string;
 }
 
-export const useMasterData = () => {
+export const useMasterData = (isAuthenticated: boolean = false) => {
   const { showSuccess, showError } = useMasterToast();
   const queryClient = useQueryClient();
 
@@ -116,7 +116,7 @@ export const useMasterData = () => {
     },
     staleTime: 300000,
     refetchOnWindowFocus: false,
-    enabled: false, // Disable automatic queries - they should be triggered manually when needed
+    enabled: isAuthenticated, // Only run when authenticated
   });
 
   // Fetch API services from api_integration_registry
@@ -140,7 +140,7 @@ export const useMasterData = () => {
     },
     staleTime: 300000,
     refetchOnWindowFocus: false,
-    enabled: false, // Disable automatic queries
+    enabled: isAuthenticated, // Only run when authenticated
   });
 
   // Fetch facilities
@@ -164,7 +164,7 @@ export const useMasterData = () => {
     },
     staleTime: 300000,
     refetchOnWindowFocus: false,
-    enabled: false, // Disable automatic queries
+    enabled: isAuthenticated, // Only run when authenticated
   });
 
   // Fetch modules
@@ -188,7 +188,7 @@ export const useMasterData = () => {
     },
     staleTime: 300000,
     refetchOnWindowFocus: false,
-    enabled: false, // Disable automatic queries
+    enabled: isAuthenticated, // Only run when authenticated
   });
 
   // Create API service mutation

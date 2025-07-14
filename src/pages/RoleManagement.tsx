@@ -26,7 +26,7 @@ const RoleManagement = () => {
     isLoading, 
     error,
     refreshData
-  } = useMasterData();
+  } = useMasterData(isAuthenticated);
 
   // Extract roles from users
   const roles = users.flatMap(user => 

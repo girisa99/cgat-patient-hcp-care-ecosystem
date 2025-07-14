@@ -21,7 +21,7 @@ const ApiServices = () => {
     stats,
     refreshData,
     createApiService
-  } = useMasterData();
+  } = useMasterData(isAuthenticated);
 
   console.log('🔌 API Services Page - Current state:', {
     isAuthenticated,
