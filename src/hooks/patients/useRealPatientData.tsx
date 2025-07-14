@@ -27,43 +27,73 @@ export const useRealPatientData = () => {
   const { data: patients = [], isLoading, error } = useQuery({
     queryKey: ['real-patients'],
     queryFn: async (): Promise<RealPatient[]> => {
-      console.log('📡 Fetching real patient data from dedicated patient tables');
+      console.log('📡 Fetching real patient data - using same approach as dashboard');
       
-      // For now, we'll use profiles filtered by patient role as a placeholder
-      // In a real implementation, this would be a dedicated patients table
-      const { data, error } = await supabase
+      // First, get all profiles (same as dashboard approach)
+      const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select(`
           id,
           first_name,
           last_name,
           email,
+          phone,
           created_at,
-          updated_at,
-          user_roles!inner(
-            role:roles!inner(name)
-          )
-        `)
-        .eq('user_roles.role.name', 'patientCaregiver');
+          updated_at
+        `);
 
-      if (error) {
-        console.error('❌ Error fetching real patient data:', error);
-        throw error;
+      if (profilesError) {
+        console.error('❌ Error fetching profiles:', profilesError);
+        throw profilesError;
       }
 
-      // Transform the data to match our interface
-      const transformedData = (data || []).map(item => ({
-        id: item.id,
-        first_name: item.first_name || '',
-        last_name: item.last_name || '',
-        email: item.email || '',
-        is_active: true, // Default to active since profiles table doesn't have is_active
-        created_at: item.created_at,
-        updated_at: item.updated_at,
-      }));
+      console.log('✅ Profiles fetched:', profiles?.length || 0);
 
-      console.log('✅ Real patient data loaded:', transformedData.length, 'patients');
-      return transformedData;
+      // Get roles for each user using the same RPC function as dashboard
+      const usersWithRoles = await Promise.all(
+        (profiles || []).map(async (profile) => {
+          try {
+            const { data: roleNames, error: roleError } = await supabase
+              .rpc('get_user_roles', { check_user_id: profile.id });
+            
+            if (roleError) {
+              console.warn('❌ Error fetching roles for user:', profile.id, roleError);
+              return null; // Skip users with role errors
+            }
+
+            const userRoles = Array.isArray(roleNames) ? roleNames : [];
+            
+            // Only return users with patientCaregiver role
+            // Check if any role matches patientCaregiver
+            const hasPatientRole = userRoles.some((role: any) => 
+              typeof role === 'string' ? role === 'patientCaregiver' : role.role_name === 'patientCaregiver'
+            );
+            
+            if (hasPatientRole) {
+              return {
+                id: profile.id,
+                first_name: profile.first_name || '',
+                last_name: profile.last_name || '',
+                email: profile.email || '',
+                phone: profile.phone || '',
+                is_active: true,
+                created_at: profile.created_at,
+                updated_at: profile.updated_at,
+              };
+            }
+            return null; // Not a patient
+          } catch (err) {
+            console.warn('❌ Role fetch failed for user:', profile.id, err);
+            return null;
+          }
+        })
+      );
+
+      // Filter out null values and return only patients
+      const patientData = usersWithRoles.filter(user => user !== null) as RealPatient[];
+      
+      console.log('✅ Patient data loaded:', patientData.length, 'patients found');
+      return patientData;
     },
     staleTime: 300000,
     refetchOnWindowFocus: false,
