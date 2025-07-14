@@ -128,7 +128,7 @@ const Patients: React.FC = () => {
       <AppLayout title="Patient Management">
         <Card className="border-red-200 bg-red-50">
           <CardContent className="p-8 text-center">
-            <p className="text-red-700">Error loading patients: {error.toString()}</p>
+            <p className="text-red-700">Error loading patients: {error?.message || String(error)}</p>
             <Button onClick={handleRefresh} className="mt-4" variant="outline">
               Try Again
             </Button>
