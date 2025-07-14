@@ -38,8 +38,9 @@ export const PatientForm: React.FC<PatientFormProps> = ({
     facility_id: ''
   });
 
-  const { createUser, isCreatingUser, assignRole, refreshData } = useMasterUserManagement();
+  const { refreshData } = useMasterUserManagement();
   const { showSuccess, showError } = useMasterToast();
+  const [isCreating, setIsCreating] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [facilities, setFacilities] = useState<Array<{id: string, name: string, facility_type: string}>>([]);
 
@@ -87,6 +88,7 @@ export const PatientForm: React.FC<PatientFormProps> = ({
 
     if (mode === 'create') {
       try {
+        setIsCreating(true);
         // Call edge function to create patient
         const { data, error } = await supabase.functions.invoke('create-patient', {
           body: {
@@ -119,6 +121,8 @@ export const PatientForm: React.FC<PatientFormProps> = ({
       } catch (error: any) {
         console.error('Creation failed:', error);
         showError('Creation Failed', error.message || 'Failed to create patient');
+      } finally {
+        setIsCreating(false);
       }
     } else {
       // Edit mode - update patient profile
@@ -235,8 +239,8 @@ export const PatientForm: React.FC<PatientFormProps> = ({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isCreatingUser || isUpdating}>
-              {(isCreatingUser || isUpdating) ? 
+            <Button type="submit" disabled={isCreating || isUpdating}>
+              {(isCreating || isUpdating) ? 
                 (mode === 'create' ? 'Creating...' : 'Updating...') : 
                 (mode === 'create' ? 'Create Patient' : 'Update Patient')
               }
