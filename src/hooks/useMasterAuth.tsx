@@ -57,49 +57,64 @@ export const MasterAuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Initialize auth state
   useEffect(() => {
-    let isInitialized = false;
+    let mounted = true;
     
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('🔐 Auth state changed:', event, session?.user?.email);
+        if (!mounted) return;
         
         setSession(session);
         setUser(session?.user ?? null);
         
-        if (session?.user && !isInitialized) {
-          // Only fetch data on initial load, not on every auth change
-          setTimeout(() => {
-            fetchUserProfile(session.user.id);
-            fetchUserRoles(session.user.id);
-          }, 0);
-          isInitialized = true;
-        } else if (!session?.user) {
+        if (session?.user) {
+          // Only fetch user data once per session
+          if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+            setTimeout(() => {
+              if (mounted) {
+                fetchUserProfile(session.user.id);
+                fetchUserRoles(session.user.id);
+              }
+            }, 100);
+          }
+        } else {
           setProfile(null);
           setUserRoles([]);
-          isInitialized = false;
         }
         
         setIsLoading(false);
       }
     );
 
-    // Check for existing session ONCE
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      if (error) {
-        console.error('❌ Session check failed:', error);
-        setIsLoading(false);
-        return;
-      }
+    // Check for existing session once
+    const checkSession = async () => {
+      if (!mounted) return;
       
-      // The auth state change listener will handle the rest
-      if (!session) {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error('❌ Session check failed:', error);
+          setIsLoading(false);
+          return;
+        }
+        
+        // The auth state change listener will handle the rest
+        if (!session) {
+          setIsLoading(false);
+        }
+      } catch (err) {
+        console.error('❌ Session check error:', err);
         setIsLoading(false);
       }
-    });
+    };
 
-    return () => subscription.unsubscribe();
-  }, []); // Remove dependencies to prevent re-runs
+    checkSession();
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, []); // No dependencies to prevent re-runs
 
   const fetchUserProfile = async (userId: string) => {
     console.log('👤 Fetching user profile for:', userId);

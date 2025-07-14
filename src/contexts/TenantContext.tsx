@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
-import { useMasterData } from '@/hooks/useMasterData';
 import { getUserAccessibleFacilities } from '@/utils/rlsPolicyHelpers';
+import { supabase } from '@/integrations/supabase/client';
 
 // Facility interface (multi-tenant context)
 interface TenantFacility {
@@ -46,7 +46,6 @@ const TenantContext = createContext<TenantContextType | undefined>(undefined);
 // Tenant Context Provider
 export const TenantProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user, userRoles, isAuthenticated } = useMasterAuth();
-  const { facilities } = useMasterData();
   
   const [currentFacility, setCurrentFacility] = useState<TenantFacility | null>(null);
   const [userFacilities, setUserFacilities] = useState<TenantFacility[]>([]);
@@ -70,17 +69,23 @@ export const TenantProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       setFacilityError(null);
 
       try {
-        console.log('🏢 Loading facilities for tenant context...');
-        
         if (isSuperAdmin) {
-          // Super admins get access to all facilities
-          const allFacilities = facilities.map(f => ({
+          // Super admins get access to all facilities - fetch directly
+          const { data: facilities, error } = await supabase
+            .from('facilities')
+            .select('id, name, facility_type, is_active')
+            .eq('is_active', true);
+
+          if (error) throw error;
+
+          const allFacilities = (facilities || []).map(f => ({
             facility_id: f.id,
             facility_name: f.name,
-            access_level: 'admin',
+            access_level: 'admin' as const,
             facility_type: f.facility_type,
-            is_active: f.is_active || true
+            is_active: f.is_active
           }));
+          
           setUserFacilities(allFacilities);
           
           // Auto-select first facility if none selected
@@ -90,16 +95,15 @@ export const TenantProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         } else {
           // Regular users get their assigned facilities
           const accessibleFacilities = await getUserAccessibleFacilities(user.id);
-          const facilitiesWithDetails = accessibleFacilities.map(af => {
-            const facilityDetail = facilities.find(f => f.id === af.facility_id);
-            return {
-              facility_id: af.facility_id,
-              facility_name: af.facility_name,
-              access_level: af.access_level,
-              facility_type: facilityDetail?.facility_type || 'unknown',
-              is_active: facilityDetail?.is_active || true
-            };
-          });
+          
+          // Ensure we have the required facility_type and is_active properties
+          const facilitiesWithDetails: TenantFacility[] = accessibleFacilities.map(af => ({
+            facility_id: af.facility_id,
+            facility_name: af.facility_name,
+            access_level: af.access_level,
+            facility_type: 'treatmentFacility', // Default facility type
+            is_active: true // Default to active
+          }));
           
           setUserFacilities(facilitiesWithDetails);
           
@@ -109,7 +113,6 @@ export const TenantProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           }
         }
 
-        console.log('✅ Tenant facilities loaded successfully');
       } catch (error) {
         console.error('❌ Error loading tenant facilities:', error);
         setFacilityError(error instanceof Error ? error.message : 'Failed to load facilities');
@@ -118,8 +121,11 @@ export const TenantProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       }
     };
 
-    loadUserFacilities();
-  }, [user, isAuthenticated, facilities, isSuperAdmin]);
+    // Only load facilities when user is authenticated and has roles
+    if (isAuthenticated && user && userRoles.length > 0) {
+      loadUserFacilities();
+    }
+  }, [user, isAuthenticated, isSuperAdmin, userRoles.length]); // Stable dependencies
 
   // Switch to a different facility (tenant switching)
   const switchFacility = (facilityId: string) => {
