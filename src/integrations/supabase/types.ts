@@ -3949,6 +3949,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      assign_user_role: {
+        Args: { p_user_id: string; p_role_name: string }
+        Returns: undefined
+      }
       calculate_financial_risk_score: {
         Args: {
           p_annual_revenue_range: string
