@@ -13,7 +13,7 @@ import { Loader2, Shield, Mail, Lock, User, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
-import HealthcareAuthLayoutWithLogo from './HealthcareAuthLayoutWithLogo';
+import HealthcareAuthLayout from './HealthcareAuthLayout';
 import { useNavigate } from 'react-router-dom';
 
 interface MasterAuthFormProps {
@@ -192,62 +192,75 @@ export const MasterAuthForm: React.FC<MasterAuthFormProps> = ({
 
   if (authLoading) {
     return (
-      <HealthcareAuthLayoutWithLogo>
+      <HealthcareAuthLayout>
         <div className="flex items-center justify-center p-8">
           <div className="text-center">
-            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-            <p className="text-gray-600">Checking authentication...</p>
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+            <p className="text-muted-foreground">Checking authentication...</p>
           </div>
         </div>
-      </HealthcareAuthLayoutWithLogo>
+      </HealthcareAuthLayout>
     );
   }
 
   return (
-    <HealthcareAuthLayoutWithLogo>
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Welcome to GENIE</CardTitle>
-          <CardDescription>
-            Secure access to healthcare management system
+    <HealthcareAuthLayout>
+      <Card className="w-full max-w-md shadow-2xl border-0 bg-white/95 backdrop-blur-sm">
+        <CardHeader className="text-center space-y-4 pb-8">
+          <div className="mx-auto w-16 h-16 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center mb-4">
+            <Shield className="w-8 h-8 text-white" />
+          </div>
+          <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
+            Welcome to GENIE
+          </CardTitle>
+          <CardDescription className="text-base text-muted-foreground">
+            Secure access to advanced cell & gene therapy platform
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-6">
           <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'login' | 'signup')}>
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Sign In</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 bg-muted/50 p-1 h-12">
+              <TabsTrigger value="login" className="font-semibold data-[state=active]:bg-white data-[state=active]:shadow-md transition-all">
+                Sign In
+              </TabsTrigger>
+              <TabsTrigger value="signup" className="font-semibold data-[state=active]:bg-white data-[state=active]:shadow-md transition-all">
+                Sign Up
+              </TabsTrigger>
             </TabsList>
             
-            <TabsContent value="login" className="mt-6">
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="login-email">Email</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <TabsContent value="login" className="mt-8">
+              <form onSubmit={handleLogin} className="space-y-6">
+                <div className="space-y-3">
+                  <Label htmlFor="login-email" className="text-sm font-semibold text-foreground">
+                    Email Address
+                  </Label>
+                  <div className="relative group">
+                    <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5 group-focus-within:text-primary transition-colors" />
                     <Input
                       id="login-email"
                       type="email"
-                      placeholder="Enter your email"
+                      placeholder="Enter your email address"
                       value={loginData.email}
                       onChange={(e) => handleInputChange('login', 'email', e.target.value)}
-                      className="pl-10"
+                      className="pl-12 h-12 border-2 border-border focus:border-primary transition-colors bg-background/50"
                       required
                     />
                   </div>
                 </div>
                 
-                <div className="space-y-2">
-                  <Label htmlFor="login-password">Password</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <div className="space-y-3">
+                  <Label htmlFor="login-password" className="text-sm font-semibold text-foreground">
+                    Password
+                  </Label>
+                  <div className="relative group">
+                    <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5 group-focus-within:text-primary transition-colors" />
                     <Input
                       id="login-password"
                       type="password"
                       placeholder="Enter your password"
                       value={loginData.password}
                       onChange={(e) => handleInputChange('login', 'password', e.target.value)}
-                      className="pl-10"
+                      className="pl-12 h-12 border-2 border-border focus:border-primary transition-colors bg-background/50"
                       required
                     />
                   </div>
@@ -255,103 +268,113 @@ export const MasterAuthForm: React.FC<MasterAuthFormProps> = ({
                 
                 <Button 
                   type="submit" 
-                  className="w-full" 
+                  className="w-full h-12 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white font-semibold text-base shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]" 
                   disabled={isLoading}
                 >
                   {isLoading ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Signing in...
+                      <Loader2 className="mr-3 h-5 w-5 animate-spin" />
+                      Signing you in...
                     </>
                   ) : (
                     <>
-                      <Shield className="mr-2 h-4 w-4" />
-                      Sign In
+                      <Shield className="mr-3 h-5 w-5" />
+                      Sign In Securely
                     </>
                   )}
                 </Button>
               </form>
             </TabsContent>
             
-            <TabsContent value="signup" className="mt-6">
-              <form onSubmit={handleSignup} className="space-y-4">
+            <TabsContent value="signup" className="mt-8">
+              <form onSubmit={handleSignup} className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-firstName">First Name</Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <div className="space-y-3">
+                    <Label htmlFor="signup-firstName" className="text-sm font-semibold text-foreground">
+                      First Name
+                    </Label>
+                    <div className="relative group">
+                      <User className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5 group-focus-within:text-primary transition-colors" />
                       <Input
                         id="signup-firstName"
                         type="text"
                         placeholder="First name"
                         value={signupData.firstName}
                         onChange={(e) => handleInputChange('signup', 'firstName', e.target.value)}
-                        className="pl-10"
+                        className="pl-12 h-12 border-2 border-border focus:border-primary transition-colors bg-background/50"
                         required
                       />
                     </div>
                   </div>
                   
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-lastName">Last Name</Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <div className="space-y-3">
+                    <Label htmlFor="signup-lastName" className="text-sm font-semibold text-foreground">
+                      Last Name
+                    </Label>
+                    <div className="relative group">
+                      <User className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5 group-focus-within:text-primary transition-colors" />
                       <Input
                         id="signup-lastName"
                         type="text"
                         placeholder="Last name"
                         value={signupData.lastName}
                         onChange={(e) => handleInputChange('signup', 'lastName', e.target.value)}
-                        className="pl-10"
+                        className="pl-12 h-12 border-2 border-border focus:border-primary transition-colors bg-background/50"
                         required
                       />
                     </div>
                   </div>
                 </div>
                 
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <div className="space-y-3">
+                  <Label htmlFor="signup-email" className="text-sm font-semibold text-foreground">
+                    Email Address
+                  </Label>
+                  <div className="relative group">
+                    <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5 group-focus-within:text-primary transition-colors" />
                     <Input
                       id="signup-email"
                       type="email"
-                      placeholder="Enter your email"
+                      placeholder="Enter your email address"
                       value={signupData.email}
                       onChange={(e) => handleInputChange('signup', 'email', e.target.value)}
-                      className="pl-10"
+                      className="pl-12 h-12 border-2 border-border focus:border-primary transition-colors bg-background/50"
                       required
                     />
                   </div>
                 </div>
                 
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <div className="space-y-3">
+                  <Label htmlFor="signup-password" className="text-sm font-semibold text-foreground">
+                    Password
+                  </Label>
+                  <div className="relative group">
+                    <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5 group-focus-within:text-primary transition-colors" />
                     <Input
                       id="signup-password"
                       type="password"
-                      placeholder="Enter your password"
+                      placeholder="Minimum 6 characters"
                       value={signupData.password}
                       onChange={(e) => handleInputChange('signup', 'password', e.target.value)}
-                      className="pl-10"
+                      className="pl-12 h-12 border-2 border-border focus:border-primary transition-colors bg-background/50"
                       required
                     />
                   </div>
                 </div>
                 
-                <div className="space-y-2">
-                  <Label htmlFor="signup-confirmPassword">Confirm Password</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <div className="space-y-3">
+                  <Label htmlFor="signup-confirmPassword" className="text-sm font-semibold text-foreground">
+                    Confirm Password
+                  </Label>
+                  <div className="relative group">
+                    <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5 group-focus-within:text-primary transition-colors" />
                     <Input
                       id="signup-confirmPassword"
                       type="password"
                       placeholder="Confirm your password"
                       value={signupData.confirmPassword}
                       onChange={(e) => handleInputChange('signup', 'confirmPassword', e.target.value)}
-                      className="pl-10"
+                      className="pl-12 h-12 border-2 border-border focus:border-primary transition-colors bg-background/50"
                       required
                     />
                   </div>
@@ -359,17 +382,17 @@ export const MasterAuthForm: React.FC<MasterAuthFormProps> = ({
                 
                 <Button 
                   type="submit" 
-                  className="w-full" 
+                  className="w-full h-12 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white font-semibold text-base shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]" 
                   disabled={isLoading}
                 >
                   {isLoading ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creating account...
+                      <Loader2 className="mr-3 h-5 w-5 animate-spin" />
+                      Creating your account...
                     </>
                   ) : (
                     <>
-                      <User className="mr-2 h-4 w-4" />
+                      <User className="mr-3 h-5 w-5" />
                       Create Account
                     </>
                   )}
@@ -380,13 +403,21 @@ export const MasterAuthForm: React.FC<MasterAuthFormProps> = ({
           
 
           
-          <div className="mt-6 text-center text-sm text-gray-600">
-            <p>By signing in, you agree to our</p>
-            <p className="font-medium">Privacy Policy and Terms of Service</p>
+          <div className="mt-8 text-center space-y-3">
+            <div className="flex items-center justify-center space-x-2 text-xs text-muted-foreground">
+              <Shield className="w-4 h-4" />
+              <span>HIPAA Compliant • SOC 2 Certified</span>
+            </div>
+            <div className="text-sm text-muted-foreground">
+              <p>By accessing this system, you agree to our</p>
+              <p className="font-semibold text-primary hover:underline cursor-pointer">
+                Privacy Policy and Terms of Service
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>
-    </HealthcareAuthLayoutWithLogo>
+    </HealthcareAuthLayout>
   );
 };
 
