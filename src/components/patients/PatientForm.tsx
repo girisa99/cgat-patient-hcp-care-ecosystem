@@ -95,28 +95,22 @@ export const PatientForm: React.FC<PatientFormProps> = ({
     }
 
     if (mode === 'create') {
-      console.log('Creating patient...');
+      console.log('Creating patient using same mechanism as self-registration...');
       try {
         setIsCreating(true);
-        // Call edge function to create patient - same as self-registration mechanism
-        const { data, error } = await supabase.functions.invoke('create-patient', {
-          body: {
-            email: formData.email,
-            first_name: formData.first_name,
-            last_name: formData.last_name,
-            password: formData.password || 'TempPassword123!',
-            facility_id: formData.facility_id || null
-          }
+        
+        // Use RPC function to create patient - same as self-registration flow
+        const { data, error } = await supabase.rpc('create_patient_user', {
+          p_email: formData.email,
+          p_password: formData.password || 'TempPassword123!',
+          p_first_name: formData.first_name,
+          p_last_name: formData.last_name,
+          p_facility_id: formData.facility_id || null
         });
 
         if (error) {
-          console.error('Edge function error:', error);
+          console.error('Patient creation error:', error);
           throw error;
-        }
-
-        if (data?.error) {
-          console.error('Patient creation error:', data.error);
-          throw new Error(data.error);
         }
 
         showSuccess('Patient Created', 'Patient has been created successfully with Patient/Caregiver role');
@@ -126,6 +120,7 @@ export const PatientForm: React.FC<PatientFormProps> = ({
 
         // Reset form and close dialog
         setFormData({ email: '', first_name: '', last_name: '', password: '', facility_id: '' });
+        onOpenChange(false);
         onOpenChange(false);
       } catch (error: any) {
         console.error('Creation failed:', error);
