@@ -6,7 +6,7 @@ import {
   Users, UserPlus, RefreshCw, Edit, UserX, Activity 
 } from 'lucide-react';
 import { useMasterUserManagement } from '@/hooks/useMasterUserManagement';
-import { CreateUserForm } from '@/components/forms/CreateUserForm';
+import { PatientForm } from './PatientForm';
 
 export const PatientManagementTable: React.FC = () => {
   const { 
@@ -19,8 +19,9 @@ export const PatientManagementTable: React.FC = () => {
     isDeactivating
   } = useMasterUserManagement();
   
-  const [showCreateUser, setShowCreateUser] = useState(false);
-  const [selectedPatientForEdit, setSelectedPatientForEdit] = useState<string | null>(null);
+  const [showPatientForm, setShowPatientForm] = useState(false);
+  const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
+  const [selectedPatientForEdit, setSelectedPatientForEdit] = useState<any>(null);
   
   // Filter users to only show patients (those with patientCaregiver role)
   const patients = users.filter(user => 
@@ -33,13 +34,15 @@ export const PatientManagementTable: React.FC = () => {
 
   // Action handlers using existing working functionality
   const handleAddPatient = () => {
-    setShowCreateUser(true);
+    setFormMode('create');
+    setSelectedPatientForEdit(null);
+    setShowPatientForm(true);
   };
 
-  const handleEditPatient = (patientId: string, patientName: string) => {
-    setSelectedPatientForEdit(patientId);
-    console.log('Edit patient:', patientId, patientName);
-    // TODO: Open edit dialog when available
+  const handleEditPatient = (patient: any) => {
+    setFormMode('edit');
+    setSelectedPatientForEdit(patient);
+    setShowPatientForm(true);
   };
 
   const handleDeactivatePatient = async (patientId: string, patientName: string) => {
@@ -166,8 +169,8 @@ export const PatientManagementTable: React.FC = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleEditPatient(patient.id, `${patient.first_name} ${patient.last_name}`)}
-                        title="View Patient"
+                        onClick={() => handleEditPatient(patient)}
+                        title="Edit Patient"
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
@@ -202,10 +205,13 @@ export const PatientManagementTable: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Working Dialogs - Reusing existing components */}
-      <CreateUserForm 
-        open={showCreateUser} 
-        onOpenChange={setShowCreateUser}
+      {/* Patient Form Dialog */}
+      <PatientForm 
+        open={showPatientForm} 
+        onOpenChange={setShowPatientForm}
+        mode={formMode}
+        patientId={selectedPatientForEdit?.id}
+        initialData={selectedPatientForEdit}
       />
     </div>
   );
