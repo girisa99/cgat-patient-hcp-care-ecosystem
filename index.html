@@ -40,14 +40,14 @@
           
           const script = document.createElement('script');
           script.type = 'module';
-          script.src = '/src/main.tsx';
+          script.src = '/src/main.js';
           script.onload = () => {
-            console.log('✅ main.tsx loaded successfully');
-            root.innerHTML += '<p style="color: green; margin: 10px 0;">✅ React script loaded!</p>';
+            console.log('✅ main.js loaded successfully');
+            root.innerHTML += '<p style="color: green; margin: 10px 0;">✅ JavaScript module loaded!</p>';
           };
           script.onerror = (e) => {
-            console.error('❌ main.tsx failed to load:', e);
-            root.innerHTML += '<p style="color: red; margin: 10px 0;">❌ React script failed to load!</p>';
+            console.error('❌ main.js failed to load:', e);
+            root.innerHTML += '<p style="color: red; margin: 10px 0;">❌ JavaScript module failed to load!</p>';
           };
           document.head.appendChild(script);
         }, 1000);
