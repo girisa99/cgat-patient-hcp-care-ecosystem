@@ -86,24 +86,41 @@ export const useMasterData = (isAuthenticated: boolean = false) => {
 
       console.log('✅ Profiles fetched:', profiles?.length || 0);
 
-      // Then, get user roles with role names using the database function
-      const { data: userRolesData, error: rolesError } = await supabase
-        .rpc('get_user_roles', { check_user_id: profiles[0]?.id });
+      // Get roles for each user using existing get_user_roles function
+      const usersWithRoles = await Promise.all(
+        (profiles || []).map(async (profile) => {
+          try {
+            const { data: roleNames, error: roleError } = await supabase
+              .rpc('get_user_roles', { check_user_id: profile.id });
+            
+            if (roleError) {
+              console.warn('❌ Error fetching roles for user:', profile.id, roleError);
+              return {
+                ...profile,
+                is_active: true,
+                user_roles: []
+              };
+            }
 
-      let userRoles: any[] = [];
-      if (!rolesError && userRolesData) {
-        userRoles = userRolesData.map((roleData: { role_name: string }) => ({ roles: { name: roleData.role_name } }));
-      }
-
-
-      console.log('✅ User roles fetched for first user');
-
-      // Combine profiles with their roles (simplified for now)
-      const usersWithRoles = (profiles || []).map(profile => ({
-        ...profile,
-        is_active: true,
-        user_roles: profile.id === profiles[0]?.id ? userRoles : []
-      }));
+            return {
+              ...profile,
+              is_active: true,
+              user_roles: Array.isArray(roleNames) 
+                ? roleNames.map((role: any) => ({
+                    roles: { name: typeof role === 'string' ? role : role.role_name }
+                  }))
+                : []
+            };
+          } catch (err) {
+            console.warn('❌ Role fetch failed for user:', profile.id, err);
+            return {
+              ...profile,
+              is_active: true,
+              user_roles: []
+            };
+          }
+        })
+      );
 
       console.log('✅ Users with roles combined:', usersWithRoles.length);
       return usersWithRoles as User[];
