@@ -61,7 +61,7 @@ export const useMasterData = () => {
   const { showSuccess, showError } = useMasterToast();
   const queryClient = useQueryClient();
 
-  // Fetch users
+  // Fetch users - only when authenticated
   const { data: users = [], isLoading: usersLoading, error: usersError } = useQuery({
     queryKey: ['master-users'],
     queryFn: async (): Promise<User[]> => {
@@ -116,6 +116,7 @@ export const useMasterData = () => {
     },
     staleTime: 300000,
     refetchOnWindowFocus: false,
+    enabled: false, // Disable automatic queries - they should be triggered manually when needed
   });
 
   // Fetch API services from api_integration_registry
@@ -139,6 +140,7 @@ export const useMasterData = () => {
     },
     staleTime: 300000,
     refetchOnWindowFocus: false,
+    enabled: false, // Disable automatic queries
   });
 
   // Fetch facilities
@@ -162,6 +164,7 @@ export const useMasterData = () => {
     },
     staleTime: 300000,
     refetchOnWindowFocus: false,
+    enabled: false, // Disable automatic queries
   });
 
   // Fetch modules
@@ -185,6 +188,7 @@ export const useMasterData = () => {
     },
     staleTime: 300000,
     refetchOnWindowFocus: false,
+    enabled: false, // Disable automatic queries
   });
 
   // Create API service mutation

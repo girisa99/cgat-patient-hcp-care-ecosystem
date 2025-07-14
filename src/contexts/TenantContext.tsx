@@ -121,10 +121,11 @@ export const TenantProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       }
     };
 
-    // Only load facilities when user is authenticated and has roles
-    if (isAuthenticated && user && userRoles.length > 0) {
-      loadUserFacilities();
-    }
+    // Disable automatic facility loading to prevent startup queries
+    // Facilities will be loaded on-demand when needed
+    // if (isAuthenticated && user && userRoles.length > 0) {
+    //   loadUserFacilities();
+    // }
   }, [user, isAuthenticated, isSuperAdmin, userRoles.length]); // Stable dependencies
 
   // Switch to a different facility (tenant switching)
