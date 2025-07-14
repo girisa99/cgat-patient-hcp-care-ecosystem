@@ -69,13 +69,11 @@ serve(async (req) => {
         console.error('Profile error:', profileError)
       }
         
-      // Assign patient role
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .insert({ 
-          user_id: authData.user.id, 
-          role_id: '991a1679-d423-4c62-86c8-f14c11db5186' // patientCaregiver role ID
-        })
+      // Assign patient role using RPC to avoid schema issues
+      const { error: roleError } = await supabase.rpc('assign_user_role', {
+        p_user_id: authData.user.id,
+        p_role_name: 'patientCaregiver'
+      })
       
       if (roleError) {
         console.error('Role assignment error:', roleError)
