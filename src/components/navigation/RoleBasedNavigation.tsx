@@ -16,7 +16,17 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
   const location = useLocation();
   const { user, profile, availableTabs, currentRole, isAdmin, isSuperAdmin } = useRoleBasedNavigation();
 
+  console.log('🧭 RoleBasedNavigation rendering with:', {
+    userExists: !!user,
+    availableTabsCount: availableTabs?.length || 0,
+    availableTabs: availableTabs?.map(tab => tab.title) || [],
+    currentRole,
+    isAdmin,
+    isSuperAdmin
+  });
+
   if (!user) {
+    console.log('🚫 RoleBasedNavigation: No user found, not rendering');
     return null;
   }
 

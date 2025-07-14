@@ -6,8 +6,23 @@ import { useMasterAuth } from './useMasterAuth';
 export const useRoleBasedNavigation = () => {
   const { userRoles, isAuthenticated, user, profile } = useMasterAuth();
 
+  console.log('🧭 useRoleBasedNavigation called with:', {
+    userRoles,
+    isAuthenticated,
+    userExists: !!user,
+    profileExists: !!profile
+  });
+
   const getVisibleNavItems = useMemo(() => {
+    console.log('🧭 Computing visible nav items...', {
+      isAuthenticated,
+      userRolesLength: userRoles.length,
+      userRoles,
+      totalNavItems: navItems.length
+    });
+
     if (!isAuthenticated) {
+      console.log('🚫 Not authenticated, returning empty array');
       return [];
     }
 
@@ -36,7 +51,7 @@ export const useRoleBasedNavigation = () => {
       'active-verification': ['superAdmin', 'onboardingTeam'],
     };
 
-    return navItems.filter(item => {
+    const filteredItems = navItems.filter(item => {
       const path = item.url.replace('/', '') || 'dashboard';
       const allowedRoles = roleAccess[path as keyof typeof roleAccess] || [];
       const hasAccess = userRoles.some(role => allowedRoles.includes(role));
@@ -44,10 +59,15 @@ export const useRoleBasedNavigation = () => {
       // For development, log which items are being filtered
       if (!hasAccess) {
         console.log(`🚫 Navigation filtered: ${item.title} (requires: ${allowedRoles.join(', ')}, have: ${userRoles.join(', ')})`);
+      } else {
+        console.log(`✅ Navigation allowed: ${item.title}`);
       }
       
       return hasAccess;
     });
+
+    console.log('🧭 Final filtered nav items:', filteredItems.map(item => item.title));
+    return filteredItems;
   }, [userRoles, isAuthenticated]);
 
   const hasAccess = (path: string) => {
