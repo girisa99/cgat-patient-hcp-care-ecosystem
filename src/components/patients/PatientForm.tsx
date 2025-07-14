@@ -82,9 +82,15 @@ export const PatientForm: React.FC<PatientFormProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log('Form submitted with data:', formData);
+    console.log('Email:', formData.email);
+    console.log('First name:', formData.first_name);
+    console.log('Last name:', formData.last_name);
     
     if (!formData.email || !formData.first_name || !formData.last_name) {
-      console.log('Missing required fields');
+      console.log('Missing required fields - validation failed');
+      console.log('Email missing:', !formData.email);
+      console.log('First name missing:', !formData.first_name);
+      console.log('Last name missing:', !formData.last_name);
       return;
     }
 
