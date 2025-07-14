@@ -28,7 +28,9 @@ const AppContent = () => {
 
   // Initialize routes once on app start
   React.useEffect(() => {
+    console.log('🚀 App initializing routes...');
     initializeRoutes();
+    console.log('✅ App routes initialized');
   }, []);
 
   // Show loading screen while auth is initializing
