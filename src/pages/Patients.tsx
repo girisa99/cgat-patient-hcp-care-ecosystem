@@ -29,8 +29,10 @@ const Patients = () => {
   const { 
     createPatient, 
     updatePatient, 
+    deactivatePatient,
     isCreating, 
-    isUpdating 
+    isUpdating,
+    isDeactivating
   } = usePatientMutations();
 
   console.log('🏥 Patients Page - Current state:', {
@@ -66,7 +68,10 @@ const Patients = () => {
   const handleViewPatient = (patientId: string) => {
     const patient = patients.find(p => p.id === patientId);
     if (patient) {
-      showInfo("Patient Details", `Viewing details for ${patient.first_name} ${patient.last_name}`);
+      showInfo(
+        "Patient Details", 
+        `Name: ${patient.first_name} ${patient.last_name}\nEmail: ${patient.email}\nPhone: ${patient.phone || 'Not provided'}\nCreated: ${new Date(patient.created_at).toLocaleDateString()}`
+      );
     }
   };
 
@@ -89,10 +94,15 @@ const Patients = () => {
     }
   };
 
-  const handleDeactivatePatient = (patientId: string) => {
+  const handleDeactivatePatient = async (patientId: string) => {
     const patient = patients.find(p => p.id === patientId);
     if (patient) {
-      showInfo("Deactivate Patient", `Deactivation functionality for ${patient.first_name} ${patient.last_name} will be implemented soon`);
+      try {
+        await deactivatePatient(patientId);
+      } catch (error) {
+        // Error handling is done in the mutation hook
+        console.error('Deactivation error:', error);
+      }
     }
   };
 
@@ -345,8 +355,9 @@ const Patients = () => {
                       variant="destructive" 
                       size="sm" 
                       onClick={() => handleDeactivatePatient(patient.id)}
+                      disabled={isDeactivating}
                     >
-                      Deactivate
+                      {isDeactivating ? 'Deactivating...' : 'Deactivate'}
                     </Button>
                   </div>
                 </div>
