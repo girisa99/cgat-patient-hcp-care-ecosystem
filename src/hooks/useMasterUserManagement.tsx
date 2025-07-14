@@ -32,7 +32,13 @@ export const useMasterUserManagement = () => {
 
   // Create user mutation
   const createUserMutation = useMutation({
-    mutationFn: async (userData: { email: string; first_name: string; last_name: string; password?: string }) => {
+    mutationFn: async (userData: { 
+      email: string; 
+      first_name: string; 
+      last_name: string; 
+      password?: string;
+      roles?: string[];
+    }) => {
       const { data, error } = await supabase.auth.admin.createUser({
         email: userData.email,
         password: userData.password || 'TempPassword123!',
@@ -44,6 +50,21 @@ export const useMasterUserManagement = () => {
       });
       
       if (error) throw error;
+      
+      // Assign roles if provided
+      if (userData.roles && userData.roles.length > 0 && data.user) {
+        for (const roleId of userData.roles) {
+          const { error: roleError } = await supabase
+            .from('user_roles')
+            .insert({ 
+              user_id: data.user.id, 
+              role_id: roleId
+            });
+          
+          if (roleError) throw roleError;
+        }
+      }
+      
       return data;
     },
     onSuccess: () => {

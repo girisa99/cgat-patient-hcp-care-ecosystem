@@ -68,48 +68,15 @@ export const PatientForm: React.FC<PatientFormProps> = ({
 
     if (mode === 'create') {
       try {
-        // Create user first
-        const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        // Use the existing createUser handler with patient-specific role
+        await createUser({
           email: formData.email,
-          password: formData.password || 'TempPassword123!',
-          email_confirm: true,
-          user_metadata: {
-            firstName: formData.first_name,
-            lastName: formData.last_name
-          }
+          first_name: formData.first_name,
+          last_name: formData.last_name,
+          password: formData.password,
+          roles: ['991a1679-d423-4c62-86c8-f14c11db5186'], // patientCaregiver role ID
         });
-        
-        if (authError) throw authError;
-        
-        // Update the profile with correct names (trigger creates profile but may not populate names correctly)
-        if (authData.user) {
-          await supabase
-            .from('profiles')
-            .update({ 
-              first_name: formData.first_name,
-              last_name: formData.last_name,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', authData.user.id);
-            
-          // Assign patient role
-          const { error: roleError } = await supabase
-            .from('user_roles')
-            .insert({ 
-              user_id: authData.user.id, 
-              role_id: '991a1679-d423-4c62-86c8-f14c11db5186' // patientCaregiver role ID
-            });
-          
-          if (roleError) throw roleError;
-        }
 
-        showSuccess('Patient Created', 'Patient has been created successfully with Patient/Caregiver role');
-        
-        // Force refresh the data and wait for it
-        setTimeout(() => {
-          refreshData();
-        }, 500);
-        
         // Reset form and close dialog
         setFormData({ email: '', first_name: '', last_name: '', password: '' });
         onOpenChange(false);
