@@ -6,7 +6,7 @@ import { useMasterData } from './useMasterData';
 import { useMasterToast } from './useMasterToast';
 
 export const useMasterUserManagement = () => {
-  const masterData = useMasterData();
+  const masterData = useMasterData(true); // Pass isAuthenticated = true
   const { showSuccess, showError } = useMasterToast();
   const queryClient = useQueryClient();
   const [isCreatingUser, setIsCreatingUser] = useState(false);
