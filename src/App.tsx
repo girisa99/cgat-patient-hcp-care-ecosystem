@@ -61,6 +61,7 @@ const AppContent = () => {
                   {isAuthenticated ? (
                     <>
                       <Route path="/" element={<Index />} />
+                      <Route path="/dashboard" element={<Index />} />
                       <Route path="/users" element={<Users />} />
                       <Route path="/patients" element={<Patients />} />
                       <Route path="/facilities" element={<Facilities />} />
