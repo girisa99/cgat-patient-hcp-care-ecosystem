@@ -95,24 +95,51 @@ export const PatientForm: React.FC<PatientFormProps> = ({
     }
 
     if (mode === 'create') {
-      console.log('Creating patient using same mechanism as self-registration...');
+      console.log('Creating patient using Supabase Auth Admin API...');
       try {
         setIsCreating(true);
         
-        // Use RPC function to create patient - same as self-registration flow
-        const { data, error } = await supabase.rpc('create_patient_user', {
-          p_email: formData.email,
-          p_password: formData.password || 'TempPassword123!',
+        // Step 1: Create the user with Supabase Auth Admin API
+        const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+          email: formData.email,
+          password: formData.password || 'TempPassword123!',
+          email_confirm: true,
+          user_metadata: {
+            firstName: formData.first_name,
+            lastName: formData.last_name
+          }
+        });
+
+        if (authError) {
+          console.error('Auth user creation error:', authError);
+          throw authError;
+        }
+
+        if (!authData.user) {
+          throw new Error('Failed to create user - no user data returned');
+        }
+
+        console.log('Auth user created successfully:', authData.user.id);
+
+        // Step 2: Create profile and assign patient role
+        const { data: profileData, error: profileError } = await supabase.rpc('create_patient_profile_and_role', {
+          p_user_id: authData.user.id,
           p_first_name: formData.first_name,
           p_last_name: formData.last_name,
+          p_email: formData.email,
           p_facility_id: formData.facility_id || null
         });
 
-        if (error) {
-          console.error('Patient creation error:', error);
-          throw error;
+        if (profileError) {
+          console.error('Profile creation error:', profileError);
+          throw profileError;
         }
 
+        if (profileData && typeof profileData === 'object' && 'error' in profileData) {
+          throw new Error(profileData.error as string);
+        }
+
+        console.log('Patient profile and role created successfully');
         showSuccess('Patient Created', 'Patient has been created successfully with Patient/Caregiver role');
         
         // Refresh the data
@@ -120,7 +147,6 @@ export const PatientForm: React.FC<PatientFormProps> = ({
 
         // Reset form and close dialog
         setFormData({ email: '', first_name: '', last_name: '', password: '', facility_id: '' });
-        onOpenChange(false);
         onOpenChange(false);
       } catch (error: any) {
         console.error('Creation failed:', error);

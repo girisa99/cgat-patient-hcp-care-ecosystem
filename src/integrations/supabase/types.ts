@@ -3970,12 +3970,12 @@ export type Database = {
         }
         Returns: boolean
       }
-      create_patient_user: {
+      create_patient_profile_and_role: {
         Args: {
-          p_email: string
-          p_password: string
+          p_user_id: string
           p_first_name: string
           p_last_name: string
+          p_email: string
           p_facility_id?: string
         }
         Returns: Json
