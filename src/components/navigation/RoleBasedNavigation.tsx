@@ -1,9 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useRoleBasedNavigation } from '@/hooks/useRoleBasedNavigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Home } from 'lucide-react';
+import { ArrowLeft, Home, ChevronDown, Users, Building2, Settings, Activity, MoreHorizontal } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface RoleBasedNavigationProps {
   className?: string;
@@ -25,12 +32,74 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
   const isDashboard = location.pathname === '/';
   const canGoBack = !isDashboard && window.history.length > 1;
 
+  // Group navigation items by category
+  const navigationGroups = {
+    core: availableTabs.filter(tab => 
+      ['/', '/patients', '/onboarding'].includes(tab.to)
+    ),
+    management: availableTabs.filter(tab => 
+      ['/users', '/facilities', '/modules', '/role-management'].includes(tab.to)
+    ),
+    technical: availableTabs.filter(tab => 
+      ['/api-services', '/ngrok', '/security', '/testing', '/data-import', '/active-verification'].includes(tab.to)
+    ),
+    reporting: availableTabs.filter(tab => 
+      ['/reports'].includes(tab.to)
+    )
+  };
+
+  const renderNavButton = (tab: any, isDropdown = false) => {
+    const isActive = location.pathname === tab.to;
+    const Icon = tab.icon;
+    
+    const buttonContent = (
+      <>
+        <Icon className="h-4 w-4" />
+        <span className={isDropdown ? "" : "hidden sm:inline"}>{tab.title}</span>
+      </>
+    );
+
+    if (isDropdown) {
+      return (
+        <DropdownMenuItem key={tab.to} asChild>
+          <Link to={tab.to} className="flex items-center gap-2 w-full">
+            {buttonContent}
+          </Link>
+        </DropdownMenuItem>
+      );
+    }
+
+    return (
+      <Link key={tab.to} to={tab.to}>
+        <Button
+          variant={isActive ? 'default' : 'ghost'}
+          size="sm"
+          className={`flex items-center gap-2 whitespace-nowrap transition-all duration-200 ${
+            isActive 
+              ? 'bg-primary text-primary-foreground shadow-sm' 
+              : 'hover:bg-accent hover:scale-105'
+          }`}
+        >
+          {buttonContent}
+        </Button>
+      </Link>
+    );
+  };
+
   return (
     <header className={`sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 ${className}`}>
       <div className="container flex h-16 items-center justify-between px-4">
         
-        {/* Left side: Back button and Home */}
+        {/* Left side: Logo and Back button */}
         <div className="flex items-center gap-4">
+          {/* Logo placeholder - replace with your actual logo */}
+          <Link to="/" className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+              <span className="text-primary-foreground font-bold text-sm">L</span>
+            </div>
+            <span className="font-semibold text-lg hidden md:inline">Healthcare Portal</span>
+          </Link>
+          
           {canGoBack && (
             <Button
               variant="ghost"
@@ -39,47 +108,72 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
               className="flex items-center gap-2 hover:bg-accent"
             >
               <ArrowLeft className="h-4 w-4" />
-              Back
+              <span className="hidden sm:inline">Back</span>
             </Button>
           )}
-          
+        </div>
+
+        {/* Center: Main Navigation */}
+        <nav className="flex items-center gap-1">
+          {/* Dashboard */}
           <Link to="/">
             <Button
-              variant="ghost"
+              variant={isDashboard ? 'default' : 'ghost'}
               size="sm"
               className={`flex items-center gap-2 ${
-                isDashboard ? 'bg-accent text-accent-foreground' : 'hover:bg-accent'
+                isDashboard ? 'bg-primary text-primary-foreground shadow-sm' : 'hover:bg-accent hover:scale-105'
               }`}
             >
               <Home className="h-4 w-4" />
-              Dashboard
+              <span className="hidden sm:inline">Dashboard</span>
             </Button>
           </Link>
-        </div>
 
-        {/* Center: Main Navigation Tabs */}
-        <nav className="flex items-center gap-1 overflow-x-auto">
-          {availableTabs.filter(tab => tab.to !== '/').map((tab) => {
-            const isActive = location.pathname === tab.to;
-            const Icon = tab.icon;
+          {/* Core Features */}
+          {navigationGroups.core.filter(tab => tab.to !== '/').map(tab => renderNavButton(tab))}
 
-            return (
-              <Link key={tab.to} to={tab.to}>
+          {/* Management Dropdown */}
+          {navigationGroups.management.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
                 <Button
-                  variant={isActive ? 'default' : 'ghost'}
+                  variant="ghost"
                   size="sm"
-                  className={`flex items-center gap-2 whitespace-nowrap transition-all duration-200 ${
-                    isActive 
-                      ? 'bg-primary text-primary-foreground shadow-sm' 
-                      : 'hover:bg-accent hover:scale-105'
-                  }`}
+                  className="flex items-center gap-2 hover:bg-accent hover:scale-105"
                 >
-                  <Icon className="h-4 w-4" />
-                  <span className="hidden sm:inline">{tab.title}</span>
+                  <Users className="h-4 w-4" />
+                  <span className="hidden sm:inline">Management</span>
+                  <ChevronDown className="h-3 w-3" />
                 </Button>
-              </Link>
-            );
-          })}
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="center" className="w-48">
+                {navigationGroups.management.map(tab => renderNavButton(tab, true))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+
+          {/* Technical Dropdown */}
+          {navigationGroups.technical.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="flex items-center gap-2 hover:bg-accent hover:scale-105"
+                >
+                  <Settings className="h-4 w-4" />
+                  <span className="hidden sm:inline">Technical</span>
+                  <ChevronDown className="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="center" className="w-48">
+                {navigationGroups.technical.map(tab => renderNavButton(tab, true))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+
+          {/* Reports */}
+          {navigationGroups.reporting.map(tab => renderNavButton(tab))}
         </nav>
 
         {/* Right side: User info and role badge */}
