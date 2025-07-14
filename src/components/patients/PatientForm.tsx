@@ -81,15 +81,19 @@ export const PatientForm: React.FC<PatientFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Form submitted with data:', formData);
     
     if (!formData.email || !formData.first_name || !formData.last_name) {
+      console.log('Missing required fields');
       return;
     }
 
     if (mode === 'create') {
+      console.log('Creating patient...');
       try {
         setIsCreating(true);
         // Call edge function to create patient
+        console.log('About to call edge function...');
         const { data, error } = await supabase.functions.invoke('create-patient', {
           body: {
             email: formData.email,
@@ -99,6 +103,8 @@ export const PatientForm: React.FC<PatientFormProps> = ({
             facility_id: formData.facility_id || null
           }
         });
+
+        console.log('Edge function response:', { data, error });
 
         if (error) {
           console.error('Edge function error:', error);
