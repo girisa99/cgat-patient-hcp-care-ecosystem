@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Debug Test</title>
+  </head>
+  <body>
+    <div id="root">
+      <h1>Static HTML Test</h1>
+      <p>If you can see this, HTML is loading.</p>
+    </div>
+    
+    <script>
+      console.log('🔥 BASIC SCRIPT IS RUNNING!');
+      
+      // Test if we can manipulate the DOM
+      const root = document.getElementById('root');
+      if (root) {
+        console.log('✅ Root element found');
+        root.innerHTML += '<p style="color: green;">✅ JavaScript is working!</p>';
+      } else {
+        console.log('❌ Root element not found');
+      }
+      
+      // Test if we can load the actual main.tsx
+      setTimeout(() => {
+        console.log('🚀 Attempting to load main.tsx...');
+        const script = document.createElement('script');
+        script.type = 'module';
+        script.src = '/src/main.tsx';
+        script.onload = () => console.log('✅ main.tsx loaded successfully');
+        script.onerror = (e) => console.error('❌ main.tsx failed to load:', e);
+        document.head.appendChild(script);
+      }, 1000);
+    </script>
+  </body>
+</html>

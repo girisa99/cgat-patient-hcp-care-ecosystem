@@ -18,7 +18,42 @@
   </head>
 
   <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <div id="root">
+      <h1>Loading Test...</h1>
+      <p>If you see this, HTML is working.</p>
+    </div>
+    
+    <script>
+      console.log('🔥 BASIC SCRIPT IS RUNNING!');
+      console.log('🔍 Testing basic functionality...');
+      
+      // Test if we can manipulate the DOM
+      const root = document.getElementById('root');
+      if (root) {
+        console.log('✅ Root element found');
+        root.innerHTML += '<p style="color: green; margin: 10px 0;">✅ JavaScript is working!</p>';
+        
+        // Try to load React
+        setTimeout(() => {
+          console.log('🚀 Attempting to load React app...');
+          root.innerHTML += '<p style="color: blue; margin: 10px 0;">🚀 Loading React...</p>';
+          
+          const script = document.createElement('script');
+          script.type = 'module';
+          script.src = '/src/main.tsx';
+          script.onload = () => {
+            console.log('✅ main.tsx loaded successfully');
+            root.innerHTML += '<p style="color: green; margin: 10px 0;">✅ React script loaded!</p>';
+          };
+          script.onerror = (e) => {
+            console.error('❌ main.tsx failed to load:', e);
+            root.innerHTML += '<p style="color: red; margin: 10px 0;">❌ React script failed to load!</p>';
+          };
+          document.head.appendChild(script);
+        }, 1000);
+      } else {
+        console.error('❌ Root element not found');
+      }
+    </script>
   </body>
 </html>
