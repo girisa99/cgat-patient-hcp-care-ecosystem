@@ -95,41 +95,38 @@ export const PatientForm: React.FC<PatientFormProps> = ({
     }
 
     if (mode === 'create') {
-      console.log('Creating patient...');
+      console.log('Creating patient using auth signup...');
       try {
         setIsCreating(true);
-        // Call edge function to create patient
-        console.log('About to call edge function...');
-        const { data, error } = await supabase.functions.invoke('create-patient', {
-          body: {
-            email: formData.email,
+        
+        // Use the same signup mechanism as self-registration
+        const { data, error } = await supabase.auth.admin.createUser({
+          email: formData.email,
+          password: formData.password || 'TempPassword123!',
+          email_confirm: true,
+          user_metadata: {
             first_name: formData.first_name,
-            last_name: formData.last_name,
-            password: formData.password || 'TempPassword123!',
-            facility_id: formData.facility_id || null
+            last_name: formData.last_name
           }
         });
 
-        console.log('Edge function response:', { data, error });
-
         if (error) {
-          console.error('Edge function error:', error);
+          console.error('User creation error:', error);
           throw error;
         }
 
-        if (data?.error) {
-          console.error('Patient creation error:', data.error);
-          throw new Error(data.error);
+        if (data.user) {
+          // The handle_new_user trigger will automatically create the profile
+          // and assign the default patientCaregiver role
+          showSuccess('Patient Created', 'Patient has been created successfully with Patient/Caregiver role');
+          
+          // Refresh the data
+          refreshData();
+
+          // Reset form and close dialog
+          setFormData({ email: '', first_name: '', last_name: '', password: '', facility_id: '' });
+          onOpenChange(false);
         }
-
-        showSuccess('Patient Created', 'Patient has been created successfully with Patient/Caregiver role');
-        
-        // Refresh the data
-        refreshData();
-
-        // Reset form and close dialog
-        setFormData({ email: '', first_name: '', last_name: '', password: '', facility_id: '' });
-        onOpenChange(false);
       } catch (error: any) {
         console.error('Creation failed:', error);
         showError('Creation Failed', error.message || 'Failed to create patient');
