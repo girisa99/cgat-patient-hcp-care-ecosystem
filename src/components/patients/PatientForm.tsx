@@ -95,53 +95,32 @@ export const PatientForm: React.FC<PatientFormProps> = ({
     }
 
     if (mode === 'create') {
-      console.log('Creating patient using Supabase Auth Admin API... (Updated Version)');
-      console.log('🔍 DEBUG: About to call supabase.auth.admin.createUser');
+      console.log('Creating patient using Edge Function...');
       try {
         setIsCreating(true);
         
-        // Step 1: Create the user with Supabase Auth Admin API
-        const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-          email: formData.email,
-          password: formData.password || 'TempPassword123!',
-          email_confirm: true,
-          user_metadata: {
-            firstName: formData.first_name,
-            lastName: formData.last_name
+        // Call the Edge Function to create patient
+        const { data, error } = await supabase.functions.invoke('create-patient', {
+          body: {
+            email: formData.email,
+            password: formData.password || undefined,
+            first_name: formData.first_name,
+            last_name: formData.last_name,
+            facility_id: formData.facility_id || null
           }
         });
 
-        if (authError) {
-          console.error('Auth user creation error:', authError);
-          throw authError;
+        if (error) {
+          console.error('Edge function error:', error);
+          throw new Error(error.message || 'Failed to call patient creation function');
         }
 
-        if (!authData.user) {
-          throw new Error('Failed to create user - no user data returned');
+        if (data?.error) {
+          console.error('Patient creation error:', data.error);
+          throw new Error(data.error);
         }
 
-        console.log('Auth user created successfully:', authData.user.id);
-
-        // Step 2: Create profile and assign patient role
-        console.log('🔍 DEBUG: About to call create_patient_profile_and_role RPC function');
-        const { data: profileData, error: profileError } = await supabase.rpc('create_patient_profile_and_role', {
-          p_user_id: authData.user.id,
-          p_first_name: formData.first_name,
-          p_last_name: formData.last_name,
-          p_email: formData.email,
-          p_facility_id: formData.facility_id || null
-        });
-
-        if (profileError) {
-          console.error('Profile creation error:', profileError);
-          throw profileError;
-        }
-
-        if (profileData && typeof profileData === 'object' && 'error' in profileData) {
-          throw new Error(profileData.error as string);
-        }
-
-        console.log('Patient profile and role created successfully');
+        console.log('Patient created successfully:', data);
         showSuccess('Patient Created', 'Patient has been created successfully with Patient/Caregiver role');
         
         // Refresh the data

@@ -1,20 +1,37 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
+import { corsHeaders } from '../_shared/cors.ts'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+interface CreatePatientRequest {
+  email: string
+  password?: string
+  first_name: string
+  last_name: string
+  facility_id?: string
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    // Create a Supabase client with service role key
-    const supabase = createClient(
+    // Parse the request
+    const { email, password, first_name, last_name, facility_id }: CreatePatientRequest = await req.json()
+
+    // Validate required fields
+    if (!email || !first_name || !last_name) {
+      return new Response(
+        JSON.stringify({ error: 'Missing required fields: email, first_name, last_name' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+
+    // Create admin client with service role key
+    const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
       {
@@ -25,17 +42,10 @@ serve(async (req) => {
       }
     )
 
-    const { email, first_name, last_name, password, facility_id } = await req.json()
+    console.log('Creating patient user with admin client...')
 
-    if (!email || !first_name || !last_name) {
-      return new Response(
-        JSON.stringify({ error: 'Missing required fields' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    // Create user using admin API
-    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+    // Step 1: Create the user with admin privileges
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password: password || 'TempPassword123!',
       email_confirm: true,
@@ -46,66 +56,87 @@ serve(async (req) => {
     })
 
     if (authError) {
-      console.error('Auth error:', authError)
+      console.error('Auth user creation error:', authError)
       return new Response(
-        JSON.stringify({ error: authError.message }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    if (authData.user) {
-      // Update the profile with names and facility
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({ 
-          first_name,
-          last_name,
-          facility_id: facility_id || null,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', authData.user.id)
-        
-      if (profileError) {
-        console.error('Profile error:', profileError)
-      }
-        
-      // Assign patient role using RPC to avoid schema issues
-      const { error: roleError } = await supabase.rpc('assign_user_role', {
-        p_user_id: authData.user.id,
-        p_role_name: 'patientCaregiver'
-      })
-      
-      if (roleError) {
-        console.error('Role assignment error:', roleError)
-        return new Response(
-          JSON.stringify({ error: roleError.message }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-      }
-
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          user: authData.user,
-          message: 'Patient created successfully'
-        }),
+        JSON.stringify({ error: `Failed to create user: ${authError.message}` }),
         { 
-          status: 200, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       )
     }
 
+    if (!authData.user) {
+      return new Response(
+        JSON.stringify({ error: 'Failed to create user - no user data returned' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+
+    console.log('Auth user created successfully:', authData.user.id)
+
+    // Step 2: Create profile and assign patient role using the database function
+    const { data: profileData, error: profileError } = await supabaseAdmin.rpc('create_patient_profile_and_role', {
+      p_user_id: authData.user.id,
+      p_first_name: first_name,
+      p_last_name: last_name,
+      p_email: email,
+      p_facility_id: facility_id || null
+    })
+
+    if (profileError) {
+      console.error('Profile creation error:', profileError)
+      
+      // Clean up the auth user if profile creation fails
+      await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
+      
+      return new Response(
+        JSON.stringify({ error: `Failed to create profile: ${profileError.message}` }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+
+    if (profileData && typeof profileData === 'object' && 'error' in profileData) {
+      // Clean up the auth user if profile creation fails
+      await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
+      
+      return new Response(
+        JSON.stringify({ error: profileData.error }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+
+    console.log('Patient profile and role created successfully')
+
     return new Response(
-      JSON.stringify({ error: 'Failed to create user' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ 
+        success: true, 
+        user_id: authData.user.id,
+        message: 'Patient created successfully'
+      }),
+      { 
+        status: 200, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
     )
 
   } catch (error) {
-    console.error('Function error:', error)
+    console.error('Unexpected error:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ error: 'Internal server error' }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
     )
   }
 })
