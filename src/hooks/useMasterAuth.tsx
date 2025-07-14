@@ -26,6 +26,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const MasterAuthProvider = ({ children }: { children: ReactNode }) => {
+  console.log('🔑 MasterAuthProvider rendering...');
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<any>(null);
@@ -115,6 +116,18 @@ export const MasterAuthProvider = ({ children }: { children: ReactNode }) => {
       subscription.unsubscribe();
     };
   }, []); // No dependencies to prevent re-runs
+
+  // Force loading to complete after 10 seconds to prevent infinite loading
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (isLoading) {
+        console.log('🚨 Auth loading timeout - force completing...');
+        setIsLoading(false);
+      }
+    }, 10000);
+    
+    return () => clearTimeout(timeout);
+  }, [isLoading]);
 
   const fetchUserProfile = async (userId: string) => {
     console.log('👤 Fetching user profile for:', userId);

@@ -38,10 +38,14 @@ const queryClient = new QueryClient({
 });
 
 const AppContent = () => {
+  console.log('🎯 AppContent rendering...');
   const { isAuthenticated, isLoading } = useMasterAuth();
+
+  console.log('🎯 Auth state:', { isAuthenticated, isLoading });
 
   // Show loading screen while auth is initializing
   if (isLoading) {
+    console.log('⏳ Showing loading screen...');
     return <PageLoading message="Initializing application..." />;
   }
 
