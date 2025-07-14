@@ -3,11 +3,8 @@ import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { SidebarProvider } from '@/components/ui/sidebar-database-aligned';
-import { AppSidebar } from '@/components/sidebar/AppSidebar';
 import { MasterAuthProvider } from './hooks/useMasterAuth';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
-import { TenantProvider } from '@/contexts/TenantContext';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { PageLoading } from '@/components/ui/LoadingStates';
 
@@ -55,35 +52,37 @@ const AppContent = () => {
     <ErrorBoundary>
       <BrowserRouter>
         <div className="min-h-screen bg-background">
-          <Routes>
-            {/* Public routes */}
-            <Route path="/login" element={<Login />} />
-            
-            {/* Protected routes */}
-            {isAuthenticated ? (
-              <>
-                <Route path="/" element={<Index />} />
-                <Route path="/dashboard" element={<Index />} />
-                <Route path="/users" element={<Users />} />
-                <Route path="/patients" element={<Patients />} />
-                <Route path="/facilities" element={<Facilities />} />
-                <Route path="/onboarding" element={<Onboarding />} />
-                <Route path="/modules" element={<Modules />} />
-                <Route path="/api-services" element={<ApiServices />} />
-                <Route path="/ngrok" element={<NgrokIntegration />} />
-                <Route path="/security" element={<Security />} />
-                <Route path="/reports" element={<Reports />} />
-                <Route path="/testing" element={<Testing />} />
-                <Route path="/role-management" element={<RoleManagement />} />
-                <Route path="/stability" element={<Stability />} />
-              </>
-            ) : (
-              <>
-                <Route path="/" element={<Login />} />
-                <Route path="*" element={<Navigate to="/login" replace />} />
-              </>
-            )}
-          </Routes>
+          <Suspense fallback={<PageLoading message="Loading page..." />}>
+            <Routes>
+              {/* Public routes */}
+              <Route path="/login" element={<Login />} />
+              
+              {/* Protected routes */}
+              {isAuthenticated ? (
+                <>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/dashboard" element={<Index />} />
+                  <Route path="/users" element={<Users />} />
+                  <Route path="/patients" element={<Patients />} />
+                  <Route path="/facilities" element={<Facilities />} />
+                  <Route path="/onboarding" element={<Onboarding />} />
+                  <Route path="/modules" element={<Modules />} />
+                  <Route path="/api-services" element={<ApiServices />} />
+                  <Route path="/ngrok" element={<NgrokIntegration />} />
+                  <Route path="/security" element={<Security />} />
+                  <Route path="/reports" element={<Reports />} />
+                  <Route path="/testing" element={<Testing />} />
+                  <Route path="/role-management" element={<RoleManagement />} />
+                  <Route path="/stability" element={<Stability />} />
+                </>
+              ) : (
+                <>
+                  <Route path="/" element={<Login />} />
+                  <Route path="*" element={<Navigate to="/login" replace />} />
+                </>
+              )}
+            </Routes>
+          </Suspense>
         </div>
       </BrowserRouter>
     </ErrorBoundary>
