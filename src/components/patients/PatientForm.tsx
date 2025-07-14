@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useMasterUserManagement } from '@/hooks/useMasterUserManagement';
+import { supabase } from '@/integrations/supabase/client';
+import { useMasterToast } from '@/hooks/useMasterToast';
 
 interface PatientFormProps {
   open: boolean;
@@ -34,7 +36,9 @@ export const PatientForm: React.FC<PatientFormProps> = ({
     password: ''
   });
 
-  const { createUser, isCreatingUser } = useMasterUserManagement();
+  const { createUser, isCreatingUser, assignRole, refreshData } = useMasterUserManagement();
+  const { showSuccess, showError } = useMasterToast();
+  const [isUpdating, setIsUpdating] = useState(false);
 
   // Pre-populate form data when editing
   useEffect(() => {
@@ -63,19 +67,68 @@ export const PatientForm: React.FC<PatientFormProps> = ({
     }
 
     if (mode === 'create') {
-      // Create new patient with patientCaregiver role
-      await createUser({
-        ...formData
-      });
-    } else {
-      // For edit mode, we would need an update function
-      console.log('Edit patient:', patientId, formData);
-      // TODO: Implement patient update functionality
-    }
+      try {
+        // Create user first
+        const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+          email: formData.email,
+          password: formData.password || 'TempPassword123!',
+          email_confirm: true,
+          user_metadata: {
+            firstName: formData.first_name,
+            lastName: formData.last_name
+          }
+        });
+        
+        if (authError) throw authError;
+        
+        // Assign patient role
+        if (authData.user) {
+          const { error: roleError } = await supabase
+            .from('user_roles')
+            .insert({ 
+              user_id: authData.user.id, 
+              role_id: '991a1679-d423-4c62-86c8-f14c11db5186' // patientCaregiver role ID
+            });
+          
+          if (roleError) throw roleError;
+        }
 
-    // Reset form and close dialog
-    setFormData({ email: '', first_name: '', last_name: '', password: '' });
-    onOpenChange(false);
+        showSuccess('Patient Created', 'Patient has been created successfully with Patient/Caregiver role');
+        refreshData(); // Refresh the patient list
+        
+        // Reset form and close dialog
+        setFormData({ email: '', first_name: '', last_name: '', password: '' });
+        onOpenChange(false);
+      } catch (error: any) {
+        showError('Creation Failed', error.message);
+      }
+    } else {
+      // Edit mode - update patient profile
+      try {
+        setIsUpdating(true);
+        const { error } = await supabase
+          .from('profiles')
+          .update({ 
+            first_name: formData.first_name,
+            last_name: formData.last_name,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', patientId);
+        
+        if (error) throw error;
+        
+        showSuccess('Patient Updated', 'Patient information has been updated successfully');
+        refreshData(); // Refresh the patient list
+        
+        // Reset form and close dialog
+        setFormData({ email: '', first_name: '', last_name: '', password: '' });
+        onOpenChange(false);
+      } catch (error: any) {
+        showError('Update Failed', error.message);
+      } finally {
+        setIsUpdating(false);
+      }
+    }
   };
 
   return (
@@ -148,8 +201,8 @@ export const PatientForm: React.FC<PatientFormProps> = ({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isCreatingUser}>
-              {isCreatingUser ? 
+            <Button type="submit" disabled={isCreatingUser || isUpdating}>
+              {(isCreatingUser || isUpdating) ? 
                 (mode === 'create' ? 'Creating...' : 'Updating...') : 
                 (mode === 'create' ? 'Create Patient' : 'Update Patient')
               }
