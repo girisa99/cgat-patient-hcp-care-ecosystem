@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useMasterUserManagement } from '@/hooks/useMasterUserManagement';
 import { supabase } from '@/integrations/supabase/client';
 import { useMasterToast } from '@/hooks/useMasterToast';
@@ -33,28 +34,46 @@ export const PatientForm: React.FC<PatientFormProps> = ({
     email: '',
     first_name: '',
     last_name: '',
-    password: ''
+    password: '',
+    facility_id: ''
   });
 
   const { createUser, isCreatingUser, assignRole, refreshData } = useMasterUserManagement();
   const { showSuccess, showError } = useMasterToast();
   const [isUpdating, setIsUpdating] = useState(false);
+  const [facilities, setFacilities] = useState<Array<{id: string, name: string, facility_type: string}>>([]);
 
-  // Pre-populate form data when editing
+  // Load facilities and pre-populate form data
   useEffect(() => {
+    const loadFacilities = async () => {
+      const { data } = await supabase
+        .from('facilities')
+        .select('id, name, facility_type')
+        .eq('is_active', true)
+        .order('name');
+      
+      if (data) {
+        setFacilities(data);
+      }
+    };
+
+    loadFacilities();
+
     if (mode === 'edit' && initialData) {
       setFormData({
         email: initialData.email || '',
         first_name: initialData.first_name || '',
         last_name: initialData.last_name || '',
-        password: ''
+        password: '',
+        facility_id: ''
       });
     } else {
       setFormData({
         email: '',
         first_name: '',
         last_name: '',
-        password: ''
+        password: '',
+        facility_id: ''
       });
     }
   }, [mode, initialData, open]);
@@ -68,20 +87,63 @@ export const PatientForm: React.FC<PatientFormProps> = ({
 
     if (mode === 'create') {
       try {
-        // Use the existing createUser handler with patient-specific role
-        await createUser({
+        // Create user using admin API
+        const { data: authData, error: authError } = await supabase.auth.admin.createUser({
           email: formData.email,
-          first_name: formData.first_name,
-          last_name: formData.last_name,
-          password: formData.password,
-          roles: ['991a1679-d423-4c62-86c8-f14c11db5186'], // patientCaregiver role ID
+          password: formData.password || 'TempPassword123!',
+          email_confirm: true,
+          user_metadata: {
+            firstName: formData.first_name,
+            lastName: formData.last_name
+          }
         });
+        
+        if (authError) {
+          console.error('Auth error:', authError);
+          throw authError;
+        }
+        
+        if (authData.user) {
+          // Update the profile with names and facility
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .update({ 
+              first_name: formData.first_name,
+              last_name: formData.last_name,
+              facility_id: formData.facility_id || null,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', authData.user.id);
+            
+          if (profileError) {
+            console.error('Profile error:', profileError);
+          }
+            
+          // Assign patient role
+          const { error: roleError } = await supabase
+            .from('user_roles')
+            .insert({ 
+              user_id: authData.user.id, 
+              role_id: '991a1679-d423-4c62-86c8-f14c11db5186' // patientCaregiver role ID
+            });
+          
+          if (roleError) {
+            console.error('Role assignment error:', roleError);
+            throw roleError;
+          }
+          
+          showSuccess('Patient Created', 'Patient has been created successfully with Patient/Caregiver role');
+          
+          // Refresh the data
+          refreshData();
+        }
 
         // Reset form and close dialog
-        setFormData({ email: '', first_name: '', last_name: '', password: '' });
+        setFormData({ email: '', first_name: '', last_name: '', password: '', facility_id: '' });
         onOpenChange(false);
       } catch (error: any) {
-        showError('Creation Failed', error.message);
+        console.error('Creation failed:', error);
+        showError('Creation Failed', error.message || 'Failed to create patient');
       }
     } else {
       // Edit mode - update patient profile
@@ -102,7 +164,7 @@ export const PatientForm: React.FC<PatientFormProps> = ({
         refreshData(); // Refresh the patient list
         
         // Reset form and close dialog
-        setFormData({ email: '', first_name: '', last_name: '', password: '' });
+        setFormData({ email: '', first_name: '', last_name: '', password: '', facility_id: '' });
         onOpenChange(false);
       } catch (error: any) {
         showError('Update Failed', error.message);
@@ -156,6 +218,22 @@ export const PatientForm: React.FC<PatientFormProps> = ({
             {mode === 'edit' && (
               <p className="text-xs text-muted-foreground mt-1">Email cannot be changed</p>
             )}
+          </div>
+
+          <div>
+            <Label htmlFor="facility">Facility</Label>
+            <Select value={formData.facility_id} onValueChange={(value) => setFormData(prev => ({ ...prev, facility_id: value }))}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a facility" />
+              </SelectTrigger>
+              <SelectContent>
+                {facilities.map((facility) => (
+                  <SelectItem key={facility.id} value={facility.id}>
+                    {facility.name} ({facility.facility_type})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {mode === 'create' && (
