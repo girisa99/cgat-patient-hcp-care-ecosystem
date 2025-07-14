@@ -19,7 +19,7 @@ export { useMasterUserManagement } from './useMasterUserManagement';
 export { useMasterDashboard } from './useMasterDashboard';
 
 // Patients - Single Source (FIXED - Real Data Only)
-export { useRealPatientData } from './patients/useRealPatientData';
+// Removed duplicate patient hooks - using existing useMasterUserManagement instead
 
 // Facilities - Single Source (FIXED)
 export { useMasterFacilities } from './useMasterFacilities';
