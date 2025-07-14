@@ -3970,6 +3970,16 @@ export type Database = {
         }
         Returns: boolean
       }
+      create_patient_user: {
+        Args: {
+          p_email: string
+          p_password: string
+          p_first_name: string
+          p_last_name: string
+          p_facility_id?: string
+        }
+        Returns: Json
+      }
       detect_system_functionality: {
         Args: Record<PropertyKey, never>
         Returns: undefined
