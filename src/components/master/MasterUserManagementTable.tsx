@@ -13,8 +13,15 @@ import {
   Mail, Trash2 
 } from 'lucide-react';
 import { useMasterUserManagement } from '@/hooks/useMasterUserManagement';
+import { useAdminRealtime } from '@/hooks/useRealtime';
 
 export const MasterUserManagementTable: React.FC = () => {
+  // Enable real-time updates for user management
+  useAdminRealtime({ 
+    enableNotifications: true,
+    areas: ['userManagement', 'rbac'] 
+  });
+
   const { 
     users, 
     isLoading, 

@@ -6,9 +6,16 @@ import {
   Users, UserPlus, RefreshCw, Edit, UserX, Activity 
 } from 'lucide-react';
 import { useMasterUserManagement } from '@/hooks/useMasterUserManagement';
+import { useAdminRealtime } from '@/hooks/useRealtime';
 import { PatientForm } from './PatientForm';
 
 export const PatientManagementTable: React.FC = () => {
+  // Enable real-time updates for user management
+  useAdminRealtime({ 
+    enableNotifications: true,
+    areas: ['userManagement', 'patients'] 
+  });
+
   const { 
     users, 
     isLoading, 

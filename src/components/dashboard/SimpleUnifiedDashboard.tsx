@@ -1,9 +1,18 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
+import { useMasterData } from '@/hooks/useMasterData';
+import { useAdminRealtime } from '@/hooks/useRealtime';
 
 const SimpleUnifiedDashboard: React.FC = () => {
+  // Enable real-time updates for dashboard
+  useAdminRealtime({ 
+    enableNotifications: true,
+    areas: ['userManagement', 'facility', 'modules'] 
+  });
+
   const { user } = useMasterAuth();
+  const { stats } = useMasterData();
 
   console.log('🎯 Simple Unified Dashboard - Rendering for user:', user?.id);
 
@@ -43,34 +52,34 @@ const SimpleUnifiedDashboard: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              <div className="text-2xl font-bold">1</div>
-              <div className="text-sm text-muted-foreground">Active Users</div>
+              <div className="text-2xl font-bold">{stats?.totalUsers || 0}</div>
+              <div className="text-sm text-muted-foreground">Total Users</div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Modules Card */}
+        {/* Patients Card */}
         <Card>
           <CardHeader>
-            <CardTitle>Modules</CardTitle>
+            <CardTitle>Patients</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              <div className="text-2xl font-bold">5</div>
-              <div className="text-sm text-muted-foreground">Available Modules</div>
+              <div className="text-2xl font-bold">{stats?.patientCount || 0}</div>
+              <div className="text-sm text-muted-foreground">Patients</div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Services Card */}
+        {/* Facilities Card */}
         <Card>
           <CardHeader>
-            <CardTitle>Services</CardTitle>
+            <CardTitle>Facilities</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              <div className="text-2xl font-bold">3</div>
-              <div className="text-sm text-muted-foreground">API Services</div>
+              <div className="text-2xl font-bold">{stats?.totalFacilities || 0}</div>
+              <div className="text-sm text-muted-foreground">Facilities</div>
             </div>
           </CardContent>
         </Card>
