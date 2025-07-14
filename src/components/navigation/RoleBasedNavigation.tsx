@@ -3,7 +3,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useRoleBasedNavigation } from '@/hooks/useRoleBasedNavigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Home, ChevronDown, Users, Building2, Settings, Activity, MoreHorizontal } from 'lucide-react';
+import { ArrowLeft, Home, ChevronDown, Users, Building2, Settings, Activity, MoreHorizontal, LogOut, User } from 'lucide-react';
+import { useMasterAuth } from '@/hooks/useMasterAuth';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,6 +25,7 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
   const location = useLocation();
   const navigate = useNavigate();
   const { user, profile, availableTabs, currentRole, isAdmin, isSuperAdmin } = useRoleBasedNavigation();
+  const { signOut } = useMasterAuth();
 
   if (!user) {
     return null;
@@ -31,6 +33,23 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
 
   const isDashboard = location.pathname === '/';
   const canGoBack = !isDashboard && window.history.length > 1;
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
+
+  const getUserDisplayName = () => {
+    if (profile?.first_name && profile?.last_name) {
+      return `${profile.first_name} ${profile.last_name}`;
+    }
+    if (profile?.first_name) {
+      return profile.first_name;
+    }
+    if (user?.email) {
+      return user.email.split('@')[0];
+    }
+    return 'User';
+  };
 
   // Group navigation items by category
   const navigationGroups = {
@@ -181,16 +200,43 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
           {navigationGroups.reporting.map(tab => renderNavButton(tab))}
         </nav>
 
-        {/* Right side: User info and role badge */}
+        {/* Right side: User dropdown and actions */}
         <div className="flex items-center gap-3">
-          {profile?.first_name && (
-            <span className="text-sm text-muted-foreground hidden md:inline">
-              Welcome, {profile.first_name}
-            </span>
-          )}
+          {/* User Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="flex items-center gap-2 hover:bg-accent">
+                <User className="h-4 w-4" />
+                <span className="hidden md:inline">{getUserDisplayName()}</span>
+                <ChevronDown className="h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <div className="px-2 py-1.5">
+                <p className="text-sm font-medium">{getUserDisplayName()}</p>
+                <p className="text-xs text-muted-foreground">{user?.email}</p>
+              </div>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>
+                <User className="h-4 w-4 mr-2" />
+                Profile Settings
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Settings className="h-4 w-4 mr-2" />
+                Preferences
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleSignOut} className="text-red-600 focus:text-red-600">
+                <LogOut className="h-4 w-4 mr-2" />
+                Sign Out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
+          {/* Role Badge */}
           <Badge 
             variant={isSuperAdmin ? 'destructive' : isAdmin ? 'secondary' : 'outline'}
-            className="whitespace-nowrap"
+            className="whitespace-nowrap hidden sm:flex"
           >
             {currentRole ? currentRole.replace(/([A-Z])/g, ' $1').trim() : 'No Role'}
           </Badge>

@@ -8,7 +8,6 @@ import {
   TrendingUp, AlertCircle, RefreshCw, Database
 } from "lucide-react";
 import { useMasterAuth } from "@/hooks/useMasterAuth";
-import DashboardHeader from "@/components/layout/DashboardHeader";
 import RoleBasedNavigation from "@/components/navigation/RoleBasedNavigation";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -58,18 +57,18 @@ const Index = () => {
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <DashboardHeader />
+        <RoleBasedNavigation />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <Card className="border-0 shadow-sm bg-yellow-50 border-yellow-200">
             <CardHeader>
               <CardTitle className="text-yellow-800 flex items-center space-x-2">
                 <AlertCircle className="h-5 w-5" />
-                <span>Welcome to Healthcare Platform</span>
+                <span>Welcome to GENIE Platform</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-yellow-700">
-                Please log in to access the dashboard and manage your healthcare data.
+                Please log in to access the dashboard and manage your cell & gene technology data.
               </p>
             </CardContent>
           </Card>
@@ -81,7 +80,7 @@ const Index = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <DashboardHeader />
+        <RoleBasedNavigation />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="animate-pulse space-y-8">
             <div className="h-8 bg-gray-200 rounded w-1/3"></div>
@@ -102,14 +101,8 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <DashboardHeader />
-      
-      {/* Navigation Tabs */}
-      <div className="border-b bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <RoleBasedNavigation />
-        </div>
-      </div>
+      {/* Single Navigation Bar */}
+      <RoleBasedNavigation />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header Section */}
@@ -117,10 +110,10 @@ const Index = () => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                Healthcare Dashboard
+                GENIE Dashboard
               </h1>
               <p className="text-lg text-gray-600">
-                Comprehensive healthcare data management and analytics platform
+                Cell & Gene Technology Navigator - Comprehensive data management platform
               </p>
             </div>
             <Button
@@ -291,7 +284,8 @@ const Index = () => {
               <p><strong>Data Source:</strong> Supabase (Real Database)</p>
               <p><strong>Total Users:</strong> {stats?.totalUsers || 0}</p>
               <p><strong>Patient Users:</strong> {stats?.patientUsers || 0}</p>
-              <p><strong>API Services:</strong> {stats?.totalApiServices || 0}</p>
+              <p><strong>Facilities:</strong> {stats?.totalFacilities || 0}</p>
+              <p><strong>Modules:</strong> {stats?.totalModules || 0}</p>
               <p><strong>Current User:</strong> {user?.email || 'Not logged in'}</p>
               <p><strong>User Roles:</strong> {userRoles.length > 0 ? userRoles.join(', ') : 'None assigned'}</p>
               <p><strong>Mock Data Status:</strong> ❌ Eliminated - Using real database only</p>
