@@ -49,47 +49,42 @@ const AppContent = () => {
     return <PageLoading message="Initializing application..." />;
   }
 
+  console.log('🎯 Rendering routes, isAuthenticated:', isAuthenticated);
+
   return (
     <ErrorBoundary>
       <BrowserRouter>
-        <SidebarProvider>
-          <div className="flex min-h-screen w-full">
-            {isAuthenticated && <AppSidebar />}
-            <div className="flex-1 min-h-screen bg-gray-50">
-              <Suspense fallback={<PageLoading message="Loading page..." />}>
-                <Routes>
-                  {/* Public routes */}
-                  <Route path="/login" element={<Login />} />
-                  
-                  {/* Protected routes */}
-                  {isAuthenticated ? (
-                    <>
-                      <Route path="/" element={<Index />} />
-                      <Route path="/dashboard" element={<Index />} />
-                      <Route path="/users" element={<Users />} />
-                      <Route path="/patients" element={<Patients />} />
-                      <Route path="/facilities" element={<Facilities />} />
-                      <Route path="/onboarding" element={<Onboarding />} />
-                      <Route path="/modules" element={<Modules />} />
-                      <Route path="/api-services" element={<ApiServices />} />
-                      <Route path="/ngrok" element={<NgrokIntegration />} />
-                      <Route path="/security" element={<Security />} />
-                      <Route path="/reports" element={<Reports />} />
-                      <Route path="/testing" element={<Testing />} />
-                      <Route path="/role-management" element={<RoleManagement />} />
-                      <Route path="/stability" element={<Stability />} />
-                    </>
-                  ) : (
-                    <>
-                      <Route path="/" element={<Login />} />
-                      <Route path="*" element={<Navigate to="/login" replace />} />
-                    </>
-                  )}
-                </Routes>
-              </Suspense>
-            </div>
-          </div>
-        </SidebarProvider>
+        <div className="min-h-screen bg-background">
+          <Routes>
+            {/* Public routes */}
+            <Route path="/login" element={<Login />} />
+            
+            {/* Protected routes */}
+            {isAuthenticated ? (
+              <>
+                <Route path="/" element={<Index />} />
+                <Route path="/dashboard" element={<Index />} />
+                <Route path="/users" element={<Users />} />
+                <Route path="/patients" element={<Patients />} />
+                <Route path="/facilities" element={<Facilities />} />
+                <Route path="/onboarding" element={<Onboarding />} />
+                <Route path="/modules" element={<Modules />} />
+                <Route path="/api-services" element={<ApiServices />} />
+                <Route path="/ngrok" element={<NgrokIntegration />} />
+                <Route path="/security" element={<Security />} />
+                <Route path="/reports" element={<Reports />} />
+                <Route path="/testing" element={<Testing />} />
+                <Route path="/role-management" element={<RoleManagement />} />
+                <Route path="/stability" element={<Stability />} />
+              </>
+            ) : (
+              <>
+                <Route path="/" element={<Login />} />
+                <Route path="*" element={<Navigate to="/login" replace />} />
+              </>
+            )}
+          </Routes>
+        </div>
       </BrowserRouter>
     </ErrorBoundary>
   );
@@ -98,12 +93,10 @@ const AppContent = () => {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <MasterAuthProvider>
-      <TenantProvider>
-        <TooltipProvider>
-          <Toaster />
-          <AppContent />
-        </TooltipProvider>
-      </TenantProvider>
+      <TooltipProvider>
+        <Toaster />
+        <AppContent />
+      </TooltipProvider>
     </MasterAuthProvider>
   </QueryClientProvider>
 );
