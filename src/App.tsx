@@ -80,7 +80,10 @@ const AppContent = () => {
                       <Route path="/stability" element={<Stability />} />
                     </>
                   ) : (
-                    <Route path="*" element={<Navigate to="/login" replace />} />
+                    <>
+                      <Route path="/" element={<Login />} />
+                      <Route path="*" element={<Navigate to="/login" replace />} />
+                    </>
                   )}
                 </Routes>
               </Suspense>
