@@ -23,6 +23,10 @@ export const useMasterUserManagement = () => {
   });
 
   const fetchUsers = () => {
+    // Force refresh both users and general data
+    queryClient.invalidateQueries({ queryKey: ['master-users'] });
+    queryClient.invalidateQueries({ queryKey: ['master-data'] });
+    queryClient.refetchQueries({ queryKey: ['master-users'] });
     masterData.refreshData();
   };
 
@@ -43,7 +47,10 @@ export const useMasterUserManagement = () => {
       return data;
     },
     onSuccess: () => {
+      // Invalidate multiple query keys to ensure complete refresh
       queryClient.invalidateQueries({ queryKey: ['master-users'] });
+      queryClient.invalidateQueries({ queryKey: ['master-data'] });
+      queryClient.refetchQueries({ queryKey: ['master-users'] });
       showSuccess('User Created', 'User has been created successfully');
       setIsCreatingUser(false);
     },
@@ -65,7 +72,10 @@ export const useMasterUserManagement = () => {
       return userId;
     },
     onSuccess: () => {
+      // Invalidate multiple query keys to ensure complete refresh
       queryClient.invalidateQueries({ queryKey: ['master-users'] });
+      queryClient.invalidateQueries({ queryKey: ['master-data'] });
+      queryClient.refetchQueries({ queryKey: ['master-users'] });
       showSuccess('User Deactivated', 'User has been deactivated successfully');
       setIsDeactivating(false);
     },

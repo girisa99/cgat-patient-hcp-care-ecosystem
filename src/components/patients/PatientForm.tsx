@@ -81,8 +81,18 @@ export const PatientForm: React.FC<PatientFormProps> = ({
         
         if (authError) throw authError;
         
-        // Assign patient role
+        // Update the profile with correct names (trigger creates profile but may not populate names correctly)
         if (authData.user) {
+          await supabase
+            .from('profiles')
+            .update({ 
+              first_name: formData.first_name,
+              last_name: formData.last_name,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', authData.user.id);
+            
+          // Assign patient role
           const { error: roleError } = await supabase
             .from('user_roles')
             .insert({ 
@@ -94,7 +104,11 @@ export const PatientForm: React.FC<PatientFormProps> = ({
         }
 
         showSuccess('Patient Created', 'Patient has been created successfully with Patient/Caregiver role');
-        refreshData(); // Refresh the patient list
+        
+        // Force refresh the data and wait for it
+        setTimeout(() => {
+          refreshData();
+        }, 500);
         
         // Reset form and close dialog
         setFormData({ email: '', first_name: '', last_name: '', password: '' });
