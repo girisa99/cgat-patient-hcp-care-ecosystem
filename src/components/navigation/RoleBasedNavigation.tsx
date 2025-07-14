@@ -92,14 +92,17 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
         
         {/* Left side: Logo and Back button */}
         <div className="flex items-center gap-4">
-          {/* Logo - replace with your actual logo */}
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/70 rounded-lg flex items-center justify-center shadow-lg">
-              <span className="text-primary-foreground font-bold text-lg">H</span>
+          {/* Company Logo */}
+          <Link to="/" className="flex items-center gap-3">
+            <img 
+              src="/lovable-uploads/c721185e-a640-4364-a7d1-ccae9b2d6123.png" 
+              alt="GENIE - Cell and Gene Technology Navigator" 
+              className="w-10 h-10 object-contain"
+            />
+            <div className="hidden md:block">
+              <div className="font-bold text-xl text-primary">GENIE</div>
+              <div className="text-xs text-muted-foreground -mt-1">Cell & Gene Technology Navigator</div>
             </div>
-            <span className="font-semibold text-xl hidden md:inline bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-              Healthcare Platform
-            </span>
           </Link>
           
           {canGoBack && (
