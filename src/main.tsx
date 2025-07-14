@@ -1,31 +1,30 @@
-console.log('🚀 Step 1: main.tsx file is being parsed');
-
 import { createRoot } from 'react-dom/client';
-console.log('🚀 Step 2: React DOM imported successfully');
-
 import React from 'react';
-console.log('🚀 Step 3: React imported successfully');
+import './index.css';
 
-console.log('🚀 Step 4: About to create simple component');
+console.log('🚀 main.tsx is loading...');
 
-const SimpleApp = () => {
-  console.log('🚀 Step 6: SimpleApp component rendering');
-  return React.createElement('div', 
-    { style: { padding: '20px', fontFamily: 'Arial' } },
-    React.createElement('h1', null, 'React is Working!'),
-    React.createElement('p', null, 'This proves React can render successfully.')
+// Simple working app component
+const App = () => {
+  console.log('🎯 App component rendering...');
+  
+  return (
+    <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
+      <h1 style={{ color: 'green' }}>🎉 React App is Working!</h1>
+      <p>Your development server is now working properly.</p>
+      <p style={{ color: 'blue' }}>This is your main React application.</p>
+    </div>
   );
 };
 
-console.log('🚀 Step 5: SimpleApp component created');
+console.log('🚀 Creating React root...');
+const rootElement = document.getElementById('root');
 
-const rootElement = document.getElementById("root");
 if (!rootElement) {
   console.error('❌ Root element not found!');
 } else {
-  console.log('✅ Root element found, creating React root...');
   const root = createRoot(rootElement);
-  console.log('✅ React root created, rendering app...');
-  root.render(React.createElement(SimpleApp));
-  console.log('✅ React app rendered successfully!');
+  console.log('🚀 Rendering app...');
+  root.render(<App />);
+  console.log('✅ App rendered successfully!');
 }

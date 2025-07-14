@@ -18,66 +18,7 @@
   </head>
 
   <body>
-    <div id="root">
-      <h1>Testing Direct HTML...</h1>
-    </div>
-    
-    <!-- Load React directly from CDN to bypass module issues -->
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    
-    <script>
-      console.log('🔥 HTML SCRIPT IS RUNNING!');
-      
-      const root = document.getElementById('root');
-      if (!root) {
-        console.error('❌ Root element not found');
-        return;
-      }
-      
-      console.log('✅ Root element found');
-      root.innerHTML = '<h1>HTML Working!</h1><p>Testing React from CDN...</p>';
-      
-      // Test if React loaded from CDN
-      if (typeof React === 'undefined') {
-        console.error('❌ React not loaded from CDN');
-        root.innerHTML += '<p style="color: red;">❌ React failed to load from CDN</p>';
-        return;
-      }
-      
-      console.log('✅ React loaded from CDN');
-      
-      if (typeof ReactDOM === 'undefined') {
-        console.error('❌ ReactDOM not loaded from CDN');
-        root.innerHTML += '<p style="color: red;">❌ ReactDOM failed to load from CDN</p>';
-        return;
-      }
-      
-      console.log('✅ ReactDOM loaded from CDN');
-      
-      // Create a simple React component
-      const TestApp = () => {
-        console.log('🚀 TestApp component rendering');
-        return React.createElement('div', 
-          { style: { padding: '20px', backgroundColor: '#e8f5e8', borderRadius: '8px' } },
-          React.createElement('h1', { style: { color: 'green' } }, '🎉 React is Working from CDN!'),
-          React.createElement('p', null, 'This proves React can work in your environment.'),
-          React.createElement('p', { style: { color: 'blue' } }, 'The issue is with the development server or module loading.')
-        );
-      };
-      
-      try {
-        console.log('🚀 Creating React root...');
-        const reactRoot = ReactDOM.createRoot(root);
-        
-        console.log('🚀 Rendering React app...');
-        reactRoot.render(React.createElement(TestApp));
-        
-        console.log('✅ React app rendered successfully!');
-      } catch (error) {
-        console.error('❌ Error rendering React app:', error);
-        root.innerHTML += '<p style="color: red;">❌ Error rendering React: ' + error.message + '</p>';
-      }
-    </script>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
