@@ -101,3 +101,77 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Layout Stability Protection */
+@layer utilities {
+  /* Prevent layout shifts */
+  .layout-stable {
+    contain: layout;
+    transform: translateZ(0); /* Force GPU acceleration */
+  }
+
+  /* Stable loading states */
+  .skeleton-loader {
+    @apply animate-pulse bg-muted;
+    contain: layout;
+  }
+
+  /* Reserve space for dynamic content */
+  .content-placeholder {
+    min-height: theme('spacing.12');
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Prevent text reflow */
+  .text-stable {
+    word-break: break-word;
+    hyphens: auto;
+    overflow-wrap: break-word;
+  }
+
+  /* Image stability */
+  .img-stable {
+    aspect-ratio: attr(width) / attr(height);
+    object-fit: cover;
+    @apply bg-muted;
+  }
+
+  /* Grid stability */
+  .grid-stable {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: theme('spacing.4');
+  }
+
+  /* Table stability */
+  .table-stable {
+    table-layout: fixed;
+    width: 100%;
+  }
+
+  .table-stable th,
+  .table-stable td {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Button stability */
+  .btn-stable {
+    min-width: theme('spacing.20');
+    min-height: theme('spacing.10');
+    transition: all 0.2s ease-in-out;
+  }
+
+  /* Form stability */
+  .form-stable {
+    contain: layout;
+  }
+
+  .form-stable input,
+  .form-stable textarea,
+  .form-stable select {
+    transition: border-color 0.2s ease-in-out;
+  }
+}
