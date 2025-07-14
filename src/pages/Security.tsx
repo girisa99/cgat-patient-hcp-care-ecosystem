@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Shield, RefreshCw, AlertCircle } from "lucide-react";
 import { useMasterAuth } from '@/hooks/useMasterAuth';
-import DashboardHeader from "@/components/layout/DashboardHeader";
+import AppLayout from '@/components/layout/AppLayout';
 import { getErrorMessage } from '@/utils/errorHandling';
 
 const Security = () => {
@@ -12,9 +12,8 @@ const Security = () => {
   const [error] = React.useState<string | null>(null);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <DashboardHeader />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <AppLayout title="Security Dashboard">
+      <div className="max-w-7xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Security</h1>
           <p className="text-lg text-gray-600">Manage security settings and policies</p>
@@ -46,7 +45,7 @@ const Security = () => {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </AppLayout>
   );
 };
 

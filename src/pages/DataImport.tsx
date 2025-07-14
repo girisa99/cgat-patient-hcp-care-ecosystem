@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Database, Upload, RefreshCw, AlertCircle } from "lucide-react";
 import { useMasterAuth } from '@/hooks/useMasterAuth';
-import DashboardHeader from "@/components/layout/DashboardHeader";
+import AppLayout from '@/components/layout/AppLayout';
 import { getErrorMessage } from '@/utils/errorHandling';
 
 const DataImport = () => {
@@ -19,9 +19,8 @@ const DataImport = () => {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <DashboardHeader />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <AppLayout title="Data Import">
+        <div className="max-w-7xl mx-auto">
           <Card className="border-0 shadow-sm bg-yellow-50 border-yellow-200">
             <CardHeader>
               <CardTitle className="text-yellow-800 flex items-center space-x-2">
@@ -36,14 +35,13 @@ const DataImport = () => {
             </CardContent>
           </Card>
         </div>
-      </div>
+      </AppLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <DashboardHeader />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <AppLayout title="Data Import">
+      <div className="max-w-7xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Data Import</h1>
           <p className="text-lg text-gray-600">Import and manage your data</p>
@@ -88,7 +86,7 @@ const DataImport = () => {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </AppLayout>
   );
 };
 

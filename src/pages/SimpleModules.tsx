@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { useMasterData } from '@/hooks/useMasterData';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
-import DashboardHeader from "@/components/layout/DashboardHeader";
+import AppLayout from '@/components/layout/AppLayout';
 import { getErrorMessage } from '@/utils/errorHandling';
 
 const SimpleModules = () => {
@@ -37,9 +37,8 @@ const SimpleModules = () => {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <DashboardHeader />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <AppLayout title="Simple Modules">
+        <div className="max-w-7xl mx-auto">
           <Card className="border-0 shadow-sm bg-yellow-50 border-yellow-200">
             <CardHeader>
               <CardTitle className="text-yellow-800 flex items-center space-x-2">
@@ -54,15 +53,14 @@ const SimpleModules = () => {
             </CardContent>
           </Card>
         </div>
-      </div>
+      </AppLayout>
     );
   }
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <DashboardHeader />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <AppLayout title="Simple Modules">
+        <div className="max-w-7xl mx-auto">
           <div className="animate-pulse space-y-8">
             <div className="h-8 bg-gray-200 rounded w-1/3"></div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -74,15 +72,14 @@ const SimpleModules = () => {
                 </div>
               ))}
             </div>
-          </div>
+           </div>
         </div>
-      </div>
+      </AppLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <DashboardHeader />
+    <AppLayout title="Simple Modules">
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header Section */}
@@ -224,7 +221,7 @@ const SimpleModules = () => {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </AppLayout>
   );
 };
 
