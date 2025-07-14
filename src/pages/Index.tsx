@@ -11,9 +11,11 @@ import { useMasterAuth } from "@/hooks/useMasterAuth";
 import RoleBasedNavigation from "@/components/navigation/RoleBasedNavigation";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 const Index = () => {
   const { user, userRoles, isAuthenticated } = useMasterAuth();
+  const navigate = useNavigate();
   
   // Load dashboard stats with real data
   const { data: stats, isLoading, error, refetch } = useQuery({
@@ -237,10 +239,10 @@ const Index = () => {
                 Manage users, roles, and permissions across the platform.
               </p>
               <div className="flex space-x-2">
-                <Button size="sm" variant="outline">
+                <Button size="sm" variant="outline" onClick={() => navigate('/users')}>
                   View Users
                 </Button>
-                <Button size="sm" variant="outline">
+                <Button size="sm" variant="outline" onClick={() => navigate('/patients')}>
                   Manage Patients
                 </Button>
               </div>
@@ -259,10 +261,10 @@ const Index = () => {
                 Configure and monitor API integrations and services.
               </p>
               <div className="flex space-x-2">
-                <Button size="sm" variant="outline">
+                <Button size="sm" variant="outline" onClick={() => navigate('/api-services')}>
                   View APIs
                 </Button>
-                <Button size="sm" variant="outline">
+                <Button size="sm" variant="outline" onClick={() => navigate('/api-services')}>
                   Monitor Usage
                 </Button>
               </div>
