@@ -245,7 +245,16 @@ export const PatientForm: React.FC<PatientFormProps> = ({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isCreating || isUpdating}>
+            <Button 
+              type="submit" 
+              disabled={isCreating || isUpdating}
+              onClick={(e) => {
+                console.log('Button clicked!');
+                console.log('Form data:', formData);
+                console.log('Mode:', mode);
+                console.log('Button type:', e.currentTarget.type);
+              }}
+            >
               {(isCreating || isUpdating) ? 
                 (mode === 'create' ? 'Creating...' : 'Updating...') : 
                 (mode === 'create' ? 'Create Patient' : 'Update Patient')
