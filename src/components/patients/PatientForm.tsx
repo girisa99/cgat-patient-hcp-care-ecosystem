@@ -87,56 +87,31 @@ export const PatientForm: React.FC<PatientFormProps> = ({
 
     if (mode === 'create') {
       try {
-        // Create user using admin API
-        const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-          email: formData.email,
-          password: formData.password || 'TempPassword123!',
-          email_confirm: true,
-          user_metadata: {
-            firstName: formData.first_name,
-            lastName: formData.last_name
+        // Call edge function to create patient
+        const { data, error } = await supabase.functions.invoke('create-patient', {
+          body: {
+            email: formData.email,
+            first_name: formData.first_name,
+            last_name: formData.last_name,
+            password: formData.password || 'TempPassword123!',
+            facility_id: formData.facility_id || null
           }
         });
-        
-        if (authError) {
-          console.error('Auth error:', authError);
-          throw authError;
+
+        if (error) {
+          console.error('Edge function error:', error);
+          throw error;
         }
-        
-        if (authData.user) {
-          // Update the profile with names and facility
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .update({ 
-              first_name: formData.first_name,
-              last_name: formData.last_name,
-              facility_id: formData.facility_id || null,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', authData.user.id);
-            
-          if (profileError) {
-            console.error('Profile error:', profileError);
-          }
-            
-          // Assign patient role
-          const { error: roleError } = await supabase
-            .from('user_roles')
-            .insert({ 
-              user_id: authData.user.id, 
-              role_id: '991a1679-d423-4c62-86c8-f14c11db5186' // patientCaregiver role ID
-            });
-          
-          if (roleError) {
-            console.error('Role assignment error:', roleError);
-            throw roleError;
-          }
-          
-          showSuccess('Patient Created', 'Patient has been created successfully with Patient/Caregiver role');
-          
-          // Refresh the data
-          refreshData();
+
+        if (data?.error) {
+          console.error('Patient creation error:', data.error);
+          throw new Error(data.error);
         }
+
+        showSuccess('Patient Created', 'Patient has been created successfully with Patient/Caregiver role');
+        
+        // Refresh the data
+        refreshData();
 
         // Reset form and close dialog
         setFormData({ email: '', first_name: '', last_name: '', password: '', facility_id: '' });
