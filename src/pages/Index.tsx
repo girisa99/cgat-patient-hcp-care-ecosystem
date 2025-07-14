@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useMasterAuth } from "@/hooks/useMasterAuth";
 import DashboardHeader from "@/components/layout/DashboardHeader";
+import RoleBasedNavigation from "@/components/navigation/RoleBasedNavigation";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -90,6 +91,13 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <DashboardHeader />
+      
+      {/* Navigation Tabs */}
+      <div className="border-b bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <RoleBasedNavigation />
+        </div>
+      </div>
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header Section */}
