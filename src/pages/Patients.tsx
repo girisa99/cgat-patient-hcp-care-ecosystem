@@ -18,38 +18,25 @@ const Patients: React.FC = () => {
   const { data: patientsData, isLoading, error, refetch } = useQuery({
     queryKey: ['patients-data'],
     queryFn: async () => {
-      // Get all profiles with user roles - same pattern as Dashboard
-      const { data: profilesWithRoles, error: profilesError } = await supabase
+      // Get patients using the SAME logic as Dashboard but with full profile data
+      const { data: patientsWithRoles, error: patientsError } = await supabase
         .from('profiles')
         .select(`
           id,
           first_name,
           last_name,
           email,
-          created_at
-        `);
-
-      if (profilesError) throw profilesError;
-
-      // Get user roles for patients
-      const { data: userRolesData, error: userRolesError } = await supabase
-        .from('user_roles')
-        .select(`
-          user_id,
-          roles!inner(name)
+          created_at,
+          user_roles!inner(
+            roles!inner(name)
+          )
         `)
-        .eq('roles.name', 'patientCaregiver');
+        .eq('user_roles.roles.name', 'patientCaregiver');
 
-      if (userRolesError) throw userRolesError;
+      if (patientsError) throw patientsError;
 
-      // Filter profiles to only include patients
-      const patientUserIds = userRolesData?.map(ur => ur.user_id) || [];
-      const patients = profilesWithRoles?.filter(profile => 
-        patientUserIds.includes(profile.id)
-      ) || [];
-
-      // Get overall stats using same pattern as Dashboard
-      const [usersResult, allUserRolesResult] = await Promise.all([
+      // Get overall stats using EXACT same pattern as Dashboard
+      const [usersResult, userRolesResult] = await Promise.all([
         supabase.from('profiles').select('id', { count: 'exact', head: true }),
         supabase.from('user_roles')
           .select(`
@@ -58,27 +45,27 @@ const Patients: React.FC = () => {
           `)
       ]);
 
-      // Count patient users from user_roles - same as Dashboard
-      const patientUsers = allUserRolesResult.data?.filter(item => 
+      // Count patient users EXACTLY like Dashboard
+      const patientUsers = userRolesResult.data?.filter(item => 
         item.roles?.name === 'patientCaregiver'
       ).length || 0;
 
       // Count admin users
-      const adminUsers = allUserRolesResult.data?.filter(item => 
+      const adminUsers = userRolesResult.data?.filter(item => 
         item.roles?.name === 'superAdmin'
       ).length || 0;
 
       return {
-        patients: patients,
+        patients: patientsWithRoles || [],
         stats: {
           totalUsers: usersResult.count || 0,
-          activeUsers: patients.length, // All retrieved patients are considered active
-          patientCount: patientUsers,
+          activeUsers: patientsWithRoles?.length || 0, // All patients are considered active
+          patientCount: patientUsers, // This should match Dashboard exactly
           adminCount: adminUsers
         }
       };
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
   
