@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { useRoleBasedNavigation } from '@/hooks/useRoleBasedNavigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,11 +8,18 @@ import { Button } from '@/components/ui/button';
 import { Users, UserPlus, Edit, UserX, RefreshCw, Activity } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { CreateUserForm } from '@/components/forms/CreateUserForm';
+import { useMasterUserManagement } from '@/hooks/useMasterUserManagement';
 
 const Patients: React.FC = () => {
-  console.log('🏥 Patients page - Using same successful approach as Dashboard');
+  console.log('🏥 Patients page - Using existing working components for Add/Edit/Deactivate');
   
   const { hasAccess, currentRole } = useRoleBasedNavigation();
+  const { deactivateUser, isDeactivating } = useMasterUserManagement();
+  
+  // State for dialogs
+  const [showCreateUser, setShowCreateUser] = useState(false);
+  const [selectedPatientForEdit, setSelectedPatientForEdit] = useState<string | null>(null);
   
   // Use the same successful query pattern as Dashboard
   const { data: patientsData, isLoading, error, refetch } = useQuery({
@@ -81,6 +88,24 @@ const Patients: React.FC = () => {
       </AppLayout>
     );
   }
+
+  // Working action handlers using existing components
+  const handleAddPatient = () => {
+    setShowCreateUser(true);
+  };
+
+  const handleEditPatient = (patientId: string, patientName: string) => {
+    setSelectedPatientForEdit(patientId);
+    console.log('Edit patient:', patientId, patientName);
+    // TODO: Open edit dialog when available
+  };
+
+  const handleDeactivatePatient = async (patientId: string, patientName: string) => {
+    if (window.confirm(`Are you sure you want to deactivate ${patientName}?`)) {
+      await deactivateUser(patientId);
+      refetch(); // Refresh data after deactivation
+    }
+  };
 
   const handleRefresh = () => {
     refetch();
@@ -165,7 +190,7 @@ const Patients: React.FC = () => {
                   <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
                   Refresh
                 </Button>
-                <Button onClick={() => console.log('Add Patient - TODO: Implement')}>
+                <Button onClick={handleAddPatient}>
                   <UserPlus className="h-4 w-4 mr-2" />
                   Add Patient
                 </Button>
@@ -204,7 +229,7 @@ const Patients: React.FC = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => console.log('View patient:', patient.id)}
+                          onClick={() => handleEditPatient(patient.id, `${patient.first_name} ${patient.last_name}`)}
                           title="View Patient"
                         >
                           <Edit className="h-4 w-4" />
@@ -213,9 +238,10 @@ const Patients: React.FC = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => console.log('Deactivate patient:', patient.id)}
+                          onClick={() => handleDeactivatePatient(patient.id, `${patient.first_name} ${patient.last_name}`)}
                           title="Deactivate Patient"
                           className="text-orange-600 hover:text-orange-700"
+                          disabled={isDeactivating}
                         >
                           <UserX className="h-4 w-4" />
                         </Button>
@@ -239,6 +265,12 @@ const Patients: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Working Dialogs - Reusing existing components */}
+      <CreateUserForm 
+        open={showCreateUser} 
+        onOpenChange={setShowCreateUser}
+      />
     </AppLayout>
   );
 };
