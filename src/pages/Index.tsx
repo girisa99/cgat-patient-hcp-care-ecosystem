@@ -20,7 +20,7 @@ const Index = () => {
     queryKey: ['dashboard-stats'],
     queryFn: async () => {
       const [usersResult, facilitiesResult] = await Promise.all([
-        supabase.from('profiles').select('id, user_roles(roles(name))', { count: 'exact', head: true }),
+        supabase.from('profiles').select('id', { count: 'exact', head: true }),
         supabase.from('facilities').select('id', { count: 'exact', head: true })
       ]);
 

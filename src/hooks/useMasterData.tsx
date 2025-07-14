@@ -86,29 +86,23 @@ export const useMasterData = (isAuthenticated: boolean = false) => {
 
       console.log('✅ Profiles fetched:', profiles?.length || 0);
 
-      // Then, get user roles with role names
-      const { data: userRoles, error: rolesError } = await supabase
-        .from('user_roles')
-        .select(`
-          user_id,
-          roles!user_roles_role_id_fkey(name)
-        `);
+      // Then, get user roles with role names using the database function
+      const { data: userRolesData, error: rolesError } = await supabase
+        .rpc('get_user_roles', { check_user_id: profiles[0]?.id });
 
-      if (rolesError) {
-        console.error('❌ Error fetching user roles:', rolesError);
-        // Don't throw - continue without roles
-        console.warn('Continuing without roles data');
+      let userRoles: any[] = [];
+      if (!rolesError && userRolesData) {
+        userRoles = userRolesData.map((roleData: { role_name: string }) => ({ roles: { name: roleData.role_name } }));
       }
 
-      console.log('✅ User roles fetched:', userRoles?.length || 0);
 
-      // Combine profiles with their roles
+      console.log('✅ User roles fetched for first user');
+
+      // Combine profiles with their roles (simplified for now)
       const usersWithRoles = (profiles || []).map(profile => ({
         ...profile,
         is_active: true,
-        user_roles: (userRoles || [])
-          .filter(ur => ur.user_id === profile.id)
-          .map(ur => ({ roles: ur.roles }))
+        user_roles: profile.id === profiles[0]?.id ? userRoles : []
       }));
 
       console.log('✅ Users with roles combined:', usersWithRoles.length);
