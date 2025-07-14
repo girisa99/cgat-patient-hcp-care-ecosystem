@@ -1,8 +1,9 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useRoleBasedNavigation } from '@/hooks/useRoleBasedNavigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { ArrowLeft, Home } from 'lucide-react';
 
 interface RoleBasedNavigationProps {
   className?: string;
@@ -14,68 +15,89 @@ interface RoleBasedNavigationProps {
  */
 export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ className = '' }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, profile, availableTabs, currentRole, isAdmin, isSuperAdmin } = useRoleBasedNavigation();
 
-  console.log('🧭 RoleBasedNavigation rendering with:', {
-    userExists: !!user,
-    availableTabsCount: availableTabs?.length || 0,
-    availableTabs: availableTabs?.map(tab => tab.title) || [],
-    currentRole,
-    isAdmin,
-    isSuperAdmin
-  });
-
   if (!user) {
-    console.log('🚫 RoleBasedNavigation: No user found, not rendering');
     return null;
   }
 
+  const isDashboard = location.pathname === '/';
+  const canGoBack = !isDashboard && window.history.length > 1;
+
   return (
-    <div className={`role-based-navigation ${className}`}>
-      {/* Role Status Badge */}
-      <div className="mb-4 flex items-center gap-2">
-        <Badge variant={isSuperAdmin ? 'destructive' : isAdmin ? 'secondary' : 'outline'}>
-          {currentRole ? currentRole.replace(/([A-Z])/g, ' $1').trim() : 'No Role'}
-        </Badge>
-        {profile?.first_name && (
-          <span className="text-sm text-muted-foreground">
-            Welcome, {profile.first_name}
-          </span>
-        )}
-      </div>
-
-      {/* Navigation Tabs */}
-      <nav className="flex flex-wrap gap-2">
-        {availableTabs.map((tab) => {
-          const isActive = location.pathname === tab.to;
-          const Icon = tab.icon;
-
-          return (
-            <Link key={tab.to} to={tab.to}>
-              <Button
-                variant={isActive ? 'default' : 'ghost'}
-                size="sm"
-                className={`flex items-center gap-2 ${
-                  isActive ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                {tab.title}
-              </Button>
-            </Link>
-          );
-        })}
-      </nav>
-
-      {/* Debug Info (only for admins) */}
-      {isAdmin && (
-        <div className="mt-4 p-2 bg-muted rounded text-xs">
-          <div>Role: {currentRole}</div>
-          <div>Available tabs: {availableTabs.length}</div>
-          <div>Current path: {location.pathname}</div>
+    <header className={`sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 ${className}`}>
+      <div className="container flex h-16 items-center justify-between px-4">
+        
+        {/* Left side: Back button and Home */}
+        <div className="flex items-center gap-4">
+          {canGoBack && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate(-1)}
+              className="flex items-center gap-2 hover:bg-accent"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </Button>
+          )}
+          
+          <Link to="/">
+            <Button
+              variant="ghost"
+              size="sm"
+              className={`flex items-center gap-2 ${
+                isDashboard ? 'bg-accent text-accent-foreground' : 'hover:bg-accent'
+              }`}
+            >
+              <Home className="h-4 w-4" />
+              Dashboard
+            </Button>
+          </Link>
         </div>
-      )}
-    </div>
+
+        {/* Center: Main Navigation Tabs */}
+        <nav className="flex items-center gap-1 overflow-x-auto">
+          {availableTabs.filter(tab => tab.to !== '/').map((tab) => {
+            const isActive = location.pathname === tab.to;
+            const Icon = tab.icon;
+
+            return (
+              <Link key={tab.to} to={tab.to}>
+                <Button
+                  variant={isActive ? 'default' : 'ghost'}
+                  size="sm"
+                  className={`flex items-center gap-2 whitespace-nowrap transition-all duration-200 ${
+                    isActive 
+                      ? 'bg-primary text-primary-foreground shadow-sm' 
+                      : 'hover:bg-accent hover:scale-105'
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  <span className="hidden sm:inline">{tab.title}</span>
+                </Button>
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* Right side: User info and role badge */}
+        <div className="flex items-center gap-3">
+          {profile?.first_name && (
+            <span className="text-sm text-muted-foreground hidden md:inline">
+              Welcome, {profile.first_name}
+            </span>
+          )}
+          <Badge 
+            variant={isSuperAdmin ? 'destructive' : isAdmin ? 'secondary' : 'outline'}
+            className="whitespace-nowrap"
+          >
+            {currentRole ? currentRole.replace(/([A-Z])/g, ' $1').trim() : 'No Role'}
+          </Badge>
+        </div>
+      </div>
+    </header>
   );
 };
 
