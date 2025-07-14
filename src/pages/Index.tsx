@@ -16,20 +16,32 @@ import { supabase } from "@/integrations/supabase/client";
 const Index = () => {
   const { user, userRoles, isAuthenticated } = useMasterAuth();
   
-  // Only load dashboard stats when needed
+  // Load dashboard stats with real data
   const { data: stats, isLoading, error, refetch } = useQuery({
     queryKey: ['dashboard-stats'],
     queryFn: async () => {
-      const [usersResult, facilitiesResult] = await Promise.all([
+      const [usersResult, facilitiesResult, modulesResult, userRolesResult] = await Promise.all([
         supabase.from('profiles').select('id', { count: 'exact', head: true }),
-        supabase.from('facilities').select('id', { count: 'exact', head: true })
+        supabase.from('facilities').select('id', { count: 'exact', head: true }),
+        supabase.from('modules').select('id', { count: 'exact', head: true }),
+        supabase.from('user_roles')
+          .select(`
+            user_id,
+            roles!inner(name)
+          `)
       ]);
+
+      // Count patient users from user_roles
+      const patientUsers = userRolesResult.data?.filter(item => 
+        item.roles?.name === 'patientCaregiver'
+      ).length || 0;
 
       return {
         totalUsers: usersResult.count || 0,
         activeUsers: usersResult.count || 0,
-        patientUsers: 0, // Simplified for performance
+        patientUsers: patientUsers,
         totalFacilities: facilitiesResult.count || 0,
+        totalModules: modulesResult.count || 0,
         totalApiServices: 0,
         activeApiServices: []
       };
@@ -174,7 +186,7 @@ const Index = () => {
 
           <Card className="border-0 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Patient Users</CardTitle>
+              <CardTitle className="text-sm font-medium">Patients</CardTitle>
               <Activity className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
@@ -189,30 +201,30 @@ const Index = () => {
 
           <Card className="border-0 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">API Services</CardTitle>
-              <Settings className="h-4 w-4 text-purple-600" />
+              <CardTitle className="text-sm font-medium">Facilities</CardTitle>
+              <Building2 className="h-4 w-4 text-purple-600" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-purple-600">
-                {stats?.totalApiServices || 0}
+                {stats?.totalFacilities || 0}
               </div>
               <p className="text-xs text-muted-foreground">
-                Active: {stats?.activeApiServices?.length || 0}
+                Healthcare facilities
               </p>
             </CardContent>
           </Card>
 
           <Card className="border-0 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">System Health</CardTitle>
-              <TrendingUp className="h-4 w-4 text-orange-600" />
+              <CardTitle className="text-sm font-medium">Modules</CardTitle>
+              <Settings className="h-4 w-4 text-orange-600" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-orange-600">
-                Healthy
+                {stats?.totalModules || 0}
               </div>
               <p className="text-xs text-muted-foreground">
-                All systems operational
+                System modules active
               </p>
             </CardContent>
           </Card>
