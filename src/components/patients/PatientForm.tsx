@@ -95,7 +95,8 @@ export const PatientForm: React.FC<PatientFormProps> = ({
     }
 
     if (mode === 'create') {
-      console.log('Creating patient using Supabase Auth Admin API...');
+      console.log('Creating patient using Supabase Auth Admin API... (Updated Version)');
+      console.log('🔍 DEBUG: About to call supabase.auth.admin.createUser');
       try {
         setIsCreating(true);
         
@@ -122,6 +123,7 @@ export const PatientForm: React.FC<PatientFormProps> = ({
         console.log('Auth user created successfully:', authData.user.id);
 
         // Step 2: Create profile and assign patient role
+        console.log('🔍 DEBUG: About to call create_patient_profile_and_role RPC function');
         const { data: profileData, error: profileError } = await supabase.rpc('create_patient_profile_and_role', {
           p_user_id: authData.user.id,
           p_first_name: formData.first_name,
