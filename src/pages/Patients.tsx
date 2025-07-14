@@ -9,31 +9,43 @@ import {
 } from "lucide-react";
 import { useMasterAuth } from "@/hooks/useMasterAuth";
 import { useMasterToast } from '@/hooks/useMasterToast';
-import { useConsolidatedPatients } from '@/hooks/patients/useConsolidatedPatients';
-import { usePatientMutations } from '@/hooks/mutations/usePatientMutations';
+import { useMasterUserManagement } from '@/hooks/useMasterUserManagement';
 import AppLayout from "@/components/layout/AppLayout";
 
 const Patients = () => {
   const { user, userRoles, isAuthenticated } = useMasterAuth();
   const { showSuccess, showError, showInfo } = useMasterToast();
   
-  // Use dedicated patient hooks for proper data and functionality
+  // Use existing user management system with patient filtering
   const { 
-    patients,
-    activePatients,
-    patientStats,
+    users,
     isLoading, 
-    error 
-  } = useConsolidatedPatients();
+    error,
+    createUser,
+    deactivateUser,
+    isCreatingUser,
+    isDeactivating,
+    getUserStats
+  } = useMasterUserManagement();
   
-  const { 
-    createPatient, 
-    updatePatient, 
-    deactivatePatient,
-    isCreating, 
-    isUpdating,
-    isDeactivating
-  } = usePatientMutations();
+  // Filter users to get only patients (users with patientCaregiver role)
+  const patients = users.filter(u => 
+    u.user_roles.some(ur => ur.roles.name === 'patientCaregiver')
+  );
+  
+  const activePatients = patients.filter(p => p.is_active !== false);
+  
+  const patientStats = {
+    totalPatients: patients.length,
+    activePatients: activePatients.length,
+    inactivePatients: patients.length - activePatients.length,
+    recentPatients: patients.filter(p => {
+      const created = new Date(p.created_at);
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      return created > thirtyDaysAgo;
+    }).length,
+  };
 
   console.log('🏥 Patients Page - Current state:', {
     isAuthenticated,
@@ -52,13 +64,13 @@ const Patients = () => {
   const handleAddPatient = async () => {
     try {
       const newPatientData = {
-        firstName: 'New',
-        lastName: 'Patient',
         email: `patient${Date.now()}@example.com`,
-        phone: '+1-555-0123'
+        first_name: 'New',
+        last_name: 'Patient',
+        password: 'TempPassword123!'
       };
       
-      await createPatient(newPatientData);
+      await createUser(newPatientData);
       showSuccess("Patient Added", "New patient has been successfully added to the system");
     } catch (error) {
       showError("Failed to Add Patient", "There was an error adding the new patient");
@@ -78,19 +90,7 @@ const Patients = () => {
   const handleEditPatient = async (patientId: string) => {
     const patient = patients.find(p => p.id === patientId);
     if (patient) {
-      try {
-        const updatedData = {
-          firstName: patient.first_name,
-          lastName: patient.last_name,
-          email: patient.email,
-          phone: patient.phone || ''
-        };
-        
-        await updatePatient({ id: patientId, ...updatedData });
-        showSuccess("Patient Updated", `${patient.first_name} ${patient.last_name}'s information has been updated`);
-      } catch (error) {
-        showError("Update Failed", "There was an error updating the patient information");
-      }
+      showInfo("Edit Patient", `Edit functionality for ${patient.first_name} ${patient.last_name} - would open edit form`);
     }
   };
 
@@ -98,9 +98,8 @@ const Patients = () => {
     const patient = patients.find(p => p.id === patientId);
     if (patient) {
       try {
-        await deactivatePatient(patientId);
+        await deactivateUser(patientId);
       } catch (error) {
-        // Error handling is done in the mutation hook
         console.error('Deactivation error:', error);
       }
     }
@@ -266,10 +265,10 @@ const Patients = () => {
             <Button 
               size="sm" 
               onClick={handleAddPatient}
-              disabled={isCreating}
+              disabled={isCreatingUser}
             >
               <UserPlus className="h-4 w-4 mr-2" />
-              {isCreating ? 'Adding...' : 'Add Patient'}
+              {isCreatingUser ? 'Adding...' : 'Add Patient'}
             </Button>
           </CardTitle>
         </CardHeader>
@@ -347,9 +346,8 @@ const Patients = () => {
                       variant="outline" 
                       size="sm" 
                       onClick={() => handleEditPatient(patient.id)}
-                      disabled={isUpdating}
                     >
-                      {isUpdating ? 'Updating...' : 'Edit'}
+                      Edit
                     </Button>
                     <Button 
                       variant="destructive" 
