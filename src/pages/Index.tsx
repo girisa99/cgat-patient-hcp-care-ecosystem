@@ -1,301 +1,32 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { 
-  Users, Building2, Settings, Activity, 
-  TrendingUp, AlertCircle, RefreshCw, Database
-} from "lucide-react";
-import { useMasterAuth } from "@/hooks/useMasterAuth";
-import RoleBasedNavigation from "@/components/navigation/RoleBasedNavigation";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
+import AppLayout from '@/components/layout/AppLayout';
+import { useRoleBasedNavigation } from '@/hooks/useRoleBasedNavigation';
+import { Card, CardContent } from '@/components/ui/card';
+import { DashboardManagementTable } from '@/components/dashboard/DashboardManagementTable';
 
-const Index = () => {
-  const { user, userRoles, isAuthenticated } = useMasterAuth();
-  const navigate = useNavigate();
+const Index: React.FC = () => {
+  console.log('🏠 Dashboard/Index page - Using existing working components and relationships');
   
-  // Load dashboard stats with real data
-  const { data: stats, isLoading, error, refetch } = useQuery({
-    queryKey: ['dashboard-stats'],
-    queryFn: async () => {
-      const [usersResult, facilitiesResult, modulesResult, userRolesResult] = await Promise.all([
-        supabase.from('profiles').select('id', { count: 'exact', head: true }),
-        supabase.from('facilities').select('id', { count: 'exact', head: true }),
-        supabase.from('modules').select('id', { count: 'exact', head: true }),
-        supabase.from('user_roles')
-          .select(`
-            user_id,
-            roles!inner(name)
-          `)
-      ]);
-
-      // Count patient users from user_roles
-      const patientUsers = userRolesResult.data?.filter(item => 
-        item.roles?.name === 'patientCaregiver'
-      ).length || 0;
-
-      return {
-        totalUsers: usersResult.count || 0,
-        activeUsers: usersResult.count || 0,
-        patientUsers: patientUsers,
-        totalFacilities: facilitiesResult.count || 0,
-        totalModules: modulesResult.count || 0,
-        totalApiServices: 0,
-        activeApiServices: []
-      };
-    },
-    enabled: isAuthenticated,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchOnWindowFocus: false,
-  });
-
-  const handleRefresh = () => {
-    refetch();
-  };
-
-  if (!isAuthenticated) {
+  const { hasAccess, currentRole } = useRoleBasedNavigation();
+  
+  if (!hasAccess('/dashboard')) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <RoleBasedNavigation />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <Card className="border-0 shadow-sm bg-yellow-50 border-yellow-200">
-            <CardHeader>
-              <CardTitle className="text-yellow-800 flex items-center space-x-2">
-                <AlertCircle className="h-5 w-5" />
-                <span>Welcome to GENIE Platform</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-yellow-700">
-                Please log in to access the dashboard and manage your cell & gene technology data.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <RoleBasedNavigation />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="animate-pulse space-y-8">
-            <div className="h-8 bg-gray-200 rounded w-1/3"></div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="bg-white p-6 rounded-lg shadow-sm border">
-                  <div className="h-6 bg-gray-200 rounded mb-4"></div>
-                  <div className="h-8 bg-gray-200 rounded mb-2"></div>
-                  <div className="h-4 bg-gray-200 rounded"></div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
+      <AppLayout title="Access Denied">
+        <Card>
+          <CardContent className="p-8 text-center">
+            <p>You don't have permission to access the Dashboard.</p>
+            <p className="text-sm text-muted-foreground mt-2">Current role: {currentRole}</p>
+          </CardContent>
+        </Card>
+      </AppLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Single Navigation Bar */}
-      <RoleBasedNavigation />
-      
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header Section */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                GENIE Dashboard
-              </h1>
-              <p className="text-lg text-gray-600">
-                Cell & Gene Technology Navigator - Comprehensive data management platform
-              </p>
-            </div>
-            <Button
-              onClick={handleRefresh}
-              variant="outline"
-              disabled={isLoading}
-              className="flex items-center gap-2"
-            >
-              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
-          </div>
-          
-          <div className="flex items-center space-x-2 mt-3">
-            <Badge variant="outline" className="text-sm">
-              Real Database: ✅ Connected
-            </Badge>
-            <Badge variant="outline" className="text-sm">
-              Mock Data: ❌ Eliminated
-            </Badge>
-            {userRoles.length > 0 && (
-              <Badge variant="default" className="text-sm">
-                Your Role: {userRoles.join(', ')}
-              </Badge>
-            )}
-          </div>
-        </div>
-
-        {/* Error Display */}
-        {error && (
-          <Card className="border-0 shadow-sm bg-red-50 border-red-200 mb-6">
-            <CardHeader>
-              <CardTitle className="text-red-800 flex items-center space-x-2">
-                <AlertCircle className="h-5 w-5" />
-                <span>Error Loading Dashboard Data</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-red-700">{error.toString()}</p>
-              <Button onClick={handleRefresh} className="mt-4" variant="outline">
-                Try Again
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="border-0 shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-              <Users className="h-4 w-4 text-blue-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-600">
-                {stats?.totalUsers || 0}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Active: {stats?.activeUsers || 0}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Patients</CardTitle>
-              <Activity className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">
-                {stats?.patientUsers || 0}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Real patient data only
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Facilities</CardTitle>
-              <Building2 className="h-4 w-4 text-purple-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-purple-600">
-                {stats?.totalFacilities || 0}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Healthcare facilities
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Modules</CardTitle>
-              <Settings className="h-4 w-4 text-orange-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-orange-600">
-                {stats?.totalModules || 0}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                System modules active
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <Card className="border-0 shadow-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Users className="h-5 w-5" />
-                <span>User Management</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-600 mb-4">
-                Manage users, roles, and permissions across the platform.
-              </p>
-              <div className="flex space-x-2">
-                <Button size="sm" variant="outline" onClick={() => navigate('/users')}>
-                  View Users
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => navigate('/patients')}>
-                  Manage Patients
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Settings className="h-5 w-5" />
-                <span>API Management</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-600 mb-4">
-                Configure and monitor API integrations and services.
-              </p>
-              <div className="flex space-x-2">
-                <Button size="sm" variant="outline" onClick={() => navigate('/api-services')}>
-                  View APIs
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => navigate('/api-services')}>
-                  Monitor Usage
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Development Info */}
-        <Card className="border-0 shadow-sm bg-blue-50 border-blue-200">
-          <CardHeader>
-            <CardTitle className="text-blue-800 flex items-center space-x-2">
-              <Database className="h-5 w-5" />
-              <span>System Status</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-sm text-blue-700 space-y-1">
-              <p><strong>Database Connection:</strong> {error ? '❌ Error' : '✅ Connected'}</p>
-              <p><strong>Data Source:</strong> Supabase (Real Database)</p>
-              <p><strong>Total Users:</strong> {stats?.totalUsers || 0}</p>
-              <p><strong>Patient Users:</strong> {stats?.patientUsers || 0}</p>
-              <p><strong>Facilities:</strong> {stats?.totalFacilities || 0}</p>
-              <p><strong>Modules:</strong> {stats?.totalModules || 0}</p>
-              <p><strong>Current User:</strong> {user?.email || 'Not logged in'}</p>
-              <p><strong>User Roles:</strong> {userRoles.length > 0 ? userRoles.join(', ') : 'None assigned'}</p>
-              <p><strong>Mock Data Status:</strong> ❌ Eliminated - Using real database only</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+    <AppLayout title="Healthcare Management Dashboard">
+      <DashboardManagementTable />
+    </AppLayout>
   );
 };
 
