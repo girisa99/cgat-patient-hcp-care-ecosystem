@@ -266,6 +266,15 @@ export const useMasterData = (isAuthenticated: boolean = false) => {
     facilities,
     modules,
     stats,
+    roles: [
+      { id: '1', name: 'superAdmin', description: 'Super Administrator' },
+      { id: '2', name: 'onboardingTeam', description: 'Onboarding Team' },
+      { id: '3', name: 'caseManager', description: 'Case Manager' },
+      { id: '4', name: 'nurse', description: 'Nurse' },
+      { id: '5', name: 'provider', description: 'Provider' },
+      { id: '6', name: 'patientCaregiver', description: 'Patient/Caregiver' },
+      { id: '7', name: 'facilityAdmin', description: 'Facility Administrator' }
+    ],
     
     // Loading states
     isLoading: usersLoading || apiServicesLoading || facilitiesLoading || modulesLoading,

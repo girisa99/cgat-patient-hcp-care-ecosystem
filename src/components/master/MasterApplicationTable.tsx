@@ -17,6 +17,9 @@ import { useMasterApplication } from '@/hooks/useMasterApplication';
 import { CreateUserForm } from '@/components/forms/CreateUserForm';
 import { CreateFacilityForm } from '@/components/forms/CreateFacilityForm';
 import { CreateModuleForm } from '@/components/forms/CreateModuleForm';
+import { RoleAssignmentDialog } from '@/components/dialogs/RoleAssignmentDialog';
+import { EditUserDialog } from '@/components/dialogs/EditUserDialog';
+import { ModuleAssignmentDialog } from '@/components/dialogs/ModuleAssignmentDialog';
 
 export const MasterApplicationTable: React.FC = () => {
   const {
@@ -39,6 +42,10 @@ export const MasterApplicationTable: React.FC = () => {
   const [showCreateUser, setShowCreateUser] = useState(false);
   const [showCreateFacility, setShowCreateFacility] = useState(false);
   const [showCreateModule, setShowCreateModule] = useState(false);
+  const [showRoleAssignment, setShowRoleAssignment] = useState(false);
+  const [showEditUser, setShowEditUser] = useState(false);
+  const [showModuleAssignment, setShowModuleAssignment] = useState(false);
+  const [selectedUserForDialog, setSelectedUserForDialog] = useState<any>(null);
 
   console.log('🌟 Master Application Table - Single consolidated interface');
 
@@ -48,9 +55,11 @@ export const MasterApplicationTable: React.FC = () => {
   };
 
   const handleEditUser = (userId: string, userName: string) => {
-    toastManagement.showInfo('Edit User', `Opening edit form for ${userName}`);
-    setSelectedUser(userId);
-    // TODO: Implement edit modal
+    const user = userManagement.users.find(u => u.id === userId);
+    if (user) {
+      setSelectedUserForDialog(user);
+      setShowEditUser(true);
+    }
   };
 
   const handleDeactivateUser = (userId: string, userName: string) => {
@@ -60,8 +69,19 @@ export const MasterApplicationTable: React.FC = () => {
   };
 
   const handleAssignRole = (userId: string, userName: string) => {
-    toastManagement.showInfo('Assign Roles', `Opening role assignment for ${userName}`);
-    // TODO: Implement role assignment modal
+    const user = userManagement.users.find(u => u.id === userId);
+    if (user) {
+      setSelectedUserForDialog(user);
+      setShowRoleAssignment(true);
+    }
+  };
+
+  const handleAssignModule = (userId: string, userName: string) => {
+    const user = userManagement.users.find(u => u.id === userId);
+    if (user) {
+      setSelectedUserForDialog(user);
+      setShowModuleAssignment(true);
+    }
   };
 
   const handleDeleteUser = (userId: string, userName: string) => {
@@ -257,14 +277,24 @@ export const MasterApplicationTable: React.FC = () => {
                           variant="outline"
                           size="sm"
                           onClick={() => handleAssignRole(user.id, `${user.first_name} ${user.last_name}`)}
+                          title="Assign Roles"
                         >
                           <Shield className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="outline"
                           size="sm"
+                          onClick={() => handleAssignModule(user.id, `${user.first_name} ${user.last_name}`)}
+                          title="Assign Modules"
+                        >
+                          <Package className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => handleDeactivateUser(user.id, `${user.first_name} ${user.last_name}`)}
                           className="text-orange-600"
+                          title="Deactivate User"
                         >
                           <UserX className="h-4 w-4" />
                         </Button>
@@ -426,6 +456,24 @@ export const MasterApplicationTable: React.FC = () => {
         open={showCreateModule} 
         onOpenChange={setShowCreateModule}
         onSuccess={refreshApplication}
+      />
+      
+      <RoleAssignmentDialog
+        open={showRoleAssignment}
+        onOpenChange={setShowRoleAssignment}
+        user={selectedUserForDialog}
+      />
+      
+      <EditUserDialog
+        open={showEditUser}
+        onOpenChange={setShowEditUser}
+        user={selectedUserForDialog}
+      />
+      
+      <ModuleAssignmentDialog
+        open={showModuleAssignment}
+        onOpenChange={setShowModuleAssignment}
+        user={selectedUserForDialog}
       />
     </div>
   );

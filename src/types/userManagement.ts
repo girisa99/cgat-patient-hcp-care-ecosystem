@@ -17,6 +17,7 @@ export interface UserWithRoles {
   email_confirmed_at?: string | null;
   last_sign_in_at?: string | null;
   email_confirmed?: boolean;
+  is_active?: boolean;
   user_roles: {
     role: {
       name: string;

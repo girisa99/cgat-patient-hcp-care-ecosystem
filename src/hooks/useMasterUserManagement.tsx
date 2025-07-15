@@ -196,6 +196,77 @@ export const useMasterUserManagement = () => {
     showError('Feature Not Implemented', 'Facility assignment functionality is coming soon');
   };
 
+  // Update user mutation
+  const updateUserMutation = useMutation({
+    mutationFn: async ({ userId, updates }: { userId: string; updates: any }) => {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq('id', userId);
+      
+      if (error) throw error;
+      return { userId, updates };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['master-users'] });
+      showSuccess('User Updated', 'User has been updated successfully');
+    },
+    onError: (error: any) => {
+      showError('Update Failed', error.message);
+    }
+  });
+
+  // Module assignment mutations
+  const assignModuleMutation = useMutation({
+    mutationFn: async ({ userId, moduleId }: { userId: string; moduleId: string }) => {
+      const { error } = await supabase
+        .from('user_module_assignments')
+        .insert({ user_id: userId, module_id: moduleId, is_active: true });
+      
+      if (error) throw error;
+      return { userId, moduleId };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['master-users'] });
+      showSuccess('Module Assigned', 'Module has been assigned successfully');
+    },
+    onError: (error: any) => {
+      showError('Module Assignment Failed', error.message);
+    }
+  });
+
+  const removeModuleMutation = useMutation({
+    mutationFn: async ({ userId, moduleId }: { userId: string; moduleId: string }) => {
+      const { error } = await supabase
+        .from('user_module_assignments')
+        .delete()
+        .eq('user_id', userId)
+        .eq('module_id', moduleId);
+      
+      if (error) throw error;
+      return { userId, moduleId };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['master-users'] });
+      showSuccess('Module Removed', 'Module has been removed successfully');
+    },
+    onError: (error: any) => {
+      showError('Module Removal Failed', error.message);
+    }
+  });
+
+  const updateUser = (userId: string, updates: any) => {
+    updateUserMutation.mutate({ userId, updates });
+  };
+
+  const assignModule = (userId: string, moduleId: string) => {
+    assignModuleMutation.mutate({ userId, moduleId });
+  };
+
+  const removeModule = (userId: string, moduleId: string) => {
+    removeModuleMutation.mutate({ userId, moduleId });
+  };
+
   return {
     // Core data from master data source
     users: masterData.users,
@@ -204,13 +275,18 @@ export const useMasterUserManagement = () => {
 
     // Additional properties expected by components
     isCreatingUser: isCreatingUser || createUserMutation.isPending,
+    isUpdatingUser: updateUserMutation.isPending,
+    isAssigningModule: assignModuleMutation.isPending,
     
     // Actions
     createUser,
+    updateUser,
     deactivateUser,
     refreshData: fetchUsers,
     assignRole,
     removeRole,
+    assignModule,
+    removeModule,
     assignFacility,
     isDeactivating: isDeactivating || deactivateUserMutation.isPending,
     isAssigningRole: isAssigningRole || assignRoleMutation.isPending,
