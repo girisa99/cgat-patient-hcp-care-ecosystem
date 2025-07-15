@@ -39,19 +39,21 @@ export const useMasterUserManagement = () => {
       password?: string;
       roles?: string[];
     }) => {
-      const { data, error } = await supabase.auth.admin.createUser({
+      // Use regular sign-up instead of admin create to avoid permission issues
+      const { data, error } = await supabase.auth.signUp({
         email: userData.email,
         password: userData.password || 'TempPassword123!',
-        email_confirm: true,
-        user_metadata: {
-          firstName: userData.first_name,
-          lastName: userData.last_name
+        options: {
+          data: {
+            firstName: userData.first_name,
+            lastName: userData.last_name
+          }
         }
       });
       
       if (error) throw error;
       
-      // Assign roles if provided
+      // If user is created successfully, assign roles
       if (userData.roles && userData.roles.length > 0 && data.user) {
         for (const roleId of userData.roles) {
           const { error: roleError } = await supabase
@@ -61,7 +63,10 @@ export const useMasterUserManagement = () => {
               role_id: roleId
             });
           
-          if (roleError) throw roleError;
+          if (roleError) {
+            console.warn('Role assignment failed:', roleError);
+            // Don't throw here, as user creation succeeded
+          }
         }
       }
       

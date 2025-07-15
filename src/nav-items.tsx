@@ -2,7 +2,6 @@ import {
   HomeIcon,
   Users,
   Building2,
-  UserCheck,
   Settings,
   Shield,
   FileText,
@@ -33,11 +32,6 @@ export const navItems = [
     title: "Facilities",
     url: "/facilities",
     icon: Building2,
-  },
-  {
-    title: "Onboarding",
-    url: "/onboarding",
-    icon: UserCheck,
   },
   {
     title: "Modules",
