@@ -54,7 +54,7 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
   // Group navigation items by category
   const navigationGroups = {
     core: availableTabs.filter(tab => 
-      ['/', '/patients', '/onboarding'].includes(tab.to)
+      ['/', '/patients'].includes(tab.to)
     ),
     management: availableTabs.filter(tab => 
       ['/users', '/facilities', '/modules', '/role-management'].includes(tab.to)

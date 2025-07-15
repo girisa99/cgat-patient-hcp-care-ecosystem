@@ -327,7 +327,7 @@ export function AppSidebar() {
       { title: 'Testing', to: '/testing', icon: () => '🧪' },
       { title: 'Data Import', to: '/data-import', icon: () => '📊' },
       { title: 'Verification', to: '/active-verification', icon: () => '✅' },
-      { title: 'Onboarding', to: '/onboarding', icon: () => '🚀' },
+      
       { title: 'Security', to: '/security', icon: () => '🔒' }
     ]
     currentRole = 'Developer'

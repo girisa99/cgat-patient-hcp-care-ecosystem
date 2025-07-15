@@ -13,7 +13,7 @@ import Index from '@/pages/Index';
 import Users from '@/pages/Users';
 import Patients from '@/pages/Patients';
 import Facilities from '@/pages/Facilities';
-import Onboarding from '@/pages/Onboarding';
+
 import Modules from '@/pages/Modules';
 import ApiServices from '@/pages/ApiServices';
 import NgrokIntegration from '@/pages/NgrokIntegration';
@@ -65,7 +65,7 @@ const AppContent = () => {
                   <Route path="/users" element={<Users />} />
                   <Route path="/patients" element={<Patients />} />
                   <Route path="/facilities" element={<Facilities />} />
-                  <Route path="/onboarding" element={<Onboarding />} />
+                  
                   <Route path="/modules" element={<Modules />} />
                   <Route path="/api-services" element={<ApiServices />} />
                   <Route path="/ngrok" element={<NgrokIntegration />} />
