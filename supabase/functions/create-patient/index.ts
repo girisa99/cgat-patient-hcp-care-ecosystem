@@ -127,6 +127,10 @@ Deno.serve(async (req) => {
 
     console.log('Auth user created successfully:', authData.user.id)
 
+    console.log('=== Waiting for user to be fully committed ===')
+    // Wait a moment to ensure the user is fully committed to the auth.users table
+    await new Promise(resolve => setTimeout(resolve, 1000))
+
     console.log('=== Calling database function ===')
     // Step 2: Create profile and assign patient role using the database function
     const { data: profileData, error: profileError } = await supabaseAdmin.rpc('create_patient_profile_and_role', {
