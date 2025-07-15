@@ -81,6 +81,11 @@ const AppContent = () => {
                       {React.createElement(React.lazy(() => import('@/components/monitoring/StabilityDashboard').then(m => ({ default: m.StabilityDashboard }))))}
                     </Suspense>
                   } />
+                  <Route path="/governance" element={
+                    <Suspense fallback={<PageLoading message="Loading governance dashboard..." />}>
+                      {React.createElement(React.lazy(() => import('@/components/monitoring/GovernanceDashboard').then(m => ({ default: m.default }))))}
+                    </Suspense>
+                  } />
                   <Route path="/research" element={<PackageResearch />} />
                 </>
               ) : (

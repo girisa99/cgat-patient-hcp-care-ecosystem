@@ -10,6 +10,7 @@ import {
   TestTube,
   Activity,
   Globe,
+  Eye,
 } from "lucide-react";
 
 export const navItems = [
@@ -77,5 +78,10 @@ export const navItems = [
     title: "Verification",
     url: "/active-verification",
     icon: BarChart3,
+  },
+  {
+    title: "Governance",
+    url: "/governance",
+    icon: Eye,
   },
 ];

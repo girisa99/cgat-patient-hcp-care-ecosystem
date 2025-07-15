@@ -48,6 +48,7 @@ export const useRoleBasedNavigation = () => {
       testing: ['superAdmin', 'onboardingTeam'],
       'role-management': ['superAdmin'],
       'data-import': ['superAdmin', 'onboardingTeam'],
+      'governance': ['superAdmin', 'onboardingTeam'],
       'active-verification': ['superAdmin', 'onboardingTeam'],
     };
 
@@ -95,6 +96,7 @@ export const useRoleBasedNavigation = () => {
       'role-management': ['superAdmin'],
       'data-import': ['superAdmin', 'onboardingTeam'],
       'active-verification': ['superAdmin', 'onboardingTeam'],
+      'governance': ['superAdmin', 'onboardingTeam'],
     };
 
     const allowedRoles = roleAccess[cleanPath as keyof typeof roleAccess] || [];

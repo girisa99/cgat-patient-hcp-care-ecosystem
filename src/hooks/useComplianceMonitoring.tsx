@@ -5,15 +5,18 @@
  */
 import React, { useEffect, useState } from 'react';
 import { FrameworkComplianceMonitor } from '../utils/stability/FrameworkComplianceMonitor';
+import { PromptGovernanceInterceptor } from '../utils/stability/PromptGovernanceInterceptor';
 import { useStability } from '../components/stability/StabilityHooks';
 
 // Global compliance monitor instance
 let globalComplianceMonitor: FrameworkComplianceMonitor | null = null;
+let globalPromptInterceptor: PromptGovernanceInterceptor | null = null;
 
 export const useComplianceMonitoring = (config = {}) => {
   const [isMonitoring, setIsMonitoring] = useState(false);
   const [complianceScore, setComplianceScore] = useState(100);
   const [violations, setViolations] = useState([]);
+  const [promptStats, setPromptStats] = useState({ totalPrompts: 0, violationsFound: 0, averageComplianceScore: 100 });
   const stability = useStability();
 
   useEffect(() => {
@@ -24,6 +27,11 @@ export const useComplianceMonitoring = (config = {}) => {
         complexityThreshold: 300,
         ...config
       });
+    }
+
+    // Initialize prompt interceptor if not already done
+    if (!globalPromptInterceptor) {
+      globalPromptInterceptor = new PromptGovernanceInterceptor();
 
       // Connect compliance monitor to stability system
       globalComplianceMonitor.on('violations_detected', (event) => {
@@ -48,12 +56,23 @@ export const useComplianceMonitoring = (config = {}) => {
       });
     }
 
+    // Update prompt stats periodically
+    const updatePromptStats = () => {
+      if (globalPromptInterceptor) {
+        setPromptStats(globalPromptInterceptor.getViolationStats());
+      }
+    };
+
+    updatePromptStats();
+    const interval = setInterval(updatePromptStats, 5000); // Update every 5 seconds
+
     // Auto-start monitoring in development
     if (process.env.NODE_ENV === 'development' && !isMonitoring) {
       globalComplianceMonitor?.startMonitoring();
     }
 
     return () => {
+      clearInterval(interval);
       // Cleanup on unmount
       if (globalComplianceMonitor && isMonitoring) {
         globalComplianceMonitor.stopMonitoring();
@@ -73,14 +92,26 @@ export const useComplianceMonitoring = (config = {}) => {
     return globalComplianceMonitor?.generateComplianceReport();
   };
 
+  const interceptPrompt = async (promptData: any) => {
+    return globalPromptInterceptor?.interceptPrompt(promptData) || promptData;
+  };
+
+  const getPromptHistory = () => {
+    return globalPromptInterceptor?.getPromptHistory() || [];
+  };
+
   return {
     isMonitoring,
     complianceScore,
     violations,
+    promptStats,
     startMonitoring,
     stopMonitoring,
     getComplianceReport,
-    monitor: globalComplianceMonitor
+    interceptPrompt,
+    getPromptHistory,
+    monitor: globalComplianceMonitor,
+    interceptor: globalPromptInterceptor
   };
 };
 
