@@ -10,23 +10,43 @@ interface CreatePatientRequest {
 }
 
 Deno.serve(async (req) => {
+  console.log('=== Edge function called ===')
+  console.log('Method:', req.method)
+  console.log('Headers:', Object.fromEntries(req.headers.entries()))
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
+    console.log('Handling OPTIONS request')
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    console.log('Edge function called with method:', req.method)
+    console.log('=== Starting main logic ===')
     
     // Parse the request
-    const requestBody = await req.json()
-    console.log('Request body received:', JSON.stringify(requestBody))
+    let requestBody
+    try {
+      requestBody = await req.json()
+      console.log('Request body parsed successfully:', JSON.stringify(requestBody))
+    } catch (parseError) {
+      console.error('Failed to parse request body:', parseError)
+      return new Response(
+        JSON.stringify({ error: 'Invalid JSON in request body' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
     
     const { email, password, first_name, last_name, facility_id }: CreatePatientRequest = requestBody
 
     // Validate required fields
     if (!email || !first_name || !last_name) {
       console.log('Validation failed - missing required fields')
+      console.log('Missing email:', !email)
+      console.log('Missing first_name:', !first_name) 
+      console.log('Missing last_name:', !last_name)
       return new Response(
         JSON.stringify({ error: 'Missing required fields: email, first_name, last_name' }),
         { 
@@ -36,18 +56,21 @@ Deno.serve(async (req) => {
       )
     }
 
-    console.log('Validation passed - creating admin client...')
+    console.log('=== Validation passed ===')
 
-    // Create admin client with service role key
+    // Check environment variables
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
     
-    console.log('Environment check - URL exists:', !!supabaseUrl, 'Service key exists:', !!serviceRoleKey)
+    console.log('Environment check:')
+    console.log('- URL exists:', !!supabaseUrl)
+    console.log('- Service key exists:', !!serviceRoleKey)
+    console.log('- URL value:', supabaseUrl)
     
     if (!supabaseUrl || !serviceRoleKey) {
       console.error('Missing environment variables')
       return new Response(
-        JSON.stringify({ error: 'Server configuration error' }),
+        JSON.stringify({ error: 'Server configuration error - missing environment variables' }),
         { 
           status: 500, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -55,6 +78,7 @@ Deno.serve(async (req) => {
       )
     }
 
+    console.log('=== Creating Supabase admin client ===')
     const supabaseAdmin = createClient(
       supabaseUrl,
       serviceRoleKey,
@@ -66,8 +90,8 @@ Deno.serve(async (req) => {
       }
     )
 
-    console.log('Admin client created - attempting user creation...')
-
+    console.log('=== Starting user creation ===')
+    
     // Step 1: Create the user with admin privileges
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
@@ -91,6 +115,7 @@ Deno.serve(async (req) => {
     }
 
     if (!authData.user) {
+      console.error('No user data returned from auth creation')
       return new Response(
         JSON.stringify({ error: 'Failed to create user - no user data returned' }),
         { 
@@ -102,6 +127,7 @@ Deno.serve(async (req) => {
 
     console.log('Auth user created successfully:', authData.user.id)
 
+    console.log('=== Calling database function ===')
     // Step 2: Create profile and assign patient role using the database function
     const { data: profileData, error: profileError } = await supabaseAdmin.rpc('create_patient_profile_and_role', {
       p_user_id: authData.user.id,
@@ -111,10 +137,13 @@ Deno.serve(async (req) => {
       p_facility_id: facility_id || null
     })
 
+    console.log('Database function result:', { profileData, profileError })
+
     if (profileError) {
       console.error('Profile creation error:', profileError)
       
       // Clean up the auth user if profile creation fails
+      console.log('Cleaning up auth user due to profile error...')
       await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
       
       return new Response(
@@ -127,7 +156,9 @@ Deno.serve(async (req) => {
     }
 
     if (profileData && typeof profileData === 'object' && 'error' in profileData) {
+      console.error('Profile creation returned error:', profileData.error)
       // Clean up the auth user if profile creation fails
+      console.log('Cleaning up auth user due to profile data error...')
       await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
       
       return new Response(
@@ -139,6 +170,7 @@ Deno.serve(async (req) => {
       )
     }
 
+    console.log('=== Success! ===')
     console.log('Patient profile and role created successfully')
 
     return new Response(
@@ -154,9 +186,14 @@ Deno.serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('Unexpected error:', error)
+    console.error('=== Unexpected error ===')
+    console.error('Error type:', typeof error)
+    console.error('Error message:', error.message)
+    console.error('Error stack:', error.stack)
+    console.error('Full error:', error)
+    
     return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
+      JSON.stringify({ error: 'Internal server error: ' + error.message }),
       { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
