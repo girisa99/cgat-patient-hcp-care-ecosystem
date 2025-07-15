@@ -1,0 +1,88 @@
+{
+  "name": "eslint-plugin-stability-framework",
+  "rules": {
+    "component-naming": {
+      "meta": {
+        "type": "problem",
+        "docs": {
+          "description": "Enforce PascalCase naming for React components"
+        }
+      },
+      "create": function(context) {
+        return {
+          "ExportDefaultDeclaration": function(node) {
+            if (node.declaration && node.declaration.name) {
+              const name = node.declaration.name;
+              if (!/^[A-Z]/.test(name)) {
+                context.report({
+                  node,
+                  message: `Component '${name}' should start with uppercase letter (PascalCase)`
+                });
+              }
+            }
+          }
+        };
+      }
+    },
+    
+    "hook-naming": {
+      "meta": {
+        "type": "problem",
+        "docs": {
+          "description": "Enforce hooks start with 'use'"
+        }
+      },
+      "create": function(context) {
+        return {
+          "ExportNamedDeclaration": function(node) {
+            if (node.declaration && node.declaration.declarations) {
+              node.declaration.declarations.forEach(decl => {
+                if (decl.id && decl.id.name) {
+                  const name = decl.id.name;
+                  const isInHooksDir = context.getFilename().includes('/hooks/');
+                  if (isInHooksDir && !name.startsWith('use')) {
+                    context.report({
+                      node: decl.id,
+                      message: `Hook '${name}' should start with 'use'`
+                    });
+                  }
+                }
+              });
+            }
+          }
+        };
+      }
+    },
+
+    "service-naming": {
+      "meta": {
+        "type": "suggestion",
+        "docs": {
+          "description": "Enforce Service suffix for service exports"
+        }
+      },
+      "create": function(context) {
+        return {
+          "ExportNamedDeclaration": function(node) {
+            const filename = context.getFilename();
+            const isServiceFile = filename.includes('/services/') && filename.endsWith('Service.ts');
+            
+            if (isServiceFile && node.declaration && node.declaration.declarations) {
+              node.declaration.declarations.forEach(decl => {
+                if (decl.id && decl.id.name) {
+                  const name = decl.id.name;
+                  if (!name.endsWith('Service') && name.includes('service')) {
+                    context.report({
+                      node: decl.id,
+                      message: `Service '${name}' should end with 'Service'`
+                    });
+                  }
+                }
+              });
+            }
+          }
+        };
+      }
+    }
+  }
+}
