@@ -27,6 +27,70 @@ export default function stabilityFrameworkPlugin(options = {}) {
   let violations = [];
   let warnings = [];
 
+  // Helper functions
+  function checkNamingConventions(filename, dirname, fullPath) {
+    const relativePath = path.relative(process.cwd(), fullPath);
+
+    // Check component naming
+    if (dirname.includes('components') && !NAMING_PATTERNS.component.test(filename)) {
+      violations.push(`Naming: "${relativePath}" should follow PascalCase (e.g., ComponentName.tsx)`);
+    }
+
+    // Check hook naming
+    if (dirname.includes('hooks') && !NAMING_PATTERNS.hook.test(filename)) {
+      violations.push(`Naming: "${relativePath}" should start with "use" and follow camelCase`);
+    }
+
+    // Check service naming
+    if (dirname.includes('services') && !NAMING_PATTERNS.service.test(filename)) {
+      violations.push(`Naming: "${relativePath}" should end with "Service" and follow camelCase`);
+    }
+
+    // Check type naming
+    if (dirname.includes('types') && !NAMING_PATTERNS.type.test(filename)) {
+      violations.push(`Naming: "${relativePath}" should follow PascalCase (e.g., TypeName.ts)`);
+    }
+  }
+
+  function checkComplexity(code, fullPath) {
+    const relativePath = path.relative(process.cwd(), fullPath);
+    const complexity = calculateComplexity(code);
+
+    if (complexity > config.maxComplexity) {
+      warnings.push(`Complexity: "${relativePath}" has complexity ${complexity} (max: ${config.maxComplexity})`);
+    }
+  }
+
+  function calculateComplexity(code) {
+    // Simple complexity calculation based on control structures
+    const patterns = [
+      /if\s*\(/g,
+      /else\s*{/g,
+      /while\s*\(/g,
+      /for\s*\(/g,
+      /switch\s*\(/g,
+      /catch\s*\(/g,
+      /&&/g,
+      /\|\|/g
+    ];
+    
+    return patterns.reduce((total, pattern) => {
+      const matches = code.match(pattern);
+      return total + (matches ? matches.length : 0);
+    }, 1);
+  }
+
+  function checkForDuplicates(code, fullPath) {
+    // Simple duplicate detection - in a real implementation,
+    // you'd want more sophisticated similarity detection
+    const lines = code.split('\n').filter(line => line.trim().length > 0);
+    
+    if (lines.length > 200) {
+      const relativePath = path.relative(process.cwd(), fullPath);
+      warnings.push(`Size: "${relativePath}" is quite large (${lines.length} lines). Consider breaking it down.`);
+    }
+  }
+
   return {
     name: 'stability-framework',
     
@@ -47,17 +111,17 @@ export default function stabilityFrameworkPlugin(options = {}) {
 
       // Check naming conventions
       if (config.checkNaming) {
-        this.checkNamingConventions(filename, dirname, id);
+        checkNamingConventions(filename, dirname, id);
       }
 
       // Check file complexity
       if (config.checkComplexity) {
-        this.checkComplexity(code, id);
+        checkComplexity(code, id);
       }
 
       // Check for duplicates
       if (config.warnOnDuplicates) {
-        this.checkForDuplicates(code, id);
+        checkForDuplicates(code, id);
       }
 
       return null;
@@ -92,69 +156,6 @@ export default function stabilityFrameworkPlugin(options = {}) {
         }
       } else {
         console.log('\n✅ Stability Framework: All checks passed!');
-      }
-    },
-
-    checkNamingConventions(filename, dirname, fullPath) {
-      const relativePath = path.relative(process.cwd(), fullPath);
-
-      // Check component naming
-      if (dirname.includes('components') && !NAMING_PATTERNS.component.test(filename)) {
-        violations.push(`Naming: "${relativePath}" should follow PascalCase (e.g., ComponentName.tsx)`);
-      }
-
-      // Check hook naming
-      if (dirname.includes('hooks') && !NAMING_PATTERNS.hook.test(filename)) {
-        violations.push(`Naming: "${relativePath}" should start with "use" and follow camelCase`);
-      }
-
-      // Check service naming
-      if (dirname.includes('services') && !NAMING_PATTERNS.service.test(filename)) {
-        violations.push(`Naming: "${relativePath}" should end with "Service" and follow camelCase`);
-      }
-
-      // Check type naming
-      if (dirname.includes('types') && !NAMING_PATTERNS.type.test(filename)) {
-        violations.push(`Naming: "${relativePath}" should follow PascalCase (e.g., TypeName.ts)`);
-      }
-    },
-
-    checkComplexity(code, fullPath) {
-      const relativePath = path.relative(process.cwd(), fullPath);
-      const complexity = this.calculateComplexity(code);
-
-      if (complexity > config.maxComplexity) {
-        warnings.push(`Complexity: "${relativePath}" has complexity ${complexity} (max: ${config.maxComplexity})`);
-      }
-    },
-
-    calculateComplexity(code) {
-      // Simple complexity calculation based on control structures
-      const patterns = [
-        /if\s*\(/g,
-        /else\s*{/g,
-        /while\s*\(/g,
-        /for\s*\(/g,
-        /switch\s*\(/g,
-        /catch\s*\(/g,
-        /&&/g,
-        /\|\|/g
-      ];
-      
-      return patterns.reduce((total, pattern) => {
-        const matches = code.match(pattern);
-        return total + (matches ? matches.length : 0);
-      }, 1);
-    },
-
-    checkForDuplicates(code, fullPath) {
-      // Simple duplicate detection - in a real implementation,
-      // you'd want more sophisticated similarity detection
-      const lines = code.split('\n').filter(line => line.trim().length > 0);
-      
-      if (lines.length > 200) {
-        const relativePath = path.relative(process.cwd(), fullPath);
-        warnings.push(`Size: "${relativePath}" is quite large (${lines.length} lines). Consider breaking it down.`);
       }
     }
   };
