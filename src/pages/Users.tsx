@@ -25,16 +25,45 @@ import { useMasterData } from '@/hooks/useMasterData';
 import AppLayout from '@/components/layout/AppLayout';
 import { CreateUserForm } from '@/components/forms/CreateUserForm';
 import { MasterApplicationTable } from '@/components/master/MasterApplicationTable';
+import { UserActionDialogs } from '@/components/users/UserActionDialogs';
+import { BulkActionsTab } from '@/components/users/BulkActionsTab';
+import { useUserManagementDialogs } from '@/hooks/useUserManagementDialogs';
 import { getErrorMessage } from '@/utils/errorHandling';
 
 const UserManagement = () => {
   const { isAuthenticated, user } = useMasterAuth();
-  const { users, isLoading, error, assignRole, refreshData } = useMasterUserManagement();
-  const { facilities } = useMasterData();
+  const { 
+    users, 
+    isLoading, 
+    error, 
+    assignRole, 
+    removeRole,
+    assignFacility,
+    deactivateUser,
+    refreshData,
+    isAssigningRole,
+    isAssigningFacility,
+    isDeactivating
+  } = useMasterUserManagement();
+  const { facilities, roles } = useMasterData();
   
   const [showCreateUser, setShowCreateUser] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<string | null>(null);
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState('management');
+  
+  // Use existing dialog management hook
+  const {
+    assignRoleOpen,
+    setAssignRoleOpen,
+    removeRoleOpen,
+    setRemoveRoleOpen,
+    assignFacilityOpen,
+    setAssignFacilityOpen,
+    selectedUserId,
+    setSelectedUserId,
+    selectedUser,
+    setSelectedUser
+  } = useUserManagementDialogs();
 
   // Categorize users by onboarding status
   const pendingUsers = users.filter(u => u.user_roles.length === 0);
@@ -44,8 +73,46 @@ const UserManagement = () => {
     setShowCreateUser(true);
   };
 
-  const handleAssignRole = (userId: string, roleId: string) => {
-    assignRole(userId, roleId);
+  // Use existing functionality
+  const handleAssignRole = (userId: string, roleName: string) => {
+    assignRole(userId, roleName);
+  };
+
+  const handleRemoveRole = (userId: string, roleName: string) => {
+    removeRole(userId, roleName);
+  };
+
+  const handleAssignFacility = (userId: string, facilityId: string) => {
+    console.log('Assign facility:', facilityId, 'to user:', userId);
+    // assignFacility(); // Will implement proper facility assignment
+  };
+
+  const handleBulkAssignRole = () => {
+    // Implementation for bulk role assignment
+    console.log('Bulk assign role to:', selectedUsers);
+  };
+
+  const handleBulkAssignModule = () => {
+    // Implementation for bulk module assignment
+    console.log('Bulk assign module to:', selectedUsers);
+  };
+
+  const handleBulkAssignFacility = () => {
+    // Implementation for bulk facility assignment
+    console.log('Bulk assign facility to:', selectedUsers);
+  };
+
+  const handleBulkDeactivate = () => {
+    selectedUsers.forEach(userId => deactivateUser(userId));
+    setSelectedUsers([]);
+  };
+
+  const handleDeselectUser = (userId: string) => {
+    setSelectedUsers(prev => prev.filter(id => id !== userId));
+  };
+
+  const handleClearSelection = () => {
+    setSelectedUsers([]);
   };
 
   const handleRefresh = () => {
@@ -152,17 +219,34 @@ const UserManagement = () => {
 
           {/* User Management Table */}
           <TabsContent value="management">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Settings className="h-5 w-5" />
-                  User Management
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <MasterApplicationTable />
-              </CardContent>
-            </Card>
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Settings className="h-5 w-5" />
+                    User Management
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <MasterApplicationTable />
+                </CardContent>
+              </Card>
+              
+              {/* Bulk Actions Tab - Existing Component */}
+              <BulkActionsTab
+                selectedUsers={selectedUsers}
+                users={users as any}
+                onBulkAssignRole={handleBulkAssignRole}
+                onBulkAssignModule={handleBulkAssignModule}
+                onBulkAssignFacility={handleBulkAssignFacility}
+                onBulkDeactivate={handleBulkDeactivate}
+                onDeselectUser={handleDeselectUser}
+                onClearSelection={handleClearSelection}
+                isAssigningRole={isAssigningRole}
+                isAssigningFacility={isAssigningFacility}
+                isDeactivating={isDeactivating}
+              />
+            </div>
           </TabsContent>
 
           {/* Pending Role Assignment */}
@@ -201,7 +285,16 @@ const UserManagement = () => {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => console.log('Assign role to:', user.id)}
+                            onClick={() => {
+                              setSelectedUser({
+                                id: user.id,
+                                firstName: user.first_name,
+                                lastName: user.last_name,
+                                email: user.email,
+                                role: 'none'
+                              });
+                              setAssignRoleOpen(true);
+                            }}
                           >
                             <Shield className="h-4 w-4 mr-2" />
                             Assign Role
@@ -336,6 +429,22 @@ const UserManagement = () => {
         <CreateUserForm 
           open={showCreateUser} 
           onOpenChange={setShowCreateUser}
+        />
+        
+        {/* User Action Dialogs - Existing Component */}
+        <UserActionDialogs
+          selectedUser={selectedUser}
+          assignRoleOpen={assignRoleOpen}
+          removeRoleOpen={removeRoleOpen}
+          assignFacilityOpen={assignFacilityOpen}
+          setAssignRoleOpen={setAssignRoleOpen}
+          setRemoveRoleOpen={setRemoveRoleOpen}
+          setAssignFacilityOpen={setAssignFacilityOpen}
+          onAssignRole={handleAssignRole}
+          onRemoveRole={handleRemoveRole}
+          onAssignFacility={handleAssignFacility}
+          availableRoles={roles}
+          availableFacilities={facilities}
         />
       </div>
     </AppLayout>
