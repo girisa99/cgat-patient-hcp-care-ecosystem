@@ -1,19 +1,17 @@
 /**
- * MASTER AUTHENTICATION FORM - SINGLE SOURCE OF TRUTH
- * Unified login/signup component following master consolidation principles
- * Version: master-auth-form-v1.0.0
+ * MASTER AUTHENTICATION FORM - REFACTORED FOR STABILITY
+ * Unified login/signup component following stability framework principles
+ * Version: master-auth-form-v2.0.0 (Phase 2 Refactoring)
  */
 import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Shield, Mail, Lock, User, AlertCircle } from 'lucide-react';
+import { Loader2, Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
 import HealthcareAuthLayout from './HealthcareAuthLayout';
+import MasterAuthTabs from './MasterAuthTabs';
+import MasterAuthValidation from './MasterAuthValidation';
 import { useNavigate } from 'react-router-dom';
 
 interface MasterAuthFormProps {
@@ -21,25 +19,32 @@ interface MasterAuthFormProps {
   defaultTab?: 'login' | 'signup';
 }
 
+interface AuthFormData {
+  email: string;
+  password: string;
+  confirmPassword?: string;
+  firstName?: string;
+  lastName?: string;
+}
+
 export const MasterAuthForm: React.FC<MasterAuthFormProps> = ({ 
   onSuccess,
   defaultTab = 'login'
 }) => {
-  console.log('🔐 MasterAuthForm component rendering...');
+  console.log('🔐 MasterAuthForm component rendering (v2.0.0)...');
   const { isLoading: authLoading, refreshAuth, isAuthenticated } = useMasterAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>(defaultTab);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Login form state
-  const [loginData, setLoginData] = useState({
+  // Form state management
+  const [loginData, setLoginData] = useState<AuthFormData>({
     email: '',
     password: ''
   });
 
-  // Signup form state
-  const [signupData, setSignupData] = useState({
+  const [signupData, setSignupData] = useState<AuthFormData>({
     email: '',
     password: '',
     confirmPassword: '',
@@ -47,7 +52,7 @@ export const MasterAuthForm: React.FC<MasterAuthFormProps> = ({
     lastName: ''
   });
 
-  // If already authenticated, redirect to dashboard
+  // Redirect if already authenticated
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
       navigate('/', { replace: true });
@@ -59,6 +64,17 @@ export const MasterAuthForm: React.FC<MasterAuthFormProps> = ({
     setIsLoading(true);
 
     try {
+      // Validate login data
+      const validation = MasterAuthValidation.validateLogin(loginData.email, loginData.password);
+      if (!validation.isValid) {
+        toast({
+          title: "Validation Error",
+          description: validation.message,
+          variant: "destructive"
+        });
+        return;
+      }
+
       console.log('🔐 MASTER AUTH - Attempting login for:', loginData.email);
       
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -83,10 +99,8 @@ export const MasterAuthForm: React.FC<MasterAuthFormProps> = ({
           description: "Redirecting to dashboard..."
         });
         
-        // Refresh auth state - ensure we pass the newly signed-in user id so
-        // roles, profile & facilities are fetched immediately before the
-        // auth listener fires (helps slow connections)
         await refreshAuth(data.user.id);
+        onSuccess?.();
         navigate('/', { replace: true });
       }
     } catch (error) {
@@ -105,28 +119,25 @@ export const MasterAuthForm: React.FC<MasterAuthFormProps> = ({
     e.preventDefault();
     setIsLoading(true);
 
-    // Validation
-    if (signupData.password !== signupData.confirmPassword) {
-      toast({
-        title: "Validation Error",
-        description: "Passwords do not match",
-        variant: "destructive"
-      });
-      setIsLoading(false);
-      return;
-    }
-
-    if (signupData.password.length < 6) {
-      toast({
-        title: "Validation Error",
-        description: "Password must be at least 6 characters",
-        variant: "destructive"
-      });
-      setIsLoading(false);
-      return;
-    }
-
     try {
+      // Validate signup data
+      const validation = MasterAuthValidation.validateSignup({
+        email: signupData.email,
+        password: signupData.password,
+        confirmPassword: signupData.confirmPassword || '',
+        firstName: signupData.firstName || '',
+        lastName: signupData.lastName || ''
+      });
+
+      if (!validation.isValid) {
+        toast({
+          title: "Validation Error",
+          description: validation.message,
+          variant: "destructive"
+        });
+        return;
+      }
+
       console.log('🔐 MASTER AUTH - Attempting signup for:', signupData.email);
       
       const { data, error } = await supabase.auth.signUp({
@@ -158,6 +169,7 @@ export const MasterAuthForm: React.FC<MasterAuthFormProps> = ({
             description: "Account created successfully! Redirecting..."
           });
           await refreshAuth(data.user.id);
+          onSuccess?.();
           navigate('/', { replace: true });
         } else {
           toast({
@@ -183,13 +195,16 @@ export const MasterAuthForm: React.FC<MasterAuthFormProps> = ({
     field: string,
     value: string
   ) => {
+    const sanitizedValue = MasterAuthValidation.sanitizeInput(value);
+    
     if (formType === 'login') {
-      setLoginData(prev => ({ ...prev, [field]: value }));
+      setLoginData(prev => ({ ...prev, [field]: sanitizedValue }));
     } else {
-      setSignupData(prev => ({ ...prev, [field]: value }));
+      setSignupData(prev => ({ ...prev, [field]: sanitizedValue }));
     }
   };
 
+  // Loading state
   if (authLoading) {
     return (
       <HealthcareAuthLayout>
@@ -205,203 +220,27 @@ export const MasterAuthForm: React.FC<MasterAuthFormProps> = ({
 
   return (
     <HealthcareAuthLayout>
-      <Card className="w-full max-w-md shadow-2xl border-0 bg-white/95 backdrop-blur-sm">
-        <CardHeader className="text-center space-y-4 pb-8">
-          <div className="mx-auto w-16 h-16 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center mb-4">
-            <Shield className="w-8 h-8 text-white" />
-          </div>
-          <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
-            Welcome to GENIE
+      <Card className="w-full max-w-md mx-auto shadow-2xl border-0 bg-background/95 backdrop-blur-sm">
+        <CardHeader className="text-center pb-6">
+          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+            Healthcare Platform
           </CardTitle>
           <CardDescription className="text-base text-muted-foreground">
-            Secure access to advanced cell & gene therapy platform
+            Secure access to your healthcare management system
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'login' | 'signup')}>
-            <TabsList className="grid w-full grid-cols-2 bg-muted/50 p-1 h-12">
-              <TabsTrigger value="login" className="font-semibold data-[state=active]:bg-white data-[state=active]:shadow-md transition-all">
-                Sign In
-              </TabsTrigger>
-              <TabsTrigger value="signup" className="font-semibold data-[state=active]:bg-white data-[state=active]:shadow-md transition-all">
-                Sign Up
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="login" className="mt-8">
-              <form onSubmit={handleLogin} className="space-y-6">
-                <div className="space-y-3">
-                  <Label htmlFor="login-email" className="text-sm font-semibold text-foreground">
-                    Email Address
-                  </Label>
-                  <div className="relative group">
-                    <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5 group-focus-within:text-primary transition-colors" />
-                    <Input
-                      id="login-email"
-                      type="email"
-                      placeholder="Enter your email address"
-                      value={loginData.email}
-                      onChange={(e) => handleInputChange('login', 'email', e.target.value)}
-                      className="pl-12 h-12 border-2 border-border focus:border-primary transition-colors bg-background/50"
-                      required
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-3">
-                  <Label htmlFor="login-password" className="text-sm font-semibold text-foreground">
-                    Password
-                  </Label>
-                  <div className="relative group">
-                    <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5 group-focus-within:text-primary transition-colors" />
-                    <Input
-                      id="login-password"
-                      type="password"
-                      placeholder="Enter your password"
-                      value={loginData.password}
-                      onChange={(e) => handleInputChange('login', 'password', e.target.value)}
-                      className="pl-12 h-12 border-2 border-border focus:border-primary transition-colors bg-background/50"
-                      required
-                    />
-                  </div>
-                </div>
-                
-                <Button 
-                  type="submit" 
-                  className="w-full h-12 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white font-semibold text-base shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]" 
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-3 h-5 w-5 animate-spin" />
-                      Signing you in...
-                    </>
-                  ) : (
-                    <>
-                      <Shield className="mr-3 h-5 w-5" />
-                      Sign In Securely
-                    </>
-                  )}
-                </Button>
-              </form>
-            </TabsContent>
-            
-            <TabsContent value="signup" className="mt-8">
-              <form onSubmit={handleSignup} className="space-y-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-3">
-                    <Label htmlFor="signup-firstName" className="text-sm font-semibold text-foreground">
-                      First Name
-                    </Label>
-                    <div className="relative group">
-                      <User className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5 group-focus-within:text-primary transition-colors" />
-                      <Input
-                        id="signup-firstName"
-                        type="text"
-                        placeholder="First name"
-                        value={signupData.firstName}
-                        onChange={(e) => handleInputChange('signup', 'firstName', e.target.value)}
-                        className="pl-12 h-12 border-2 border-border focus:border-primary transition-colors bg-background/50"
-                        required
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-3">
-                    <Label htmlFor="signup-lastName" className="text-sm font-semibold text-foreground">
-                      Last Name
-                    </Label>
-                    <div className="relative group">
-                      <User className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5 group-focus-within:text-primary transition-colors" />
-                      <Input
-                        id="signup-lastName"
-                        type="text"
-                        placeholder="Last name"
-                        value={signupData.lastName}
-                        onChange={(e) => handleInputChange('signup', 'lastName', e.target.value)}
-                        className="pl-12 h-12 border-2 border-border focus:border-primary transition-colors bg-background/50"
-                        required
-                      />
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="space-y-3">
-                  <Label htmlFor="signup-email" className="text-sm font-semibold text-foreground">
-                    Email Address
-                  </Label>
-                  <div className="relative group">
-                    <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5 group-focus-within:text-primary transition-colors" />
-                    <Input
-                      id="signup-email"
-                      type="email"
-                      placeholder="Enter your email address"
-                      value={signupData.email}
-                      onChange={(e) => handleInputChange('signup', 'email', e.target.value)}
-                      className="pl-12 h-12 border-2 border-border focus:border-primary transition-colors bg-background/50"
-                      required
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-3">
-                  <Label htmlFor="signup-password" className="text-sm font-semibold text-foreground">
-                    Password
-                  </Label>
-                  <div className="relative group">
-                    <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5 group-focus-within:text-primary transition-colors" />
-                    <Input
-                      id="signup-password"
-                      type="password"
-                      placeholder="Minimum 6 characters"
-                      value={signupData.password}
-                      onChange={(e) => handleInputChange('signup', 'password', e.target.value)}
-                      className="pl-12 h-12 border-2 border-border focus:border-primary transition-colors bg-background/50"
-                      required
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-3">
-                  <Label htmlFor="signup-confirmPassword" className="text-sm font-semibold text-foreground">
-                    Confirm Password
-                  </Label>
-                  <div className="relative group">
-                    <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5 group-focus-within:text-primary transition-colors" />
-                    <Input
-                      id="signup-confirmPassword"
-                      type="password"
-                      placeholder="Confirm your password"
-                      value={signupData.confirmPassword}
-                      onChange={(e) => handleInputChange('signup', 'confirmPassword', e.target.value)}
-                      className="pl-12 h-12 border-2 border-border focus:border-primary transition-colors bg-background/50"
-                      required
-                    />
-                  </div>
-                </div>
-                
-                <Button 
-                  type="submit" 
-                  className="w-full h-12 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white font-semibold text-base shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]" 
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-3 h-5 w-5 animate-spin" />
-                      Creating your account...
-                    </>
-                  ) : (
-                    <>
-                      <User className="mr-3 h-5 w-5" />
-                      Create Account
-                    </>
-                  )}
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
-          
-
+        
+        <CardContent className="px-6 pb-6">
+          <MasterAuthTabs
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            loginData={loginData}
+            signupData={signupData}
+            isLoading={isLoading}
+            onLogin={handleLogin}
+            onSignup={handleSignup}
+            onInputChange={handleInputChange}
+          />
           
           <div className="mt-8 text-center space-y-3">
             <div className="flex items-center justify-center space-x-2 text-xs text-muted-foreground">
