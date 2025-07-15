@@ -15,6 +15,37 @@ export interface DuplicateAnalysisResult {
 }
 
 export class DuplicateAnalyzer {
+  private static componentRegistry = new Map<string, any>();
+  private static serviceRegistry = new Map<string, any>();
+
+  /**
+   * Register component to prevent future duplicates
+   */
+  static registerComponent(name: string, metadata: any): void {
+    this.componentRegistry.set(name, {
+      ...metadata,
+      registeredAt: new Date()
+    });
+  }
+
+  /**
+   * Check if component would be duplicate before creation
+   */
+  static analyzeNewComponent(name: string, metadata: any): {
+    isDuplicate: boolean;
+    recommendation?: string;
+    action?: string;
+  } {
+    if (this.componentRegistry.has(name)) {
+      return {
+        isDuplicate: true,
+        recommendation: 'Use existing component or create variant',
+        action: 'reuse_existing'
+      };
+    }
+    return { isDuplicate: false };
+  }
+
   /**
    * Analyze system for duplicate code patterns
    */
