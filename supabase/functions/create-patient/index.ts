@@ -16,11 +16,17 @@ Deno.serve(async (req) => {
   }
 
   try {
+    console.log('Edge function called with method:', req.method)
+    
     // Parse the request
-    const { email, password, first_name, last_name, facility_id }: CreatePatientRequest = await req.json()
+    const requestBody = await req.json()
+    console.log('Request body received:', JSON.stringify(requestBody))
+    
+    const { email, password, first_name, last_name, facility_id }: CreatePatientRequest = requestBody
 
     // Validate required fields
     if (!email || !first_name || !last_name) {
+      console.log('Validation failed - missing required fields')
       return new Response(
         JSON.stringify({ error: 'Missing required fields: email, first_name, last_name' }),
         { 
@@ -30,10 +36,28 @@ Deno.serve(async (req) => {
       )
     }
 
+    console.log('Validation passed - creating admin client...')
+
     // Create admin client with service role key
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    
+    console.log('Environment check - URL exists:', !!supabaseUrl, 'Service key exists:', !!serviceRoleKey)
+    
+    if (!supabaseUrl || !serviceRoleKey) {
+      console.error('Missing environment variables')
+      return new Response(
+        JSON.stringify({ error: 'Server configuration error' }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+
     const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      supabaseUrl,
+      serviceRoleKey,
       {
         auth: {
           autoRefreshToken: false,
@@ -42,7 +66,7 @@ Deno.serve(async (req) => {
       }
     )
 
-    console.log('Creating patient user with admin client...')
+    console.log('Admin client created - attempting user creation...')
 
     // Step 1: Create the user with admin privileges
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
