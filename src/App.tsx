@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react';
+import React, { Suspense, useEffect } from 'react';
 import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -7,6 +7,7 @@ import { MasterAuthProvider } from './hooks/useMasterAuth';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { PageLoading } from '@/components/ui/LoadingStates';
+import { initializeStabilityFramework } from '@/utils/framework/init';
 
 // Import pages that exist
 import Index from '@/pages/Index';
@@ -91,15 +92,22 @@ const AppContent = () => {
   );
 };
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <MasterAuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <AppContent />
-      </TooltipProvider>
-    </MasterAuthProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  // Initialize stability framework on app startup
+  useEffect(() => {
+    initializeStabilityFramework().catch(console.error);
+  }, []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <MasterAuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <AppContent />
+        </TooltipProvider>
+      </MasterAuthProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
