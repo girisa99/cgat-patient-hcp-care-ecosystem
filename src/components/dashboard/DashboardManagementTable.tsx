@@ -137,15 +137,27 @@ export const DashboardManagementTable: React.FC = () => {
             <div className="space-y-3">
               {isAdmin && (
                 <>
-                  <Button className="w-full justify-start" variant="outline">
+                  <Button 
+                    className="w-full justify-start" 
+                    variant="outline"
+                    onClick={() => window.location.href = '/users'}
+                  >
                     <Users className="h-4 w-4 mr-2" />
                     Manage Users
                   </Button>
-                  <Button className="w-full justify-start" variant="outline">
+                  <Button 
+                    className="w-full justify-start" 
+                    variant="outline"
+                    onClick={() => window.location.href = '/facilities'}
+                  >
                     <Building className="h-4 w-4 mr-2" />
                     Add Facility
                   </Button>
-                  <Button className="w-full justify-start" variant="outline">
+                  <Button 
+                    className="w-full justify-start" 
+                    variant="outline"
+                    onClick={() => window.location.href = '/modules'}
+                  >
                     <Package className="h-4 w-4 mr-2" />
                     Configure Modules
                   </Button>

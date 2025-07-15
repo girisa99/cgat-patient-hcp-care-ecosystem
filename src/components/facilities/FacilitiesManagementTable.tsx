@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Shield, UserPlus, Settings } from 'lucide-react';
 
 export const FacilitiesManagementTable: React.FC = () => {
   const { userRoles } = useMasterAuth();
@@ -80,8 +81,44 @@ export const FacilitiesManagementTable: React.FC = () => {
     showInfo("Facility Deactivated", `${facility.name} has been deactivated`);
   };
 
+  const handleAssignRole = (facility: Facility) => {
+    showInfo("Assign Role", `Assigning role to ${facility.name}`);
+  };
+
+  const handleAssignUser = (facility: Facility) => {
+    showInfo("Assign User", `Assigning user to ${facility.name}`);
+  };
+
+  const handleAssignModule = (facility: Facility) => {
+    showInfo("Assign Module", `Assigning module to ${facility.name}`);
+  };
+
   const renderActions = (row: Facility) => (
     <div className="flex gap-1">
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => handleAssignRole(row)}
+        title="Assign Role"
+      >
+        <Shield className="h-4 w-4" />
+      </Button>
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => handleAssignUser(row)}
+        title="Assign User"
+      >
+        <UserPlus className="h-4 w-4" />
+      </Button>
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => handleAssignModule(row)}
+        title="Assign Module"
+      >
+        <Settings className="h-4 w-4" />
+      </Button>
       {row.is_active && (
         <Button
           size="sm"
