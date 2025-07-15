@@ -24,7 +24,7 @@ import { useMasterUserManagement } from '@/hooks/useMasterUserManagement';
 import { useMasterData } from '@/hooks/useMasterData';
 import AppLayout from '@/components/layout/AppLayout';
 import { CreateUserForm } from '@/components/forms/CreateUserForm';
-import { MasterApplicationTable } from '@/components/master/MasterApplicationTable';
+import { UsersManagementTable } from '@/components/users/UsersManagementTable';
 import { UserActionDialogs } from '@/components/users/UserActionDialogs';
 import { BulkActionsTab } from '@/components/users/BulkActionsTab';
 import { useUserManagementDialogs } from '@/hooks/useUserManagementDialogs';
@@ -198,7 +198,7 @@ const UserManagement = () => {
 
         {/* User Management Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="management" className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
               Management
@@ -215,6 +215,14 @@ const UserManagement = () => {
               <Users className="h-4 w-4" />
               All Users ({userStats.totalUsers})
             </TabsTrigger>
+            <TabsTrigger value="facilities" className="flex items-center gap-2">
+              <Shield className="h-4 w-4" />
+              Facilities ({userStats.facilities})
+            </TabsTrigger>
+            <TabsTrigger value="modules" className="flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              Modules
+            </TabsTrigger>
           </TabsList>
 
           {/* User Management Table */}
@@ -227,9 +235,9 @@ const UserManagement = () => {
                     User Management
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <MasterApplicationTable />
-                </CardContent>
+                 <CardContent>
+                   <UsersManagementTable />
+                 </CardContent>
               </Card>
               
               {/* Bulk Actions Tab - Existing Component */}
@@ -419,6 +427,72 @@ const UserManagement = () => {
                       </div>
                     );
                   })}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Facilities Tab */}
+          <TabsContent value="facilities">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Shield className="h-5 w-5" />
+                  Facilities Management
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {facilities.map((facility) => (
+                    <div key={facility.id} className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                      <div className="flex items-center gap-4">
+                        <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center">
+                          <Shield className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold">{facility.name}</h3>
+                          <p className="text-sm text-muted-foreground">{facility.facility_type}</p>
+                          <Badge variant={facility.is_active ? 'default' : 'secondary'} className="mt-1">
+                            {facility.is_active ? 'Active' : 'Inactive'}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button variant="outline" size="sm">
+                          <Settings className="h-4 w-4 mr-2" />
+                          Manage
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                  {facilities.length === 0 && (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <Shield className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <h3 className="font-semibold mb-2">No facilities found</h3>
+                      <p>Facilities will appear here when created.</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Modules Tab */}
+          <TabsContent value="modules">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="h-5 w-5" />
+                  Modules Management
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="text-center py-12 text-muted-foreground">
+                    <Settings className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <h3 className="font-semibold mb-2">Modules Management</h3>
+                    <p>Module assignment and management functionality will be available here.</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>

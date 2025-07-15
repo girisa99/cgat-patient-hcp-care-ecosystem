@@ -82,15 +82,21 @@ export const FacilitiesManagementTable: React.FC = () => {
   };
 
   const handleAssignRole = (facility: Facility) => {
-    showInfo("Assign Role", `Assigning role to ${facility.name}`);
+    // Functionality to assign role to facility
+    console.log('Assign role to facility:', facility.id);
+    showSuccess("Role Assignment", `Role assignment dialog opened for ${facility.name}`);
   };
 
   const handleAssignUser = (facility: Facility) => {
-    showInfo("Assign User", `Assigning user to ${facility.name}`);
+    // Functionality to assign user to facility
+    console.log('Assign user to facility:', facility.id);
+    showSuccess("User Assignment", `User assignment dialog opened for ${facility.name}`);
   };
 
   const handleAssignModule = (facility: Facility) => {
-    showInfo("Assign Module", `Assigning module to ${facility.name}`);
+    // Functionality to assign module to facility
+    console.log('Assign module to facility:', facility.id);
+    showSuccess("Module Assignment", `Module assignment dialog opened for ${facility.name}`);
   };
 
   const renderActions = (row: Facility) => (

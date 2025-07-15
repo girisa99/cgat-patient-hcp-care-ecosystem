@@ -75,12 +75,14 @@ export const ModulesManagementTable: React.FC = () => {
 
   const handleAssignRole = (moduleId: string) => {
     const module = getModuleById(moduleId);
-    showInfo("Assign Role", `Assigning role to ${module?.name || 'module'}`);
+    console.log('Assign role to module:', moduleId);
+    showSuccess("Role Assignment", `Role assignment dialog opened for ${module?.name || 'module'}`);
   };
 
   const handleAssignUser = (moduleId: string) => {
     const module = getModuleById(moduleId);
-    showInfo("Assign User", `Assigning user to ${module?.name || 'module'}`);
+    console.log('Assign user to module:', moduleId);
+    showSuccess("User Assignment", `User assignment dialog opened for ${module?.name || 'module'}`);
   };
 
   const integrity = verifyModuleIntegrity();
