@@ -13,6 +13,7 @@ import Index from '@/pages/Index';
 import Users from '@/pages/Users';
 import Patients from '@/pages/Patients';
 import Facilities from '@/pages/Facilities';
+import PackageResearch from '@/components/PackageResearch';
 
 import Modules from '@/pages/Modules';
 import ApiServices from '@/pages/ApiServices';
@@ -74,6 +75,7 @@ const AppContent = () => {
                   <Route path="/testing" element={<Testing />} />
                   <Route path="/role-management" element={<RoleManagement />} />
                   <Route path="/stability" element={<Stability />} />
+                  <Route path="/research" element={<PackageResearch />} />
                 </>
               ) : (
                 <>
