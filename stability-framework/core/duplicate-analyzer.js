@@ -1,396 +1,224 @@
 /**
- * Duplicate Analyzer - Detects and manages code/component duplicates
- * Identifies patterns, components, hooks, and utilities that are duplicated
+ * Duplicate Analyzer - Core component for detecting duplicates
  */
 
-import fs from 'fs-extra';
-import path from 'path';
-import { createHash } from 'crypto';
-
 export class DuplicateAnalyzer {
-  constructor(config = {}) {
-    this.config = {
-      srcPath: './src',
-      ignorePaths: ['node_modules', '.git', 'dist', 'build'],
-      fileExtensions: ['.js', '.jsx', '.ts', '.tsx'],
-      minSimilarity: 0.8,
-      minLines: 10,
-      ...config
-    };
+  constructor() {
+    this.componentRegistry = new Map();
+    this.serviceRegistry = new Map();
+    this.typeRegistry = new Map();
+  }
+
+  registerComponent(name, metadata) {
+    this.componentRegistry.set(name, {
+      ...metadata,
+      registeredAt: new Date().toISOString()
+    });
+  }
+
+  registerService(name, metadata) {
+    this.serviceRegistry.set(name, {
+      ...metadata,
+      registeredAt: new Date().toISOString()
+    });
+  }
+
+  registerType(name, definition) {
+    this.typeRegistry.set(name, {
+      ...definition,
+      registeredAt: new Date().toISOString()
+    });
+  }
+
+  async analyzeComponent(name, metadata) {
+    const similar = this.findSimilarComponents(name, metadata);
+    const isDuplicate = this.checkExactDuplicate(name, metadata, 'component');
     
-    this.duplicates = [];
-    this.fileHashes = new Map();
-    this.componentPatterns = new Map();
-  }
-
-  /**
-   * Analyze project for duplicates
-   */
-  async analyze() {
-    console.log('🔍 Starting duplicate analysis...');
-    
-    this.duplicates = [];
-    this.fileHashes.clear();
-    this.componentPatterns.clear();
-    
-    try {
-      // Scan all files
-      const files = await this.scanFiles(this.config.srcPath);
-      
-      // Analyze each file
-      for (const file of files) {
-        await this.analyzeFile(file);
-      }
-      
-      // Find duplicates
-      await this.findDuplicatePatterns();
-      
-      const results = {
-        totalFiles: files.length,
-        totalDuplicates: this.duplicates.length,
-        criticalIssues: this.duplicates.filter(d => d.severity === 'critical').length,
-        duplicates: this.duplicates
-      };
-      
-      console.log(`📊 Analysis complete: ${results.totalDuplicates} duplicates found`);
-      return results;
-    } catch (error) {
-      console.error('❌ Duplicate analysis failed:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Recursively scan files in directory
-   */
-  async scanFiles(dirPath) {
-    const files = [];
-    
-    try {
-      const items = await fs.readdir(dirPath);
-      
-      for (const item of items) {
-        const fullPath = path.join(dirPath, item);
-        
-        // Skip ignored paths
-        if (this.config.ignorePaths.some(ignore => fullPath.includes(ignore))) {
-          continue;
-        }
-        
-        const stat = await fs.stat(fullPath);
-        
-        if (stat.isDirectory()) {
-          files.push(...await this.scanFiles(fullPath));
-        } else if (this.isTargetFile(fullPath)) {
-          files.push(fullPath);
-        }
-      }
-    } catch (error) {
-      console.warn(`⚠️ Could not scan directory: ${dirPath}`);
-    }
-    
-    return files;
-  }
-
-  /**
-   * Check if file should be analyzed
-   */
-  isTargetFile(filePath) {
-    return this.config.fileExtensions.some(ext => filePath.endsWith(ext));
-  }
-
-  /**
-   * Analyze individual file for patterns
-   */
-  async analyzeFile(filePath) {
-    try {
-      const content = await fs.readFile(filePath, 'utf8');
-      const lines = content.split('\n');
-      
-      // Generate file hash
-      const hash = createHash('md5').update(content).digest('hex');
-      
-      if (this.fileHashes.has(hash)) {
-        this.fileHashes.get(hash).push(filePath);
-      } else {
-        this.fileHashes.set(hash, [filePath]);
-      }
-      
-      // Analyze components
-      this.analyzeComponents(filePath, content);
-      
-      // Analyze hooks
-      this.analyzeHooks(filePath, content);
-      
-      // Analyze utility functions
-      this.analyzeUtilities(filePath, content);
-      
-    } catch (error) {
-      console.warn(`⚠️ Could not analyze file: ${filePath}`);
-    }
-  }
-
-  /**
-   * Analyze React components for patterns
-   */
-  analyzeComponents(filePath, content) {
-    // Find component definitions
-    const componentRegex = /(?:function|const|class)\s+([A-Z][a-zA-Z0-9]*)/g;
-    let match;
-    
-    while ((match = componentRegex.exec(content)) !== null) {
-      const componentName = match[1];
-      const pattern = this.extractComponentPattern(content, componentName);
-      
-      if (pattern) {
-        const hash = createHash('md5').update(pattern).digest('hex');
-        
-        if (!this.componentPatterns.has(hash)) {
-          this.componentPatterns.set(hash, []);
-        }
-        
-        this.componentPatterns.get(hash).push({
-          name: componentName,
-          file: filePath,
-          pattern
-        });
-      }
-    }
-  }
-
-  /**
-   * Analyze custom hooks for patterns
-   */
-  analyzeHooks(filePath, content) {
-    const hookRegex = /(?:function|const)\s+(use[A-Z][a-zA-Z0-9]*)/g;
-    let match;
-    
-    while ((match = hookRegex.exec(content)) !== null) {
-      const hookName = match[1];
-      const pattern = this.extractHookPattern(content, hookName);
-      
-      if (pattern) {
-        const hash = createHash('md5').update(pattern).digest('hex');
-        
-        if (!this.componentPatterns.has(hash)) {
-          this.componentPatterns.set(hash, []);
-        }
-        
-        this.componentPatterns.get(hash).push({
-          name: hookName,
-          file: filePath,
-          pattern,
-          type: 'hook'
-        });
-      }
-    }
-  }
-
-  /**
-   * Analyze utility functions for patterns
-   */
-  analyzeUtilities(filePath, content) {
-    // Simple utility function detection
-    const utilityRegex = /export\s+(?:function|const)\s+([a-z][a-zA-Z0-9]*)/g;
-    let match;
-    
-    while ((match = utilityRegex.exec(content)) !== null) {
-      const utilityName = match[1];
-      const pattern = this.extractUtilityPattern(content, utilityName);
-      
-      if (pattern && pattern.length > this.config.minLines) {
-        const hash = createHash('md5').update(pattern).digest('hex');
-        
-        if (!this.componentPatterns.has(hash)) {
-          this.componentPatterns.set(hash, []);
-        }
-        
-        this.componentPatterns.get(hash).push({
-          name: utilityName,
-          file: filePath,
-          pattern,
-          type: 'utility'
-        });
-      }
-    }
-  }
-
-  /**
-   * Extract component pattern for comparison
-   */
-  extractComponentPattern(content, componentName) {
-    // Simplified pattern extraction - could be enhanced with AST parsing
-    const startIndex = content.indexOf(componentName);
-    if (startIndex === -1) return null;
-    
-    const lines = content.split('\n');
-    const startLine = content.substring(0, startIndex).split('\n').length - 1;
-    
-    // Extract a reasonable block of code
-    const endLine = Math.min(startLine + 50, lines.length);
-    return lines.slice(startLine, endLine).join('\n');
-  }
-
-  /**
-   * Extract hook pattern for comparison
-   */
-  extractHookPattern(content, hookName) {
-    return this.extractComponentPattern(content, hookName);
-  }
-
-  /**
-   * Extract utility pattern for comparison
-   */
-  extractUtilityPattern(content, utilityName) {
-    return this.extractComponentPattern(content, utilityName);
-  }
-
-  /**
-   * Find duplicate patterns across files
-   */
-  async findDuplicatePatterns() {
-    // Check for exact file duplicates
-    for (const [hash, files] of this.fileHashes) {
-      if (files.length > 1) {
-        this.duplicates.push({
-          type: 'exact_file',
-          severity: 'high',
-          files,
-          hash,
-          canAutoFix: true,
-          description: `Exact duplicate files detected`
-        });
-      }
-    }
-    
-    // Check for pattern duplicates
-    for (const [hash, patterns] of this.componentPatterns) {
-      if (patterns.length > 1) {
-        this.duplicates.push({
-          type: patterns[0].type || 'component',
-          severity: this.calculateSeverity(patterns),
-          patterns,
-          hash,
-          canAutoFix: this.canAutoFixPattern(patterns),
-          description: `Duplicate ${patterns[0].type || 'component'} pattern detected`
-        });
-      }
-    }
-  }
-
-  /**
-   * Calculate severity of duplicate
-   */
-  calculateSeverity(patterns) {
-    if (patterns.length > 5) return 'critical';
-    if (patterns.length > 3) return 'high';
-    if (patterns.length > 1) return 'medium';
-    return 'low';
-  }
-
-  /**
-   * Check if pattern can be auto-fixed
-   */
-  canAutoFixPattern(patterns) {
-    // Conservative approach - only auto-fix simple utilities
-    return patterns[0].type === 'utility' && patterns.length <= 3;
-  }
-
-  /**
-   * Fix a specific duplicate
-   */
-  async fixDuplicate(duplicate) {
-    if (!duplicate.canAutoFix) {
-      throw new Error('Duplicate cannot be auto-fixed');
-    }
-    
-    console.log(`🔧 Fixing duplicate: ${duplicate.type}`);
-    
-    if (duplicate.type === 'exact_file') {
-      await this.fixExactFileDuplicate(duplicate);
-    } else if (duplicate.type === 'utility') {
-      await this.fixUtilityDuplicate(duplicate);
-    }
-  }
-
-  /**
-   * Fix exact file duplicates
-   */
-  async fixExactFileDuplicate(duplicate) {
-    // Keep the first file, remove others and update imports
-    const [keepFile, ...removeFiles] = duplicate.files;
-    
-    for (const removeFile of removeFiles) {
-      // This would need more sophisticated import updating
-      console.log(`Would remove duplicate file: ${removeFile}`);
-      // await fs.remove(removeFile);
-    }
-  }
-
-  /**
-   * Fix utility duplicates by creating shared utility
-   */
-  async fixUtilityDuplicate(duplicate) {
-    const patterns = duplicate.patterns;
-    const sharedUtilPath = 'src/utils/shared-utilities.js';
-    
-    // This would need actual implementation to extract and share utilities
-    console.log(`Would create shared utility for: ${patterns.map(p => p.name).join(', ')}`);
-  }
-
-  /**
-   * Get detailed report
-   */
-  async getDetailedReport() {
     return {
-      summary: {
-        totalDuplicates: this.duplicates.length,
-        bySeverity: this.groupBySeverity(),
-        byType: this.groupByType()
-      },
-      duplicates: this.duplicates,
-      recommendations: this.generateRecommendations()
+      isDuplicate,
+      type: isDuplicate ? 'exact' : 'none',
+      similar,
+      recommendation: this.generateRecommendation(name, similar, isDuplicate, 'component')
     };
   }
 
-  /**
-   * Group duplicates by severity
-   */
-  groupBySeverity() {
-    return this.duplicates.reduce((acc, dup) => {
-      acc[dup.severity] = (acc[dup.severity] || 0) + 1;
-      return acc;
-    }, {});
+  async analyzeService(name, metadata) {
+    const similar = this.findSimilarServices(name, metadata);
+    const isDuplicate = this.checkExactDuplicate(name, metadata, 'service');
+    
+    return {
+      isDuplicate,
+      type: isDuplicate ? 'exact' : 'none',
+      similar,
+      recommendation: this.generateRecommendation(name, similar, isDuplicate, 'service')
+    };
   }
 
-  /**
-   * Group duplicates by type
-   */
-  groupByType() {
-    return this.duplicates.reduce((acc, dup) => {
-      acc[dup.type] = (acc[dup.type] || 0) + 1;
-      return acc;
-    }, {});
+  findSimilarComponents(name, metadata) {
+    const similar = [];
+    
+    for (const [existingName, existingMetadata] of this.componentRegistry) {
+      if (existingName === name) continue;
+      
+      const similarity = this.calculateSimilarity(metadata, existingMetadata);
+      if (similarity > 0.6) {
+        similar.push({
+          name: existingName,
+          similarity,
+          metadata: existingMetadata
+        });
+      }
+    }
+    
+    return similar.sort((a, b) => b.similarity - a.similarity);
   }
 
-  /**
-   * Generate recommendations
-   */
-  generateRecommendations() {
-    const recommendations = [];
+  findSimilarServices(name, metadata) {
+    const similar = [];
     
-    const criticalCount = this.duplicates.filter(d => d.severity === 'critical').length;
-    if (criticalCount > 0) {
-      recommendations.push(`Address ${criticalCount} critical duplicates immediately`);
+    for (const [existingName, existingMetadata] of this.serviceRegistry) {
+      if (existingName === name) continue;
+      
+      const similarity = this.calculateSimilarity(metadata, existingMetadata);
+      if (similarity > 0.7) {
+        similar.push({
+          name: existingName,
+          similarity,
+          metadata: existingMetadata
+        });
+      }
     }
     
-    const utilityDuplicates = this.duplicates.filter(d => d.type === 'utility').length;
-    if (utilityDuplicates > 3) {
-      recommendations.push('Consider creating a shared utilities module');
+    return similar.sort((a, b) => b.similarity - a.similarity);
+  }
+
+  calculateSimilarity(metadata1, metadata2) {
+    let similarities = [];
+    
+    // Compare props/methods
+    if (metadata1.props && metadata2.props) {
+      const propsSimilarity = this.calculateArraySimilarity(metadata1.props, metadata2.props);
+      similarities.push(propsSimilarity);
     }
     
-    return recommendations;
+    if (metadata1.methods && metadata2.methods) {
+      const methodsSimilarity = this.calculateArraySimilarity(metadata1.methods, metadata2.methods);
+      similarities.push(methodsSimilarity);
+    }
+    
+    // Compare functionality description
+    if (metadata1.functionality && metadata2.functionality) {
+      const functionalitySimilarity = this.calculateStringSimilarity(
+        metadata1.functionality, 
+        metadata2.functionality
+      );
+      similarities.push(functionalitySimilarity);
+    }
+    
+    // Compare categories
+    if (metadata1.category && metadata2.category) {
+      similarities.push(metadata1.category === metadata2.category ? 1 : 0);
+    }
+    
+    return similarities.length > 0 ? 
+      similarities.reduce((a, b) => a + b) / similarities.length : 
+      0;
+  }
+
+  calculateArraySimilarity(arr1, arr2) {
+    if (!arr1 || !arr2 || arr1.length === 0 || arr2.length === 0) return 0;
+    
+    const intersection = arr1.filter(item => arr2.includes(item));
+    const union = [...new Set([...arr1, ...arr2])];
+    
+    return intersection.length / union.length;
+  }
+
+  calculateStringSimilarity(str1, str2) {
+    if (!str1 || !str2) return 0;
+    
+    const words1 = str1.toLowerCase().split(/\s+/);
+    const words2 = str2.toLowerCase().split(/\s+/);
+    
+    return this.calculateArraySimilarity(words1, words2);
+  }
+
+  checkExactDuplicate(name, metadata, type) {
+    const registry = type === 'component' ? this.componentRegistry : this.serviceRegistry;
+    
+    for (const [existingName, existingMetadata] of registry) {
+      if (existingName === name) continue;
+      
+      // Check for exact functionality match
+      if (this.calculateSimilarity(metadata, existingMetadata) > 0.95) {
+        return true;
+      }
+    }
+    
+    return false;
+  }
+
+  generateRecommendation(name, similar, isDuplicate, type) {
+    if (isDuplicate) {
+      return `Remove duplicate ${type} '${name}' and use existing implementation`;
+    }
+    
+    if (similar.length > 0) {
+      const mostSimilar = similar[0];
+      const percentage = Math.round(mostSimilar.similarity * 100);
+      return `Consider extending or composing with '${mostSimilar.name}' (${percentage}% similar)`;
+    }
+    
+    return `${type.charAt(0).toUpperCase() + type.slice(1)} appears unique - no action needed`;
+  }
+
+  generateReport() {
+    return {
+      timestamp: new Date().toISOString(),
+      components: {
+        total: this.componentRegistry.size,
+        details: Array.from(this.componentRegistry.entries()).map(([name, metadata]) => ({
+          name,
+          category: metadata.category,
+          filePath: metadata.filePath
+        }))
+      },
+      services: {
+        total: this.serviceRegistry.size,
+        details: Array.from(this.serviceRegistry.entries()).map(([name, metadata]) => ({
+          name,
+          methods: metadata.methods?.length || 0,
+          filePath: metadata.filePath
+        }))
+      },
+      types: {
+        total: this.typeRegistry.size,
+        details: Array.from(this.typeRegistry.entries()).map(([name, definition]) => ({
+          name,
+          type: definition.type
+        }))
+      }
+    };
+  }
+
+  clear() {
+    this.componentRegistry.clear();
+    this.serviceRegistry.clear();
+    this.typeRegistry.clear();
+  }
+
+  getStats() {
+    return {
+      totalDuplicates: this.getTotalDuplicates(),
+      components: this.componentRegistry.size,
+      services: this.serviceRegistry.size,
+      types: this.typeRegistry.size
+    };
+  }
+
+  getTotalDuplicates() {
+    // This would be calculated based on analysis results
+    // For now, return a simple count
+    return 0;
   }
 }
-
-export default DuplicateAnalyzer;
