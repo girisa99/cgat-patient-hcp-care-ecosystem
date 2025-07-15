@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useMasterUserManagement } from '@/hooks/useMasterUserManagement';
 import { useAdminRealtime } from '@/hooks/useRealtime';
+import { useMasterToast } from '@/hooks/useMasterToast';
 
 export const MasterUserManagementTable: React.FC = () => {
   // Enable real-time updates for user management
@@ -38,6 +39,8 @@ export const MasterUserManagementTable: React.FC = () => {
     isAssigningRole,
     isRemovingRole
   } = useMasterUserManagement();
+  
+  const { showSuccess, showError } = useMasterToast();
   
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const stats = getUserStats();
@@ -75,9 +78,28 @@ export const MasterUserManagementTable: React.FC = () => {
     console.log('Assign modules to:', userId, userName);
   };
 
-  const handleResendEmail = (userId: string, userEmail: string) => {
-    // TODO: Implement email resend functionality
-    console.log('Resend email to:', userEmail);
+  const handleResendEmail = async (userId: string, userEmail: string) => {
+    try {
+      const response = await fetch('/api/send-verification-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          userId, 
+          email: userEmail,
+          firstName: users.find(u => u.id === userId)?.first_name,
+          lastName: users.find(u => u.id === userId)?.last_name
+        })
+      });
+
+      if (response.ok) {
+        showSuccess('Email Sent', `Verification email sent to ${userEmail}`);
+      } else {
+        showError('Email Failed', 'Failed to send verification email');
+      }
+    } catch (error) {
+      console.error('Resend email error:', error);
+      showError('Email Error', 'Error sending verification email');
+    }
   };
 
   const handleDeleteUser = (userId: string, userName: string) => {

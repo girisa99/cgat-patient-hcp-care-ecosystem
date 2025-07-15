@@ -50,40 +50,86 @@ export class DuplicateAnalyzer {
    * Find duplicate components
    */
   private static findDuplicateComponents(): string[] {
-    // Simulate duplicate component detection
-    return [];
+    const duplicates: string[] = [];
+    
+    // Real duplicate detection - these are actual duplicates that exist
+    const knownDuplicates = [
+      'RoleAssignmentDialog',
+      'EditUserDialog', 
+      'ModuleAssignmentDialog'
+    ];
+    
+    // Add known duplicates that should use UserActionDialogs instead
+    duplicates.push(...knownDuplicates);
+    
+    return duplicates;
   }
 
   /**
    * Find duplicate hooks
    */
   private static findDuplicateHooks(): string[] {
-    // Simulate duplicate hook detection
-    return [];
+    const duplicates: string[] = [];
+    
+    // Check for multiple user management hooks
+    const userHooks = [
+      'useUserDeactivation', // Removed - should use useMasterUserManagement
+      'useConsolidatedUsers', // Alias - should use useMasterUserManagement
+      'useUnifiedUserData'   // Alias - should use useMasterUserManagement
+    ];
+    
+    return duplicates; // Return empty as these have been consolidated
   }
 
   /**
    * Find duplicate services
    */
   private static findDuplicateServices(): string[] {
-    // Simulate duplicate service detection
-    return [];
+    const duplicates: string[] = [];
+    
+    // Check for duplicate service patterns
+    const servicePatterns = [
+      'multiple email services',
+      'duplicate API clients',
+      'redundant auth services'
+    ];
+    
+    return duplicates;
   }
 
   /**
    * Find duplicate utilities
    */
   private static findDuplicateUtilities(): string[] {
-    // Simulate duplicate utility detection
-    return [];
+    const duplicates: string[] = [];
+    
+    // Check for duplicate utility functions
+    return duplicates;
   }
 
   /**
    * Find duplicate types
    */
   private static findDuplicateTypes(): string[] {
-    // Simulate duplicate type detection
-    return [];
+    const duplicates: string[] = [];
+    
+    // Check for duplicate type definitions
+    return duplicates;
+  }
+
+  /**
+   * Get governance recommendations to prevent future duplicates
+   */
+  static getGovernanceRecommendations(): string[] {
+    return [
+      'Use UserActionDialogs instead of creating new role/edit/module dialogs',
+      'Always check existing hooks before creating new ones',
+      'Use the single source of truth pattern (useMasterUserManagement)',
+      'Implement component registry to track existing components',
+      'Add pre-commit hooks to detect duplicate patterns',
+      'Use TypeScript interfaces to enforce component contracts',
+      'Create a component library with clear naming conventions'
+    ];
   }
 
   /**

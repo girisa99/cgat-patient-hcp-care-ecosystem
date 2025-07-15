@@ -8,13 +8,22 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Package, CheckCircle, Shield, Database } from 'lucide-react';
+import { Plus, Package, CheckCircle, Shield, Database, Users, UserPlus, Settings } from 'lucide-react';
 import { useSingleMasterModules } from '@/hooks/useSingleMasterModules';
 import { useMasterToast } from '@/hooks/useMasterToast';
+import { useMasterRoleManagement } from '@/hooks/useMasterRoleManagement';
 
 const Modules: React.FC = () => {
   const { hasAccess } = useRoleBasedNavigation();
   const { showSuccess, showError, showInfo } = useMasterToast();
+  const { 
+    roles, 
+    permissions, 
+    activeRoles, 
+    hasRole, 
+    isAdmin,
+    userRoles 
+  } = useMasterRoleManagement();
   
   // ✅ VERIFIED: Using the CORRECT single source of truth hook
   const {
@@ -193,6 +202,68 @@ const Modules: React.FC = () => {
           </Card>
         )}
 
+        {/* RBAC Management Section */}
+        {isAdmin && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5" />
+                Role-Based Access Control (RBAC)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <h4 className="font-medium mb-3 flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    Roles ({roles.length})
+                  </h4>
+                  <div className="space-y-2">
+                    {roles.map((role) => (
+                      <div key={role.id} className="flex items-center justify-between p-2 border rounded">
+                        <span className="text-sm">{role.name}</span>
+                        <Badge variant={activeRoles.find(r => r.id === role.id) ? "default" : "secondary"}>
+                          {role.description}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                <div>
+                  <h4 className="font-medium mb-3 flex items-center gap-2">
+                    <Settings className="h-4 w-4" />
+                    Permissions ({permissions.length})
+                  </h4>
+                  <div className="space-y-2">
+                    {permissions.map((permission) => (
+                      <div key={permission.id} className="p-2 border rounded">
+                        <div className="text-sm font-medium">{permission.name}</div>
+                        <div className="text-xs text-muted-foreground">{permission.description}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                <div>
+                  <h4 className="font-medium mb-3 flex items-center gap-2">
+                    <UserPlus className="h-4 w-4" />
+                    Your Access
+                  </h4>
+                  <div className="space-y-2">
+                    {userRoles.map((role, index) => (
+                      <Badge key={index} variant="default">{role}</Badge>
+                    ))}
+                    <div className="text-sm text-muted-foreground mt-2">
+                      Admin Access: {isAdmin ? '✅ Yes' : '❌ No'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Modules List using SINGLE HOOK */}
         <Tabs defaultValue="all" className="space-y-4">
           <TabsList>
@@ -222,8 +293,21 @@ const Modules: React.FC = () => {
                           <Badge variant={module.is_active ? "default" : "secondary"}>
                             {module.is_active ? 'Active' : 'Inactive'}
                           </Badge>
-                          <Button variant="outline" size="sm" onClick={() => handleEditModule(module.id)}>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => handleEditModule(module.id)}
+                            disabled={!isAdmin}
+                          >
                             Edit
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => handleToggleModule(module.id)}
+                            disabled={!isAdmin}
+                          >
+                            {module.is_active ? 'Deactivate' : 'Activate'}
                           </Button>
                         </div>
                       </div>

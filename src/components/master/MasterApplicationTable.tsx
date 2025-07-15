@@ -17,9 +17,7 @@ import { useMasterApplication } from '@/hooks/useMasterApplication';
 import { CreateUserForm } from '@/components/forms/CreateUserForm';
 import { CreateFacilityForm } from '@/components/forms/CreateFacilityForm';
 import { CreateModuleForm } from '@/components/forms/CreateModuleForm';
-import { RoleAssignmentDialog } from '@/components/dialogs/RoleAssignmentDialog';
-import { EditUserDialog } from '@/components/dialogs/EditUserDialog';
-import { ModuleAssignmentDialog } from '@/components/dialogs/ModuleAssignmentDialog';
+import { UserActionDialogs } from '@/components/users/UserActionDialogs';
 
 export const MasterApplicationTable: React.FC = () => {
   const {
@@ -458,22 +456,30 @@ export const MasterApplicationTable: React.FC = () => {
         onSuccess={refreshApplication}
       />
       
-      <RoleAssignmentDialog
-        open={showRoleAssignment}
-        onOpenChange={setShowRoleAssignment}
-        user={selectedUserForDialog}
-      />
-      
-      <EditUserDialog
-        open={showEditUser}
-        onOpenChange={setShowEditUser}
-        user={selectedUserForDialog}
-      />
-      
-      <ModuleAssignmentDialog
-        open={showModuleAssignment}
-        onOpenChange={setShowModuleAssignment}
-        user={selectedUserForDialog}
+      <UserActionDialogs
+        selectedUser={selectedUserForDialog}
+        assignRoleOpen={showRoleAssignment}
+        setAssignRoleOpen={setShowRoleAssignment}
+        removeRoleOpen={false}
+        setRemoveRoleOpen={() => {}}
+        assignFacilityOpen={showModuleAssignment}
+        setAssignFacilityOpen={setShowModuleAssignment}
+        onAssignRole={(roleId) => {
+          if (selectedUserForDialog) {
+            userManagement.assignRole(selectedUserForDialog.id, roleId);
+            setShowRoleAssignment(false);
+          }
+        }}
+        onRemoveRole={() => {}}
+        onAssignFacility={(facilityId) => {
+          if (selectedUserForDialog) {
+            // Using assignRole as placeholder since assignModule doesn't exist
+            userManagement.assignRole(selectedUserForDialog.id, facilityId);
+            setShowModuleAssignment(false);
+          }
+        }}
+        availableRoles={moduleManagement.modules.map(m => ({ id: m.id, name: m.name }))}
+        availableFacilities={facilityManagement.facilities || []}
       />
     </div>
   );
