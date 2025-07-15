@@ -1,0 +1,8 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Run stability framework pre-commit checks
+node scripts/pre-commit-stability-check.js
+
+# Run lint-staged for other checks
+npx lint-staged

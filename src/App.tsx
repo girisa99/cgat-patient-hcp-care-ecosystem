@@ -76,6 +76,11 @@ const AppContent = () => {
                   <Route path="/testing" element={<Testing />} />
                   <Route path="/role-management" element={<RoleManagement />} />
                   <Route path="/stability" element={<Stability />} />
+                  <Route path="/stability/dashboard" element={
+                    <Suspense fallback={<PageLoading message="Loading stability dashboard..." />}>
+                      {React.createElement(React.lazy(() => import('@/components/monitoring/StabilityDashboard').then(m => ({ default: m.StabilityDashboard }))))}
+                    </Suspense>
+                  } />
                   <Route path="/research" element={<PackageResearch />} />
                 </>
               ) : (

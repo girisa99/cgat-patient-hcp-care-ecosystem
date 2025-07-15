@@ -2,6 +2,8 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
+// @ts-ignore
+import stabilityFrameworkPlugin from "./vite.stability-plugin.js";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -13,6 +15,14 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     mode === 'development' && componentTagger(),
+    stabilityFrameworkPlugin({
+      enabled: true,
+      failOnViolations: false,
+      warnOnDuplicates: true,
+      checkNaming: true,
+      checkComplexity: true,
+      maxComplexity: 10
+    }),
   ].filter(Boolean),
   resolve: {
     alias: {
