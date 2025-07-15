@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
 // Component to research npm packages using Claude AI
-export const PackageResearch = () => {
+const PackageResearch = () => {
   const researchPackages = async () => {
     try {
       const { data, error } = await supabase.functions.invoke('claude-ai-chat', {
