@@ -623,7 +623,10 @@ const UserManagement = () => {
         {/* Facility Management Modal */}
         <FacilityManagementModal
           open={facilityManagementModal.open}
-          onOpenChange={(open) => setFacilityManagementModal({ open, facility: open ? facilityManagementModal.facility : undefined })}
+          onOpenChange={(open) => setFacilityManagementModal(prev => ({ 
+            open, 
+            facility: open ? prev.facility : undefined 
+          }))}
           facility={facilityManagementModal.facility}
           onSuccess={() => {
             refreshData();
