@@ -5,24 +5,16 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ChevronUp, ChevronDown, Search, X } from 'lucide-react';
 import { BulkActions, BulkActionConfig } from './ActionButton';
+import type { DataRow, TableColumn, SortConfig } from '@/types/common';
 
-export interface ColumnConfig {
-  key: string;
-  label: string;
-  sortable?: boolean;
-  render?: (value: any, row: any) => React.ReactNode;
-  className?: string;
+export interface ColumnConfig<T = DataRow> extends TableColumn<T> {
+  // Extended from base TableColumn with additional DataTable-specific properties
 }
 
-export interface SortConfig {
-  key: string;
-  direction: 'asc' | 'desc';
-}
-
-export interface DataTableProps {
-  data: any[];
-  columns: ColumnConfig[];
-  actions?: (row: any) => React.ReactNode;
+export interface DataTableProps<T extends DataRow = DataRow> {
+  data: T[];
+  columns: ColumnConfig<T>[];
+  actions?: (row: T) => React.ReactNode;
   searchable?: boolean;
   searchPlaceholder?: string;
   sortable?: boolean;
@@ -36,7 +28,7 @@ export interface DataTableProps {
   onRefresh?: () => void;
 }
 
-export const DataTable: React.FC<DataTableProps> = ({
+export const DataTable = <T extends DataRow = DataRow>({
   data,
   columns,
   actions,
@@ -51,7 +43,7 @@ export const DataTable: React.FC<DataTableProps> = ({
   emptyMessage = "No data available",
   className = "",
   onRefresh
-}) => {
+}: DataTableProps<T>) => {
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
@@ -73,8 +65,8 @@ export const DataTable: React.FC<DataTableProps> = ({
     if (!sortConfig) return filteredData;
     
     return [...filteredData].sort((a, b) => {
-      const aValue = a[sortConfig.key];
-      const bValue = b[sortConfig.key];
+      const aValue = a[sortConfig.key as keyof T];
+      const bValue = b[sortConfig.key as keyof T];
       
       if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
       if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
@@ -112,6 +104,7 @@ export const DataTable: React.FC<DataTableProps> = ({
   const handleSort = (key: string) => {
     setSortConfig(prev => ({
       key,
+      field: key,
       direction: prev?.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
     }));
   };
@@ -205,12 +198,12 @@ export const DataTable: React.FC<DataTableProps> = ({
               
               {/* Column headers */}
               {columns.map(column => (
-                <TableHead key={column.key} className={column.className}>
+                <TableHead key={String(column.key)} className={column.className}>
                   {sortable && column.sortable !== false ? (
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleSort(column.key)}
+                      onClick={() => handleSort(String(column.key))}
                       className="flex items-center space-x-1 p-0 h-auto font-medium"
                     >
                       <span>{column.label}</span>
@@ -255,10 +248,10 @@ export const DataTable: React.FC<DataTableProps> = ({
                   
                   {/* Data cells */}
                   {columns.map(column => (
-                    <TableCell key={column.key} className={column.className}>
+                    <TableCell key={String(column.key)} className={column.className}>
                       {column.render 
-                        ? column.render(row[column.key], row) 
-                        : row[column.key] || '-'
+                        ? column.render(row[column.key as keyof T], row) 
+                        : String(row[column.key as keyof T] || '-')
                       }
                     </TableCell>
                   ))}

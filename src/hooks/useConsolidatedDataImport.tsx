@@ -7,12 +7,13 @@
 import { useState } from 'react';
 import { useMasterData } from './useMasterData';
 import { useMasterToast } from './useMasterToast';
+import type { ImportResult, ImportStats, ValidationResult } from '@/types/common';
 
 export const useConsolidatedDataImport = () => {
   const [isImporting, setIsImporting] = useState(false);
   const [importProgress, setImportProgress] = useState(0);
-  const [importResults, setImportResults] = useState<any[]>([]);
-  const [importHistory, setImportHistory] = useState<any[]>([]);
+  const [importResults, setImportResults] = useState<ImportResult[]>([]);
+  const [importHistory, setImportHistory] = useState<ImportResult[]>([]);
   
   const { createUser } = useMasterData();
   const { showSuccess, showError } = useMasterToast();
@@ -20,20 +21,21 @@ export const useConsolidatedDataImport = () => {
   console.log('📊 Consolidated Data Import - Single source of truth active');
 
   // Import users
-  const importUsers = async (userData: any[]) => {
+  const importUsers = async (userData: Array<Record<string, unknown>>) => {
     setIsImporting(true);
     try {
-      const results = [];
+      const results: ImportResult[] = [];
       for (let i = 0; i < userData.length; i++) {
         const user = userData[i];
         createUser(); // TODO: Implement actual user creation with parameters
-        results.push({ success: true, user });
+        results.push({ success: true, data: user, rowIndex: i });
         setImportProgress(((i + 1) / userData.length) * 100);
       }
       setImportResults(results);
       showSuccess('Import Complete', `Successfully imported ${results.length} users`);
-    } catch (error: any) {
-      showError('Import Failed', error.message || 'Failed to import users');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to import users';
+      showError('Import Failed', errorMessage);
     } finally {
       setIsImporting(false);
       setImportProgress(0);
@@ -41,26 +43,26 @@ export const useConsolidatedDataImport = () => {
   };
 
   // Import facilities
-  const importFacilities = async (facilityData: any[]) => {
+  const importFacilities = async (facilityData: Array<Record<string, unknown>>) => {
     console.log('Importing facilities:', facilityData.length);
     showSuccess('Import Started', 'Facility import functionality to be implemented');
   };
 
   // Import modules
-  const importModules = async (moduleData: any[]) => {
+  const importModules = async (moduleData: Array<Record<string, unknown>>) => {
     console.log('Importing modules:', moduleData.length);
     showSuccess('Import Started', 'Module import functionality to be implemented');
   };
 
   // Parse CSV data
-  const parseCSV = (csvText: string) => {
+  const parseCSV = (csvText: string): Array<Record<string, string>> => {
     const lines = csvText.split('\n');
     const headers = lines[0].split(',').map(h => h.trim());
     const data = lines.slice(1).map(line => {
       const values = line.split(',').map(v => v.trim());
-      const obj: any = {};
+      const obj: Record<string, string> = {};
       headers.forEach((header, index) => {
-        obj[header] = values[index];
+        obj[header] = values[index] || '';
       });
       return obj;
     });
@@ -68,7 +70,7 @@ export const useConsolidatedDataImport = () => {
   };
 
   // Validate data
-  const validateData = (data: any[], type: string) => {
+  const validateData = (data: Array<Record<string, unknown>>, type: string): ValidationResult => {
     const errors = [];
     const requiredFields = {
       users: ['email', 'firstName', 'lastName'],
@@ -115,7 +117,7 @@ export const useConsolidatedDataImport = () => {
   };
 
   // Import JSON data
-  const importJSONData = async (jsonData: any[], type: string) => {
+  const importJSONData = async (jsonData: Array<Record<string, unknown>>, type: string) => {
     const validation = validateData(jsonData, type);
     
     if (!validation.isValid) {

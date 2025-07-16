@@ -180,7 +180,7 @@ export const FacilitiesManagementTable: React.FC = () => {
         {error ? (
           <p className="text-destructive">{String(error)}</p>
         ) : (
-          <DataTable
+          <DataTable<Facility>
             data={facilities}
             columns={columns}
             actions={renderActions}

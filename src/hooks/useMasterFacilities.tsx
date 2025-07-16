@@ -21,6 +21,7 @@ export interface Facility {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  [key: string]: unknown; // Index signature to satisfy DataRow
 }
 
 export const useMasterFacilities = () => {
