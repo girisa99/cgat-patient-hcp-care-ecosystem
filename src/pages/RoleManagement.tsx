@@ -42,11 +42,21 @@ const RoleManagement = () => {
   // Form states
   const [newRoleName, setNewRoleName] = useState('');
   const [newRoleDescription, setNewRoleDescription] = useState('');
-  const [selectedRole, setSelectedRole] = useState<any>(null);
+  const [selectedRoleForEdit, setSelectedRoleForEdit] = useState<any>(null);
+  const [editRoleName, setEditRoleName] = useState('');
+  const [editRoleDescription, setEditRoleDescription] = useState('');
   const [selectedUser, setSelectedUser] = useState('');
   const [selectedModule, setSelectedModule] = useState('');
   const [selectedFacility, setSelectedFacility] = useState('');
   const [selectedRoleForAssignment, setSelectedRoleForAssignment] = useState('');
+
+  console.log('🔐 Role Management Debug:', {
+    rolesCount: roles.length,
+    usersCount: users.length,
+    modulesCount: modules.length,
+    facilitiesCount: facilities.length,
+    isLoading
+  });
 
   // Role management functions
   const handleCreateRole = async () => {
@@ -68,6 +78,32 @@ const RoleManagement = () => {
       setCreateRoleOpen(false);
     } catch (err: any) {
       showError('Failed to create role: ' + err.message);
+    }
+  };
+
+  const handleEditRole = async () => {
+    if (!editRoleName.trim() || !selectedRoleForEdit) {
+      showError('Role name is required');
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('roles')
+        .update({ 
+          description: editRoleDescription.trim() 
+        })
+        .eq('id', selectedRoleForEdit.id);
+
+      if (error) throw error;
+      
+      showSuccess('Role updated successfully');
+      setEditRoleOpen(false);
+      setSelectedRoleForEdit(null);
+      setEditRoleName('');
+      setEditRoleDescription('');
+    } catch (err: any) {
+      showError('Failed to update role: ' + err.message);
     }
   };
 
@@ -245,7 +281,9 @@ const RoleManagement = () => {
                         variant="outline" 
                         size="sm"
                         onClick={() => {
-                          setSelectedRole(role);
+                          setSelectedRoleForEdit(role);
+                          setEditRoleName(role.name);
+                          setEditRoleDescription(role.description || '');
                           setEditRoleOpen(true);
                         }}
                       >
@@ -295,14 +333,15 @@ const RoleManagement = () => {
             </div>
             
             <div className="space-y-4">
-              {users.map((user) => (
-                <Card key={user.id} className="border-0 shadow-sm">
-                  <CardContent className="pt-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-medium">{user.first_name} {user.last_name}</h4>
-                        <p className="text-sm text-gray-500">{user.email}</p>
-                      </div>
+              {users && users.length > 0 ? (
+                users.map((user) => (
+                  <Card key={user.id} className="border-0 shadow-sm">
+                    <CardContent className="pt-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="font-medium">{user.first_name} {user.last_name}</h4>
+                          <p className="text-sm text-gray-500">{user.email}</p>
+                        </div>
                       <div className="flex gap-2">
                         {user.user_roles.map((userRole, index) => (
                           <Badge key={index} variant="outline">
@@ -314,9 +353,20 @@ const RoleManagement = () => {
                         )}
                       </div>
                     </div>
+                    </CardContent>
+                  </Card>
+                ))
+              ) : (
+                <Card className="border-0 shadow-sm">
+                  <CardContent className="text-center py-12">
+                    <Users className="h-12 w-12 mx-auto mb-4 opacity-50 text-gray-400" />
+                    <h3 className="font-semibold mb-2 text-gray-700">No Users Found</h3>
+                    <p className="text-sm mb-4 text-gray-500">
+                      No users have been loaded from the database.
+                    </p>
                   </CardContent>
                 </Card>
-              ))}
+              )}
             </div>
           </TabsContent>
 
@@ -331,21 +381,33 @@ const RoleManagement = () => {
             </div>
             
             <div className="space-y-4">
-              {modules.map((module) => (
-                <Card key={module.id} className="border-0 shadow-sm">
-                  <CardContent className="pt-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-medium">{module.name}</h4>
-                        <p className="text-sm text-gray-500">{module.description}</p>
-                      </div>
+              {modules && modules.length > 0 ? (
+                modules.map((module) => (
+                  <Card key={module.id} className="border-0 shadow-sm">
+                    <CardContent className="pt-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="font-medium">{module.name}</h4>
+                          <p className="text-sm text-gray-500">{module.description}</p>
+                        </div>
                       <Badge variant={module.is_active ? "default" : "secondary"}>
                         {module.is_active ? "Active" : "Inactive"}
                       </Badge>
                     </div>
+                    </CardContent>
+                  </Card>
+                ))
+              ) : (
+                <Card className="border-0 shadow-sm">
+                  <CardContent className="text-center py-12">
+                    <Blocks className="h-12 w-12 mx-auto mb-4 opacity-50 text-gray-400" />
+                    <h3 className="font-semibold mb-2 text-gray-700">No Modules Found</h3>
+                    <p className="text-sm mb-4 text-gray-500">
+                      No modules have been loaded from the database.
+                    </p>
                   </CardContent>
                 </Card>
-              ))}
+              )}
             </div>
           </TabsContent>
 
@@ -360,24 +422,36 @@ const RoleManagement = () => {
             </div>
             
             <div className="space-y-4">
-              {facilities.map((facility) => (
-                <Card key={facility.id} className="border-0 shadow-sm">
-                  <CardContent className="pt-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-medium">{facility.name}</h4>
-                        <p className="text-sm text-gray-500">{facility.facility_type}</p>
-                        {facility.address && (
-                          <p className="text-xs text-gray-400">{facility.address}</p>
-                        )}
-                      </div>
+              {facilities && facilities.length > 0 ? (
+                facilities.map((facility) => (
+                  <Card key={facility.id} className="border-0 shadow-sm">
+                    <CardContent className="pt-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="font-medium">{facility.name}</h4>
+                          <p className="text-sm text-gray-500">{facility.facility_type}</p>
+                          {facility.address && (
+                            <p className="text-xs text-gray-400">{facility.address}</p>
+                          )}
+                        </div>
                       <Badge variant={facility.is_active ? "default" : "secondary"}>
                         {facility.is_active ? "Active" : "Inactive"}
                       </Badge>
                     </div>
+                    </CardContent>
+                  </Card>
+                ))
+              ) : (
+                <Card className="border-0 shadow-sm">
+                  <CardContent className="text-center py-12">
+                    <Building2 className="h-12 w-12 mx-auto mb-4 opacity-50 text-gray-400" />
+                    <h3 className="font-semibold mb-2 text-gray-700">No Facilities Found</h3>
+                    <p className="text-sm mb-4 text-gray-500">
+                      No facilities have been loaded from the database.
+                    </p>
                   </CardContent>
                 </Card>
-              ))}
+              )}
             </div>
           </TabsContent>
         </Tabs>
@@ -412,6 +486,45 @@ const RoleManagement = () => {
                   Create Role
                 </Button>
                 <Button variant="outline" onClick={() => setCreateRoleOpen(false)}>
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Role Dialog */}
+        <Dialog open={editRoleOpen} onOpenChange={setEditRoleOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Role</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="editRoleName">Role Name</Label>
+                <Input
+                  id="editRoleName"
+                  value={editRoleName}
+                  onChange={(e) => setEditRoleName(e.target.value)}
+                  placeholder="Enter role name"
+                  disabled
+                />
+                <p className="text-xs text-gray-500 mt-1">Role name cannot be changed</p>
+              </div>
+              <div>
+                <Label htmlFor="editRoleDescription">Description</Label>
+                <Textarea
+                  id="editRoleDescription"
+                  value={editRoleDescription}
+                  onChange={(e) => setEditRoleDescription(e.target.value)}
+                  placeholder="Enter role description"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={handleEditRole}>
+                  Update Role
+                </Button>
+                <Button variant="outline" onClick={() => setEditRoleOpen(false)}>
                   Cancel
                 </Button>
               </div>
