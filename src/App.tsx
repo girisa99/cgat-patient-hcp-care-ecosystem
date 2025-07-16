@@ -15,6 +15,7 @@ import Users from '@/pages/Users';
 import Patients from '@/pages/Patients';
 import Facilities from '@/pages/Facilities';
 import PackageResearch from '@/components/PackageResearch';
+import DataImport from '@/pages/DataImport';
 
 import Modules from '@/pages/Modules';
 import ApiServices from '@/pages/ApiServices';
@@ -68,13 +69,14 @@ const AppContent = () => {
                   <Route path="/patients" element={<Patients />} />
                   <Route path="/facilities" element={<Facilities />} />
                   
-                  <Route path="/modules" element={<Modules />} />
-                  <Route path="/api-services" element={<ApiServices />} />
-                  <Route path="/ngrok" element={<NgrokIntegration />} />
-                  <Route path="/security" element={<Security />} />
-                  <Route path="/reports" element={<Reports />} />
-                  <Route path="/testing" element={<Testing />} />
-                  <Route path="/role-management" element={<RoleManagement />} />
+                   <Route path="/modules" element={<Modules />} />
+                   <Route path="/api-services" element={<ApiServices />} />
+                   <Route path="/data-import" element={<DataImport />} />
+                   <Route path="/ngrok" element={<NgrokIntegration />} />
+                   <Route path="/security" element={<Security />} />
+                   <Route path="/reports" element={<Reports />} />
+                   <Route path="/testing" element={<Testing />} />
+                   <Route path="/role-management" element={<RoleManagement />} />
                   <Route path="/stability" element={<Stability />} />
                   <Route path="/stability/dashboard" element={
                     <Suspense fallback={<PageLoading message="Loading stability dashboard..." />}>
