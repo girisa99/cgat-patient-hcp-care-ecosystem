@@ -181,14 +181,29 @@ export class AdvancedSchemaAnalyzer {
    * Get all tables with complete metadata
    */
   private async getAllTables(): Promise<DatabaseTable[]> {
-    const { data: tables, error } = await supabase.rpc('get_complete_schema_info');
+    const { data, error } = await supabase.rpc('get_complete_schema_info');
     
     if (error) {
       console.error('Failed to fetch tables:', error);
       throw error;
     }
 
-    return tables || [];
+    // Parse the JSONB result into our TypeScript interface
+    if (!data || !Array.isArray(data)) {
+      return [];
+    }
+
+    return data.map((table: any) => ({
+      table_name: table.table_name,
+      table_schema: table.table_schema,
+      table_type: table.table_type,
+      columns: table.columns || [],
+      foreign_keys: table.foreign_keys || [],
+      indexes: table.indexes || [],
+      constraints: table.constraints || [],
+      rls_enabled: table.rls_enabled || false,
+      rls_policies: table.rls_policies || []
+    }));
   }
 
   /**

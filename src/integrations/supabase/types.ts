@@ -4365,6 +4365,10 @@ export type Database = {
         Args: { functionality_id?: string }
         Returns: number
       }
+      get_complete_schema_info: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       get_daily_fix_stats: {
         Args: { days_back?: number; target_user_id?: string }
         Returns: {
