@@ -79,18 +79,28 @@ const AppContent = () => {
                     <Route path="/testing" element={<Testing />} />
                     <Route path="/framework" element={<FrameworkDashboard />} />
                    <Route path="/role-management" element={<RoleManagement />} />
-                  <Route path="/stability" element={<Stability />} />
-                  <Route path="/stability/dashboard" element={
-                    <Suspense fallback={<PageLoading message="Loading stability dashboard..." />}>
-                      {React.createElement(React.lazy(() => import('@/components/monitoring/StabilityDashboard').then(m => ({ default: m.StabilityDashboard }))))}
-                    </Suspense>
-                  } />
-                  <Route path="/governance" element={
-                    <Suspense fallback={<PageLoading message="Loading governance dashboard..." />}>
-                      {React.createElement(React.lazy(() => import('@/components/monitoring/GovernanceDashboard').then(m => ({ default: m.default }))))}
-                    </Suspense>
-                  } />
-                  <Route path="/research" element={<PackageResearch />} />
+                   <Route path="/stability" element={<Stability />} />
+                   <Route path="/stability/dashboard" element={
+                     <Suspense fallback={<PageLoading message="Loading stability dashboard..." />}>
+                       {React.createElement(React.lazy(() => import('@/components/stability/StabilityDashboard').then(m => ({ default: m.StabilityDashboard }))))}
+                     </Suspense>
+                   } />
+                   <Route path="/governance" element={
+                     <Suspense fallback={<PageLoading message="Loading governance dashboard..." />}>
+                       {React.createElement(React.lazy(() => import('@/components/monitoring/GovernanceDashboard').then(m => ({ default: m.default }))))}
+                     </Suspense>
+                   } />
+                   <Route path="/healthcare-ai" element={
+                     <Suspense fallback={<PageLoading message="Loading healthcare AI..." />}>
+                       {React.createElement(React.lazy(() => import('@/components/healthcare/HealthcareAIDashboard').then(m => ({ default: m.default }))))}
+                     </Suspense>
+                   } />
+                   <Route path="/active-verification" element={
+                     <Suspense fallback={<PageLoading message="Loading verification..." />}>
+                       {React.createElement(React.lazy(() => import('@/pages/ActiveVerification').then(m => ({ default: m.default }))))}
+                     </Suspense>
+                   } />
+                   <Route path="/research" element={<PackageResearch />} />
                 </>
               ) : (
                 <>
