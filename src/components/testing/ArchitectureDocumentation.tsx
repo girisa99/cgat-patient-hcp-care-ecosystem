@@ -97,57 +97,57 @@ export function ArchitectureDocumentation({ onDownload }: ArchitectureDocumentat
   const ArchitectureDiagram = ({ type }: { type: string }) => {
     const diagramContent: Record<string, any> = {
       'high-level': (
-        <div className="w-full h-96 bg-gradient-to-br from-blue-50 to-indigo-100 rounded-lg p-6 flex items-center justify-center">
+        <div className="w-full h-96 bg-gradient-to-br from-background to-muted rounded-lg p-6 flex items-center justify-center">
           <div className="text-center space-y-4">
             <div className="grid grid-cols-3 gap-8">
-              <div className="bg-white p-4 rounded-lg shadow-md">
-                <div className="text-lg font-semibold text-blue-600">Frontend Layer</div>
-                <div className="text-sm text-gray-600">React + TypeScript</div>
+              <div className="bg-card p-4 rounded-lg shadow-md border">
+                <div className="text-lg font-semibold text-primary">Frontend Layer</div>
+                <div className="text-sm text-muted-foreground">React + TypeScript</div>
               </div>
-              <div className="bg-white p-4 rounded-lg shadow-md">
-                <div className="text-lg font-semibold text-green-600">API Gateway</div>
-                <div className="text-sm text-gray-600">Supabase Edge Functions</div>
+              <div className="bg-card p-4 rounded-lg shadow-md border">
+                <div className="text-lg font-semibold text-primary">API Gateway</div>
+                <div className="text-sm text-muted-foreground">Supabase Edge Functions</div>
               </div>
-              <div className="bg-white p-4 rounded-lg shadow-md">
-                <div className="text-lg font-semibold text-purple-600">Database</div>
-                <div className="text-sm text-gray-600">PostgreSQL + RLS</div>
+              <div className="bg-card p-4 rounded-lg shadow-md border">
+                <div className="text-lg font-semibold text-primary">Database</div>
+                <div className="text-sm text-muted-foreground">PostgreSQL + RLS</div>
               </div>
             </div>
-            <div className="text-sm text-gray-500">High-Level System Architecture</div>
+            <div className="text-sm text-muted-foreground">High-Level System Architecture</div>
           </div>
         </div>
       ),
       'flow-diagrams': (
-        <div className="w-full h-96 bg-gradient-to-br from-green-50 to-emerald-100 rounded-lg p-6 flex items-center justify-center">
+        <div className="w-full h-96 bg-gradient-to-br from-background to-muted rounded-lg p-6 flex items-center justify-center">
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <div className="bg-white p-3 rounded-lg shadow">Start</div>
-              <div className="w-8 h-1 bg-gray-400"></div>
-              <div className="bg-white p-3 rounded-lg shadow">Test Creation</div>
-              <div className="w-8 h-1 bg-gray-400"></div>
-              <div className="bg-white p-3 rounded-lg shadow">Execution</div>
-              <div className="w-8 h-1 bg-gray-400"></div>
-              <div className="bg-white p-3 rounded-lg shadow">Results</div>
+              <div className="bg-card p-3 rounded-lg shadow border">Start</div>
+              <div className="w-8 h-1 bg-border"></div>
+              <div className="bg-card p-3 rounded-lg shadow border">Test Creation</div>
+              <div className="w-8 h-1 bg-border"></div>
+              <div className="bg-card p-3 rounded-lg shadow border">Execution</div>
+              <div className="w-8 h-1 bg-border"></div>
+              <div className="bg-card p-3 rounded-lg shadow border">Results</div>
             </div>
-            <div className="text-center text-sm text-gray-500">Test Execution Flow</div>
+            <div className="text-center text-sm text-muted-foreground">Test Execution Flow</div>
           </div>
         </div>
       ),
       'low-level': (
-        <div className="w-full h-96 bg-gradient-to-br from-purple-50 to-violet-100 rounded-lg p-6">
+        <div className="w-full h-96 bg-gradient-to-br from-background to-muted rounded-lg p-6">
           <div className="grid grid-cols-2 gap-6 h-full">
             <div className="space-y-4">
-              <div className="bg-white p-3 rounded-lg shadow">
-                <div className="font-semibold text-purple-600">Services Layer</div>
-                <div className="text-xs space-y-1 mt-2">
+              <div className="bg-card p-3 rounded-lg shadow border">
+                <div className="font-semibold text-primary">Services Layer</div>
+                <div className="text-xs space-y-1 mt-2 text-muted-foreground">
                   <div>• Testing Service</div>
                   <div>• Validation Service</div>
                   <div>• Report Service</div>
                 </div>
               </div>
-              <div className="bg-white p-3 rounded-lg shadow">
-                <div className="font-semibold text-purple-600">Data Layer</div>
-                <div className="text-xs space-y-1 mt-2">
+              <div className="bg-card p-3 rounded-lg shadow border">
+                <div className="font-semibold text-primary">Data Layer</div>
+                <div className="text-xs space-y-1 mt-2 text-muted-foreground">
                   <div>• Test Cases Table</div>
                   <div>• Execution History</div>
                   <div>• Compliance Reports</div>
@@ -155,20 +155,146 @@ export function ArchitectureDocumentation({ onDownload }: ArchitectureDocumentat
               </div>
             </div>
             <div className="space-y-4">
-              <div className="bg-white p-3 rounded-lg shadow">
-                <div className="font-semibold text-purple-600">Hooks Layer</div>
-                <div className="text-xs space-y-1 mt-2">
+              <div className="bg-card p-3 rounded-lg shadow border">
+                <div className="font-semibold text-primary">Hooks Layer</div>
+                <div className="text-xs space-y-1 mt-2 text-muted-foreground">
                   <div>• useUnifiedTesting</div>
                   <div>• useEnhancedTesting</div>
                   <div>• useComplianceReport</div>
                 </div>
               </div>
-              <div className="bg-white p-3 rounded-lg shadow">
-                <div className="font-semibold text-purple-600">Components</div>
-                <div className="text-xs space-y-1 mt-2">
+              <div className="bg-card p-3 rounded-lg shadow border">
+                <div className="font-semibold text-primary">Components</div>
+                <div className="text-xs space-y-1 mt-2 text-muted-foreground">
                   <div>• TestCasesDisplay</div>
                   <div>• ExecutionHistory</div>
                   <div>• ComplianceReports</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+      'reference': (
+        <div className="w-full h-96 bg-gradient-to-br from-background to-muted rounded-lg p-6">
+          <div className="grid grid-cols-2 gap-6 h-full">
+            <div className="space-y-4">
+              <div className="bg-card p-3 rounded-lg shadow border">
+                <div className="font-semibold text-primary">Design Patterns</div>
+                <div className="text-xs space-y-1 mt-2 text-muted-foreground">
+                  <div>• Component Isolation</div>
+                  <div>• Single Source of Truth</div>
+                  <div>• Reusable Architecture</div>
+                </div>
+              </div>
+              <div className="bg-card p-3 rounded-lg shadow border">
+                <div className="font-semibold text-primary">Security Framework</div>
+                <div className="text-xs space-y-1 mt-2 text-muted-foreground">
+                  <div>• Role-Based Access</div>
+                  <div>• Row Level Security</div>
+                  <div>• Permission Validation</div>
+                </div>
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="bg-card p-3 rounded-lg shadow border">
+                <div className="font-semibold text-primary">Multi-Tenant Support</div>
+                <div className="text-xs space-y-1 mt-2 text-muted-foreground">
+                  <div>• Tenant Isolation</div>
+                  <div>• User Default Tabs</div>
+                  <div>• Module Configuration</div>
+                </div>
+              </div>
+              <div className="bg-card p-3 rounded-lg shadow border">
+                <div className="font-semibold text-primary">Scalability Patterns</div>
+                <div className="text-xs space-y-1 mt-2 text-muted-foreground">
+                  <div>• Infinite Tenants</div>
+                  <div>• Component Reuse</div>
+                  <div>• Performance Optimization</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+      'security': (
+        <div className="w-full h-96 bg-gradient-to-br from-background to-muted rounded-lg p-6">
+          <div className="grid grid-cols-2 gap-6 h-full">
+            <div className="space-y-4">
+              <div className="bg-card p-3 rounded-lg shadow border">
+                <div className="font-semibold text-primary">Authentication</div>
+                <div className="text-xs space-y-1 mt-2 text-muted-foreground">
+                  <div>• Supabase Auth</div>
+                  <div>• Multi-tenant Support</div>
+                  <div>• Role Assignment</div>
+                </div>
+              </div>
+              <div className="bg-card p-3 rounded-lg shadow border">
+                <div className="font-semibold text-primary">Authorization</div>
+                <div className="text-xs space-y-1 mt-2 text-muted-foreground">
+                  <div>• Permission Framework</div>
+                  <div>• Component-level RBAC</div>
+                  <div>• API Protection</div>
+                </div>
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="bg-card p-3 rounded-lg shadow border">
+                <div className="font-semibold text-primary">Data Protection</div>
+                <div className="text-xs space-y-1 mt-2 text-muted-foreground">
+                  <div>• Row Level Security</div>
+                  <div>• Tenant Data Isolation</div>
+                  <div>• Encrypted Storage</div>
+                </div>
+              </div>
+              <div className="bg-card p-3 rounded-lg shadow border">
+                <div className="font-semibold text-primary">Audit & Compliance</div>
+                <div className="text-xs space-y-1 mt-2 text-muted-foreground">
+                  <div>• Activity Logging</div>
+                  <div>• Change Tracking</div>
+                  <div>• Security Events</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+      'deployment': (
+        <div className="w-full h-96 bg-gradient-to-br from-background to-muted rounded-lg p-6">
+          <div className="grid grid-cols-2 gap-6 h-full">
+            <div className="space-y-4">
+              <div className="bg-card p-3 rounded-lg shadow border">
+                <div className="font-semibold text-primary">Frontend Deployment</div>
+                <div className="text-xs space-y-1 mt-2 text-muted-foreground">
+                  <div>• Vite Build System</div>
+                  <div>• React Production</div>
+                  <div>• CDN Distribution</div>
+                </div>
+              </div>
+              <div className="bg-card p-3 rounded-lg shadow border">
+                <div className="font-semibold text-primary">Backend Services</div>
+                <div className="text-xs space-y-1 mt-2 text-muted-foreground">
+                  <div>• Supabase Cloud</div>
+                  <div>• Edge Functions</div>
+                  <div>• PostgreSQL</div>
+                </div>
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="bg-card p-3 rounded-lg shadow border">
+                <div className="font-semibold text-primary">Monitoring</div>
+                <div className="text-xs space-y-1 mt-2 text-muted-foreground">
+                  <div>• Performance Metrics</div>
+                  <div>• Error Tracking</div>
+                  <div>• Usage Analytics</div>
+                </div>
+              </div>
+              <div className="bg-card p-3 rounded-lg shadow border">
+                <div className="font-semibold text-primary">Scaling Strategy</div>
+                <div className="text-xs space-y-1 mt-2 text-muted-foreground">
+                  <div>• Auto-scaling</div>
+                  <div>• Load Balancing</div>
+                  <div>• High Availability</div>
                 </div>
               </div>
             </div>
@@ -178,8 +304,8 @@ export function ArchitectureDocumentation({ onDownload }: ArchitectureDocumentat
     };
 
     return diagramContent[type] || (
-      <div className="w-full h-96 bg-gray-50 rounded-lg flex items-center justify-center">
-        <div className="text-gray-500">Diagram for {type} will be rendered here</div>
+      <div className="w-full h-96 bg-muted rounded-lg flex items-center justify-center">
+        <div className="text-muted-foreground">Diagram for {type} will be rendered here</div>
       </div>
     );
   };
