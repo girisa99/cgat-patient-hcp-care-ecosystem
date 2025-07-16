@@ -14,7 +14,7 @@ export interface ActionButtonProps {
 }
 
 export const ActionButton = React.forwardRef<HTMLButtonElement, ActionButtonProps>(({
-  icon: Icon,
+  icon,
   label,
   onClick,
   variant = 'outline',
@@ -28,16 +28,14 @@ export const ActionButton = React.forwardRef<HTMLButtonElement, ActionButtonProp
       ref={ref}
       variant={variant}
       size={size}
+      disabled={disabled}
+      loading={loading}
+      icon={icon}
+      iconPosition="left"
       onClick={onClick}
-      disabled={disabled || loading}
-      className={`flex items-center space-x-2 ${className}`}
+      className={className}
     >
-      {loading ? (
-        <Loader2 className="h-4 w-4 animate-spin" />
-      ) : (
-        <Icon className="h-4 w-4" />
-      )}
-      <span>{label}</span>
+      {label}
     </Button>
   );
 });

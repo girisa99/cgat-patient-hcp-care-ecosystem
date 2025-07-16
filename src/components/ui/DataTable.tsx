@@ -28,7 +28,8 @@ export interface DataTableProps<T extends DataRow = DataRow> {
   onRefresh?: () => void;
 }
 
-export const DataTable = <T extends DataRow = DataRow>({
+// Enhanced DataTable with React.memo for performance optimization
+export const DataTable = React.memo(<T extends DataRow = DataRow>({
   data,
   columns,
   actions,
@@ -321,4 +322,7 @@ export const DataTable = <T extends DataRow = DataRow>({
       )}
     </div>
   );
-};
+});
+
+// Add display name for debugging
+DataTable.displayName = 'DataTable';
