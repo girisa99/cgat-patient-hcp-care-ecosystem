@@ -317,12 +317,11 @@ const UserManagement = () => {
                             size="sm"
                             onClick={async () => {
                               try {
-                                const { data, error } = await supabase.functions.invoke('send-verification-email', {
-                                  body: { 
-                                    userId: user.id, 
-                                    email: user.email,
-                                    firstName: user.first_name,
-                                    lastName: user.last_name
+                                const { error } = await supabase.auth.resend({
+                                  type: 'signup',
+                                  email: user.email,
+                                  options: {
+                                    emailRedirectTo: `${window.location.origin}/auth/callback`
                                   }
                                 });
 
