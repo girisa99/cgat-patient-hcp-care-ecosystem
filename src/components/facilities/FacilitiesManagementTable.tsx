@@ -29,9 +29,14 @@ export const FacilitiesManagementTable: React.FC = () => {
   
   // Dialog state
   const [isAddOpen, setIsAddOpen] = useState(false);
-  const [newFacility, setNewFacility] = useState({
+  const [newFacility, setNewFacility] = useState<{
+    name: string;
+    facility_type: 'treatmentFacility' | 'referralFacility' | 'prescriberFacility';
+    address: string;
+    phone: string;
+  }>({
     name: '',
-    facility_type: 'treatmentFacility' as Facility['facility_type'],
+    facility_type: 'treatmentFacility',
     address: '',
     phone: '',
   });
@@ -159,7 +164,7 @@ export const FacilitiesManagementTable: React.FC = () => {
               </div>
               <div>
                 <Label htmlFor="type">Type</Label>
-                <Input id="type" value={newFacility.facility_type} onChange={(e) => setNewFacility({ ...newFacility, facility_type: e.target.value as any })} />
+                <Input id="type" value={newFacility.facility_type} onChange={(e) => setNewFacility({ ...newFacility, facility_type: e.target.value as 'treatmentFacility' | 'referralFacility' | 'prescriberFacility' })} />
               </div>
               <div>
                 <Label htmlFor="address">Address</Label>
