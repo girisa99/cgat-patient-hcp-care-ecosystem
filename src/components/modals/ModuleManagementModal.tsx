@@ -161,6 +161,7 @@ export const ModuleManagementModal: React.FC<ModuleManagementModalProps> = ({
   };
 
   const handleViewPermissions = async () => {
+    console.log('handleViewPermissions called with module:', module);
     if (!module?.id) return;
     
     try {
@@ -189,6 +190,7 @@ export const ModuleManagementModal: React.FC<ModuleManagementModalProps> = ({
   };
 
   const handleViewAuditTrail = async () => {
+    console.log('handleViewAuditTrail called with module:', module);
     if (!module?.id) return;
     
     try {
