@@ -44,7 +44,7 @@ export const ModuleManagementModal: React.FC<ModuleManagementModalProps> = ({
   onSuccess,
   isCreating = false
 }) => {
-  const { showSuccess, showError } = useMasterToast();
+  const { showSuccess, showError, showInfo } = useMasterToast();
   const { data: users = [], isLoading: usersLoading } = useRealUsers();
   const { roles, isLoading: rolesLoading } = useMasterRoleManagement();
   const [activeTab, setActiveTab] = useState('edit');
@@ -157,6 +157,63 @@ export const ModuleManagementModal: React.FC<ModuleManagementModalProps> = ({
       showError('Deactivation Failed', error.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleViewPermissions = async () => {
+    if (!module?.id) return;
+    
+    try {
+      const { data: permissions, error } = await supabase
+        .from('module_permissions')
+        .select(`
+          permission_id,
+          permissions(name, description)
+        `)
+        .eq('module_id', module.id);
+
+      if (error) throw error;
+
+      if (permissions && permissions.length > 0) {
+        const permissionList = permissions
+          .map(p => p.permissions?.name)
+          .filter(Boolean)
+          .join(', ');
+        showInfo('Module Permissions', `Permissions: ${permissionList}`);
+      } else {
+        showInfo('Module Permissions', 'No permissions assigned to this module');
+      }
+    } catch (error: any) {
+      showError('Permission Error', error.message);
+    }
+  };
+
+  const handleViewAuditTrail = async () => {
+    if (!module?.id) return;
+    
+    try {
+      const { data: auditLogs, error } = await supabase
+        .from('audit_logs')
+        .select('action, created_at, old_values, new_values')
+        .eq('table_name', 'modules')
+        .eq('record_id', module.id)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (error) throw error;
+
+      if (auditLogs && auditLogs.length > 0) {
+        const lastAction = auditLogs[0];
+        const actionCount = auditLogs.length;
+        showInfo(
+          'Audit Trail', 
+          `${actionCount} audit record(s) found. Last action: ${lastAction.action} at ${new Date(lastAction.created_at).toLocaleString()}`
+        );
+      } else {
+        showInfo('Audit Trail', 'No audit records found for this module');
+      }
+    } catch (error: any) {
+      showError('Audit Error', error.message);
     }
   };
 
@@ -438,17 +495,7 @@ export const ModuleManagementModal: React.FC<ModuleManagementModalProps> = ({
                   </div>
                   <Button 
                     variant="outline" 
-                    onClick={(e) => {
-                      console.log('=== View Permissions button clicked ===', e);
-                      console.log('Event target:', e.target);
-                      console.log('Current target:', e.currentTarget);
-                      try {
-                        showSuccess('Permissions', 'Permission viewer coming soon');
-                        console.log('showSuccess called successfully');
-                      } catch (error) {
-                        console.error('Error in showSuccess:', error);
-                      }
-                    }}
+                     onClick={handleViewPermissions}
                   >
                     <Key className="h-4 w-4 mr-2" />
                     View Permissions
@@ -464,17 +511,7 @@ export const ModuleManagementModal: React.FC<ModuleManagementModalProps> = ({
                   </div>
                   <Button 
                     variant="outline" 
-                    onClick={(e) => {
-                      console.log('=== View Audit Trail button clicked ===', e);
-                      console.log('Event target:', e.target);
-                      console.log('Current target:', e.currentTarget);
-                      try {
-                        showSuccess('Audit Trail', 'Audit trail viewer coming soon');
-                        console.log('showSuccess called successfully');
-                      } catch (error) {
-                        console.error('Error in showSuccess:', error);
-                      }
-                    }}
+                     onClick={handleViewAuditTrail}
                   >
                     <Shield className="h-4 w-4 mr-2" />
                     View Audit
