@@ -10,8 +10,8 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 export const useMasterRoleManagement = () => {
-  const { modules, users, facilities, isLoading } = useMasterData();
-  const { userRoles } = useMasterAuth();
+  const { userRoles, isAuthenticated } = useMasterAuth();
+  const { modules, users, facilities, isLoading } = useMasterData(isAuthenticated);
 
   console.log('🔐 Master Role Management - Single source of truth active');
 
