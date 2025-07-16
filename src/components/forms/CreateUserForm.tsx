@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { useMasterData } from '@/hooks/useMasterData';
 import { useMasterUserManagement } from '@/hooks/useMasterUserManagement';
+import { useMasterRoleManagement } from '@/hooks/useMasterRoleManagement';
 
 interface CreateUserFormProps {
   open: boolean;
@@ -29,14 +30,14 @@ export const CreateUserForm: React.FC<CreateUserFormProps> = ({ open, onOpenChan
 
   const { facilities } = useMasterData();
   const { createUser, isCreatingUser } = useMasterUserManagement();
+  const { roles } = useMasterRoleManagement();
 
-  // Mock roles - in real app, fetch from database
-  const availableRoles = [
-    { id: 'patient', name: 'Patient' },
-    { id: 'staff', name: 'Staff' },
-    { id: 'admin', name: 'Admin' },
-    { id: 'onboardingTeam', name: 'Onboarding Team' }
-  ];
+  // Use real roles from database
+  const availableRoles = roles.map(role => ({
+    id: role.id,
+    name: role.name,
+    description: role.description
+  }));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

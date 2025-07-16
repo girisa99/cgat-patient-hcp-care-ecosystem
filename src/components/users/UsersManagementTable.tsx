@@ -14,6 +14,7 @@ import { useMasterToast } from '@/hooks/useMasterToast';
 import { UserActionDialogs } from './UserActionDialogs';
 import { ModuleAssignmentDialog } from './ModuleAssignmentDialog';
 import { CreateRoleDialog } from './CreateRoleDialog';
+import { FacilityAssignmentDialog } from './FacilityAssignmentDialog';
 import { CreateUserForm } from '@/components/forms/CreateUserForm';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -43,6 +44,7 @@ export const UsersManagementTable: React.FC = () => {
   const [assignFacilityOpen, setAssignFacilityOpen] = useState(false);
   const [assignModuleOpen, setAssignModuleOpen] = useState(false);
   const [createRoleOpen, setCreateRoleOpen] = useState(false);
+  const [assignFacilityDialogOpen, setAssignFacilityDialogOpen] = useState(false);
   
   const stats = getUserStats();
 
@@ -78,8 +80,25 @@ export const UsersManagementTable: React.FC = () => {
   };
 
   const handleAssignModule = (userId: string, userName: string) => {
-    setSelectedUser(users.find(u => u.id === userId) || null);
+    const user = users.find(u => u.id === userId);
+    setSelectedUser({
+      id: user?.id || userId,
+      firstName: user?.first_name || 'Unknown',
+      lastName: user?.last_name || 'User',
+      email: user?.email || 'unknown@email.com'
+    });
     setAssignModuleOpen(true);
+  };
+
+  const handleAssignFacility = (userId: string, userName: string) => {
+    const user = users.find(u => u.id === userId);
+    setSelectedUser({
+      id: user?.id || userId,
+      firstName: user?.first_name || 'Unknown',
+      lastName: user?.last_name || 'User',
+      email: user?.email || 'unknown@email.com'
+    });
+    setAssignFacilityDialogOpen(true);
   };
 
   const handleResendEmail = async (userId: string, userEmail: string) => {
@@ -129,6 +148,11 @@ export const UsersManagementTable: React.FC = () => {
   const onAssignModule = (userId: string, moduleId: string) => {
     assignModule(userId, moduleId);
     showSuccess('Module Assigned', `Module assigned successfully`);
+  };
+
+  const onAssignFacilityHandler = (userId: string, facilityId: string) => {
+    const facility = facilities.find(f => f.id === facilityId);
+    showSuccess('Facility Assigned', `Facility ${facility?.name} assigned successfully`);
   };
 
   const onCreateRole = (roleName: string, description: string, isDefault: boolean) => {
@@ -279,6 +303,15 @@ export const UsersManagementTable: React.FC = () => {
                           size="sm"
                           onClick={() => handleAssignModule(user.id, `${user.first_name} ${user.last_name}`)}
                           title="Assign Module"
+                        >
+                          <Settings className="h-4 w-4" />
+                        </Button>
+                        
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleAssignFacility(user.id, `${user.first_name} ${user.last_name}`)}
+                          title="Assign Facility"
                         >
                           <Settings className="h-4 w-4" />
                         </Button>
@@ -443,6 +476,14 @@ export const UsersManagementTable: React.FC = () => {
         open={createRoleOpen}
         onOpenChange={setCreateRoleOpen}
         onCreateRole={onCreateRole}
+      />
+
+      {/* Facility Assignment Dialog */}
+      <FacilityAssignmentDialog
+        open={assignFacilityDialogOpen}
+        onOpenChange={setAssignFacilityDialogOpen}
+        selectedUser={selectedUser}
+        onAssignFacility={onAssignFacilityHandler}
       />
     </div>
   );

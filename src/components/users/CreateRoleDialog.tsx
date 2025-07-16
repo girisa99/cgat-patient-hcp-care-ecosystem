@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
+import { useMasterRoleManagement } from '@/hooks/useMasterRoleManagement';
 
 interface CreateRoleDialogProps {
   open: boolean;
@@ -19,6 +21,8 @@ export const CreateRoleDialog: React.FC<CreateRoleDialogProps> = ({
   const [roleName, setRoleName] = useState('');
   const [description, setDescription] = useState('');
   const [isDefault, setIsDefault] = useState(false);
+  
+  const { roles } = useMasterRoleManagement();
 
   const handleCreateRole = () => {
     if (roleName.trim()) {
@@ -79,6 +83,23 @@ export const CreateRoleDialog: React.FC<CreateRoleDialogProps> = ({
               onCheckedChange={setIsDefault}
             />
             <Label htmlFor="is-default">Set as default role for new users</Label>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Existing Roles</Label>
+            <div className="flex flex-wrap gap-2 p-3 bg-muted rounded-lg">
+              {roles.map((role: any) => (
+                <Badge key={role.id} variant="outline" className="text-xs">
+                  {role.name}
+                  {role.description && (
+                    <span className="ml-1 text-muted-foreground">- {role.description}</span>
+                  )}
+                </Badge>
+              ))}
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Total existing roles: {roles.length}
+            </p>
           </div>
         </div>
         
