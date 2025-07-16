@@ -372,10 +372,10 @@ export const FacilityManagementModal: React.FC<FacilityManagementModalProps> = (
                   <Button 
                     variant="outline" 
                     onClick={handleDeactivateFacility}
-                    disabled={loading || !facility.is_active}
+                    disabled={loading || !facility?.is_active}
                   >
                     <Trash2 className="h-4 w-4 mr-2" />
-                    {facility.is_active ? 'Deactivate' : 'Already Inactive'}
+                    {facility?.is_active ? 'Deactivate' : 'Already Inactive'}
                   </Button>
                 </div>
 
