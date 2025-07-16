@@ -267,6 +267,11 @@ export const useMasterUserManagement = () => {
     removeModuleMutation.mutate({ userId, moduleId });
   };
 
+  const createRole = (roleName: string, description: string, isDefault: boolean) => {
+    // For now, show a message that this needs admin setup since roles use enum constraints
+    showError('Role Creation', 'Role creation requires database admin privileges. Please contact system administrator to add new roles to the system.');
+  };
+
   return {
     // Core data from master data source
     users: masterData.users,
@@ -288,6 +293,7 @@ export const useMasterUserManagement = () => {
     assignModule,
     removeModule,
     assignFacility,
+    createRole,
     isDeactivating: isDeactivating || deactivateUserMutation.isPending,
     isAssigningRole: isAssigningRole || assignRoleMutation.isPending,
     isRemovingRole: isRemovingRole || removeRoleMutation.isPending,

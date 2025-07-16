@@ -12,6 +12,8 @@ import { useMasterRoleManagement } from '@/hooks/useMasterRoleManagement';
 import { useMasterFacilities } from '@/hooks/useMasterFacilities';
 import { useMasterToast } from '@/hooks/useMasterToast';
 import { UserActionDialogs } from './UserActionDialogs';
+import { ModuleAssignmentDialog } from './ModuleAssignmentDialog';
+import { CreateRoleDialog } from './CreateRoleDialog';
 import { CreateUserForm } from '@/components/forms/CreateUserForm';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -39,6 +41,8 @@ export const UsersManagementTable: React.FC = () => {
   const [assignRoleOpen, setAssignRoleOpen] = useState(false);
   const [removeRoleOpen, setRemoveRoleOpen] = useState(false);
   const [assignFacilityOpen, setAssignFacilityOpen] = useState(false);
+  const [assignModuleOpen, setAssignModuleOpen] = useState(false);
+  const [createRoleOpen, setCreateRoleOpen] = useState(false);
   
   const stats = getUserStats();
 
@@ -74,8 +78,8 @@ export const UsersManagementTable: React.FC = () => {
   };
 
   const handleAssignModule = (userId: string, userName: string) => {
-    assignModule(userId, 'example-module-id');
-    showSuccess('Module Assigned', `Module assigned to ${userName}`);
+    setSelectedUser(users.find(u => u.id === userId) || null);
+    setAssignModuleOpen(true);
   };
 
   const handleResendEmail = async (userId: string, userEmail: string) => {
@@ -120,6 +124,17 @@ export const UsersManagementTable: React.FC = () => {
   const onAssignFacility = (userId: string, facilityId: string) => {
     const facility = facilities.find(f => f.id === facilityId);
     showSuccess('Facility Assigned', `Facility ${facility?.name} assigned successfully`);
+  };
+
+  const onAssignModule = (userId: string, moduleId: string) => {
+    assignModule(userId, moduleId);
+    showSuccess('Module Assigned', `Module assigned successfully`);
+  };
+
+  const onCreateRole = (roleName: string, description: string, isDefault: boolean) => {
+    // For now, show a message that this needs admin setup since roles use enum constraints
+    showError('Role Creation', 'Role creation requires database admin privileges. Please contact system administrator to add new roles to the system.');
+    setCreateRoleOpen(false);
   };
 
   return (
@@ -202,6 +217,10 @@ export const UsersManagementTable: React.FC = () => {
                   <Button onClick={() => setShowCreateForm(true)}>
                     <Plus className="h-4 w-4 mr-2" />
                     Create User
+                  </Button>
+                  <Button variant="outline" onClick={() => setCreateRoleOpen(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Role
                   </Button>
                 </div>
               </CardTitle>
@@ -409,6 +428,21 @@ export const UsersManagementTable: React.FC = () => {
         onAssignFacility={onAssignFacility}
         availableRoles={roles}
         availableFacilities={facilities}
+      />
+
+      {/* Module Assignment Dialog */}
+      <ModuleAssignmentDialog
+        open={assignModuleOpen}
+        onOpenChange={setAssignModuleOpen}
+        selectedUser={selectedUser}
+        onAssignModule={onAssignModule}
+      />
+
+      {/* Create Role Dialog */}
+      <CreateRoleDialog
+        open={createRoleOpen}
+        onOpenChange={setCreateRoleOpen}
+        onCreateRole={onCreateRole}
       />
     </div>
   );
