@@ -66,7 +66,7 @@ export const useComplianceMonitoring = (config = {}) => {
     updatePromptStats();
     const interval = setInterval(updatePromptStats, 5000); // Update every 5 seconds
 
-    // Auto-start monitoring in development
+    // Auto-start monitoring in development (browser-safe mode only)
     if (process.env.NODE_ENV === 'development' && !isMonitoring) {
       globalComplianceMonitor?.startMonitoring();
     }
