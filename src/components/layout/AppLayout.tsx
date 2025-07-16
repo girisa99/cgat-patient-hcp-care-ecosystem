@@ -18,7 +18,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({
 }) => {
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Navigation */}
+      {/* DEBUG: Navigation should render here */}
       {showNavigation && <RoleBasedNavigation />}
       
       {/* Main Content */}

@@ -83,32 +83,32 @@ export const GovernanceDashboard: React.FC = () => {
 
   return (
     <AppLayout title="Governance Dashboard">
-      <div className="space-y-6">//
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Governance Dashboard</h1>
-          <p className="text-muted-foreground">Monitor prompt compliance and framework violations</p>
-        </div>
-        <div className="flex gap-2">
-          {isMonitoring ? (
-            <Button onClick={stopMonitoring} variant="destructive">
-              <Shield className="w-4 h-4 mr-2" />
-              Stop Monitoring
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-muted-foreground">Monitor prompt compliance and framework violations</p>
+          </div>
+          <div className="flex gap-2">
+            {isMonitoring ? (
+              <Button onClick={stopMonitoring} variant="destructive">
+                <Shield className="w-4 h-4 mr-2" />
+                Stop Monitoring
+              </Button>
+            ) : (
+              <Button onClick={startMonitoring}>
+                <Shield className="w-4 h-4 mr-2" />
+                Start Monitoring
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => setPromptHistory(getPromptHistory())}>
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Refresh
             </Button>
-          ) : (
-            <Button onClick={startMonitoring}>
-              <Shield className="w-4 h-4 mr-2" />
-              Start Monitoring
-            </Button>
-          )}
-          <Button variant="outline" onClick={() => setPromptHistory(getPromptHistory())}>
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Refresh
-          </Button>
+          </div>
         </div>
-      </div>
 
-      {/* Status Cards */}
+        {/* Status Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -319,7 +319,7 @@ export const GovernanceDashboard: React.FC = () => {
             </CardContent>
           </Card>
         </div>
-      )}
+        )}
       </div>
     </AppLayout>
   );
