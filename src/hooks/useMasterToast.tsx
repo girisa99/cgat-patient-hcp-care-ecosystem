@@ -1,31 +1,17 @@
 
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 export const useMasterToast = () => {
-  const { toast } = useToast();
-
   const showSuccess = (title: string, description?: string) => {
-    toast({
-      title,
-      description,
-      variant: 'default',
-    });
+    toast.success(title, { description });
   };
 
   const showError = (title: string, description?: string) => {
-    toast({
-      title,
-      description,
-      variant: 'destructive',
-    });
+    toast.error(title, { description });
   };
 
   const showInfo = (title: string, description?: string) => {
-    toast({
-      title,
-      description,
-      variant: 'default',
-    });
+    toast.info(title, { description });
   };
 
   return {
