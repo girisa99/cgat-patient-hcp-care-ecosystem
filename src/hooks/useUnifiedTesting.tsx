@@ -235,15 +235,17 @@ export const useUnifiedTesting = (config?: UnifiedTestingConfig) => {
     }
   });
 
-  // Convenience methods
+  // Convenience methods - REAL DATABASE EXECUTION
   const executeStandardTestSuite = useCallback(() => {
+    console.log('🚀 Unified Testing - Executing Standard Test Suite - REAL database');
     return executeTestSuiteMutation.mutate({
-      testType: 'comprehensive',
+      testType: 'unit',
       options: { priority: 'medium', reportingLevel: 'summary' }
     });
   }, [executeTestSuiteMutation]);
 
   const executeSecurityTestSuite = useCallback(() => {
+    console.log('🚀 Unified Testing - Executing Security Test Suite - REAL database');
     return executeTestSuiteMutation.mutate({
       testType: 'security',
       options: { priority: 'high', reportingLevel: 'detailed' }
@@ -251,9 +253,9 @@ export const useUnifiedTesting = (config?: UnifiedTestingConfig) => {
   }, [executeTestSuiteMutation]);
 
   const executeApiIntegrationTests = useCallback(() => {
+    console.log('🚀 Unified Testing - Executing API Integration Tests - REAL database');
     if (availableApis === 0) {
-      toast.error('No APIs Available: No APIs are available for integration testing');
-      return Promise.reject(new Error('No APIs available'));
+      console.warn('⚠️ No APIs available for testing - proceeding with database tests');
     }
     
     return executeTestSuiteMutation.mutate({

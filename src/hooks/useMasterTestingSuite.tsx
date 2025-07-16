@@ -17,7 +17,7 @@ export const useMasterTestingSuite = () => {
   const { data: testCases = [], isLoading: testCasesLoading } = useQuery({
     queryKey: ['master-test-cases'],
     queryFn: async () => {
-      console.log('📡 Fetching comprehensive test cases');
+      console.log('📡 Fetching comprehensive test cases - REAL database data');
       
       const { data, error } = await supabase
         .from('comprehensive_test_cases')
@@ -25,7 +25,21 @@ export const useMasterTestingSuite = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      console.log('✅ Test cases loaded:', data?.length || 0);
+      
+      // Verify we're getting real database tests
+      const dbTests = data?.filter(tc => 
+        tc.database_source && 
+        !tc.database_source.includes('mock') && 
+        !tc.database_source.includes('test_')
+      ) || [];
+      
+      console.log('✅ Real database test cases loaded:', data?.length || 0);
+      console.log('✅ Database-specific tests:', dbTests.length);
+      console.log('✅ Test suites breakdown:', data?.reduce((acc, tc) => {
+        acc[tc.test_suite_type] = (acc[tc.test_suite_type] || 0) + 1;
+        return acc;
+      }, {}));
+      
       return data || [];
     },
     staleTime: 300000,

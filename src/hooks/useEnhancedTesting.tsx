@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { enhancedTestingService, type AdvancedTestFilters, type TestExecutionMetrics } from '@/services/enhancedTestingService';
 import { type ComprehensiveTestCase } from '@/services/comprehensiveTestingService';
 import { enhancedTestingBusinessLayer } from '@/services/enhancedTestingBusinessLayer';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 export const useEnhancedTesting = () => {
@@ -34,19 +35,26 @@ export const useEnhancedTesting = () => {
     staleTime: 60000,
   });
 
-  // Execute test suite mutation - now uses business layer
+  // Execute test suite mutation - REAL DATABASE TESTS
   const executeTestSuiteMutation = useMutation({
     mutationFn: async (suiteType?: string) => {
       setIsExecuting(true);
-      // Use business layer for enhanced execution
-      return enhancedTestingBusinessLayer.executeComprehensiveTestSuite({
-        suiteType: suiteType || 'security',
-        priority: 'medium',
-        reportingLevel: 'summary'
-      });
+      console.log('🚀 Enhanced Testing - Executing REAL database tests:', suiteType);
+      
+      // Execute actual database tests instead of business layer simulation
+      const { data, error } = await supabase
+        .rpc('execute_comprehensive_test_suite', {
+          suite_type: suiteType || 'security',
+          batch_size: 25
+        });
+
+      if (error) throw error;
+      return data;
     },
-    onSuccess: (result) => {
-      toast.success(`Enhanced test suite executed: ${result.passed_tests}/${result.total_tests} passed`);
+    onSuccess: (result: any) => {
+      const passedTests = result?.passed_tests || 0;
+      const totalTests = result?.total_tests || 0;
+      toast.success(`Enhanced test suite executed: ${passedTests}/${totalTests} passed`);
       queryClient.invalidateQueries({ queryKey: ['enhanced-test-cases'] });
       queryClient.invalidateQueries({ queryKey: ['enhanced-test-metrics-legacy'] });
     },
