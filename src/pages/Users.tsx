@@ -17,7 +17,8 @@ import {
   Clock,
   Shield,
   Mail,
-  Settings
+  Settings,
+  Plus
 } from "lucide-react";
 import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { useMasterUserManagement } from '@/hooks/useMasterUserManagement';
@@ -531,6 +532,20 @@ const UserManagement = () => {
               </CardHeader>
                <CardContent>
                  <div className="space-y-4">
+                   <div className="flex items-center justify-between mb-4">
+                     <h3 className="text-lg font-semibold">Modules</h3>
+                     <Button
+                       variant="outline"
+                       size="sm"
+                       onClick={() => setModuleManagementModal({ 
+                         open: true, 
+                         module: undefined 
+                       })}
+                     >
+                       <Plus className="h-4 w-4 mr-2" />
+                       Create New Module
+                     </Button>
+                   </div>
                    {modules.length === 0 ? (
                      <div className="text-center py-12 text-muted-foreground">
                        <Settings className="h-12 w-12 mx-auto mb-4 opacity-50" />
@@ -612,6 +627,7 @@ const UserManagement = () => {
           open={moduleManagementModal.open}
           onOpenChange={(open) => setModuleManagementModal({ open, module: open ? moduleManagementModal.module : undefined })}
           module={moduleManagementModal.module}
+          isCreating={!moduleManagementModal.module}
           onSuccess={() => {
             refreshData();
             setModuleManagementModal({ open: false });

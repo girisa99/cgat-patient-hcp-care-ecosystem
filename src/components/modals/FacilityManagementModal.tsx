@@ -19,6 +19,7 @@ import {
   Settings 
 } from 'lucide-react';
 import { useMasterToast } from '@/hooks/useMasterToast';
+import { useRealUsers } from '@/hooks/api/useRealUsers';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 
@@ -46,6 +47,7 @@ export const FacilityManagementModal: React.FC<FacilityManagementModalProps> = (
   onSuccess
 }) => {
   const { showSuccess, showError } = useMasterToast();
+  const { data: users = [], isLoading: usersLoading } = useRealUsers();
   const [activeTab, setActiveTab] = useState('edit');
   const [loading, setLoading] = useState(false);
   
@@ -270,9 +272,19 @@ export const FacilityManagementModal: React.FC<FacilityManagementModalProps> = (
                         <SelectValue placeholder="Select a user" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="user1">John Doe</SelectItem>
-                        <SelectItem value="user2">Jane Smith</SelectItem>
-                        <SelectItem value="user3">Dr. Wilson</SelectItem>
+                        {usersLoading ? (
+                          <SelectItem value="" disabled>Loading users...</SelectItem>
+                        ) : users.length === 0 ? (
+                          <SelectItem value="" disabled>No users available</SelectItem>
+                        ) : (
+                          users.map((user) => (
+                            <SelectItem key={user.id} value={user.id}>
+                              {user.first_name && user.last_name 
+                                ? `${user.first_name} ${user.last_name}` 
+                                : user.email}
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                   </div>

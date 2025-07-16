@@ -20,6 +20,8 @@ import {
   Key
 } from 'lucide-react';
 import { useMasterToast } from '@/hooks/useMasterToast';
+import { useRealUsers } from '@/hooks/api/useRealUsers';
+import { useMasterRoleManagement } from '@/hooks/useMasterRoleManagement';
 import { supabase } from '@/integrations/supabase/client';
 
 interface ModuleManagementModalProps {
@@ -32,15 +34,19 @@ interface ModuleManagementModalProps {
     is_active: boolean;
   };
   onSuccess?: () => void;
+  isCreating?: boolean;
 }
 
 export const ModuleManagementModal: React.FC<ModuleManagementModalProps> = ({
   open,
   onOpenChange,
   module,
-  onSuccess
+  onSuccess,
+  isCreating = false
 }) => {
   const { showSuccess, showError } = useMasterToast();
+  const { data: users = [], isLoading: usersLoading } = useRealUsers();
+  const { roles, isLoading: rolesLoading } = useMasterRoleManagement();
   const [activeTab, setActiveTab] = useState('edit');
   const [loading, setLoading] = useState(false);
   
@@ -61,27 +67,42 @@ export const ModuleManagementModal: React.FC<ModuleManagementModalProps> = ({
   });
 
   const handleEditModule = async () => {
-    if (!module?.id) return;
-    
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('modules')
-        .update({
-          name: editForm.name,
-          description: editForm.description,
-          is_active: editForm.is_active,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', module.id);
+      if (isCreating) {
+        // Create new module
+        const { error } = await supabase
+          .from('modules')
+          .insert({
+            name: editForm.name,
+            description: editForm.description,
+            is_active: editForm.is_active
+          });
 
-      if (error) throw error;
+        if (error) throw error;
+        showSuccess('Module Created', `${editForm.name} has been created successfully`);
+      } else {
+        // Update existing module
+        if (!module?.id) return;
+        
+        const { error } = await supabase
+          .from('modules')
+          .update({
+            name: editForm.name,
+            description: editForm.description,
+            is_active: editForm.is_active,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', module.id);
 
-      showSuccess('Module Updated', `${editForm.name} has been updated successfully`);
+        if (error) throw error;
+        showSuccess('Module Updated', `${editForm.name} has been updated successfully`);
+      }
+      
       onSuccess?.();
       onOpenChange(false);
     } catch (error: any) {
-      showError('Update Failed', error.message);
+      showError(isCreating ? 'Create Failed' : 'Update Failed', error.message);
     } finally {
       setLoading(false);
     }
@@ -161,7 +182,7 @@ export const ModuleManagementModal: React.FC<ModuleManagementModalProps> = ({
     }
   };
 
-  if (!module) return null;
+  if (!module && !isCreating) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -169,34 +190,38 @@ export const ModuleManagementModal: React.FC<ModuleManagementModalProps> = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Package className="h-5 w-5" />
-            Manage Module: {module.name}
+            {isCreating ? 'Create New Module' : `Manage Module: ${module?.name}`}
           </DialogTitle>
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className={`grid w-full ${isCreating ? 'grid-cols-1' : 'grid-cols-4'}`}>
             <TabsTrigger value="edit">
               <Edit className="h-4 w-4 mr-2" />
-              Edit
+              {isCreating ? 'Create' : 'Edit'}
             </TabsTrigger>
-            <TabsTrigger value="assign">
-              <UserPlus className="h-4 w-4 mr-2" />
-              Assign Users
-            </TabsTrigger>
-            <TabsTrigger value="rbac">
-              <Shield className="h-4 w-4 mr-2" />
-              RBAC
-            </TabsTrigger>
-            <TabsTrigger value="actions">
-              <Settings className="h-4 w-4 mr-2" />
-              Actions
-            </TabsTrigger>
+            {!isCreating && (
+              <>
+                <TabsTrigger value="assign">
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Assign Users
+                </TabsTrigger>
+                <TabsTrigger value="rbac">
+                  <Shield className="h-4 w-4 mr-2" />
+                  RBAC
+                </TabsTrigger>
+                <TabsTrigger value="actions">
+                  <Settings className="h-4 w-4 mr-2" />
+                  Actions
+                </TabsTrigger>
+              </>
+            )}
           </TabsList>
 
           <TabsContent value="edit" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Edit Module Details</CardTitle>
+                <CardTitle>{isCreating ? 'Create Module' : 'Edit Module Details'}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
@@ -232,7 +257,7 @@ export const ModuleManagementModal: React.FC<ModuleManagementModalProps> = ({
 
                 <div className="flex gap-2">
                   <Button onClick={handleEditModule} disabled={loading}>
-                    {loading ? 'Saving...' : 'Save Changes'}
+                    {loading ? (isCreating ? 'Creating...' : 'Saving...') : (isCreating ? 'Create Module' : 'Save Changes')}
                   </Button>
                   <Button variant="outline" onClick={() => onOpenChange(false)}>
                     Cancel
@@ -242,7 +267,8 @@ export const ModuleManagementModal: React.FC<ModuleManagementModalProps> = ({
             </Card>
           </TabsContent>
 
-          <TabsContent value="assign" className="space-y-4">
+          {!isCreating && (
+            <TabsContent value="assign" className="space-y-4">
             <Card>
               <CardHeader>
                 <CardTitle>Assign Users to Module</CardTitle>
@@ -256,9 +282,19 @@ export const ModuleManagementModal: React.FC<ModuleManagementModalProps> = ({
                         <SelectValue placeholder="Select a user" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="user1">John Doe</SelectItem>
-                        <SelectItem value="user2">Jane Smith</SelectItem>
-                        <SelectItem value="user3">Dr. Wilson</SelectItem>
+                        {usersLoading ? (
+                          <SelectItem value="" disabled>Loading users...</SelectItem>
+                        ) : users.length === 0 ? (
+                          <SelectItem value="" disabled>No users available</SelectItem>
+                        ) : (
+                          users.map((user) => (
+                            <SelectItem key={user.id} value={user.id}>
+                              {user.first_name && user.last_name 
+                                ? `${user.first_name} ${user.last_name}` 
+                                : user.email}
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
@@ -279,6 +315,9 @@ export const ModuleManagementModal: React.FC<ModuleManagementModalProps> = ({
               </CardContent>
             </Card>
           </TabsContent>
+          )}
+
+          {!isCreating && (
 
           <TabsContent value="rbac" className="space-y-4">
             <Card>
@@ -293,10 +332,17 @@ export const ModuleManagementModal: React.FC<ModuleManagementModalProps> = ({
                       <SelectValue placeholder="Select a role" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="manager">Manager</SelectItem>
-                      <SelectItem value="user">User</SelectItem>
-                      <SelectItem value="viewer">Viewer</SelectItem>
+                      {rolesLoading ? (
+                        <SelectItem value="" disabled>Loading roles...</SelectItem>
+                      ) : roles.length === 0 ? (
+                        <SelectItem value="" disabled>No roles available</SelectItem>
+                      ) : (
+                        roles.map((role) => (
+                          <SelectItem key={role.id} value={role.id}>
+                            {role.name}
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -330,8 +376,10 @@ export const ModuleManagementModal: React.FC<ModuleManagementModalProps> = ({
               </CardContent>
             </Card>
           </TabsContent>
+          )}
 
-          <TabsContent value="actions" className="space-y-4">
+          {!isCreating && (
+            <TabsContent value="actions" className="space-y-4">
             <Card>
               <CardHeader>
                 <CardTitle>Module Actions</CardTitle>
@@ -388,6 +436,7 @@ export const ModuleManagementModal: React.FC<ModuleManagementModalProps> = ({
               </CardContent>
             </Card>
           </TabsContent>
+          )}
         </Tabs>
       </DialogContent>
     </Dialog>
