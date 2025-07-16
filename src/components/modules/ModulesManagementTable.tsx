@@ -1,15 +1,13 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Package, CheckCircle, Shield, Database, Users, UserPlus, Settings } from 'lucide-react';
+import { Plus, Package, CheckCircle, Shield, Database, Users, UserPlus, Settings, Edit } from 'lucide-react';
 import { useSingleMasterModules } from '@/hooks/useSingleMasterModules';
 import { useMasterToast } from '@/hooks/useMasterToast';
 import { useMasterRoleManagement } from '@/hooks/useMasterRoleManagement';
+import { ModuleManagementModal } from '@/components/modals/ModuleManagementModal';
 
 export const ModulesManagementTable: React.FC = () => {
   const { showSuccess, showError, showInfo } = useMasterToast();
@@ -39,50 +37,27 @@ export const ModulesManagementTable: React.FC = () => {
     meta
   } = useSingleMasterModules();
   
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [newModule, setNewModule] = useState({
-    name: '',
-    description: '',
-    is_active: true
-  });
+  const [moduleModal, setModuleModal] = useState<{
+    open: boolean;
+    module?: any;
+    isCreating?: boolean;
+  }>({ open: false });
 
   console.log('📦 Modules Management - Using VERIFIED SINGLE MASTER HOOK');
   console.log('🏆 Architecture Verified: Single Source of Truth Active');
   console.log('📊 Real modules count:', modules.length);
 
-  const handleCreateModule = () => {
-    if (newModule.name.trim()) {
-      createModule(newModule);
-      setNewModule({ name: '', description: '', is_active: true });
-      setShowCreateForm(false);
-      showSuccess("Module Created", `${newModule.name} has been created successfully`);
-    } else {
-      showError("Validation Error", "Module name is required");
-    }
+  const handleOpenCreateModal = () => {
+    setModuleModal({ open: true, module: undefined, isCreating: true });
   };
 
-  const handleEditModule = (moduleId: string) => {
-    const module = getModuleById(moduleId);
-    showInfo("Edit Module", `Edit functionality for ${module?.name || 'module'} - opening edit dialog`);
+  const handleOpenEditModal = (module: any) => {
+    setModuleModal({ open: true, module, isCreating: false });
   };
 
-  const handleToggleModule = (moduleId: string) => {
-    const module = getModuleById(moduleId);
-    const action = module?.is_active ? "deactivate" : "activate";
-    // Real toggle functionality would go here
-    showSuccess("Module Updated", `${module?.name || 'module'} has been ${action}d`);
-  };
-
-  const handleAssignRole = (moduleId: string) => {
-    const module = getModuleById(moduleId);
-    console.log('Assign role to module:', moduleId);
-    showSuccess("Role Assignment", `Role assignment dialog opened for ${module?.name || 'module'}`);
-  };
-
-  const handleAssignUser = (moduleId: string) => {
-    const module = getModuleById(moduleId);
-    console.log('Assign user to module:', moduleId);
-    showSuccess("User Assignment", `User assignment dialog opened for ${module?.name || 'module'}`);
+  const refreshData = () => {
+    // Trigger a refresh of the module data
+    window.location.reload(); // Simple refresh, can be improved with proper state management
   };
 
   const integrity = verifyModuleIntegrity();
@@ -107,7 +82,7 @@ export const ModulesManagementTable: React.FC = () => {
             <Database className="h-3 w-3" />
             Real DB: {modules.length}
           </Badge>
-          <Button onClick={() => setShowCreateForm(true)} disabled={isCreating}>
+          <Button onClick={handleOpenCreateModal} disabled={isCreating}>
             <Plus className="h-4 w-4 mr-2" />
             Add Module
           </Button>
@@ -162,42 +137,6 @@ export const ModulesManagementTable: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Module Creation Form */}
-      {showCreateForm && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Create New Module (via Single Hook)</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="module-name">Module Name</Label>
-              <Input
-                id="module-name"
-                value={newModule.name}
-                onChange={(e) => setNewModule(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="Enter module name"
-              />
-            </div>
-            <div>
-              <Label htmlFor="module-description">Description</Label>
-              <Textarea
-                id="module-description"
-                value={newModule.description}
-                onChange={(e) => setNewModule(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Enter module description"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <Button onClick={handleCreateModule} disabled={isCreating}>
-                {isCreating ? 'Creating...' : 'Create Module'}
-              </Button>
-              <Button variant="outline" onClick={() => setShowCreateForm(false)}>
-                Cancel
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* RBAC Management Section */}
       {isAdmin && (
@@ -293,36 +232,20 @@ export const ModulesManagementTable: React.FC = () => {
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          onClick={() => handleEditModule(module.id)}
+                          onClick={() => handleOpenEditModal(module)}
                           disabled={!isAdmin}
+                          title="Edit Module"
                         >
-                          Edit
+                          <Edit className="h-4 w-4" />
                         </Button>
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          onClick={() => handleAssignRole(module.id)}
+                          onClick={() => handleOpenEditModal(module)}
                           disabled={!isAdmin}
-                          title="Assign Role"
+                          title="Manage Module"
                         >
-                          <Shield className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={() => handleAssignUser(module.id)}
-                          disabled={!isAdmin}
-                          title="Assign User"
-                        >
-                          <UserPlus className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={() => handleToggleModule(module.id)}
-                          disabled={!isAdmin}
-                        >
-                          {module.is_active ? 'Deactivate' : 'Activate'}
+                          <Settings className="h-4 w-4" />
                         </Button>
                       </div>
                     </div>
@@ -353,8 +276,14 @@ export const ModulesManagementTable: React.FC = () => {
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge variant="default">Active</Badge>
-                        <Button variant="outline" size="sm" onClick={() => handleEditModule(module.id)}>
-                          Edit
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => handleOpenEditModal(module)}
+                          title="Manage Module"
+                        >
+                          <Settings className="h-4 w-4 mr-2" />
+                          Manage
                         </Button>
                     </div>
                   </div>
@@ -379,8 +308,14 @@ export const ModulesManagementTable: React.FC = () => {
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge variant="secondary">Inactive</Badge>
-                      <Button variant="outline" size="sm" onClick={() => handleToggleModule(module.id)}>
-                        Activate
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => handleOpenEditModal(module)}
+                        title="Manage Module"
+                      >
+                        <Settings className="h-4 w-4 mr-2" />
+                        Manage
                       </Button>
                     </div>
                   </div>
@@ -402,6 +337,22 @@ export const ModulesManagementTable: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Module Management Modal */}
+      <ModuleManagementModal
+        open={moduleModal.open}
+        onOpenChange={(open) => setModuleModal(prev => ({ 
+          open, 
+          module: open ? prev.module : undefined,
+          isCreating: open ? prev.isCreating : false
+        }))}
+        module={moduleModal.module}
+        isCreating={moduleModal.isCreating}
+        onSuccess={() => {
+          refreshData();
+          setModuleModal({ open: false });
+        }}
+      />
     </div>
   );
 };
