@@ -130,20 +130,55 @@ export function EnhancedArchitectureDocumentation({ onDownload }: EnhancedArchit
     setIsGenerating(`${docId}-${format}`);
     
     try {
-      // Simulate document generation
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
       const doc = architectureDocs.find(d => d.id === docId);
-      const fileName = `${doc?.title.replace(/\s+/g, '_')}.${format.toLowerCase()}`;
+      if (!doc) {
+        throw new Error('Document not found');
+      }
       
-      // In a real implementation, this would generate actual files
+      const fileName = `${doc.title.replace(/\s+/g, '_')}.${format.toLowerCase()}`;
+      
+      // Generate actual content based on format
+      let content = '';
+      let mimeType = '';
+      let blob: Blob;
+      
+      if (format === 'PDF') {
+        // Generate PDF content
+        content = generatePDFContent(doc);
+        mimeType = 'application/pdf';
+        blob = new Blob([content], { type: mimeType });
+      } else if (format === 'PNG') {
+        // Generate PNG from diagram
+        const canvas = await generateDiagramPNG(doc);
+        blob = await new Promise<Blob>(resolve => canvas.toBlob(blob => resolve(blob!), 'image/png'));
+        mimeType = 'image/png';
+      } else if (format === 'Word') {
+        // Generate Word document
+        content = generateWordContent(doc);
+        mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+        blob = new Blob([content], { type: mimeType });
+      } else {
+        throw new Error('Unsupported format');
+      }
+      
+      // Create download link and trigger download
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
       toast({
-        title: "Document Generated",
-        description: `${fileName} has been generated and downloaded.`,
+        title: "Document Downloaded",
+        description: `${fileName} has been successfully downloaded.`,
       });
       
       onDownload(`${docId}-${format.toLowerCase()}`);
     } catch (error) {
+      console.error('Document generation error:', error);
       toast({
         title: "Generation Failed", 
         description: "Failed to generate document. Please try again.",
@@ -152,6 +187,174 @@ export function EnhancedArchitectureDocumentation({ onDownload }: EnhancedArchit
     } finally {
       setIsGenerating(null);
     }
+  };
+
+  const generatePDFContent = (doc: any) => {
+    // Simple text-based PDF content (would use a proper PDF library in production)
+    return `%PDF-1.4
+1 0 obj
+<<
+/Type /Catalog
+/Pages 2 0 R
+>>
+endobj
+
+2 0 obj
+<<
+/Type /Pages
+/Kids [3 0 R]
+/Count 1
+>>
+endobj
+
+3 0 obj
+<<
+/Type /Page
+/Parent 2 0 R
+/MediaBox [0 0 612 792]
+/Contents 4 0 R
+>>
+endobj
+
+4 0 obj
+<<
+/Length 500
+>>
+stream
+BT
+/F1 12 Tf
+72 720 Td
+(${doc.title}) Tj
+0 -20 Td
+(${doc.description}) Tj
+0 -30 Td
+(Overview: ${doc.details.overview}) Tj
+0 -20 Td
+(Components:) Tj
+${doc.details.components.map((comp: string, i: number) => `0 -15 Td (${i + 1}. ${comp}) Tj`).join('\n')}
+0 -30 Td
+(Technical Details: ${doc.details.technicalDetails}) Tj
+ET
+endstream
+endobj
+
+xref
+0 5
+0000000000 65535 f 
+0000000010 00000 n 
+0000000053 00000 n 
+0000000125 00000 n 
+0000000185 00000 n 
+trailer
+<<
+/Size 5
+/Root 1 0 R
+>>
+startxref
+735
+%%EOF`;
+  };
+
+  const generateWordContent = (doc: any) => {
+    // Simple HTML content that can be opened by Word
+    return `<html>
+<head>
+<meta charset="utf-8">
+<title>${doc.title}</title>
+<style>
+body { font-family: Arial, sans-serif; margin: 40px; }
+h1 { color: #2563eb; border-bottom: 2px solid #2563eb; }
+h2 { color: #1e40af; margin-top: 30px; }
+ul { margin: 10px 0; }
+li { margin: 5px 0; }
+.overview { background: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0; }
+</style>
+</head>
+<body>
+<h1>${doc.title}</h1>
+<p><strong>Description:</strong> ${doc.description}</p>
+
+<div class="overview">
+<h2>Overview</h2>
+<p>${doc.details.overview}</p>
+</div>
+
+<h2>Components</h2>
+<ul>
+${doc.details.components.map((comp: string) => `<li>${comp}</li>`).join('\n')}
+</ul>
+
+<h2>Process Flows</h2>
+<ul>
+${doc.details.flows.map((flow: string) => `<li>${flow}</li>`).join('\n')}
+</ul>
+
+<h2>Technical Details</h2>
+<p>${doc.details.technicalDetails}</p>
+
+<h2>Status</h2>
+<p><strong>Current Status:</strong> ${doc.status}</p>
+<p><strong>Document Generated:</strong> ${new Date().toLocaleString()}</p>
+</body>
+</html>`;
+  };
+
+  const generateDiagramPNG = async (doc: any): Promise<HTMLCanvasElement> => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1200;
+    canvas.height = 800;
+    const ctx = canvas.getContext('2d')!;
+    
+    // Set background
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw title
+    ctx.fillStyle = '#2563eb';
+    ctx.font = 'bold 32px Arial';
+    ctx.fillText(doc.title, 50, 50);
+    
+    // Draw description
+    ctx.fillStyle = '#64748b';
+    ctx.font = '18px Arial';
+    ctx.fillText(doc.description, 50, 90);
+    
+    // Draw components as boxes
+    ctx.fillStyle = '#f1f5f9';
+    ctx.strokeStyle = '#e2e8f0';
+    ctx.lineWidth = 2;
+    
+    let y = 150;
+    doc.details.components.forEach((component: string, index: number) => {
+      const boxHeight = 60;
+      const boxWidth = 300;
+      const x = 50 + (index % 3) * 350;
+      
+      if (index % 3 === 0 && index > 0) {
+        y += 100;
+      }
+      
+      // Draw box
+      ctx.fillRect(x, y, boxWidth, boxHeight);
+      ctx.strokeRect(x, y, boxWidth, boxHeight);
+      
+      // Draw text
+      ctx.fillStyle = '#1e293b';
+      ctx.font = '14px Arial';
+      const lines = component.match(/.{1,35}/g) || [component];
+      lines.forEach((line, lineIndex) => {
+        ctx.fillText(line, x + 10, y + 20 + lineIndex * 18);
+      });
+      
+      ctx.fillStyle = '#f1f5f9';
+    });
+    
+    // Add footer
+    ctx.fillStyle = '#64748b';
+    ctx.font = '12px Arial';
+    ctx.fillText(`Generated on ${new Date().toLocaleString()}`, 50, canvas.height - 30);
+    
+    return canvas;
   };
 
   const ArchitectureDiagram = ({ type }: { type: string }) => {
