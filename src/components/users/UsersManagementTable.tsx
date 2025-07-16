@@ -102,7 +102,9 @@ export const UsersManagementTable: React.FC = () => {
   };
 
   const handleResendEmail = async (userId: string, userEmail: string) => {
+    console.log('🔥 Resend email called for:', { userId, userEmail });
     try {
+      console.log('📧 Attempting to resend verification email via Supabase auth...');
       const { error } = await supabase.auth.resend({
         type: 'signup',
         email: userEmail,
@@ -112,12 +114,14 @@ export const UsersManagementTable: React.FC = () => {
       });
 
       if (error) {
+        console.error('❌ Supabase auth resend error:', error);
         showError('Email Failed', error.message);
       } else {
+        console.log('✅ Email resend successful');
         showSuccess('Email Sent', `Verification email sent to ${userEmail}`);
       }
     } catch (error) {
-      console.error('Resend email error:', error);
+      console.error('💥 Resend email error:', error);
       showError('Email Error', 'Error sending verification email');
     }
   };
