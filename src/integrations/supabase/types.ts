@@ -4365,6 +4365,15 @@ export type Database = {
         Args: { key_type: string }
         Returns: string
       }
+      generate_comprehensive_documentation: {
+        Args: {
+          functionality_id?: string
+          include_architecture?: boolean
+          include_requirements?: boolean
+          include_test_cases?: boolean
+        }
+        Returns: Json
+      }
       generate_comprehensive_test_cases: {
         Args: { functionality_id?: string }
         Returns: number
@@ -4517,6 +4526,10 @@ export type Database = {
       sync_active_issues: {
         Args: { issues_data: Json }
         Returns: undefined
+      }
+      sync_real_time_testing_updates: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
       }
       test_rls_policies: {
         Args: Record<PropertyKey, never>
