@@ -142,6 +142,14 @@ const Testing: React.FC = () => {
                         <div className="text-sm text-muted-foreground">E2E Tests</div>
                       </div>
                       <div className="text-center p-3 border rounded">
+                        <div className="text-lg font-bold">{masterTesting.testingStats.suiteBreakdown.system || 0}</div>
+                        <div className="text-sm text-muted-foreground">System Tests</div>
+                      </div>
+                      <div className="text-center p-3 border rounded">
+                        <div className="text-lg font-bold">{masterTesting.testingStats.suiteBreakdown.uat || 0}</div>
+                        <div className="text-sm text-muted-foreground">UAT Tests</div>
+                      </div>
+                      <div className="text-center p-3 border rounded">
                         <div className="text-lg font-bold">{masterTesting.testingStats.suiteBreakdown.performance || 0}</div>
                         <div className="text-sm text-muted-foreground">Performance Tests</div>
                       </div>
@@ -258,6 +266,22 @@ const Testing: React.FC = () => {
                           className="w-full justify-start"
                         >
                           E2E Tests ({masterTesting.testingStats.suiteBreakdown.e2e || 0})
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          onClick={() => masterTesting.executeTestSuite('system')}
+                          disabled={isExecuting}
+                          className="w-full justify-start"
+                        >
+                          System Tests ({masterTesting.testingStats.suiteBreakdown.system || 0})
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          onClick={() => masterTesting.executeTestSuite('uat')}
+                          disabled={isExecuting}
+                          className="w-full justify-start"
+                        >
+                          UAT Tests ({masterTesting.testingStats.suiteBreakdown.uat || 0})
                         </Button>
                       </div>
                     </div>
