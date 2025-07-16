@@ -125,10 +125,6 @@ export const useMasterData = (isAuthenticated: boolean = false) => {
       );
 
       console.log('✅ Users with roles combined:', usersWithRoles.length);
-      console.log('🔍 Sample user data:', usersWithRoles[0]);
-      console.log('🔍 Users with verified emails:', usersWithRoles.filter(u => u.is_email_verified).length);
-      console.log('🔍 Users with roles:', usersWithRoles.filter(u => u.user_roles && u.user_roles.length > 0).length);
-      console.log('🔍 Users verified AND with roles:', usersWithRoles.filter(u => u.is_email_verified && u.user_roles && u.user_roles.length > 0).length);
       return usersWithRoles as User[];
     },
     staleTime: 300000,
