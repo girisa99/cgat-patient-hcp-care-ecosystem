@@ -18,6 +18,10 @@ export const useMasterUserManagement = () => {
   const getUserStats = () => ({
     totalUsers: masterData.stats.totalUsers,
     activeUsers: masterData.users.filter(u => u.is_active !== false).length,
+    verifiedUsers: masterData.users.filter(u => u.is_email_verified).length,
+    pendingVerification: masterData.users.filter(u => !u.is_email_verified).length,
+    pendingRoleAssignment: masterData.users.filter(u => !u.user_roles || u.user_roles.length === 0).length,
+    completeUsers: masterData.users.filter(u => u.is_email_verified && u.user_roles && u.user_roles.length > 0).length,
     adminCount: masterData.stats.adminCount,
     patientCount: masterData.stats.patientCount,
   });

@@ -15,6 +15,7 @@ export interface MasterUser {
   created_at: string;
   updated_at: string;
   is_active?: boolean;
+  is_email_verified?: boolean;
   phone?: string;
   user_roles: {
     roles: {
@@ -75,6 +76,7 @@ export const useMasterData = (isAuthenticated: boolean = false) => {
           first_name,
           last_name,
           email,
+          is_email_verified,
           created_at,
           updated_at
         `);

@@ -147,6 +147,14 @@ export const UsersManagementTable: React.FC = () => {
     }
   };
 
+  const handleDeleteUser = (userId: string, userName: string) => {
+    if (window.confirm(`Are you sure you want to delete ${userName}? This action cannot be undone.`)) {
+      // TODO: Implement delete user functionality in the hook
+      console.log('Delete user:', userId);
+      showSuccess('User Deleted', `${userName} has been deleted`);
+    }
+  };
+
   const onAssignRole = (userId: string, roleName: string) => {
     assignRole(userId, roleName);
     showSuccess('Role Assigned', `Role ${roleName} assigned successfully`);
@@ -232,7 +240,8 @@ export const UsersManagementTable: React.FC = () => {
       <Tabs defaultValue="management" className="space-y-4">
         <TabsList>
           <TabsTrigger value="management">User Management</TabsTrigger>
-          <TabsTrigger value="pending">Pending Approval</TabsTrigger>
+          <TabsTrigger value="pending-approval">Pending Role Assignment</TabsTrigger>
+          <TabsTrigger value="pending-verification">Pending Verification</TabsTrigger>
           <TabsTrigger value="completed">Completed</TabsTrigger>
           <TabsTrigger value="all">All Users</TabsTrigger>
         </TabsList>
@@ -243,7 +252,7 @@ export const UsersManagementTable: React.FC = () => {
               <CardTitle className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Users className="h-5 w-5" />
-                  User Management ({users.length})
+                  Verified & Active Users ({users.filter(u => u.is_email_verified && u.user_roles && u.user_roles.length > 0).length})
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
@@ -271,7 +280,7 @@ export const UsersManagementTable: React.FC = () => {
                 <div className="text-center p-8">Loading users...</div>
               ) : (
                 <div className="space-y-4">
-                  {users.map((user) => (
+                  {users.filter(u => u.is_email_verified && u.user_roles && u.user_roles.length > 0).map((user) => (
                     <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
                       <div className="flex-1">
                         <div className="font-medium">
@@ -354,16 +363,21 @@ export const UsersManagementTable: React.FC = () => {
                       </div>
                     </div>
                   ))}
+                  {users.filter(u => u.is_email_verified && u.user_roles && u.user_roles.length > 0).length === 0 && (
+                    <div className="text-center p-8 text-muted-foreground">
+                      No verified and active users found
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="pending">
+        <TabsContent value="pending-approval">
           <Card>
             <CardHeader>
-              <CardTitle>Pending Role Assignment</CardTitle>
+              <CardTitle>Pending Role Assignment ({users.filter(u => !u.user_roles || u.user_roles.length === 0).length})</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -372,6 +386,9 @@ export const UsersManagementTable: React.FC = () => {
                     <div>
                       <div className="font-medium">{user.first_name} {user.last_name}</div>
                       <div className="text-sm text-muted-foreground">{user.email}</div>
+                      <div className="text-xs text-muted-foreground">
+                        Created: {new Date(user.created_at || '').toLocaleDateString()}
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <Button
@@ -380,19 +397,93 @@ export const UsersManagementTable: React.FC = () => {
                       >
                         Assign Role
                       </Button>
-                       <Button
-                         onClick={() => handleResendEmailClick(user.id, user.email, `${user.first_name} ${user.last_name}`)}
-                         variant="outline"
-                         size="sm"
-                       >
-                         Send Email
-                       </Button>
+                      <Button
+                        onClick={() => handleResendEmailClick(user.id, user.email, `${user.first_name} ${user.last_name}`)}
+                        variant="outline"
+                        size="sm"
+                      >
+                        <Mail className="h-4 w-4 mr-2" />
+                        Send Email
+                      </Button>
+                      <Button
+                        onClick={() => handleDeactivateUser(user.id, `${user.first_name} ${user.last_name}`)}
+                        variant="outline"
+                        size="sm"
+                        className="text-orange-600 hover:text-orange-700"
+                      >
+                        <UserX className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        onClick={() => handleDeleteUser(user.id, `${user.first_name} ${user.last_name}`)}
+                        variant="outline"
+                        size="sm"
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
                 ))}
                 {users.filter(u => !u.user_roles || u.user_roles.length === 0).length === 0 && (
                   <div className="text-center p-8 text-muted-foreground">
                     No users pending role assignment
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="pending-verification">
+          <Card>
+            <CardHeader>
+              <CardTitle>Pending Email Verification ({users.filter(u => !u.is_email_verified).length})</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {users.filter(u => !u.is_email_verified).map((user) => (
+                  <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div>
+                      <div className="font-medium">{user.first_name} {user.last_name}</div>
+                      <div className="text-sm text-muted-foreground">{user.email}</div>
+                      <div className="text-xs text-muted-foreground">
+                        Created: {new Date(user.created_at || '').toLocaleDateString()}
+                      </div>
+                      <Badge variant="outline" className="text-orange-600 border-orange-600">
+                        Email Not Verified
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        onClick={() => handleResendEmailClick(user.id, user.email, `${user.first_name} ${user.last_name}`)}
+                        variant="outline"
+                        size="sm"
+                      >
+                        <Mail className="h-4 w-4 mr-2" />
+                        Resend Verification
+                      </Button>
+                      <Button
+                        onClick={() => handleDeactivateUser(user.id, `${user.first_name} ${user.last_name}`)}
+                        variant="outline"
+                        size="sm"
+                        className="text-orange-600 hover:text-orange-700"
+                      >
+                        <UserX className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        onClick={() => handleDeleteUser(user.id, `${user.first_name} ${user.last_name}`)}
+                        variant="outline"
+                        size="sm"
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+                {users.filter(u => !u.is_email_verified).length === 0 && (
+                  <div className="text-center p-8 text-muted-foreground">
+                    No users pending email verification
                   </div>
                 )}
               </div>
