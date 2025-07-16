@@ -1,9 +1,15 @@
 /**
  * Intelligent Import Orchestrator - Main Business Logic Coordinator
  * Coordinates all components of the advanced import system
+ * Ensures no mock data, validates real database usage, prevents duplicates
+ * Integrates with comprehensive stability framework
  */
 
 import { advancedSchemaAnalyzer } from './AdvancedSchemaAnalyzer';
+import { MockDataDetector } from '@/utils/verification/MockDataDetector';
+import { DuplicateDetector } from '@/utils/verification/DuplicateDetector';
+import { FrameworkValidator } from '../../../duplicate-prevention/core/validator.js';
+import { ComponentRegistry } from '../../../duplicate-prevention/core/registry.js';
 import { migrationGenerator } from './MigrationGenerator';
 import { typeScriptGenerator } from './TypeScriptGenerator';
 import type { 
@@ -34,6 +40,14 @@ export interface IntelligentImportResult {
   recommendations: string[];
   status: 'success' | 'warning' | 'requires_approval' | 'error';
   next_steps: string[];
+  framework_compliance?: {
+    validated: boolean;
+    no_duplicates: boolean;
+    no_mock_data: boolean;
+    real_database_usage: boolean;
+    stability_monitoring: boolean;
+    prompt_governance: boolean;
+  };
 }
 
 export interface IntelligentImportConfig {
@@ -43,10 +57,23 @@ export interface IntelligentImportConfig {
   naming_convention_enforcement: boolean;
   typescript_generation_enabled: boolean;
   safety_checks_enabled: boolean;
+  
+  // Framework compliance settings
+  prevent_mock_data: boolean;
+  prevent_duplicates: boolean;
+  enforce_real_database_usage: boolean;
+  stability_monitoring_enabled: boolean;
+  prompt_governance_enabled: boolean;
 }
 
 export class IntelligentImportOrchestrator {
   private config: IntelligentImportConfig;
+  
+  // Framework protection components
+  private frameworkValidator: FrameworkValidator;
+  private componentRegistry: ComponentRegistry;
+  private duplicateDetector: DuplicateDetector;
+  private backgroundMonitoring: NodeJS.Timeout | null = null;
   
   constructor(config?: Partial<IntelligentImportConfig>) {
     this.config = {
@@ -56,8 +83,33 @@ export class IntelligentImportOrchestrator {
       naming_convention_enforcement: true,
       typescript_generation_enabled: true,
       safety_checks_enabled: true,
+      
+      // Framework compliance defaults
+      prevent_mock_data: true,
+      prevent_duplicates: true,
+      enforce_real_database_usage: true,
+      stability_monitoring_enabled: true,
+      prompt_governance_enabled: true,
+      
       ...config
     };
+    
+    // Initialize framework protection
+    this.frameworkValidator = new FrameworkValidator({
+      strictMode: true,
+      preventMockData: this.config.prevent_mock_data,
+      preventDuplicates: this.config.prevent_duplicates,
+      enforceNamingConventions: this.config.naming_convention_enforcement,
+      requireRealDatabaseUsage: this.config.enforce_real_database_usage
+    });
+    
+    this.componentRegistry = new ComponentRegistry();
+    this.duplicateDetector = new DuplicateDetector();
+    
+    // Start background monitoring if enabled
+    if (this.config.stability_monitoring_enabled) {
+      this.initializeBackgroundMonitoring();
+    }
   }
   
   /**
@@ -69,6 +121,13 @@ export class IntelligentImportOrchestrator {
     const sessionId = `import_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
     try {
+      // Pre-import framework compliance validation
+      await this.validateFrameworkCompliance(request);
+      console.log('✅ Framework compliance validated');
+      
+      // Check for duplicates before proceeding
+      await this.validateNoDuplicates(request.source_name);
+      console.log('✅ No duplicates detected');
       // Step 1: Analyze existing schema
       console.log('📊 Analyzing existing database schema...');
       const existingSchema = await advancedSchemaAnalyzer.analyzeCompleteSchema();
@@ -363,6 +422,200 @@ Intelligent Import Analysis Summary:
     }
     
     return { status: 'success', nextSteps };
+  }
+
+  /**
+   * Validate framework compliance before processing import
+   */
+  private async validateFrameworkCompliance(request: IntelligentImportRequest): Promise<void> {
+    console.log('🔍 Validating framework compliance...');
+    
+    if (!this.config.prevent_mock_data && !this.config.prevent_duplicates) {
+      return; // Skip if compliance checks are disabled
+    }
+    
+    // 1. Check for mock data patterns in the import data
+    if (this.config.prevent_mock_data) {
+      for (const record of request.data.slice(0, 10)) { // Sample first 10 records
+        const recordStr = JSON.stringify(record);
+        
+        // Check for mock data indicators
+        const mockPatterns = [
+          /test@|mock@|dummy@|sample@/i,
+          /john|jane|test|sample|mock/i,
+          /lorem\s+ipsum/i,
+          /placeholder/i,
+          /\b(test|mock|dummy|fake|sample)[\s_-]?(user|data|value|name|email)\b/i
+        ];
+        
+        for (const pattern of mockPatterns) {
+          if (pattern.test(recordStr)) {
+            throw new Error(`Framework violation: Mock/test data detected in import data. Use only real data from database sources.`);
+          }
+        }
+      }
+    }
+    
+    // 2. Validate source name doesn't indicate test data
+    if (this.config.prevent_mock_data) {
+      const forbiddenNames = ['test', 'mock', 'dummy', 'sample', 'placeholder', 'seed'];
+      if (forbiddenNames.some(name => request.source_name.toLowerCase().includes(name))) {
+        throw new Error(`Framework violation: Source name "${request.source_name}" suggests test/mock data. Use meaningful names for real data sources.`);
+      }
+    }
+    
+    // 3. Run comprehensive framework validation
+    const validationResult = await this.frameworkValidator.validateProject();
+    
+    if (!validationResult.isValid && validationResult.violations.some(v => v.severity === 'critical')) {
+      const criticalViolations = validationResult.violations
+        .filter(v => v.severity === 'critical')
+        .map(v => v.message)
+        .join('; ');
+      throw new Error(`Framework validation failed: ${criticalViolations}`);
+    }
+    
+    console.log('✅ Framework compliance validated successfully');
+  }
+
+  /**
+   * Check for duplicate tables/schemas before import
+   */
+  private async validateNoDuplicates(sourceName: string): Promise<void> {
+    if (!this.config.prevent_duplicates) {
+      return; // Skip if duplicate prevention is disabled
+    }
+    
+    console.log('🔍 Checking for duplicate tables/schemas...');
+    
+    // Check component registry for similar functionality
+    const similar = this.componentRegistry.findSimilar('service', `Import service for ${sourceName} data`);
+    
+    if (similar.length > 0 && similar[0].similarity > 0.8) {
+      throw new Error(
+        `Duplicate prevention: Similar import functionality already exists: ${similar[0].name} ` +
+        `(${Math.round(similar[0].similarity * 100)}% similar). ` +
+        `Consider extending existing implementation or choose different approach.`
+      );
+    }
+    
+    console.log('✅ No duplicates detected');
+  }
+
+  /**
+   * Register import component in the component registry
+   */
+  private async registerImportComponent(sourceName: string, schema: any): Promise<void> {
+    const componentName = `${sourceName}ImportService`;
+    
+    try {
+      this.componentRegistry.registerService(componentName, {
+        filePath: `src/utils/intelligentImport/${componentName}.ts`,
+        functionality: `Import service for ${sourceName} data processing and analysis`,
+        category: 'data-import',
+        methods: ['processImport', 'validateData', 'transformData', 'generateSchema'],
+        sourceName,
+        schema,
+        generatedBy: 'IntelligentImportOrchestrator',
+        timestamp: new Date().toISOString(),
+        frameworkCompliant: true
+      });
+      
+      console.log(`📝 Registered import component: ${componentName}`);
+    } catch (error) {
+      console.warn(`⚠️ Failed to register component: ${error.message}`);
+      // Don't fail the import process, just log the warning
+    }
+  }
+
+  /**
+   * Initialize background monitoring for framework compliance
+   */
+  private initializeBackgroundMonitoring(): void {
+    console.log('🔄 Starting background framework monitoring...');
+    
+    // Run monitoring every 30 seconds
+    this.backgroundMonitoring = setInterval(async () => {
+      try {
+        await this.performBackgroundCheck();
+      } catch (error) {
+        console.error('Background monitoring error:', error);
+      }
+    }, 30000);
+  }
+
+  /**
+   * Perform periodic background compliance checks
+   */
+  private async performBackgroundCheck(): Promise<void> {
+    if (!this.config.stability_monitoring_enabled) {
+      return;
+    }
+    
+    try {
+      // 1. Check for new mock data violations
+      if (this.config.prevent_mock_data) {
+        const mockDataAnalysis = await MockDataDetector.analyzeMockDataUsage();
+        if (mockDataAnalysis.violations.length > 0) {
+          console.warn(`⚠️ Background check: ${mockDataAnalysis.violations.length} mock data violations detected`);
+        }
+      }
+      
+      // 2. Check for new duplicates
+      if (this.config.prevent_duplicates) {
+        const duplicateStats = this.duplicateDetector.getDuplicateStats();
+        if (duplicateStats.totalDuplicates > 0) {
+          console.warn(`⚠️ Background check: ${duplicateStats.totalDuplicates} duplicates detected`);
+        }
+      }
+      
+      // 3. Validate overall framework compliance
+      const validationResult = await this.frameworkValidator.validateProject();
+      if (!validationResult.isValid) {
+        console.warn(`⚠️ Background check: Framework compliance issues detected (${validationResult.violations.length} violations)`);
+      }
+      
+    } catch (error) {
+      console.error('Background check failed:', error);
+    }
+  }
+
+  /**
+   * Stop background monitoring
+   */
+  public stopBackgroundMonitoring(): void {
+    if (this.backgroundMonitoring) {
+      clearInterval(this.backgroundMonitoring);
+      this.backgroundMonitoring = null;
+      console.log('🛑 Background monitoring stopped');
+    }
+  }
+
+  /**
+   * Get current framework compliance status
+   */
+  public async getFrameworkComplianceStatus(): Promise<{
+    overall_compliant: boolean;
+    mock_data_score: number;
+    duplicate_count: number;
+    validation_summary: any;
+    monitoring_active: boolean;
+  }> {
+    const mockDataAnalysis = await MockDataDetector.analyzeMockDataUsage();
+    const duplicateStats = this.duplicateDetector.getDuplicateStats();
+    const validationResult = await this.frameworkValidator.validateProject();
+    
+    return {
+      overall_compliant: validationResult.isValid && mockDataAnalysis.violations.length === 0 && duplicateStats.totalDuplicates === 0,
+      mock_data_score: mockDataAnalysis.databaseUsageScore,
+      duplicate_count: duplicateStats.totalDuplicates,
+      validation_summary: {
+        violations: validationResult.violations.length,
+        warnings: validationResult.warnings.length,
+        recommendations: validationResult.recommendations.length
+      },
+      monitoring_active: this.backgroundMonitoring !== null
+    };
   }
 }
 
