@@ -32,6 +32,8 @@ import { useUserManagementDialogs } from '@/hooks/useUserManagementDialogs';
 import { getErrorMessage } from '@/utils/errorHandling';
 import { supabase } from '@/integrations/supabase/client';
 import { useMasterToast } from '@/hooks/useMasterToast';
+import { FacilityManagementModal } from '@/components/modals/FacilityManagementModal';
+import { ModuleManagementModal } from '@/components/modals/ModuleManagementModal';
 
 const UserManagement = () => {
   const { isAuthenticated, user } = useMasterAuth();
@@ -55,6 +57,14 @@ const UserManagement = () => {
   const [showCreateUser, setShowCreateUser] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState('management');
+  const [facilityManagementModal, setFacilityManagementModal] = useState<{
+    open: boolean;
+    facility?: any;
+  }>({ open: false });
+  const [moduleManagementModal, setModuleManagementModal] = useState<{
+    open: boolean;
+    module?: any;
+  }>({ open: false });
   
   // Use existing dialog management hook
   const {
@@ -483,18 +493,19 @@ const UserManagement = () => {
                           </Badge>
                         </div>
                       </div>
-                       <div className="flex items-center gap-2">
-                         <Button 
-                           variant="outline" 
-                           size="sm"
-                           onClick={() => {
-                             showSuccess('Facility Management', `Managing ${facility.name} - functionality coming soon`);
-                           }}
-                         >
-                           <Settings className="h-4 w-4 mr-2" />
-                           Manage
-                         </Button>
-                       </div>
+                        <div className="flex items-center gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => setFacilityManagementModal({ 
+                              open: true, 
+                              facility: facility 
+                            })}
+                          >
+                            <Settings className="h-4 w-4 mr-2" />
+                            Manage
+                          </Button>
+                        </div>
                     </div>
                   ))}
                   {facilities.length === 0 && (
@@ -541,18 +552,19 @@ const UserManagement = () => {
                              </Badge>
                            </div>
                          </div>
-                         <div className="flex items-center gap-2">
-                           <Button 
-                             variant="outline" 
-                             size="sm"
-                             onClick={() => {
-                               showSuccess('Module Management', `Managing ${module.name} - functionality coming soon`);
-                             }}
-                           >
-                             <Settings className="h-4 w-4 mr-2" />
-                             Manage
-                           </Button>
-                         </div>
+                          <div className="flex items-center gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => setModuleManagementModal({ 
+                                open: true, 
+                                module: module 
+                              })}
+                            >
+                              <Settings className="h-4 w-4 mr-2" />
+                              Manage
+                            </Button>
+                          </div>
                        </div>
                      ))
                    )}
@@ -582,6 +594,28 @@ const UserManagement = () => {
           onAssignFacility={handleAssignFacility}
           availableRoles={roles}
           availableFacilities={facilities}
+        />
+        
+        {/* Facility Management Modal */}
+        <FacilityManagementModal
+          open={facilityManagementModal.open}
+          onOpenChange={(open) => setFacilityManagementModal({ open, facility: open ? facilityManagementModal.facility : undefined })}
+          facility={facilityManagementModal.facility}
+          onSuccess={() => {
+            refreshData();
+            setFacilityManagementModal({ open: false });
+          }}
+        />
+        
+        {/* Module Management Modal */}
+        <ModuleManagementModal
+          open={moduleManagementModal.open}
+          onOpenChange={(open) => setModuleManagementModal({ open, module: open ? moduleManagementModal.module : undefined })}
+          module={moduleManagementModal.module}
+          onSuccess={() => {
+            refreshData();
+            setModuleManagementModal({ open: false });
+          }}
         />
       </div>
     </AppLayout>
