@@ -100,9 +100,18 @@ export const useRoleBasedNavigation = () => {
       'data-import': ['superAdmin', 'onboardingTeam'],
       'active-verification': ['superAdmin', 'onboardingTeam'],
       'governance': ['superAdmin', 'onboardingTeam'],
+      'framework': ['superAdmin', 'onboardingTeam'],
+      'stability': ['superAdmin', 'onboardingTeam'],
+      'healthcare-ai': ['superAdmin', 'onboardingTeam'],
     };
 
     const allowedRoles = roleAccess[cleanPath as keyof typeof roleAccess] || [];
+    
+    // During development, allow framework access if no roles assigned
+    if (userRoles.length === 0 && ['framework', 'stability', 'healthcare-ai', 'governance'].includes(cleanPath)) {
+      return true;
+    }
+    
     return userRoles.some(role => allowedRoles.includes(role));
   };
 
@@ -134,6 +143,10 @@ export const useRoleBasedNavigation = () => {
           'role-management': ['superAdmin'],
           'data-import': ['superAdmin', 'onboardingTeam'],
           'active-verification': ['superAdmin', 'onboardingTeam'],
+          'governance': ['superAdmin', 'onboardingTeam'],
+          'framework': ['superAdmin', 'onboardingTeam'],
+          'stability': ['superAdmin', 'onboardingTeam'],
+          'healthcare-ai': ['superAdmin', 'onboardingTeam'],
         };
         
         const allowedRoles = roleAccess[path as keyof typeof roleAccess] || [];
