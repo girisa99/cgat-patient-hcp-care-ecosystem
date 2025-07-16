@@ -126,8 +126,13 @@ export const ModuleManagementModal: React.FC<ModuleManagementModalProps> = ({
     }
   };
 
-  const handleDeactivateModule = async () => {
-    console.log('handleDeactivateModule called', { module: module?.id, moduleData: module });
+  const handleDeactivateModule = async (e) => {
+    console.log('=== handleDeactivateModule called ===', { 
+      event: e, 
+      module: module?.id, 
+      moduleData: module,
+      moduleActive: module?.is_active 
+    });
     if (!module?.id) {
       console.log('No module ID found, returning early');
       return;
@@ -433,9 +438,16 @@ export const ModuleManagementModal: React.FC<ModuleManagementModalProps> = ({
                   </div>
                   <Button 
                     variant="outline" 
-                    onClick={() => {
-                      console.log('View Permissions button clicked');
-                      showSuccess('Permissions', 'Permission viewer coming soon');
+                    onClick={(e) => {
+                      console.log('=== View Permissions button clicked ===', e);
+                      console.log('Event target:', e.target);
+                      console.log('Current target:', e.currentTarget);
+                      try {
+                        showSuccess('Permissions', 'Permission viewer coming soon');
+                        console.log('showSuccess called successfully');
+                      } catch (error) {
+                        console.error('Error in showSuccess:', error);
+                      }
                     }}
                   >
                     <Key className="h-4 w-4 mr-2" />
@@ -452,9 +464,16 @@ export const ModuleManagementModal: React.FC<ModuleManagementModalProps> = ({
                   </div>
                   <Button 
                     variant="outline" 
-                    onClick={() => {
-                      console.log('View Audit Trail button clicked');
-                      showSuccess('Audit Trail', 'Audit trail viewer coming soon');
+                    onClick={(e) => {
+                      console.log('=== View Audit Trail button clicked ===', e);
+                      console.log('Event target:', e.target);
+                      console.log('Current target:', e.currentTarget);
+                      try {
+                        showSuccess('Audit Trail', 'Audit trail viewer coming soon');
+                        console.log('showSuccess called successfully');
+                      } catch (error) {
+                        console.error('Error in showSuccess:', error);
+                      }
                     }}
                   >
                     <Shield className="h-4 w-4 mr-2" />
