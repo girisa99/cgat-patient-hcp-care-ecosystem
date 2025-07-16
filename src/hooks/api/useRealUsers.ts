@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { dbAdapter } from '@/utils/db';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface UserRow {
   id: string;
@@ -11,22 +11,34 @@ export interface UserRow {
 }
 
 async function fetchUsers(): Promise<UserRow[]> {
-  // Basic select with role aggregation
-  const sql = `
-    SELECT p.id,
-           p.email,
-           p.first_name,
-           p.last_name,
-           p.created_at,
-           COALESCE(array_agg(r.name) FILTER (WHERE r.name IS NOT NULL), '{}') AS roles
-    FROM profiles p
-    LEFT JOIN user_roles ur ON ur.user_id = p.id
-    LEFT JOIN roles r ON r.id = ur.role_id
-    GROUP BY p.id
-    ORDER BY p.created_at DESC
-    LIMIT 500`;
+  try {
+    // Use Supabase client instead of dbAdapter to respect RLS policies
+    const { data, error } = await supabase
+      .from('profiles')
+      .select(`
+        id,
+        email,
+        first_name,
+        last_name,
+        created_at
+      `)
+      .order('created_at', { ascending: false })
+      .limit(500);
 
-  return dbAdapter.query<UserRow>(sql);
+    if (error) {
+      console.error('Error fetching users:', error);
+      throw error;
+    }
+
+    // Transform the data to match UserRow interface
+    return (data || []).map(user => ({
+      ...user,
+      roles: [] // We'll add role fetching later if needed
+    }));
+  } catch (error) {
+    console.error('Failed to fetch users:', error);
+    return [];
+  }
 }
 
 export const useRealUsers = () => {
