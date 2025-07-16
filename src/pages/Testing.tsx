@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/hooks/use-toast';
 import AppLayout from '@/components/layout/AppLayout';
 import { useRoleBasedNavigation } from '@/hooks/useRoleBasedNavigation';
 import { useMasterTestingSuite } from '@/hooks/useMasterTestingSuite';
@@ -12,11 +13,14 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Activity, BarChart3, Database, FileText, Play, RefreshCw, Shield, TestTube, Zap } from 'lucide-react';
 import TestCasesDisplay from '@/components/testing/TestCasesDisplay';
+import { ArchitectureDocumentation } from '@/components/testing/ArchitectureDocumentation';
+import { RequirementsDocumentation } from '@/components/testing/RequirementsDocumentation';
 
 const Testing: React.FC = () => {
   console.log('🧪 Comprehensive Testing Suite - Full functionality restored');
   const { currentRole, hasAccess } = useRoleBasedNavigation();
   const [activeTab, setActiveTab] = useState("overview");
+  const { toast } = useToast();
   
   // Use all testing hooks for comprehensive functionality
   const masterTesting = useMasterTestingSuite();
@@ -480,54 +484,38 @@ const Testing: React.FC = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-6">
-                  <div className="flex gap-2">
-                    <Button onClick={() => enhancedTesting.generateDocumentation()}>
-                      Generate Full Documentation
-                    </Button>
-                    <Button variant="outline" onClick={() => unifiedTesting.buildTraceabilityMatrix()}>
-                      Build Traceability Matrix
-                    </Button>
-                  </div>
+                <Tabs defaultValue="architecture" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="architecture">Architecture Documentation</TabsTrigger>
+                    <TabsTrigger value="requirements">Requirements Documentation</TabsTrigger>
+                  </TabsList>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      <h4 className="font-medium">Available Documentation</h4>
-                      <div className="space-y-2">
-                        <div className="p-3 border rounded">
-                          <div className="font-medium">Test Plan Documentation</div>
-                          <div className="text-sm text-muted-foreground">Comprehensive test planning and strategy</div>
-                        </div>
-                        <div className="p-3 border rounded">
-                          <div className="font-medium">API Integration Guide</div>
-                          <div className="text-sm text-muted-foreground">Testing procedures for API integrations</div>
-                        </div>
-                        <div className="p-3 border rounded">
-                          <div className="font-medium">Compliance Reports</div>
-                          <div className="text-sm text-muted-foreground">21 CFR Part 11 and validation reports</div>
-                        </div>
-                      </div>
-                    </div>
+                  <TabsContent value="architecture" className="mt-6">
+                    <ArchitectureDocumentation
+                      onDownload={(type) => {
+                        // Handle download logic
+                        console.log(`Downloading: ${type}`);
+                        toast({
+                          title: "Download Started",
+                          description: `Downloading ${type} documentation...`,
+                        });
+                      }}
+                    />
+                  </TabsContent>
 
-                    <div className="space-y-4">
-                      <h4 className="font-medium">Compliance Status</h4>
-                      <div className="space-y-3">
-                        <div className="flex justify-between items-center">
-                          <span>21 CFR Part 11</span>
-                          <Badge>Compliant</Badge>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span>HIPAA</span>
-                          <Badge>Compliant</Badge>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span>SOX</span>
-                          <Badge variant="secondary">In Progress</Badge>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                  <TabsContent value="requirements" className="mt-6">
+                    <RequirementsDocumentation
+                      onDownload={(type) => {
+                        // Handle download logic
+                        console.log(`Downloading: ${type}`);
+                        toast({
+                          title: "Download Started",
+                          description: `Downloading ${type} documentation...`,
+                        });
+                      }}
+                    />
+                  </TabsContent>
+                </Tabs>
               </CardContent>
             </Card>
           </TabsContent>
