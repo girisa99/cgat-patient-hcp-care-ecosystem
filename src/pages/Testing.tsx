@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Activity, BarChart3, Database, FileText, Play, RefreshCw, Shield, TestTube, Zap } from 'lucide-react';
+import TestCasesDisplay from '@/components/testing/TestCasesDisplay';
 
 const Testing: React.FC = () => {
   console.log('🧪 Comprehensive Testing Suite - Full functionality restored');
@@ -101,8 +102,9 @@ const Testing: React.FC = () => {
 
         {/* Comprehensive Testing Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="test-cases">Test Cases</TabsTrigger>
             <TabsTrigger value="execution">Test Execution</TabsTrigger>
             <TabsTrigger value="database">DB Integration</TabsTrigger>
             <TabsTrigger value="reporting">Reports & Analytics</TabsTrigger>
@@ -192,6 +194,11 @@ const Testing: React.FC = () => {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          {/* Test Cases Tab */}
+          <TabsContent value="test-cases" className="space-y-4">
+            <TestCasesDisplay />
           </TabsContent>
 
           {/* Test Execution Tab */}
