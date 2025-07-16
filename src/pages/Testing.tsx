@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Activity, BarChart3, Database, FileText, Play, RefreshCw, Shield, TestTube, Zap } from 'lucide-react';
 import TestCasesDisplay from '@/components/testing/TestCasesDisplay';
-import { ArchitectureDocumentation } from '@/components/testing/ArchitectureDocumentation';
+import { EnhancedArchitectureDocumentation } from '@/components/testing/EnhancedArchitectureDocumentation';
 import { RequirementsDocumentation } from '@/components/testing/RequirementsDocumentation';
 
 const Testing: React.FC = () => {
@@ -491,13 +491,13 @@ const Testing: React.FC = () => {
                   </TabsList>
 
                   <TabsContent value="architecture" className="mt-6">
-                    <ArchitectureDocumentation
+                    <EnhancedArchitectureDocumentation
                       onDownload={(type) => {
-                        // Handle download logic
+                        // Handle download logic - Real implementation would generate actual files
                         console.log(`Downloading: ${type}`);
                         toast({
-                          title: "Download Started",
-                          description: `Downloading ${type} documentation...`,
+                          title: "Document Generation",
+                          description: `${type} documentation is being prepared for download. This would generate actual PDF, PNG, and Word files in a real implementation.`,
                         });
                       }}
                     />
