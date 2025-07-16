@@ -127,7 +127,11 @@ export const ModuleManagementModal: React.FC<ModuleManagementModalProps> = ({
   };
 
   const handleDeactivateModule = async () => {
-    if (!module?.id) return;
+    console.log('handleDeactivateModule called', { module: module?.id, moduleData: module });
+    if (!module?.id) {
+      console.log('No module ID found, returning early');
+      return;
+    }
     
     setLoading(true);
     try {
@@ -429,7 +433,10 @@ export const ModuleManagementModal: React.FC<ModuleManagementModalProps> = ({
                   </div>
                   <Button 
                     variant="outline" 
-                    onClick={() => showSuccess('Permissions', 'Permission viewer coming soon')}
+                    onClick={() => {
+                      console.log('View Permissions button clicked');
+                      showSuccess('Permissions', 'Permission viewer coming soon');
+                    }}
                   >
                     <Key className="h-4 w-4 mr-2" />
                     View Permissions
@@ -445,7 +452,10 @@ export const ModuleManagementModal: React.FC<ModuleManagementModalProps> = ({
                   </div>
                   <Button 
                     variant="outline" 
-                    onClick={() => showSuccess('Audit Trail', 'Audit trail viewer coming soon')}
+                    onClick={() => {
+                      console.log('View Audit Trail button clicked');
+                      showSuccess('Audit Trail', 'Audit trail viewer coming soon');
+                    }}
                   >
                     <Shield className="h-4 w-4 mr-2" />
                     View Audit
