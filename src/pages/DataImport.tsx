@@ -2,10 +2,15 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Database, Upload, RefreshCw, AlertCircle } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Database, Upload, FileText, Globe, History, AlertCircle } from "lucide-react";
 import { useMasterAuth } from '@/hooks/useMasterAuth';
 import AppLayout from '@/components/layout/AppLayout';
 import { getErrorMessage } from '@/utils/errorHandling';
+import { CsvImportTab } from '@/components/data-import/tabs/CsvImportTab';
+import { JsonImportTab } from '@/components/data-import/tabs/JsonImportTab';
+import { ApiImportTab } from '@/components/data-import/tabs/ApiImportTab';
+import { ImportHistory } from '@/components/data-import/ImportHistory';
 
 const DataImport = () => {
   const { isAuthenticated } = useMasterAuth();
@@ -72,17 +77,42 @@ const DataImport = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-center py-12">
-              <Upload className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-              <h3 className="font-semibold mb-2">Ready to Import</h3>
-              <p className="text-sm text-gray-500 mb-4">
-                Upload your data files to get started
-              </p>
-              <Button>
-                <Upload className="h-4 w-4 mr-2" />
-                Upload File
-              </Button>
-            </div>
+            <Tabs defaultValue="csv" className="w-full">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="csv" className="flex items-center space-x-2">
+                  <FileText className="h-4 w-4" />
+                  <span>CSV Import</span>
+                </TabsTrigger>
+                <TabsTrigger value="json" className="flex items-center space-x-2">
+                  <Upload className="h-4 w-4" />
+                  <span>JSON Import</span>
+                </TabsTrigger>
+                <TabsTrigger value="api" className="flex items-center space-x-2">
+                  <Globe className="h-4 w-4" />
+                  <span>API Import</span>
+                </TabsTrigger>
+                <TabsTrigger value="history" className="flex items-center space-x-2">
+                  <History className="h-4 w-4" />
+                  <span>History</span>
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="csv" className="mt-6">
+                <CsvImportTab />
+              </TabsContent>
+              
+              <TabsContent value="json" className="mt-6">
+                <JsonImportTab />
+              </TabsContent>
+              
+              <TabsContent value="api" className="mt-6">
+                <ApiImportTab />
+              </TabsContent>
+              
+              <TabsContent value="history" className="mt-6">
+                <ImportHistory />
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
       </div>
