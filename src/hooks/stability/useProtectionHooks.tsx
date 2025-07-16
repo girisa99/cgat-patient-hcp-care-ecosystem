@@ -1,5 +1,5 @@
 import { useCallback, useRef, useEffect } from 'react';
-import { useStability } from '../../components/stability/StabilityProvider';
+import { useStability } from '@/components/stability/StabilityProvider';
 
 /**
  * Hook to ensure no duplicate data fetching across modules
