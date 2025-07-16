@@ -221,7 +221,7 @@ export const ModuleManagementModal: React.FC<ModuleManagementModalProps> = ({
           </DialogTitle>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <Tabs value={activeTab} onValueChange={setActiveTab} defaultValue="actions">
           <TabsList className={`grid w-full ${isCreating ? 'grid-cols-1' : 'grid-cols-4'}`}>
             <TabsTrigger value="edit">
               <Edit className="h-4 w-4 mr-2" />
