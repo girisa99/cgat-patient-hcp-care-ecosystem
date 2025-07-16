@@ -80,14 +80,12 @@ export const useMasterTestingSuite = () => {
       queryClient.invalidateQueries({ queryKey: ['master-test-cases'] });
       queryClient.invalidateQueries({ queryKey: ['master-test-executions'] });
       
-      // Handle the results safely
-      const totalTests = results?.total_tests || 0;
-      const passedTests = results?.passed_tests || 0;
-      
-      showSuccess('Test Suite Executed', `Executed ${totalTests} tests with ${passedTests} passing`);
+      // No automatic toasts - let the UI handle success feedback
+      console.log('✅ Test suite executed successfully:', results);
     },
     onError: (error: any) => {
-      showError('Test Execution Failed', error.message);
+      console.error('❌ Test execution failed:', error);
+      // No automatic toasts - let the UI handle error feedback
     }
   });
 
@@ -105,10 +103,12 @@ export const useMasterTestingSuite = () => {
     },
     onSuccess: (count) => {
       queryClient.invalidateQueries({ queryKey: ['master-test-cases'] });
-      showSuccess('Test Cases Generated', `Generated ${count} new test cases`);
+      console.log('✅ Test cases generated:', count);
+      // No automatic toasts - let the UI handle success feedback
     },
     onError: (error: any) => {
-      showError('Test Generation Failed', error.message);
+      console.error('❌ Test generation failed:', error);
+      // No automatic toasts - let the UI handle error feedback
     }
   });
 
@@ -138,10 +138,8 @@ export const useMasterTestingSuite = () => {
     return testExecutions.filter(te => te.test_case_id === testCaseId);
   };
 
-  // Real-time subscription for comprehensive updates
+  // Real-time subscription for comprehensive updates (NO TOASTS)
   useEffect(() => {
-    let hasShownInitialToast = false;
-    
     const channel = supabase
       .channel('comprehensive-testing-realtime')
       .on(
@@ -155,10 +153,7 @@ export const useMasterTestingSuite = () => {
           console.log('🔄 Real-time test case update:', payload);
           queryClient.invalidateQueries({ queryKey: ['master-test-cases'] });
           setLastSync(new Date());
-          // Only show toast for significant changes (INSERT/DELETE), not routine updates
-          if (payload.eventType === 'INSERT') {
-            showSuccess('New Test Cases', 'New test cases have been generated');
-          }
+          // No toasts - silent updates only
         }
       )
       .on(
@@ -172,10 +167,7 @@ export const useMasterTestingSuite = () => {
           console.log('🔄 Real-time functionality update:', payload);
           queryClient.invalidateQueries({ queryKey: ['master-test-cases'] });
           setLastSync(new Date());
-          // Only show toast for new functionality
-          if (payload.eventType === 'INSERT') {
-            showSuccess('New Functionality', 'New functionality detected - generating tests');
-          }
+          // No toasts - silent updates only
         }
       )
       .on(
@@ -189,26 +181,20 @@ export const useMasterTestingSuite = () => {
           console.log('🔄 Real-time execution update:', payload);
           queryClient.invalidateQueries({ queryKey: ['master-test-executions'] });
           setLastSync(new Date());
-          // Silent update for execution history
+          // No toasts - silent updates only
         }
       )
       .subscribe((status) => {
         console.log('📡 Real-time subscription status:', status);
         setRealTimeEnabled(status === 'SUBSCRIBED');
-        
-        // Only show toast once when initially connected, not on every reconnection
-        if (status === 'SUBSCRIBED' && !hasShownInitialToast) {
-          hasShownInitialToast = true;
-          showSuccess('Real-time Enabled', 'Live updates are now active');
-        }
+        // No toasts - status updates only in console
       });
 
     return () => {
       supabase.removeChannel(channel);
       setRealTimeEnabled(false);
-      hasShownInitialToast = false;
     };
-  }, [queryClient, showSuccess]);
+  }, [queryClient]);
 
   // Generate comprehensive documentation mutation
   const generateDocumentationMutation = useMutation({
@@ -232,11 +218,11 @@ export const useMasterTestingSuite = () => {
     },
     onSuccess: (data) => {
       console.log('📋 Documentation generated successfully:', data);
-      showSuccess('Documentation Generated', 'Comprehensive architecture, requirements, and test documentation created');
+      // No automatic toasts - let the UI handle success feedback
     },
     onError: (error: any) => {
       console.error('❌ Documentation generation failed:', error);
-      showError('Documentation Failed', error.message);
+      // No automatic toasts - let the UI handle error feedback
     }
   });
 
@@ -256,10 +242,12 @@ export const useMasterTestingSuite = () => {
     onSuccess: (result: any) => {
       queryClient.invalidateQueries({ queryKey: ['master-test-cases'] });
       const count = (result as any)?.test_cases_created || 0;
-      showSuccess('Enhanced Test Generation', `Generated ${count} comprehensive test cases across all coverage areas`);
+      console.log('✅ Enhanced test cases generated:', count);
+      // No automatic toasts - let the UI handle success feedback
     },
     onError: (error: any) => {
-      showError('Enhanced Test Generation Failed', error.message);
+      console.error('❌ Enhanced test generation failed:', error);
+      // No automatic toasts - let the UI handle error feedback
     }
   });
 
@@ -279,11 +267,12 @@ export const useMasterTestingSuite = () => {
       
       const newFunctionality = (data as any)?.new_functionality_detected || 0;
       const updatedTests = (data as any)?.tests_updated || 0;
-      showSuccess('Sync Complete', `${newFunctionality} new functionality, ${updatedTests} tests updated`);
+      console.log(`🔄 Sync results: ${newFunctionality} new functionality, ${updatedTests} tests updated`);
+      // No automatic toasts - let the UI handle success feedback
     },
     onError: (error: any) => {
       console.error('❌ Real-time sync failed:', error);
-      showError('Sync Failed', error.message);
+      // No automatic toasts - let the UI handle error feedback
     }
   });
 
