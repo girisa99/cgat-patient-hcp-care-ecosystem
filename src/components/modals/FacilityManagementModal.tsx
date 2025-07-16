@@ -169,15 +169,14 @@ export const FacilityManagementModal: React.FC<FacilityManagementModalProps> = (
     
     setLoading(true);
     try {
-      // Check if user_facility_access table exists, if not, create the assignment logic
+      // Update user's facility_id in profiles table
       const { error } = await supabase
-        .from('user_facility_access')
-        .insert({
-          user_id: assignUserForm.userId,
+        .from('profiles')
+        .update({
           facility_id: facility.id,
-          access_level: assignUserForm.accessLevel,
-          is_active: true
-        });
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', assignUserForm.userId);
 
       if (error) throw error;
 
@@ -187,6 +186,57 @@ export const FacilityManagementModal: React.FC<FacilityManagementModalProps> = (
       showError('Assignment Failed', error.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAssignRole = async () => {
+    if (!facility?.id) return;
+    
+    setLoading(true);
+    try {
+      showSuccess('Role Assignment', 'Role assignment functionality will be implemented');
+    } catch (error: any) {
+      showError('Assignment Failed', error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAssignModule = async () => {
+    if (!facility?.id) return;
+    
+    setLoading(true);
+    try {
+      showSuccess('Module Assignment', 'Module assignment functionality will be implemented');
+    } catch (error: any) {
+      showError('Assignment Failed', error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleViewAuditTrail = async () => {
+    if (!facility?.id) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('audit_logs')
+        .select('*')
+        .eq('table_name', 'facilities')
+        .eq('record_id', facility.id)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        showSuccess('Audit Trail', `Found ${data.length} audit records for this facility`);
+        console.log('Facility audit records:', data);
+      } else {
+        showSuccess('Audit Trail', 'No audit records found for this facility');
+      }
+    } catch (error: any) {
+      showError('Audit Trail Error', error.message);
     }
   };
 
@@ -241,7 +291,7 @@ export const FacilityManagementModal: React.FC<FacilityManagementModalProps> = (
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-background border shadow-md z-50">
                         <SelectItem value="treatmentFacility">Treatment Facility</SelectItem>
                         <SelectItem value="referralFacility">Referral Facility</SelectItem>
                         <SelectItem value="prescriberFacility">Prescriber Facility</SelectItem>
@@ -317,7 +367,7 @@ export const FacilityManagementModal: React.FC<FacilityManagementModalProps> = (
                       <SelectTrigger>
                         <SelectValue placeholder="Select a user" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-background border shadow-md z-50">
                         {usersLoading ? (
                           <SelectItem value="" disabled>Loading users...</SelectItem>
                         ) : users.length === 0 ? (
@@ -340,7 +390,7 @@ export const FacilityManagementModal: React.FC<FacilityManagementModalProps> = (
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-background border shadow-md z-50">
                         <SelectItem value="read">Read Only</SelectItem>
                         <SelectItem value="write">Read & Write</SelectItem>
                         <SelectItem value="admin">Admin</SelectItem>
@@ -364,18 +414,35 @@ export const FacilityManagementModal: React.FC<FacilityManagementModalProps> = (
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between p-4 border rounded-lg">
                   <div>
-                    <h4 className="font-medium">Deactivate Facility</h4>
+                    <h4 className="font-medium">Assign Role</h4>
                     <p className="text-sm text-muted-foreground">
-                      This will deactivate the facility and prevent new assignments
+                      Assign roles to this facility
                     </p>
                   </div>
                   <Button 
                     variant="outline" 
-                    onClick={handleDeactivateFacility}
-                    disabled={loading || !facility?.is_active}
+                    onClick={handleAssignRole}
+                    disabled={loading}
                   >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    {facility?.is_active ? 'Deactivate' : 'Already Inactive'}
+                    <Shield className="h-4 w-4 mr-2" />
+                    Assign Role
+                  </Button>
+                </div>
+
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div>
+                    <h4 className="font-medium">Assign Module</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Assign modules to this facility
+                    </p>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    onClick={handleAssignModule}
+                    disabled={loading}
+                  >
+                    <Settings className="h-4 w-4 mr-2" />
+                    Assign Module
                   </Button>
                 </div>
 
@@ -388,10 +455,28 @@ export const FacilityManagementModal: React.FC<FacilityManagementModalProps> = (
                   </div>
                   <Button 
                     variant="outline" 
-                    onClick={() => showSuccess('Audit Trail', 'Audit trail viewer coming soon')}
+                    onClick={handleViewAuditTrail}
+                    disabled={loading}
                   >
                     <Shield className="h-4 w-4 mr-2" />
                     View Audit
+                  </Button>
+                </div>
+
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div>
+                    <h4 className="font-medium">Deactivate Facility</h4>
+                    <p className="text-sm text-muted-foreground">
+                      This will deactivate the facility and prevent new assignments
+                    </p>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    onClick={handleDeactivateFacility}
+                    disabled={loading || !facility?.is_active}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    {facility?.is_active ? 'Deactivate' : 'Already Inactive'}
                   </Button>
                 </div>
               </CardContent>
