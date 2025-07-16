@@ -548,6 +548,59 @@ export type Database = {
           },
         ]
       }
+      code_generation_monitoring: {
+        Row: {
+          auto_fixes_applied: Json | null
+          compliance_score: number
+          created_at: string
+          framework_version: string | null
+          generated_code: string | null
+          generation_session_id: string
+          id: string
+          manual_review_required: boolean | null
+          prompt_id: string | null
+          user_id: string | null
+          validation_results: Json
+          violations_detected: Json | null
+        }
+        Insert: {
+          auto_fixes_applied?: Json | null
+          compliance_score?: number
+          created_at?: string
+          framework_version?: string | null
+          generated_code?: string | null
+          generation_session_id: string
+          id?: string
+          manual_review_required?: boolean | null
+          prompt_id?: string | null
+          user_id?: string | null
+          validation_results?: Json
+          violations_detected?: Json | null
+        }
+        Update: {
+          auto_fixes_applied?: Json | null
+          compliance_score?: number
+          created_at?: string
+          framework_version?: string | null
+          generated_code?: string | null
+          generation_session_id?: string
+          id?: string
+          manual_review_required?: boolean | null
+          prompt_id?: string | null
+          user_id?: string | null
+          validation_results?: Json
+          violations_detected?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "code_generation_monitoring_prompt_id_fkey"
+            columns: ["prompt_id"]
+            isOneToOne: false
+            referencedRelation: "prompt_governance"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       commercial_products: {
         Row: {
           competitive_landscape: Json | null
@@ -606,6 +659,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      compliance_reports: {
+        Row: {
+          compliance_score: number
+          generated_at: string
+          id: string
+          recommendations: Json | null
+          report_data: Json
+          report_period_end: string | null
+          report_period_start: string | null
+          report_type: string
+          total_violations: number | null
+          user_id: string | null
+          violations_by_severity: Json | null
+        }
+        Insert: {
+          compliance_score?: number
+          generated_at?: string
+          id?: string
+          recommendations?: Json | null
+          report_data?: Json
+          report_period_end?: string | null
+          report_period_start?: string | null
+          report_type: string
+          total_violations?: number | null
+          user_id?: string | null
+          violations_by_severity?: Json | null
+        }
+        Update: {
+          compliance_score?: number
+          generated_at?: string
+          id?: string
+          recommendations?: Json | null
+          report_data?: Json
+          report_period_end?: string | null
+          report_period_start?: string | null
+          report_type?: string
+          total_violations?: number | null
+          user_id?: string | null
+          violations_by_severity?: Json | null
+        }
+        Relationships: []
       }
       comprehensive_test_cases: {
         Row: {
@@ -1156,6 +1251,39 @@ export type Database = {
           npi_number?: string | null
           phone?: string | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      framework_configuration: {
+        Row: {
+          config_data: Json
+          config_name: string
+          created_at: string
+          id: string
+          is_active: boolean | null
+          is_global: boolean | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          config_data?: Json
+          config_name: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          is_global?: boolean | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          config_data?: Json
+          config_name?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          is_global?: boolean | null
+          updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -2901,6 +3029,51 @@ export type Database = {
           },
         ]
       }
+      prompt_governance: {
+        Row: {
+          analysis_results: Json
+          blocking_reasons: Json | null
+          compliance_score: number
+          enhanced_prompt: string | null
+          enhancements_applied: Json | null
+          id: string
+          intercepted_at: string
+          original_prompt: string | null
+          prompt_text: string
+          user_id: string | null
+          violations_found: Json | null
+          was_blocked: boolean | null
+        }
+        Insert: {
+          analysis_results?: Json
+          blocking_reasons?: Json | null
+          compliance_score?: number
+          enhanced_prompt?: string | null
+          enhancements_applied?: Json | null
+          id?: string
+          intercepted_at?: string
+          original_prompt?: string | null
+          prompt_text: string
+          user_id?: string | null
+          violations_found?: Json | null
+          was_blocked?: boolean | null
+        }
+        Update: {
+          analysis_results?: Json
+          blocking_reasons?: Json | null
+          compliance_score?: number
+          enhanced_prompt?: string | null
+          enhancements_applied?: Json | null
+          id?: string
+          intercepted_at?: string
+          original_prompt?: string | null
+          prompt_text?: string
+          user_id?: string | null
+          violations_found?: Json | null
+          was_blocked?: boolean | null
+        }
+        Relationships: []
+      }
       role_module_assignments: {
         Row: {
           assigned_at: string | null
@@ -3313,6 +3486,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      stability_monitoring: {
+        Row: {
+          auto_fixed: boolean | null
+          created_at: string
+          event_data: Json
+          event_type: string
+          file_path: string | null
+          id: string
+          monitoring_session_id: string
+          rule_name: string | null
+          severity: string
+          updated_at: string
+          user_id: string | null
+          violation_details: Json | null
+        }
+        Insert: {
+          auto_fixed?: boolean | null
+          created_at?: string
+          event_data?: Json
+          event_type: string
+          file_path?: string | null
+          id?: string
+          monitoring_session_id: string
+          rule_name?: string | null
+          severity?: string
+          updated_at?: string
+          user_id?: string | null
+          violation_details?: Json | null
+        }
+        Update: {
+          auto_fixed?: boolean | null
+          created_at?: string
+          event_data?: Json
+          event_type?: string
+          file_path?: string | null
+          id?: string
+          monitoring_session_id?: string
+          rule_name?: string | null
+          severity?: string
+          updated_at?: string
+          user_id?: string | null
+          violation_details?: Json | null
+        }
+        Relationships: []
       }
       system_functionality_registry: {
         Row: {
@@ -4079,6 +4297,20 @@ export type Database = {
         }
         Returns: undefined
       }
+      log_prompt_governance: {
+        Args: {
+          p_prompt_text: string
+          p_analysis_results: Json
+          p_compliance_score?: number
+          p_violations_found?: Json
+          p_enhancements_applied?: Json
+          p_original_prompt?: string
+          p_enhanced_prompt?: string
+          p_was_blocked?: boolean
+          p_blocking_reasons?: Json
+        }
+        Returns: string
+      }
       log_security_event: {
         Args: {
           p_user_id: string
@@ -4088,6 +4320,18 @@ export type Database = {
           p_metadata?: Json
         }
         Returns: undefined
+      }
+      log_stability_event: {
+        Args: {
+          p_monitoring_session_id: string
+          p_event_type: string
+          p_event_data?: Json
+          p_severity?: string
+          p_file_path?: string
+          p_rule_name?: string
+          p_violation_details?: Json
+        }
+        Returns: string
       }
       log_user_activity: {
         Args: {
