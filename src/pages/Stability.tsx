@@ -7,11 +7,12 @@ import { StabilityMonitor } from '@/components/stability/StabilityMonitor';
 import { SystemStatusChecker } from '@/components/monitoring/SystemStatusChecker';
 import { AutomaticEnhancementsVerification } from '@/components/monitoring/AutomaticEnhancementsVerification';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import AppLayout from '@/components/layout/AppLayout';
 
 const Stability: React.FC = () => {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <AppLayout title="Stability Monitoring">
+      <div className="space-y-6">
         <Tabs defaultValue="enhancements" className="w-full">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="enhancements">Auto Enhancements</TabsTrigger>
@@ -32,7 +33,7 @@ const Stability: React.FC = () => {
           </TabsContent>
         </Tabs>
       </div>
-    </div>
+    </AppLayout>
   );
 };
 

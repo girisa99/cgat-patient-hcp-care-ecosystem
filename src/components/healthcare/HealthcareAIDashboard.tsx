@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Brain, Shield, Activity, Database, Users, AlertTriangle } from 'lucide-react';
 import { useHealthcareAI } from '@/hooks/useHealthcareAI';
+import AppLayout from '@/components/layout/AppLayout';
 
 const HealthcareAIDashboard: React.FC = () => {
   const {
@@ -73,7 +74,8 @@ const HealthcareAIDashboard: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <AppLayout title="Healthcare AI Dashboard">
+      <div className="space-y-6">//
       <div className="flex items-center gap-2 mb-6">
         <Brain className="h-8 w-8 text-primary" />
         <h1 className="text-3xl font-bold text-foreground">Healthcare AI & MCP Dashboard</h1>
@@ -303,7 +305,8 @@ const HealthcareAIDashboard: React.FC = () => {
           )}
         </TabsContent>
       </Tabs>
-    </div>
+      </div>
+    </AppLayout>
   );
 };
 

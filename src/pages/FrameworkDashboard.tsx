@@ -36,6 +36,7 @@ import {
 } from 'lucide-react';
 import { MockDataDetector } from '@/utils/verification/MockDataDetector';
 import { DuplicateDetector } from '@/utils/verification/DuplicateDetector';
+import AppLayout from '@/components/layout/AppLayout';
 
 interface FrameworkStatus {
   overall_compliant: boolean;
@@ -379,17 +380,18 @@ const FrameworkDashboard: React.FC = () => {
 
   if (isLoading && !frameworkStatus) {
     return (
-      <div className="container mx-auto p-6">
+      <AppLayout title="Framework Dashboard">
         <div className="flex items-center justify-center h-64">
           <RefreshCw className="h-8 w-8 animate-spin" />
           <span className="ml-2">Loading framework data...</span>
         </div>
-      </div>
+      </AppLayout>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <AppLayout title="Framework Dashboard">
+      <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -1083,7 +1085,8 @@ const FrameworkDashboard: React.FC = () => {
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
+      </div>
+    </AppLayout>
   );
 };
 
