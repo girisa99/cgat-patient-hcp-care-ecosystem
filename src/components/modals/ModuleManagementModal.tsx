@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -65,6 +65,24 @@ export const ModuleManagementModal: React.FC<ModuleManagementModalProps> = ({
     roleId: '',
     permissions: [] as string[]
   });
+
+  // Update form when module prop changes
+  useEffect(() => {
+    if (module) {
+      setEditForm({
+        name: module.name,
+        description: module.description || '',
+        is_active: module.is_active
+      });
+    } else if (isCreating) {
+      // Reset form for new module
+      setEditForm({
+        name: '',
+        description: '',
+        is_active: true
+      });
+    }
+  }, [module, isCreating]);
 
   const handleEditModule = async () => {
     setLoading(true);
@@ -395,10 +413,10 @@ export const ModuleManagementModal: React.FC<ModuleManagementModalProps> = ({
                   <Button 
                     variant="outline" 
                     onClick={handleDeactivateModule}
-                    disabled={loading || !module.is_active}
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    {module.is_active ? 'Deactivate' : 'Already Inactive'}
+                     disabled={loading || !module?.is_active}
+                   >
+                     <Trash2 className="h-4 w-4 mr-2" />
+                     {module?.is_active ? 'Deactivate' : 'Already Inactive'}
                   </Button>
                 </div>
 
