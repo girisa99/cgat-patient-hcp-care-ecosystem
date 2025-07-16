@@ -140,6 +140,8 @@ export const useMasterTestingSuite = () => {
 
   // Real-time subscription for comprehensive updates
   useEffect(() => {
+    let hasShownInitialToast = false;
+    
     const channel = supabase
       .channel('comprehensive-testing-realtime')
       .on(
@@ -153,7 +155,10 @@ export const useMasterTestingSuite = () => {
           console.log('🔄 Real-time test case update:', payload);
           queryClient.invalidateQueries({ queryKey: ['master-test-cases'] });
           setLastSync(new Date());
-          showSuccess('Real-time Update', 'Test cases updated automatically');
+          // Only show toast for significant changes (INSERT/DELETE), not routine updates
+          if (payload.eventType === 'INSERT') {
+            showSuccess('New Test Cases', 'New test cases have been generated');
+          }
         }
       )
       .on(
@@ -167,7 +172,10 @@ export const useMasterTestingSuite = () => {
           console.log('🔄 Real-time functionality update:', payload);
           queryClient.invalidateQueries({ queryKey: ['master-test-cases'] });
           setLastSync(new Date());
-          showSuccess('New Functionality', 'Detected new functionality - generating tests');
+          // Only show toast for new functionality
+          if (payload.eventType === 'INSERT') {
+            showSuccess('New Functionality', 'New functionality detected - generating tests');
+          }
         }
       )
       .on(
@@ -181,12 +189,16 @@ export const useMasterTestingSuite = () => {
           console.log('🔄 Real-time execution update:', payload);
           queryClient.invalidateQueries({ queryKey: ['master-test-executions'] });
           setLastSync(new Date());
+          // Silent update for execution history
         }
       )
       .subscribe((status) => {
         console.log('📡 Real-time subscription status:', status);
         setRealTimeEnabled(status === 'SUBSCRIBED');
-        if (status === 'SUBSCRIBED') {
+        
+        // Only show toast once when initially connected, not on every reconnection
+        if (status === 'SUBSCRIBED' && !hasShownInitialToast) {
+          hasShownInitialToast = true;
           showSuccess('Real-time Enabled', 'Live updates are now active');
         }
       });
@@ -194,6 +206,7 @@ export const useMasterTestingSuite = () => {
     return () => {
       supabase.removeChannel(channel);
       setRealTimeEnabled(false);
+      hasShownInitialToast = false;
     };
   }, [queryClient, showSuccess]);
 
