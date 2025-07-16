@@ -7,6 +7,7 @@ import {
   Users, UserPlus, Shield, Mail, Settings, Edit, 
   UserX, Trash2, RefreshCw, Plus 
 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useMasterUserManagement } from '@/hooks/useMasterUserManagement';
 import { useMasterRoleManagement } from '@/hooks/useMasterRoleManagement';
 import { useMasterFacilities } from '@/hooks/useMasterFacilities';
@@ -45,6 +46,8 @@ export const UsersManagementTable: React.FC = () => {
   const [assignModuleOpen, setAssignModuleOpen] = useState(false);
   const [createRoleOpen, setCreateRoleOpen] = useState(false);
   const [assignFacilityDialogOpen, setAssignFacilityDialogOpen] = useState(false);
+  const [resendEmailDialogOpen, setResendEmailDialogOpen] = useState(false);
+  const [selectedUserForEmail, setSelectedUserForEmail] = useState<{userId: string, userEmail: string, userName: string} | null>(null);
   
   const stats = getUserStats();
 
@@ -101,7 +104,15 @@ export const UsersManagementTable: React.FC = () => {
     setAssignFacilityDialogOpen(true);
   };
 
-  const handleResendEmail = async (userId: string, userEmail: string) => {
+  const handleResendEmailClick = (userId: string, userEmail: string, userName: string) => {
+    setSelectedUserForEmail({ userId, userEmail, userName });
+    setResendEmailDialogOpen(true);
+  };
+
+  const handleResendEmail = async () => {
+    if (!selectedUserForEmail) return;
+    
+    const { userId, userEmail } = selectedUserForEmail;
     console.log('🔥 Resend email called for:', { userId, userEmail });
     try {
       console.log('📧 Attempting to resend verification email via Supabase auth...');
@@ -123,6 +134,9 @@ export const UsersManagementTable: React.FC = () => {
     } catch (error) {
       console.error('💥 Resend email error:', error);
       showError('Email Error', 'Error sending verification email');
+    } finally {
+      setResendEmailDialogOpen(false);
+      setSelectedUserForEmail(null);
     }
   };
 
@@ -319,14 +333,14 @@ export const UsersManagementTable: React.FC = () => {
                           <Settings className="h-4 w-4" />
                         </Button>
                         
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleResendEmail(user.id, user.email)}
-                          title="Resend Email"
-                        >
-                          <Mail className="h-4 w-4" />
-                        </Button>
+                         <Button
+                           variant="outline"
+                           size="sm"
+                           onClick={() => handleResendEmailClick(user.id, user.email, `${user.first_name} ${user.last_name}`)}
+                           title="Resend Email"
+                         >
+                           <Mail className="h-4 w-4" />
+                         </Button>
                         
                         <Button
                           variant="outline"
@@ -366,13 +380,13 @@ export const UsersManagementTable: React.FC = () => {
                       >
                         Assign Role
                       </Button>
-                      <Button
-                        onClick={() => handleResendEmail(user.id, user.email)}
-                        variant="outline"
-                        size="sm"
-                      >
-                        Send Email
-                      </Button>
+                       <Button
+                         onClick={() => handleResendEmailClick(user.id, user.email, `${user.first_name} ${user.last_name}`)}
+                         variant="outline"
+                         size="sm"
+                       >
+                         Send Email
+                       </Button>
                     </div>
                   </div>
                 ))}
@@ -488,6 +502,39 @@ export const UsersManagementTable: React.FC = () => {
         selectedUser={selectedUser}
         onAssignFacility={onAssignFacilityHandler}
       />
+
+      {/* Resend Email Confirmation Dialog */}
+      <Dialog open={resendEmailDialogOpen} onOpenChange={setResendEmailDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirm Email Resend</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Are you sure you want to resend the verification email to{' '}
+              <span className="font-medium">{selectedUserForEmail?.userName}</span>?
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Email will be sent to: <span className="font-medium">{selectedUserForEmail?.userEmail}</span>
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setResendEmailDialogOpen(false);
+                  setSelectedUserForEmail(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleResendEmail}>
+                <Mail className="h-4 w-4 mr-2" />
+                Send Email
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

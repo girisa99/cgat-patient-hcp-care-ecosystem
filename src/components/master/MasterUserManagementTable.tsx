@@ -12,6 +12,7 @@ import {
   Users, UserPlus, Settings, RefreshCw, Edit, UserX, Shield, 
   Mail, Trash2 
 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useMasterUserManagement } from '@/hooks/useMasterUserManagement';
 import { useAdminRealtime } from '@/hooks/useRealtime';
 import { useMasterToast } from '@/hooks/useMasterToast';
@@ -23,6 +24,9 @@ export const MasterUserManagementTable: React.FC = () => {
     enableNotifications: true,
     areas: ['userManagement', 'rbac'] 
   });
+
+  const [resendEmailDialogOpen, setResendEmailDialogOpen] = useState(false);
+  const [selectedUserForEmail, setSelectedUserForEmail] = useState<{userId: string, userEmail: string, userName: string} | null>(null);
 
   const { 
     users, 
@@ -79,7 +83,15 @@ export const MasterUserManagementTable: React.FC = () => {
     console.log('Assign modules to:', userId, userName);
   };
 
-  const handleResendEmail = async (userId: string, userEmail: string) => {
+  const handleResendEmailClick = (userId: string, userEmail: string, userName: string) => {
+    setSelectedUserForEmail({ userId, userEmail, userName });
+    setResendEmailDialogOpen(true);
+  };
+
+  const handleResendEmail = async () => {
+    if (!selectedUserForEmail) return;
+    
+    const { userId, userEmail } = selectedUserForEmail;
     console.log('🔥 Master - Resend email called for:', { userId, userEmail });
     try {
       console.log('📧 Master - Attempting to resend verification email via Supabase auth...');
@@ -94,14 +106,16 @@ export const MasterUserManagementTable: React.FC = () => {
       if (error) {
         console.error('❌ Master - Supabase auth resend error:', error);
         showError('Email Failed', 'Failed to send verification email');
-        return;
+      } else {
+        console.log('✅ Master - Email resend successful');
+        showSuccess('Email Sent', `Verification email sent to ${userEmail}`);
       }
-
-      console.log('✅ Master - Email resend successful');
-      showSuccess('Email Sent', `Verification email sent to ${userEmail}`);
     } catch (error) {
       console.error('💥 Master - Resend email error:', error);
       showError('Email Error', 'Error sending verification email');
+    } finally {
+      setResendEmailDialogOpen(false);
+      setSelectedUserForEmail(null);
     }
   };
 
@@ -247,14 +261,14 @@ export const MasterUserManagementTable: React.FC = () => {
                         <Settings className="h-4 w-4" />
                       </Button>
                       
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleResendEmail(user.id, user.email)}
-                        title="Resend Email Verification"
-                      >
-                        <Mail className="h-4 w-4" />
-                      </Button>
+                       <Button
+                         variant="outline"
+                         size="sm"
+                         onClick={() => handleResendEmailClick(user.id, user.email, `${user.first_name} ${user.last_name}`)}
+                         title="Resend Email Verification"
+                       >
+                         <Mail className="h-4 w-4" />
+                       </Button>
                       
                       {user.is_active ? (
                         <Button
@@ -295,6 +309,39 @@ export const MasterUserManagementTable: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Resend Email Confirmation Dialog */}
+      <Dialog open={resendEmailDialogOpen} onOpenChange={setResendEmailDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirm Email Resend</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Are you sure you want to resend the verification email to{' '}
+              <span className="font-medium">{selectedUserForEmail?.userName}</span>?
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Email will be sent to: <span className="font-medium">{selectedUserForEmail?.userEmail}</span>
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setResendEmailDialogOpen(false);
+                  setSelectedUserForEmail(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleResendEmail}>
+                <Mail className="h-4 w-4 mr-2" />
+                Send Email
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
