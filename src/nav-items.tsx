@@ -11,6 +11,10 @@ import {
   Activity,
   Globe,
   Eye,
+  Layers,
+  Database,
+  Upload,
+  Brain,
 } from "lucide-react";
 
 export const navItems = [
@@ -83,5 +87,20 @@ export const navItems = [
     title: "Governance",
     url: "/governance",
     icon: Eye,
+  },
+  {
+    title: "Framework",
+    url: "/framework",
+    icon: Shield,
+  },
+  {
+    title: "Stability",
+    url: "/stability",
+    icon: Activity,
+  },
+  {
+    title: "Healthcare AI",
+    url: "/healthcare-ai",
+    icon: Brain,
   },
 ];

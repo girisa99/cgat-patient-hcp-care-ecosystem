@@ -23,6 +23,7 @@ import NgrokIntegration from '@/pages/NgrokIntegration';
 import Security from '@/pages/Security';
 import Reports from '@/pages/Reports';
 import Testing from '@/pages/Testing';
+import FrameworkDashboard from '@/pages/FrameworkDashboard';
 import RoleManagement from '@/pages/RoleManagement';
 import Stability from '@/pages/Stability';
 import Login from '@/pages/Login';
@@ -75,7 +76,8 @@ const AppContent = () => {
                    <Route path="/ngrok" element={<NgrokIntegration />} />
                    <Route path="/security" element={<Security />} />
                    <Route path="/reports" element={<Reports />} />
-                   <Route path="/testing" element={<Testing />} />
+                    <Route path="/testing" element={<Testing />} />
+                    <Route path="/framework" element={<FrameworkDashboard />} />
                    <Route path="/role-management" element={<RoleManagement />} />
                   <Route path="/stability" element={<Stability />} />
                   <Route path="/stability/dashboard" element={

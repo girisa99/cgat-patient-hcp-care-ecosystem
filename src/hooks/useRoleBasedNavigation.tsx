@@ -50,6 +50,9 @@ export const useRoleBasedNavigation = () => {
       'data-import': ['superAdmin', 'onboardingTeam'],
       'governance': ['superAdmin', 'onboardingTeam'],
       'active-verification': ['superAdmin', 'onboardingTeam'],
+      'framework': ['superAdmin', 'onboardingTeam'],
+      'stability': ['superAdmin', 'onboardingTeam'],
+      'healthcare-ai': ['superAdmin', 'onboardingTeam'],
     };
 
     const filteredItems = navItems.filter(item => {
