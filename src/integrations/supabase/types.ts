@@ -800,6 +800,57 @@ export type Database = {
           },
         ]
       }
+      data_import_sessions: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          error_details: Json | null
+          id: string
+          import_config: Json | null
+          import_type: string
+          records_failed: number | null
+          records_processed: number | null
+          records_total: number | null
+          schema_detected: Json
+          source_name: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          error_details?: Json | null
+          id?: string
+          import_config?: Json | null
+          import_type: string
+          records_failed?: number | null
+          records_processed?: number | null
+          records_total?: number | null
+          schema_detected?: Json
+          source_name: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          error_details?: Json | null
+          id?: string
+          import_config?: Json | null
+          import_type?: string
+          records_failed?: number | null
+          records_processed?: number | null
+          records_total?: number | null
+          schema_detected?: Json
+          source_name?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       developer_applications: {
         Row: {
           company_name: string
@@ -988,6 +1039,47 @@ export type Database = {
           website_url?: string | null
         }
         Relationships: []
+      }
+      dynamic_table_schemas: {
+        Row: {
+          created_at: string
+          created_from_import_session: string | null
+          id: string
+          is_active: boolean
+          schema_definition: Json
+          table_name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_from_import_session?: string | null
+          id?: string
+          is_active?: boolean
+          schema_definition: Json
+          table_name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_from_import_session?: string | null
+          id?: string
+          is_active?: boolean
+          schema_definition?: Json
+          table_name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dynamic_table_schemas_created_from_import_session_fkey"
+            columns: ["created_from_import_session"]
+            isOneToOne: false
+            referencedRelation: "data_import_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       external_api_change_logs: {
         Row: {
@@ -1333,6 +1425,57 @@ export type Database = {
             columns: ["functionality_id"]
             isOneToOne: false
             referencedRelation: "system_functionality_registry"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      imported_data: {
+        Row: {
+          created_at: string
+          id: string
+          import_session_id: string
+          row_data: Json
+          row_index: number
+          table_schema_id: string | null
+          user_id: string
+          validation_errors: Json | null
+          validation_status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          import_session_id: string
+          row_data: Json
+          row_index: number
+          table_schema_id?: string | null
+          user_id: string
+          validation_errors?: Json | null
+          validation_status?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          import_session_id?: string
+          row_data?: Json
+          row_index?: number
+          table_schema_id?: string | null
+          user_id?: string
+          validation_errors?: Json | null
+          validation_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "imported_data_import_session_id_fkey"
+            columns: ["import_session_id"]
+            isOneToOne: false
+            referencedRelation: "data_import_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "imported_data_table_schema_id_fkey"
+            columns: ["table_schema_id"]
+            isOneToOne: false
+            referencedRelation: "dynamic_table_schemas"
             referencedColumns: ["id"]
           },
         ]
@@ -4198,6 +4341,10 @@ export type Database = {
         }
         Returns: Json
       }
+      detect_schema_from_data: {
+        Args: { sample_data: Json; max_samples?: number }
+        Returns: Json
+      }
       detect_system_functionality: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -4226,6 +4373,10 @@ export type Database = {
           fix_count: number
           severity_breakdown: Json
         }[]
+      }
+      get_import_statistics: {
+        Args: { p_user_id?: string }
+        Returns: Json
       }
       get_user_accessible_facilities: {
         Args: { user_id: string }
@@ -4377,6 +4528,10 @@ export type Database = {
           role_name: Database["public"]["Enums"]["user_role"]
         }
         Returns: boolean
+      }
+      validate_data_against_schema: {
+        Args: { data_row: Json; schema_def: Json }
+        Returns: Json
       }
     }
     Enums: {
