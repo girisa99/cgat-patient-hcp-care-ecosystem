@@ -103,12 +103,11 @@ export const UsersManagementTable: React.FC = () => {
 
   const handleResendEmail = async (userId: string, userEmail: string) => {
     try {
-      const { error } = await supabase.functions.invoke('send-verification-email', {
-        body: { 
-          userId, 
-          email: userEmail,
-          firstName: users.find(u => u.id === userId)?.first_name,
-          lastName: users.find(u => u.id === userId)?.last_name
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: userEmail,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`
         }
       });
 
