@@ -15,6 +15,7 @@ import {
 import { useMasterUserManagement } from '@/hooks/useMasterUserManagement';
 import { useAdminRealtime } from '@/hooks/useRealtime';
 import { useMasterToast } from '@/hooks/useMasterToast';
+import { supabase } from '@/integrations/supabase/client';
 
 export const MasterUserManagementTable: React.FC = () => {
   // Enable real-time updates for user management
@@ -80,22 +81,22 @@ export const MasterUserManagementTable: React.FC = () => {
 
   const handleResendEmail = async (userId: string, userEmail: string) => {
     try {
-      const response = await fetch('/api/send-verification-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+      const { data, error } = await supabase.functions.invoke('send-verification-email', {
+        body: { 
           userId, 
           email: userEmail,
           firstName: users.find(u => u.id === userId)?.first_name,
           lastName: users.find(u => u.id === userId)?.last_name
-        })
+        }
       });
 
-      if (response.ok) {
-        showSuccess('Email Sent', `Verification email sent to ${userEmail}`);
-      } else {
+      if (error) {
+        console.error('Email function error:', error);
         showError('Email Failed', 'Failed to send verification email');
+        return;
       }
+
+      showSuccess('Email Sent', `Verification email sent to ${userEmail}`);
     } catch (error) {
       console.error('Resend email error:', error);
       showError('Email Error', 'Error sending verification email');

@@ -22,6 +22,7 @@ import {
 import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { useMasterUserManagement } from '@/hooks/useMasterUserManagement';
 import { useMasterData } from '@/hooks/useMasterData';
+import { useSingleMasterModules } from '@/hooks/useSingleMasterModules';
 import AppLayout from '@/components/layout/AppLayout';
 import { CreateUserForm } from '@/components/forms/CreateUserForm';
 import { UsersManagementTable } from '@/components/users/UsersManagementTable';
@@ -29,6 +30,8 @@ import { UserActionDialogs } from '@/components/users/UserActionDialogs';
 import { BulkActionsTab } from '@/components/users/BulkActionsTab';
 import { useUserManagementDialogs } from '@/hooks/useUserManagementDialogs';
 import { getErrorMessage } from '@/utils/errorHandling';
+import { supabase } from '@/integrations/supabase/client';
+import { useMasterToast } from '@/hooks/useMasterToast';
 
 const UserManagement = () => {
   const { isAuthenticated, user } = useMasterAuth();
@@ -46,6 +49,8 @@ const UserManagement = () => {
     isDeactivating
   } = useMasterUserManagement();
   const { facilities, roles } = useMasterData();
+  const { modules } = useSingleMasterModules();
+  const { showSuccess, showError } = useMasterToast();
   
   const [showCreateUser, setShowCreateUser] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
@@ -310,7 +315,29 @@ const UserManagement = () => {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => console.log('Send email to:', user.email)}
+                            onClick={async () => {
+                              try {
+                                const { data, error } = await supabase.functions.invoke('send-verification-email', {
+                                  body: { 
+                                    userId: user.id, 
+                                    email: user.email,
+                                    firstName: user.first_name,
+                                    lastName: user.last_name
+                                  }
+                                });
+
+                                if (error) {
+                                  console.error('Email function error:', error);
+                                  alert('Failed to send verification email');
+                                  return;
+                                }
+
+                                alert(`Verification email sent to ${user.email}`);
+                              } catch (error) {
+                                console.error('Resend email error:', error);
+                                alert('Error sending verification email');
+                              }
+                            }}
                           >
                             <Mail className="h-4 w-4 mr-2" />
                             Send Email
@@ -457,12 +484,18 @@ const UserManagement = () => {
                           </Badge>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Button variant="outline" size="sm">
-                          <Settings className="h-4 w-4 mr-2" />
-                          Manage
-                        </Button>
-                      </div>
+                       <div className="flex items-center gap-2">
+                         <Button 
+                           variant="outline" 
+                           size="sm"
+                           onClick={() => {
+                             showSuccess('Facility Management', `Managing ${facility.name} - functionality coming soon`);
+                           }}
+                         >
+                           <Settings className="h-4 w-4 mr-2" />
+                           Manage
+                         </Button>
+                       </div>
                     </div>
                   ))}
                   {facilities.length === 0 && (
@@ -486,15 +519,46 @@ const UserManagement = () => {
                   Modules Management
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="text-center py-12 text-muted-foreground">
-                    <Settings className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <h3 className="font-semibold mb-2">Modules Management</h3>
-                    <p>Module assignment and management functionality will be available here.</p>
-                  </div>
-                </div>
-              </CardContent>
+               <CardContent>
+                 <div className="space-y-4">
+                   {modules.length === 0 ? (
+                     <div className="text-center py-12 text-muted-foreground">
+                       <Settings className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                       <h3 className="font-semibold mb-2">No modules found</h3>
+                       <p>Modules will appear here when created.</p>
+                     </div>
+                   ) : (
+                     modules.map((module) => (
+                       <div key={module.id} className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                         <div className="flex items-center gap-4">
+                           <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center">
+                             <Settings className="h-5 w-5 text-primary" />
+                           </div>
+                           <div>
+                             <h3 className="font-semibold">{module.name}</h3>
+                             <p className="text-sm text-muted-foreground">{module.description || 'No description'}</p>
+                             <Badge variant={module.is_active ? 'default' : 'secondary'} className="mt-1">
+                               {module.is_active ? 'Active' : 'Inactive'}
+                             </Badge>
+                           </div>
+                         </div>
+                         <div className="flex items-center gap-2">
+                           <Button 
+                             variant="outline" 
+                             size="sm"
+                             onClick={() => {
+                               showSuccess('Module Management', `Managing ${module.name} - functionality coming soon`);
+                             }}
+                           >
+                             <Settings className="h-4 w-4 mr-2" />
+                             Manage
+                           </Button>
+                         </div>
+                       </div>
+                     ))
+                   )}
+                 </div>
+               </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
