@@ -51,6 +51,8 @@ export const FacilityManagementModal: React.FC<FacilityManagementModalProps> = (
   const [activeTab, setActiveTab] = useState('edit');
   const [loading, setLoading] = useState(false);
   
+  const isEditMode = !!facility;
+  
   const [editForm, setEditForm] = useState({
     name: facility?.name || '',
     facility_type: facility?.facility_type || 'treatmentFacility' as FacilityType,
@@ -60,36 +62,78 @@ export const FacilityManagementModal: React.FC<FacilityManagementModalProps> = (
     is_active: facility?.is_active ?? true
   });
 
+  // Update form when facility prop changes
+  React.useEffect(() => {
+    if (facility) {
+      setEditForm({
+        name: facility.name,
+        facility_type: facility.facility_type,
+        address: facility.address || '',
+        phone: facility.phone || '',
+        email: facility.email || '',
+        is_active: facility.is_active
+      });
+    } else {
+      // Reset form for new facility
+      setEditForm({
+        name: '',
+        facility_type: 'treatmentFacility' as FacilityType,
+        address: '',
+        phone: '',
+        email: '',
+        is_active: true
+      });
+    }
+  }, [facility]);
+
   const [assignUserForm, setAssignUserForm] = useState({
     userId: '',
     accessLevel: 'read'
   });
 
-  const handleEditFacility = async () => {
-    if (!facility?.id) return;
+  const handleSaveFacility = async () => {
+    if (isEditMode && !facility?.id) return;
     
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('facilities')
-        .update({
-          name: editForm.name,
-          facility_type: editForm.facility_type,
-          address: editForm.address,
-          phone: editForm.phone,
-          email: editForm.email,
-          is_active: editForm.is_active,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', facility.id);
+      if (isEditMode) {
+        // Update existing facility
+        const { error } = await supabase
+          .from('facilities')
+          .update({
+            name: editForm.name,
+            facility_type: editForm.facility_type,
+            address: editForm.address,
+            phone: editForm.phone,
+            email: editForm.email,
+            is_active: editForm.is_active,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', facility.id);
 
-      if (error) throw error;
+        if (error) throw error;
+        showSuccess('Facility Updated', `${editForm.name} has been updated successfully`);
+      } else {
+        // Create new facility
+        const { error } = await supabase
+          .from('facilities')
+          .insert({
+            name: editForm.name,
+            facility_type: editForm.facility_type,
+            address: editForm.address,
+            phone: editForm.phone,
+            email: editForm.email,
+            is_active: editForm.is_active
+          });
 
-      showSuccess('Facility Updated', `${editForm.name} has been updated successfully`);
+        if (error) throw error;
+        showSuccess('Facility Created', `${editForm.name} has been created successfully`);
+      }
+      
       onSuccess?.();
       onOpenChange(false);
     } catch (error: any) {
-      showError('Update Failed', error.message);
+      showError(isEditMode ? 'Update Failed' : 'Create Failed', error.message);
     } finally {
       setLoading(false);
     }
@@ -146,38 +190,40 @@ export const FacilityManagementModal: React.FC<FacilityManagementModalProps> = (
     }
   };
 
-  if (!facility) return null;
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Building2 className="h-5 w-5" />
-            Manage Facility: {facility.name}
+            {isEditMode ? `Manage Facility: ${facility.name}` : 'Create New Facility'}
           </DialogTitle>
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className={isEditMode ? "grid w-full grid-cols-3" : "grid w-full grid-cols-1"}>
             <TabsTrigger value="edit">
               <Edit className="h-4 w-4 mr-2" />
-              Edit
+              {isEditMode ? 'Edit' : 'Create'}
             </TabsTrigger>
-            <TabsTrigger value="assign">
-              <UserPlus className="h-4 w-4 mr-2" />
-              Assign Users
-            </TabsTrigger>
-            <TabsTrigger value="actions">
-              <Settings className="h-4 w-4 mr-2" />
-              Actions
-            </TabsTrigger>
+            {isEditMode && (
+              <>
+                <TabsTrigger value="assign">
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Assign Users
+                </TabsTrigger>
+                <TabsTrigger value="actions">
+                  <Settings className="h-4 w-4 mr-2" />
+                  Actions
+                </TabsTrigger>
+              </>
+            )}
           </TabsList>
 
           <TabsContent value="edit" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Edit Facility Details</CardTitle>
+                <CardTitle>{isEditMode ? 'Edit Facility Details' : 'Create New Facility'}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
@@ -247,8 +293,8 @@ export const FacilityManagementModal: React.FC<FacilityManagementModalProps> = (
                 </div>
 
                 <div className="flex gap-2">
-                  <Button onClick={handleEditFacility} disabled={loading}>
-                    {loading ? 'Saving...' : 'Save Changes'}
+                  <Button onClick={handleSaveFacility} disabled={loading}>
+                    {loading ? 'Saving...' : (isEditMode ? 'Save Changes' : 'Create Facility')}
                   </Button>
                   <Button variant="outline" onClick={() => onOpenChange(false)}>
                     Cancel

@@ -473,10 +473,19 @@ const UserManagement = () => {
           <TabsContent value="facilities">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Shield className="h-5 w-5" />
-                  Facilities Management
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <Shield className="h-5 w-5" />
+                    Facilities Management
+                  </CardTitle>
+                  <Button 
+                    onClick={() => setFacilityManagementModal({ open: true, facility: undefined })}
+                    className="flex items-center gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add New Facility
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
