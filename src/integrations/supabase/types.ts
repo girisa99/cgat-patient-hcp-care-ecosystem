@@ -4331,6 +4331,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      continuous_test_generation: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       create_patient_profile_and_role: {
         Args: {
           p_user_id: string
@@ -4364,6 +4368,10 @@ export type Database = {
       generate_comprehensive_test_cases: {
         Args: { functionality_id?: string }
         Returns: number
+      }
+      generate_comprehensive_test_cases_enhanced: {
+        Args: { functionality_id?: string }
+        Returns: Json
       }
       get_complete_schema_info: {
         Args: Record<PropertyKey, never>
