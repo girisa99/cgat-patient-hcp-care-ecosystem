@@ -81,22 +81,30 @@ export const useMasterVerification = () => {
     queryFn: async (): Promise<VerificationSession[]> => {
       console.log('🔍 Fetching verification sessions...');
       
-      // Since we don't have a verification_sessions table, we'll simulate this
-      // In a real implementation, you'd fetch from your verification sessions table
-      const mockSessions: VerificationSession[] = [
-        {
-          id: '1',
-          session_type: 'comprehensive',
-          status: 'completed',
-          health_score: 95,
-          created_at: new Date().toISOString(),
-          completed_at: new Date().toISOString(),
-          results: { total_checks: 50, passed: 47, failed: 3 }
-        }
-      ];
+      // Real database sessions - fetch from compliance_reports table
+      const { data: sessions, error } = await supabase
+        .from('compliance_reports')
+        .select('*')
+        .order('generated_at', { ascending: false })
+        .limit(10);
+        
+      if (error) {
+        console.error('Error fetching verification sessions:', error);
+        return [];
+      }
       
-      console.log('✅ Verification sessions loaded:', mockSessions.length);
-      return mockSessions;
+      const verificationSessions: VerificationSession[] = sessions?.map(session => ({
+        id: session.id,
+        session_type: session.report_type,
+        status: session.compliance_score >= 80 ? 'completed' : 'failed',
+        health_score: session.compliance_score,
+        created_at: session.generated_at,
+        completed_at: session.generated_at,
+        results: session.report_data
+      })) || [];
+      
+      console.log('✅ Real verification sessions loaded from database:', verificationSessions.length);
+      return verificationSessions;
     },
     retry: 1,
     staleTime: 300000, // 5 minutes

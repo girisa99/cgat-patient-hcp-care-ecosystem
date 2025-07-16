@@ -36,8 +36,7 @@ export { useMasterReports } from './useMasterReports';
 // Testing Suite - Single Source (FIXED)
 export { useMasterTestingSuite } from './useMasterTestingSuite';
 
-// Data Import - Single Source (FIXED)
-export { useMasterDataImport } from './useMasterDataImport';
+// Data Import - No longer needed (removed mock data)
 
 // API Services - Single Source
 export { useApiServices } from './useApiServices';
