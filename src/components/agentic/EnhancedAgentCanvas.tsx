@@ -37,7 +37,35 @@ interface CanvasTemplate {
   isDefault?: boolean;
 }
 
-export const EnhancedAgentCanvas: React.FC = () => {
+interface EnhancedAgentCanvasProps {
+  initialName?: string;
+  initialTagline?: string;
+  initialPrimaryColor?: string;
+  initialSecondaryColor?: string;
+  initialAccentColor?: string;
+  initialLogo?: string;
+  onNameChange?: (name: string) => void;
+  onTaglineChange?: (tagline: string) => void;
+  onPrimaryColorChange?: (color: string) => void;
+  onSecondaryColorChange?: (color: string) => void;
+  onAccentColorChange?: (color: string) => void;
+  onLogoChange?: (file: File | null, url: string) => void;
+}
+
+export const EnhancedAgentCanvas: React.FC<EnhancedAgentCanvasProps> = ({
+  initialName = '',
+  initialTagline = '',
+  initialPrimaryColor = '#3b82f6',
+  initialSecondaryColor = '#8b5cf6',
+  initialAccentColor = '#06b6d4',
+  initialLogo = '',
+  onNameChange,
+  onTaglineChange,
+  onPrimaryColorChange,
+  onSecondaryColorChange,
+  onAccentColorChange,
+  onLogoChange
+}) => {
   const [canvasName, setCanvasName] = useState('');
   const [tagline, setTagline] = useState('');
   const [logo, setLogo] = useState<File | null>(null);

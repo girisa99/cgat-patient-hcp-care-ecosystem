@@ -90,10 +90,10 @@ const AgenticEcosystem = () => {
   });
 
   const handleCreateAgent = () => {
-    setActiveTab('canvas');
+    setActiveTab('wizard');
     toast({
-      title: "Agent Builder",
-      description: "Opening agent creation canvas...",
+      title: "Agent Creation Wizard",
+      description: "Opening guided agent creation process...",
     });
   };
 
@@ -217,10 +217,14 @@ const AgenticEcosystem = () => {
 
       {/* Main Interface */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="grid w-full grid-cols-8">
           <TabsTrigger value="overview">
             <Settings className="h-4 w-4 mr-2" />
             Overview
+          </TabsTrigger>
+          <TabsTrigger value="wizard">
+            <Plus className="h-4 w-4 mr-2" />
+            Create Agent
           </TabsTrigger>
           <TabsTrigger value="canvas">
             <Bot className="h-4 w-4 mr-2" />
@@ -320,6 +324,10 @@ const AgenticEcosystem = () => {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="wizard" className="space-y-4">
+          <AgentCreationWizard />
         </TabsContent>
 
         <TabsContent value="canvas" className="space-y-4">

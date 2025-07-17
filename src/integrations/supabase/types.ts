@@ -154,6 +154,155 @@ export type Database = {
         }
         Relationships: []
       }
+      agent_knowledge_bases: {
+        Row: {
+          agent_id: string
+          created_at: string
+          id: string
+          is_primary: boolean | null
+          knowledge_base_id: string
+        }
+        Insert: {
+          agent_id: string
+          created_at?: string
+          id?: string
+          is_primary?: boolean | null
+          knowledge_base_id: string
+        }
+        Update: {
+          agent_id?: string
+          created_at?: string
+          id?: string
+          is_primary?: boolean | null
+          knowledge_base_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_knowledge_bases_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_knowledge_bases_knowledge_base_id_fkey"
+            columns: ["knowledge_base_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_base"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_templates: {
+        Row: {
+          accent_color: string | null
+          configuration: Json | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_default: boolean | null
+          logo_url: string | null
+          name: string
+          primary_color: string | null
+          secondary_color: string | null
+          tagline: string | null
+          template_type: string
+          updated_at: string
+        }
+        Insert: {
+          accent_color?: string | null
+          configuration?: Json | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_default?: boolean | null
+          logo_url?: string | null
+          name: string
+          primary_color?: string | null
+          secondary_color?: string | null
+          tagline?: string | null
+          template_type?: string
+          updated_at?: string
+        }
+        Update: {
+          accent_color?: string | null
+          configuration?: Json | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_default?: boolean | null
+          logo_url?: string | null
+          name?: string
+          primary_color?: string | null
+          secondary_color?: string | null
+          tagline?: string | null
+          template_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      agents: {
+        Row: {
+          agent_type: string | null
+          brand: string | null
+          configuration: Json | null
+          created_at: string
+          created_by: string | null
+          deployment_config: Json | null
+          description: string | null
+          id: string
+          name: string
+          purpose: string | null
+          status: string | null
+          template_id: string | null
+          updated_at: string
+          use_case: string | null
+        }
+        Insert: {
+          agent_type?: string | null
+          brand?: string | null
+          configuration?: Json | null
+          created_at?: string
+          created_by?: string | null
+          deployment_config?: Json | null
+          description?: string | null
+          id?: string
+          name: string
+          purpose?: string | null
+          status?: string | null
+          template_id?: string | null
+          updated_at?: string
+          use_case?: string | null
+        }
+        Update: {
+          agent_type?: string | null
+          brand?: string | null
+          configuration?: Json | null
+          created_at?: string
+          created_by?: string | null
+          deployment_config?: Json | null
+          description?: string | null
+          id?: string
+          name?: string
+          purpose?: string | null
+          status?: string | null
+          template_id?: string | null
+          updated_at?: string
+          use_case?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agents_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "agent_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_model_integrations: {
         Row: {
           api_endpoint: string | null

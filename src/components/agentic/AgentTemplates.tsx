@@ -169,7 +169,15 @@ const agentTemplates: AgentTemplate[] = [
   }
 ];
 
-export const AgentTemplates = () => {
+interface AgentTemplatesProps {
+  onSelectTemplate?: (templateId: string) => void;
+  selectedTemplateId?: string | null;
+}
+
+export const AgentTemplates: React.FC<AgentTemplatesProps> = ({ 
+  onSelectTemplate, 
+  selectedTemplateId 
+}) => {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedTemplate, setSelectedTemplate] = useState<AgentTemplate | null>(null);
 
@@ -181,6 +189,7 @@ export const AgentTemplates = () => {
 
   const handleUseTemplate = (template: AgentTemplate) => {
     setSelectedTemplate(template);
+    onSelectTemplate?.(template.id);
     toast({
       title: "Template Selected",
       description: `Starting configuration for ${template.name}. Pre-configured systems will be automatically connected.`,

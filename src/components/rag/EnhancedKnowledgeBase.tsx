@@ -26,7 +26,15 @@ interface Document {
   uploadDate: string;
 }
 
-export const EnhancedKnowledgeBase: React.FC = () => {
+interface EnhancedKnowledgeBaseProps {
+  onKnowledgeBaseChange?: (ids: string[]) => void;
+  selectedIds?: string[];
+}
+
+export const EnhancedKnowledgeBase: React.FC<EnhancedKnowledgeBaseProps> = ({
+  onKnowledgeBaseChange,
+  selectedIds = []
+}) => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [activeTab, setActiveTab] = useState('upload');
   const fileInputRef = useRef<HTMLInputElement>(null);
