@@ -8,6 +8,7 @@ import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { PageLoading } from '@/components/ui/LoadingStates';
 import { initializeStabilityFramework } from '@/utils/framework/init';
+import { StabilityProvider } from '@/components/stability/StabilityProvider';
 
 // Import pages that exist
 import Index from '@/pages/Index';
@@ -117,10 +118,12 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <MasterAuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <AppContent />
-        </TooltipProvider>
+        <StabilityProvider>
+          <TooltipProvider>
+            <Toaster />
+            <AppContent />
+          </TooltipProvider>
+        </StabilityProvider>
       </MasterAuthProvider>
     </QueryClientProvider>
   );
