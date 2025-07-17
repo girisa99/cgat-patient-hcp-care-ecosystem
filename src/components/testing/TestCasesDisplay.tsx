@@ -447,10 +447,56 @@ const TestCasesDisplay: React.FC = () => {
                                     </p>
                                   </div>
                                   
+                                  {testCase.test_steps && Array.isArray(testCase.test_steps) && testCase.test_steps.length > 0 && (
+                                    <div>
+                                      <h5 className="font-medium text-sm mb-2">Test Steps</h5>
+                                      <div className="space-y-2">
+                                        {testCase.test_steps.map((step: any, index: number) => (
+                                          <div key={index} className="bg-background p-2 rounded border text-xs">
+                                            <div className="flex items-center gap-2 font-medium mb-1">
+                                              <Badge variant="secondary" className="text-xs px-1 py-0">Step {step.step || index + 1}</Badge>
+                                              <span className="text-xs font-medium">{step.action}</span>
+                                            </div>
+                                            <p className="text-muted-foreground mb-1 text-xs">{step.description}</p>
+                                            <div className="text-xs">
+                                              <span className="font-medium text-green-700">Expected: </span>
+                                              <span className="text-green-600">{step.expected}</span>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                  
+                                  {testCase.expected_results && (
+                                    <div>
+                                      <h5 className="font-medium text-sm mb-1">Expected Results</h5>
+                                      <div className="text-xs text-muted-foreground bg-green-50 border border-green-200 p-2 rounded">
+                                        {testCase.expected_results}
+                                      </div>
+                                    </div>
+                                  )}
+                                  
                                   {testCase.database_source && (
                                     <div>
                                       <h5 className="font-medium text-sm mb-1">Database Source</h5>
                                       <Badge variant="outline" className="text-xs">{testCase.database_source}</Badge>
+                                    </div>
+                                  )}
+                                  
+                                  {testCase.cfr_part11_metadata && (
+                                    <div>
+                                      <h5 className="font-medium text-sm mb-1">CFR Part 11 Compliance</h5>
+                                      <div className="text-xs bg-blue-50 border border-blue-200 p-2 rounded">
+                                        <div className="grid grid-cols-2 gap-1">
+                                          {Object.entries(testCase.cfr_part11_metadata).map(([key, value]) => (
+                                            <div key={key} className="flex justify-between">
+                                              <span className="font-medium">{key.replace(/_/g, ' ')}:</span>
+                                              <span>{typeof value === 'boolean' ? (value ? '✓' : '✗') : String(value)}</span>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
                                     </div>
                                   )}
                                   

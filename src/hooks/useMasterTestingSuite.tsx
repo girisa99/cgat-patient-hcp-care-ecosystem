@@ -19,6 +19,7 @@ export const useMasterTestingSuite = () => {
 
   const { data: testCases = [], isLoading: testCasesLoading } = useQuery({
     queryKey: ['master-test-cases'],
+    staleTime: 10000, // 10 seconds to refresh data more frequently
     queryFn: async () => {
       console.log('📡 Fetching comprehensive test cases - REAL database data');
       
@@ -44,8 +45,7 @@ export const useMasterTestingSuite = () => {
       }, {}));
       
       return data || [];
-    },
-    staleTime: 300000,
+    }
   });
 
   const { data: testExecutions = [], isLoading: executionsLoading } = useQuery({
