@@ -56,6 +56,158 @@ export type Database = {
         }
         Relationships: []
       }
+      agent_compliance_monitoring: {
+        Row: {
+          agent_id: string
+          auto_remediation_applied: boolean | null
+          check_result: Json
+          compliance_check_type: string
+          conversation_id: string | null
+          created_at: string
+          id: string
+          recommendations: Json | null
+          remediation_actions: Json | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          severity_level: string | null
+          violations: Json | null
+        }
+        Insert: {
+          agent_id: string
+          auto_remediation_applied?: boolean | null
+          check_result: Json
+          compliance_check_type: string
+          conversation_id?: string | null
+          created_at?: string
+          id?: string
+          recommendations?: Json | null
+          remediation_actions?: Json | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          severity_level?: string | null
+          violations?: Json | null
+        }
+        Update: {
+          agent_id?: string
+          auto_remediation_applied?: boolean | null
+          check_result?: Json
+          compliance_check_type?: string
+          conversation_id?: string | null
+          created_at?: string
+          id?: string
+          recommendations?: Json | null
+          remediation_actions?: Json | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          severity_level?: string | null
+          violations?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_compliance_monitoring_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "agent_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_conversations: {
+        Row: {
+          agent_id: string
+          conversation_data: Json
+          created_at: string
+          healthcare_context: Json | null
+          id: string
+          metadata: Json | null
+          session_id: string
+          status: string
+          title: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          agent_id: string
+          conversation_data?: Json
+          created_at?: string
+          healthcare_context?: Json | null
+          id?: string
+          metadata?: Json | null
+          session_id: string
+          status?: string
+          title?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          agent_id?: string
+          conversation_data?: Json
+          created_at?: string
+          healthcare_context?: Json | null
+          id?: string
+          metadata?: Json | null
+          session_id?: string
+          status?: string
+          title?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      ai_model_integrations: {
+        Row: {
+          api_endpoint: string | null
+          api_key_reference: string | null
+          capabilities: string[] | null
+          created_at: string
+          healthcare_specialization: string[] | null
+          id: string
+          is_active: boolean
+          max_context_length: number | null
+          model_config: Json
+          model_type: string
+          name: string
+          provider: string
+          supports_function_calling: boolean | null
+          supports_vision: boolean | null
+          updated_at: string
+        }
+        Insert: {
+          api_endpoint?: string | null
+          api_key_reference?: string | null
+          capabilities?: string[] | null
+          created_at?: string
+          healthcare_specialization?: string[] | null
+          id?: string
+          is_active?: boolean
+          max_context_length?: number | null
+          model_config: Json
+          model_type: string
+          name: string
+          provider: string
+          supports_function_calling?: boolean | null
+          supports_vision?: boolean | null
+          updated_at?: string
+        }
+        Update: {
+          api_endpoint?: string | null
+          api_key_reference?: string | null
+          capabilities?: string[] | null
+          created_at?: string
+          healthcare_specialization?: string[] | null
+          id?: string
+          is_active?: boolean
+          max_context_length?: number | null
+          model_config?: Json
+          model_type?: string
+          name?: string
+          provider?: string
+          supports_function_calling?: boolean | null
+          supports_vision?: boolean | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       api_consumption_logs: {
         Row: {
           api_integration_id: string
@@ -1039,6 +1191,101 @@ export type Database = {
           },
         ]
       }
+      connected_systems: {
+        Row: {
+          authentication_method: string | null
+          capabilities: Json | null
+          compliance_requirements: string[] | null
+          connection_config: Json
+          created_at: string
+          data_formats: string[] | null
+          healthcare_standards: string[] | null
+          id: string
+          last_sync: string | null
+          name: string
+          status: string
+          system_type: string
+          updated_at: string
+        }
+        Insert: {
+          authentication_method?: string | null
+          capabilities?: Json | null
+          compliance_requirements?: string[] | null
+          connection_config: Json
+          created_at?: string
+          data_formats?: string[] | null
+          healthcare_standards?: string[] | null
+          id?: string
+          last_sync?: string | null
+          name: string
+          status?: string
+          system_type: string
+          updated_at?: string
+        }
+        Update: {
+          authentication_method?: string | null
+          capabilities?: Json | null
+          compliance_requirements?: string[] | null
+          connection_config?: Json
+          created_at?: string
+          data_formats?: string[] | null
+          healthcare_standards?: string[] | null
+          id?: string
+          last_sync?: string | null
+          name?: string
+          status?: string
+          system_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      conversation_exports: {
+        Row: {
+          completed_at: string | null
+          compliance_metadata: Json | null
+          conversation_id: string
+          created_at: string
+          export_data: Json
+          export_type: string
+          id: string
+          recipient_email: string | null
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          compliance_metadata?: Json | null
+          conversation_id: string
+          created_at?: string
+          export_data: Json
+          export_type: string
+          id?: string
+          recipient_email?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          compliance_metadata?: Json | null
+          conversation_id?: string
+          created_at?: string
+          export_data?: Json
+          export_type?: string
+          id?: string
+          recipient_email?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_exports_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "agent_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       data_import_sessions: {
         Row: {
           completed_at: string | null
@@ -1278,6 +1525,56 @@ export type Database = {
           website_url?: string | null
         }
         Relationships: []
+      }
+      document_processing_queue: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          file_path: string | null
+          id: string
+          knowledge_base_id: string | null
+          processed_at: string | null
+          processing_type: string
+          progress_data: Json | null
+          retry_count: number | null
+          status: string
+          url: string | null
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          file_path?: string | null
+          id?: string
+          knowledge_base_id?: string | null
+          processed_at?: string | null
+          processing_type: string
+          progress_data?: Json | null
+          retry_count?: number | null
+          status?: string
+          url?: string | null
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          file_path?: string | null
+          id?: string
+          knowledge_base_id?: string | null
+          processed_at?: string | null
+          processing_type?: string
+          progress_data?: Json | null
+          retry_count?: number | null
+          status?: string
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_processing_queue_knowledge_base_id_fkey"
+            columns: ["knowledge_base_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_base"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       dynamic_table_schemas: {
         Row: {
@@ -1758,6 +2055,117 @@ export type Database = {
           issue_type?: string
           metadata?: Json | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      knowledge_base: {
+        Row: {
+          category: string
+          content_type: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          embeddings: string | null
+          healthcare_tags: string[] | null
+          id: string
+          is_active: boolean
+          metadata: Json | null
+          modality_type: string | null
+          name: string
+          processed_content: string | null
+          raw_content: string | null
+          regulatory_status: string | null
+          source_type: string
+          source_url: string | null
+          treatment_category: string | null
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          content_type?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          embeddings?: string | null
+          healthcare_tags?: string[] | null
+          id?: string
+          is_active?: boolean
+          metadata?: Json | null
+          modality_type?: string | null
+          name: string
+          processed_content?: string | null
+          raw_content?: string | null
+          regulatory_status?: string | null
+          source_type: string
+          source_url?: string | null
+          treatment_category?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          content_type?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          embeddings?: string | null
+          healthcare_tags?: string[] | null
+          id?: string
+          is_active?: boolean
+          metadata?: Json | null
+          modality_type?: string | null
+          name?: string
+          processed_content?: string | null
+          raw_content?: string | null
+          regulatory_status?: string | null
+          source_type?: string
+          source_url?: string | null
+          treatment_category?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      labeling_projects: {
+        Row: {
+          annotation_guidelines: string | null
+          created_at: string
+          created_by: string | null
+          dataset_info: Json | null
+          healthcare_domain: string | null
+          id: string
+          labeling_config: Json
+          name: string
+          project_type: string
+          quality_metrics: Json | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          annotation_guidelines?: string | null
+          created_at?: string
+          created_by?: string | null
+          dataset_info?: Json | null
+          healthcare_domain?: string | null
+          id?: string
+          labeling_config: Json
+          name: string
+          project_type: string
+          quality_metrics?: Json | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          annotation_guidelines?: string | null
+          created_at?: string
+          created_by?: string | null
+          dataset_info?: Json | null
+          healthcare_domain?: string | null
+          id?: string
+          labeling_config?: Json
+          name?: string
+          project_type?: string
+          quality_metrics?: Json | null
+          status?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -3455,6 +3863,56 @@ export type Database = {
           was_blocked?: boolean | null
         }
         Relationships: []
+      }
+      rag_recommendations: {
+        Row: {
+          clinical_insights: Json | null
+          confidence_score: number | null
+          conversation_id: string | null
+          created_at: string
+          healthcare_context: Json | null
+          id: string
+          knowledge_base_ids: string[] | null
+          next_best_actions: Json
+          query_context: string
+          recommendations: Json
+          treatment_recommendations: Json | null
+        }
+        Insert: {
+          clinical_insights?: Json | null
+          confidence_score?: number | null
+          conversation_id?: string | null
+          created_at?: string
+          healthcare_context?: Json | null
+          id?: string
+          knowledge_base_ids?: string[] | null
+          next_best_actions: Json
+          query_context: string
+          recommendations: Json
+          treatment_recommendations?: Json | null
+        }
+        Update: {
+          clinical_insights?: Json | null
+          confidence_score?: number | null
+          conversation_id?: string | null
+          created_at?: string
+          healthcare_context?: Json | null
+          id?: string
+          knowledge_base_ids?: string[] | null
+          next_best_actions?: Json
+          query_context?: string
+          recommendations?: Json
+          treatment_recommendations?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rag_recommendations_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "agent_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       role_module_assignments: {
         Row: {

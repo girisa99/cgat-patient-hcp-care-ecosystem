@@ -7,6 +7,8 @@ import { AgentCanvas } from '@/components/agentic/AgentCanvas';
 import { AgentTemplates } from '@/components/agentic/AgentTemplates';
 import { SystemConnectors } from '@/components/agentic/SystemConnectors';
 import { AgentDeployment } from '@/components/agentic/AgentDeployment';
+import { KnowledgeBaseManager } from '@/components/rag/KnowledgeBaseManager';
+import { RAGRecommendations } from '@/components/rag/RAGRecommendations';
 import { Bot, Network, Settings, Rocket, Plus } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
@@ -215,7 +217,7 @@ const AgenticEcosystem = () => {
 
       {/* Main Interface */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="overview">
             <Settings className="h-4 w-4 mr-2" />
             Overview
@@ -235,6 +237,14 @@ const AgenticEcosystem = () => {
           <TabsTrigger value="deployment">
             <Rocket className="h-4 w-4 mr-2" />
             Deployment
+          </TabsTrigger>
+          <TabsTrigger value="knowledge">
+            <Bot className="h-4 w-4 mr-2" />
+            Knowledge
+          </TabsTrigger>
+          <TabsTrigger value="rag">
+            <Bot className="h-4 w-4 mr-2" />
+            RAG
           </TabsTrigger>
         </TabsList>
 
@@ -326,6 +336,14 @@ const AgenticEcosystem = () => {
 
         <TabsContent value="deployment" className="space-y-4">
           <AgentDeployment agents={agents} onDeploy={handleDeployAgent} />
+        </TabsContent>
+
+        <TabsContent value="knowledge" className="space-y-4">
+          <KnowledgeBaseManager />
+        </TabsContent>
+
+        <TabsContent value="rag" className="space-y-4">
+          <RAGRecommendations />
         </TabsContent>
       </Tabs>
     </div>
