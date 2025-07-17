@@ -4,9 +4,8 @@
  * Integrates all verification systems into unified compliance engine
  */
 
-import { DuplicateDetector } from '../verification/DuplicateDetector';
+import { DuplicateDetector, DuplicateAnalyzer } from '@/utils/duplicate-prevention-bridge';
 import { MockDataDetector } from '../verification/MockDataDetector';
-import { DuplicateAnalyzer } from '../verification/analyzers/DuplicateAnalyzer';
 import { SingleSourceValidator } from '../verification/SingleSourceValidator';
 import { ComponentGovernance } from '../governance/ComponentGovernance';
 
@@ -72,10 +71,10 @@ export class ComprehensiveFrameworkValidator {
       overallCompliance: complianceScore,
       frameworkAdherence: complianceScore >= 85,
       violations: {
-        duplicates: duplicateStats.totalDuplicates,
+        duplicates: duplicateStats.totalDuplicates || 0,
         mockData: mockDataAnalysis.violations.length,
         singleSource: singleSourceValidation.violations.length,
-        governance: duplicateAnalysis.duplicateComponents.length
+        governance: duplicateAnalysis.duplicates.components.length + duplicateAnalysis.duplicates.services.length
       },
       recommendations: this.generateRecommendations({
         duplicateStats,
@@ -128,7 +127,7 @@ export class ComprehensiveFrameworkValidator {
     let baseScore = 100;
     
     // Deduct for duplicates (high impact)
-    baseScore -= validationData.duplicateStats.totalDuplicates * 15;
+    baseScore -= (validationData.duplicateStats.totalDuplicates || 0) * 15;
     
     // Deduct for mock data violations (medium impact)
     baseScore -= validationData.mockDataAnalysis.violations.length * 10;
@@ -137,7 +136,7 @@ export class ComprehensiveFrameworkValidator {
     baseScore -= validationData.singleSourceValidation.violations.length * 12;
     
     // Deduct for governance violations (medium impact)
-    baseScore -= validationData.duplicateAnalysis.duplicateComponents.length * 8;
+    baseScore -= (validationData.duplicateAnalysis.duplicates.components.length + validationData.duplicateAnalysis.duplicates.services.length) * 8;
     
     // Ensure score doesn't go below 0
     return Math.max(0, Math.min(100, baseScore));
@@ -146,9 +145,10 @@ export class ComprehensiveFrameworkValidator {
   private generateRecommendations(validationData: any): string[] {
     const recommendations: string[] = [];
 
-    if (validationData.duplicateStats.totalDuplicates > 0) {
+    const totalDuplicates = validationData.duplicateStats.totalDuplicates || 0;
+    if (totalDuplicates > 0) {
       recommendations.push(
-        `Remove ${validationData.duplicateStats.totalDuplicates} duplicate components/services`
+        `Remove ${totalDuplicates} duplicate components/services`
       );
       recommendations.push('Implement component registry to prevent future duplicates');
     }
@@ -163,7 +163,8 @@ export class ComprehensiveFrameworkValidator {
       recommendations.push('Implement unified data access patterns');
     }
 
-    if (validationData.duplicateAnalysis.duplicateComponents.length > 0) {
+    const duplicateComponentsCount = validationData.duplicateAnalysis.duplicates.components.length + validationData.duplicateAnalysis.duplicates.services.length;
+    if (duplicateComponentsCount > 0) {
       recommendations.push('Review and merge duplicate component implementations');
       recommendations.push('Establish component governance rules');
     }
@@ -180,7 +181,8 @@ export class ComprehensiveFrameworkValidator {
     const blocking: string[] = [];
 
     // Critical duplicates
-    if (validationData.duplicateStats.totalDuplicates > 10) {
+    const totalDuplicates = validationData.duplicateStats.totalDuplicates || 0;
+    if (totalDuplicates > 10) {
       blocking.push('Excessive component duplication prevents maintainability');
     }
 

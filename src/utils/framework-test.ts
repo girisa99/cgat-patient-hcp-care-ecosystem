@@ -4,7 +4,7 @@
  */
 
 import { MockDataDetector } from '@/utils/verification/MockDataDetector';
-import { DuplicateDetector } from '@/utils/verification/DuplicateDetector';
+import { DuplicateDetector } from '@/utils/duplicate-prevention-bridge';
 import { intelligentImportOrchestrator } from '@/utils/intelligentImport/IntelligentImportOrchestrator';
 
 export const runFrameworkDemo = async () => {

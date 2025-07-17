@@ -35,7 +35,7 @@ import {
   GitBranch
 } from 'lucide-react';
 import { MockDataDetector } from '@/utils/verification/MockDataDetector';
-import { DuplicateDetector } from '@/utils/verification/DuplicateDetector';
+import { DuplicateDetector } from '@/utils/duplicate-prevention-bridge';
 import AppLayout from '@/components/layout/AppLayout';
 
 interface FrameworkStatus {

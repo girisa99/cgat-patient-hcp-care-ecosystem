@@ -9,7 +9,7 @@ import { DatabaseAnalyzer } from './analyzers/DatabaseAnalyzer';
 import { ModuleAnalyzer } from './analyzers/ModuleAnalyzer';
 import { TypeScriptAnalyzer } from './analyzers/TypeScriptAnalyzer';
 import { DeadCodeAnalyzer } from './analyzers/DeadCodeAnalyzer';
-import { DuplicateAnalyzer } from './analyzers/DuplicateAnalyzer';
+import { DuplicateAnalyzer } from '@/utils/duplicate-prevention-bridge';
 
 export interface ComprehensiveVerificationResult {
   overallHealthScore: number;

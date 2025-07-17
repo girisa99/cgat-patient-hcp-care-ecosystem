@@ -7,7 +7,7 @@
 
 import { advancedSchemaAnalyzer } from './AdvancedSchemaAnalyzer';
 import { MockDataDetector } from '@/utils/verification/MockDataDetector';
-import { DuplicateDetector } from '@/utils/verification/DuplicateDetector';
+import { DuplicateDetector } from '@/utils/duplicate-prevention-bridge';
 import { FrameworkValidator } from '../../../duplicate-prevention/core/validator.js';
 import { ComponentRegistry } from '../../../duplicate-prevention/core/registry.js';
 import { migrationGenerator } from './MigrationGenerator';

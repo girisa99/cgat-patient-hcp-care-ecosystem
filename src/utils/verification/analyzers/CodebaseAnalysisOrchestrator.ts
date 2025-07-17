@@ -7,7 +7,7 @@
 import { ComponentAnalyzer, ComponentAnalysisResult } from './ComponentAnalyzer';
 import { HookAnalyzer, HookAnalysisResult } from './HookAnalyzer';
 import { UtilityAnalyzer, UtilityAnalysisResult } from './UtilityAnalyzer';
-import { DuplicateAnalyzer, DuplicateAnalysisResult } from './DuplicateAnalyzer';
+import { DuplicateAnalyzer, DuplicateAnalysisResult } from '@/utils/duplicate-prevention-bridge';
 import { DeadCodeAnalyzer, DeadCodeAnalysisResult } from './DeadCodeAnalyzer';
 
 export interface ComprehensiveCodebaseAnalysisResult {

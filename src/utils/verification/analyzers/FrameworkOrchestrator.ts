@@ -4,7 +4,7 @@
  */
 
 import { StabilityManager, ChangeRequest, CompatibilityResult } from './StabilityManager';
-import { DuplicateAnalyzer, DuplicateAnalysisResult } from './DuplicateAnalyzer';
+import { DuplicateAnalyzer, DuplicateAnalysisResult } from '@/utils/duplicate-prevention-bridge';
 import { RoleBasedFeatureManager, FeatureConfig, User } from './RoleBasedFeatureManager';
 import { SafeComponentManager, ComponentMetadata, ValidationResult } from './SafeComponentManager';
 
@@ -356,8 +356,8 @@ export class FrameworkOrchestrator {
         lastValidation: this.lastHealthCheck
       },
       duplicatePrevention: {
-        registeredComponents: duplicateReport.totalDuplicates,
-        registeredServices: 0, // Would track from DuplicateAnalyzer
+        registeredComponents: duplicateReport.duplicates.components.length + duplicateReport.duplicates.services.length,
+        registeredServices: duplicateReport.duplicates.services.length,
         lastAnalysis: new Date()
       },
       roleBasedFeatures: {
@@ -431,7 +431,7 @@ export class FrameworkOrchestrator {
     const duplicateReport = DuplicateAnalyzer.analyzeDuplicates();
     results.components.duplicateAnalyzer = {
       status: duplicateReport.severityScore > 80 ? 'healthy' : duplicateReport.severityScore > 60 ? 'warning' : 'critical',
-      issues: duplicateReport.severityScore < 80 ? [`${duplicateReport.totalDuplicates} duplicates found`] : []
+      issues: duplicateReport.severityScore < 80 ? [`${duplicateReport.duplicates.components.length + duplicateReport.duplicates.services.length} duplicates found`] : []
     };
 
     // Check stability manager
@@ -457,7 +457,7 @@ export class FrameworkOrchestrator {
     }
 
     // Generate recommendations
-    if (duplicateReport.totalDuplicates > 5) {
+    if ((duplicateReport.duplicates.components.length + duplicateReport.duplicates.services.length) > 5) {
       results.recommendations.push('Review and consolidate duplicate code patterns');
     }
     if (registeredFeatures.size === 0) {
