@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useRoleBasedNavigation } from '@/hooks/useRoleBasedNavigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Home, ChevronDown, Users, Building2, Settings, Activity, MoreHorizontal, LogOut, User, FileBarChart } from 'lucide-react';
+import { ArrowLeft, Home, ChevronDown, Users, Building2, Settings, Activity, MoreHorizontal, LogOut, User, FileBarChart, Bot } from 'lucide-react';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
 import {
   DropdownMenu,
@@ -56,11 +56,14 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
     core: availableTabs.filter(tab => 
       ['/', '/patients'].includes(tab.to)
     ),
+    agents: availableTabs.filter(tab => 
+      ['/agents'].includes(tab.to)
+    ),
     management: availableTabs.filter(tab => 
       ['/users', '/facilities', '/modules', '/role-management'].includes(tab.to)
     ),
     technical: availableTabs.filter(tab => 
-      ['/api-services', '/ngrok', '/security', '/testing', '/data-import', '/healthcare-ai', '/agentic-ecosystem'].includes(tab.to)
+      ['/api-services', '/ngrok', '/security', '/testing', '/data-import', '/healthcare-ai'].includes(tab.to)
     ),
     reportsCompliance: availableTabs.filter(tab => 
       ['/reports', '/governance', '/framework', '/stability'].includes(tab.to)
@@ -155,6 +158,11 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
 
           {/* Core Features */}
           {navigationGroups.core.filter(tab => tab.to !== '/').map(tab => renderNavButton(tab))}
+
+          {/* Agents Tab */}
+          {navigationGroups.agents.length > 0 && (
+            navigationGroups.agents.map(tab => renderNavButton(tab))
+          )}
 
           {/* Management Dropdown */}
           {navigationGroups.management.length > 0 && (

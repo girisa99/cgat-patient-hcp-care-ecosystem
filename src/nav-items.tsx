@@ -35,6 +35,11 @@ export const navItems = [
     icon: Stethoscope,
   },
   {
+    title: "Agents",
+    url: "/agents",
+    icon: Bot,
+  },
+  {
     title: "Facilities",
     url: "/facilities",
     icon: Building2,
