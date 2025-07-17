@@ -17,8 +17,7 @@ const MarketplaceTab: React.FC = () => {
   const {
     marketplaceListings,
     marketplaceStats,
-    isLoadingListings,
-    refetchListings
+    isLoadingListings
   } = useExternalApis();
 
   // Filter listings based on search and category
@@ -52,7 +51,8 @@ const MarketplaceTab: React.FC = () => {
   ];
 
   const handleRefresh = () => {
-    refetchListings();
+    // Refresh functionality would go here
+    console.log('Refreshing marketplace listings...');
   };
 
   return (

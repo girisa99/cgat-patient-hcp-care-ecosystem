@@ -90,6 +90,8 @@ export interface MasterApiService {
   status: string;
   type: string;
   description?: string;
+  category?: string;
+  direction?: string;
   created_at: string;
   updated_at?: string;
 }

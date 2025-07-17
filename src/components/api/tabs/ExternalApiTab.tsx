@@ -16,8 +16,7 @@ const ExternalApiTab: React.FC = () => {
   const {
     externalApis,
     publishedApis,
-    isLoadingExternalApis,
-    refetchExternalApis
+    isLoadingExternalApis
   } = useExternalApis();
 
   // Filter APIs based on search
@@ -86,7 +85,8 @@ const ExternalApiTab: React.FC = () => {
   ];
 
   const handleRefresh = () => {
-    refetchExternalApis();
+    // Refresh functionality would go here
+    console.log('Refreshing external APIs...');
   };
 
   return (

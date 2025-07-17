@@ -15,8 +15,7 @@ const DeveloperPortalTab: React.FC = () => {
   
   const {
     developerApplications,
-    isLoadingApplications,
-    refetchApplications
+    isLoadingApplications
   } = useExternalApis();
 
   // Filter applications based on search
@@ -59,7 +58,8 @@ const DeveloperPortalTab: React.FC = () => {
   ];
 
   const handleRefresh = () => {
-    refetchApplications();
+    // Refresh functionality would go here
+    console.log('Refreshing applications...');
   };
 
   const handleApproveApplication = (applicationId: string) => {

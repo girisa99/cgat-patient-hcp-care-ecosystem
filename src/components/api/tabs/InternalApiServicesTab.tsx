@@ -142,7 +142,7 @@ const InternalApiServicesTab: React.FC = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-red-700">{error}</p>
+            <p className="text-red-700">{error?.message || String(error)}</p>
           </CardContent>
         </Card>
       )}
@@ -213,14 +213,14 @@ const InternalApiServicesTab: React.FC = () => {
                             {service.type}
                           </span>
                           <Badge variant="outline" className="text-xs">
-                            {service.direction}
+                            {service.direction || 'bidirectional'}
                           </Badge>
                         </div>
                         
                         <div className="flex items-center justify-between text-xs text-gray-500">
                           <span className="flex items-center gap-1">
                             <Shield className="h-3 w-3" />
-                            {service.category}
+                            {service.category || 'integration'}
                           </span>
                           <span className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />

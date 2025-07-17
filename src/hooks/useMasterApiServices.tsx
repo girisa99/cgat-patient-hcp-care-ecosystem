@@ -17,6 +17,8 @@ export interface ApiService {
   base_url?: string;
   type: string;
   status: string;
+  category?: string;
+  direction?: string;
   created_at: string;
   updated_at: string;
 }

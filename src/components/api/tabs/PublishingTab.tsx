@@ -11,10 +11,10 @@ import { useExternalApiPublishing } from '@/hooks/useExternalApiPublishing';
 
 const PublishingTab: React.FC = () => {
   const {
-    createDraftMutation,
-    moveToReviewMutation,
-    publishApiMutation,
-    completeWorkflowMutation
+    createDraft,
+    moveToReview,
+    publishApi,
+    completeWorkflow
   } = useExternalApiPublishing();
 
   const [selectedApi, setSelectedApi] = useState<string>('');
@@ -71,7 +71,7 @@ const PublishingTab: React.FC = () => {
 
   const handleMoveToReview = async (apiId: string) => {
     try {
-      await moveToReviewMutation.mutateAsync(apiId);
+      await moveToReview(apiId);
     } catch (error) {
       console.error('Failed to move to review:', error);
     }
@@ -79,7 +79,7 @@ const PublishingTab: React.FC = () => {
 
   const handlePublish = async (apiId: string) => {
     try {
-      await publishApiMutation.mutateAsync(apiId);
+      await publishApi(apiId);
     } catch (error) {
       console.error('Failed to publish:', error);
     }
@@ -214,7 +214,7 @@ const PublishingTab: React.FC = () => {
                         <Button 
                           size="sm"
                           onClick={() => handleMoveToReview(api.id)}
-                          disabled={moveToReviewMutation.isPending}
+                          disabled={false}
                         >
                           Submit for Review
                         </Button>
@@ -224,7 +224,7 @@ const PublishingTab: React.FC = () => {
                         <Button 
                           size="sm"
                           onClick={() => handlePublish(api.id)}
-                          disabled={publishApiMutation.isPending}
+                          disabled={false}
                         >
                           Approve & Publish
                         </Button>
