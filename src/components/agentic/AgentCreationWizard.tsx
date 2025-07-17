@@ -86,7 +86,7 @@ export const AgentCreationWizard = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
   const [showAIModelSelector, setShowAIModelSelector] = useState(false);
-  const [selectedAIModels, setSelectedAIModels] = useState<any[]>([]);
+  const [selectedAIModels, setSelectedAIModels] = useState<string[]>([]);
   
   // Fetch templates on component mount
   useEffect(() => {
@@ -216,12 +216,12 @@ export const AgentCreationWizard = () => {
         const filePath = `agent-logos/${Date.now()}.${fileExt}`;
         
         const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('assets')
+          .from('agents')
           .upload(filePath, state.logoFile);
         
         if (uploadError) throw uploadError;
         
-        const { data } = supabase.storage.from('assets').getPublicUrl(filePath);
+        const { data } = supabase.storage.from('agents').getPublicUrl(filePath);
         logoUrl = data.publicUrl;
       }
 
@@ -241,6 +241,7 @@ export const AgentCreationWizard = () => {
             primaryColor: state.primaryColor,
             secondaryColor: state.secondaryColor,
             accentColor: state.accentColor,
+            aiModels: selectedAIModels,
           },
           deployment_config: state.deploymentConfig,
           created_by: (await supabase.auth.getUser()).data.user?.id
@@ -504,11 +505,11 @@ export const AgentCreationWizard = () => {
       />
     </div>,
     
-    // Step 4: Connectors & Templates (if needed)
+    // Step 4: Connectors & AI Models
     <div className="space-y-6" key="step-4">
       <div>
-        <h3 className="text-lg font-medium">System Connectors & Additional Templates</h3>
-        <p className="text-muted-foreground">Connect external systems and add specialized templates</p>
+        <h3 className="text-lg font-medium">System Connectors & AI Models</h3>
+        <p className="text-muted-foreground">Connect external systems and select AI models for your agent</p>
         {state.isFirstTime && (
           <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg mt-2">
             <p className="text-sm text-blue-800 dark:text-blue-200">
@@ -522,7 +523,7 @@ export const AgentCreationWizard = () => {
       <Tabs defaultValue="connectors" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="connectors">System Connectors</TabsTrigger>
-          <TabsTrigger value="templates">Additional Templates</TabsTrigger>
+          <TabsTrigger value="ai-models">AI Models</TabsTrigger>
         </TabsList>
         
         <TabsContent value="connectors" className="space-y-4">
@@ -530,7 +531,6 @@ export const AgentCreationWizard = () => {
             <p className="text-sm text-muted-foreground">
               Select system connectors to integrate with your agent
             </p>
-            {/* Simplified connector selection would go here */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {['OpenAI GPT-4', 'Salesforce CRM', 'PostgreSQL', 'Email SMTP', 'Slack', 'GitHub'].map((connector) => (
                 <Card key={connector} className="p-4">
@@ -554,14 +554,28 @@ export const AgentCreationWizard = () => {
           </div>
         </TabsContent>
         
-        <TabsContent value="templates" className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Add specialized templates to enhance your agent's capabilities
-          </p>
-          <div className="text-center py-8 text-muted-foreground">
-            <Bot className="h-12 w-12 mx-auto mb-2 opacity-50" />
-            <p>Additional templates can be added during agent configuration</p>
+        <TabsContent value="ai-models" className="space-y-4">
+          <div>
+            <h3 className="text-lg font-medium">Select AI Models</h3>
+            <p className="text-muted-foreground">Choose the AI models that will power your agent</p>
           </div>
+          <div className="text-center py-8">
+            <Button onClick={() => setShowAIModelSelector(true)}>
+              Configure AI Models
+            </Button>
+          </div>
+          <AIModelSelector 
+            isOpen={showAIModelSelector}
+            onClose={() => setShowAIModelSelector(false)}
+            onSelect={(model, config) => {
+              setSelectedAIModels([...selectedAIModels, model.id]);
+              toast({
+                title: "AI Model Added",
+                description: `${model.name} has been configured for your agent.`,
+              });
+            }}
+            selectedModels={selectedAIModels}
+          />
         </TabsContent>
       </Tabs>
     </div>,
