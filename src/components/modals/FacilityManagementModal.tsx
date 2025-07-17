@@ -55,7 +55,7 @@ export const FacilityManagementModal: React.FC<FacilityManagementModalProps> = (
   
   const [editForm, setEditForm] = useState({
     name: facility?.name || '',
-    facility_type: facility?.facility_type || 'treatmentFacility' as FacilityType,
+    facility_type: facility?.facility_type || 'hospital' as FacilityType,
     address: facility?.address || '',
     phone: facility?.phone || '',
     email: facility?.email || '',
@@ -77,7 +77,7 @@ export const FacilityManagementModal: React.FC<FacilityManagementModalProps> = (
       // Reset form for new facility
       setEditForm({
         name: '',
-        facility_type: 'treatmentFacility' as FacilityType,
+        facility_type: 'hospital' as FacilityType,
         address: '',
         phone: '',
         email: '',
@@ -292,9 +292,14 @@ export const FacilityManagementModal: React.FC<FacilityManagementModalProps> = (
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="bg-background border shadow-md z-50">
+                        <SelectItem value="hospital">Hospital</SelectItem>
+                        <SelectItem value="clinic">Clinic</SelectItem>
+                        <SelectItem value="pharmacy">Pharmacy</SelectItem>
+                        <SelectItem value="laboratory">Laboratory</SelectItem>
                         <SelectItem value="treatmentFacility">Treatment Facility</SelectItem>
                         <SelectItem value="referralFacility">Referral Facility</SelectItem>
                         <SelectItem value="prescriberFacility">Prescriber Facility</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

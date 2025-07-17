@@ -11,6 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { useMasterToast } from '@/hooks/useMasterToast';
 import { supabase } from '@/integrations/supabase/client';
+import { Database } from '@/integrations/supabase/types';
+
+type FacilityType = Database["public"]["Enums"]["facility_type"];
 
 interface CreateFacilityFormProps {
   open: boolean;
@@ -25,7 +28,7 @@ export const CreateFacilityForm: React.FC<CreateFacilityFormProps> = ({
 }) => {
   const [formData, setFormData] = useState({
     name: '',
-    facility_type: '' as 'treatmentFacility' | 'referralFacility' | 'prescriberFacility' | '',
+    facility_type: '' as FacilityType | '',
     address: '',
     phone: '',
     email: '',
@@ -36,9 +39,14 @@ export const CreateFacilityForm: React.FC<CreateFacilityFormProps> = ({
   const { showSuccess, showError } = useMasterToast();
 
   const facilityTypes = [
+    { value: 'hospital', label: 'Hospital' },
+    { value: 'clinic', label: 'Clinic' },
+    { value: 'pharmacy', label: 'Pharmacy' },
+    { value: 'laboratory', label: 'Laboratory' },
     { value: 'treatmentFacility', label: 'Treatment Facility' },
     { value: 'referralFacility', label: 'Referral Facility' },
-    { value: 'prescriberFacility', label: 'Prescriber Facility' }
+    { value: 'prescriberFacility', label: 'Prescriber Facility' },
+    { value: 'other', label: 'Other' }
   ];
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -55,7 +63,7 @@ export const CreateFacilityForm: React.FC<CreateFacilityFormProps> = ({
       // Ensure we have a valid facility_type before submitting
       const submitData = {
         ...formData,
-        facility_type: formData.facility_type as 'treatmentFacility' | 'referralFacility' | 'prescriberFacility'
+        facility_type: formData.facility_type as FacilityType
       };
       
       const { error } = await supabase
@@ -69,7 +77,7 @@ export const CreateFacilityForm: React.FC<CreateFacilityFormProps> = ({
       // Reset form
       setFormData({
         name: '',
-        facility_type: '' as 'treatmentFacility' | 'referralFacility' | 'prescriberFacility' | '',
+        facility_type: '' as FacilityType | '',
         address: '',
         phone: '',
         email: '',
@@ -108,7 +116,7 @@ export const CreateFacilityForm: React.FC<CreateFacilityFormProps> = ({
             <Label htmlFor="facility_type">Facility Type *</Label>
             <Select 
               value={formData.facility_type} 
-              onValueChange={(value: 'treatmentFacility' | 'referralFacility' | 'prescriberFacility') => 
+              onValueChange={(value: FacilityType) => 
                 setFormData(prev => ({ ...prev, facility_type: value }))
               }
             >

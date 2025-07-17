@@ -101,7 +101,7 @@ export const TenantProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             facility_id: af.facility_id,
             facility_name: af.facility_name,
             access_level: af.access_level,
-            facility_type: 'treatmentFacility', // Default facility type
+            facility_type: 'hospital', // Default facility type
             is_active: true // Default to active
           }));
           
