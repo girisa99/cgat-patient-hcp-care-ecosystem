@@ -3,7 +3,7 @@
  * Central dashboard for monitoring component stability and protection
  */
 import React from 'react';
-import { StabilityMonitor } from '@/components/stability/StabilityMonitor';
+import { StabilityMonitor as StabilityMonitorComponent } from '@/components/verification/StabilityMonitor';
 import { SystemStatusChecker } from '@/components/monitoring/SystemStatusChecker';
 import { AutomaticEnhancementsVerification } from '@/components/monitoring/AutomaticEnhancementsVerification';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -29,7 +29,7 @@ const Stability: React.FC = () => {
           </TabsContent>
           
           <TabsContent value="monitoring" className="mt-6">
-            <StabilityMonitor />
+            <StabilityMonitorComponent />
           </TabsContent>
         </Tabs>
       </div>
