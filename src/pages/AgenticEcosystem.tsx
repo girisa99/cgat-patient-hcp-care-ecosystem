@@ -28,28 +28,33 @@ const AgenticEcosystem = () => {
       name: 'Healthcare Compliance Agent',
       description: 'Monitors FDA compliance and manages adverse events',
       status: 'deployed',
-      connections: ['OpenFDA', 'Veeva', 'ICD-11'],
-      role: 'Compliance Officer',
-      template: 'Regulatory Monitoring'
+      connections: ['api-gateway', 'sms'],
+      role: 'compliance',
+      template: 'healthcare-compliance'
     },
     {
       id: '2',
-      name: 'Prior Authorization Assistant',
-      description: 'Automates prior authorization workflows',
+      name: 'Patient Engagement Bot',
+      description: 'Handles patient queries and appointment scheduling',
       status: 'deployed',
-      connections: ['Insurance APIs', 'Epic', 'Benefit Verification'],
-      role: 'Care Manager',
-      template: 'Insurance Processing'
+      connections: ['whatsapp', 'voice'],
+      role: 'engagement',
+      template: 'patient-care'
+    },
+    {
+      id: '3',
+      name: 'Treatment Protocol Assistant',
+      description: 'Assists with treatment protocol recommendations',
+      status: 'draft',
+      connections: ['api-gateway'],
+      role: 'clinical-support',
+      template: 'treatment-assistant'
     }
   ]);
 
-  const [activeTab, setActiveTab] = useState('canvas');
+  const [activeTab, setActiveTab] = useState('overview');
 
   const handleCreateAgent = () => {
-    toast({
-      title: "Agent Creation Started",
-      description: "Use the canvas to design your new agent with drag-and-drop functionality.",
-    });
     setActiveTab('canvas');
   };
 
@@ -60,153 +65,237 @@ const AgenticEcosystem = () => {
         : agent
     ));
     toast({
-      title: "Agent Deployed",
+      title: "Agent Deployed Successfully",
       description: "Your agent is now live and processing requests.",
     });
   };
 
   return (
-    <AppLayout title="Agentic API Ecosystem">
+    <AppLayout>
       <div className="space-y-6">
-        {/* Header Section */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Agentic API Ecosystem</h1>
+            <h1 className="text-3xl font-bold text-foreground">Healthcare Agentic API Ecosystem</h1>
             <p className="text-muted-foreground mt-2">
-              Create, configure, and deploy intelligent agents with comprehensive system integrations
+              Comprehensive platform for Cell, Gene, Advanced & Personalized treatments with AI orchestration
             </p>
           </div>
-          <Button onClick={handleCreateAgent} className="gap-2">
-            <Plus className="h-4 w-4" />
+          <Button onClick={handleCreateAgent}>
+            <Plus className="h-4 w-4 mr-2" />
             Create New Agent
           </Button>
         </div>
 
-        {/* Stats Overview */}
+        {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3">
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-2">
                 <Bot className="h-8 w-8 text-primary" />
                 <div>
-                  <p className="text-2xl font-bold">{agents.length}</p>
-                  <p className="text-sm text-muted-foreground">Active Agents</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3">
-                <Network className="h-8 w-8 text-blue-600" />
-                <div>
-                  <p className="text-2xl font-bold">47</p>
-                  <p className="text-sm text-muted-foreground">System Connectors</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3">
-                <Settings className="h-8 w-8 text-green-600" />
-                <div>
                   <p className="text-2xl font-bold">12</p>
-                  <p className="text-sm text-muted-foreground">Agent Templates</p>
+                  <p className="text-xs text-muted-foreground">Active Agents</p>
                 </div>
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3">
-                <Rocket className="h-8 w-8 text-purple-600" />
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-2">
+                <Network className="h-8 w-8 text-green-600" />
                 <div>
-                  <p className="text-2xl font-bold">{agents.filter(a => a.status === 'deployed').length}</p>
-                  <p className="text-sm text-muted-foreground">Deployed Agents</p>
+                  <p className="text-2xl font-bold">8</p>
+                  <p className="text-xs text-muted-foreground">Connected Channels</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-2">
+                <Settings className="h-8 w-8 text-blue-600" />
+                <div>
+                  <p className="text-2xl font-bold">247</p>
+                  <p className="text-xs text-muted-foreground">Conversations Today</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-2">
+                <Rocket className="h-8 w-8 text-orange-600" />
+                <div>
+                  <p className="text-2xl font-bold">99.2%</p>
+                  <p className="text-xs text-muted-foreground">Uptime</p>
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Main Content Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        {/* Main Interface */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="canvas">Agent Canvas</TabsTrigger>
-            <TabsTrigger value="connectors">System Connectors</TabsTrigger>
-            <TabsTrigger value="templates">Templates</TabsTrigger>
-            <TabsTrigger value="deployment">Deployment</TabsTrigger>
-            <TabsTrigger value="agents">My Agents</TabsTrigger>
+            <TabsTrigger value="overview">
+              <Settings className="h-4 w-4 mr-2" />
+              Overview
+            </TabsTrigger>
+            <TabsTrigger value="canvas">
+              <Bot className="h-4 w-4 mr-2" />
+              Canvas
+            </TabsTrigger>
+            <TabsTrigger value="connectors">
+              <Network className="h-4 w-4 mr-2" />
+              Connectors
+            </TabsTrigger>
+            <TabsTrigger value="templates">
+              <Plus className="h-4 w-4 mr-2" />
+              Templates
+            </TabsTrigger>
+            <TabsTrigger value="deployment">
+              <Rocket className="h-4 w-4 mr-2" />
+              Deployment
+            </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="canvas" className="space-y-6">
+          <TabsContent value="overview" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Platform Analytics & Performance</CardTitle>
+                <CardDescription>Real-time insights into your agentic ecosystem</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <Card>
+                    <CardContent className="p-4">
+                      <h3 className="font-semibold mb-2">Agent Performance</h3>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span>Cell Therapy Agent:</span>
+                          <span className="text-green-600">98.5%</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Gene Therapy Agent:</span>
+                          <span className="text-green-600">97.2%</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Personalized Med:</span>
+                          <span className="text-green-600">99.1%</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-4">
+                      <h3 className="font-semibold mb-2">Channel Usage</h3>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span>WhatsApp:</span>
+                          <span>45%</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>SMS:</span>
+                          <span>30%</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Voice:</span>
+                          <span>15%</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Alexa:</span>
+                          <span>10%</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-4">
+                      <h3 className="font-semibold mb-2">Token Usage</h3>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span>Today:</span>
+                          <span>125K tokens</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>This Week:</span>
+                          <span>750K tokens</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Monthly Limit:</span>
+                          <span>2M tokens</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* My Agents */}
+            <Card>
+              <CardHeader>
+                <CardTitle>My Agents</CardTitle>
+                <CardDescription>Manage and monitor your deployed agents</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4">
+                  {agents.map((agent) => (
+                    <div key={agent.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex items-center space-x-4">
+                        <Bot className="h-8 w-8 text-primary" />
+                        <div>
+                          <h3 className="font-semibold">{agent.name}</h3>
+                          <p className="text-sm text-muted-foreground">{agent.description}</p>
+                          <div className="flex items-center space-x-2 mt-2">
+                            <Badge 
+                              variant={agent.status === 'deployed' ? 'default' : agent.status === 'draft' ? 'secondary' : 'outline'}
+                            >
+                              {agent.status}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground">
+                              {agent.connections.length} connections
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex space-x-2">
+                        {agent.status === 'draft' && (
+                          <Button 
+                            size="sm" 
+                            onClick={() => handleDeployAgent(agent.id)}
+                          >
+                            <Rocket className="h-4 w-4 mr-2" />
+                            Deploy
+                          </Button>
+                        )}
+                        <Button variant="outline" size="sm">
+                          <Settings className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="canvas" className="space-y-4">
             <AgentCanvas />
           </TabsContent>
 
-          <TabsContent value="connectors" className="space-y-6">
+          <TabsContent value="connectors" className="space-y-4">
             <SystemConnectors />
           </TabsContent>
 
-          <TabsContent value="templates" className="space-y-6">
+          <TabsContent value="templates" className="space-y-4">
             <AgentTemplates />
           </TabsContent>
 
-          <TabsContent value="deployment" className="space-y-6">
+          <TabsContent value="deployment" className="space-y-4">
             <AgentDeployment agents={agents} onDeploy={handleDeployAgent} />
-          </TabsContent>
-
-          <TabsContent value="agents" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {agents.map((agent) => (
-                <Card key={agent.id}>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg">{agent.name}</CardTitle>
-                      <Badge variant={agent.status === 'deployed' ? 'default' : 'secondary'}>
-                        {agent.status}
-                      </Badge>
-                    </div>
-                    <CardDescription>{agent.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Role</p>
-                        <p className="text-sm">{agent.role}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Template</p>
-                        <p className="text-sm">{agent.template}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Connections</p>
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {agent.connections.map((conn, index) => (
-                            <Badge key={index} variant="outline" className="text-xs">
-                              {conn}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                      <div className="flex gap-2 pt-3">
-                        <Button variant="outline" size="sm" className="flex-1">
-                          Configure
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          className="flex-1"
-                          onClick={() => handleDeployAgent(agent.id)}
-                          disabled={agent.status === 'deployed'}
-                        >
-                          {agent.status === 'deployed' ? 'Deployed' : 'Deploy'}
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
           </TabsContent>
         </Tabs>
       </div>
