@@ -1,6 +1,12 @@
 
 /**
- * Duplicate Detector - Phase 2 Migration
+ * @deprecated This file has been migrated to the new duplicate prevention framework
+ * Please use: import { DuplicateDetector } from '@/utils/duplicate-prevention-bridge'
+ * 
+ * MIGRATION NOTICE: This legacy implementation will be removed in a future version.
+ * The new bridge system provides enhanced functionality with backward compatibility.
+ * 
+ * Duplicate Detector - Phase 2 Migration (LEGACY)
  * Integration with new duplicate prevention framework
  * DEPRECATED: Use duplicate-prevention/migration/bridge.js for new implementations
  */
