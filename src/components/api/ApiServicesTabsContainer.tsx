@@ -15,18 +15,13 @@ import { useApiKeys } from '@/hooks/useApiKeys';
 import { useExternalApis } from '@/hooks/useExternalApis';
 import { useEnhancedExternalApis } from '@/hooks/useEnhancedExternalApis';
 
-// Import components
+// Import consolidated components
 import InternalApiServicesTab from './tabs/InternalApiServicesTab';
-import ExternalApiTab from './tabs/ExternalApiTab';
-import ApiKeysTab from './tabs/ApiKeysTab';
-import PublishingTab from './tabs/PublishingTab';
-import DeveloperPortalTab from './tabs/DeveloperPortalTab';
+import ExternalIntegrationTab from './tabs/ExternalIntegrationTab';
+import DeveloperHubTab from './tabs/DeveloperHubTab';
 import MarketplaceTab from './tabs/MarketplaceTab';
-import SandboxTab from './tabs/SandboxTab';
-import DocumentationTab from './tabs/DocumentationTab';
-import FieldMappingTab from './tabs/FieldMappingTab';
-import BusinessApiTab from './tabs/BusinessApiTab';
-import TechnicalApiTab from './tabs/TechnicalApiTab';
+import ApiKeysTab from './tabs/ApiKeysTab';
+import TestingTab from './tabs/TestingTab';
 
 interface ApiServicesTabsContainerProps {
   defaultTab?: string;
@@ -58,38 +53,17 @@ const ApiServicesTabsContainer: React.FC<ApiServicesTabsContainerProps> = ({
     },
     {
       id: "external",
-      label: "External APIs", 
+      label: "External Integration",
       icon: ExternalLink,
-      count: externalApis?.length || 0,
-      component: ExternalApiTab
-    },
-    {
-      id: "business",
-      label: "Business APIs",
-      icon: Users,
-      count: apiServices?.filter(api => api.category === 'business')?.length || 0,
-      component: BusinessApiTab
-    },
-    {
-      id: "technical",
-      label: "Technical APIs",
-      icon: Code,
-      count: apiServices?.filter(api => api.category === 'technical')?.length || 0,
-      component: TechnicalApiTab
-    },
-    {
-      id: "publish",
-      label: "Publishing",
-      icon: Upload,
-      count: publishedApis?.length || 0,
-      component: PublishingTab
+      count: (externalApis?.length || 0) + (publishedApis?.length || 0),
+      component: ExternalIntegrationTab
     },
     {
       id: "developer",
-      label: "Developer Portal",
-      icon: Users,
+      label: "Developer Hub",
+      icon: Code,
       count: developerApplications?.length || 0,
-      component: DeveloperPortalTab
+      component: DeveloperHubTab
     },
     {
       id: "marketplace",
@@ -106,25 +80,11 @@ const ApiServicesTabsContainer: React.FC<ApiServicesTabsContainerProps> = ({
       component: ApiKeysTab
     },
     {
-      id: "sandbox",
-      label: "Sandbox",
+      id: "testing",
+      label: "Testing",
       icon: TestTube,
-      count: 0, // Sandbox environments
-      component: SandboxTab
-    },
-    {
-      id: "documentation",
-      label: "Documentation",
-      icon: FileText,
-      count: 0, // Generated docs
-      component: DocumentationTab
-    },
-    {
-      id: "field-mapping",
-      label: "Field Mapping",
-      icon: Map,
-      count: 0, // Field mappings
-      component: FieldMappingTab
+      count: apiServices?.length || 0,
+      component: TestingTab
     }
   ];
 
@@ -222,7 +182,7 @@ const ApiServicesTabsContainer: React.FC<ApiServicesTabsContainerProps> = ({
 
       {/* Main Tabs Container */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-6 lg:grid-cols-11 gap-1 h-auto p-1">
+        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6 gap-1 h-auto p-1">
           {tabs.map((tab) => {
             const IconComponent = tab.icon;
             return (

@@ -31,23 +31,31 @@ const MarketplaceTab: React.FC = () => {
     return matchesSearch && matchesCategory;
   });
 
-  // Mock marketplace data for demonstration
-  const mockStats = {
-    totalListings: 24,
-    publishedListings: 18,
-    featuredListings: 6,
-    totalViews: 12847,
-    averageRating: 4.6
+  // Calculate real marketplace statistics
+  const realStats = {
+    totalListings: marketplaceListings?.length || 0,
+    publishedListings: marketplaceListings?.filter(listing => listing.listing_status === 'approved').length || 0,
+    featuredListings: marketplaceListings?.filter(listing => listing.featured).length || 0,
+    totalViews: marketplaceListings?.reduce((sum, listing) => sum + (listing.metrics?.views || 0), 0) || 0,
+    averageRating: marketplaceListings?.length > 0 
+      ? marketplaceListings.reduce((sum, listing) => sum + (listing.metrics?.rating || 0), 0) / marketplaceListings.length 
+      : 0
   };
 
+  // Calculate real categories from marketplace listings
+  const categoryStats = (marketplaceListings || []).reduce((acc, listing) => {
+    const category = listing.category || 'other';
+    acc[category] = (acc[category] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
   const categories = [
-    { id: 'all', name: 'All Categories', count: 24 },
-    { id: 'healthcare', name: 'Healthcare', count: 8 },
-    { id: 'communication', name: 'Communication', count: 5 },
-    { id: 'analytics', name: 'Analytics', count: 4 },
-    { id: 'ai-ml', name: 'AI/ML', count: 3 },
-    { id: 'document', name: 'Document Processing', count: 2 },
-    { id: 'other', name: 'Other', count: 2 }
+    { id: 'all', name: 'All Categories', count: marketplaceListings?.length || 0 },
+    ...Object.entries(categoryStats).map(([id, count]) => ({
+      id,
+      name: id.charAt(0).toUpperCase() + id.slice(1),
+      count
+    }))
   ];
 
   const handleRefresh = () => {
@@ -82,7 +90,7 @@ const MarketplaceTab: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-blue-600">Total Listings</p>
-                <p className="text-2xl font-bold text-blue-900">{mockStats.totalListings}</p>
+                <p className="text-2xl font-bold text-blue-900">{realStats.totalListings}</p>
               </div>
               <Globe className="h-8 w-8 text-blue-500" />
             </div>
@@ -94,7 +102,7 @@ const MarketplaceTab: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-green-600">Published</p>
-                <p className="text-2xl font-bold text-green-900">{mockStats.publishedListings}</p>
+                <p className="text-2xl font-bold text-green-900">{realStats.publishedListings}</p>
               </div>
               <CheckCircle className="h-8 w-8 text-green-500" />
             </div>
@@ -106,7 +114,7 @@ const MarketplaceTab: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-yellow-600">Featured</p>
-                <p className="text-2xl font-bold text-yellow-900">{mockStats.featuredListings}</p>
+                <p className="text-2xl font-bold text-yellow-900">{realStats.featuredListings}</p>
               </div>
               <Star className="h-8 w-8 text-yellow-500" />
             </div>
@@ -118,7 +126,7 @@ const MarketplaceTab: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-purple-600">Views</p>
-                <p className="text-2xl font-bold text-purple-900">{mockStats.totalViews.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-purple-900">{realStats.totalViews.toLocaleString()}</p>
               </div>
               <TrendingUp className="h-8 w-8 text-purple-500" />
             </div>
@@ -130,7 +138,7 @@ const MarketplaceTab: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-orange-600">Avg Rating</p>
-                <p className="text-2xl font-bold text-orange-900">{mockStats.averageRating}</p>
+                <p className="text-2xl font-bold text-orange-900">{realStats.averageRating.toFixed(1)}</p>
               </div>
               <Star className="h-8 w-8 text-orange-500" />
             </div>
@@ -177,68 +185,37 @@ const MarketplaceTab: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Mock featured API listings */}
-            {[
-              {
-                id: '1',
-                title: 'Healthcare Provider Directory',
-                description: 'Comprehensive directory of healthcare providers with NPI integration',
-                category: 'Healthcare',
-                pricing: 'Freemium',
-                rating: 4.8,
-                downloads: 1247,
-                verified: true
-              },
-              {
-                id: '2',
-                title: 'SMS & Voice Communications',
-                description: 'Send SMS messages and make voice calls with Twilio integration',
-                category: 'Communication',
-                pricing: 'Pay-per-use',
-                rating: 4.6,
-                downloads: 892,
-                verified: true
-              },
-              {
-                id: '3',
-                title: 'AI Document Processing',
-                description: 'Extract text and data from documents using advanced AI',
-                category: 'AI/ML',
-                pricing: 'Enterprise',
-                rating: 4.9,
-                downloads: 654,
-                verified: true
-              }
-            ].map((api) => (
+            {/* Featured API listings from real data */}
+            {(marketplaceListings?.filter(listing => listing.featured) || []).slice(0, 3).map((api) => (
               <Card key={api.id} className="hover:shadow-md transition-shadow">
                 <CardContent className="p-6">
-                  <div className="space-y-3">
-                    <div className="flex items-start justify-between">
-                      <h3 className="font-semibold">{api.title}</h3>
-                      {api.verified && (
-                        <Badge variant="outline" className="text-green-600 border-green-200">
-                          <CheckCircle className="h-3 w-3 mr-1" />
-                          Verified
-                        </Badge>
-                      )}
-                    </div>
-                    
-                    <p className="text-sm text-gray-600 line-clamp-2">
-                      {api.description}
-                    </p>
-                    
-                    <div className="flex items-center justify-between text-sm">
-                      <Badge variant="outline">{api.category}</Badge>
-                      <div className="flex items-center gap-1">
-                        <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-                        <span>{api.rating}</span>
+                    <div className="space-y-3">
+                      <div className="flex items-start justify-between">
+                        <h3 className="font-semibold">{api.title}</h3>
+                        {api.is_verified && (
+                          <Badge variant="outline" className="text-green-600 border-green-200">
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            Verified
+                          </Badge>
+                        )}
                       </div>
-                    </div>
-                    
-                    <div className="flex items-center justify-between text-sm text-gray-600">
-                      <span>{api.downloads} downloads</span>
-                      <Badge variant="outline">{api.pricing}</Badge>
-                    </div>
+                      
+                      <p className="text-sm text-gray-600 line-clamp-2">
+                        {api.short_description}
+                      </p>
+                      
+                      <div className="flex items-center justify-between text-sm">
+                        <Badge variant="outline">{api.category}</Badge>
+                        <div className="flex items-center gap-1">
+                          <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                          <span>{api.metrics?.rating?.toFixed(1) || '0.0'}</span>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center justify-between text-sm text-gray-600">
+                        <span>{api.metrics?.views || 0} views</span>
+                        <Badge variant="outline">{api.pricing_info?.model || 'Free'}</Badge>
+                      </div>
                     
                     <div className="flex items-center justify-between pt-2 border-t">
                       <Button variant="outline" size="sm">
