@@ -4586,6 +4586,9 @@ export type Database = {
         | "prescriberFacility"
         | "hospital"
         | "other"
+        | "clinic"
+        | "pharmacy"
+        | "laboratory"
       inventory_model:
         | "traditional_wholesale"
         | "consignment"
@@ -4837,6 +4840,9 @@ export const Constants = {
         "prescriberFacility",
         "hospital",
         "other",
+        "clinic",
+        "pharmacy",
+        "laboratory",
       ],
       inventory_model: [
         "traditional_wholesale",
