@@ -12,6 +12,7 @@ import { StabilityProvider } from '@/components/stability/StabilityProvider';
 
 // Import pages that exist
 import Index from '@/pages/Index';
+import Dashboard from '@/pages/Dashboard';
 import Users from '@/pages/Users';
 import Patients from '@/pages/Patients';
 import Facilities from '@/pages/Facilities';
@@ -66,8 +67,9 @@ const AppContent = () => {
               {/* Protected routes */}
               {isAuthenticated ? (
                 <>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/dashboard" element={<Index />} />
+                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/index" element={<Index />} />
                   <Route path="/users" element={<Users />} />
                   <Route path="/patients" element={<Patients />} />
                   <Route path="/facilities" element={<Facilities />} />
