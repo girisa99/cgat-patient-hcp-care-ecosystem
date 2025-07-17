@@ -95,7 +95,7 @@ class EnhancedTestingService {
    * Get comprehensive test execution metrics
    */
   async getTestExecutionMetrics(): Promise<TestExecutionMetrics> {
-    const testCases = await this.getAdvancedTestCases();
+    const testCases = await this.getAdvancedTestCases({});
     const now = Date.now();
     const oneWeekAgo = now - (7 * 24 * 60 * 60 * 1000);
     const oneDayAgo = now - (24 * 60 * 60 * 1000);
@@ -138,7 +138,7 @@ class EnhancedTestingService {
     try {
       console.log('🔄 Generating comprehensive documentation...');
       
-      const testCases = await this.getAdvancedTestCases();
+      const testCases = await this.getAdvancedTestCases({});
       const metrics = await this.getTestExecutionMetrics();
       
       const userRequirements = this.extractUserRequirements(testCases);
@@ -174,7 +174,7 @@ class EnhancedTestingService {
   async generateRoleBasedTestSuites(): Promise<RoleBasedTestSuite[]> {
     try {
       // Use existing service functionality
-      const testCases = await this.getAdvancedTestCases();
+      const testCases = await this.getAdvancedTestCases({});
       
       // For now, return a simple structure - this should be enhanced based on actual roles
       const roleBasedSuites: RoleBasedTestSuite[] = [
