@@ -9,6 +9,7 @@ import { EnhancedKnowledgeBase } from '@/components/rag/EnhancedKnowledgeBase';
 import { AgentTemplates } from './AgentTemplates';
 import { AgentDeployment } from './AgentDeployment';
 import { RAGComplianceWorkflow } from '@/components/rag/RAGComplianceWorkflow';
+import { AIModelSelector } from './AIModelSelector';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
@@ -84,6 +85,8 @@ export const AgentCreationWizard = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
+  const [showAIModelSelector, setShowAIModelSelector] = useState(false);
+  const [selectedAIModels, setSelectedAIModels] = useState<any[]>([]);
   
   // Fetch templates on component mount
   useEffect(() => {

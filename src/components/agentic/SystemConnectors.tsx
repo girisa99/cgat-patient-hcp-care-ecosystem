@@ -12,6 +12,8 @@ import {
   Building, Workflow, GitBranch, Server, Phone,
   CheckCircle, AlertCircle, Clock, Zap, Loader2
 } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
 
 interface Connector {
@@ -345,7 +347,7 @@ export const SystemConnectors = () => {
     
     toast({
       title: "Configure Connection",
-      description: "Update connection settings and credentials.",
+      description: "Opening configuration dialog for " + connector.name,
     });
   };
 

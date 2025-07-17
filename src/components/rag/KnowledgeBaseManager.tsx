@@ -22,6 +22,7 @@ import {
   Search,
   Filter
 } from 'lucide-react';
+import { DocumentUpload } from './DocumentUpload';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 
@@ -199,8 +200,9 @@ export const KnowledgeBaseManager: React.FC = () => {
             </DialogHeader>
 
             <Tabs defaultValue="manual" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="manual">Manual Entry</TabsTrigger>
+                <TabsTrigger value="upload">Upload</TabsTrigger>
                 <TabsTrigger value="url">From URL</TabsTrigger>
                 <TabsTrigger value="crawl">Web Crawl</TabsTrigger>
               </TabsList>
@@ -284,6 +286,19 @@ export const KnowledgeBaseManager: React.FC = () => {
                     rows={6}
                   />
                 </div>
+              </TabsContent>
+              
+              <TabsContent value="upload" className="space-y-4">
+                <DocumentUpload 
+                  onUploadComplete={(files) => {
+                    toast({
+                      title: "Documents Uploaded",
+                      description: `${files.length} documents have been processed and added to knowledge base.`,
+                    });
+                    refetch();
+                    setIsAddDialogOpen(false);
+                  }}
+                />
               </TabsContent>
               
               <TabsContent value="url" className="space-y-4">
