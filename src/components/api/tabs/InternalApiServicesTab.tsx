@@ -22,13 +22,30 @@ const InternalApiServicesTab: React.FC = () => {
     getApiServiceStats
   } = useMasterApiServices();
 
-  // Get filtered services based on search
+  // Filter for internal APIs only
+  const internalServices = apiServices?.filter(api => api.direction === 'internal') || [];
+  
+  // Get filtered services based on search (from internal APIs only)
   const filteredServices = searchQuery 
-    ? searchApiServices(searchQuery)
-    : apiServices;
+    ? internalServices.filter(service => 
+        service.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        service.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        service.category?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : internalServices;
 
-  // Get statistics
-  const stats = getApiServiceStats();
+  // Get statistics for internal APIs only
+  const stats = {
+    total: internalServices.length,
+    statusDistribution: internalServices.reduce((acc, service) => {
+      acc[service.status] = (acc[service.status] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>),
+    typeDistribution: internalServices.reduce((acc, service) => {
+      acc[service.type] = (acc[service.type] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>)
+  };
 
   const handleRefresh = () => {
     refetch();

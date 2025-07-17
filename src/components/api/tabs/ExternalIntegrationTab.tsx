@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useExternalApis } from '@/hooks/useExternalApis';
 import { useExternalApiPublishing } from '@/hooks/useExternalApiPublishing';
+import { useMasterApiServices } from '@/hooks/useMasterApiServices';
 
 const ExternalIntegrationTab: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -22,13 +23,44 @@ const ExternalIntegrationTab: React.FC = () => {
     isLoadingExternalApis
   } = useExternalApis();
 
+  const { apiServices } = useMasterApiServices();
+
   const {
     moveToReview,
     publishApi
   } = useExternalApiPublishing();
 
+  // Get external APIs from main registry (direction = 'external' or type = 'external')
+  const externalIntegrationApis = apiServices?.filter(api => 
+    api.direction === 'external' || 
+    api.type === 'external' ||
+    api.direction === 'inbound' || 
+    api.direction === 'bidirectional'
+  ) || [];
+
+  // Transform integration APIs to match external API format
+  const transformedIntegrationApis = externalIntegrationApis.map(api => ({
+    id: api.id,
+    external_name: api.name,
+    external_description: api.description || '',
+    published_at: api.created_at,
+    visibility: 'public' as const,
+    pricing_model: 'free' as const,
+    status: api.status,
+    category: api.category,
+    created_at: api.created_at,
+    base_url: api.base_url,
+    version: '1.0.0'
+  }));
+
+  // Combine with published external APIs
+  const allExternalApis = [
+    ...transformedIntegrationApis,
+    ...(externalApis || [])
+  ];
+
   // Filter external APIs based on search
-  const filteredExternalApis = (externalApis || []).filter(api =>
+  const filteredExternalApis = allExternalApis.filter(api =>
     api.external_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     api.external_description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     api.category?.toLowerCase().includes(searchQuery.toLowerCase())

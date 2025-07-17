@@ -5,38 +5,31 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
-  Code, FileText, Users, Plus, RefreshCw, Search,
-  CheckCircle, Clock, X, Eye, ExternalLink,
-  Shield, Download, Book
+  Code, FileText, Key, Plus, RefreshCw, Search,
+  CheckCircle, Clock, Eye, ExternalLink, X, Users,
+  Shield, Download, Book, TestTube, Settings,
+  Globe, PlayCircle, Database, Zap
 } from "lucide-react";
 import { useExternalApis } from '@/hooks/useExternalApis';
+import { useMasterApiServices } from '@/hooks/useMasterApiServices';
+import { useApiKeys } from '@/hooks/useApiKeys';
 
 const DeveloperHubTab: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeSubTab, setActiveSubTab] = useState('applications');
+  const [activeSubTab, setActiveSubTab] = useState('sandbox');
   
-  const {
-    developerApplications,
-    isLoadingApplications
-  } = useExternalApis();
+  const { apiServices, isLoading } = useMasterApiServices();
+  const { publishedApis } = useExternalApis();
+  const { apiKeys } = useApiKeys();
 
-  // Filter applications based on search
-  const filteredApplications = (developerApplications || []).filter(app =>
-    app.application_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    app.company_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    app.description?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Get published APIs for developer consumption
+  const developerApis = apiServices?.filter(api => 
+    api.status === 'active' && 
+    (api.direction === 'outbound' || api.direction === 'bidirectional')
+  ) || [];
 
   const handleRefresh = () => {
     console.log('Refreshing developer hub...');
-  };
-
-  const handleApproveApplication = (applicationId: string) => {
-    console.log('Approving application:', applicationId);
-  };
-
-  const handleRejectApplication = (applicationId: string) => {
-    console.log('Rejecting application:', applicationId);
   };
 
   return (
@@ -45,30 +38,30 @@ const DeveloperHubTab: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Developer Hub</h2>
-          <p className="text-gray-600">Developer portal, applications, and documentation management</p>
+          <p className="text-gray-600">Sandbox, published APIs, endpoints, Postman, API keys, and testing</p>
         </div>
         <div className="flex items-center gap-3">
-          <Button onClick={handleRefresh} variant="outline" disabled={isLoadingApplications}>
-            <RefreshCw className={`h-4 w-4 mr-2 ${isLoadingApplications ? 'animate-spin' : ''}`} />
+          <Button onClick={handleRefresh} variant="outline" disabled={isLoading}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
           <Button>
             <Plus className="h-4 w-4 mr-2" />
-            New Application
+            New API Key
           </Button>
         </div>
       </div>
 
       {/* Developer Hub Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Card className="bg-blue-50 border-blue-200">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-blue-600">Total Applications</p>
-                <p className="text-2xl font-bold text-blue-900">{developerApplications?.length || 0}</p>
+                <p className="text-sm text-blue-600">Published APIs</p>
+                <p className="text-2xl font-bold text-blue-900">{developerApis.length}</p>
               </div>
-              <Users className="h-8 w-8 text-blue-500" />
+              <Globe className="h-8 w-8 text-blue-500" />
             </div>
           </CardContent>
         </Card>
@@ -77,26 +70,10 @@ const DeveloperHubTab: React.FC = () => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-green-600">Approved</p>
-                <p className="text-2xl font-bold text-green-900">
-                  {developerApplications?.filter(app => app.status === 'approved').length || 0}
-                </p>
+                <p className="text-sm text-green-600">API Keys</p>
+                <p className="text-2xl font-bold text-green-900">{apiKeys?.length || 0}</p>
               </div>
-              <CheckCircle className="h-8 w-8 text-green-500" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-yellow-50 border-yellow-200">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-yellow-600">Pending</p>
-                <p className="text-2xl font-bold text-yellow-900">
-                  {developerApplications?.filter(app => app.status === 'pending').length || 0}
-                </p>
-              </div>
-              <Clock className="h-8 w-8 text-yellow-500" />
+              <Key className="h-8 w-8 text-green-500" />
             </div>
           </CardContent>
         </Card>
@@ -105,10 +82,34 @@ const DeveloperHubTab: React.FC = () => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-purple-600">Documentation</p>
-                <p className="text-2xl font-bold text-purple-900">{developerApplications?.length || 0}</p>
+                <p className="text-sm text-purple-600">Endpoints</p>
+                <p className="text-2xl font-bold text-purple-900">{developerApis.reduce((acc, api) => acc + 5, 0)}</p>
               </div>
-              <FileText className="h-8 w-8 text-purple-500" />
+              <Zap className="h-8 w-8 text-purple-500" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-orange-50 border-orange-200">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-orange-600">Test Cases</p>
+                <p className="text-2xl font-bold text-orange-900">{developerApis.length * 3}</p>
+              </div>
+              <TestTube className="h-8 w-8 text-orange-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-cyan-50 border-cyan-200">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-cyan-600">Sandbox</p>
+                <p className="text-2xl font-bold text-cyan-900">Active</p>
+              </div>
+              <PlayCircle className="h-8 w-8 text-cyan-500" />
             </div>
           </CardContent>
         </Card>
@@ -119,129 +120,94 @@ const DeveloperHubTab: React.FC = () => {
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
         <Input
           type="text"
-          placeholder="Search applications..."
+          placeholder="Search APIs, keys, endpoints..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="pl-10"
         />
       </div>
 
-      {/* Sub-tabs for different developer hub aspects */}
+      {/* Developer Hub Sub-tabs */}
       <Tabs value={activeSubTab} onValueChange={setActiveSubTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="applications">Applications</TabsTrigger>
-          <TabsTrigger value="documentation">Documentation</TabsTrigger>
-          <TabsTrigger value="resources">Resources</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-6">
+          <TabsTrigger value="sandbox">Sandbox</TabsTrigger>
+          <TabsTrigger value="published">Published APIs</TabsTrigger>
+          <TabsTrigger value="endpoints">Endpoints</TabsTrigger>
+          <TabsTrigger value="postman">Postman</TabsTrigger>
+          <TabsTrigger value="keys">API Keys</TabsTrigger>
+          <TabsTrigger value="testing">Testing</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="applications" className="mt-6">
+        <TabsContent value="sandbox" className="mt-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
-                <Users className="h-5 w-5" />
-                <span>Developer Applications ({filteredApplications.length})</span>
+                <PlayCircle className="h-5 w-5" />
+                <span>API Sandbox Environment</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {filteredApplications.length === 0 ? (
-                <div className="text-center py-12 text-gray-500">
-                  <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <h3 className="font-semibold mb-2">
-                    {searchQuery ? 'No Applications Match Your Search' : 'No Developer Applications'}
-                  </h3>
-                  <p className="text-sm mb-4">
-                    {searchQuery 
-                      ? 'Try adjusting your search terms.'
-                      : 'No developer applications have been submitted yet.'
-                    }
-                  </p>
+              <div className="text-center py-12">
+                <PlayCircle className="h-16 w-16 text-blue-600 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold mb-2">Interactive API Testing</h3>
+                <p className="text-gray-600 mb-6">Test your APIs in a secure sandbox environment with real-time responses</p>
+                <div className="flex items-center justify-center gap-3">
                   <Button>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Application
+                    <PlayCircle className="h-4 w-4 mr-2" />
+                    Launch Sandbox
+                  </Button>
+                  <Button variant="outline">
+                    <Settings className="h-4 w-4 mr-2" />
+                    Configure
                   </Button>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="published" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Globe className="h-5 w-5" />
+                <span>Published APIs ({developerApis.length})</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {developerApis.length === 0 ? (
+                <div className="text-center py-12 text-gray-500">
+                  <Globe className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <h3 className="font-semibold mb-2">No Published APIs</h3>
+                  <p className="text-sm mb-4">No APIs have been published for external consumption yet.</p>
+                </div>
               ) : (
-                <div className="space-y-4">
-                  {filteredApplications.map((application) => (
-                    <Card key={application.id} className="hover:shadow-md transition-shadow">
-                      <CardContent className="p-6">
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                              <h3 className="font-semibold">{application.application_name}</h3>
-                              <Badge variant={
-                                application.status === 'approved' ? "default" :
-                                application.status === 'pending' ? "secondary" :
-                                application.status === 'rejected' ? "destructive" : "outline"
-                              }>
-                                {application.status}
-                              </Badge>
-                              <Badge variant="outline">{application.application_type}</Badge>
-                              <Badge variant="outline">{application.environment}</Badge>
-                            </div>
-                            
-                            <div className="space-y-2">
-                              <p className="text-sm text-gray-600">{application.description}</p>
-                              
-                              {application.company_name && (
-                                <p className="text-sm"><strong>Company:</strong> {application.company_name}</p>
-                              )}
-                              
-                              <div className="flex items-center gap-4 text-sm text-gray-600">
-                                <span>Created: {new Date(application.created_at).toLocaleDateString()}</span>
-                                {application.reviewed_at && (
-                                  <span>Reviewed: {new Date(application.reviewed_at).toLocaleDateString()}</span>
-                                )}
-                              </div>
-                              
-                              {application.requested_apis && application.requested_apis.length > 0 && (
-                                <div>
-                                  <span className="text-sm font-medium">Requested APIs:</span>
-                                  <div className="flex flex-wrap gap-1 mt-1">
-                                    {application.requested_apis.map((api, idx) => (
-                                      <Badge key={idx} variant="outline" className="text-xs">
-                                        {api}
-                                      </Badge>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center gap-2">
-                            <Button variant="outline" size="sm">
-                              <Eye className="h-4 w-4 mr-1" />
-                              View
-                            </Button>
-                            
-                            {application.status === 'pending' && (
-                              <>
-                                <Button 
-                                  size="sm"
-                                  onClick={() => handleApproveApplication(application.id)}
-                                >
-                                  <CheckCircle className="h-4 w-4 mr-1" />
-                                  Approve
-                                </Button>
-                                <Button 
-                                  variant="destructive" 
-                                  size="sm"
-                                  onClick={() => handleRejectApplication(application.id)}
-                                >
-                                  <X className="h-4 w-4 mr-1" />
-                                  Reject
-                                </Button>
-                              </>
-                            )}
-                            
-                            {application.status === 'approved' && (
-                              <Button variant="outline" size="sm">
-                                <Shield className="h-4 w-4 mr-1" />
-                                Manage Access
-                              </Button>
-                            )}
-                          </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {developerApis.map((api) => (
+                    <Card key={api.id} className="hover:shadow-md transition-shadow">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium flex items-center space-x-2">
+                          <Globe className="h-4 w-4 text-blue-600" />
+                          <span className="truncate">{api.name}</span>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm text-gray-600 mb-3">{api.description}</p>
+                        <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
+                          <Badge variant="outline">{api.category}</Badge>
+                          <Badge variant={api.status === 'active' ? "default" : "secondary"}>
+                            {api.status}
+                          </Badge>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button variant="outline" size="sm" className="flex-1">
+                            <Eye className="h-3 w-3 mr-1" />
+                            View
+                          </Button>
+                          <Button variant="outline" size="sm" className="flex-1">
+                            <Code className="h-3 w-3 mr-1" />
+                            Docs
+                          </Button>
                         </div>
                       </CardContent>
                     </Card>
@@ -252,27 +218,49 @@ const DeveloperHubTab: React.FC = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="documentation" className="mt-6">
+        <TabsContent value="endpoints" className="mt-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
-                <FileText className="h-5 w-5" />
-                <span>API Documentation</span>
+                <Zap className="h-5 w-5" />
+                <span>API Endpoints</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-12 text-gray-500">
-                <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <h3 className="font-semibold mb-2">Interactive API Documentation</h3>
-                <p className="text-sm mb-4">Automatically generated documentation for all published APIs.</p>
-                <div className="flex items-center justify-center gap-2">
+              <div className="text-center py-12">
+                <Zap className="h-16 w-16 text-purple-600 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold mb-2">Endpoint Management</h3>
+                <p className="text-gray-600 mb-6">View and manage all available API endpoints with detailed specifications</p>
+                <Button>
+                  <Eye className="h-4 w-4 mr-2" />
+                  View All Endpoints
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="postman" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Download className="h-5 w-5" />
+                <span>Postman Collections</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-12">
+                <Download className="h-16 w-16 text-orange-600 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold mb-2">Ready-to-Use Collections</h3>
+                <p className="text-gray-600 mb-6">Download pre-configured Postman collections for all published APIs</p>
+                <div className="flex items-center justify-center gap-3">
                   <Button>
-                    <Book className="h-4 w-4 mr-2" />
-                    View Docs
+                    <Download className="h-4 w-4 mr-2" />
+                    Download Collection
                   </Button>
                   <Button variant="outline">
-                    <Download className="h-4 w-4 mr-2" />
-                    Export
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Import to Postman
                   </Button>
                 </div>
               </div>
@@ -280,43 +268,55 @@ const DeveloperHubTab: React.FC = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="resources" className="mt-6">
+        <TabsContent value="keys" className="mt-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
-                <Code className="h-5 w-5" />
-                <span>Developer Resources</span>
+                <Key className="h-5 w-5" />
+                <span>API Keys ({apiKeys?.length || 0})</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="text-center p-6 border rounded-lg">
-                  <Code className="h-12 w-12 text-blue-600 mx-auto mb-4" />
-                  <h3 className="font-semibold mb-2">SDK Downloads</h3>
-                  <p className="text-sm text-gray-600 mb-4">Client libraries for popular programming languages</p>
+              <div className="text-center py-12">
+                <Key className="h-16 w-16 text-green-600 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold mb-2">API Key Management</h3>
+                <p className="text-gray-600 mb-6">Create and manage API keys for secure access to published APIs</p>
+                <div className="flex items-center justify-center gap-3">
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Generate New Key
+                  </Button>
                   <Button variant="outline">
-                    <Download className="h-4 w-4 mr-2" />
-                    Download SDKs
+                    <Settings className="h-4 w-4 mr-2" />
+                    Manage Keys
                   </Button>
                 </div>
-                
-                <div className="text-center p-6 border rounded-lg">
-                  <Shield className="h-12 w-12 text-green-600 mx-auto mb-4" />
-                  <h3 className="font-semibold mb-2">Authentication Guide</h3>
-                  <p className="text-sm text-gray-600 mb-4">API key management and security best practices</p>
-                  <Button variant="outline">
-                    <Book className="h-4 w-4 mr-2" />
-                    Read Guide
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="testing" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <TestTube className="h-5 w-5" />
+                <span>API Testing Suite</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-12">
+                <TestTube className="h-16 w-16 text-red-600 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold mb-2">Comprehensive Testing</h3>
+                <p className="text-gray-600 mb-6">Run automated tests, performance benchmarks, and validation checks</p>
+                <div className="flex items-center justify-center gap-3">
+                  <Button>
+                    <PlayCircle className="h-4 w-4 mr-2" />
+                    Run Tests
                   </Button>
-                </div>
-                
-                <div className="text-center p-6 border rounded-lg">
-                  <FileText className="h-12 w-12 text-purple-600 mx-auto mb-4" />
-                  <h3 className="font-semibold mb-2">Code Examples</h3>
-                  <p className="text-sm text-gray-600 mb-4">Sample implementations and tutorials</p>
                   <Button variant="outline">
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    View Examples
+                    <Settings className="h-4 w-4 mr-2" />
+                    Configure Tests
                   </Button>
                 </div>
               </div>
