@@ -42,8 +42,12 @@ const ApiServicesTabsContainer: React.FC<ApiServicesTabsContainerProps> = ({
   } = useExternalApis();
 
   // Filter APIs by direction and type for proper categorization
-  const internalApis = apiServices?.filter(api => api.direction === 'internal') || [];
-  const externalIntegrationApis = apiServices?.filter(api => api.direction === 'external') || [];
+  const internalApis = apiServices?.filter(api => 
+    api.type === 'internal' || api.direction === 'outbound'
+  ) || [];
+  const externalIntegrationApis = apiServices?.filter(api => 
+    api.type === 'external' || api.direction === 'inbound' || api.direction === 'bidirectional'
+  ) || [];
   const technicalApis = apiServices?.filter(api => api.category === 'technical') || [];
   const businessApis = apiServices?.filter(api => api.category === 'business') || [];
 

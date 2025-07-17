@@ -22,8 +22,12 @@ const InternalApiServicesTab: React.FC = () => {
     getApiServiceStats
   } = useMasterApiServices();
 
-  // Filter for internal APIs only
-  const internalServices = apiServices?.filter(api => api.direction === 'internal') || [];
+  // Filter for internal APIs (type = 'internal' or bidirectional internal APIs)
+  const internalServices = apiServices?.filter(api => 
+    api.type === 'internal' || 
+    (api.direction === 'bidirectional' && api.type === 'internal') ||
+    api.direction === 'outbound'
+  ) || [];
   
   // Get filtered services based on search (from internal APIs only)
   const filteredServices = searchQuery 
