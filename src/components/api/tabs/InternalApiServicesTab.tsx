@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Database, Plus, RefreshCw, Settings, Activity,
-  AlertCircle, CheckCircle, Search, Zap, Shield, Clock
+  AlertCircle, CheckCircle, Search, Zap, Shield, Clock, Trash2
 } from "lucide-react";
 import { useMasterApiServices } from '@/hooks/useMasterApiServices';
 import ConfigurationDialog from '../ConfigurationDialog';
@@ -21,6 +21,8 @@ const InternalApiServicesTab: React.FC = () => {
     isLoading,
     error,
     createApiService,
+    deleteApiService,
+    isDeletingApiService,
     refetch,
     searchApiServices,
     getApiServiceStats
@@ -97,17 +99,7 @@ const InternalApiServicesTab: React.FC = () => {
     console.log('🔄 Creating new REST API service...');
     
     try {
-      if (typeof createApiService !== 'function') {
-        console.error('❌ createApiService is not a function:', typeof createApiService);
-        toast({
-          title: "Error",
-          description: "Create service function is not available.",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      await createApiService({
+      createApiService({
         name: 'New REST API Service',
         description: 'A new REST API service for system integration',
         category: 'healthcare',
@@ -116,19 +108,9 @@ const InternalApiServicesTab: React.FC = () => {
         purpose: 'publishing'
       });
       
-      console.log('✅ REST API service created successfully');
-      await refetch(); // Refresh data immediately
-      toast({
-        title: "Service Created",
-        description: "New REST API service has been created successfully.",
-      });
+      console.log('✅ REST API service creation initiated');
     } catch (err) {
-      console.error('❌ Failed to create API service:', err);
-      toast({
-        title: "Creation Failed",
-        description: "Failed to create new API service. Please try again.",
-        variant: "destructive",
-      });
+      console.error('❌ Failed to create REST API service:', err);
     }
   };
 
@@ -136,7 +118,7 @@ const InternalApiServicesTab: React.FC = () => {
     console.log('🔄 Creating new GraphQL API service...');
     
     try {
-      await createApiService({
+      createApiService({
         name: 'GraphQL Healthcare API',
         description: 'A GraphQL API service for healthcare data management and queries',
         category: 'healthcare',
@@ -145,19 +127,21 @@ const InternalApiServicesTab: React.FC = () => {
         purpose: 'publishing'
       });
       
-      console.log('✅ GraphQL API service created successfully');
-      await refetch(); // Refresh data immediately
-      toast({
-        title: "GraphQL Service Created",
-        description: "New GraphQL API service has been created successfully.",
-      });
+      console.log('✅ GraphQL API service creation initiated');
     } catch (err) {
       console.error('❌ Failed to create GraphQL API service:', err);
-      toast({
-        title: "Creation Failed",
-        description: "Failed to create GraphQL API service. Please try again.",
-        variant: "destructive",
-      });
+    }
+  };
+
+  const handleDeleteService = async (serviceId: string, serviceName: string) => {
+    console.log('🗑️ Deleting service:', serviceName);
+    
+    if (window.confirm(`Are you sure you want to delete "${serviceName}"? This action cannot be undone.`)) {
+      try {
+        deleteApiService(serviceId);
+      } catch (err) {
+        console.error('❌ Failed to delete service:', err);
+      }
     }
   };
 
@@ -350,18 +334,29 @@ const InternalApiServicesTab: React.FC = () => {
                         </div>
                       </div>
                       
-                      <div className="flex items-center justify-between pt-2 border-t">
+                       <div className="flex items-center justify-between pt-2 border-t">
                         <div className="text-xs text-gray-500">
                           ID: {service.id.slice(0, 8)}...
                         </div>
-                         <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleConfigureService(service)}
-                        >
-                          <Settings className="h-3 w-3 mr-1" />
-                          Configure
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleConfigureService(service)}
+                          >
+                            <Settings className="h-3 w-3 mr-1" />
+                            Configure
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleDeleteService(service.id, service.name)}
+                            disabled={isDeletingApiService}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </CardContent>
