@@ -3,13 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Database, Plus, RefreshCw, Settings, Activity,
   AlertCircle, CheckCircle, Search, Zap, Shield, Clock
 } from "lucide-react";
 import { useMasterApiServices } from '@/hooks/useMasterApiServices';
+import ConfigurationDialog from '../ConfigurationDialog';
 
 const InternalApiServicesTab: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -94,7 +94,7 @@ const InternalApiServicesTab: React.FC = () => {
   };
 
   const handleCreateService = async () => {
-    console.log('🔄 Creating new internal API service...');
+    console.log('🔄 Creating new REST API service...');
     
     try {
       if (typeof createApiService !== 'function') {
@@ -108,24 +108,54 @@ const InternalApiServicesTab: React.FC = () => {
       }
       
       await createApiService({
-        name: 'New Internal API Service',
-        description: 'A new internal API service for system integration',
+        name: 'New REST API Service',
+        description: 'A new REST API service for system integration',
         category: 'healthcare',
         type: 'internal',
         direction: 'bidirectional',
         purpose: 'publishing'
       });
       
-      console.log('✅ API service created successfully');
+      console.log('✅ REST API service created successfully');
+      await refetch(); // Refresh data immediately
       toast({
         title: "Service Created",
-        description: "New internal API service has been created successfully.",
+        description: "New REST API service has been created successfully.",
       });
     } catch (err) {
       console.error('❌ Failed to create API service:', err);
       toast({
         title: "Creation Failed",
         description: "Failed to create new API service. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCreateGraphQLService = async () => {
+    console.log('🔄 Creating new GraphQL API service...');
+    
+    try {
+      await createApiService({
+        name: 'GraphQL Healthcare API',
+        description: 'A GraphQL API service for healthcare data management and queries',
+        category: 'healthcare',
+        type: 'internal',
+        direction: 'bidirectional',
+        purpose: 'publishing'
+      });
+      
+      console.log('✅ GraphQL API service created successfully');
+      await refetch(); // Refresh data immediately
+      toast({
+        title: "GraphQL Service Created",
+        description: "New GraphQL API service has been created successfully.",
+      });
+    } catch (err) {
+      console.error('❌ Failed to create GraphQL API service:', err);
+      toast({
+        title: "Creation Failed",
+        description: "Failed to create GraphQL API service. Please try again.",
         variant: "destructive",
       });
     }
@@ -149,9 +179,13 @@ const InternalApiServicesTab: React.FC = () => {
             <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
-          <Button onClick={handleCreateService}>
+          <Button onClick={handleCreateService} disabled={isLoading}>
             <Plus className="h-4 w-4 mr-2" />
-            Add Service
+            Add REST API
+          </Button>
+          <Button onClick={handleCreateGraphQLService} disabled={isLoading}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add GraphQL API
           </Button>
         </div>
       </div>
@@ -339,77 +373,11 @@ const InternalApiServicesTab: React.FC = () => {
       </Card>
 
       {/* Configuration Dialog */}
-      <Dialog open={!!selectedService} onOpenChange={(open) => !open && setSelectedService(null)}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Configure {selectedService?.name}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="font-medium">Service ID:</span>
-                <p className="text-gray-600">{selectedService?.id}</p>
-              </div>
-              <div>
-                <span className="font-medium">Type:</span>
-                <p className="text-gray-600">{selectedService?.type}</p>
-              </div>
-              <div>
-                <span className="font-medium">Direction:</span>
-                <p className="text-gray-600">{selectedService?.direction}</p>
-              </div>
-              <div>
-                <span className="font-medium">Status:</span>
-                <Badge variant={selectedService?.status === 'active' ? "default" : "secondary"}>
-                  {selectedService?.status}
-                </Badge>
-              </div>
-            </div>
-            
-            <div>
-              <span className="font-medium">Description:</span>
-              <p className="text-gray-600 mt-1">{selectedService?.description || 'No description available'}</p>
-            </div>
-
-            <div className="border-t pt-4">
-              <h4 className="font-medium mb-3">Configuration Options</h4>
-              <div className="grid grid-cols-1 gap-3">
-                <Button variant="outline" className="justify-start">
-                  <Settings className="h-4 w-4 mr-2" />
-                  API Endpoints Configuration
-                </Button>
-                <Button variant="outline" className="justify-start">
-                  <Shield className="h-4 w-4 mr-2" />
-                  Authentication Settings
-                </Button>
-                <Button variant="outline" className="justify-start">
-                  <Clock className="h-4 w-4 mr-2" />
-                  Rate Limiting Configuration
-                </Button>
-                <Button variant="outline" className="justify-start">
-                  <Database className="h-4 w-4 mr-2" />
-                  Documentation Management
-                </Button>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2 pt-4 border-t">
-              <Button variant="outline" onClick={() => setSelectedService(null)}>
-                Close
-              </Button>
-              <Button onClick={() => {
-                toast({
-                  title: "Configuration Saved",
-                  description: `Configuration for ${selectedService?.name} has been saved.`,
-                });
-                setSelectedService(null);
-              }}>
-                Save Configuration
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <ConfigurationDialog
+        service={selectedService}
+        isOpen={!!selectedService}
+        onClose={() => setSelectedService(null)}
+      />
     </div>
   );
 };
