@@ -36,6 +36,7 @@ import {
 } from 'lucide-react';
 import { MockDataDetector } from '@/utils/verification/MockDataDetector';
 import { DuplicateDetector } from '@/utils/duplicate-prevention-bridge';
+import { duplicatePreventionOrchestrator } from '@/utils/verification/DuplicatePreventionOrchestrator';
 import AppLayout from '@/components/layout/AppLayout';
 
 interface FrameworkStatus {
@@ -142,9 +143,10 @@ const FrameworkDashboard: React.FC = () => {
       // Get mock data analysis
       const mockDataAnalysis = await MockDataDetector.analyzeMockDataUsage();
       
-      // Get duplicate statistics
+      // Get duplicate statistics with new comprehensive system
       const duplicateDetector = new DuplicateDetector();
       const duplicateStats = duplicateDetector.getDuplicateStats();
+      const systemStatus = duplicatePreventionOrchestrator.getSystemStatus();
       
       setFrameworkStatus({
         overall_compliant: mockDataAnalysis.violations.length === 0 && duplicateStats.totalDuplicates === 0,
