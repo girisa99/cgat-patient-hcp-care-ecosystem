@@ -438,7 +438,9 @@ const Testing: React.FC = () => {
                         </div>
                         <div className="flex justify-between">
                           <span>Service Factory</span>
-                          <span className="font-medium">{unifiedTesting.meta?.serviceFactoryStatus || 'Active'}</span>
+                          <span className="font-medium">
+                            {unifiedTesting.meta?.serviceFactoryStatus?.factoryInitialized ? 'Active' : 'Inactive'}
+                          </span>
                         </div>
                         <div className="flex justify-between">
                           <span>APIs Available</span>
