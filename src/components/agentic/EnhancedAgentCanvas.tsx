@@ -66,13 +66,13 @@ export const EnhancedAgentCanvas: React.FC<EnhancedAgentCanvasProps> = ({
   onAccentColorChange,
   onLogoChange
 }) => {
-  const [canvasName, setCanvasName] = useState('');
-  const [tagline, setTagline] = useState('');
+  const [canvasName, setCanvasName] = useState(initialName);
+  const [tagline, setTagline] = useState(initialTagline);
   const [logo, setLogo] = useState<File | null>(null);
-  const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const [primaryColor, setPrimaryColor] = useState('#3b82f6');
-  const [secondaryColor, setSecondaryColor] = useState('#8b5cf6');
-  const [accentColor, setAccentColor] = useState('#06b6d4');
+  const [logoPreview, setLogoPreview] = useState<string | null>(initialLogo || null);
+  const [primaryColor, setPrimaryColor] = useState(initialPrimaryColor);
+  const [secondaryColor, setSecondaryColor] = useState(initialSecondaryColor);
+  const [accentColor, setAccentColor] = useState(initialAccentColor);
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
   const [isDragging, setIsDragging] = useState(false);
   const [templates, setTemplates] = useState<CanvasTemplate[]>([
@@ -109,6 +109,36 @@ export const EnhancedAgentCanvas: React.FC<EnhancedAgentCanvasProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
 
+  // Handle canvas name change with parent callback
+  const handleCanvasNameChange = (name: string) => {
+    setCanvasName(name);
+    onNameChange?.(name);
+  };
+
+  // Handle tagline change with parent callback
+  const handleTaglineChange = (newTagline: string) => {
+    setTagline(newTagline);
+    onTaglineChange?.(newTagline);
+  };
+
+  // Handle primary color change with parent callback
+  const handlePrimaryColorChange = (color: string) => {
+    setPrimaryColor(color);
+    onPrimaryColorChange?.(color);
+  };
+
+  // Handle secondary color change with parent callback
+  const handleSecondaryColorChange = (color: string) => {
+    setSecondaryColor(color);
+    onSecondaryColorChange?.(color);
+  };
+
+  // Handle accent color change with parent callback
+  const handleAccentColorChange = (color: string) => {
+    setAccentColor(color);
+    onAccentColorChange?.(color);
+  };
+
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     handleNewLogo(file);
@@ -121,7 +151,10 @@ export const EnhancedAgentCanvas: React.FC<EnhancedAgentCanvasProps> = ({
       // Create preview
       const reader = new FileReader();
       reader.onloadend = () => {
-        setLogoPreview(reader.result as string);
+        const result = reader.result as string;
+        setLogoPreview(result);
+        // Notify parent with file and preview URL
+        onLogoChange?.(file, result);
       };
       reader.readAsDataURL(file);
 
@@ -217,16 +250,27 @@ export const EnhancedAgentCanvas: React.FC<EnhancedAgentCanvasProps> = ({
     const template = templates.find(t => t.id === id);
     if (template) {
       setSelectedTemplate(id);
+      
+      // Update local state and notify parent
       setPrimaryColor(template.primaryColor);
+      onPrimaryColorChange?.(template.primaryColor);
+      
       setSecondaryColor(template.secondaryColor);
+      onSecondaryColorChange?.(template.secondaryColor);
+      
       setAccentColor(template.accentColor);
+      onAccentColorChange?.(template.accentColor);
+      
       setTagline(template.tagline);
+      onTaglineChange?.(template.tagline);
       
       if (template.logo) {
         setLogoPreview(template.logo);
+        onLogoChange?.(null, template.logo);
       } else {
         setLogoPreview(null);
         setLogo(null);
+        onLogoChange?.(null, '');
       }
       
       toast({
@@ -299,7 +343,7 @@ export const EnhancedAgentCanvas: React.FC<EnhancedAgentCanvasProps> = ({
                 <Input
                   id="canvas-name"
                   value={canvasName}
-                  onChange={(e) => setCanvasName(e.target.value)}
+                  onChange={(e) => handleCanvasNameChange(e.target.value)}
                   placeholder="My Canvas Template"
                 />
               </div>
@@ -309,7 +353,7 @@ export const EnhancedAgentCanvas: React.FC<EnhancedAgentCanvasProps> = ({
                 <Input
                   id="tagline"
                   value={tagline}
-                  onChange={(e) => setTagline(e.target.value)}
+                  onChange={(e) => handleTaglineChange(e.target.value)}
                   placeholder="Your healthcare AI partner"
                 />
                 <p className="text-xs text-muted-foreground mt-1">Short tagline to appear with your logo</p>
@@ -347,6 +391,7 @@ export const EnhancedAgentCanvas: React.FC<EnhancedAgentCanvasProps> = ({
                           e.stopPropagation();
                           setLogo(null);
                           setLogoPreview(null);
+                          onLogoChange?.(null, '');
                         }}
                       >
                         ×
@@ -382,12 +427,12 @@ export const EnhancedAgentCanvas: React.FC<EnhancedAgentCanvasProps> = ({
                       id="primary-color"
                       type="color"
                       value={primaryColor}
-                      onChange={(e) => setPrimaryColor(e.target.value)}
+                      onChange={(e) => handlePrimaryColorChange(e.target.value)}
                       className="w-10 h-10 rounded-md border cursor-pointer"
                     />
                     <Input
                       value={primaryColor}
-                      onChange={(e) => setPrimaryColor(e.target.value)}
+                      onChange={(e) => handlePrimaryColorChange(e.target.value)}
                       className="flex-1"
                     />
                   </div>
@@ -399,12 +444,12 @@ export const EnhancedAgentCanvas: React.FC<EnhancedAgentCanvasProps> = ({
                       id="secondary-color"
                       type="color"
                       value={secondaryColor}
-                      onChange={(e) => setSecondaryColor(e.target.value)}
+                      onChange={(e) => handleSecondaryColorChange(e.target.value)}
                       className="w-10 h-10 rounded-md border cursor-pointer"
                     />
                     <Input
                       value={secondaryColor}
-                      onChange={(e) => setSecondaryColor(e.target.value)}
+                      onChange={(e) => handleSecondaryColorChange(e.target.value)}
                       className="flex-1"
                     />
                   </div>
@@ -416,12 +461,12 @@ export const EnhancedAgentCanvas: React.FC<EnhancedAgentCanvasProps> = ({
                       id="accent-color"
                       type="color"
                       value={accentColor}
-                      onChange={(e) => setAccentColor(e.target.value)}
+                      onChange={(e) => handleAccentColorChange(e.target.value)}
                       className="w-10 h-10 rounded-md border cursor-pointer"
                     />
                     <Input
                       value={accentColor}
-                      onChange={(e) => setAccentColor(e.target.value)}
+                      onChange={(e) => handleAccentColorChange(e.target.value)}
                       className="flex-1"
                     />
                   </div>
