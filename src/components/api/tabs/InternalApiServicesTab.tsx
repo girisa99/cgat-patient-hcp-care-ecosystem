@@ -28,6 +28,10 @@ const InternalApiServicesTab: React.FC = () => {
     (api.direction === 'bidirectional' && api.type === 'internal') ||
     api.direction === 'outbound'
   ) || [];
+
+  // Debug logging
+  console.log('🔍 All API Services:', apiServices);
+  console.log('🔍 Internal Services:', internalServices);
   
   // Get filtered services based on search (from internal APIs only)
   const filteredServices = searchQuery 
@@ -47,15 +51,20 @@ const InternalApiServicesTab: React.FC = () => {
     }, {} as Record<string, number>),
     // Count actual API protocol types based on service names/descriptions
     protocolDistribution: internalServices.reduce((acc, service) => {
+      console.log(`🔍 Checking service: ${service.name} - ${service.description}`);
+      
       // Determine protocol based on service name or description
       if (service.name?.toLowerCase().includes('rest') || 
           service.name?.toLowerCase().includes('api') ||
           service.description?.toLowerCase().includes('rest')) {
+        console.log(`✅ Found REST API: ${service.name}`);
         acc['REST'] = (acc['REST'] || 0) + 1;
       } else if (service.name?.toLowerCase().includes('graphql') ||
                  service.description?.toLowerCase().includes('graphql')) {
+        console.log(`✅ Found GraphQL API: ${service.name}`);
         acc['GraphQL'] = (acc['GraphQL'] || 0) + 1;
       } else {
+        console.log(`➡️ Defaulting to REST for: ${service.name}`);
         // Default to REST for API services
         acc['REST'] = (acc['REST'] || 0) + 1;
       }
@@ -83,7 +92,7 @@ const InternalApiServicesTab: React.FC = () => {
         category: 'healthcare',
         type: 'internal',
         direction: 'bidirectional',
-        purpose: 'data_exchange'
+        purpose: 'publishing'
       });
       console.log('✅ API service created successfully');
     } catch (err) {
