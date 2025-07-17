@@ -70,6 +70,13 @@ const InternalApiServicesTab: React.FC = () => {
   const handleCreateService = async () => {
     try {
       console.log('🔄 Creating new internal API service...');
+      
+      // Add debugging to check if function exists
+      if (typeof createApiService !== 'function') {
+        console.error('❌ createApiService is not a function:', typeof createApiService);
+        return;
+      }
+      
       await createApiService({
         name: 'New Internal API Service',
         description: 'A new internal API service for system integration',
@@ -86,8 +93,8 @@ const InternalApiServicesTab: React.FC = () => {
 
   const handleConfigureService = (serviceId: string, serviceName: string) => {
     console.log(`🔧 Configuring API service: ${serviceName} (${serviceId})`);
-    // For now, show a simple alert - this would typically open a configuration modal
-    alert(`Configure ${serviceName}\n\nThis would open a configuration dialog for:\n- API endpoints\n- Authentication settings\n- Rate limiting\n- Documentation\n- Testing parameters`);
+    // Show a proper alert with service details
+    alert(`Configure ${serviceName}\n\nService ID: ${serviceId}\n\nThis would open a configuration dialog for:\n- API endpoints\n- Authentication settings\n- Rate limiting\n- Documentation\n- Testing parameters`);
   };
 
   return (
