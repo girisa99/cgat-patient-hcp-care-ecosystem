@@ -39,16 +39,19 @@ const TestCasesDisplay: React.FC = () => {
     testCases, 
     testExecutions, 
     executeTestSuite, 
+    generateTestCases,
+    generateEnhancedTestCases,
     generateDocumentation, 
     realTimeEnabled, 
     lastSync,
-    testingStats 
+    testingStats,
+    isExecuting,
+    isGenerating,
+    isDocumenting
   } = useMasterTestingSuite();
   
   const unifiedTesting = useUnifiedTesting();
   const enhancedTesting = useEnhancedTesting();
-  
-  const [isExecuting, setIsExecuting] = useState(false);
   
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -609,11 +612,7 @@ const TestCasesDisplay: React.FC = () => {
                 {/* Quick Actions */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <Button 
-                    onClick={() => {
-                      setIsExecuting(true);
-                      executeTestSuite('all');
-                      setTimeout(() => setIsExecuting(false), 3000);
-                    }}
+                    onClick={() => executeTestSuite('all')}
                     disabled={isExecuting}
                     className="h-12"
                   >
@@ -622,11 +621,7 @@ const TestCasesDisplay: React.FC = () => {
                   </Button>
                   <Button 
                     variant="outline"
-                    onClick={() => {
-                      setIsExecuting(true);
-                      unifiedTesting.executeApiIntegrationTests?.();
-                      setTimeout(() => setIsExecuting(false), 3000);
-                    }}
+                    onClick={() => executeTestSuite('api')}
                     disabled={isExecuting}
                     className="h-12"
                   >
@@ -635,11 +630,7 @@ const TestCasesDisplay: React.FC = () => {
                   </Button>
                   <Button 
                     variant="outline"
-                    onClick={() => {
-                      setIsExecuting(true);
-                      enhancedTesting.executeTestSuite?.('security');
-                      setTimeout(() => setIsExecuting(false), 3000);
-                    }}
+                    onClick={() => executeTestSuite('security')}
                     disabled={isExecuting}
                     className="h-12"
                   >
@@ -701,11 +692,11 @@ const TestCasesDisplay: React.FC = () => {
                     <div className="space-y-2">
                       <Button 
                         variant="outline" 
-                        onClick={() => enhancedTesting.generateRoleBasedTests?.()}
+                        onClick={() => executeTestSuite('regression')}
                         disabled={isExecuting}
                         className="w-full justify-start"
                       >
-                        Role-Based Tests
+                        Regression Tests ({testingStats.suiteBreakdown.regression || 0})
                       </Button>
                       <Button 
                         variant="outline" 
@@ -717,10 +708,11 @@ const TestCasesDisplay: React.FC = () => {
                       </Button>
                       <Button 
                         variant="outline" 
-                        onClick={() => generateDocumentation()}
-                        disabled={isExecuting}
+                        onClick={() => generateEnhancedTestCases()}
+                        disabled={isGenerating}
                         className="w-full justify-start"
                       >
+                        <Zap className="h-4 w-4 mr-2" />
                         Generate New Tests
                       </Button>
                     </div>
@@ -787,15 +779,22 @@ const TestCasesDisplay: React.FC = () => {
                   </Card>
                 </div>
 
-                <div className="space-y-4">
+                  <div className="space-y-4">
                   <div className="flex gap-2">
-                    <Button onClick={() => unifiedTesting.executeApiIntegrationTests?.()}>
+                    <Button 
+                      onClick={() => executeTestSuite('database')}
+                      disabled={isExecuting}
+                    >
                       <Database className="h-4 w-4 mr-2" />
                       Run Database Tests
                     </Button>
-                    <Button variant="outline" onClick={() => unifiedTesting.refreshAllData?.()}>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => generateTestCases()}
+                      disabled={isGenerating}
+                    >
                       <RefreshCw className="h-4 w-4 mr-2" />
-                      Refresh Data
+                      Generate Tests
                     </Button>
                   </div>
 
