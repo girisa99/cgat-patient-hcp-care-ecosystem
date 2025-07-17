@@ -5,11 +5,12 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
 import { 
   Bot, Database, MessageSquare, Globe, Settings, 
   Stethoscope, ShieldCheck, CreditCard, FileText,
   Building, Workflow, GitBranch, Server, Phone,
-  CheckCircle, AlertCircle, Clock, Zap
+  CheckCircle, AlertCircle, Clock, Zap, Loader2
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
@@ -28,7 +29,7 @@ interface Connector {
   cost: 'Free' | 'Paid' | 'Enterprise';
 }
 
-const systemConnectors: Connector[] = [
+const initialConnectors: Connector[] = [
   // Language Models & Gen AI
   {
     id: 'openai-gpt4',
@@ -287,19 +288,43 @@ export const SystemConnectors = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [configuring, setConfiguring] = useState<string | null>(null);
   const [testing, setTesting] = useState<string | null>(null);
+  const [connecting, setConnecting] = useState<string | null>(null);
+  const [connectors, setConnectors] = useState<Connector[]>(initialConnectors);
   const [connectionData, setConnectionData] = useState<{[key: string]: any}>({});
+  const [credentials, setCredentials] = useState({
+    apiKey: '',
+    endpoint: '',
+    username: '',
+    password: '',
+    token: '',
+    additionalConfig: ''
+  });
 
   const categories = ['All', 'Language Models', 'CRM Systems', 'Databases', 'Healthcare APIs', 'Communication', 'Insurance', 'Development'];
 
-  const filteredConnectors = systemConnectors.filter(connector => {
+  const filteredConnectors = connectors.filter(connector => {
     const matchesCategory = selectedCategory === 'All' || connector.category === selectedCategory;
     const matchesSearch = connector.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          connector.description.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
-  const handleConnect = (connectorId: string) => {
+  const clearCredentialsForm = () => {
+    setCredentials({
+      apiKey: '',
+      endpoint: '',
+      username: '',
+      password: '',
+      token: '',
+      additionalConfig: ''
+    });
+  };
+
+  const handleConnect = async (connectorId: string) => {
+    setConnecting(connectorId);
     setConfiguring(connectorId);
+    clearCredentialsForm();
+    
     toast({
       title: "Configuring Connection",
       description: "Please provide the required credentials to establish connection.",
@@ -307,7 +332,17 @@ export const SystemConnectors = () => {
   };
 
   const handleConfigure = (connectorId: string) => {
+    const connector = connectors.find(c => c.id === connectorId);
+    if (!connector) return;
+
     setConfiguring(connectorId);
+    // Pre-populate with existing connection data if available
+    if (connectionData[connectorId]) {
+      setCredentials(connectionData[connectorId]);
+    } else {
+      clearCredentialsForm();
+    }
+    
     toast({
       title: "Configure Connection",
       description: "Update connection settings and credentials.",
@@ -316,42 +351,169 @@ export const SystemConnectors = () => {
 
   const handleTest = async (connectorId: string) => {
     setTesting(connectorId);
-    const connector = systemConnectors.find(c => c.id === connectorId);
+    const connector = connectors.find(c => c.id === connectorId);
     
-    // Simulate test connection
-    setTimeout(() => {
+    if (!connector) {
       setTesting(null);
-      const isSuccess = Math.random() > 0.2; // 80% success rate for demo
+      return;
+    }
+
+    try {
+      // Simulate real connection testing with different scenarios
+      await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
+      
+      // More realistic success rates based on connector type
+      let successRate = 0.8; // Default 80%
+      
+      if (connector.category === 'Language Models') {
+        successRate = 0.85; // AI APIs are generally reliable
+      } else if (connector.category === 'Healthcare APIs') {
+        successRate = 0.9; // Government APIs are stable
+      } else if (connector.category === 'CRM Systems') {
+        successRate = 0.75; // Enterprise systems can be more complex
+      } else if (connector.category === 'Databases') {
+        successRate = 0.95; // Direct DB connections are usually stable
+      }
+      
+      const isSuccess = Math.random() < successRate;
       
       if (isSuccess) {
         toast({
-          title: "Connection Test Successful",
-          description: `${connector?.name} is responding correctly.`,
+          title: "✅ Connection Test Successful",
+          description: `${connector.name} is responding correctly. Latency: ${Math.floor(Math.random() * 200 + 50)}ms`,
         });
       } else {
+        const errorReasons = [
+          "Authentication failed - check your API key",
+          "Network timeout - service may be unavailable", 
+          "Rate limit exceeded - try again later",
+          "Invalid endpoint configuration",
+          "Service temporarily unavailable"
+        ];
+        const randomError = errorReasons[Math.floor(Math.random() * errorReasons.length)];
+        
         toast({
-          title: "Connection Test Failed",
-          description: `Unable to connect to ${connector?.name}. Check your configuration.`,
+          title: "❌ Connection Test Failed",
+          description: `${connector.name}: ${randomError}`,
           variant: "destructive"
         });
       }
-    }, 2000);
+    } catch (error) {
+      toast({
+        title: "Test Error",
+        description: "An unexpected error occurred during testing.",
+        variant: "destructive"
+      });
+    } finally {
+      setTesting(null);
+    }
   };
 
-  const handleSaveConnection = () => {
+  const handleSaveConnection = async () => {
     if (!configuring) return;
     
-    // Update connector status
-    const connectorIndex = systemConnectors.findIndex(c => c.id === configuring);
-    if (connectorIndex !== -1) {
-      systemConnectors[connectorIndex].status = 'connected';
+    const connector = connectors.find(c => c.id === configuring);
+    if (!connector) return;
+
+    // Basic validation
+    if (connector.authMethod === 'api_key' && !credentials.apiKey.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "API Key is required for this connector.",
+        variant: "destructive"
+      });
+      return;
     }
-    
-    setConfiguring(null);
-    toast({
-      title: "Connection Established",
-      description: "System connector is now active and ready for use.",
-    });
+
+    if (connector.authMethod === 'basic' && (!credentials.username.trim() || !credentials.password.trim())) {
+      toast({
+        title: "Validation Error", 
+        description: "Username and Password are required for basic authentication.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (connector.authMethod === 'token' && !credentials.token.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Token is required for this connector.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setConnecting(configuring);
+
+    try {
+      // Simulate connection establishment
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Update connector status in state
+      setConnectors(prevConnectors => 
+        prevConnectors.map(c => 
+          c.id === configuring 
+            ? { ...c, status: 'connected' }
+            : c
+        )
+      );
+
+      // Store connection data
+      setConnectionData(prev => ({
+        ...prev,
+        [configuring]: { ...credentials }
+      }));
+
+      clearCredentialsForm();
+      setConfiguring(null);
+      
+      toast({
+        title: "🎉 Connection Established",
+        description: `${connector.name} is now active and ready for use.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Connection Failed",
+        description: "Failed to establish connection. Please check your credentials.",
+        variant: "destructive"
+      });
+    } finally {
+      setConnecting(null);
+    }
+  };
+
+  const handleDisconnect = async (connectorId: string) => {
+    const connector = connectors.find(c => c.id === connectorId);
+    if (!connector) return;
+
+    try {
+      // Update connector status
+      setConnectors(prevConnectors => 
+        prevConnectors.map(c => 
+          c.id === connectorId 
+            ? { ...c, status: 'available' }
+            : c
+        )
+      );
+
+      // Remove stored connection data
+      setConnectionData(prev => {
+        const updated = { ...prev };
+        delete updated[connectorId];
+        return updated;
+      });
+
+      toast({
+        title: "Disconnected",
+        description: `${connector.name} has been disconnected successfully.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to disconnect the connector.",
+        variant: "destructive"
+      });
+    }
   };
 
   const getStatusIcon = (status: string) => {
@@ -483,24 +645,51 @@ export const SystemConnectors = () => {
                 
                 <div className="pt-3 border-t">
                   {connector.status === 'connected' ? (
-                    <div className="flex gap-2">
+                    <div className="space-y-2">
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex-1"
+                          onClick={() => handleConfigure(connector.id)}
+                          disabled={configuring === connector.id || connecting === connector.id}
+                        >
+                          {configuring === connector.id ? "Configuring..." : "Configure"}
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex-1"
+                          onClick={() => handleTest(connector.id)}
+                          disabled={testing === connector.id || connecting === connector.id}
+                        >
+                          {testing === connector.id ? (
+                            <>
+                              <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                              Testing...
+                            </>
+                          ) : "Test"}
+                        </Button>
+                      </div>
                       <Button 
-                        variant="outline" 
+                        variant="destructive" 
                         size="sm" 
-                        className="flex-1"
-                        onClick={() => handleConfigure(connector.id)}
-                        disabled={configuring === connector.id}
+                        className="w-full"
+                        onClick={() => handleDisconnect(connector.id)}
                       >
-                        Configure
+                        Disconnect
                       </Button>
+                    </div>
+                  ) : connector.status === 'configuring' ? (
+                    <div className="space-y-2">
                       <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="flex-1"
-                        onClick={() => handleTest(connector.id)}
-                        disabled={testing === connector.id}
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                        disabled
                       >
-                        {testing === connector.id ? "Testing..." : "Test"}
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Configuring...
                       </Button>
                     </div>
                   ) : (
@@ -508,9 +697,19 @@ export const SystemConnectors = () => {
                       onClick={() => handleConnect(connector.id)}
                       className="w-full gap-2"
                       size="sm"
+                      disabled={connecting === connector.id}
                     >
-                      <Zap className="h-4 w-4" />
-                      Connect
+                      {connecting === connector.id ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Connecting...
+                        </>
+                      ) : (
+                        <>
+                          <Zap className="h-4 w-4" />
+                          Connect
+                        </>
+                      )}
                     </Button>
                   )}
                 </div>
@@ -522,30 +721,179 @@ export const SystemConnectors = () => {
 
       {/* Configuration Modal */}
       {configuring && (
-        <Card className="border-primary">
+        <Card className="border-primary bg-gradient-to-br from-background to-muted/50">
           <CardHeader>
-            <CardTitle>Configure Connection</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Settings className="h-5 w-5" />
+              Configure Connection
+            </CardTitle>
             <CardDescription>
-              Provide credentials for {systemConnectors.find(c => c.id === configuring)?.name}
+              Provide credentials for <strong>{connectors.find(c => c.id === configuring)?.name}</strong>
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="apiKey">API Key / Token</Label>
-              <Input id="apiKey" type="password" placeholder="Enter your API key" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="endpoint">Custom Endpoint (Optional)</Label>
-              <Input id="endpoint" placeholder="https://api.example.com" />
-            </div>
-            <div className="flex gap-3 pt-4">
-              <Button onClick={handleSaveConnection} className="flex-1">
-                Save & Connect
+          <CardContent className="space-y-6">
+            {(() => {
+              const connector = connectors.find(c => c.id === configuring);
+              if (!connector) return null;
+
+              return (
+                <div className="space-y-4">
+                  {/* Authentication Method Info */}
+                  <div className="bg-muted/50 p-3 rounded-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <ShieldCheck className="h-4 w-4 text-primary" />
+                      <span className="font-medium text-sm">Authentication Method</span>
+                    </div>
+                    <Badge variant="secondary">{connector.authMethod.toUpperCase()}</Badge>
+                  </div>
+
+                  {/* Dynamic form fields based on auth method */}
+                  {connector.authMethod === 'api_key' && (
+                    <div className="space-y-2">
+                      <Label htmlFor="apiKey" className="text-sm font-medium">
+                        API Key <span className="text-destructive">*</span>
+                      </Label>
+                      <Input 
+                        id="apiKey" 
+                        type="password" 
+                        placeholder="Enter your API key"
+                        value={credentials.apiKey}
+                        onChange={(e) => setCredentials(prev => ({ ...prev, apiKey: e.target.value }))}
+                      />
+                    </div>
+                  )}
+
+                  {connector.authMethod === 'token' && (
+                    <div className="space-y-2">
+                      <Label htmlFor="token" className="text-sm font-medium">
+                        Access Token <span className="text-destructive">*</span>
+                      </Label>
+                      <Input 
+                        id="token" 
+                        type="password" 
+                        placeholder="Enter your access token"
+                        value={credentials.token}
+                        onChange={(e) => setCredentials(prev => ({ ...prev, token: e.target.value }))}
+                      />
+                    </div>
+                  )}
+
+                  {connector.authMethod === 'basic' && (
+                    <>
+                      <div className="space-y-2">
+                        <Label htmlFor="username" className="text-sm font-medium">
+                          Username <span className="text-destructive">*</span>
+                        </Label>
+                        <Input 
+                          id="username" 
+                          placeholder="Enter your username"
+                          value={credentials.username}
+                          onChange={(e) => setCredentials(prev => ({ ...prev, username: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="password" className="text-sm font-medium">
+                          Password <span className="text-destructive">*</span>
+                        </Label>
+                        <Input 
+                          id="password" 
+                          type="password" 
+                          placeholder="Enter your password"
+                          value={credentials.password}
+                          onChange={(e) => setCredentials(prev => ({ ...prev, password: e.target.value }))}
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  {connector.authMethod === 'oauth' && (
+                    <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Globe className="h-4 w-4 text-blue-600" />
+                        <span className="font-medium text-blue-900">OAuth Authentication</span>
+                      </div>
+                      <p className="text-sm text-blue-700 mb-3">
+                        This connector uses OAuth for authentication. You'll be redirected to authorize the connection.
+                      </p>
+                      <Button variant="outline" size="sm" className="w-full">
+                        <Globe className="h-4 w-4 mr-2" />
+                        Authorize with {connector.name}
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Custom endpoint */}
+                  <div className="space-y-2">
+                    <Label htmlFor="endpoint" className="text-sm font-medium">Custom Endpoint (Optional)</Label>
+                    <Input 
+                      id="endpoint" 
+                      placeholder={connector.apiEndpoint || "https://api.example.com"}
+                      value={credentials.endpoint}
+                      onChange={(e) => setCredentials(prev => ({ ...prev, endpoint: e.target.value }))}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Leave empty to use the default endpoint
+                    </p>
+                  </div>
+
+                  {/* Additional configuration */}
+                  <div className="space-y-2">
+                    <Label htmlFor="additionalConfig" className="text-sm font-medium">
+                      Additional Configuration (JSON)
+                    </Label>
+                    <Textarea 
+                      id="additionalConfig"
+                      placeholder='{"timeout": 30000, "retries": 3}'
+                      value={credentials.additionalConfig}
+                      onChange={(e) => setCredentials(prev => ({ ...prev, additionalConfig: e.target.value }))}
+                      rows={3}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Optional JSON configuration for advanced settings
+                    </p>
+                  </div>
+
+                  {/* Connection Info */}
+                  {connector.rateLimit && (
+                    <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-lg">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Clock className="h-4 w-4 text-yellow-600" />
+                        <span className="font-medium text-yellow-900 text-sm">Rate Limit</span>
+                      </div>
+                      <p className="text-xs text-yellow-700">{connector.rateLimit}</p>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
+            <div className="flex gap-3 pt-4 border-t">
+              <Button 
+                onClick={handleSaveConnection} 
+                className="flex-1"
+                disabled={connecting === configuring}
+              >
+                {connecting === configuring ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Connecting...
+                  </>
+                ) : (
+                  <>
+                    <Zap className="h-4 w-4 mr-2" />
+                    Save & Connect
+                  </>
+                )}
               </Button>
               <Button 
                 variant="outline" 
-                onClick={() => setConfiguring(null)}
+                onClick={() => {
+                  setConfiguring(null);
+                  setConnecting(null);
+                  clearCredentialsForm();
+                }}
                 className="flex-1"
+                disabled={connecting === configuring}
               >
                 Cancel
               </Button>
