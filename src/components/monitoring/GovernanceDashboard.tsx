@@ -19,8 +19,6 @@ import {
   Settings
 } from 'lucide-react';
 import { useComplianceMonitoring } from '@/hooks/useComplianceMonitoring';
-import AppLayout from '@/components/layout/AppLayout';
-
 interface PromptViolation {
   type: string;
   severity: string;
@@ -82,8 +80,7 @@ const GovernanceDashboard: React.FC = () => {
   };
 
   return (
-    <AppLayout title="Governance Dashboard">
-      <div className="space-y-6">
+    <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -321,7 +318,6 @@ const GovernanceDashboard: React.FC = () => {
         </div>
         )}
       </div>
-    </AppLayout>
   );
 };
 
