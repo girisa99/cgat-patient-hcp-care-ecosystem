@@ -60,7 +60,7 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
       ['/users', '/facilities', '/modules', '/role-management'].includes(tab.to)
     ),
     technical: availableTabs.filter(tab => 
-      ['/api-services', '/ngrok', '/security', '/testing', '/data-import', '/healthcare-ai'].includes(tab.to)
+      ['/api-services', '/ngrok', '/security', '/testing', '/data-import', '/healthcare-ai', '/agentic-ecosystem'].includes(tab.to)
     ),
     reportsCompliance: availableTabs.filter(tab => 
       ['/reports', '/governance', '/framework', '/stability'].includes(tab.to)

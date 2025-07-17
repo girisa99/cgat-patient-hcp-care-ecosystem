@@ -104,9 +104,4 @@ export const navItems = [
     url: "/healthcare-ai",
     icon: Brain,
   },
-  {
-    title: "Agentic Ecosystem",
-    url: "/agentic-ecosystem",
-    icon: Bot,
-  },
 ];
