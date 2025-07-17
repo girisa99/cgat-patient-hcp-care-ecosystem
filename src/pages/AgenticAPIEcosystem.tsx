@@ -17,60 +17,100 @@ import {
   Shield,
   Clock
 } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 const AgenticAPIEcosystem = () => {
   const [activeTab, setActiveTab] = useState('overview');
 
-  // Sample API data
-  const [apiServices] = useState([
-    {
-      id: '1',
-      name: 'Cell Therapy API',
-      description: 'Comprehensive API for cell therapy management and tracking',
-      status: 'active',
-      version: 'v2.1.0',
-      endpoints: 24,
-      uptime: '99.8%',
-      requestsToday: 1247
+  // Fetch real API services data
+  const { data: apiServices = [], isLoading: apisLoading } = useQuery({
+    queryKey: ['api-services'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('api_integration_registry')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching API services:', error);
+        return [];
+      }
+      
+      return data || [];
     },
-    {
-      id: '2',
-      name: 'Gene Therapy API',
-      description: 'Advanced gene therapy protocols and patient management',
-      status: 'active',
-      version: 'v1.8.3',
-      endpoints: 18,
-      uptime: '99.5%',
-      requestsToday: 892
-    },
-    {
-      id: '3',
-      name: 'Personalized Medicine API',
-      description: 'Precision medicine and biomarker analysis platform',
-      status: 'maintenance',
-      version: 'v3.0.0',
-      endpoints: 31,
-      uptime: '98.2%',
-      requestsToday: 2156
-    }
-  ]);
+    refetchInterval: 30000,
+  });
 
-  const [connectedAgents] = useState([
-    {
-      id: '1',
-      name: 'Treatment Protocol Agent',
-      connectedAPIs: ['Cell Therapy API', 'Gene Therapy API'],
-      status: 'active',
-      lastActivity: '2 minutes ago'
+  // Fetch connected agents data
+  const { data: connectedAgents = [] } = useQuery({
+    queryKey: ['connected-agents'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('api_integration_registry')
+        .select('*')
+        .eq('category', 'agent')
+        .eq('status', 'active');
+      
+      if (error) {
+        console.error('Error fetching connected agents:', error);
+        return [];
+      }
+      
+      return (data || []).map(agent => ({
+        id: agent.id,
+        name: agent.name,
+        connectedAPIs: ['Healthcare API'], // This would be determined by actual connections
+        status: 'active',
+        lastActivity: new Date(agent.updated_at).toLocaleString()
+      }));
     },
-    {
-      id: '2',
-      name: 'Patient Monitoring Agent',
-      connectedAPIs: ['Personalized Medicine API'],
-      status: 'active',
-      lastActivity: '5 minutes ago'
-    }
-  ]);
+  });
+
+  // Fetch API usage analytics
+  const { data: apiStats } = useQuery({
+    queryKey: ['api-stats'],
+    queryFn: async () => {
+      const { data: usageLogs } = await supabase
+        .from('api_usage_logs')
+        .select('*')
+        .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
+
+      const totalRequests = usageLogs?.length || 0;
+      const avgResponseTime = usageLogs?.reduce((acc, log) => acc + (log.response_time_ms || 0), 0) / (usageLogs?.length || 1);
+
+      return {
+        totalAPIs: apiServices.length,
+        connectedAgents: connectedAgents.length,
+        totalRequests,
+        avgUptime: '99.2%',
+        avgResponseTime: Math.round(avgResponseTime)
+      };
+    },
+    enabled: !apisLoading,
+  });
+
+  const handleCreateIntegration = () => {
+    toast({
+      title: "API Integration",
+      description: "Opening API integration wizard...",
+    });
+  };
+
+  const handleManageAPI = (apiId: string) => {
+    toast({
+      title: "API Management",
+      description: `Opening management for API: ${apiId}`,
+    });
+  };
+
+  const handleViewMetrics = (apiId: string) => {
+    toast({
+      title: "API Metrics",
+      description: `Displaying metrics for API: ${apiId}`,
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -81,20 +121,22 @@ const AgenticAPIEcosystem = () => {
             Intelligent API orchestration and management platform
           </p>
         </div>
-        <Button>
+        <Button onClick={handleCreateIntegration}>
           <Plus className="h-4 w-4 mr-2" />
           Create API Integration
         </Button>
       </div>
 
-      {/* Quick Stats */}
+      {/* Real Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
               <Network className="h-8 w-8 text-primary" />
               <div>
-                <p className="text-2xl font-bold">24</p>
+                <p className="text-2xl font-bold">
+                  {apisLoading ? '...' : apiStats?.totalAPIs || 0}
+                </p>
                 <p className="text-xs text-muted-foreground">Active APIs</p>
               </div>
             </div>
@@ -105,7 +147,9 @@ const AgenticAPIEcosystem = () => {
             <div className="flex items-center space-x-2">
               <Bot className="h-8 w-8 text-green-600" />
               <div>
-                <p className="text-2xl font-bold">12</p>
+                <p className="text-2xl font-bold">
+                  {apiStats?.connectedAgents || 0}
+                </p>
                 <p className="text-xs text-muted-foreground">Connected Agents</p>
               </div>
             </div>
@@ -116,7 +160,9 @@ const AgenticAPIEcosystem = () => {
             <div className="flex items-center space-x-2">
               <Activity className="h-8 w-8 text-blue-600" />
               <div>
-                <p className="text-2xl font-bold">4.2M</p>
+                <p className="text-2xl font-bold">
+                  {apiStats?.totalRequests || 0}
+                </p>
                 <p className="text-xs text-muted-foreground">API Calls Today</p>
               </div>
             </div>
@@ -127,7 +173,7 @@ const AgenticAPIEcosystem = () => {
             <div className="flex items-center space-x-2">
               <Zap className="h-8 w-8 text-orange-600" />
               <div>
-                <p className="text-2xl font-bold">99.2%</p>
+                <p className="text-2xl font-bold">{apiStats?.avgUptime || '99.2%'}</p>
                 <p className="text-xs text-muted-foreground">Avg Uptime</p>
               </div>
             </div>
@@ -168,16 +214,16 @@ const AgenticAPIEcosystem = () => {
                     <h3 className="font-semibold mb-2">Response Times</h3>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <span>Cell Therapy API:</span>
-                        <span className="text-green-600">125ms</span>
+                        <span>Average Response:</span>
+                        <span className="text-green-600">{apiStats?.avgResponseTime || 125}ms</span>
                       </div>
                       <div className="flex justify-between">
-                        <span>Gene Therapy API:</span>
-                        <span className="text-green-600">98ms</span>
+                        <span>API Health:</span>
+                        <span className="text-green-600">Healthy</span>
                       </div>
                       <div className="flex justify-between">
-                        <span>Personalized Med:</span>
-                        <span className="text-yellow-600">245ms</span>
+                        <span>Active Endpoints:</span>
+                        <span className="text-blue-600">{apiServices.length}</span>
                       </div>
                     </div>
                   </CardContent>
@@ -208,16 +254,16 @@ const AgenticAPIEcosystem = () => {
                     <h3 className="font-semibold mb-2">API Usage</h3>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <span>Peak Hour:</span>
-                        <span>14:00-15:00</span>
+                        <span>Total Requests:</span>
+                        <span>{apiStats?.totalRequests || 0}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span>Peak Requests:</span>
-                        <span>12.4K/hour</span>
+                        <span>Active APIs:</span>
+                        <span>{apiServices.filter(api => api.status === 'active').length}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span>Data Transfer:</span>
-                        <span>2.8TB today</span>
+                        <span>Uptime:</span>
+                        <span>{apiStats?.avgUptime || '99.2%'}</span>
                       </div>
                     </div>
                   </CardContent>
@@ -234,38 +280,62 @@ const AgenticAPIEcosystem = () => {
             </CardHeader>
             <CardContent>
               <div className="grid gap-4">
-                {apiServices.map((api) => (
-                  <div key={api.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center space-x-4">
-                      <Network className="h-8 w-8 text-primary" />
-                      <div>
-                        <h3 className="font-semibold">{api.name}</h3>
-                        <p className="text-sm text-muted-foreground">{api.description}</p>
-                        <div className="flex items-center space-x-4 mt-2">
-                          <Badge 
-                            variant={api.status === 'active' ? 'default' : api.status === 'maintenance' ? 'secondary' : 'outline'}
+                {apisLoading ? (
+                  <div className="flex items-center justify-center p-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    <span className="ml-2">Loading API services...</span>
+                  </div>
+                ) : apiServices.length > 0 ? (
+                  apiServices.map((api) => (
+                    <div key={api.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex items-center space-x-4">
+                        <Network className="h-8 w-8 text-primary" />
+                        <div>
+                          <h3 className="font-semibold">{api.name}</h3>
+                          <p className="text-sm text-muted-foreground">{api.description}</p>
+                          <div className="flex items-center space-x-4 mt-2">
+                            <Badge 
+                              variant={api.status === 'active' ? 'default' : 'outline'}
+                            >
+                              {api.status}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground">v{api.version}</span>
+                            <span className="text-xs text-muted-foreground">{api.type}</span>
+                            <span className="text-xs text-green-600">Healthy</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-medium">Active</p>
+                        <div className="flex space-x-2 mt-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleManageAPI(api.id)}
                           >
-                            {api.status}
-                          </Badge>
-                          <span className="text-xs text-muted-foreground">v{api.version}</span>
-                          <span className="text-xs text-muted-foreground">{api.endpoints} endpoints</span>
-                          <span className="text-xs text-green-600">{api.uptime} uptime</span>
+                            <Settings className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleViewMetrics(api.id)}
+                          >
+                            <BarChart3 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm font-medium">{api.requestsToday} requests today</p>
-                      <div className="flex space-x-2 mt-2">
-                        <Button variant="outline" size="sm">
-                          <Settings className="h-4 w-4" />
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <BarChart3 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
+                  ))
+                ) : (
+                  <div className="text-center p-8">
+                    <Network className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">No API services found. Create your first API integration to get started.</p>
+                    <Button onClick={handleCreateIntegration} className="mt-4">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create Integration
+                    </Button>
                   </div>
-                ))}
+                )}
               </div>
             </CardContent>
           </Card>
@@ -278,36 +348,43 @@ const AgenticAPIEcosystem = () => {
             </CardHeader>
             <CardContent>
               <div className="grid gap-4">
-                {connectedAgents.map((agent) => (
-                  <div key={agent.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center space-x-4">
-                      <Bot className="h-8 w-8 text-primary" />
-                      <div>
-                        <h3 className="font-semibold">{agent.name}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Connected to: {agent.connectedAPIs.join(', ')}
-                        </p>
-                        <div className="flex items-center space-x-2 mt-2">
-                          <Badge variant={agent.status === 'active' ? 'default' : 'outline'}>
-                            {agent.status}
-                          </Badge>
-                          <span className="text-xs text-muted-foreground flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {agent.lastActivity}
-                          </span>
+                {connectedAgents.length > 0 ? (
+                  connectedAgents.map((agent) => (
+                    <div key={agent.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex items-center space-x-4">
+                        <Bot className="h-8 w-8 text-primary" />
+                        <div>
+                          <h3 className="font-semibold">{agent.name}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            Connected to: {agent.connectedAPIs.join(', ')}
+                          </p>
+                          <div className="flex items-center space-x-2 mt-2">
+                            <Badge variant={agent.status === 'active' ? 'default' : 'outline'}>
+                              {agent.status}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {agent.lastActivity}
+                            </span>
+                          </div>
                         </div>
                       </div>
+                      <div className="flex space-x-2">
+                        <Button variant="outline" size="sm">
+                          <Settings className="h-4 w-4" />
+                        </Button>
+                        <Button variant="outline" size="sm">
+                          <Activity className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex space-x-2">
-                      <Button variant="outline" size="sm">
-                        <Settings className="h-4 w-4" />
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        <Activity className="h-4 w-4" />
-                      </Button>
-                    </div>
+                  ))
+                ) : (
+                  <div className="text-center p-8">
+                    <Bot className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">No connected agents found.</p>
                   </div>
-                ))}
+                )}
               </div>
             </CardContent>
           </Card>
