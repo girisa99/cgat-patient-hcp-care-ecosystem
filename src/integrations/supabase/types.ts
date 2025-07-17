@@ -112,6 +112,136 @@ export type Database = {
           },
         ]
       }
+      api_documentation: {
+        Row: {
+          api_integration_id: string | null
+          audience: string | null
+          content: string | null
+          created_at: string | null
+          doc_type: string
+          format: string | null
+          id: string
+          is_public: boolean | null
+          metadata: Json | null
+          order_index: number | null
+          title: string
+          updated_at: string | null
+          version: string | null
+        }
+        Insert: {
+          api_integration_id?: string | null
+          audience?: string | null
+          content?: string | null
+          created_at?: string | null
+          doc_type: string
+          format?: string | null
+          id?: string
+          is_public?: boolean | null
+          metadata?: Json | null
+          order_index?: number | null
+          title: string
+          updated_at?: string | null
+          version?: string | null
+        }
+        Update: {
+          api_integration_id?: string | null
+          audience?: string | null
+          content?: string | null
+          created_at?: string | null
+          doc_type?: string
+          format?: string | null
+          id?: string
+          is_public?: boolean | null
+          metadata?: Json | null
+          order_index?: number | null
+          title?: string
+          updated_at?: string | null
+          version?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_documentation_api_integration_id_fkey"
+            columns: ["api_integration_id"]
+            isOneToOne: false
+            referencedRelation: "api_integration_registry"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      api_endpoints: {
+        Row: {
+          api_integration_id: string | null
+          category: string
+          created_at: string | null
+          description: string | null
+          documentation_url: string | null
+          endpoint_path: string
+          example_request: Json | null
+          example_response: Json | null
+          id: string
+          is_public: boolean | null
+          method: string
+          postman_collection_id: string | null
+          rate_limit_config: Json | null
+          request_schema: Json | null
+          requires_authentication: boolean | null
+          response_schema: Json | null
+          sandbox_available: boolean | null
+          testing_status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          api_integration_id?: string | null
+          category: string
+          created_at?: string | null
+          description?: string | null
+          documentation_url?: string | null
+          endpoint_path: string
+          example_request?: Json | null
+          example_response?: Json | null
+          id?: string
+          is_public?: boolean | null
+          method: string
+          postman_collection_id?: string | null
+          rate_limit_config?: Json | null
+          request_schema?: Json | null
+          requires_authentication?: boolean | null
+          response_schema?: Json | null
+          sandbox_available?: boolean | null
+          testing_status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          api_integration_id?: string | null
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          documentation_url?: string | null
+          endpoint_path?: string
+          example_request?: Json | null
+          example_response?: Json | null
+          id?: string
+          is_public?: boolean | null
+          method?: string
+          postman_collection_id?: string | null
+          rate_limit_config?: Json | null
+          request_schema?: Json | null
+          requires_authentication?: boolean | null
+          response_schema?: Json | null
+          sandbox_available?: boolean | null
+          testing_status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_endpoints_api_integration_id_fkey"
+            columns: ["api_integration_id"]
+            isOneToOne: false
+            referencedRelation: "api_integration_registry"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       api_integration_registry: {
         Row: {
           base_url: string | null
@@ -299,6 +429,115 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "api_lifecycle_events_api_integration_id_fkey"
+            columns: ["api_integration_id"]
+            isOneToOne: false
+            referencedRelation: "api_integration_registry"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      api_mapping_fields: {
+        Row: {
+          api_integration_id: string | null
+          created_at: string | null
+          data_sensitivity: string | null
+          default_value: string | null
+          field_category: string | null
+          field_type: string
+          id: string
+          is_required: boolean | null
+          mapping_direction: string | null
+          source_field: string
+          target_field: string
+          transformation_rule: string | null
+          updated_at: string | null
+          validation_rules: Json | null
+        }
+        Insert: {
+          api_integration_id?: string | null
+          created_at?: string | null
+          data_sensitivity?: string | null
+          default_value?: string | null
+          field_category?: string | null
+          field_type: string
+          id?: string
+          is_required?: boolean | null
+          mapping_direction?: string | null
+          source_field: string
+          target_field: string
+          transformation_rule?: string | null
+          updated_at?: string | null
+          validation_rules?: Json | null
+        }
+        Update: {
+          api_integration_id?: string | null
+          created_at?: string | null
+          data_sensitivity?: string | null
+          default_value?: string | null
+          field_category?: string | null
+          field_type?: string
+          id?: string
+          is_required?: boolean | null
+          mapping_direction?: string | null
+          source_field?: string
+          target_field?: string
+          transformation_rule?: string | null
+          updated_at?: string | null
+          validation_rules?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_mapping_fields_api_integration_id_fkey"
+            columns: ["api_integration_id"]
+            isOneToOne: false
+            referencedRelation: "api_integration_registry"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      api_testing_configs: {
+        Row: {
+          api_integration_id: string | null
+          config_name: string
+          created_at: string | null
+          expected_results: Json | null
+          id: string
+          is_active: boolean | null
+          postman_collection: Json | null
+          sandbox_config: Json | null
+          test_parameters: Json | null
+          testing_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          api_integration_id?: string | null
+          config_name: string
+          created_at?: string | null
+          expected_results?: Json | null
+          id?: string
+          is_active?: boolean | null
+          postman_collection?: Json | null
+          sandbox_config?: Json | null
+          test_parameters?: Json | null
+          testing_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          api_integration_id?: string | null
+          config_name?: string
+          created_at?: string | null
+          expected_results?: Json | null
+          id?: string
+          is_active?: boolean | null
+          postman_collection?: Json | null
+          sandbox_config?: Json | null
+          test_parameters?: Json | null
+          testing_type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_testing_configs_api_integration_id_fkey"
             columns: ["api_integration_id"]
             isOneToOne: false
             referencedRelation: "api_integration_registry"
