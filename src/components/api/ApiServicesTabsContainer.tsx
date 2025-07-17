@@ -41,34 +41,33 @@ const ApiServicesTabsContainer: React.FC<ApiServicesTabsContainerProps> = ({
     isLoadingExternalApis 
   } = useExternalApis();
 
+  // Filter APIs by direction and type for proper categorization
+  const internalApis = apiServices?.filter(api => api.direction === 'internal') || [];
+  const externalIntegrationApis = apiServices?.filter(api => api.direction === 'external') || [];
+  const technicalApis = apiServices?.filter(api => api.category === 'technical') || [];
+  const businessApis = apiServices?.filter(api => api.category === 'business') || [];
+
   const tabs = [
     {
       id: "internal",
       label: "Internal APIs",
       icon: Database,
-      count: apiServices?.length || 0,
+      count: internalApis.length,
       component: InternalApiServicesTab
     },
     {
       id: "external",
       label: "External Integration",
       icon: ExternalLink,
-      count: (externalApis?.length || 0) + (publishedApis?.length || 0),
+      count: externalIntegrationApis.length + (publishedApis?.length || 0),
       component: ExternalIntegrationTab
     },
     {
       id: "developer",
       label: "Developer Hub",
       icon: Code,
-      count: developerApplications?.length || 0,
+      count: (publishedApis?.length || 0) + (apiKeys?.length || 0),
       component: DeveloperHubTab
-    },
-    {
-      id: "marketplace",
-      label: "Marketplace",
-      icon: Star,
-      count: marketplaceListings?.length || 0,
-      component: MarketplaceTab
     },
     {
       id: "keys",
@@ -104,13 +103,13 @@ const ApiServicesTabsContainer: React.FC<ApiServicesTabsContainerProps> = ({
   return (
     <div className="space-y-6">
       {/* Overview Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
         <Card className="bg-blue-50 border-blue-200">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-blue-600">Internal APIs</p>
-                <p className="text-2xl font-bold text-blue-900">{apiServices?.length || 0}</p>
+                <p className="text-2xl font-bold text-blue-900">{internalApis.length}</p>
               </div>
               <Database className="h-6 w-6 text-blue-500" />
             </div>
@@ -121,10 +120,22 @@ const ApiServicesTabsContainer: React.FC<ApiServicesTabsContainerProps> = ({
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-green-600">External APIs</p>
-                <p className="text-2xl font-bold text-green-900">{externalApis?.length || 0}</p>
+                <p className="text-sm text-green-600">External Integration</p>
+                <p className="text-2xl font-bold text-green-900">{externalIntegrationApis.length}</p>
               </div>
               <ExternalLink className="h-6 w-6 text-green-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-orange-50 border-orange-200">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-orange-600">Published APIs</p>
+                <p className="text-2xl font-bold text-orange-900">{publishedApis?.length || 0}</p>
+              </div>
+              <Upload className="h-6 w-6 text-orange-500" />
             </div>
           </CardContent>
         </Card>
@@ -141,38 +152,14 @@ const ApiServicesTabsContainer: React.FC<ApiServicesTabsContainerProps> = ({
           </CardContent>
         </Card>
 
-        <Card className="bg-orange-50 border-orange-200">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-orange-600">Published</p>
-                <p className="text-2xl font-bold text-orange-900">{publishedApis?.length || 0}</p>
-              </div>
-              <Upload className="h-6 w-6 text-orange-500" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-pink-50 border-pink-200">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-pink-600">Marketplace</p>
-                <p className="text-2xl font-bold text-pink-900">{marketplaceListings?.length || 0}</p>
-              </div>
-              <Star className="h-6 w-6 text-pink-500" />
-            </div>
-          </CardContent>
-        </Card>
-
         <Card className="bg-cyan-50 border-cyan-200">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-cyan-600">Dev Apps</p>
-                <p className="text-2xl font-bold text-cyan-900">{developerApplications?.length || 0}</p>
+                <p className="text-sm text-cyan-600">Technical APIs</p>
+                <p className="text-2xl font-bold text-cyan-900">{technicalApis.length}</p>
               </div>
-              <Users className="h-6 w-6 text-cyan-500" />
+              <Code className="h-6 w-6 text-cyan-500" />
             </div>
           </CardContent>
         </Card>
@@ -180,7 +167,7 @@ const ApiServicesTabsContainer: React.FC<ApiServicesTabsContainerProps> = ({
 
       {/* Main Tabs Container */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6 gap-1 h-auto p-1">
+        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-5 gap-1 h-auto p-1">
           {tabs.map((tab) => {
             const IconComponent = tab.icon;
             return (
