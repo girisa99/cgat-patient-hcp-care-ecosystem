@@ -15,6 +15,7 @@ import {
   Database,
   Upload,
   Brain,
+  Bot,
 } from "lucide-react";
 
 export const navItems = [
@@ -102,5 +103,10 @@ export const navItems = [
     title: "Healthcare AI",
     url: "/healthcare-ai",
     icon: Brain,
+  },
+  {
+    title: "Agentic Ecosystem",
+    url: "/agentic-ecosystem",
+    icon: Bot,
   },
 ];
