@@ -96,6 +96,11 @@ const AppContent = () => {
                      </Suspense>
                    } />
                    <Route path="/research" element={<PackageResearch />} />
+                   <Route path="/agentic-ecosystem" element={
+                     <Suspense fallback={<PageLoading message="Loading Agentic API Ecosystem..." />}>
+                       {React.createElement(React.lazy(() => import('@/pages/AgenticEcosystem').then(m => ({ default: m.default }))))}
+                     </Suspense>
+                   } />
                 </>
               ) : (
                 <>
