@@ -1,9 +1,14 @@
 /**
- * Stability Framework Initialization
- * Sets up monitoring and enforcement systems
+ * COMPREHENSIVE FRAMEWORK INITIALIZATION
+ * Bootstraps complete stability, compliance, and enhancement framework
+ * Ensures all systems follow unified project structure
  */
 
 import { toast } from 'sonner';
+import { FrameworkComplianceMonitor } from '../stability/FrameworkComplianceMonitor';
+import { PromptGovernanceInterceptor } from '../stability/PromptGovernanceInterceptor';
+import ComprehensiveFrameworkValidator from './ComprehensiveFrameworkValidator';
+import PromptEnhancementEngine from './PromptEnhancementEngine';
 
 interface FrameworkConfig {
   monitoring: {

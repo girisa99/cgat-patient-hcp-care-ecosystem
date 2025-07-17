@@ -21,13 +21,30 @@ export class DuplicateDetector {
   }
 
   getDuplicateStats(): DuplicateStats {
-    console.log('🔍 Getting duplicate stats...');
+    console.log('🔍 Enhanced duplicate analysis for framework compliance...');
+    
+    // Enhanced analysis with categorization
+    let componentDuplicates = 0;
+    let serviceDuplicates = 0;
+    let typeDuplicates = 0;
+
+    this.duplicates.forEach((count, name) => {
+      if (count > 1) {
+        if (name.includes('Component') || name.includes('component')) {
+          componentDuplicates++;
+        } else if (name.includes('Service') || name.includes('service')) {
+          serviceDuplicates++;
+        } else if (name.includes('Type') || name.includes('type') || name.includes('Interface')) {
+          typeDuplicates++;
+        }
+      }
+    });
     
     return {
       totalDuplicates: this.duplicates.size,
-      components: 0,
-      services: 0,
-      types: 0
+      components: componentDuplicates,
+      services: serviceDuplicates,
+      types: typeDuplicates
     };
   }
 
