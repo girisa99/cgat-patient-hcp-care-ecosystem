@@ -286,6 +286,8 @@ export const SystemConnectors = () => {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [configuring, setConfiguring] = useState<string | null>(null);
+  const [testing, setTesting] = useState<string | null>(null);
+  const [connectionData, setConnectionData] = useState<{[key: string]: any}>({});
 
   const categories = ['All', 'Language Models', 'CRM Systems', 'Databases', 'Healthcare APIs', 'Communication', 'Insurance', 'Development'];
 
@@ -302,6 +304,38 @@ export const SystemConnectors = () => {
       title: "Configuring Connection",
       description: "Please provide the required credentials to establish connection.",
     });
+  };
+
+  const handleConfigure = (connectorId: string) => {
+    setConfiguring(connectorId);
+    toast({
+      title: "Configure Connection",
+      description: "Update connection settings and credentials.",
+    });
+  };
+
+  const handleTest = async (connectorId: string) => {
+    setTesting(connectorId);
+    const connector = systemConnectors.find(c => c.id === connectorId);
+    
+    // Simulate test connection
+    setTimeout(() => {
+      setTesting(null);
+      const isSuccess = Math.random() > 0.2; // 80% success rate for demo
+      
+      if (isSuccess) {
+        toast({
+          title: "Connection Test Successful",
+          description: `${connector?.name} is responding correctly.`,
+        });
+      } else {
+        toast({
+          title: "Connection Test Failed",
+          description: `Unable to connect to ${connector?.name}. Check your configuration.`,
+          variant: "destructive"
+        });
+      }
+    }, 2000);
   };
 
   const handleSaveConnection = () => {
@@ -450,11 +484,23 @@ export const SystemConnectors = () => {
                 <div className="pt-3 border-t">
                   {connector.status === 'connected' ? (
                     <div className="flex gap-2">
-                      <Button variant="outline" size="sm" className="flex-1">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="flex-1"
+                        onClick={() => handleConfigure(connector.id)}
+                        disabled={configuring === connector.id}
+                      >
                         Configure
                       </Button>
-                      <Button variant="outline" size="sm" className="flex-1">
-                        Test
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="flex-1"
+                        onClick={() => handleTest(connector.id)}
+                        disabled={testing === connector.id}
+                      >
+                        {testing === connector.id ? "Testing..." : "Test"}
                       </Button>
                     </div>
                   ) : (

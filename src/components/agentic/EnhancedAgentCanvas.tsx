@@ -206,23 +206,19 @@ export const EnhancedAgentCanvas: React.FC<EnhancedAgentCanvasProps> = ({
         logoUrl = data.publicUrl;
       }
       
-      // Save template data (using api_integration_registry as storage)
+      // Save template data to agent_templates table instead
       const { error } = await supabase
-        .from('api_integration_registry')
+        .from('agent_templates')
         .insert({
           name: canvasName || 'Unnamed Canvas',
-          description: 'Custom canvas template',
-          category: 'canvas_template',
-          type: 'template',
-          direction: 'bidirectional',
-          purpose: 'Canvas white-labeling template',
-          contact_info: {
-            logo_url: logoUrl,
-            tagline,
-            primary_color: primaryColor,
-            secondary_color: secondaryColor,
-            accent_color: accentColor
-          }
+          description: 'Custom canvas template created in wizard',
+          tagline,
+          primary_color: primaryColor,
+          secondary_color: secondaryColor,
+          accent_color: accentColor,
+          logo_url: logoUrl,
+          template_type: 'canvas',
+          created_by: (await supabase.auth.getUser()).data.user?.id
         });
         
       if (error) throw error;
