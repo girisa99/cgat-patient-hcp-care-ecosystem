@@ -8,7 +8,7 @@ import { FileUploadZone } from '../FileUploadZone';
 import { DataPreviewTable } from '../DataPreviewTable';
 import { SchemaGenerator } from '../SchemaGenerator';
 import { ImportProgress } from '../ImportProgress';
-import { useDataImportPage } from '@/hooks/useDataImportPage';
+import { useConsolidatedDataImport } from '@/hooks/useConsolidatedDataImport';
 import { Upload } from 'lucide-react';
 
 export const CsvImportTab: React.FC = () => {
@@ -19,7 +19,7 @@ export const CsvImportTab: React.FC = () => {
     isImporting,
     importProgress,
     importResults
-  } = useDataImportPage();
+  } = useConsolidatedDataImport();
 
   const [files, setFiles] = useState<File[]>([]);
   const [parsedData, setParsedData] = useState<Array<Record<string, unknown>>>([]);

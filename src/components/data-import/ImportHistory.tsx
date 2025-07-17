@@ -3,11 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useDataImportPage } from '@/hooks/useDataImportPage';
+import { useConsolidatedDataImport } from '@/hooks/useConsolidatedDataImport';
 import { History, Download, AlertCircle, CheckCircle2, Clock } from 'lucide-react';
 
 export const ImportHistory: React.FC = () => {
-  const { importHistory, getImportStats } = useDataImportPage();
+  const { importHistory, getImportStats } = useConsolidatedDataImport();
   const stats = getImportStats();
 
   const getStatusIcon = (status: string) => {

@@ -15,16 +15,48 @@ export const useMasterUserManagement = () => {
   const [isRemovingRole, setIsRemovingRole] = useState(false);
   const [isAssigningFacility, setIsAssigningFacility] = useState(false);
 
-  const getUserStats = () => ({
-    totalUsers: masterData.stats.totalUsers,
-    activeUsers: masterData.users.filter(u => u.is_active !== false).length,
-    verifiedUsers: masterData.users.filter(u => u.is_email_verified).length,
-    pendingVerification: masterData.users.filter(u => !u.is_email_verified).length,
-    pendingRoleAssignment: masterData.users.filter(u => !u.user_roles || u.user_roles.length === 0).length,
-    completeUsers: masterData.users.filter(u => u.is_email_verified && u.user_roles && u.user_roles.length > 0).length,
-    adminCount: masterData.stats.adminCount,
-    patientCount: masterData.stats.patientCount,
-  });
+  // Enhanced user statistics (merged from useUserStatistics)
+  const getUserStats = () => {
+    const users = masterData.users;
+    const basicStats = {
+      totalUsers: masterData.stats.totalUsers,
+      activeUsers: users.filter(u => u.is_active !== false).length,
+      verifiedUsers: users.filter(u => u.is_email_verified).length,
+      pendingVerification: users.filter(u => !u.is_email_verified).length,
+      pendingRoleAssignment: users.filter(u => !u.user_roles || u.user_roles.length === 0).length,
+      completeUsers: users.filter(u => u.is_email_verified && u.user_roles && u.user_roles.length > 0).length,
+      adminCount: masterData.stats.adminCount,
+      patientCount: masterData.stats.patientCount,
+    };
+
+    // Enhanced statistics (merged functionality)
+    const byRole = users.reduce((acc: Record<string, number>, user) => {
+      if (user.user_roles) {
+        user.user_roles.forEach(ur => {
+          const roleName = ur.roles?.name || 'unknown';
+          acc[roleName] = (acc[roleName] || 0) + 1;
+        });
+      }
+      return acc;
+    }, {});
+
+    const byStatus = {
+      active: users.filter(u => u.is_active !== false).length,
+      inactive: users.filter(u => u.is_active === false).length,
+      verified: users.filter(u => u.is_email_verified).length,
+      pending: users.filter(u => !u.is_email_verified).length,
+    };
+
+    const recent = users.filter(u => {
+      if (!u.created_at) return false;
+      const createdDate = new Date(u.created_at);
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      return createdDate > sevenDaysAgo;
+    }).length;
+
+    return { ...basicStats, byRole, byStatus, recent };
+  };
 
   const fetchUsers = () => {
     // Force refresh both users and general data

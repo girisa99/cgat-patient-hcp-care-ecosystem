@@ -9,7 +9,7 @@ import { FileUploadZone } from '../FileUploadZone';
 import { DataPreviewTable } from '../DataPreviewTable';
 import { SchemaGenerator } from '../SchemaGenerator';
 import { ImportProgress } from '../ImportProgress';
-import { useDataImportPage } from '@/hooks/useDataImportPage';
+import { useConsolidatedDataImport } from '@/hooks/useConsolidatedDataImport';
 import { Upload, FileText } from 'lucide-react';
 
 export const JsonImportTab: React.FC = () => {
@@ -19,7 +19,7 @@ export const JsonImportTab: React.FC = () => {
     isImporting,
     importProgress,
     importResults
-  } = useDataImportPage();
+  } = useConsolidatedDataImport();
 
   const [files, setFiles] = useState<File[]>([]);
   const [jsonText, setJsonText] = useState('');
