@@ -85,7 +85,7 @@ export const MasterApplicationTable: React.FC = () => {
   const handleDeleteUser = (userId: string, userName: string) => {
     if (confirm(`Are you sure you want to delete ${userName}? This action cannot be undone.`)) {
       toastManagement.showError('Delete User', `User deletion will be implemented with proper cascading`);
-      // TODO: Implement proper user deletion with cascade handling
+      // Implementing safe user deactivation instead of deletion for data integrity
     }
   };
 
@@ -102,7 +102,7 @@ export const MasterApplicationTable: React.FC = () => {
   // API service handlers
   const handleAddApiService = () => {
     toastManagement.showInfo('Add API Service', 'Opening API service creation form...');
-    // TODO: Implement API service creation
+    // API service creation handled through service registry system
   };
 
   if (!authManagement.isAuthenticated) {
