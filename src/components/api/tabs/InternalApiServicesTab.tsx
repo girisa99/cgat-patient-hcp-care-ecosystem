@@ -45,8 +45,20 @@ const InternalApiServicesTab: React.FC = () => {
       acc[service.status] = (acc[service.status] || 0) + 1;
       return acc;
     }, {} as Record<string, number>),
-    typeDistribution: internalServices.reduce((acc, service) => {
-      acc[service.type] = (acc[service.type] || 0) + 1;
+    // Count actual API protocol types based on service names/descriptions
+    protocolDistribution: internalServices.reduce((acc, service) => {
+      // Determine protocol based on service name or description
+      if (service.name?.toLowerCase().includes('rest') || 
+          service.name?.toLowerCase().includes('api') ||
+          service.description?.toLowerCase().includes('rest')) {
+        acc['REST'] = (acc['REST'] || 0) + 1;
+      } else if (service.name?.toLowerCase().includes('graphql') ||
+                 service.description?.toLowerCase().includes('graphql')) {
+        acc['GraphQL'] = (acc['GraphQL'] || 0) + 1;
+      } else {
+        // Default to REST for API services
+        acc['REST'] = (acc['REST'] || 0) + 1;
+      }
       return acc;
     }, {} as Record<string, number>)
   };
@@ -57,17 +69,25 @@ const InternalApiServicesTab: React.FC = () => {
 
   const handleCreateService = async () => {
     try {
+      console.log('🔄 Creating new internal API service...');
       await createApiService({
         name: 'New Internal API Service',
         description: 'A new internal API service for system integration',
-        category: 'integration',
-        type: 'REST',
+        category: 'healthcare',
+        type: 'internal',
         direction: 'bidirectional',
         purpose: 'data_exchange'
       });
+      console.log('✅ API service created successfully');
     } catch (err) {
-      console.error('Failed to create API service:', err);
+      console.error('❌ Failed to create API service:', err);
     }
+  };
+
+  const handleConfigureService = (serviceId: string, serviceName: string) => {
+    console.log(`🔧 Configuring API service: ${serviceName} (${serviceId})`);
+    // For now, show a simple alert - this would typically open a configuration modal
+    alert(`Configure ${serviceName}\n\nThis would open a configuration dialog for:\n- API endpoints\n- Authentication settings\n- Rate limiting\n- Documentation\n- Testing parameters`);
   };
 
   return (
@@ -133,7 +153,7 @@ const InternalApiServicesTab: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-purple-600">REST APIs</p>
-                <p className="text-2xl font-bold text-purple-900">{stats.typeDistribution.REST || 0}</p>
+                <p className="text-2xl font-bold text-purple-900">{stats.protocolDistribution.REST || 0}</p>
               </div>
               <Zap className="h-8 w-8 text-purple-500" />
             </div>
@@ -145,7 +165,7 @@ const InternalApiServicesTab: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-orange-600">GraphQL</p>
-                <p className="text-2xl font-bold text-orange-900">{stats.typeDistribution.GraphQL || 0}</p>
+                <p className="text-2xl font-bold text-orange-900">{stats.protocolDistribution.GraphQL || 0}</p>
               </div>
               <Shield className="h-8 w-8 text-orange-500" />
             </div>
@@ -254,7 +274,11 @@ const InternalApiServicesTab: React.FC = () => {
                         <div className="text-xs text-gray-500">
                           ID: {service.id.slice(0, 8)}...
                         </div>
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleConfigureService(service.id, service.name)}
+                        >
                           <Settings className="h-3 w-3 mr-1" />
                           Configure
                         </Button>
