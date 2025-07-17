@@ -22,7 +22,9 @@ interface SchemaGeneratorProps {
 }
 
 const typeOptions = [
-  'string', 'number', 'boolean', 'date', 'email', 'url', 'uuid', 'json'
+  'string', 'number', 'boolean', 'date', 'email', 'url', 'uuid', 'json',
+  'mcp-request', 'mcp-response', 'mcp-resource', 'mcp-tool',
+  'sml-schema', 'sml-validation'
 ];
 
 export const SchemaGenerator: React.FC<SchemaGeneratorProps> = ({

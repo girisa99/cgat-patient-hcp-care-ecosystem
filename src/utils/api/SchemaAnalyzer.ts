@@ -1,13 +1,14 @@
 /**
  * Schema Analysis and Data Generation Utilities
- * REFINED: Only core healthcare business schemas (3 essential schemas)
+ * REFINED: Core healthcare business schemas with MCP and SML integration
  */
 
 import { ApiEndpoint, ApiIntegration } from './ApiIntegrationTypes';
+import { MCPResource, MCPTool } from '@/integrations/mcp/healthcare-server';
 
 export class SchemaAnalyzer {
   /**
-   * Generates OpenAPI specification from API integration
+   * Generates OpenAPI specification from API integration with MCP support
    */
   static generateOpenAPISpec(integration: ApiIntegration) {
     const spec = {
@@ -25,7 +26,11 @@ export class SchemaAnalyzer {
       ],
       paths: {} as Record<string, any>,
       components: {
-        schemas: integration.schemas,
+        schemas: {
+          ...integration.schemas,
+          ...this.generateMCPSchemas(),
+          ...this.generateSMLSchemas()
+        },
         securitySchemes: this.generateSecuritySchemes(integration.endpoints)
       }
     };
@@ -157,6 +162,191 @@ export class SchemaAnalyzer {
       default:
         return null;
     }
+  }
+
+  /**
+   * Generate MCP protocol schemas for healthcare integrations
+   */
+  static generateMCPSchemas(): Record<string, any> {
+    return {
+      // MCP Request Schema
+      MCPRequest: {
+        type: 'object',
+        description: 'Model Context Protocol request schema',
+        properties: {
+          jsonrpc: { type: 'string', enum: ['2.0'], description: 'JSON-RPC version' },
+          id: { type: 'string', description: 'Request identifier' },
+          method: { type: 'string', description: 'MCP method name' },
+          params: { 
+            type: 'object', 
+            description: 'Method parameters',
+            additionalProperties: true 
+          }
+        },
+        required: ['jsonrpc', 'id', 'method']
+      },
+
+      // MCP Response Schema
+      MCPResponse: {
+        type: 'object',
+        description: 'Model Context Protocol response schema',
+        properties: {
+          jsonrpc: { type: 'string', enum: ['2.0'], description: 'JSON-RPC version' },
+          id: { type: 'string', description: 'Request identifier' },
+          result: { 
+            type: 'object', 
+            description: 'Response result',
+            additionalProperties: true 
+          },
+          error: {
+            type: 'object',
+            description: 'Error information',
+            properties: {
+              code: { type: 'integer', description: 'Error code' },
+              message: { type: 'string', description: 'Error message' },
+              data: { description: 'Additional error data' }
+            }
+          }
+        },
+        required: ['jsonrpc', 'id']
+      },
+
+      // MCP Resource Schema
+      MCPResource: {
+        type: 'object',
+        description: 'MCP resource definition for healthcare data',
+        properties: {
+          uri: { type: 'string', format: 'uri', description: 'Resource URI' },
+          name: { type: 'string', description: 'Resource name' },
+          description: { type: 'string', description: 'Resource description' },
+          mimeType: { type: 'string', description: 'MIME type' },
+          annotations: {
+            type: 'object',
+            description: 'Resource annotations',
+            properties: {
+              audience: { type: 'array', items: { type: 'string' } },
+              priority: { type: 'number' }
+            }
+          }
+        },
+        required: ['uri', 'name']
+      },
+
+      // MCP Tool Schema
+      MCPTool: {
+        type: 'object',
+        description: 'MCP tool definition for healthcare operations',
+        properties: {
+          name: { type: 'string', description: 'Tool name' },
+          description: { type: 'string', description: 'Tool description' },
+          inputSchema: { 
+            type: 'object', 
+            description: 'JSON Schema for tool input',
+            additionalProperties: true 
+          }
+        },
+        required: ['name', 'description', 'inputSchema']
+      }
+    };
+  }
+
+  /**
+   * Generate SML (Schema Markup Language) schemas for enhanced metadata
+   */
+  static generateSMLSchemas(): Record<string, any> {
+    return {
+      // SML Schema Definition
+      SMLSchema: {
+        type: 'object',
+        description: 'Schema Markup Language definition for healthcare schemas',
+        properties: {
+          id: { type: 'string', format: 'uuid', description: 'Schema identifier' },
+          version: { type: 'string', description: 'Schema version' },
+          namespace: { type: 'string', description: 'Schema namespace' },
+          metadata: {
+            type: 'object',
+            description: 'Schema metadata',
+            properties: {
+              title: { type: 'string', description: 'Schema title' },
+              description: { type: 'string', description: 'Schema description' },
+              author: { type: 'string', description: 'Schema author' },
+              created: { type: 'string', format: 'date-time', description: 'Creation timestamp' },
+              updated: { type: 'string', format: 'date-time', description: 'Last update timestamp' },
+              tags: { type: 'array', items: { type: 'string' }, description: 'Schema tags' },
+              compliance: {
+                type: 'array',
+                items: { type: 'string' },
+                description: 'Compliance standards (HIPAA, HL7, etc.)'
+              }
+            }
+          },
+          entities: {
+            type: 'array',
+            description: 'Schema entities',
+            items: {
+              type: 'object',
+              properties: {
+                name: { type: 'string', description: 'Entity name' },
+                type: { type: 'string', description: 'Entity type' },
+                properties: { type: 'object', description: 'Entity properties' },
+                relationships: { type: 'array', items: { type: 'string' } },
+                constraints: { type: 'array', items: { type: 'string' } }
+              }
+            }
+          },
+          transformations: {
+            type: 'array',
+            description: 'Data transformation rules',
+            items: {
+              type: 'object',
+              properties: {
+                source: { type: 'string', description: 'Source field' },
+                target: { type: 'string', description: 'Target field' },
+                rule: { type: 'string', description: 'Transformation rule' },
+                validation: { type: 'string', description: 'Validation pattern' }
+              }
+            }
+          }
+        },
+        required: ['id', 'version', 'namespace', 'metadata']
+      },
+
+      // SML Validation Schema
+      SMLValidation: {
+        type: 'object',
+        description: 'SML validation rules for healthcare data',
+        properties: {
+          schemaId: { type: 'string', format: 'uuid', description: 'Associated schema ID' },
+          rules: {
+            type: 'array',
+            description: 'Validation rules',
+            items: {
+              type: 'object',
+              properties: {
+                field: { type: 'string', description: 'Field name' },
+                type: { type: 'string', description: 'Validation type' },
+                pattern: { type: 'string', description: 'Validation pattern' },
+                required: { type: 'boolean', description: 'Field required' },
+                message: { type: 'string', description: 'Error message' }
+              }
+            }
+          },
+          customValidators: {
+            type: 'array',
+            description: 'Custom validation functions',
+            items: {
+              type: 'object',
+              properties: {
+                name: { type: 'string', description: 'Validator name' },
+                function: { type: 'string', description: 'Validation function' },
+                parameters: { type: 'object', description: 'Function parameters' }
+              }
+            }
+          }
+        },
+        required: ['schemaId', 'rules']
+      }
+    };
   }
 
   /**
