@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AgentCanvas } from '@/components/agentic/AgentCanvas';
 import { AgentTemplates } from '@/components/agentic/AgentTemplates';
+import { AgentCreationWizard } from '@/components/agentic/AgentCreationWizard';
 import { SystemConnectors } from '@/components/agentic/SystemConnectors';
 import { AgentDeployment } from '@/components/agentic/AgentDeployment';
 import { KnowledgeBaseManager } from '@/components/rag/KnowledgeBaseManager';
