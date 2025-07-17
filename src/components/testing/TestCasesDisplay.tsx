@@ -22,10 +22,13 @@ import {
   ExternalLink,
   ChevronDown,
   ChevronRight,
-  Activity,
-  Info
+   Activity,
+   Info,
+   RefreshCw
 } from 'lucide-react';
 import { useMasterTestingSuite } from '@/hooks/useMasterTestingSuite';
+import { useUnifiedTesting } from '@/hooks/useUnifiedTesting';
+import { useEnhancedTesting } from '@/hooks/useEnhancedTesting';
 
 const TestCasesDisplay: React.FC = () => {
   const { 
@@ -37,6 +40,11 @@ const TestCasesDisplay: React.FC = () => {
     lastSync,
     testingStats 
   } = useMasterTestingSuite();
+  
+  const unifiedTesting = useUnifiedTesting();
+  const enhancedTesting = useEnhancedTesting();
+  
+  const [isExecuting, setIsExecuting] = useState(false);
   
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -225,8 +233,8 @@ const TestCasesDisplay: React.FC = () => {
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="test-cases">Test Cases</TabsTrigger>
           <TabsTrigger value="test-scripts">Test Scripts</TabsTrigger>
-          <TabsTrigger value="executions">Execution History</TabsTrigger>
-          <TabsTrigger value="documentation">Documentation</TabsTrigger>
+          <TabsTrigger value="test-execution">Test Execution</TabsTrigger>
+          <TabsTrigger value="db-integration">DB Integration</TabsTrigger>
         </TabsList>
 
         {/* Test Cases Tab */}
@@ -446,201 +454,224 @@ const TestCasesDisplay: React.FC = () => {
           </div>
         </TabsContent>
 
-        {/* Execution History Tab */}
-        <TabsContent value="executions" className="space-y-4">
-          <Alert>
-            <Info className="h-4 w-4" />
-            <AlertDescription>
-              Showing recent test executions with detailed results and performance metrics.
-            </AlertDescription>
-          </Alert>
-          
-          <div className="grid gap-4">
-            {testExecutions.slice(0, 20).map((execution) => (
-              <Card key={execution.id}>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        {getStatusIcon(execution.execution_status)}
-                        <span className="font-medium">Execution #{execution.id.slice(-8)}</span>
-                        {getStatusBadge(execution.execution_status)}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {new Date(execution.executed_at).toLocaleString()}
-                      </div>
-                      {execution.performance_metrics && typeof execution.performance_metrics === 'object' && (
-                        <div className="text-sm text-muted-foreground">
-                          Duration: {(execution.performance_metrics as any)?.duration_ms || 'N/A'}ms
-                        </div>
-                      )}
-                      {execution.execution_details && typeof execution.execution_details === 'object' && (
-                        <div className="text-xs bg-muted p-2 rounded mt-2">
-                          <strong>Details:</strong> {JSON.stringify(execution.execution_details, null, 2)}
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex gap-2">
-                      <Button size="sm" variant="outline">
-                        <Eye className="h-3 w-3 mr-1" />
-                        View Details
-                      </Button>
-                      <Button size="sm" variant="outline">
-                        <Download className="h-3 w-3 mr-1" />
-                        Export Report
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-
-        {/* Documentation Tab */}
-        <TabsContent value="documentation" className="space-y-4">
-          <Alert>
-            <FileText className="h-4 w-4" />
-            <AlertDescription>
-              Access comprehensive documentation including architecture, requirements, and compliance materials.
-            </AlertDescription>
-          </Alert>
-          
+        {/* Test Execution Tab */}
+        <TabsContent value="test-execution" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Test Documentation & Requirements
+                <Play className="h-5 w-5" />
+                Test Execution Center
+                <Badge variant={isExecuting ? 'secondary' : 'outline'}>
+                  {isExecuting ? 'Running...' : 'Ready'}
+                </Badge>
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
+                {/* Quick Actions */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Button 
+                    onClick={() => {
+                      setIsExecuting(true);
+                      executeTestSuite('all');
+                      setTimeout(() => setIsExecuting(false), 3000);
+                    }}
+                    disabled={isExecuting}
+                    className="h-12"
+                  >
+                    <Play className="h-4 w-4 mr-2" />
+                    Run All Tests
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      setIsExecuting(true);
+                      unifiedTesting.executeApiIntegrationTests?.();
+                      setTimeout(() => setIsExecuting(false), 3000);
+                    }}
+                    disabled={isExecuting}
+                    className="h-12"
+                  >
+                    <Database className="h-4 w-4 mr-2" />
+                    API Integration
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      setIsExecuting(true);
+                      enhancedTesting.executeTestSuite?.('security');
+                      setTimeout(() => setIsExecuting(false), 3000);
+                    }}
+                    disabled={isExecuting}
+                    className="h-12"
+                  >
+                    <Shield className="h-4 w-4 mr-2" />
+                    Security Tests
+                  </Button>
+                </div>
+
+                {/* Test Suite Controls */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <h4 className="font-medium">Architecture Documentation</h4>
+                  <div className="space-y-3">
+                    <h4 className="font-medium">Standard Test Suites</h4>
                     <div className="space-y-2">
-                      {Object.entries(documentationSamples).map(([key, doc]) => (
-                        <div key={key} className="p-3 border rounded hover:bg-muted/50 cursor-pointer" 
-                             onClick={() => setSelectedDocType(key)}>
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <div className="font-medium">{doc.title}</div>
-                              <div className="text-sm text-muted-foreground">
-                                Last updated: {new Date(doc.lastUpdated).toLocaleDateString()}
-                              </div>
-                            </div>
-                            <div className="flex gap-2">
-                              <Button size="sm" variant="outline">
-                                <Eye className="h-3 w-3 mr-1" />
-                                View
-                              </Button>
-                              <Button size="sm" variant="outline">
-                                <Download className="h-3 w-3 mr-1" />
-                                Download
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                      
-                      <div className="p-3 border rounded hover:bg-muted/50 cursor-pointer">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <div className="font-medium">Low Level Architecture</div>
-                            <div className="text-sm text-muted-foreground">Detailed technical specifications</div>
-                          </div>
-                          <Button size="sm" variant="outline">
-                            <Eye className="h-3 w-3 mr-1" />
-                            View
-                          </Button>
-                        </div>
-                      </div>
-                      <div className="p-3 border rounded hover:bg-muted/50 cursor-pointer">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <div className="font-medium">Reference Architecture</div>
-                            <div className="text-sm text-muted-foreground">Standards and best practices</div>
-                          </div>
-                          <Button size="sm" variant="outline">
-                            <Eye className="h-3 w-3 mr-1" />
-                            View
-                          </Button>
-                        </div>
-                      </div>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => executeTestSuite('unit')}
+                        disabled={isExecuting}
+                        className="w-full justify-start"
+                      >
+                        Unit Tests ({testingStats.suiteBreakdown.unit || 0})
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => executeTestSuite('integration')}
+                        disabled={isExecuting}
+                        className="w-full justify-start"
+                      >
+                        Integration Tests ({testingStats.suiteBreakdown.integration || 0})
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => executeTestSuite('e2e')}
+                        disabled={isExecuting}
+                        className="w-full justify-start"
+                      >
+                        E2E Tests ({testingStats.suiteBreakdown.e2e || 0})
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => executeTestSuite('system')}
+                        disabled={isExecuting}
+                        className="w-full justify-start"
+                      >
+                        System Tests ({testingStats.suiteBreakdown.system || 0})
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => executeTestSuite('uat')}
+                        disabled={isExecuting}
+                        className="w-full justify-start"
+                      >
+                        UAT Tests ({testingStats.suiteBreakdown.uat || 0})
+                      </Button>
                     </div>
                   </div>
-                  
-                  <div className="space-y-4">
-                    <h4 className="font-medium">Requirements Documentation</h4>
+
+                  <div className="space-y-3">
+                    <h4 className="font-medium">Advanced Test Suites</h4>
                     <div className="space-y-2">
-                      <div className="p-3 border rounded hover:bg-muted/50 cursor-pointer">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <div className="font-medium">Functional Requirements</div>
-                            <div className="text-sm text-muted-foreground">System functional specifications</div>
-                          </div>
-                          <Button size="sm" variant="outline">
-                            <Eye className="h-3 w-3 mr-1" />
-                            View
-                          </Button>
-                        </div>
-                      </div>
-                      <div className="p-3 border rounded hover:bg-muted/50 cursor-pointer">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <div className="font-medium">Traceability Matrix</div>
-                            <div className="text-sm text-muted-foreground">Requirements to test mapping</div>
-                          </div>
-                          <Button size="sm" variant="outline">
-                            <Eye className="h-3 w-3 mr-1" />
-                            View
-                          </Button>
-                        </div>
-                      </div>
-                      <div className="p-3 border rounded hover:bg-muted/50 cursor-pointer">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <div className="font-medium">Compliance Reports</div>
-                            <div className="text-sm text-muted-foreground">21 CFR Part 11 validation reports</div>
-                          </div>
-                          <Button size="sm" variant="outline">
-                            <Eye className="h-3 w-3 mr-1" />
-                            View
-                          </Button>
-                        </div>
-                      </div>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => enhancedTesting.generateRoleBasedTests?.()}
+                        disabled={isExecuting}
+                        className="w-full justify-start"
+                      >
+                        Role-Based Tests
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => executeTestSuite('performance')}
+                        disabled={isExecuting}
+                        className="w-full justify-start"
+                      >
+                        Performance Tests ({testingStats.suiteBreakdown.performance || 0})
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => generateDocumentation()}
+                        disabled={isExecuting}
+                        className="w-full justify-start"
+                      >
+                        Generate New Tests
+                      </Button>
                     </div>
                   </div>
                 </div>
-                
-                {/* Selected Documentation Viewer */}
-                {selectedDocType && documentationSamples[selectedDocType as keyof typeof documentationSamples] && (
-                  <div className="mt-6 p-4 border rounded-lg bg-background">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold">
-                        {documentationSamples[selectedDocType as keyof typeof documentationSamples].title}
-                      </h3>
-                      <Button size="sm" variant="outline" onClick={() => setSelectedDocType(null)}>
-                        Close
-                      </Button>
-                    </div>
-                    <div className="prose prose-sm max-w-none">
-                      <pre className="whitespace-pre-wrap text-sm">
-                        {documentationSamples[selectedDocType as keyof typeof documentationSamples].content}
-                      </pre>
+
+                {/* Recent Executions */}
+                {testingStats.recentExecutions.length > 0 && (
+                  <div className="space-y-3">
+                    <h4 className="font-medium">Recent Test Executions</h4>
+                    <div className="space-y-2">
+                      {testingStats.recentExecutions.slice(0, 5).map((execution: any) => (
+                        <div key={execution.id} className="flex items-center justify-between p-3 border rounded">
+                          <div>
+                            <div className="font-medium">Test Execution #{execution.id.slice(-8)}</div>
+                            <div className="text-sm text-muted-foreground">
+                              {new Date(execution.executed_at).toLocaleString()}
+                            </div>
+                          </div>
+                          <Badge 
+                            variant={execution.execution_status === 'passed' ? 'default' : 'destructive'}
+                          >
+                            {execution.execution_status}
+                          </Badge>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
-                
-                <div className="flex gap-2 pt-4">
-                  <Button onClick={() => generateDocumentation()}>
-                    <FileText className="h-4 w-4 mr-2" />
-                    Generate Full Documentation
-                  </Button>
-                  <Button variant="outline">
-                    <Download className="h-4 w-4 mr-2" />
-                    Export All Documentation
-                  </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* DB Integration Tab */}
+        <TabsContent value="db-integration" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Database className="h-5 w-5" />
+                Database Integration & Testing
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="text-lg font-bold">{testCases.filter(tc => tc.database_source).length}</div>
+                      <div className="text-sm text-muted-foreground">Database Tests</div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="text-lg font-bold">{unifiedTesting.testingData?.apiIntegrationTests?.total || 0}</div>
+                      <div className="text-sm text-muted-foreground">API Integration Tests</div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="text-lg font-bold">{unifiedTesting.meta?.totalApisAvailable || 0}</div>
+                      <div className="text-sm text-muted-foreground">Available APIs</div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex gap-2">
+                    <Button onClick={() => unifiedTesting.executeApiIntegrationTests?.()}>
+                      <Database className="h-4 w-4 mr-2" />
+                      Run Database Tests
+                    </Button>
+                    <Button variant="outline" onClick={() => unifiedTesting.refreshAllData?.()}>
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Refresh Data
+                    </Button>
+                  </div>
+
+                  {testCases.filter(tc => tc.database_source).slice(0, 5).map((test: any) => (
+                    <div key={test.id} className="flex items-center justify-between p-3 border rounded">
+                      <div>
+                        <div className="font-medium">{test.test_name}</div>
+                        <div className="text-sm text-muted-foreground">Database: {test.database_source}</div>
+                      </div>
+                      <Badge variant={test.test_status === 'passed' ? 'default' : 'destructive'}>
+                        {test.test_status}
+                      </Badge>
+                    </div>
+                  ))}
                 </div>
               </div>
             </CardContent>
