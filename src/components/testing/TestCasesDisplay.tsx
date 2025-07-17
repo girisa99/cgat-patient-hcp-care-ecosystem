@@ -34,6 +34,7 @@ import { useMasterTestingSuite } from '@/hooks/useMasterTestingSuite';
 import { useUnifiedTesting } from '@/hooks/useUnifiedTesting';
 import { useEnhancedTesting } from '@/hooks/useEnhancedTesting';
 import { TestExecutionStatus } from './TestExecutionStatus';
+import { DatabaseIntegrationTestingFramework } from './DatabaseIntegrationTestingFramework';
 
 const TestCasesDisplay: React.FC = () => {
   const { 
@@ -627,12 +628,12 @@ const TestCasesDisplay: React.FC = () => {
                   </Button>
                   <Button 
                     variant="outline"
-                    onClick={() => executeTestSuite('api')}
+                    onClick={() => executeTestSuite('integration')}
                     disabled={isExecuting}
                     className="h-12"
                   >
                     <Database className="h-4 w-4 mr-2" />
-                    API Integration
+                    API Integration Tests
                   </Button>
                   <Button 
                     variant="outline"
@@ -755,70 +756,7 @@ const TestCasesDisplay: React.FC = () => {
 
         {/* DB Integration Tab */}
         <TabsContent value="db-integration" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Database className="h-5 w-5" />
-                Database Integration & Testing
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="text-lg font-bold">{testCases.filter(tc => tc.database_source).length}</div>
-                      <div className="text-sm text-muted-foreground">Database Tests</div>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="text-lg font-bold">{unifiedTesting.testingData?.apiIntegrationTests?.total || 0}</div>
-                      <div className="text-sm text-muted-foreground">API Integration Tests</div>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="text-lg font-bold">{unifiedTesting.meta?.totalApisAvailable || 0}</div>
-                      <div className="text-sm text-muted-foreground">Available APIs</div>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                  <div className="space-y-4">
-                  <div className="flex gap-2">
-                    <Button 
-                      onClick={() => executeTestSuite('database')}
-                      disabled={isExecuting}
-                    >
-                      <Database className="h-4 w-4 mr-2" />
-                      Run Database Tests
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => generateTestCases()}
-                      disabled={isGenerating}
-                    >
-                      <RefreshCw className="h-4 w-4 mr-2" />
-                      Generate Tests
-                    </Button>
-                  </div>
-
-                  {testCases.filter(tc => tc.database_source).slice(0, 5).map((test: any) => (
-                    <div key={test.id} className="flex items-center justify-between p-3 border rounded">
-                      <div>
-                        <div className="font-medium">{test.test_name}</div>
-                        <div className="text-sm text-muted-foreground">Database: {test.database_source}</div>
-                      </div>
-                      <Badge variant={test.test_status === 'passed' ? 'default' : 'destructive'}>
-                        {test.test_status}
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <DatabaseIntegrationTestingFramework />
         </TabsContent>
       </Tabs>
     </div>
