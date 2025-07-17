@@ -73,19 +73,24 @@ export const useMasterTestingSuite = () => {
           batch_size: 50
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Database error:', error);
+        throw error;
+      }
+      
+      console.log('✅ Database response:', data);
       return data;
     },
     onSuccess: (results: any) => {
       queryClient.invalidateQueries({ queryKey: ['master-test-cases'] });
       queryClient.invalidateQueries({ queryKey: ['master-test-executions'] });
       
-      // No automatic toasts - let the UI handle success feedback
       console.log('✅ Test suite executed successfully:', results);
+      showSuccess(`Test execution completed: ${results?.passed_tests || 0} passed, ${results?.failed_tests || 0} failed`);
     },
     onError: (error: any) => {
       console.error('❌ Test execution failed:', error);
-      // No automatic toasts - let the UI handle error feedback
+      showError(`Test execution failed: ${error.message}`);
     }
   });
 
@@ -98,17 +103,22 @@ export const useMasterTestingSuite = () => {
           functionality_id: functionalityId
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Test generation error:', error);
+        throw error;
+      }
+      
+      console.log('✅ Test generation response:', data);
       return data;
     },
     onSuccess: (count) => {
       queryClient.invalidateQueries({ queryKey: ['master-test-cases'] });
       console.log('✅ Test cases generated:', count);
-      // No automatic toasts - let the UI handle success feedback
+      showSuccess(`Generated ${count} new test cases`);
     },
     onError: (error: any) => {
       console.error('❌ Test generation failed:', error);
-      // No automatic toasts - let the UI handle error feedback
+      showError(`Test generation failed: ${error.message}`);
     }
   });
 
@@ -236,18 +246,23 @@ export const useMasterTestingSuite = () => {
           functionality_id: functionalityId
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Enhanced test generation error:', error);
+        throw error;
+      }
+      
+      console.log('✅ Enhanced test generation response:', data);
       return data;
     },
     onSuccess: (result: any) => {
       queryClient.invalidateQueries({ queryKey: ['master-test-cases'] });
       const count = (result as any)?.test_cases_created || 0;
       console.log('✅ Enhanced test cases generated:', count);
-      // No automatic toasts - let the UI handle success feedback
+      showSuccess(`Generated ${count} enhanced test cases with full coverage`);
     },
     onError: (error: any) => {
       console.error('❌ Enhanced test generation failed:', error);
-      // No automatic toasts - let the UI handle error feedback
+      showError(`Enhanced test generation failed: ${error.message}`);
     }
   });
 

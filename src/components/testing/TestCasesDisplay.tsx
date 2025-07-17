@@ -33,6 +33,7 @@ import {
 import { useMasterTestingSuite } from '@/hooks/useMasterTestingSuite';
 import { useUnifiedTesting } from '@/hooks/useUnifiedTesting';
 import { useEnhancedTesting } from '@/hooks/useEnhancedTesting';
+import { TestExecutionStatus } from './TestExecutionStatus';
 
 const TestCasesDisplay: React.FC = () => {
   const { 
@@ -608,6 +609,11 @@ const TestCasesDisplay: React.FC = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
+              <TestExecutionStatus 
+                isExecuting={isExecuting}
+                isGenerating={isGenerating}
+                testingStats={testingStats}
+              />
               <div className="space-y-6">
                 {/* Quick Actions */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
