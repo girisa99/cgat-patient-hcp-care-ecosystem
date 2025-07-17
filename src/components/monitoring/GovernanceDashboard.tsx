@@ -29,7 +29,7 @@ interface PromptViolation {
   recommendation: string;
 }
 
-export const GovernanceDashboard: React.FC = () => {
+const GovernanceDashboard: React.FC = () => {
   const {
     isMonitoring,
     complianceScore,
@@ -325,4 +325,8 @@ export const GovernanceDashboard: React.FC = () => {
   );
 };
 
+// Named export for internal use
+export { GovernanceDashboard };
+
+// Default export for page imports
 export default GovernanceDashboard;

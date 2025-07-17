@@ -26,6 +26,7 @@ import Testing from '@/pages/Testing';
 import FrameworkDashboard from '@/pages/FrameworkDashboard';
 import RoleManagement from '@/pages/RoleManagement';
 import Stability from '@/pages/Stability';
+import Governance from '@/pages/Governance';
 import Login from '@/pages/Login';
 
 const queryClient = new QueryClient({
@@ -85,19 +86,10 @@ const AppContent = () => {
                        {React.createElement(React.lazy(() => import('@/components/stability/StabilityDashboard').then(m => ({ default: m.StabilityDashboard }))))}
                      </Suspense>
                    } />
-                   <Route path="/governance" element={
-                     <Suspense fallback={<PageLoading message="Loading governance dashboard..." />}>
-                       {React.createElement(React.lazy(() => import('@/components/monitoring/GovernanceDashboard').then(m => ({ default: m.default }))))}
-                     </Suspense>
-                   } />
+                   <Route path="/governance" element={<Governance />} />
                    <Route path="/healthcare-ai" element={
                      <Suspense fallback={<PageLoading message="Loading healthcare AI..." />}>
                        {React.createElement(React.lazy(() => import('@/components/healthcare/HealthcareAIDashboard').then(m => ({ default: m.default }))))}
-                     </Suspense>
-                   } />
-                   <Route path="/active-verification" element={
-                     <Suspense fallback={<PageLoading message="Loading verification..." />}>
-                       {React.createElement(React.lazy(() => import('@/pages/ActiveVerification').then(m => ({ default: m.default }))))}
                      </Suspense>
                    } />
                    <Route path="/research" element={<PackageResearch />} />
