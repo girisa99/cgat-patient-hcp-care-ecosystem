@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useRoleBasedNavigation } from '@/hooks/useRoleBasedNavigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Home, ChevronDown, Users, Building2, Settings, Activity, MoreHorizontal, LogOut, User } from 'lucide-react';
+import { ArrowLeft, Home, ChevronDown, Users, Building2, Settings, Activity, MoreHorizontal, LogOut, User, FileBarChart } from 'lucide-react';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
 import {
   DropdownMenu,
@@ -60,10 +60,10 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
       ['/users', '/facilities', '/modules', '/role-management'].includes(tab.to)
     ),
     technical: availableTabs.filter(tab => 
-      ['/api-services', '/ngrok', '/security', '/testing', '/data-import', '/active-verification', '/governance', '/framework', '/stability', '/healthcare-ai'].includes(tab.to)
+      ['/api-services', '/ngrok', '/security', '/testing', '/data-import', '/healthcare-ai'].includes(tab.to)
     ),
-    reporting: availableTabs.filter(tab => 
-      ['/reports'].includes(tab.to)
+    reportsCompliance: availableTabs.filter(tab => 
+      ['/reports', '/active-verification', '/governance', '/framework', '/stability'].includes(tab.to)
     )
   };
 
@@ -196,8 +196,25 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
             </DropdownMenu>
           )}
 
-          {/* Reports */}
-          {navigationGroups.reporting.map(tab => renderNavButton(tab))}
+          {/* Reports & Compliance Dropdown */}
+          {navigationGroups.reportsCompliance.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="flex items-center gap-2 hover:bg-accent hover:scale-105"
+                >
+                  <FileBarChart className="h-4 w-4" />
+                  <span className="hidden sm:inline">Reports & Compliance</span>
+                  <ChevronDown className="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="center" className="w-56">
+                {navigationGroups.reportsCompliance.map(tab => renderNavButton(tab, true))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </nav>
 
         {/* Right side: User dropdown and actions */}
