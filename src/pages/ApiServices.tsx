@@ -5,6 +5,8 @@ import ApiServicesTabsContainer from '@/components/api/ApiServicesTabsContainer'
 import { getErrorMessage } from '@/utils/errorHandling';
 
 const ApiServices = () => {
+  console.log('🚀 API Services page rendered');
+  
   return (
     <AppLayout title="API Services">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

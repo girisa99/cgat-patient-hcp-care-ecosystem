@@ -285,7 +285,7 @@ const ApiKeysTab: React.FC = () => {
           <div className="text-sm text-blue-700 space-y-2">
             <p><strong>Postman:</strong> Add the API key to headers as 'Authorization: Bearer YOUR_API_KEY'</p>
             <p><strong>curl:</strong> curl -H "Authorization: Bearer YOUR_API_KEY" https://api.example.com/endpoint</p>
-            <p><strong>JavaScript:</strong> headers: {'Authorization': 'Bearer YOUR_API_KEY'}</p>
+            <p><strong>JavaScript:</strong> headers: {`{'Authorization': 'Bearer YOUR_API_KEY'}`}</p>
             <p className="text-orange-600 font-medium mt-3">⚠️ Keep your API keys secure and never expose them in client-side code</p>
           </div>
         </CardContent>
