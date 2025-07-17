@@ -4,6 +4,7 @@
  * Part of Stability Framework Phase 2 refactoring
  */
 import React, { useContext } from 'react';
+import { useStability } from './StabilityProvider';
 
 // Types for stability monitoring (re-exported from main provider)
 export interface StabilityMetrics {
@@ -50,7 +51,7 @@ export interface StabilityContextType {
   state: StabilityState;
   trackModuleMetrics: (moduleId: string, metrics: Partial<StabilityMetrics>) => void;
   trackHookUsage: (hookName: string, moduleId: string, source: string) => void;
-  detectLayoutShift: (elementId: string, layout: DOMRect) => void;
+  detectLayoutShift: (elementId: string, rect: DOMRect | DOMRectReadOnly) => void;
   addProtectionAlert: (alert: string) => void;
   clearAlerts: () => void;
   updateGlobalHealth: (health: 'stable' | 'warning' | 'unstable') => void;
@@ -63,14 +64,7 @@ export interface StabilityContextType {
 // Create a placeholder context - will be provided by StabilityProvider
 export const StabilityContext = React.createContext<StabilityContextType | undefined>(undefined);
 
-// Hook to use stability context
-export const useStability = () => {
-  const context = useContext(StabilityContext);
-  if (context === undefined) {
-    throw new Error('useStability must be used within a StabilityProvider');
-  }
-  return context;
-};
+// Note: useStability hook is exported from StabilityProvider.tsx
 
 // Hook for module stability monitoring
 export const useModuleStability = (moduleId: string) => {
@@ -225,10 +219,4 @@ export const usePerformanceMonitoring = (moduleId: string) => {
   };
 };
 
-export default {
-  useStability,
-  useModuleStability,
-  useHookProtection,
-  useLayoutProtection,
-  usePerformanceMonitoring
-};
+// All hooks are already exported inline above

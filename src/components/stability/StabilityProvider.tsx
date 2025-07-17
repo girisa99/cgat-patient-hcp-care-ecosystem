@@ -160,7 +160,7 @@ interface StabilityContextValue {
   state: StabilityState;
   trackModuleMetrics: (moduleId: string, metrics: Partial<StabilityMetrics>) => void;
   trackHookUsage: (hookName: string, moduleId: string, source: string) => void;
-  detectLayoutShift: (elementId: string, element: HTMLElement) => void;
+  detectLayoutShift: (elementId: string, rect: DOMRect | DOMRectReadOnly) => void;
   addProtectionAlert: (alert: string) => void;
   clearAlerts: () => void;
   isStable: boolean;
@@ -256,8 +256,7 @@ export const StabilityProvider: React.FC<StabilityProviderProps> = ({
     dispatch({ type: 'TRACK_HOOK_USAGE', hookName, moduleId, source });
   }, []);
 
-  const detectLayoutShift = useCallback((elementId: string, element: HTMLElement) => {
-    const rect = element.getBoundingClientRect();
+  const detectLayoutShift = useCallback((elementId: string, rect: DOMRect | DOMRectReadOnly) => {
     dispatch({ type: 'DETECT_LAYOUT_SHIFT', elementId, layout: rect });
   }, []);
 
@@ -412,13 +411,13 @@ export const useLayoutProtection = (elementId: string) => {
     if (!element) return;
 
     const observer = new ResizeObserver(() => {
-      detectLayoutShift(elementId, element);
+      detectLayoutShift(elementId, element.getBoundingClientRect());
     });
 
     observer.observe(element);
     
     // Initial measurement
-    detectLayoutShift(elementId, element);
+    detectLayoutShift(elementId, element.getBoundingClientRect());
 
     return () => observer.disconnect();
   }, [elementId, detectLayoutShift]);

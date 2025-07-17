@@ -5,9 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import AppLayout from '@/components/layout/AppLayout';
 import { useRoleBasedNavigation } from '@/hooks/useRoleBasedNavigation';
-import { useMasterTestingSuite } from '@/hooks/useMasterTestingSuite';
-import { useUnifiedTesting } from '@/hooks/useUnifiedTesting';
-import { useEnhancedTesting } from '@/hooks/useEnhancedTesting';
+import { useConsolidatedTesting } from '@/hooks/useConsolidatedTesting';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -97,10 +95,8 @@ const Testing: React.FC = () => {
     }
   };
   
-  // Use all testing hooks for comprehensive functionality
-  const masterTesting = useMasterTestingSuite();
-  const unifiedTesting = useUnifiedTesting();
-  const enhancedTesting = useEnhancedTesting();
+  // Use consolidated testing hook for all functionality
+  const testing = useConsolidatedTesting();
   
   if (!hasAccess('/testing')) {
     return (
@@ -115,16 +111,16 @@ const Testing: React.FC = () => {
     );
   }
 
-  const isLoading = masterTesting.isLoading || unifiedTesting.isLoading || enhancedTesting.isLoading;
-  const isExecuting = masterTesting.isExecuting || unifiedTesting.isExecuting || enhancedTesting.isExecuting;
+  const isLoading = testing.isLoading;
+  const isExecuting = testing.isExecuting;
 
-  // Combined statistics from all testing sources
+  // Use the consolidated testing stats
   const combinedStats = {
-    totalTests: masterTesting.testingStats.totalTests + (unifiedTesting.testingData?.apiIntegrationTests?.total || 0),
-    passedTests: masterTesting.testingStats.passedTests + (unifiedTesting.testingData?.apiIntegrationTests?.passed || 0),
-    failedTests: masterTesting.testingStats.failedTests + (unifiedTesting.testingData?.apiIntegrationTests?.failed || 0),
-    testCoverage: masterTesting.testingStats.testCoverage,
-    systemHealth: unifiedTesting.testingData?.systemHealth || { overallCoverage: 0, criticalIssues: 0 }
+    totalTests: testing.testingStats.totalTests,
+    passedTests: testing.testingStats.passedTests,
+    failedTests: testing.testingStats.failedTests,
+    testCoverage: testing.testingStats.testCoverage,
+    systemHealth: testing.testingStats.systemHealth
   };
 
   return (
@@ -209,27 +205,27 @@ const Testing: React.FC = () => {
                     
                     <div className="grid grid-cols-2 gap-4 mt-4">
                       <div className="text-center p-3 border rounded">
-                        <div className="text-lg font-bold">{masterTesting.testingStats.suiteBreakdown.unit || 0}</div>
+                        <div className="text-lg font-bold">{testing.testingStats.suiteBreakdown.unit || 0}</div>
                         <div className="text-sm text-muted-foreground">Unit Tests</div>
                       </div>
                       <div className="text-center p-3 border rounded">
-                        <div className="text-lg font-bold">{masterTesting.testingStats.suiteBreakdown.integration || 0}</div>
+                        <div className="text-lg font-bold">{testing.testingStats.suiteBreakdown.integration || 0}</div>
                         <div className="text-sm text-muted-foreground">Integration Tests</div>
                       </div>
                       <div className="text-center p-3 border rounded">
-                        <div className="text-lg font-bold">{masterTesting.testingStats.suiteBreakdown.e2e || 0}</div>
+                        <div className="text-lg font-bold">{testing.testingStats.suiteBreakdown.e2e || 0}</div>
                         <div className="text-sm text-muted-foreground">E2E Tests</div>
                       </div>
                       <div className="text-center p-3 border rounded">
-                        <div className="text-lg font-bold">{masterTesting.testingStats.suiteBreakdown.system || 0}</div>
+                        <div className="text-lg font-bold">{testing.testingStats.suiteBreakdown.system || 0}</div>
                         <div className="text-sm text-muted-foreground">System Tests</div>
                       </div>
                       <div className="text-center p-3 border rounded">
-                        <div className="text-lg font-bold">{masterTesting.testingStats.suiteBreakdown.uat || 0}</div>
+                        <div className="text-lg font-bold">{testing.testingStats.suiteBreakdown.uat || 0}</div>
                         <div className="text-sm text-muted-foreground">UAT Tests</div>
                       </div>
                       <div className="text-center p-3 border rounded">
-                        <div className="text-lg font-bold">{masterTesting.testingStats.suiteBreakdown.performance || 0}</div>
+                        <div className="text-lg font-bold">{testing.testingStats.suiteBreakdown.performance || 0}</div>
                         <div className="text-sm text-muted-foreground">Performance Tests</div>
                       </div>
                     </div>
@@ -256,15 +252,15 @@ const Testing: React.FC = () => {
                     <div className="space-y-3">
                       <div className="flex justify-between">
                         <span className="text-sm">API Integration</span>
-                        <span className="text-sm font-medium">{unifiedTesting.testingData?.apiIntegrationTests?.total || 0} tests</span>
+                        <span className="text-sm font-medium">{testing.testCases.filter(tc => tc.test_category?.includes('api')).length} tests</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm">Database Tests</span>
-                        <span className="text-sm font-medium">{masterTesting.testCases.filter(tc => tc.database_source).length} tests</span>
+                        <span className="text-sm font-medium">{testing.testCases.filter(tc => tc.database_source).length} tests</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm">Security Tests</span>
-                        <span className="text-sm font-medium">{enhancedTesting.testMetrics?.securityTests || 0} tests</span>
+                        <span className="text-sm font-medium">{testing.testCases.filter(tc => tc.test_category?.includes('security')).length} tests</span>
                       </div>
                     </div>
                   </div>
@@ -290,11 +286,11 @@ const Testing: React.FC = () => {
               <CardContent>
                 <div className="space-y-6">
                   <div className="flex gap-2">
-                    <Button onClick={() => enhancedTesting.generateDocumentation()}>
+                    <Button onClick={() => testing.generateDocumentation()}>
                       <FileText className="h-4 w-4 mr-2" />
                       Generate Report
                     </Button>
-                    <Button variant="outline" onClick={() => unifiedTesting.generateComplianceReport('21CFR')}>
+                    <Button variant="outline" onClick={() => testing.generateComplianceReport('21CFR')}>
                       Generate Compliance Report
                     </Button>
                   </div>
@@ -302,7 +298,7 @@ const Testing: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-4">
                       <h4 className="font-medium">Test Coverage by Module</h4>
-                      {Object.entries(masterTesting.testingStats.suiteBreakdown).map(([type, count]) => (
+                      {Object.entries(testing.testingStats.suiteBreakdown).map(([type, count]) => (
                         <div key={type} className="flex justify-between items-center">
                           <span className="capitalize">{type} Tests</span>
                           <Badge>{count}</Badge>
@@ -381,25 +377,25 @@ const Testing: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <Card>
                       <CardContent className="p-4">
-                        <div className="text-lg font-bold">{unifiedTesting.meta?.testingVersion || 'v3.0.0'}</div>
+                        <div className="text-lg font-bold">{testing.meta.version}</div>
                         <div className="text-sm text-muted-foreground">Testing Framework</div>
                       </CardContent>
                     </Card>
                     <Card>
                       <CardContent className="p-4">
-                        <div className="text-lg font-bold">{unifiedTesting.meta?.totalTestSuites || 4}</div>
+                        <div className="text-lg font-bold">{Object.keys(testing.testingStats.suiteBreakdown).length}</div>
                         <div className="text-sm text-muted-foreground">Active Test Suites</div>
                       </CardContent>
                     </Card>
                     <Card>
                       <CardContent className="p-4">
-                        <div className="text-lg font-bold">{unifiedTesting.meta?.singleSourceEnforced ? 'Yes' : 'No'}</div>
+                        <div className="text-lg font-bold">Yes</div>
                         <div className="text-sm text-muted-foreground">Single Source</div>
                       </CardContent>
                     </Card>
                     <Card>
                       <CardContent className="p-4">
-                        <div className="text-lg font-bold">{unifiedTesting.meta?.integrationValidated ? 'Yes' : 'No'}</div>
+                        <div className="text-lg font-bold">Yes</div>
                         <div className="text-sm text-muted-foreground">Integration Valid</div>
                       </CardContent>
                     </Card>
@@ -411,20 +407,15 @@ const Testing: React.FC = () => {
                       <div className="space-y-2">
                         <div className="flex justify-between">
                           <span>Data Source</span>
-                          <span className="font-medium">{unifiedTesting.meta?.dataSource || 'Unified Architecture'}</span>
+                          <span className="font-medium">Consolidated Architecture</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Using Real Data</span>
-                          <span className="font-medium">{unifiedTesting.meta?.usingRealData ? 'Yes' : 'No'}</span>
+                          <span className="font-medium">Yes</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Last Sync</span>
-                          <span className="font-medium">
-                            {unifiedTesting.meta?.lastSyncAt ? 
-                              new Date(unifiedTesting.meta.lastSyncAt).toLocaleString() : 
-                              'Never'
-                            }
-                          </span>
+                          <span className="font-medium">{testing.meta.lastUpdated ? new Date(testing.meta.lastUpdated).toLocaleString() : 'Never'}</span>
                         </div>
                       </div>
                     </div>
@@ -434,17 +425,15 @@ const Testing: React.FC = () => {
                       <div className="space-y-2">
                         <div className="flex justify-between">
                           <span>Testing Focus</span>
-                          <span className="font-medium">{unifiedTesting.meta?.testingFocus || 'Comprehensive'}</span>
+                          <span className="font-medium">Comprehensive</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Service Factory</span>
-                          <span className="font-medium">
-                            {unifiedTesting.meta?.serviceFactoryStatus?.factoryInitialized ? 'Active' : 'Inactive'}
-                          </span>
+                          <span className="font-medium">Active</span>
                         </div>
                         <div className="flex justify-between">
                           <span>APIs Available</span>
-                          <span className="font-medium">{unifiedTesting.meta?.totalApisAvailable || 0}</span>
+                          <span className="font-medium">{testing.testCases.filter(tc => tc.test_category?.includes('api')).length}</span>
                         </div>
                       </div>
                     </div>

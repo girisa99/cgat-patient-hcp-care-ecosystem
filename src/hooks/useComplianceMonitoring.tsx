@@ -6,7 +6,7 @@
 import React, { useEffect, useState } from 'react';
 import { FrameworkComplianceMonitor } from '../utils/stability/FrameworkComplianceMonitor';
 import { PromptGovernanceInterceptor } from '../utils/stability/PromptGovernanceInterceptor';
-import { useStability } from '../components/stability/StabilityHooks';
+import { useStability } from '../components/stability/StabilityProvider';
 
 // Global compliance monitor instance
 let globalComplianceMonitor: FrameworkComplianceMonitor | null = null;
