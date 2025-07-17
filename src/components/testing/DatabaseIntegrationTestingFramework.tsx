@@ -22,7 +22,7 @@ import {
   Settings,
   Shield
 } from 'lucide-react';
-import { useMasterTestingSuite } from '@/hooks/useMasterTestingSuite';
+import useMasterTesting from '@/hooks/useMasterTesting';
 import { supabase } from '@/integrations/supabase/client';
 
 interface DatabaseTestResult {
@@ -42,7 +42,7 @@ export const DatabaseIntegrationTestingFramework: React.FC = () => {
     isGenerating,
     testCases,
     testingStats 
-  } = useMasterTestingSuite();
+  } = useMasterTesting();
 
   const [databaseTests, setDatabaseTests] = useState<DatabaseTestResult[]>([]);
   const [isRunningDbTests, setIsRunningDbTests] = useState(false);

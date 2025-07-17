@@ -30,30 +30,33 @@ import {
   Settings,
   Users
 } from 'lucide-react';
-import { useMasterTestingSuite } from '@/hooks/useMasterTestingSuite';
-import { useUnifiedTesting } from '@/hooks/useUnifiedTesting';
-import { useEnhancedTesting } from '@/hooks/useEnhancedTesting';
+import useMasterTesting from '@/hooks/useMasterTesting';
 import { TestExecutionStatus } from './TestExecutionStatus';
 import { DatabaseIntegrationTestingFramework } from './DatabaseIntegrationTestingFramework';
 
 const TestCasesDisplay: React.FC = () => {
-  const { 
-    testCases, 
-    testExecutions, 
-    executeTestSuite, 
+  // Use the ultimate consolidated testing hook
+  const testing = useMasterTesting();
+  
+  const {
+    testCases,
+    executions: testExecutions,
+    executeTestSuite,
     generateTestCases,
     generateEnhancedTestCases,
-    generateDocumentation, 
-    realTimeEnabled, 
-    lastSync,
+    generateDocumentation,
+    syncRealTime,
     testingStats,
+    isLoading,
     isExecuting,
+    isDocumenting,
     isGenerating,
-    isDocumenting
-  } = useMasterTestingSuite();
-  
-  const unifiedTesting = useUnifiedTesting();
-  const enhancedTesting = useEnhancedTesting();
+    isSyncing,
+    getTestsByModule,
+    getTestsByStatus,
+    realTimeEnabled,
+    lastSync
+  } = testing;
   
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
