@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { toast } from 'sonner';
 import { 
   Workflow, 
   Bot, 
@@ -13,7 +14,11 @@ import {
   Palette,
   MessageSquare,
   Users,
-  Building
+  Building,
+  Save,
+  RefreshCw,
+  Upload,
+  Download
 } from 'lucide-react';
 
 interface AgentNode {
@@ -136,6 +141,10 @@ export const AgenticWorkflowBuilder: React.FC = () => {
 
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
   const [workflowConnections, setWorkflowConnections] = useState<WorkflowConnection[]>([]);
+  const [primaryColor, setPrimaryColor] = useState('#10b981');
+  const [secondaryColor, setSecondaryColor] = useState('#065f46');
+  const [accentColor, setAccentColor] = useState('#3b82f6');
+  const [logo, setLogo] = useState<string | null>(null);
 
   const handleAgentDrop = useCallback((event: React.DragEvent) => {
     // Implement drag & drop logic for workflow canvas
@@ -150,14 +159,108 @@ export const AgenticWorkflowBuilder: React.FC = () => {
     ]);
   }, []);
 
+  const handleSaveTemplate = useCallback(() => {
+    const template = {
+      agents,
+      channels,
+      workflowConnections,
+      branding: {
+        primaryColor,
+        secondaryColor,
+        accentColor,
+        logo
+      }
+    };
+    
+    // Save to localStorage for now (could be enhanced to save to Supabase)
+    localStorage.setItem('agentic-workflow-template', JSON.stringify(template));
+    toast.success('Template saved successfully!');
+  }, [agents, channels, workflowConnections, primaryColor, secondaryColor, accentColor, logo]);
+
+  const handleRefresh = useCallback(() => {
+    // Reset to default state
+    setSelectedAgent(null);
+    setWorkflowConnections([]);
+    setPrimaryColor('#10b981');
+    setSecondaryColor('#065f46');
+    setAccentColor('#3b82f6');
+    setLogo(null);
+    toast.success('Workflow refreshed!');
+  }, []);
+
+  const handleImportTemplate = useCallback(() => {
+    const savedTemplate = localStorage.getItem('agentic-workflow-template');
+    if (savedTemplate) {
+      try {
+        const template = JSON.parse(savedTemplate);
+        setAgents(template.agents || agents);
+        setChannels(template.channels || channels);
+        setWorkflowConnections(template.workflowConnections || []);
+        setPrimaryColor(template.branding?.primaryColor || '#10b981');
+        setSecondaryColor(template.branding?.secondaryColor || '#065f46');
+        setAccentColor(template.branding?.accentColor || '#3b82f6');
+        setLogo(template.branding?.logo || null);
+        toast.success('Template imported successfully!');
+      } catch (error) {
+        toast.error('Failed to import template');
+      }
+    } else {
+      toast.error('No saved template found');
+    }
+  }, [agents, channels]);
+
+  const handleLogoUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        setLogo(result);
+        toast.success('Logo uploaded successfully!');
+      };
+      reader.readAsDataURL(file);
+    }
+  }, []);
+
+  const handleColorChange = useCallback((color: string, type: 'primary' | 'secondary' | 'accent') => {
+    switch (type) {
+      case 'primary':
+        setPrimaryColor(color);
+        break;
+      case 'secondary':
+        setSecondaryColor(color);
+        break;
+      case 'accent':
+        setAccentColor(color);
+        break;
+    }
+    toast.success(`${type} color updated!`);
+  }, []);
+
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Bot className="h-5 w-5" />
-            Agentic Healthcare Treatment Workflow Builder
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Bot className="h-5 w-5" />
+              Agentic Healthcare Treatment Workflow Builder
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Button onClick={handleSaveTemplate} variant="default" size="sm">
+                <Save className="h-4 w-4 mr-2" />
+                Save Template
+              </Button>
+              <Button onClick={handleRefresh} variant="outline" size="sm">
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Refresh
+              </Button>
+              <Button onClick={handleImportTemplate} variant="secondary" size="sm">
+                <Download className="h-4 w-4 mr-2" />
+                Import
+              </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="agents" className="w-full">
@@ -306,19 +409,74 @@ export const AgenticWorkflowBuilder: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Primary Brand Color</label>
-                      <Input type="color" className="h-10" />
+                      <Input 
+                        type="color" 
+                        className="h-10" 
+                        value={primaryColor}
+                        onChange={(e) => handleColorChange(e.target.value, 'primary')}
+                      />
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Secondary Brand Color</label>
-                      <Input type="color" className="h-10" />
+                      <Input 
+                        type="color" 
+                        className="h-10" 
+                        value={secondaryColor}
+                        onChange={(e) => handleColorChange(e.target.value, 'secondary')}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Accent Color</label>
+                      <Input 
+                        type="color" 
+                        className="h-10" 
+                        value={accentColor}
+                        onChange={(e) => handleColorChange(e.target.value, 'accent')}
+                      />
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Organization Logo</label>
-                      <Input type="file" accept="image/*" />
+                      <Input 
+                        type="file" 
+                        accept="image/*" 
+                        onChange={handleLogoUpload}
+                      />
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Agent Avatar</label>
-                      <Input type="file" accept="image/*" />
+                  </div>
+                  
+                  {/* Logo Preview */}
+                  {logo && (
+                    <div className="mt-4">
+                      <label className="text-sm font-medium">Logo Preview</label>
+                      <div className="mt-2 p-4 border rounded-lg bg-muted">
+                        <img 
+                          src={logo} 
+                          alt="Organization Logo" 
+                          className="max-h-20 max-w-40 object-contain"
+                        />
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Color Preview */}
+                  <div className="mt-4">
+                    <label className="text-sm font-medium">Color Preview</label>
+                    <div className="flex gap-2 mt-2">
+                      <div 
+                        className="w-16 h-16 rounded border"
+                        style={{ backgroundColor: primaryColor }}
+                        title="Primary Color"
+                      />
+                      <div 
+                        className="w-16 h-16 rounded border"
+                        style={{ backgroundColor: secondaryColor }}
+                        title="Secondary Color"
+                      />
+                      <div 
+                        className="w-16 h-16 rounded border"
+                        style={{ backgroundColor: accentColor }}
+                        title="Accent Color"
+                      />
                     </div>
                   </div>
                 </CardContent>
