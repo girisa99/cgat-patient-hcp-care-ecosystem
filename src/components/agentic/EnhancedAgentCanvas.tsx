@@ -8,6 +8,9 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Palette,
   Upload,
@@ -20,7 +23,16 @@ import {
   Image as ImageLucide,
   EyeIcon,
   Bot,
-  Users
+  Users,
+  HelpCircle,
+  RefreshCw,
+  Plus,
+  Trash2,
+  Eye,
+  Monitor,
+  Smartphone,
+  Tablet,
+  Info
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -88,8 +100,8 @@ export const EnhancedAgentCanvas: React.FC<EnhancedAgentCanvasProps> = ({
     },
     {
       id: 'medical',
-      name: 'Medical Canvas',
-      description: 'Designed for medical organizations',
+      name: 'Medical Professional',
+      description: 'Designed for medical organizations and healthcare providers',
       tagline: 'Advanced Medical Intelligence',
       primaryColor: '#10b981',
       secondaryColor: '#059669',
@@ -97,14 +109,71 @@ export const EnhancedAgentCanvas: React.FC<EnhancedAgentCanvasProps> = ({
     },
     {
       id: 'pharma',
-      name: 'Pharmaceutical Canvas',
-      description: 'Optimized for pharmaceutical companies',
+      name: 'Pharmaceutical',
+      description: 'Optimized for pharmaceutical companies and research',
       tagline: 'Next-Generation Treatment Solutions',
       primaryColor: '#6366f1',
       secondaryColor: '#4f46e5',
       accentColor: '#ec4899'
+    },
+    {
+      id: 'clinical',
+      name: 'Clinical Research',
+      description: 'Perfect for clinical trials and research institutions',
+      tagline: 'Evidence-Based Healthcare AI',
+      primaryColor: '#f59e0b',
+      secondaryColor: '#d97706',
+      accentColor: '#7c3aed'
+    },
+    {
+      id: 'patient',
+      name: 'Patient Care',
+      description: 'Focused on patient engagement and care coordination',
+      tagline: 'Personalized Patient Experience',
+      primaryColor: '#ef4444',
+      secondaryColor: '#dc2626',
+      accentColor: '#0891b2'
+    },
+    {
+      id: 'insurance',
+      name: 'Insurance & Benefits',
+      description: 'Designed for insurance companies and benefit management',
+      tagline: 'Smart Insurance Solutions',
+      primaryColor: '#8b5cf6',
+      secondaryColor: '#7c3aed',
+      accentColor: '#06b6d4'
+    },
+    {
+      id: 'telehealth',
+      name: 'Telehealth',
+      description: 'Optimized for remote healthcare and telemedicine',
+      tagline: 'Connected Healthcare Everywhere',
+      primaryColor: '#06b6d4',
+      secondaryColor: '#0891b2',
+      accentColor: '#10b981'
+    },
+    {
+      id: 'minimal',
+      name: 'Minimal Clean',
+      description: 'Clean and minimal design for modern applications',
+      tagline: 'Simple. Smart. Effective.',
+      primaryColor: '#64748b',
+      secondaryColor: '#475569',
+      accentColor: '#0f172a'
     }
   ]);
+  
+  const [customColorPalettes] = useState([
+    { name: 'Ocean Blue', colors: ['#0ea5e9', '#0284c7', '#0369a1'] },
+    { name: 'Forest Green', colors: ['#10b981', '#059669', '#047857'] },
+    { name: 'Sunset Orange', colors: ['#f59e0b', '#d97706', '#b45309'] },
+    { name: 'Royal Purple', colors: ['#8b5cf6', '#7c3aed', '#6d28d9'] },
+    { name: 'Rose Pink', colors: ['#ec4899', '#db2777', '#be185d'] },
+    { name: 'Slate Gray', colors: ['#64748b', '#475569', '#334155'] }
+  ]);
+  
+  const [previewMode, setPreviewMode] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
+  const [showColorPicker, setShowColorPicker] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
@@ -276,6 +345,21 @@ export const EnhancedAgentCanvas: React.FC<EnhancedAgentCanvasProps> = ({
     }
   };
 
+  const handleColorPaletteSelect = (colors: string[]) => {
+    setPrimaryColor(colors[0]);
+    setSecondaryColor(colors[1]);
+    setAccentColor(colors[2]);
+    
+    onPrimaryColorChange?.(colors[0]);
+    onSecondaryColorChange?.(colors[1]);
+    onAccentColorChange?.(colors[2]);
+    
+    toast({
+      title: "Color Palette Applied",
+      description: "New color scheme has been applied to your canvas."
+    });
+  };
+
   const handleExportTemplate = () => {
     const templateData = {
       name: canvasName || 'Exported Canvas',
@@ -283,6 +367,7 @@ export const EnhancedAgentCanvas: React.FC<EnhancedAgentCanvasProps> = ({
       primaryColor,
       secondaryColor,
       accentColor,
+      logoUrl: logoPreview,
       exportedAt: new Date().toISOString()
     };
     
@@ -300,6 +385,33 @@ export const EnhancedAgentCanvas: React.FC<EnhancedAgentCanvasProps> = ({
       title: "Template Exported",
       description: "Canvas template has been exported as JSON file."
     });
+  };
+
+  const handlePreviewAction = (action: string) => {
+    toast({
+      title: `${action} Clicked`,
+      description: `This is a preview of the ${action.toLowerCase()} button functionality.`,
+    });
+  };
+
+  const validateHexColor = (color: string): boolean => {
+    return /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(color);
+  };
+
+  const handleColorInputChange = (colorType: 'primary' | 'secondary' | 'accent', value: string) => {
+    if (validateHexColor(value) || value === '') {
+      switch (colorType) {
+        case 'primary':
+          handlePrimaryColorChange(value);
+          break;
+        case 'secondary':
+          handleSecondaryColorChange(value);
+          break;
+        case 'accent':
+          handleAccentColorChange(value);
+          break;
+      }
+    }
   };
 
   return (
@@ -334,14 +446,29 @@ export const EnhancedAgentCanvas: React.FC<EnhancedAgentCanvasProps> = ({
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <Alert>
+                <Info className="h-4 w-4" />
+                <AlertDescription>
+                  <strong>Canvas Name</strong> is the display name for your agent's interface theme/branding, 
+                  while <strong>Agent Name</strong> is the actual name of your AI agent. Think of Canvas Name 
+                  as your "brand theme" that can be reused across multiple agents.
+                </AlertDescription>
+              </Alert>
+              
               <div>
-                <Label htmlFor="canvas-name">Canvas Name</Label>
+                <Label htmlFor="canvas-name" className="flex items-center gap-2">
+                  Canvas Name
+                  <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                </Label>
                 <Input
                   id="canvas-name"
                   value={canvasName}
                   onChange={(e) => handleCanvasNameChange(e.target.value)}
-                  placeholder="My Canvas Template"
+                  placeholder="My Healthcare Canvas Theme"
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  This is the theme name for your agent's interface (different from the agent name)
+                </p>
               </div>
               
               <div>
@@ -415,6 +542,48 @@ export const EnhancedAgentCanvas: React.FC<EnhancedAgentCanvasProps> = ({
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="flex items-center justify-between mb-4">
+                <Label>Custom Colors</Label>
+                <Dialog open={showColorPicker} onOpenChange={setShowColorPicker}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Palette className="h-4 w-4 mr-2" />
+                      Color Palettes
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Choose Color Palette</DialogTitle>
+                    </DialogHeader>
+                    <ScrollArea className="h-80">
+                      <div className="space-y-3">
+                        {customColorPalettes.map((palette, index) => (
+                          <div
+                            key={index}
+                            className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-muted/50"
+                            onClick={() => {
+                              handleColorPaletteSelect(palette.colors);
+                              setShowColorPicker(false);
+                            }}
+                          >
+                            <div className="flex gap-1">
+                              {palette.colors.map((color, colorIndex) => (
+                                <div
+                                  key={colorIndex}
+                                  className="w-8 h-8 rounded-md border"
+                                  style={{ backgroundColor: color }}
+                                />
+                              ))}
+                            </div>
+                            <span className="font-medium">{palette.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  </DialogContent>
+                </Dialog>
+              </div>
+              
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <Label htmlFor="primary-color">Primary Color</Label>
@@ -428,10 +597,14 @@ export const EnhancedAgentCanvas: React.FC<EnhancedAgentCanvasProps> = ({
                     />
                     <Input
                       value={primaryColor}
-                      onChange={(e) => handlePrimaryColorChange(e.target.value)}
+                      onChange={(e) => handleColorInputChange('primary', e.target.value)}
                       className="flex-1"
+                      placeholder="#3b82f6"
                     />
                   </div>
+                  {!validateHexColor(primaryColor) && primaryColor && (
+                    <p className="text-xs text-destructive mt-1">Invalid hex color</p>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="secondary-color">Secondary Color</Label>
@@ -445,10 +618,14 @@ export const EnhancedAgentCanvas: React.FC<EnhancedAgentCanvasProps> = ({
                     />
                     <Input
                       value={secondaryColor}
-                      onChange={(e) => handleSecondaryColorChange(e.target.value)}
+                      onChange={(e) => handleColorInputChange('secondary', e.target.value)}
                       className="flex-1"
+                      placeholder="#8b5cf6"
                     />
                   </div>
+                  {!validateHexColor(secondaryColor) && secondaryColor && (
+                    <p className="text-xs text-destructive mt-1">Invalid hex color</p>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="accent-color">Accent Color</Label>
@@ -462,19 +639,29 @@ export const EnhancedAgentCanvas: React.FC<EnhancedAgentCanvasProps> = ({
                     />
                     <Input
                       value={accentColor}
-                      onChange={(e) => handleAccentColorChange(e.target.value)}
+                      onChange={(e) => handleColorInputChange('accent', e.target.value)}
                       className="flex-1"
+                      placeholder="#06b6d4"
                     />
                   </div>
+                  {!validateHexColor(accentColor) && accentColor && (
+                    <p className="text-xs text-destructive mt-1">Invalid hex color</p>
+                  )}
                 </div>
               </div>
               
               <div>
                 <Label>Color Preview</Label>
                 <div className="flex gap-2 mt-2">
-                  <div className="h-10 flex-1 rounded" style={{ backgroundColor: primaryColor }}></div>
-                  <div className="h-10 flex-1 rounded" style={{ backgroundColor: secondaryColor }}></div>
-                  <div className="h-10 flex-1 rounded" style={{ backgroundColor: accentColor }}></div>
+                  <div className="h-10 flex-1 rounded border" style={{ backgroundColor: primaryColor }}>
+                    <span className="text-xs text-white/80 p-1">Primary</span>
+                  </div>
+                  <div className="h-10 flex-1 rounded border" style={{ backgroundColor: secondaryColor }}>
+                    <span className="text-xs text-white/80 p-1">Secondary</span>
+                  </div>
+                  <div className="h-10 flex-1 rounded border" style={{ backgroundColor: accentColor }}>
+                    <span className="text-xs text-white/80 p-1">Accent</span>
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -487,99 +674,186 @@ export const EnhancedAgentCanvas: React.FC<EnhancedAgentCanvasProps> = ({
             <CardHeader>
               <CardTitle className="text-lg">Template Selection</CardTitle>
               <CardDescription>
-                Choose from pre-defined canvas templates
+                Choose from multiple pre-configured canvas templates for different use cases
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 gap-3">
-                {templates.map(template => (
-                  <div 
-                    key={template.id}
-                    onClick={() => handleTemplateSelect(template.id)}
-                    className={`p-3 border rounded-lg cursor-pointer flex items-center gap-3 ${selectedTemplate === template.id ? 'border-primary bg-primary/5' : ''}`}
-                  >
+              <ScrollArea className="h-64">
+                <div className="grid grid-cols-1 gap-3 pr-4">
+                  {templates.map(template => (
                     <div 
-                      className="w-8 h-8 rounded"
-                      style={{ background: `linear-gradient(135deg, ${template.primaryColor}, ${template.secondaryColor})` }}
-                    ></div>
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">{template.name}</p>
-                      <p className="text-xs text-muted-foreground">{template.description}</p>
+                      key={template.id}
+                      onClick={() => handleTemplateSelect(template.id)}
+                      className={`p-3 border rounded-lg cursor-pointer flex items-center gap-3 transition-all hover:shadow-md ${selectedTemplate === template.id ? 'border-primary bg-primary/5 ring-1 ring-primary/20' : 'hover:border-primary/50'}`}
+                    >
+                      <div 
+                        className="w-10 h-10 rounded-md shadow-sm"
+                        style={{ background: `linear-gradient(135deg, ${template.primaryColor}, ${template.secondaryColor})` }}
+                      ></div>
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">{template.name}</p>
+                        <p className="text-xs text-muted-foreground">{template.description}</p>
+                        <p className="text-xs font-medium mt-1" style={{ color: template.primaryColor }}>
+                          {template.tagline}
+                        </p>
+                      </div>
+                      {template.isDefault && (
+                        <Badge variant="outline" className="text-xs">Default</Badge>
+                      )}
+                      {selectedTemplate === template.id && (
+                        <Check className="h-4 w-4 text-primary" />
+                      )}
                     </div>
-                    {template.isDefault && (
-                      <Badge variant="outline" className="text-xs">Default</Badge>
-                    )}
-                    {selectedTemplate === template.id && (
-                      <Check className="h-4 w-4 text-primary" />
-                    )}
-                  </div>
-                ))}
+                  ))}
+                </div>
+              </ScrollArea>
+              
+              <div className="flex gap-2 pt-2">
+                <Button variant="outline" size="sm" onClick={() => setSelectedTemplate('')}>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Reset
+                </Button>
+                <Button variant="outline" size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Custom Template
+                </Button>
               </div>
             </CardContent>
           </Card>
           
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Canvas Preview</CardTitle>
+              <CardTitle className="text-lg flex items-center gap-2">
+                Canvas Preview
+                <div className="flex gap-1 ml-auto">
+                  <Button
+                    variant={previewMode === 'desktop' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setPreviewMode('desktop')}
+                  >
+                    <Monitor className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant={previewMode === 'tablet' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setPreviewMode('tablet')}
+                  >
+                    <Tablet className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant={previewMode === 'mobile' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setPreviewMode('mobile')}
+                  >
+                    <Smartphone className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardTitle>
               <CardDescription>
-                See how your agent canvas will appear to users
+                Interactive preview of how your agent canvas will appear to users
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div 
-                className="border rounded-lg p-6"
-                style={{ background: `linear-gradient(to bottom, ${primaryColor}10, ${secondaryColor}05)` }}
-              >
-                <div className="flex items-center gap-3 mb-6">
-                  {logoPreview && (
-                    <img src={logoPreview} alt="Logo" className="w-12 h-12 object-contain" />
-                  )}
-                  <div>
-                    <h3 className="font-bold text-lg" style={{ color: primaryColor }}>
-                      {canvasName || "Agent Canvas"}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">{tagline || "Your healthcare AI partner"}</p>
-                  </div>
-                </div>
-                
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <Bot className="h-5 w-5" style={{ color: primaryColor }} />
-                    <span className="font-medium">Virtual Healthcare Assistant</span>
-                  </div>
-                  
-                  <div className="bg-background p-4 rounded-lg border">
-                    <p className="text-sm mb-2">Sample agent interaction:</p>
-                    <div className="flex gap-2 items-start mb-3">
-                      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                        <Bot className="h-4 w-4" />
-                      </div>
-                      <div className="bg-muted p-3 rounded-lg text-sm flex-1">
-                        Hello! I'm your healthcare assistant. How can I help you today?
-                      </div>
-                    </div>
-                    <div className="flex gap-2 items-start">
-                      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                        <Users className="h-4 w-4" />
-                      </div>
-                      <div className="bg-primary/10 p-3 rounded-lg text-sm flex-1">
-                        I need information about the latest treatment options.
-                      </div>
+              <div className={`mx-auto transition-all duration-300 ${
+                previewMode === 'desktop' ? 'max-w-full' : 
+                previewMode === 'tablet' ? 'max-w-md' : 'max-w-sm'
+              }`}>
+                <div 
+                  className="border rounded-lg p-6 transition-all duration-300"
+                  style={{ background: `linear-gradient(to bottom, ${primaryColor}10, ${secondaryColor}05)` }}
+                >
+                  <div className="flex items-center gap-3 mb-6">
+                    {logoPreview && (
+                      <img 
+                        src={logoPreview} 
+                        alt="Logo" 
+                        className={`object-contain ${previewMode === 'mobile' ? 'w-8 h-8' : 'w-12 h-12'}`} 
+                      />
+                    )}
+                    <div className="flex-1">
+                      <h3 
+                        className={`font-bold ${previewMode === 'mobile' ? 'text-base' : 'text-lg'}`}
+                        style={{ color: primaryColor }}
+                      >
+                        {canvasName || "Agent Canvas"}
+                      </h3>
+                      <p className={`text-muted-foreground ${previewMode === 'mobile' ? 'text-xs' : 'text-sm'}`}>
+                        {tagline || "Your healthcare AI partner"}
+                      </p>
                     </div>
                   </div>
                   
-                  <div className="flex gap-2">
-                    <Button style={{ backgroundColor: primaryColor }}>
-                      Primary Action
-                    </Button>
-                    <Button variant="outline" style={{ borderColor: secondaryColor, color: secondaryColor }}>
-                      Secondary Action
-                    </Button>
-                    <Button variant="ghost" style={{ color: accentColor }}>
-                      Accent Action
-                    </Button>
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <Bot className={`${previewMode === 'mobile' ? 'h-4 w-4' : 'h-5 w-5'}`} style={{ color: primaryColor }} />
+                      <span className={`font-medium ${previewMode === 'mobile' ? 'text-sm' : ''}`}>
+                        Virtual Healthcare Assistant
+                      </span>
+                    </div>
+                    
+                    <div className="bg-background p-4 rounded-lg border">
+                      <p className={`mb-2 ${previewMode === 'mobile' ? 'text-xs' : 'text-sm'}`}>
+                        Sample agent interaction:
+                      </p>
+                      <div className="flex gap-2 items-start mb-3">
+                        <div className={`rounded-full bg-muted flex items-center justify-center ${previewMode === 'mobile' ? 'w-6 h-6' : 'w-8 h-8'}`}>
+                          <Bot className={`${previewMode === 'mobile' ? 'h-3 w-3' : 'h-4 w-4'}`} />
+                        </div>
+                        <div className={`bg-muted p-3 rounded-lg flex-1 ${previewMode === 'mobile' ? 'text-xs' : 'text-sm'}`}>
+                          Hello! I'm your healthcare assistant. How can I help you today?
+                        </div>
+                      </div>
+                      <div className="flex gap-2 items-start">
+                        <div className={`rounded-full bg-muted flex items-center justify-center ${previewMode === 'mobile' ? 'w-6 h-6' : 'w-8 h-8'}`}>
+                          <Users className={`${previewMode === 'mobile' ? 'h-3 w-3' : 'h-4 w-4'}`} />
+                        </div>
+                        <div 
+                          className={`p-3 rounded-lg flex-1 ${previewMode === 'mobile' ? 'text-xs' : 'text-sm'}`}
+                          style={{ backgroundColor: `${primaryColor}20` }}
+                        >
+                          I need information about the latest treatment options.
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className={`flex gap-2 ${previewMode === 'mobile' ? 'flex-col' : ''}`}>
+                      <Button 
+                        size={previewMode === 'mobile' ? 'sm' : 'default'}
+                        style={{ backgroundColor: primaryColor }}
+                        onClick={() => handlePreviewAction('Primary')}
+                        className="hover:opacity-90 transition-opacity"
+                      >
+                        Primary Action
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size={previewMode === 'mobile' ? 'sm' : 'default'}
+                        style={{ borderColor: secondaryColor, color: secondaryColor }}
+                        onClick={() => handlePreviewAction('Secondary')}
+                        className="hover:bg-opacity-10 transition-all"
+                      >
+                        Secondary Action
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size={previewMode === 'mobile' ? 'sm' : 'default'}
+                        style={{ color: accentColor }}
+                        onClick={() => handlePreviewAction('Accent')}
+                        className="hover:bg-opacity-10 transition-all"
+                      >
+                        Accent Action
+                      </Button>
+                    </div>
                   </div>
                 </div>
+              </div>
+              
+              <div className="mt-4 p-3 bg-muted/50 rounded-lg">
+                <p className="text-xs text-muted-foreground">
+                  <Eye className="h-3 w-3 inline mr-1" />
+                  Preview Mode: {previewMode.charAt(0).toUpperCase() + previewMode.slice(1)} 
+                  • Click buttons to test interactions • Responsive design preview
+                </p>
               </div>
             </CardContent>
           </Card>
