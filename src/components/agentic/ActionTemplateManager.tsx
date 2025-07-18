@@ -56,6 +56,7 @@ interface AIModel {
   id: string;
   name: string;
   provider: string;
+  model_type: string;
   capabilities: any;
   model_config: any;
 }
@@ -176,7 +177,14 @@ export const ActionTemplateManager: React.FC<ActionTemplateManagerProps> = ({
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Edge function error:', error);
+        throw error;
+      }
+
+      if (!data || !data.templates) {
+        throw new Error('No templates received from AI generator');
+      }
 
       const generatedTemplates = data.templates;
 
@@ -313,6 +321,33 @@ export const ActionTemplateManager: React.FC<ActionTemplateManagerProps> = ({
         .eq('id', selectedTemplate.id);
 
       if (error) throw error;
+
+      // Update tasks if needed
+      if (tasks.length > 0) {
+        // Delete existing tasks and recreate
+        await supabase
+          .from('action_template_tasks')
+          .delete()
+          .eq('template_id', selectedTemplate.id);
+
+        const tasksToInsert = tasks.map(task => ({
+          template_id: selectedTemplate.id,
+          task_name: task.task_name,
+          task_description: task.task_description,
+          task_order: task.task_order,
+          task_type: task.task_type,
+          required_inputs: task.required_inputs,
+          expected_outputs: task.expected_outputs,
+          validation_rules: task.validation_rules,
+          timeout_minutes: task.timeout_minutes,
+          retry_attempts: task.retry_attempts,
+          is_critical: task.is_critical
+        }));
+
+        await supabase
+          .from('action_template_tasks')
+          .insert(tasksToInsert);
+      }
 
       await loadTemplates();
       setIsEditing(false);
@@ -481,7 +516,7 @@ export const ActionTemplateManager: React.FC<ActionTemplateManagerProps> = ({
                 Create Template
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Create New Action Template</DialogTitle>
               </DialogHeader>
@@ -495,24 +530,27 @@ export const ActionTemplateManager: React.FC<ActionTemplateManagerProps> = ({
                     placeholder="Enter template name"
                   />
                 </div>
+                
                 <div>
                   <Label htmlFor="template-description">Description</Label>
                   <Textarea
                     id="template-description"
                     value={editForm.description || ''}
                     onChange={(e) => setEditForm({...editForm, description: e.target.value})}
-                    placeholder="Describe what this template does"
+                    placeholder="Enter template description"
+                    className="min-h-[100px]"
                   />
                 </div>
+                
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label>Category</Label>
+                    <Label htmlFor="template-category">Category</Label>
                     <Select 
-                      value={editForm.category || 'custom'} 
+                      value={editForm.category || ''} 
                       onValueChange={(value) => setEditForm({...editForm, category: value})}
                     >
                       <SelectTrigger>
-                        <SelectValue />
+                        <SelectValue placeholder="Select category" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="communication">Communication</SelectItem>
@@ -524,14 +562,15 @@ export const ActionTemplateManager: React.FC<ActionTemplateManagerProps> = ({
                       </SelectContent>
                     </Select>
                   </div>
+                  
                   <div>
-                    <Label>Type</Label>
+                    <Label htmlFor="template-type">Type</Label>
                     <Select 
-                      value={editForm.type || 'on_demand'} 
+                      value={editForm.type || ''} 
                       onValueChange={(value) => setEditForm({...editForm, type: value})}
                     >
                       <SelectTrigger>
-                        <SelectValue />
+                        <SelectValue placeholder="Select type" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="trigger">Trigger</SelectItem>
@@ -541,15 +580,16 @@ export const ActionTemplateManager: React.FC<ActionTemplateManagerProps> = ({
                     </Select>
                   </div>
                 </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label>Priority</Label>
+                    <Label htmlFor="template-priority">Priority</Label>
                     <Select 
-                      value={editForm.priority || 'medium'} 
+                      value={editForm.priority || ''} 
                       onValueChange={(value) => setEditForm({...editForm, priority: value})}
                     >
                       <SelectTrigger>
-                        <SelectValue />
+                        <SelectValue placeholder="Select priority" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="low">Low</SelectItem>
@@ -559,107 +599,214 @@ export const ActionTemplateManager: React.FC<ActionTemplateManagerProps> = ({
                       </SelectContent>
                     </Select>
                   </div>
+                  
                   <div>
-                    <Label>Duration (minutes)</Label>
+                    <Label htmlFor="template-duration">Duration (minutes)</Label>
                     <Input
+                      id="template-duration"
                       type="number"
+                      min="1"
+                      max="180"
                       value={editForm.estimated_duration || 5}
                       onChange={(e) => setEditForm({...editForm, estimated_duration: parseInt(e.target.value)})}
                     />
                   </div>
                 </div>
+
                 <div className="flex items-center space-x-2">
                   <Switch
+                    id="requires-approval"
                     checked={editForm.requires_approval || false}
                     onCheckedChange={(checked) => setEditForm({...editForm, requires_approval: checked})}
                   />
-                  <Label>Requires Approval</Label>
+                  <Label htmlFor="requires-approval">Requires Approval</Label>
+                </div>
+
+                {/* AI Model Selection */}
+                <div>
+                  <Label>Recommended AI Model</Label>
+                  <Select 
+                    value={editForm.template_config?.recommended_ai_model_id || ''} 
+                    onValueChange={(value) => setEditForm({
+                      ...editForm, 
+                      template_config: {
+                        ...editForm.template_config,
+                        recommended_ai_model_id: value
+                      }
+                    })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select AI model" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {aiModels.map((model) => (
+                        <SelectItem key={model.id} value={model.id}>
+                          <div className="flex flex-col">
+                            <span>{model.name}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {model.provider} • {model.model_type}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* MCP Server Selection */}
+                <div>
+                  <Label>Recommended MCP Server</Label>
+                  <Select 
+                    value={editForm.template_config?.recommended_mcp_server_id || ''} 
+                    onValueChange={(value) => setEditForm({
+                      ...editForm, 
+                      template_config: {
+                        ...editForm.template_config,
+                        recommended_mcp_server_id: value
+                      }
+                    })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select MCP server" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {mcpServers.map((server) => (
+                        <SelectItem key={server.id} value={server.server_id}>
+                          <div className="flex flex-col">
+                            <span>{server.name}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {server.type} • Score: {server.reliability_score}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 {/* Tasks Section */}
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <Label className="text-base font-medium">Tasks</Label>
-                    <Button variant="outline" size="sm" onClick={addTask}>
+                    <Button type="button" variant="outline" size="sm" onClick={addTask}>
                       <Plus className="h-4 w-4 mr-2" />
                       Add Task
                     </Button>
                   </div>
-                  {tasks.map((task, index) => (
-                    <Card key={task.id}>
-                      <CardContent className="p-4 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <Input
-                            value={task.task_name}
-                            onChange={(e) => updateTask(task.id, { task_name: e.target.value })}
-                            placeholder="Task name"
-                          />
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => removeTask(task.id)}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                        <Textarea
-                          value={task.task_description || ''}
-                          onChange={(e) => updateTask(task.id, { task_description: e.target.value })}
-                          placeholder="Task description"
-                          rows={2}
-                        />
-                        <div className="grid grid-cols-3 gap-2">
-                          <div>
-                            <Label className="text-xs">Order</Label>
-                            <Input
-                              type="number"
-                              value={task.task_order}
-                              onChange={(e) => updateTask(task.id, { task_order: parseInt(e.target.value) })}
-                            />
+                  
+                  {tasks.length === 0 ? (
+                    <div className="text-center py-8 border-2 border-dashed border-muted-foreground/20 rounded-lg">
+                      <p className="text-muted-foreground">No tasks added yet</p>
+                      <p className="text-sm text-muted-foreground">Add tasks to define the workflow</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {tasks.map((task) => (
+                        <Card key={task.id} className="p-4">
+                          <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline">Task {task.task_order}</Badge>
+                                <span className="text-sm font-medium">
+                                  {task.task_name}
+                                </span>
+                              </div>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removeTask(task.id)}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <Label>Task Name</Label>
+                                <Input
+                                  value={task.task_name}
+                                  onChange={(e) => updateTask(task.id, { task_name: e.target.value })}
+                                  placeholder="Enter task name"
+                                />
+                              </div>
+                              
+                              <div>
+                                <Label>Task Type</Label>
+                                <Select 
+                                  value={task.task_type} 
+                                  onValueChange={(value) => updateTask(task.id, { task_type: value })}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="action">Action</SelectItem>
+                                    <SelectItem value="validation">Validation</SelectItem>
+                                    <SelectItem value="analysis">Analysis</SelectItem>
+                                    <SelectItem value="notification">Notification</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+                            
+                            <div>
+                              <Label>Task Description</Label>
+                              <Textarea
+                                value={task.task_description || ''}
+                                onChange={(e) => updateTask(task.id, { task_description: e.target.value })}
+                                placeholder="Describe what this task does"
+                                className="min-h-[80px]"
+                              />
+                            </div>
+                            
+                            <div className="grid grid-cols-3 gap-4">
+                              <div>
+                                <Label>Timeout (min)</Label>
+                                <Input
+                                  type="number"
+                                  min="1"
+                                  max="60"
+                                  value={task.timeout_minutes}
+                                  onChange={(e) => updateTask(task.id, { timeout_minutes: parseInt(e.target.value) })}
+                                />
+                              </div>
+                              
+                              <div>
+                                <Label>Retry Attempts</Label>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  max="5"
+                                  value={task.retry_attempts}
+                                  onChange={(e) => updateTask(task.id, { retry_attempts: parseInt(e.target.value) })}
+                                />
+                              </div>
+                              
+                              <div className="flex items-center space-x-2 pt-6">
+                                <Switch
+                                  checked={task.is_critical}
+                                  onCheckedChange={(checked) => updateTask(task.id, { is_critical: checked })}
+                                />
+                                <Label>Critical</Label>
+                              </div>
+                            </div>
                           </div>
-                          <div>
-                            <Label className="text-xs">Type</Label>
-                            <Select 
-                              value={task.task_type} 
-                              onValueChange={(value) => updateTask(task.id, { task_type: value })}
-                            >
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="action">Action</SelectItem>
-                                <SelectItem value="validation">Validation</SelectItem>
-                                <SelectItem value="analysis">Analysis</SelectItem>
-                                <SelectItem value="notification">Notification</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div>
-                            <Label className="text-xs">Timeout (min)</Label>
-                            <Input
-                              type="number"
-                              value={task.timeout_minutes}
-                              onChange={(e) => updateTask(task.id, { timeout_minutes: parseInt(e.target.value) })}
-                            />
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Switch
-                            checked={task.is_critical}
-                            onCheckedChange={(checked) => updateTask(task.id, { is_critical: checked })}
-                          />
-                          <Label className="text-xs">Critical Task</Label>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                        </Card>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => setIsCreating(false)}>
+                  <Button type="button" variant="outline" onClick={() => {
+                    setIsCreating(false);
+                    setEditForm({});
+                    setTasks([]);
+                  }}>
                     Cancel
                   </Button>
-                  <Button onClick={createTemplate}>
+                  <Button type="button" onClick={createTemplate}>
                     <Save className="h-4 w-4 mr-2" />
                     Create Template
                   </Button>
@@ -670,218 +817,348 @@ export const ActionTemplateManager: React.FC<ActionTemplateManagerProps> = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Templates List */}
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Target className="h-5 w-5" />
-                Action Templates ({templates.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {templates.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Bot className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No templates found</p>
-                  <p className="text-sm">Create or generate templates to get started</p>
+      {/* Templates Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {templates.map((template) => (
+          <Card key={template.id} className="cursor-pointer hover:shadow-md transition-shadow" 
+                onClick={() => {
+                  setSelectedTemplate(template);
+                  setTasks(template.tasks || []);
+                }}>
+            <CardContent className="p-4">
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  {getCategoryIcon(template.category)}
+                  <h4 className="font-medium">{template.name}</h4>
                 </div>
-              ) : (
-                <ScrollArea className="h-[600px]">
+                <div className="flex gap-1">
+                  <Badge variant={getPriorityColor(template.priority) as any}>
+                    {template.priority}
+                  </Badge>
+                  {template.template_config?.generated_by === 'ai' && (
+                    <Badge variant="secondary">
+                      <Sparkles className="h-3 w-3 mr-1" />
+                      AI
+                    </Badge>
+                  )}
+                </div>
+              </div>
+              
+              <p className="text-sm text-muted-foreground mb-3">
+                {template.description}
+              </p>
+              
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    ~{template.estimated_duration}min
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Users className="h-3 w-3" />
+                    {template.tasks?.length || 0} tasks
+                  </span>
+                </div>
+                
+                <div className="flex gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedTemplate(template);
+                      setEditForm(template);
+                      setTasks(template.tasks || []);
+                      setIsEditing(true);
+                    }}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      duplicateTemplate(template);
+                    }}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onTemplateSelect?.(template);
+                    }}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteTemplate(template.id);
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Template Edit Dialog */}
+      {selectedTemplate && (
+        <Dialog open={isEditing} onOpenChange={setIsEditing}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Edit className="h-5 w-5" />
+                Edit Template: {selectedTemplate.name}
+                {selectedTemplate.template_config?.generated_by === 'ai' && (
+                  <Badge variant="secondary">
+                    <Sparkles className="h-3 w-3 mr-1" />
+                    AI Generated
+                  </Badge>
+                )}
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="edit-template-name">Template Name</Label>
+                <Input
+                  id="edit-template-name"
+                  value={editForm.name || ''}
+                  onChange={(e) => setEditForm({...editForm, name: e.target.value})}
+                  placeholder="Enter template name"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="edit-template-description">Description</Label>
+                <Textarea
+                  id="edit-template-description"
+                  value={editForm.description || ''}
+                  onChange={(e) => setEditForm({...editForm, description: e.target.value})}
+                  placeholder="Enter template description"
+                  className="min-h-[100px]"
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Category</Label>
+                  <Select 
+                    value={editForm.category || ''} 
+                    onValueChange={(value) => setEditForm({...editForm, category: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="communication">Communication</SelectItem>
+                      <SelectItem value="data_processing">Data Processing</SelectItem>
+                      <SelectItem value="analysis">Analysis</SelectItem>
+                      <SelectItem value="integration">Integration</SelectItem>
+                      <SelectItem value="automation">Automation</SelectItem>
+                      <SelectItem value="custom">Custom</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <Label>Type</Label>
+                  <Select 
+                    value={editForm.type || ''} 
+                    onValueChange={(value) => setEditForm({...editForm, type: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="trigger">Trigger</SelectItem>
+                      <SelectItem value="scheduled">Scheduled</SelectItem>
+                      <SelectItem value="on_demand">On Demand</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Priority</Label>
+                  <Select 
+                    value={editForm.priority || ''} 
+                    onValueChange={(value) => setEditForm({...editForm, priority: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select priority" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                      <SelectItem value="critical">Critical</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <Label>Duration (minutes)</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    max="180"
+                    value={editForm.estimated_duration || 5}
+                    onChange={(e) => setEditForm({...editForm, estimated_duration: parseInt(e.target.value)})}
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Switch
+                  checked={editForm.requires_approval || false}
+                  onCheckedChange={(checked) => setEditForm({...editForm, requires_approval: checked})}
+                />
+                <Label>Requires Approval</Label>
+              </div>
+
+              {/* Tasks Section for Editing */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label className="text-base font-medium">Tasks</Label>
+                  <Button type="button" variant="outline" size="sm" onClick={addTask}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Task
+                  </Button>
+                </div>
+                
+                {tasks.length === 0 ? (
+                  <div className="text-center py-8 border-2 border-dashed border-muted-foreground/20 rounded-lg">
+                    <p className="text-muted-foreground">No tasks added yet</p>
+                    <p className="text-sm text-muted-foreground">Add tasks to define the workflow</p>
+                  </div>
+                ) : (
                   <div className="space-y-3">
-                    {templates.map((template) => (
-                      <Card 
-                        key={template.id} 
-                        className={`cursor-pointer transition-all ${
-                          selectedTemplate?.id === template.id ? 'ring-2 ring-primary' : 'hover:shadow-md'
-                        }`} 
-                        onClick={() => setSelectedTemplate(template)}
-                      >
-                        <CardContent className="p-4">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-2">
-                                {getCategoryIcon(template.category)}
-                                <h4 className="font-medium">{template.name}</h4>
-                                <Badge variant={getPriorityColor(template.priority) as any}>
-                                  {template.priority}
-                                </Badge>
-                                {template.is_system_template && (
-                                  <Badge variant="outline">System</Badge>
-                                )}
-                              </div>
-                              <p className="text-sm text-muted-foreground mb-2">
-                                {template.description || 'No description'}
-                              </p>
-                              <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                                <span className="flex items-center gap-1">
-                                  <Clock className="h-3 w-3" />
-                                  ~{template.estimated_duration}min
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  <Target className="h-3 w-3" />
-                                  {template.type}
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  <Users className="h-3 w-3" />
-                                  {template.tasks?.length || 0} tasks
-                                </span>
-                              </div>
+                    {tasks.map((task) => (
+                      <Card key={task.id} className="p-4">
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline">Task {task.task_order}</Badge>
+                              <span className="text-sm font-medium">
+                                {task.task_name}
+                              </span>
                             </div>
-                            <div className="flex gap-1">
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onTemplateSelect?.(template);
-                                }}
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeTask(task.id)}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <Label>Task Name</Label>
+                              <Input
+                                value={task.task_name}
+                                onChange={(e) => updateTask(task.id, { task_name: e.target.value })}
+                                placeholder="Enter task name"
+                              />
+                            </div>
+                            
+                            <div>
+                              <Label>Task Type</Label>
+                              <Select 
+                                value={task.task_type} 
+                                onValueChange={(value) => updateTask(task.id, { task_type: value })}
                               >
-                                <Plus className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  duplicateTemplate(template);
-                                }}
-                              >
-                                <Copy className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedTemplate(template);
-                                  setEditForm(template);
-                                  setIsEditing(true);
-                                }}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  deleteTemplate(template.id);
-                                }}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="action">Action</SelectItem>
+                                  <SelectItem value="validation">Validation</SelectItem>
+                                  <SelectItem value="analysis">Analysis</SelectItem>
+                                  <SelectItem value="notification">Notification</SelectItem>
+                                </SelectContent>
+                              </Select>
                             </div>
                           </div>
-                        </CardContent>
+                          
+                          <div>
+                            <Label>Task Description</Label>
+                            <Textarea
+                              value={task.task_description || ''}
+                              onChange={(e) => updateTask(task.id, { task_description: e.target.value })}
+                              placeholder="Describe what this task does"
+                              className="min-h-[80px]"
+                            />
+                          </div>
+                          
+                          <div className="grid grid-cols-3 gap-4">
+                            <div>
+                              <Label>Timeout (min)</Label>
+                              <Input
+                                type="number"
+                                min="1"
+                                max="60"
+                                value={task.timeout_minutes}
+                                onChange={(e) => updateTask(task.id, { timeout_minutes: parseInt(e.target.value) })}
+                              />
+                            </div>
+                            
+                            <div>
+                              <Label>Retry Attempts</Label>
+                              <Input
+                                type="number"
+                                min="0"
+                                max="5"
+                                value={task.retry_attempts}
+                                onChange={(e) => updateTask(task.id, { retry_attempts: parseInt(e.target.value) })}
+                              />
+                            </div>
+                            
+                            <div className="flex items-center space-x-2 pt-6">
+                              <Switch
+                                checked={task.is_critical}
+                                onCheckedChange={(checked) => updateTask(task.id, { is_critical: checked })}
+                              />
+                              <Label>Critical</Label>
+                            </div>
+                          </div>
+                        </div>
                       </Card>
                     ))}
                   </div>
-                </ScrollArea>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Template Details */}
-        <div>
-          {selectedTemplate ? (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span>Template Details</span>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => onTemplateSelect?.(selectedTemplate)}
-                  >
-                    Use Template
-                  </Button>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <h4 className="font-medium">{selectedTemplate.name}</h4>
-                  <p className="text-sm text-muted-foreground">
-                    {selectedTemplate.description || 'No description'}
-                  </p>
-                </div>
-                
-                <Separator />
-                
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Category</span>
-                    <Badge variant="outline">{selectedTemplate.category}</Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Type</span>
-                    <span className="text-sm">{selectedTemplate.type}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Priority</span>
-                    <Badge variant={getPriorityColor(selectedTemplate.priority) as any}>
-                      {selectedTemplate.priority}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Duration</span>
-                    <span className="text-sm">~{selectedTemplate.estimated_duration}min</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Requires Approval</span>
-                    <span className="text-sm">{selectedTemplate.requires_approval ? 'Yes' : 'No'}</span>
-                  </div>
-                </div>
-
-                {selectedTemplate.tasks && selectedTemplate.tasks.length > 0 && (
-                  <>
-                    <Separator />
-                    <div>
-                      <Label className="text-sm font-medium">Tasks ({selectedTemplate.tasks.length})</Label>
-                      <div className="mt-2 space-y-2">
-                        {selectedTemplate.tasks
-                          .sort((a, b) => a.task_order - b.task_order)
-                          .map((task) => (
-                          <div key={task.id} className="p-2 border rounded-lg">
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-sm font-medium">{task.task_name}</span>
-                              <Badge variant="outline" className="text-xs">
-                                {task.task_type}
-                              </Badge>
-                            </div>
-                            {task.task_description && (
-                              <p className="text-xs text-muted-foreground mb-1">
-                                {task.task_description}
-                              </p>
-                            )}
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                              <span>Order: {task.task_order}</span>
-                              <span>Timeout: {task.timeout_minutes}min</span>
-                              {task.is_critical && (
-                                <Badge variant="destructive" className="text-xs">Critical</Badge>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </>
                 )}
-              </CardContent>
-            </Card>
-          ) : (
-            <Card>
-              <CardContent className="text-center py-8 text-muted-foreground">
-                <Target className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Select a template to view details</p>
-                <p className="text-sm">Click on a template from the list to see its configuration</p>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      </div>
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="outline" onClick={() => {
+                  setIsEditing(false);
+                  setEditForm({});
+                  setTasks([]);
+                }}>
+                  Cancel
+                </Button>
+                <Button type="button" onClick={updateTemplate}>
+                  <Save className="h-4 w-4 mr-2" />
+                  Update Template
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };

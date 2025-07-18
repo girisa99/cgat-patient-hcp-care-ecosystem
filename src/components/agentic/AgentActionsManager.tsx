@@ -32,6 +32,19 @@ export interface AgentAction {
   priority: 'low' | 'medium' | 'high' | 'critical';
   estimatedDuration?: number; // in minutes
   requiresApproval?: boolean;
+  tasks?: AgentTask[];
+}
+
+interface AgentTask {
+  id: string;
+  name: string;
+  description: string;
+  type: 'action' | 'validation' | 'analysis' | 'notification';
+  category?: string;
+  aiModelId?: string;
+  timeout: number;
+  isRequired: boolean;
+  order: number;
 }
 
 interface AIModel {
@@ -131,8 +144,72 @@ export const AgentActionsManager: React.FC<AgentActionsManagerProps> = ({
   const [actions, setActions] = useState<AgentAction[]>(initialActions);
   const [selectedAction, setSelectedAction] = useState<AgentAction | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [models, setModels] = useState<AIModel[]>(AI_MODELS);
-  const [mcpServers, setMcpServers] = useState<MCPServer[]>(MCP_SERVERS);
+  const [models, setModels] = useState<AIModel[]>([]);
+  const [mcpServers, setMcpServers] = useState<MCPServer[]>([]);
+  const [editingTasks, setEditingTasks] = useState<AgentTask[]>([]);
+
+  // Load real data from database
+  useEffect(() => {
+    loadAIModels();
+    loadMCPServers();
+  }, []);
+
+  const loadAIModels = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('ai_model_integrations')
+        .select('*')
+        .eq('is_active', true);
+
+      if (error) throw error;
+      
+      // Transform to match the interface
+      const transformedModels = (data || []).map(model => ({
+        id: model.id,
+        name: model.name,
+        provider: model.provider,
+        capabilities: Array.isArray(model.capabilities) ? model.capabilities.map(cap => String(cap)) : [],
+        description: `${model.model_type} model from ${model.provider}`,
+        useCase: Array.isArray(model.healthcare_specialization) ? model.healthcare_specialization.join(', ') : 'General purpose',
+        performanceRating: 8.5, // Default rating
+        costEfficiency: 8.0, // Default efficiency
+        specialization: Array.isArray(model.healthcare_specialization) ? model.healthcare_specialization.map(spec => String(spec)) : []
+      }));
+      
+      setModels(transformedModels);
+    } catch (error) {
+      console.error('Error loading AI models:', error);
+      // Fallback to hardcoded models if database load fails
+      setModels(AI_MODELS);
+    }
+  };
+
+  const loadMCPServers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('mcp_servers')
+        .select('*')
+        .eq('is_active', true);
+
+      if (error) throw error;
+      
+      // Transform to match the interface  
+      const transformedServers = (data || []).map(server => ({
+        id: server.server_id,
+        name: server.name,
+        type: server.type,
+        capabilities: Array.isArray(server.capabilities) ? server.capabilities.map(cap => String(cap)) : [],
+        description: server.description,
+        reliability: server.reliability_score || 9.0
+      }));
+      
+      setMcpServers(transformedServers);
+    } catch (error) {
+      console.error('Error loading MCP servers:', error);
+      // Fallback to hardcoded servers if database load fails
+      setMcpServers(MCP_SERVERS);
+    }
+  };
 
   // Auto-suggest actions based on agent type and purpose
   useEffect(() => {
@@ -152,7 +229,14 @@ export const AgentActionsManager: React.FC<AgentActionsManagerProps> = ({
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Edge function error:', error);
+        throw error;
+      }
+
+      if (!data || !data.templates) {
+        throw new Error('No templates received from AI generator');
+      }
 
       const generatedTemplates = data.templates || [];
       const suggestedActions = generatedTemplates.map((template: any, index: number) => ({
@@ -218,14 +302,52 @@ export const AgentActionsManager: React.FC<AgentActionsManagerProps> = ({
       aiModelId: template?.aiModelId || getRecommendedModel('custom').id,
       mcpServerId: template?.mcpServerId || getRecommendedMCPServer('custom').id,
       isEnabled: true,
-      parameters: {}
+      parameters: {},
+      tasks: []
     };
 
     const updatedActions = [...actions, newAction];
     setActions(updatedActions);
     onActionsChange(updatedActions);
     setSelectedAction(newAction);
+    setEditingTasks(newAction.tasks || []);
     setIsEditing(true);
+  };
+
+  const addTask = () => {
+    const newTask: AgentTask = {
+      id: `task-${Date.now()}`,
+      name: 'New Task',
+      description: '',
+      type: 'action',
+      aiModelId: models[0]?.id,
+      timeout: 30,
+      isRequired: false,
+      order: editingTasks.length + 1
+    };
+    setEditingTasks([...editingTasks, newTask]);
+  };
+
+  const updateTask = (taskId: string, updates: Partial<AgentTask>) => {
+    setEditingTasks(editingTasks.map(task => 
+      task.id === taskId ? { ...task, ...updates } : task
+    ));
+  };
+
+  const removeTask = (taskId: string) => {
+    setEditingTasks(editingTasks.filter(task => task.id !== taskId));
+  };
+
+  const saveActionWithTasks = () => {
+    if (!selectedAction) return;
+    
+    const updatedAction = {
+      ...selectedAction,
+      tasks: editingTasks
+    };
+    
+    updateAction(updatedAction);
+    setIsEditing(false);
   };
 
   const updateAction = (updatedAction: AgentAction) => {
@@ -452,6 +574,62 @@ export const AgentActionsManager: React.FC<AgentActionsManagerProps> = ({
                       />
                     </div>
 
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label>AI Model</Label>
+                        <Select 
+                          value={selectedAction.aiModelId || ''} 
+                          onValueChange={(value) => updateAction({
+                            ...selectedAction,
+                            aiModelId: value
+                          })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select AI model" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {models.map((model) => (
+                              <SelectItem key={model.id} value={model.id}>
+                                <div className="flex flex-col">
+                                  <span>{model.name}</span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {model.provider} • {model.specialization.join(', ')}
+                                  </span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div>
+                        <Label>MCP Server</Label>
+                        <Select 
+                          value={selectedAction.mcpServerId || ''} 
+                          onValueChange={(value) => updateAction({
+                            ...selectedAction,
+                            mcpServerId: value
+                          })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select MCP server" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {mcpServers.map((server) => (
+                              <SelectItem key={server.id} value={server.id}>
+                                <div className="flex flex-col">
+                                  <span>{server.name}</span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {server.type} • {server.capabilities.join(', ')}
+                                  </span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
                     <div className="flex items-center space-x-2">
                       <Switch
                         id="action-enabled"
@@ -462,6 +640,133 @@ export const AgentActionsManager: React.FC<AgentActionsManagerProps> = ({
                         })}
                       />
                       <Label htmlFor="action-enabled">Enabled</Label>
+                    </div>
+
+                    {/* Tasks Section */}
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-base font-medium">Tasks</Label>
+                        <Button type="button" variant="outline" size="sm" onClick={addTask}>
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add Task
+                        </Button>
+                      </div>
+                      
+                      {editingTasks.length === 0 ? (
+                        <div className="text-center py-4 border-2 border-dashed border-muted-foreground/20 rounded-lg">
+                          <p className="text-sm text-muted-foreground">No tasks added</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {editingTasks.map((task) => (
+                            <Card key={task.id} className="p-3">
+                              <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                  <Badge variant="outline">Task {task.order}</Badge>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => removeTask(task.id)}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                                
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div>
+                                    <Label className="text-xs">Task Name</Label>
+                                    <Input
+                                      value={task.name}
+                                      onChange={(e) => updateTask(task.id, { name: e.target.value })}
+                                      className="h-8"
+                                      placeholder="Enter task name"
+                                    />
+                                  </div>
+                                  
+                                  <div>
+                                    <Label className="text-xs">Type</Label>
+                                    <Select 
+                                      value={task.type} 
+                                      onValueChange={(value: any) => updateTask(task.id, { type: value })}
+                                    >
+                                      <SelectTrigger className="h-8">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="action">Action</SelectItem>
+                                        <SelectItem value="validation">Validation</SelectItem>
+                                        <SelectItem value="analysis">Analysis</SelectItem>
+                                        <SelectItem value="notification">Notification</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                </div>
+                                
+                                <div>
+                                  <Label className="text-xs">Description</Label>
+                                  <Textarea
+                                    value={task.description}
+                                    onChange={(e) => updateTask(task.id, { description: e.target.value })}
+                                    placeholder="Describe what this task does"
+                                    className="h-16 text-xs"
+                                  />
+                                </div>
+                                
+                                <div className="grid grid-cols-3 gap-3">
+                                  <div>
+                                    <Label className="text-xs">AI Model</Label>
+                                    <Select 
+                                      value={task.aiModelId || ''} 
+                                      onValueChange={(value) => updateTask(task.id, { aiModelId: value })}
+                                    >
+                                      <SelectTrigger className="h-8">
+                                        <SelectValue placeholder="Select model" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {models.map((model) => (
+                                          <SelectItem key={model.id} value={model.id}>
+                                            {model.name}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                  
+                                  <div>
+                                    <Label className="text-xs">Timeout (min)</Label>
+                                    <Input
+                                      type="number"
+                                      min="1"
+                                      max="60"
+                                      value={task.timeout}
+                                      onChange={(e) => updateTask(task.id, { timeout: parseInt(e.target.value) })}
+                                      className="h-8"
+                                    />
+                                  </div>
+                                  
+                                  <div className="flex items-center space-x-2 pt-4">
+                                    <Switch
+                                      checked={task.isRequired}
+                                      onCheckedChange={(checked) => updateTask(task.id, { isRequired: checked })}
+                                    />
+                                    <Label className="text-xs">Required</Label>
+                                  </div>
+                                </div>
+                              </div>
+                            </Card>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex justify-end gap-2">
+                      <Button variant="outline" onClick={() => setIsEditing(false)}>
+                        Cancel
+                      </Button>
+                      <Button onClick={saveActionWithTasks}>
+                        Save Changes
+                      </Button>
                     </div>
                   </div>
                 ) : (
