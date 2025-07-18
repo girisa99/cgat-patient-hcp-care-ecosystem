@@ -12,8 +12,8 @@ export interface AgentSession {
   
   // Session data for each step
   basic_info?: {
-    name: string;
-    description: string;
+    name?: string;
+    description?: string;
     purpose?: string;
     use_case?: string;
     brand?: string;
@@ -63,11 +63,11 @@ export interface AgentSession {
 export interface AgentSessionUpdate {
   current_step?: AgentSession['current_step'];
   status?: AgentSession['status'];
-  basic_info?: Partial<AgentSession['basic_info']>;
-  canvas?: Partial<AgentSession['canvas']>;
-  actions?: Partial<AgentSession['actions']>;
-  connectors?: Partial<AgentSession['connectors']>;
-  knowledge?: Partial<AgentSession['knowledge']>;
-  rag?: Partial<AgentSession['rag']>;
-  deployment?: Partial<AgentSession['deployment']>;
+  basic_info?: AgentSession['basic_info'];
+  canvas?: AgentSession['canvas'];
+  actions?: AgentSession['actions'];
+  connectors?: AgentSession['connectors'];
+  knowledge?: AgentSession['knowledge'];
+  rag?: AgentSession['rag'];
+  deployment?: AgentSession['deployment'];
 }

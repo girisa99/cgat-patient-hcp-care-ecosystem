@@ -498,6 +498,66 @@ export type Database = {
           },
         ]
       }
+      agent_sessions: {
+        Row: {
+          actions: Json | null
+          basic_info: Json | null
+          canvas: Json | null
+          connectors: Json | null
+          created_at: string
+          current_step: string
+          deployment: Json | null
+          description: string | null
+          id: string
+          knowledge: Json | null
+          name: string
+          rag: Json | null
+          status: string
+          template_id: string | null
+          template_type: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          actions?: Json | null
+          basic_info?: Json | null
+          canvas?: Json | null
+          connectors?: Json | null
+          created_at?: string
+          current_step?: string
+          deployment?: Json | null
+          description?: string | null
+          id?: string
+          knowledge?: Json | null
+          name: string
+          rag?: Json | null
+          status?: string
+          template_id?: string | null
+          template_type?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          actions?: Json | null
+          basic_info?: Json | null
+          canvas?: Json | null
+          connectors?: Json | null
+          created_at?: string
+          current_step?: string
+          deployment?: Json | null
+          description?: string | null
+          id?: string
+          knowledge?: Json | null
+          name?: string
+          rag?: Json | null
+          status?: string
+          template_id?: string | null
+          template_type?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       agent_templates: {
         Row: {
           accent_color: string | null

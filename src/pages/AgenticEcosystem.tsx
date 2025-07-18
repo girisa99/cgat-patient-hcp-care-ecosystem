@@ -3,11 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AgentCanvas } from '@/components/agentic/AgentCanvas';
+import { SessionAgentBuilder } from '@/components/agentic/SessionAgentBuilder';
 import { AgentTemplates } from '@/components/agentic/AgentTemplates';
-import { AgentCreationWizard } from '@/components/agentic/AgentCreationWizard';
-import { SystemConnectors } from '@/components/agentic/SystemConnectors';
-import { AgentDeployment } from '@/components/agentic/AgentDeployment';
 import { KnowledgeBaseManager } from '@/components/rag/KnowledgeBaseManager';
 import { RAGRecommendations } from '@/components/rag/RAGRecommendations';
 import { Bot, Network, Settings, Rocket, Plus, Brain } from 'lucide-react';
@@ -91,10 +88,10 @@ const AgenticEcosystem = () => {
   });
 
   const handleCreateAgent = () => {
-    setActiveTab('wizard');
+    setActiveTab('builder');
     toast({
-      title: "Agent Creation Wizard",
-      description: "Opening guided agent creation process...",
+      title: "Agent Builder",
+      description: "Opening enhanced agent builder with save/continue functionality...",
     });
   };
 
@@ -218,14 +215,14 @@ const AgenticEcosystem = () => {
 
       {/* Main Interface */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="overview">
             <Settings className="h-4 w-4 mr-2" />
             Overview
           </TabsTrigger>
-          <TabsTrigger value="wizard">
+          <TabsTrigger value="builder">
             <Plus className="h-4 w-4 mr-2" />
-            Create Agent
+            Agent Builder
           </TabsTrigger>
           <TabsTrigger value="templates">
             <Plus className="h-4 w-4 mr-2" />
@@ -238,10 +235,6 @@ const AgenticEcosystem = () => {
           <TabsTrigger value="rag">
             <Brain className="h-4 w-4 mr-2" />
             RAG Recommendations
-          </TabsTrigger>
-          <TabsTrigger value="deployment">
-            <Rocket className="h-4 w-4 mr-2" />
-            Deployment
           </TabsTrigger>
         </TabsList>
 
@@ -319,8 +312,8 @@ const AgenticEcosystem = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="wizard" className="space-y-4">
-          <AgentCreationWizard />
+        <TabsContent value="builder" className="space-y-4">
+          <SessionAgentBuilder />
         </TabsContent>
 
         <TabsContent value="templates" className="space-y-4">
@@ -335,9 +328,6 @@ const AgenticEcosystem = () => {
           <RAGRecommendations />
         </TabsContent>
 
-        <TabsContent value="deployment" className="space-y-4">
-          <AgentDeployment agents={agents} onDeploy={handleDeployAgent} />
-        </TabsContent>
       </Tabs>
     </div>
   );

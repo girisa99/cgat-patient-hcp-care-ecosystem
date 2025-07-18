@@ -8,20 +8,23 @@ export const useAgentSession = (sessionId?: string) => {
   const queryClient = useQueryClient();
   const [currentSession, setCurrentSession] = useState<AgentSession | null>(null);
 
+  // Temporary: Use localStorage for sessions until types are updated
+  const getSessionsFromStorage = (): AgentSession[] => {
+    const stored = localStorage.getItem('agent-sessions');
+    return stored ? JSON.parse(stored) : [];
+  };
+
+  const saveSessionsToStorage = (sessions: AgentSession[]) => {
+    localStorage.setItem('agent-sessions', JSON.stringify(sessions));
+  };
+
   // Fetch session if sessionId provided
-  const { data: session, isLoading } = useQuery({
+  const { data: fetchedSession, isLoading } = useQuery({
     queryKey: ['agent-session', sessionId],
     queryFn: async () => {
       if (!sessionId) return null;
-      
-      const { data, error } = await supabase
-        .from('agent_sessions')
-        .select('*')
-        .eq('id', sessionId)
-        .single();
-        
-      if (error) throw error;
-      return data as AgentSession;
+      const sessions = getSessionsFromStorage();
+      return sessions.find(s => s.id === sessionId) || null;
     },
     enabled: !!sessionId,
   });
@@ -30,36 +33,36 @@ export const useAgentSession = (sessionId?: string) => {
   const { data: userSessions = [] } = useQuery({
     queryKey: ['user-agent-sessions'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('agent_sessions')
-        .select('*')
-        .order('updated_at', { ascending: false });
-        
-      if (error) throw error;
-      return data as AgentSession[];
+      return getSessionsFromStorage();
     },
   });
 
   // Create new session
   const createSession = useMutation({
     mutationFn: async (sessionData: Partial<AgentSession>) => {
-      const { data, error } = await supabase
-        .from('agent_sessions')
-        .insert([{
-          name: sessionData.name || 'Untitled Agent',
-          description: sessionData.description,
-          template_id: sessionData.template_id,
-          template_type: sessionData.template_type || 'custom',
-          current_step: 'basic_info',
-          status: 'draft',
-          basic_info: sessionData.basic_info || { name: sessionData.name || 'Untitled Agent', description: sessionData.description || '' },
-          user_id: (await supabase.auth.getUser()).data.user?.id
-        }])
-        .select()
-        .single();
-        
-      if (error) throw error;
-      return data as AgentSession;
+      const user = await supabase.auth.getUser();
+      const newSession: AgentSession = {
+        id: crypto.randomUUID(),
+        name: sessionData.name || 'Untitled Agent',
+        description: sessionData.description,
+        template_id: sessionData.template_id,
+        template_type: sessionData.template_type || 'custom',
+        current_step: 'basic_info',
+        status: 'draft',
+        basic_info: sessionData.basic_info || { 
+          name: sessionData.name || 'Untitled Agent', 
+          description: sessionData.description || '' 
+        },
+        user_id: user.data.user?.id || '',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      const sessions = getSessionsFromStorage();
+      sessions.unshift(newSession);
+      saveSessionsToStorage(sessions);
+      
+      return newSession;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['user-agent-sessions'] });
@@ -81,18 +84,21 @@ export const useAgentSession = (sessionId?: string) => {
   // Update session
   const updateSession = useMutation({
     mutationFn: async ({ sessionId, updates }: { sessionId: string; updates: AgentSessionUpdate }) => {
-      const { data, error } = await supabase
-        .from('agent_sessions')
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', sessionId)
-        .select()
-        .single();
-        
-      if (error) throw error;
-      return data as AgentSession;
+      const sessions = getSessionsFromStorage();
+      const sessionIndex = sessions.findIndex(s => s.id === sessionId);
+      
+      if (sessionIndex === -1) throw new Error('Session not found');
+      
+      const updatedSession: AgentSession = {
+        ...sessions[sessionIndex],
+        ...updates,
+        updated_at: new Date().toISOString(),
+      };
+      
+      sessions[sessionIndex] = updatedSession;
+      saveSessionsToStorage(sessions);
+      
+      return updatedSession;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['agent-session', data.id] });
@@ -111,18 +117,21 @@ export const useAgentSession = (sessionId?: string) => {
   // Auto-save functionality
   const autoSave = useMutation({
     mutationFn: async ({ sessionId, updates }: { sessionId: string; updates: AgentSessionUpdate }) => {
-      const { data, error } = await supabase
-        .from('agent_sessions')
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', sessionId)
-        .select()
-        .single();
-        
-      if (error) throw error;
-      return data as AgentSession;
+      const sessions = getSessionsFromStorage();
+      const sessionIndex = sessions.findIndex(s => s.id === sessionId);
+      
+      if (sessionIndex === -1) throw new Error('Session not found');
+      
+      const updatedSession: AgentSession = {
+        ...sessions[sessionIndex],
+        ...updates,
+        updated_at: new Date().toISOString(),
+      };
+      
+      sessions[sessionIndex] = updatedSession;
+      saveSessionsToStorage(sessions);
+      
+      return updatedSession;
     },
     onSuccess: (data) => {
       setCurrentSession(data);
@@ -133,12 +142,9 @@ export const useAgentSession = (sessionId?: string) => {
   // Delete session
   const deleteSession = useMutation({
     mutationFn: async (sessionId: string) => {
-      const { error } = await supabase
-        .from('agent_sessions')
-        .delete()
-        .eq('id', sessionId);
-        
-      if (error) throw error;
+      const sessions = getSessionsFromStorage();
+      const filteredSessions = sessions.filter(s => s.id !== sessionId);
+      saveSessionsToStorage(filteredSessions);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-agent-sessions'] });
@@ -152,30 +158,30 @@ export const useAgentSession = (sessionId?: string) => {
   // Convert session to deployable agent
   const deployAgent = useMutation({
     mutationFn: async (sessionId: string) => {
-      const session = currentSession || session;
-      if (!session) throw new Error('No session found');
+      const sessionToUse = currentSession || fetchedSession;
+      if (!sessionToUse) throw new Error('No session found');
 
       const agentData = {
-        name: session.basic_info?.name || session.name,
-        description: session.basic_info?.description || session.description,
-        purpose: session.basic_info?.purpose,
-        use_case: session.basic_info?.use_case,
-        brand: session.basic_info?.brand,
-        categories: session.basic_info?.categories || [],
-        topics: session.basic_info?.topics || [],
-        business_units: session.basic_info?.business_units || [],
-        template_id: session.template_id,
+        name: sessionToUse.basic_info?.name || sessionToUse.name,
+        description: sessionToUse.basic_info?.description || sessionToUse.description,
+        purpose: sessionToUse.basic_info?.purpose,
+        use_case: sessionToUse.basic_info?.use_case,
+        brand: sessionToUse.basic_info?.brand,
+        categories: sessionToUse.basic_info?.categories || [],
+        topics: sessionToUse.basic_info?.topics || [],
+        business_units: sessionToUse.basic_info?.business_units || [],
+        template_id: sessionToUse.template_id,
         configuration: {
-          canvas: session.canvas,
-          actions: session.actions,
-          connectors: session.connectors,
-          knowledge: session.knowledge,
-          rag: session.rag,
+          canvas: sessionToUse.canvas,
+          actions: sessionToUse.actions,
+          connectors: sessionToUse.connectors,
+          knowledge: sessionToUse.knowledge,
+          rag: sessionToUse.rag,
         },
-        deployment_config: session.deployment,
+        deployment_config: sessionToUse.deployment,
         status: 'draft',
         agent_type: 'single',
-        created_by: session.user_id,
+        created_by: sessionToUse.user_id,
       };
 
       const { data, error } = await supabase
@@ -204,10 +210,10 @@ export const useAgentSession = (sessionId?: string) => {
   });
 
   useEffect(() => {
-    if (session) {
-      setCurrentSession(session);
+    if (fetchedSession) {
+      setCurrentSession(fetchedSession);
     }
-  }, [session]);
+  }, [fetchedSession]);
 
   return {
     currentSession,
