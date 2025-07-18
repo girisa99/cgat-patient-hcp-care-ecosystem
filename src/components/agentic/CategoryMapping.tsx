@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, X, ChevronDown, ChevronRight } from 'lucide-react';
+import { Plus, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 interface CategoryMappingProps {
@@ -72,6 +72,15 @@ export const CategoryMapping: React.FC<CategoryMappingProps> = ({
   const [newCategory, setNewCategory] = useState('');
   const [newBusinessUnit, setNewBusinessUnit] = useState('');
   const [newTopic, setNewTopic] = useState('');
+  const [openDropdowns, setOpenDropdowns] = useState<{
+    categories: boolean;
+    businessUnits: boolean;
+    topics: boolean;
+  }>({
+    categories: false,
+    businessUnits: false,
+    topics: false
+  });
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [showAddBusinessUnit, setShowAddBusinessUnit] = useState(false);
   const [showAddTopic, setShowAddTopic] = useState(false);
@@ -158,6 +167,15 @@ export const CategoryMapping: React.FC<CategoryMappingProps> = ({
     }
   };
 
+  const toggleDropdown = (dropdown: 'categories' | 'businessUnits' | 'topics') => {
+    setOpenDropdowns(prev => ({
+      categories: false,
+      businessUnits: false,
+      topics: false,
+      [dropdown]: !prev[dropdown]
+    }));
+  };
+
   return (
     <div className="space-y-6">
       <div className="text-center space-y-2">
@@ -170,193 +188,250 @@ export const CategoryMapping: React.FC<CategoryMappingProps> = ({
       {/* Three Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* Category Column */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <h4 className="font-medium text-sm text-muted-foreground flex items-center gap-1">
-              Category
-              <ChevronDown className="h-3 w-3" />
-            </h4>
-          </div>
+        {/* Category Dropdown */}
+        <div className="relative">
+          <Button
+            variant="outline"
+            className="w-full justify-between text-left font-normal"
+            onClick={() => toggleDropdown('categories')}
+          >
+            <span className="text-muted-foreground">Category</span>
+            {openDropdowns.categories ? (
+              <ChevronUp className="h-4 w-4 opacity-50" />
+            ) : (
+              <ChevronDown className="h-4 w-4 opacity-50" />
+            )}
+          </Button>
           
-          <Card className="h-96 overflow-hidden">
-            <div className="p-3 space-y-1 overflow-y-auto h-full">
-              {categories.map((category) => (
-                <div
-                  key={category}
-                  className={`p-2 text-sm cursor-pointer rounded transition-colors ${
-                    selectedCategories.includes(category)
-                      ? 'bg-primary/10 text-primary font-medium'
-                      : 'hover:bg-muted/50'
-                  }`}
-                  onClick={() => toggleCategorySelection(category)}
-                >
-                  {category}
-                </div>
-              ))}
-              
-              {showAddCategory ? (
-                <div className="p-2 space-y-2">
-                  <Input
-                    placeholder="Enter category name..."
-                    value={newCategory}
-                    onChange={(e) => setNewCategory(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleAddCategory()}
-                    className="text-sm"
-                  />
-                  <div className="flex gap-1">
-                    <Button size="sm" onClick={handleAddCategory} className="text-xs">
-                      Add
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="ghost" 
-                      onClick={() => {
-                        setShowAddCategory(false);
-                        setNewCategory('');
-                      }}
-                      className="text-xs"
+          {openDropdowns.categories && (
+            <Card className="absolute top-full left-0 right-0 z-50 mt-1 max-h-80 overflow-hidden shadow-lg">
+              <div className="p-2 space-y-1 overflow-y-auto max-h-72">
+                {categories.map((category) => (
+                  <div key={category} className="flex items-center justify-between group">
+                    <div
+                      className={`flex-1 p-2 text-sm cursor-pointer rounded transition-colors ${
+                        selectedCategories.includes(category)
+                          ? 'bg-primary/10 text-primary font-medium'
+                          : 'hover:bg-muted/50'
+                      }`}
+                      onClick={() => toggleCategorySelection(category)}
                     >
-                      Cancel
-                    </Button>
+                      {category}
+                    </div>
+                    {!DEFAULT_CATEGORIES.includes(category) && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeCategory(category)}
+                        className="opacity-0 group-hover:opacity-100 h-6 w-6 p-0 text-destructive"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    )}
                   </div>
-                </div>
-              ) : (
-                <div
-                  className="p-2 text-sm cursor-pointer rounded text-muted-foreground hover:bg-muted/50 border-t"
-                  onClick={() => setShowAddCategory(true)}
-                >
-                  Add new
-                </div>
-              )}
-            </div>
-          </Card>
+                ))}
+                
+                {showAddCategory ? (
+                  <div className="p-2 space-y-2 border-t">
+                    <Input
+                      placeholder="Enter category name..."
+                      value={newCategory}
+                      onChange={(e) => setNewCategory(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && handleAddCategory()}
+                      className="text-sm"
+                    />
+                    <div className="flex gap-1">
+                      <Button size="sm" onClick={handleAddCategory} className="text-xs">
+                        Add
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        onClick={() => {
+                          setShowAddCategory(false);
+                          setNewCategory('');
+                        }}
+                        className="text-xs"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    className="p-2 text-sm cursor-pointer rounded text-muted-foreground hover:bg-muted/50 border-t text-center"
+                    onClick={() => setShowAddCategory(true)}
+                  >
+                    Add new
+                  </div>
+                )}
+              </div>
+            </Card>
+          )}
         </div>
 
-        {/* Business Units Column */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <h4 className="font-medium text-sm text-muted-foreground flex items-center gap-1">
-              Business Units
-              <ChevronDown className="h-3 w-3" />
-            </h4>
-          </div>
+        {/* Business Units Dropdown */}
+        <div className="relative">
+          <Button
+            variant="outline"
+            className="w-full justify-between text-left font-normal"
+            onClick={() => toggleDropdown('businessUnits')}
+          >
+            <span className="text-muted-foreground">Business Units</span>
+            {openDropdowns.businessUnits ? (
+              <ChevronUp className="h-4 w-4 opacity-50" />
+            ) : (
+              <ChevronDown className="h-4 w-4 opacity-50" />
+            )}
+          </Button>
           
-          <Card className="h-96 overflow-hidden">
-            <div className="p-3 space-y-1 overflow-y-auto h-full">
-              {businessUnits.map((unit) => (
-                <div
-                  key={unit}
-                  className={`p-2 text-sm cursor-pointer rounded transition-colors ${
-                    selectedBusinessUnits.includes(unit)
-                      ? 'bg-primary/10 text-primary font-medium'
-                      : 'hover:bg-muted/50'
-                  }`}
-                  onClick={() => toggleBusinessUnitSelection(unit)}
-                >
-                  {unit}
-                </div>
-              ))}
-              
-              {showAddBusinessUnit ? (
-                <div className="p-2 space-y-2">
-                  <Input
-                    placeholder="Enter business unit..."
-                    value={newBusinessUnit}
-                    onChange={(e) => setNewBusinessUnit(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleAddBusinessUnit()}
-                    className="text-sm"
-                  />
-                  <div className="flex gap-1">
-                    <Button size="sm" onClick={handleAddBusinessUnit} className="text-xs">
-                      Add
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="ghost" 
-                      onClick={() => {
-                        setShowAddBusinessUnit(false);
-                        setNewBusinessUnit('');
-                      }}
-                      className="text-xs"
+          {openDropdowns.businessUnits && (
+            <Card className="absolute top-full left-0 right-0 z-50 mt-1 max-h-80 overflow-hidden shadow-lg">
+              <div className="p-2 space-y-1 overflow-y-auto max-h-72">
+                {businessUnits.map((unit) => (
+                  <div key={unit} className="flex items-center justify-between group">
+                    <div
+                      className={`flex-1 p-2 text-sm cursor-pointer rounded transition-colors ${
+                        selectedBusinessUnits.includes(unit)
+                          ? 'bg-primary/10 text-primary font-medium'
+                          : 'hover:bg-muted/50'
+                      }`}
+                      onClick={() => toggleBusinessUnitSelection(unit)}
                     >
-                      Cancel
-                    </Button>
+                      {unit}
+                    </div>
+                    {!DEFAULT_BUSINESS_UNITS.includes(unit) && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeBusinessUnit(unit)}
+                        className="opacity-0 group-hover:opacity-100 h-6 w-6 p-0 text-destructive"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    )}
                   </div>
-                </div>
-              ) : (
-                <div
-                  className="p-2 text-sm cursor-pointer rounded text-muted-foreground hover:bg-muted/50 border-t"
-                  onClick={() => setShowAddBusinessUnit(true)}
-                >
-                  Add new
-                </div>
-              )}
-            </div>
-          </Card>
+                ))}
+                
+                {showAddBusinessUnit ? (
+                  <div className="p-2 space-y-2 border-t">
+                    <Input
+                      placeholder="Enter business unit..."
+                      value={newBusinessUnit}
+                      onChange={(e) => setNewBusinessUnit(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && handleAddBusinessUnit()}
+                      className="text-sm"
+                    />
+                    <div className="flex gap-1">
+                      <Button size="sm" onClick={handleAddBusinessUnit} className="text-xs">
+                        Add
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        onClick={() => {
+                          setShowAddBusinessUnit(false);
+                          setNewBusinessUnit('');
+                        }}
+                        className="text-xs"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    className="p-2 text-sm cursor-pointer rounded text-muted-foreground hover:bg-muted/50 border-t text-center"
+                    onClick={() => setShowAddBusinessUnit(true)}
+                  >
+                    Add new
+                  </div>
+                )}
+              </div>
+            </Card>
+          )}
         </div>
 
-        {/* Topics Column */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <h4 className="font-medium text-sm text-muted-foreground flex items-center gap-1">
-              Topics
-              <ChevronDown className="h-3 w-3" />
-            </h4>
-          </div>
+        {/* Topics Dropdown */}
+        <div className="relative">
+          <Button
+            variant="outline"
+            className="w-full justify-between text-left font-normal"
+            onClick={() => toggleDropdown('topics')}
+          >
+            <span className="text-muted-foreground">Topics</span>
+            {openDropdowns.topics ? (
+              <ChevronUp className="h-4 w-4 opacity-50" />
+            ) : (
+              <ChevronDown className="h-4 w-4 opacity-50" />
+            )}
+          </Button>
           
-          <Card className="h-96 overflow-hidden">
-            <div className="p-3 space-y-1 overflow-y-auto h-full">
-              {topics.map((topic) => (
-                <div
-                  key={topic}
-                  className={`p-2 text-sm cursor-pointer rounded transition-colors ${
-                    selectedTopics.includes(topic)
-                      ? 'bg-primary/10 text-primary font-medium'
-                      : 'hover:bg-muted/50'
-                  }`}
-                  onClick={() => toggleTopicSelection(topic)}
-                >
-                  {topic}
-                </div>
-              ))}
-              
-              {showAddTopic ? (
-                <div className="p-2 space-y-2">
-                  <Input
-                    placeholder="Enter topic..."
-                    value={newTopic}
-                    onChange={(e) => setNewTopic(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleAddTopic()}
-                    className="text-sm"
-                  />
-                  <div className="flex gap-1">
-                    <Button size="sm" onClick={handleAddTopic} className="text-xs">
-                      Add
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="ghost" 
-                      onClick={() => {
-                        setShowAddTopic(false);
-                        setNewTopic('');
-                      }}
-                      className="text-xs"
+          {openDropdowns.topics && (
+            <Card className="absolute top-full left-0 right-0 z-50 mt-1 max-h-80 overflow-hidden shadow-lg">
+              <div className="p-2 space-y-1 overflow-y-auto max-h-72">
+                {topics.map((topic) => (
+                  <div key={topic} className="flex items-center justify-between group">
+                    <div
+                      className={`flex-1 p-2 text-sm cursor-pointer rounded transition-colors ${
+                        selectedTopics.includes(topic)
+                          ? 'bg-primary/10 text-primary font-medium'
+                          : 'hover:bg-muted/50'
+                      }`}
+                      onClick={() => toggleTopicSelection(topic)}
                     >
-                      Cancel
-                    </Button>
+                      {topic}
+                    </div>
+                    {!DEFAULT_TOPICS.includes(topic) && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeTopic(topic)}
+                        className="opacity-0 group-hover:opacity-100 h-6 w-6 p-0 text-destructive"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    )}
                   </div>
-                </div>
-              ) : (
-                <div
-                  className="p-2 text-sm cursor-pointer rounded text-muted-foreground hover:bg-muted/50 border-t"
-                  onClick={() => setShowAddTopic(true)}
-                >
-                  Add New
-                </div>
-              )}
-            </div>
-          </Card>
+                ))}
+                
+                {showAddTopic ? (
+                  <div className="p-2 space-y-2 border-t">
+                    <Input
+                      placeholder="Enter topic..."
+                      value={newTopic}
+                      onChange={(e) => setNewTopic(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && handleAddTopic()}
+                      className="text-sm"
+                    />
+                    <div className="flex gap-1">
+                      <Button size="sm" onClick={handleAddTopic} className="text-xs">
+                        Add
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        onClick={() => {
+                          setShowAddTopic(false);
+                          setNewTopic('');
+                        }}
+                        className="text-xs"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    className="p-2 text-sm cursor-pointer rounded text-muted-foreground hover:bg-muted/50 border-t text-center"
+                    onClick={() => setShowAddTopic(true)}
+                  >
+                    Add New
+                  </div>
+                )}
+              </div>
+            </Card>
+          )}
         </div>
       </div>
 
