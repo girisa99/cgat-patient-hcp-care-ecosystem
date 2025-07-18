@@ -16,6 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { CircleCheckBig, AlertTriangle, Bot, Settings, Users, CheckCircle } from 'lucide-react';
+import { CategoryMapping } from './CategoryMapping';
 
 interface Template {
   id: string;
@@ -46,6 +47,10 @@ interface WizardState {
   connectorIds: string[];
   agentType: 'single' | 'multiple';
   isFirstTime: boolean;
+  // Category mapping fields
+  selectedCategories: string[];
+  selectedBusinessUnits: string[];
+  selectedTopics: string[];
   deploymentConfig: {
     parallel: boolean;
     compliance: boolean;
@@ -73,6 +78,10 @@ export const AgentCreationWizard = () => {
     connectorIds: [],
     agentType: 'single',
     isFirstTime: localStorage.getItem('agent_creation_tutorial') !== 'completed',
+    // Category mapping fields
+    selectedCategories: [],
+    selectedBusinessUnits: [],
+    selectedTopics: [],
     deploymentConfig: {
       parallel: false,
       compliance: true,
@@ -138,15 +147,17 @@ export const AgentCreationWizard = () => {
         return state.startOption !== null;
       case 1: // Template/Agent type selection
         return state.startOption === 'template' ? state.templateId !== null : (state.name !== '' && state.agentType !== null);
-      case 2: // Canvas customization
+      case 2: // Category mapping
+        return true; // Optional step
+      case 3: // Canvas customization
         return state.name !== '' && state.tagline !== '';
-      case 3: // Connectors & templates (if needed)
+      case 4: // Connectors & templates (if needed)
         return true; // Optional
-      case 4: // Knowledge Base
+      case 5: // Knowledge Base
         return true; // Optional
-      case 5: // RAG & Compliance
+      case 6: // RAG & Compliance
         return true; // Optional
-      case 6: // Deployment
+      case 7: // Deployment
         return true; // Configuration is always valid
       default:
         return false;
@@ -472,8 +483,20 @@ export const AgentCreationWizard = () => {
       )}
     </div>,
     
-    // Step 3: Canvas Customization
+    // Step 3: Category Mapping
     <div className="space-y-6" key="step-3">
+      <CategoryMapping
+        selectedCategories={state.selectedCategories}
+        selectedBusinessUnits={state.selectedBusinessUnits}
+        selectedTopics={state.selectedTopics}
+        onCategoriesChange={(categories) => updateField('selectedCategories', categories)}
+        onBusinessUnitsChange={(units) => updateField('selectedBusinessUnits', units)}
+        onTopicsChange={(topics) => updateField('selectedTopics', topics)}
+      />
+    </div>,
+
+    // Step 4: Canvas Customization
+    <div className="space-y-6" key="step-4">
       <div>
         <h3 className="text-lg font-medium">Customize Your Agent</h3>
         <p className="text-muted-foreground">Brand and customize your agent appearance</p>
@@ -505,71 +528,27 @@ export const AgentCreationWizard = () => {
       />
     </div>,
     
-    // Step 4: Category & Connectors
-    <div className="space-y-6" key="step-4">
+    // Step 5: System Connectors & AI Models
+    <div className="space-y-6" key="step-5">
       <div>
-        <h3 className="text-lg font-medium">Agent Category & System Connectors</h3>
-        <p className="text-muted-foreground">Choose a category and connect external systems for your agent</p>
+        <h3 className="text-lg font-medium">System Connectors & AI Models</h3>
+        <p className="text-muted-foreground">Connect external systems and configure AI models for your agent</p>
         {state.isFirstTime && (
           <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg mt-2">
             <p className="text-sm text-blue-800 dark:text-blue-200">
-              🏷️ <strong>Category:</strong> Select the primary category that best describes your agent's purpose.
-              <br />
               🔗 <strong>Connectors:</strong> Integrate with external APIs, databases, and services including your own internal APIs.
+              <br />
+              🤖 <strong>AI Models:</strong> Configure the AI models that will power your agent.
             </p>
           </div>
         )}
       </div>
       
-      <Tabs defaultValue="category" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="category">Agent Category</TabsTrigger>
+      <Tabs defaultValue="connectors" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="connectors">System Connectors</TabsTrigger>
           <TabsTrigger value="ai-models">AI Models</TabsTrigger>
         </TabsList>
-        
-        <TabsContent value="category" className="space-y-4">
-          <div className="space-y-4">
-            <h4 className="font-medium">Select Agent Category</h4>
-            <p className="text-sm text-muted-foreground">
-              Choose the primary category that best fits your agent's purpose
-            </p>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {[
-                'Healthcare', 'Insurance', 'Clinical', 'Support', 'Safety', 
-                'Development', 'Product', 'CRM', 'Scheduling', 'Quality', 
-                'Research', 'Onboarding', 'Market Access', 'Compliance'
-              ].map((category) => (
-                <Card 
-                  key={category} 
-                  className={`p-3 cursor-pointer transition-all ${
-                    state.connectorIds.includes(`category-${category}`) 
-                      ? 'ring-2 ring-primary bg-primary/5' 
-                      : 'hover:bg-muted/50'
-                  }`}
-                  onClick={() => {
-                    const categoryId = `category-${category}`;
-                    // Only allow one category selection
-                    const otherCategories = state.connectorIds.filter(id => !id.startsWith('category-'));
-                    const isSelected = state.connectorIds.includes(categoryId);
-                    handleConnectorChange(isSelected ? otherCategories : [...otherCategories, categoryId]);
-                  }}
-                >
-                  <div className="text-center">
-                    <div className="text-sm font-medium">{category}</div>
-                  </div>
-                </Card>
-              ))}
-            </div>
-            <div className="mt-4 p-3 bg-muted/50 rounded-lg">
-              <p className="text-sm text-muted-foreground">
-                💡 <strong>Selected Category:</strong> {
-                  state.connectorIds.find(id => id.startsWith('category-'))?.replace('category-', '') || 'None selected'
-                }
-              </p>
-            </div>
-          </div>
-        </TabsContent>
         
         <TabsContent value="connectors" className="space-y-4">
           <div className="space-y-4">
@@ -681,8 +660,8 @@ export const AgentCreationWizard = () => {
       </Tabs>
     </div>,
 
-    // Step 5: Knowledge Base
-    <div className="space-y-6" key="step-5">
+    // Step 6: Knowledge Base
+    <div className="space-y-6" key="step-6">
       <div>
         <h3 className="text-lg font-medium">Knowledge Base</h3>
         <p className="text-muted-foreground">Add knowledge documents to your agent</p>
@@ -701,8 +680,8 @@ export const AgentCreationWizard = () => {
       />
     </div>,
     
-    // Step 6: RAG & Compliance
-    <div className="space-y-6" key="step-6">
+    // Step 7: RAG & Compliance
+    <div className="space-y-6" key="step-7">
       <div>
         <h3 className="text-lg font-medium">RAG Configuration & Compliance</h3>
         <p className="text-muted-foreground">Set up retrieval and compliance workflows</p>
@@ -722,8 +701,8 @@ export const AgentCreationWizard = () => {
       />
     </div>,
     
-    // Step 7: Deployment
-    <div className="space-y-6" key="step-7">
+    // Step 8: Deployment
+    <div className="space-y-6" key="step-8">
       <div>
         <h3 className="text-lg font-medium">Deployment Configuration</h3>
         <p className="text-muted-foreground">Configure your agent deployment settings</p>
@@ -752,6 +731,15 @@ export const AgentCreationWizard = () => {
             </div>
             <div>
               <strong>Name:</strong> {state.name || 'Not set'}
+            </div>
+            <div>
+              <strong>Categories:</strong> {state.selectedCategories.length} selected
+            </div>
+            <div>
+              <strong>Business Units:</strong> {state.selectedBusinessUnits.length} selected
+            </div>
+            <div>
+              <strong>Topics:</strong> {state.selectedTopics.length} selected
             </div>
             <div>
               <strong>Knowledge Bases:</strong> {state.knowledgeBaseIds.length} selected
@@ -819,6 +807,7 @@ export const AgentCreationWizard = () => {
           >
             <Step title="Start" description="Choose approach" />
             <Step title="Setup" description="Template or custom" />
+            <Step title="Category" description="Map categories" />
             <Step title="Canvas" description="Customize appearance" />
             <Step title="Connectors" description="System integrations" />
             <Step title="Knowledge" description="Add knowledge base" />
