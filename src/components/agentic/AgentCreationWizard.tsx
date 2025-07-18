@@ -17,6 +17,7 @@ import { toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { CircleCheckBig, AlertTriangle, Bot, Settings, Users, CheckCircle } from 'lucide-react';
 import { CategoryMapping } from './CategoryMapping';
+import { AgentActionsManager, type AgentAction } from './AgentActionsManager';
 
 interface Template {
   id: string;
@@ -38,6 +39,7 @@ interface WizardState {
   description: string;
   brand: string;
   tagline: string;
+  purpose: string;
   primaryColor: string;
   secondaryColor: string;
   accentColor: string;
@@ -51,6 +53,8 @@ interface WizardState {
   selectedCategories: string[];
   selectedBusinessUnits: string[];
   selectedTopics: string[];
+  // Agent actions
+  agentActions: AgentAction[];
   deploymentConfig: {
     parallel: boolean;
     compliance: boolean;
@@ -69,6 +73,7 @@ export const AgentCreationWizard = () => {
     description: '',
     brand: '',
     tagline: '',
+    purpose: '',
     primaryColor: '#3b82f6',
     secondaryColor: '#8b5cf6',
     accentColor: '#06b6d4',
@@ -82,6 +87,8 @@ export const AgentCreationWizard = () => {
     selectedCategories: [],
     selectedBusinessUnits: [],
     selectedTopics: [],
+    // Agent actions
+    agentActions: [],
     deploymentConfig: {
       parallel: false,
       compliance: true,
@@ -151,13 +158,15 @@ export const AgentCreationWizard = () => {
         return hasBasicInfo;
       case 2: // Canvas customization
         return state.name !== '' && state.tagline !== '';
-      case 3: // Connectors & AI Models
+      case 3: // Agent Actions & Tasks
+        return true; // Optional - can proceed without actions
+      case 4: // Connectors & AI Models
         return true; // Optional
-      case 4: // Knowledge Base
+      case 5: // Knowledge Base
         return true; // Optional
-      case 5: // RAG & Compliance
+      case 6: // RAG & Compliance
         return true; // Optional
-      case 6: // Deployment
+      case 7: // Deployment
         return true; // Configuration is always valid
       default:
         return false;
@@ -168,17 +177,18 @@ export const AgentCreationWizard = () => {
   const handleSelectTemplate = (templateId: string) => {
     const selectedTemplate = templates.find(t => t.id === templateId);
     if (selectedTemplate) {
-      setState({
-        ...state,
-        templateId,
-        name: selectedTemplate.name,
-        description: selectedTemplate.description || '',
-        tagline: selectedTemplate.tagline || '',
-        primaryColor: selectedTemplate.primary_color,
-        secondaryColor: selectedTemplate.secondary_color,
-        accentColor: selectedTemplate.accent_color,
-        logoUrl: selectedTemplate.logo_url || '',
-      });
+        setState({
+          ...state,
+          templateId,
+          name: selectedTemplate.name,
+          description: selectedTemplate.description || '',
+          purpose: selectedTemplate.description || '',
+          tagline: selectedTemplate.tagline || '',
+          primaryColor: selectedTemplate.primary_color,
+          secondaryColor: selectedTemplate.secondary_color,
+          accentColor: selectedTemplate.accent_color,
+          logoUrl: selectedTemplate.logo_url || '',
+        });
     }
   };
 
@@ -468,15 +478,18 @@ export const AgentCreationWizard = () => {
                   placeholder="Enter agent name"
                 />
               </div>
-              <div>
-                <Label htmlFor="agentDescription">Description</Label>
-                <Input 
-                  id="agentDescription"
-                  value={state.description}
-                  onChange={(e) => updateField('description', e.target.value)}
-                  placeholder="Brief description of agent purpose"
-                />
-              </div>
+                <div>
+                  <Label htmlFor="agentDescription">Description</Label>
+                  <Input 
+                    id="agentDescription"
+                    value={state.description}
+                    onChange={(e) => {
+                      updateField('description', e.target.value);
+                      updateField('purpose', e.target.value);
+                    }}
+                    placeholder="Brief description of agent purpose"
+                  />
+                </div>
             </div>
 
             {/* Category Mapping Section */}
@@ -528,7 +541,17 @@ export const AgentCreationWizard = () => {
       />
     </div>,
 
-    // Step 4: System Connectors & AI Models
+    // Step 4: Agent Actions & Tasks
+    <div className="space-y-6" key="step-4">
+      <AgentActionsManager
+        onActionsChange={(actions) => updateField('agentActions', actions)}
+        initialActions={state.agentActions || []}
+        agentType={state.agentType}
+        agentPurpose={state.purpose}
+      />
+    </div>,
+
+    // Step 5: System Connectors & AI Models
     <div className="space-y-6" key="step-5">
       <div>
         <h3 className="text-lg font-medium">System Connectors & AI Models</h3>
@@ -742,6 +765,9 @@ export const AgentCreationWizard = () => {
               <strong>Topics:</strong> {state.selectedTopics.length} selected
             </div>
             <div>
+              <strong>Agent Actions:</strong> {state.agentActions.length} configured
+            </div>
+            <div>
               <strong>Knowledge Bases:</strong> {state.knowledgeBaseIds.length} selected
             </div>
             <div>
@@ -808,6 +834,7 @@ export const AgentCreationWizard = () => {
             <Step title="Start" description="Choose approach" />
             <Step title="Setup" description="Template or custom" />
             <Step title="Canvas" description="Customize appearance" />
+            <Step title="Actions" description="Configure tasks" />
             <Step title="Connectors" description="System integrations" />
             <Step title="Knowledge" description="Add knowledge base" />
             <Step title="RAG" description="Configure RAG & compliance" />
