@@ -1,54 +1,49 @@
-import React from 'react';
+import React, { useState } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
-import { useRoleBasedNavigation } from '@/hooks/useRoleBasedNavigation';
-import { Card, CardContent } from '@/components/ui/card';
-import { ExtensibleModuleTemplate } from '@/templates/components/ExtensibleModuleTemplate';
-import { useAgents } from '@/hooks/useAgents';
-import { Badge } from '@/components/ui/badge';
-import { Bot, Brain } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Bot, Network } from 'lucide-react';
 
-const Agents: React.FC = () => {
-  console.log('🤖 Agents page - Using template structure');
-  
-  const { hasAccess, currentRole } = useRoleBasedNavigation();
-  const agents = useAgents();
-  
-  if (!hasAccess('/agents')) {
-    return (
-      <AppLayout title="Access Denied">
-        <Card>
-          <CardContent className="p-8 text-center">
-            <p>You don't have permission to access AI Agents.</p>
-            <p className="text-sm text-muted-foreground mt-2">Current role: {currentRole}</p>
-          </CardContent>
-        </Card>
-      </AppLayout>
-    );
-  }
+// Import the ecosystem components
+import AgenticEcosystem from './AgenticEcosystem';
+import AgenticAPIEcosystem from './AgenticAPIEcosystem';
 
-  const columns = [
-    { key: 'name', header: 'Agent Name' },
-    { key: 'description', header: 'Description' },
-    { key: 'agent_type', header: 'Type', cell: (value: string) => <Badge variant="outline">{value || 'single'}</Badge> },
-    { key: 'status', header: 'Status', cell: (value: string) => <Badge variant={value === 'active' ? "default" : "secondary"}>{value || 'draft'}</Badge> }
-  ];
+const Agents = () => {
+  const [activeTab, setActiveTab] = useState('agentic-ecosystem');
 
   return (
-    <AppLayout title="AI Agents">
-      <ExtensibleModuleTemplate
-        title="AI Agents"
-        description="Manage intelligent AI agents for healthcare automation and assistance"
-        items={agents.items}
-        isLoading={agents.isLoading}
-        error={agents.error}
-        searchItems={agents.searchItems}
-        getStatistics={agents.getStatistics}
-        columns={columns}
-        onRefresh={agents.refetch}
-        enableCreate={false}
-        enableEdit={false}
-        enableDelete={false}
-      />
+    <AppLayout>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Agents</h1>
+            <p className="text-muted-foreground mt-2">
+              Manage and deploy intelligent agents for healthcare automation
+            </p>
+          </div>
+        </div>
+
+        {/* Main Tabs Interface */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="agentic-ecosystem" className="flex items-center gap-2">
+              <Bot className="h-4 w-4" />
+              Agentic Ecosystem
+            </TabsTrigger>
+            <TabsTrigger value="agentic-api-ecosystem" className="flex items-center gap-2">
+              <Network className="h-4 w-4" />
+              Agentic API Ecosystem
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="agentic-ecosystem" className="space-y-4">
+            <AgenticEcosystem />
+          </TabsContent>
+
+          <TabsContent value="agentic-api-ecosystem" className="space-y-4">
+            <AgenticAPIEcosystem />
+          </TabsContent>
+        </Tabs>
+      </div>
     </AppLayout>
   );
 };

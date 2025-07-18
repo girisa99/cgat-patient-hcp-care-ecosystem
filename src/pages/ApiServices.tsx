@@ -1,67 +1,28 @@
 
 import React from 'react';
 import AppLayout from '@/components/layout/AppLayout';
-import { ExtensibleModuleTemplate } from '@/templates/components/ExtensibleModuleTemplate';
-import { useApiServices } from '@/hooks/useApiServices';
-import { Badge } from '@/components/ui/badge';
-import { Globe } from 'lucide-react';
+import ApiServicesTabsContainer from '@/components/api/ApiServicesTabsContainer';
+import { getErrorMessage } from '@/utils/errorHandling';
 
 const ApiServices = () => {
-  console.log('🚀 API Services page - Using template structure');
-  
-  const apiServices = useApiServices();
-
-  const columns = [
-    {
-      key: 'name',
-      header: 'Name'
-    },
-    {
-      key: 'description',
-      header: 'Description'
-    },
-    {
-      key: 'type',
-      header: 'Type',
-      cell: (value: string) => <Badge variant="outline">{value}</Badge>
-    },
-    {
-      key: 'direction',
-      header: 'Direction',
-      cell: (value: string) => <Badge variant="secondary">{value}</Badge>
-    },
-    {
-      key: 'status',
-      header: 'Status',
-      cell: (value: string) => (
-        <Badge variant={value === 'active' ? "default" : "secondary"}>
-          {value}
-        </Badge>
-      )
-    }
-  ];
+  console.log('🚀 API Services page rendered');
   
   return (
     <AppLayout title="API Services">
-      <ExtensibleModuleTemplate
-        title="API Services"
-        description="Comprehensive API ecosystem management including internal services, external integrations, publishing, marketplace, developer portal, and more"
-        items={apiServices.items}
-        isLoading={apiServices.isLoading}
-        error={apiServices.error}
-        searchItems={apiServices.searchItems}
-        createItem={undefined}
-        updateItem={undefined}
-        deleteItem={undefined}
-        getStatistics={apiServices.getStatistics}
-        columns={columns}
-        onRefresh={apiServices.refetch}
-        customActions={
-          <div className="flex items-center gap-2">
-            <Globe className="h-4 w-4" />
-          </div>
-        }
-      />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header Section */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            API Services Management
+          </h1>
+          <p className="text-lg text-gray-600">
+            Comprehensive API ecosystem management including internal services, external integrations, publishing, marketplace, developer portal, and more
+          </p>
+        </div>
+
+        {/* Main Tabs Container with all functionality */}
+        <ApiServicesTabsContainer />
+      </div>
     </AppLayout>
   );
 };
