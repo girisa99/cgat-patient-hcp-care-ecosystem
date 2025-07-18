@@ -146,7 +146,9 @@ export const AgentCreationWizard = () => {
       case 0: // Start preference
         return state.startOption !== null;
       case 1: // Template/Agent type selection with category mapping
-        return state.startOption === 'template' ? state.templateId !== null : (state.name !== '' && state.agentType !== null);
+        const hasBasicInfo = state.startOption === 'template' ? state.templateId !== null : (state.name !== '' && state.agentType !== null);
+        // Category mapping is optional - don't require it for step completion
+        return hasBasicInfo;
       case 2: // Canvas customization
         return state.name !== '' && state.tagline !== '';
       case 3: // Connectors & AI Models

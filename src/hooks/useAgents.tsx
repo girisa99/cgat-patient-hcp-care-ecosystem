@@ -18,6 +18,11 @@ interface Agent {
   configuration: any;
   deployment_config?: any;
   template_id?: string;
+  categories?: string[];
+  business_units?: string[];
+  topics?: string[];
+  organization_id?: string;
+  facility_id?: string;
   created_by?: string;
   created_at: string;
   updated_at: string;
@@ -50,7 +55,6 @@ export const useAgents = () => {
     refetchOnWindowFocus: false,
   });
 
-  // Create agent mutation
   const createAgentMutation = useMutation({
     mutationFn: async (agentData: {
       name: string;
@@ -59,6 +63,11 @@ export const useAgents = () => {
       purpose?: string;
       use_case?: string;
       configuration?: any;
+      categories?: string[];
+      business_units?: string[];
+      topics?: string[];
+      organization_id?: string;
+      facility_id?: string;
     }) => {
       const { data, error } = await supabase
         .from('agents')

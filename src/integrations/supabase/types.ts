@@ -193,6 +193,44 @@ export type Database = {
           },
         ]
       }
+      agent_organization_mapping: {
+        Row: {
+          agent_id: string
+          business_unit: string | null
+          created_at: string
+          department: string | null
+          facility_id: string | null
+          id: string
+          organization_id: string | null
+        }
+        Insert: {
+          agent_id: string
+          business_unit?: string | null
+          created_at?: string
+          department?: string | null
+          facility_id?: string | null
+          id?: string
+          organization_id?: string | null
+        }
+        Update: {
+          agent_id?: string
+          business_unit?: string | null
+          created_at?: string
+          department?: string | null
+          facility_id?: string | null
+          id?: string
+          organization_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_organization_mapping_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agent_templates: {
         Row: {
           accent_color: string | null
@@ -244,52 +282,105 @@ export type Database = {
         }
         Relationships: []
       }
+      agent_user_associations: {
+        Row: {
+          access_level: string | null
+          agent_id: string
+          created_at: string
+          id: string
+          role: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_level?: string | null
+          agent_id: string
+          created_at?: string
+          id?: string
+          role: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_level?: string | null
+          agent_id?: string
+          created_at?: string
+          id?: string
+          role?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_user_associations_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agents: {
         Row: {
           agent_type: string | null
           brand: string | null
+          business_units: string[] | null
+          categories: string[] | null
           configuration: Json | null
           created_at: string
           created_by: string | null
           deployment_config: Json | null
           description: string | null
+          facility_id: string | null
           id: string
           name: string
+          organization_id: string | null
           purpose: string | null
           status: string | null
           template_id: string | null
+          topics: string[] | null
           updated_at: string
           use_case: string | null
         }
         Insert: {
           agent_type?: string | null
           brand?: string | null
+          business_units?: string[] | null
+          categories?: string[] | null
           configuration?: Json | null
           created_at?: string
           created_by?: string | null
           deployment_config?: Json | null
           description?: string | null
+          facility_id?: string | null
           id?: string
           name: string
+          organization_id?: string | null
           purpose?: string | null
           status?: string | null
           template_id?: string | null
+          topics?: string[] | null
           updated_at?: string
           use_case?: string | null
         }
         Update: {
           agent_type?: string | null
           brand?: string | null
+          business_units?: string[] | null
+          categories?: string[] | null
           configuration?: Json | null
           created_at?: string
           created_by?: string | null
           deployment_config?: Json | null
           description?: string | null
+          facility_id?: string | null
           id?: string
           name?: string
+          organization_id?: string | null
           purpose?: string | null
           status?: string | null
           template_id?: string | null
+          topics?: string[] | null
           updated_at?: string
           use_case?: string | null
         }
