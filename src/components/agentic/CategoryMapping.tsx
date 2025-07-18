@@ -39,14 +39,17 @@ const DEFAULT_BUSINESS_UNITS = [
   'Compliance'
 ];
 
-const DEFAULT_TOPICS = {
-  'Commercial': ['Market access'],
-  'R&D': ['Clinical data management'],
-  'Supply chain': [],
-  'IT': ['Service now', 'Dev Ops', 'Jira'],
-  'Manufacturing': ['Batch process', 'Order confirmation', 'Fulfillment'],
-  'Compliance': ['21 CFR Part 11']
-};
+const DEFAULT_TOPICS = [
+  'Market access',
+  'Clinical data management', 
+  'Service now',
+  'Dev Ops',
+  'Jira',
+  'Batch process',
+  'Order confirmation',
+  'Fulfillment',
+  '21 CFR Part 11'
+];
 
 export const CategoryMapping: React.FC<CategoryMappingProps> = ({
   selectedCategories,
@@ -58,11 +61,10 @@ export const CategoryMapping: React.FC<CategoryMappingProps> = ({
 }) => {
   const [categories, setCategories] = useState<string[]>(DEFAULT_CATEGORIES);
   const [businessUnits, setBusinessUnits] = useState<string[]>(DEFAULT_BUSINESS_UNITS);
-  const [topics, setTopics] = useState<{ [key: string]: string[] }>(DEFAULT_TOPICS);
+  const [topics, setTopics] = useState<string[]>(DEFAULT_TOPICS);
   const [newCategory, setNewCategory] = useState('');
   const [newBusinessUnit, setNewBusinessUnit] = useState('');
   const [newTopic, setNewTopic] = useState('');
-  const [selectedBusinessUnitForTopic, setSelectedBusinessUnitForTopic] = useState('');
   const [expandedSections, setExpandedSections] = useState<{ [key: string]: boolean }>({
     categories: true,
     businessUnits: true,
@@ -92,7 +94,6 @@ export const CategoryMapping: React.FC<CategoryMappingProps> = ({
     if (newBusinessUnit.trim() && !businessUnits.includes(newBusinessUnit.trim())) {
       const updated = [...businessUnits, newBusinessUnit.trim()];
       setBusinessUnits(updated);
-      setTopics(prev => ({ ...prev, [newBusinessUnit.trim()]: [] }));
       setNewBusinessUnit('');
       toast({
         title: 'Success',
@@ -102,17 +103,13 @@ export const CategoryMapping: React.FC<CategoryMappingProps> = ({
   };
 
   const addNewTopic = () => {
-    if (newTopic.trim() && selectedBusinessUnitForTopic && 
-        !topics[selectedBusinessUnitForTopic]?.includes(newTopic.trim())) {
-      const updated = {
-        ...topics,
-        [selectedBusinessUnitForTopic]: [...(topics[selectedBusinessUnitForTopic] || []), newTopic.trim()]
-      };
+    if (newTopic.trim() && !topics.includes(newTopic.trim())) {
+      const updated = [...topics, newTopic.trim()];
       setTopics(updated);
       setNewTopic('');
       toast({
         title: 'Success',
-        description: `New topic added to ${selectedBusinessUnitForTopic}`
+        description: 'New topic added successfully'
       });
     }
   };
@@ -124,19 +121,11 @@ export const CategoryMapping: React.FC<CategoryMappingProps> = ({
 
   const removeBusinessUnit = (unit: string) => {
     setBusinessUnits(prev => prev.filter(u => u !== unit));
-    setTopics(prev => {
-      const updated = { ...prev };
-      delete updated[unit];
-      return updated;
-    });
     onBusinessUnitsChange(selectedBusinessUnits.filter(u => u !== unit));
   };
 
-  const removeTopic = (businessUnit: string, topic: string) => {
-    setTopics(prev => ({
-      ...prev,
-      [businessUnit]: prev[businessUnit]?.filter(t => t !== topic) || []
-    }));
+  const removeTopic = (topic: string) => {
+    setTopics(prev => prev.filter(t => t !== topic));
     onTopicsChange(selectedTopics.filter(t => t !== topic));
   };
 
@@ -326,78 +315,52 @@ export const CategoryMapping: React.FC<CategoryMappingProps> = ({
                   <ChevronRight className="h-4 w-4" />
                 }
               </Button>
-              Topics by Business Unit
+              Topics
               <Badge variant="secondary">{selectedTopics.length} selected</Badge>
             </CardTitle>
           </div>
         </CardHeader>
         {expandedSections.topics && (
           <CardContent className="space-y-4">
-            {businessUnits.map((unit) => (
-              <div key={unit} className="space-y-2">
-                <Label className="text-sm font-medium text-primary">{unit}</Label>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                  {topics[unit]?.map((topic) => (
-                    <div key={topic} className="flex items-center gap-2">
-                      <Card 
-                        className={`flex-1 cursor-pointer transition-all ${
-                          selectedTopics.includes(topic) 
-                            ? 'ring-2 ring-primary bg-primary/5' 
-                            : 'hover:bg-muted/50'
-                        }`}
-                        onClick={() => toggleTopicSelection(topic)}
-                      >
-                        <CardContent className="p-2">
-                          <div className="text-xs font-medium">{topic}</div>
-                        </CardContent>
-                      </Card>
-                      {!DEFAULT_TOPICS[unit]?.includes(topic) && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeTopic(unit, topic)}
-                          className="text-destructive"
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      )}
-                    </div>
-                  )) || (
-                    <p className="text-xs text-muted-foreground col-span-full">No topics for this business unit</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {topics.map((topic) => (
+                <div key={topic} className="flex items-center gap-2">
+                  <Card 
+                    className={`flex-1 cursor-pointer transition-all ${
+                      selectedTopics.includes(topic) 
+                        ? 'ring-2 ring-primary bg-primary/5' 
+                        : 'hover:bg-muted/50'
+                    }`}
+                    onClick={() => toggleTopicSelection(topic)}
+                  >
+                    <CardContent className="p-3">
+                      <div className="text-sm font-medium">{topic}</div>
+                    </CardContent>
+                  </Card>
+                  {!DEFAULT_TOPICS.includes(topic) && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeTopic(topic)}
+                      className="text-destructive"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
                   )}
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="businessUnitSelect">Add Topic to Business Unit</Label>
-              <div className="flex gap-2">
-                <select
-                  id="businessUnitSelect"
-                  value={selectedBusinessUnitForTopic}
-                  onChange={(e) => setSelectedBusinessUnitForTopic(e.target.value)}
-                  className="flex h-10 w-[180px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
-                >
-                  <option value="">Select business unit</option>
-                  {businessUnits.map((unit) => (
-                    <option key={unit} value={unit}>{unit}</option>
-                  ))}
-                </select>
-                <Input
-                  placeholder="Add new topic..."
-                  value={newTopic}
-                  onChange={(e) => setNewTopic(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && addNewTopic()}
-                  disabled={!selectedBusinessUnitForTopic}
-                />
-                <Button 
-                  onClick={addNewTopic} 
-                  size="sm" 
-                  disabled={!selectedBusinessUnitForTopic || !newTopic.trim()}
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
+            <div className="flex gap-2">
+              <Input
+                placeholder="Add new topic..."
+                value={newTopic}
+                onChange={(e) => setNewTopic(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && addNewTopic()}
+              />
+              <Button onClick={addNewTopic} size="sm">
+                <Plus className="h-4 w-4" />
+              </Button>
             </div>
           </CardContent>
         )}
