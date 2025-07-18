@@ -63,6 +63,7 @@ interface TestingStats {
 interface ConsolidatedTestingReturn {
   // Core data
   testCases: TestCase[];
+  items: TestCase[]; // Compatibility alias
   testingStats: TestingStats;
   executions: TestExecution[];
   
@@ -73,6 +74,9 @@ interface ConsolidatedTestingReturn {
   isGenerating: boolean;
   isSyncing: boolean;
   
+  // Error state
+  error: any;
+  
   // Actions (merged from useMasterTestingSuite)
   executeTestSuite: (suiteType?: string) => Promise<void>;
   generateTestCases: (functionality?: string) => Promise<void>;
@@ -81,11 +85,14 @@ interface ConsolidatedTestingReturn {
   generateComplianceReport: (standard: string) => Promise<void>;
   syncRealTime: () => Promise<void>;
   refreshData: () => Promise<void>;
+  refetch: () => Promise<void>; // Compatibility alias
   
   // Utilities (from useMasterTestingSuite)
   getTestsByModule: (module: string) => TestCase[];
   getTestsByStatus: (status: string) => TestCase[];
   getTestExecutionHistory: (testCaseId?: string) => TestExecution[];
+  getStatistics: () => { total: number; active: number; inactive: number; pending: number };
+  searchItems: (query: string) => TestCase[];
   
   // Real-time capabilities
   realTimeEnabled: boolean;
@@ -410,6 +417,7 @@ export const useConsolidatedTesting = (): ConsolidatedTestingReturn => {
   return {
     // Core data
     testCases,
+    items: testCases, // Add items alias for compatibility
     testingStats,
     executions,
     
@@ -420,6 +428,9 @@ export const useConsolidatedTesting = (): ConsolidatedTestingReturn => {
     isGenerating,
     isSyncing,
     
+    // Error state
+    error: null, // Add error property for compatibility
+    
     // Actions
     executeTestSuite,
     generateTestCases,
@@ -428,11 +439,26 @@ export const useConsolidatedTesting = (): ConsolidatedTestingReturn => {
     generateComplianceReport,
     syncRealTime,
     refreshData,
+    refetch: refreshData, // Add refetch alias
     
     // Utilities
     getTestsByModule,
     getTestsByStatus,
     getTestExecutionHistory,
+    getStatistics: () => ({
+      total: testingStats.totalTests,
+      active: testingStats.passedTests,
+      inactive: testingStats.failedTests,
+      pending: testingStats.pendingTests
+    }),
+    searchItems: (query: string) => {
+      if (!query.trim()) return testCases;
+      return testCases.filter((testCase: any) => 
+        testCase.test_name?.toLowerCase().includes(query.toLowerCase()) ||
+        testCase.test_description?.toLowerCase().includes(query.toLowerCase()) ||
+        testCase.module_name?.toLowerCase().includes(query.toLowerCase())
+      );
+    },
     
     // Real-time capabilities
     realTimeEnabled,

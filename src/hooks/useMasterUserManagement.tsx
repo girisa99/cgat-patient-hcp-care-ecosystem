@@ -55,7 +55,15 @@ export const useMasterUserManagement = () => {
       return createdDate > sevenDaysAgo;
     }).length;
 
-    return { ...basicStats, byRole, byStatus, recent };
+    return { 
+      ...basicStats, 
+      byRole, 
+      byStatus, 
+      recent,
+      total: users.length,
+      active: users.filter(u => u.is_active !== false).length,
+      inactive: users.filter(u => u.is_active === false).length
+    };
   };
 
   const fetchUsers = () => {
@@ -311,6 +319,7 @@ export const useMasterUserManagement = () => {
   return {
     // Core data from master data source
     users: masterData.users,
+    items: masterData.users, // Add items property for compatibility
     isLoading: masterData.isLoading,
     error: masterData.error,
 
@@ -324,6 +333,7 @@ export const useMasterUserManagement = () => {
     updateUser,
     deactivateUser,
     refreshData: fetchUsers,
+    refetch: fetchUsers, // Add refetch alias
     assignRole,
     removeRole,
     assignModule,
@@ -337,6 +347,15 @@ export const useMasterUserManagement = () => {
 
     // Utilities
     getUserStats,
+    getStatistics: getUserStats, // Add getStatistics alias
+    searchItems: (query: string) => {
+      if (!query.trim()) return masterData.users;
+      return masterData.users.filter((user: any) => 
+        user.first_name?.toLowerCase().includes(query.toLowerCase()) ||
+        user.last_name?.toLowerCase().includes(query.toLowerCase()) ||
+        user.email?.toLowerCase().includes(query.toLowerCase())
+      );
+    },
     fetchUsers,
     totalUsers: masterData.stats.totalUsers,
     adminCount: masterData.stats.adminCount,

@@ -114,6 +114,7 @@ export const useMasterFacilities = () => {
   return {
     // Core data
     facilities,
+    items: facilities, // Add items property for compatibility
     activeFacilities,
     facilityStats,
     
@@ -134,6 +135,15 @@ export const useMasterFacilities = () => {
     
     // Utilities
     getFacilityStats,
+    getStatistics: getFacilityStats, // Add getStatistics alias
+    searchItems: (query: string) => {
+      if (!query.trim()) return facilities;
+      return facilities.filter((facility: any) => 
+        facility.name?.toLowerCase().includes(query.toLowerCase()) ||
+        facility.facility_type?.toLowerCase().includes(query.toLowerCase()) ||
+        facility.address?.toLowerCase().includes(query.toLowerCase())
+      );
+    },
     refetch,
     
     // Meta
