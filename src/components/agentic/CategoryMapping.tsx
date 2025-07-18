@@ -17,37 +17,44 @@ interface CategoryMappingProps {
 }
 
 const DEFAULT_CATEGORIES = [
-  'Patient onboarding',
-  'Provider and Treatment center onboarding and credentialing',
-  'Market access - Reimbursement - Prior Authorization, Insurance eligibility, Prior Authorization, Copay assistance, Alternative funding, Travel and logistics',
-  'Distribution - Delivery/Fulfillment',
-  'Manufacturing - Order confirmation, batch process',
-  'Claims management - Submit claims',
-  'Clinical information - ICD 9,10,11, HCPCS codes',
-  'Product information - NDC codes, Dosage, strength, dose schedules',
-  'Packaging - Label and Adverse Events',
-  'Scheduling - appointments, communications',
-  'Buy to build - Order confirmation and order details'
+  'Onboarding and Credentaling',
+  'Market access',
+  'Distribution',
+  'Manufacturing',
+  'Claims Management',
+  'Clinical information',
+  'Product Information',
+  'Packaging',
+  'Scheduling',
+  'Buy & Build',
+  'Insurance',
+  'Prior Authorization',
+  'Compliance & Regulatory'
 ];
 
 const DEFAULT_BUSINESS_UNITS = [
   'Commercial',
-  'R&D',
-  'Supply chain',
+  'Research & Development',
+  'Supply Chain',
   'IT',
   'Manufacturing',
-  'Compliance'
+  'Compliance',
+  'Finance',
+  'HR'
 ];
 
 const DEFAULT_TOPICS = [
-  'Market access',
-  'Clinical data management', 
-  'Service now',
-  'Dev Ops',
-  'Jira',
-  'Batch process',
-  'Order confirmation',
-  'Fulfillment',
+  'Patient onboarding',
+  'Treatment center',
+  'Provider onboarding',
+  'Pharma/Biotech onboarding',
+  'Eligibility Investigation',
+  'Eligibility Verification',
+  'Delivery/Fulfillment',
+  'Label & Adverse Events',
+  'Product details',
+  'Billing & Coding',
+  'Appointments scheduling and communication',
   '21 CFR Part 11'
 ];
 
@@ -65,54 +72,10 @@ export const CategoryMapping: React.FC<CategoryMappingProps> = ({
   const [newCategory, setNewCategory] = useState('');
   const [newBusinessUnit, setNewBusinessUnit] = useState('');
   const [newTopic, setNewTopic] = useState('');
-  const [expandedSections, setExpandedSections] = useState<{ [key: string]: boolean }>({
-    categories: true,
-    businessUnits: true,
-    topics: true
-  });
+  const [showAddCategory, setShowAddCategory] = useState(false);
+  const [showAddBusinessUnit, setShowAddBusinessUnit] = useState(false);
+  const [showAddTopic, setShowAddTopic] = useState(false);
 
-  const toggleSection = (section: string) => {
-    setExpandedSections(prev => ({
-      ...prev,
-      [section]: !prev[section]
-    }));
-  };
-
-  const addNewCategory = () => {
-    if (newCategory.trim() && !categories.includes(newCategory.trim())) {
-      const updated = [...categories, newCategory.trim()];
-      setCategories(updated);
-      setNewCategory('');
-      toast({
-        title: 'Success',
-        description: 'New category added successfully'
-      });
-    }
-  };
-
-  const addNewBusinessUnit = () => {
-    if (newBusinessUnit.trim() && !businessUnits.includes(newBusinessUnit.trim())) {
-      const updated = [...businessUnits, newBusinessUnit.trim()];
-      setBusinessUnits(updated);
-      setNewBusinessUnit('');
-      toast({
-        title: 'Success',
-        description: 'New business unit added successfully'
-      });
-    }
-  };
-
-  const addNewTopic = () => {
-    if (newTopic.trim() && !topics.includes(newTopic.trim())) {
-      const updated = [...topics, newTopic.trim()];
-      setTopics(updated);
-      setNewTopic('');
-      toast({
-        title: 'Success',
-        description: 'New topic added successfully'
-      });
-    }
-  };
 
   const removeCategory = (category: string) => {
     setCategories(prev => prev.filter(c => c !== category));
@@ -156,229 +119,260 @@ export const CategoryMapping: React.FC<CategoryMappingProps> = ({
     }
   };
 
+  const handleAddCategory = () => {
+    if (newCategory.trim() && !categories.includes(newCategory.trim())) {
+      const updated = [...categories, newCategory.trim()];
+      setCategories(updated);
+      setNewCategory('');
+      setShowAddCategory(false);
+      toast({
+        title: 'Success',
+        description: 'New category added successfully'
+      });
+    }
+  };
+
+  const handleAddBusinessUnit = () => {
+    if (newBusinessUnit.trim() && !businessUnits.includes(newBusinessUnit.trim())) {
+      const updated = [...businessUnits, newBusinessUnit.trim()];
+      setBusinessUnits(updated);
+      setNewBusinessUnit('');
+      setShowAddBusinessUnit(false);
+      toast({
+        title: 'Success',
+        description: 'New business unit added successfully'
+      });
+    }
+  };
+
+  const handleAddTopic = () => {
+    if (newTopic.trim() && !topics.includes(newTopic.trim())) {
+      const updated = [...topics, newTopic.trim()];
+      setTopics(updated);
+      setNewTopic('');
+      setShowAddTopic(false);
+      toast({
+        title: 'Success',
+        description: 'New topic added successfully'
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="text-center space-y-2">
         <h3 className="text-xl font-semibold">Category Mapping</h3>
         <p className="text-muted-foreground">
-          Map categories to business units and topics to organize your agent's capabilities
+          Select categories, business units, and topics to organize your agent's capabilities
         </p>
       </div>
 
-      {/* Categories Section */}
-      <Card>
-        <CardHeader className="pb-3">
+      {/* Three Column Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* Category Column */}
+        <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => toggleSection('categories')}
-                className="p-0 h-auto"
-              >
-                {expandedSections.categories ? 
-                  <ChevronDown className="h-4 w-4" /> : 
-                  <ChevronRight className="h-4 w-4" />
-                }
-              </Button>
-              Categories
-              <Badge variant="secondary">{selectedCategories.length} selected</Badge>
-            </CardTitle>
+            <h4 className="font-medium text-sm text-muted-foreground flex items-center gap-1">
+              Category
+              <ChevronDown className="h-3 w-3" />
+            </h4>
           </div>
-        </CardHeader>
-        {expandedSections.categories && (
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          
+          <Card className="h-96 overflow-hidden">
+            <div className="p-3 space-y-1 overflow-y-auto h-full">
               {categories.map((category) => (
-                <div key={category} className="flex items-center gap-2">
-                  <Card 
-                    className={`flex-1 cursor-pointer transition-all ${
-                      selectedCategories.includes(category) 
-                        ? 'ring-2 ring-primary bg-primary/5' 
-                        : 'hover:bg-muted/50'
-                    }`}
-                    onClick={() => toggleCategorySelection(category)}
-                  >
-                    <CardContent className="p-3">
-                      <div className="text-sm font-medium">{category}</div>
-                    </CardContent>
-                  </Card>
-                  {!DEFAULT_CATEGORIES.includes(category) && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeCategory(category)}
-                      className="text-destructive"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  )}
+                <div
+                  key={category}
+                  className={`p-2 text-sm cursor-pointer rounded transition-colors ${
+                    selectedCategories.includes(category)
+                      ? 'bg-primary/10 text-primary font-medium'
+                      : 'hover:bg-muted/50'
+                  }`}
+                  onClick={() => toggleCategorySelection(category)}
+                >
+                  {category}
                 </div>
               ))}
+              
+              {showAddCategory ? (
+                <div className="p-2 space-y-2">
+                  <Input
+                    placeholder="Enter category name..."
+                    value={newCategory}
+                    onChange={(e) => setNewCategory(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleAddCategory()}
+                    className="text-sm"
+                  />
+                  <div className="flex gap-1">
+                    <Button size="sm" onClick={handleAddCategory} className="text-xs">
+                      Add
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      onClick={() => {
+                        setShowAddCategory(false);
+                        setNewCategory('');
+                      }}
+                      className="text-xs"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div
+                  className="p-2 text-sm cursor-pointer rounded text-muted-foreground hover:bg-muted/50 border-t"
+                  onClick={() => setShowAddCategory(true)}
+                >
+                  Add new
+                </div>
+              )}
             </div>
-            
-            <div className="flex gap-2">
-              <Input
-                placeholder="Add new category..."
-                value={newCategory}
-                onChange={(e) => setNewCategory(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && addNewCategory()}
-              />
-              <Button onClick={addNewCategory} size="sm">
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
-          </CardContent>
-        )}
-      </Card>
+          </Card>
+        </div>
 
-      {/* Business Units Section */}
-      <Card>
-        <CardHeader className="pb-3">
+        {/* Business Units Column */}
+        <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => toggleSection('businessUnits')}
-                className="p-0 h-auto"
-              >
-                {expandedSections.businessUnits ? 
-                  <ChevronDown className="h-4 w-4" /> : 
-                  <ChevronRight className="h-4 w-4" />
-                }
-              </Button>
+            <h4 className="font-medium text-sm text-muted-foreground flex items-center gap-1">
               Business Units
-              <Badge variant="secondary">{selectedBusinessUnits.length} selected</Badge>
-            </CardTitle>
+              <ChevronDown className="h-3 w-3" />
+            </h4>
           </div>
-        </CardHeader>
-        {expandedSections.businessUnits && (
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          
+          <Card className="h-96 overflow-hidden">
+            <div className="p-3 space-y-1 overflow-y-auto h-full">
               {businessUnits.map((unit) => (
-                <div key={unit} className="flex items-center gap-2">
-                  <Card 
-                    className={`flex-1 cursor-pointer transition-all ${
-                      selectedBusinessUnits.includes(unit) 
-                        ? 'ring-2 ring-primary bg-primary/5' 
-                        : 'hover:bg-muted/50'
-                    }`}
-                    onClick={() => toggleBusinessUnitSelection(unit)}
-                  >
-                    <CardContent className="p-3">
-                      <div className="text-sm font-medium text-center">{unit}</div>
-                    </CardContent>
-                  </Card>
-                  {!DEFAULT_BUSINESS_UNITS.includes(unit) && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeBusinessUnit(unit)}
-                      className="text-destructive"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  )}
+                <div
+                  key={unit}
+                  className={`p-2 text-sm cursor-pointer rounded transition-colors ${
+                    selectedBusinessUnits.includes(unit)
+                      ? 'bg-primary/10 text-primary font-medium'
+                      : 'hover:bg-muted/50'
+                  }`}
+                  onClick={() => toggleBusinessUnitSelection(unit)}
+                >
+                  {unit}
                 </div>
               ))}
+              
+              {showAddBusinessUnit ? (
+                <div className="p-2 space-y-2">
+                  <Input
+                    placeholder="Enter business unit..."
+                    value={newBusinessUnit}
+                    onChange={(e) => setNewBusinessUnit(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleAddBusinessUnit()}
+                    className="text-sm"
+                  />
+                  <div className="flex gap-1">
+                    <Button size="sm" onClick={handleAddBusinessUnit} className="text-xs">
+                      Add
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      onClick={() => {
+                        setShowAddBusinessUnit(false);
+                        setNewBusinessUnit('');
+                      }}
+                      className="text-xs"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div
+                  className="p-2 text-sm cursor-pointer rounded text-muted-foreground hover:bg-muted/50 border-t"
+                  onClick={() => setShowAddBusinessUnit(true)}
+                >
+                  Add new
+                </div>
+              )}
             </div>
-            
-            <div className="flex gap-2">
-              <Input
-                placeholder="Add new business unit..."
-                value={newBusinessUnit}
-                onChange={(e) => setNewBusinessUnit(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && addNewBusinessUnit()}
-              />
-              <Button onClick={addNewBusinessUnit} size="sm">
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
-          </CardContent>
-        )}
-      </Card>
+          </Card>
+        </div>
 
-      {/* Topics Section */}
-      <Card>
-        <CardHeader className="pb-3">
+        {/* Topics Column */}
+        <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => toggleSection('topics')}
-                className="p-0 h-auto"
-              >
-                {expandedSections.topics ? 
-                  <ChevronDown className="h-4 w-4" /> : 
-                  <ChevronRight className="h-4 w-4" />
-                }
-              </Button>
+            <h4 className="font-medium text-sm text-muted-foreground flex items-center gap-1">
               Topics
-              <Badge variant="secondary">{selectedTopics.length} selected</Badge>
-            </CardTitle>
+              <ChevronDown className="h-3 w-3" />
+            </h4>
           </div>
-        </CardHeader>
-        {expandedSections.topics && (
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          
+          <Card className="h-96 overflow-hidden">
+            <div className="p-3 space-y-1 overflow-y-auto h-full">
               {topics.map((topic) => (
-                <div key={topic} className="flex items-center gap-2">
-                  <Card 
-                    className={`flex-1 cursor-pointer transition-all ${
-                      selectedTopics.includes(topic) 
-                        ? 'ring-2 ring-primary bg-primary/5' 
-                        : 'hover:bg-muted/50'
-                    }`}
-                    onClick={() => toggleTopicSelection(topic)}
-                  >
-                    <CardContent className="p-3">
-                      <div className="text-sm font-medium">{topic}</div>
-                    </CardContent>
-                  </Card>
-                  {!DEFAULT_TOPICS.includes(topic) && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeTopic(topic)}
-                      className="text-destructive"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  )}
+                <div
+                  key={topic}
+                  className={`p-2 text-sm cursor-pointer rounded transition-colors ${
+                    selectedTopics.includes(topic)
+                      ? 'bg-primary/10 text-primary font-medium'
+                      : 'hover:bg-muted/50'
+                  }`}
+                  onClick={() => toggleTopicSelection(topic)}
+                >
+                  {topic}
                 </div>
               ))}
+              
+              {showAddTopic ? (
+                <div className="p-2 space-y-2">
+                  <Input
+                    placeholder="Enter topic..."
+                    value={newTopic}
+                    onChange={(e) => setNewTopic(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleAddTopic()}
+                    className="text-sm"
+                  />
+                  <div className="flex gap-1">
+                    <Button size="sm" onClick={handleAddTopic} className="text-xs">
+                      Add
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      onClick={() => {
+                        setShowAddTopic(false);
+                        setNewTopic('');
+                      }}
+                      className="text-xs"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div
+                  className="p-2 text-sm cursor-pointer rounded text-muted-foreground hover:bg-muted/50 border-t"
+                  onClick={() => setShowAddTopic(true)}
+                >
+                  Add New
+                </div>
+              )}
             </div>
-            
-            <div className="flex gap-2">
-              <Input
-                placeholder="Add new topic..."
-                value={newTopic}
-                onChange={(e) => setNewTopic(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && addNewTopic()}
-              />
-              <Button onClick={addNewTopic} size="sm">
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
-          </CardContent>
-        )}
-      </Card>
+          </Card>
+        </div>
+      </div>
 
-      {/* Summary */}
+      {/* Selection Summary */}
       <Card className="bg-muted/50">
-        <CardHeader>
+        <CardHeader className="pb-3">
           <CardTitle className="text-base">Selection Summary</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
-          <div>
+          <div className="text-sm">
             <span className="font-medium">Categories:</span> {selectedCategories.length > 0 ? selectedCategories.join(', ') : 'None selected'}
           </div>
-          <div>
+          <div className="text-sm">
             <span className="font-medium">Business Units:</span> {selectedBusinessUnits.length > 0 ? selectedBusinessUnits.join(', ') : 'None selected'}
           </div>
-          <div>
+          <div className="text-sm">
             <span className="font-medium">Topics:</span> {selectedTopics.length > 0 ? selectedTopics.join(', ') : 'None selected'}
           </div>
         </CardContent>
