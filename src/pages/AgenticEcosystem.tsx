@@ -30,16 +30,14 @@ interface Agent {
 const AgenticEcosystem = () => {
   const [activeTab, setActiveTab] = useState('overview');
 
-  // Fetch real agents data from database
+  // Fetch real agents data from dedicated agents table
   const { data: agents = [], isLoading: agentsLoading, refetch: refetchAgents } = useQuery({
     queryKey: ['agents'],
     queryFn: async () => {
-      // For now, we'll use a table structure. In a real implementation, 
-      // you might want to create an 'agents' table in your database
       const { data, error } = await supabase
-        .from('api_integration_registry')
+        .from('agents')
         .select('*')
-        .eq('category', 'agent');
+        .order('created_at', { ascending: false });
       
       if (error) {
         console.error('Error fetching agents:', error);
@@ -51,10 +49,10 @@ const AgenticEcosystem = () => {
         id: item.id,
         name: item.name,
         description: item.description || '',
-        status: item.status === 'active' ? 'deployed' : 'draft',
-        connections: item.rate_limits ? Object.keys(item.rate_limits) : [],
-        role: item.type || 'general',
-        template: item.category || 'default',
+        status: item.status || 'draft',
+        connections: [], // This would come from agent connections table
+        role: item.agent_type || 'general',
+        template: item.template_id || 'default',
         created_at: item.created_at,
         updated_at: item.updated_at
       })) as Agent[];
@@ -62,27 +60,22 @@ const AgenticEcosystem = () => {
     refetchInterval: 30000, // Refresh every 30 seconds
   });
 
-  // Fetch real ecosystem stats
+  // Fetch real ecosystem stats from proper tables
   const { data: ecosystemStats } = useQuery({
     queryKey: ['ecosystem-stats'],
     queryFn: async () => {
-      const { data: apiServices } = await supabase
-        .from('api_integration_registry')
-        .select('status')
-        .eq('status', 'active');
-
-      const { data: connectors } = await supabase
-        .from('api_endpoints')
+      const { data: agentKnowledgeBases } = await supabase
+        .from('agent_knowledge_bases')
         .select('id');
 
       const { data: conversations } = await supabase
-        .from('audit_logs')
+        .from('agent_conversations')
         .select('id')
         .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
 
       return {
         activeAgents: agents.filter(a => a.status === 'deployed').length,
-        connectedChannels: connectors?.length || 0,
+        connectedChannels: agentKnowledgeBases?.length || 0,
         conversationsToday: conversations?.length || 0,
         uptime: '99.2%'
       };
@@ -100,10 +93,10 @@ const AgenticEcosystem = () => {
 
   const handleDeployAgent = async (agentId: string) => {
     try {
-      // Update agent status in database
+      // Update agent status in proper agents table
       const { error } = await supabase
-        .from('api_integration_registry')
-        .update({ status: 'active' })
+        .from('agents')
+        .update({ status: 'deployed' })
         .eq('id', agentId);
 
       if (error) throw error;
@@ -126,7 +119,7 @@ const AgenticEcosystem = () => {
   const handlePauseAgent = async (agentId: string) => {
     try {
       const { error } = await supabase
-        .from('api_integration_registry')
+        .from('agents')
         .update({ status: 'paused' })
         .eq('id', agentId);
 
