@@ -66,6 +66,35 @@ export const RAGRecommendations: React.FC<RAGRecommendationsProps> = ({
   const [sourceCount, setSourceCount] = useState<number>(0);
   const [editingRecommendation, setEditingRecommendation] = useState<string | null>(null);
   const [editContent, setEditContent] = useState<string>('');
+  const [showDemo, setShowDemo] = useState(false);
+
+  // Sample demo data to showcase functionality
+  const demoRecommendations: Recommendation[] = [
+    {
+      id: 'demo-1',
+      type: 'treatment',
+      title: 'CAR-T Cell Therapy Protocol',
+      description: 'Consider CAR-T cell therapy for relapsed/refractory B-cell lymphoma based on latest clinical guidelines and patient profile.',
+      confidence: 0.85,
+      source: 'https://example.com/cart-protocol',
+      category: 'cell_therapy',
+      approved: undefined,
+      generatedContent: 'This recommendation is based on current FDA-approved protocols for CAR-T cell therapy in B-cell malignancies.'
+    },
+    {
+      id: 'demo-2', 
+      type: 'diagnostic',
+      title: 'Enhanced Biomarker Testing',
+      description: 'Implement comprehensive genomic profiling to identify targetable mutations for personalized treatment approach.',
+      confidence: 0.78,
+      source: 'https://example.com/biomarker-testing',
+      category: 'personalized_medicine',
+      approved: true,
+      approvedBy: 'dr.smith@example.com',
+      approvedAt: new Date().toISOString(),
+      generatedContent: 'Genomic profiling should include DNA sequencing, RNA sequencing, and protein expression analysis.'
+    }
+  ];
 
   const handleGetRecommendations = async () => {
     if (!query.trim()) {
@@ -262,6 +291,20 @@ export const RAGRecommendations: React.FC<RAGRecommendationsProps> = ({
     });
   };
 
+  const handleLoadDemo = () => {
+    setRecommendations(demoRecommendations);
+    setConfidence(0.82);
+    setSourceCount(15);
+    setQuery('What are the latest CAR-T cell therapy protocols for B-cell lymphoma?');
+    
+    toast({
+      title: "Demo Data Loaded",
+      description: "Loaded sample recommendations to showcase functionality.",
+    });
+  };
+
+  const currentRecommendations = showDemo ? demoRecommendations : recommendations;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -274,6 +317,12 @@ export const RAGRecommendations: React.FC<RAGRecommendationsProps> = ({
             Get AI-powered recommendations based on your healthcare knowledge base
           </p>
         </div>
+        {recommendations.length === 0 && (
+          <Button variant="outline" onClick={handleLoadDemo}>
+            <FileText className="h-4 w-4 mr-2" />
+            Load Demo
+          </Button>
+        )}
       </div>
 
       {/* Query Input */}
