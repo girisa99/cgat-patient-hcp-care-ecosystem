@@ -14,15 +14,16 @@ import { Bot, Network, Settings, Rocket, Plus, Brain } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+// Following Stability Framework - Use Template System
+import { useAgents } from '@/hooks/useAgents';
 
 interface Agent {
   id: string;
   name: string;
   description: string;
   status: 'draft' | 'deployed' | 'paused';
-  connections: string[];
-  role: string;
-  template: string;
+  agent_type?: string;
+  template_id?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -30,35 +31,35 @@ interface Agent {
 const AgenticEcosystem = () => {
   const [activeTab, setActiveTab] = useState('overview');
 
-  // Fetch real agents data from dedicated agents table
-  const { data: agents = [], isLoading: agentsLoading, refetch: refetchAgents } = useQuery({
-    queryKey: ['agents'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('agents')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) {
-        console.error('Error fetching agents:', error);
-        return [];
-      }
-      
-      // Transform the data to match our Agent interface
-      return (data || []).map(item => ({
-        id: item.id,
-        name: item.name,
-        description: item.description || '',
-        status: item.status || 'draft',
-        connections: [], // This would come from agent connections table
-        role: item.agent_type || 'general',
-        template: item.template_id || 'default',
-        created_at: item.created_at,
-        updated_at: item.updated_at
-      })) as Agent[];
-    },
-    refetchInterval: 30000, // Refresh every 30 seconds
-  });
+  // Using Stability Framework Template System
+  const { 
+    items: rawAgents, 
+    isLoading: agentsLoading, 
+    refetch: refetchAgents,
+    deployAgent,
+    pauseAgent,
+    createItem: createAgent
+  } = useAgents();
+
+  // Transform raw data to Agent interface compatible with both our needs and AgentDeployment
+  const agents: Agent[] = (rawAgents || []).map((item: any) => ({
+    id: item.id,
+    name: item.name || 'Unnamed Agent',
+    description: item.description || '',
+    status: item.status || 'draft',
+    agent_type: item.agent_type || 'general',
+    template_id: item.template_id,
+    created_at: item.created_at,
+    updated_at: item.updated_at
+  }));
+
+  // Create deployment-compatible agents for AgentDeployment component
+  const deploymentAgents = agents.map(agent => ({
+    ...agent,
+    connections: [], // Default empty connections
+    role: agent.agent_type || 'general',
+    template: agent.template_id || 'default'
+  }));
 
   // Fetch real ecosystem stats from proper tables
   const { data: ecosystemStats } = useQuery({
@@ -93,14 +94,7 @@ const AgenticEcosystem = () => {
 
   const handleDeployAgent = async (agentId: string) => {
     try {
-      // Update agent status in proper agents table
-      const { error } = await supabase
-        .from('agents')
-        .update({ status: 'deployed' })
-        .eq('id', agentId);
-
-      if (error) throw error;
-
+      await deployAgent(agentId);
       await refetchAgents();
       
       toast({
@@ -118,13 +112,7 @@ const AgenticEcosystem = () => {
 
   const handlePauseAgent = async (agentId: string) => {
     try {
-      const { error } = await supabase
-        .from('agents')
-        .update({ status: 'paused' })
-        .eq('id', agentId);
-
-      if (error) throw error;
-
+      await pauseAgent(agentId);
       await refetchAgents();
       
       toast({
@@ -261,14 +249,14 @@ const AgenticEcosystem = () => {
                           <h3 className="font-semibold">{agent.name}</h3>
                           <p className="text-sm text-muted-foreground">{agent.description}</p>
                           <div className="flex items-center space-x-2 mt-2">
-                            <Badge 
-                              variant={agent.status === 'deployed' ? 'default' : agent.status === 'draft' ? 'secondary' : 'outline'}
-                            >
-                              {agent.status}
+                             <Badge 
+                               variant={agent.status === 'deployed' ? 'default' : agent.status === 'draft' ? 'secondary' : 'outline'}
+                             >
+                               {agent.status}
                             </Badge>
-                            <span className="text-xs text-muted-foreground">
-                              {agent.connections.length} connections
-                            </span>
+                             <span className="text-xs text-muted-foreground">
+                               {agent.agent_type || 'general'} • {agent.created_at ? new Date(agent.created_at).toLocaleDateString() : 'Recent'}
+                             </span>
                           </div>
                         </div>
                       </div>
@@ -329,7 +317,7 @@ const AgenticEcosystem = () => {
         </TabsContent>
 
         <TabsContent value="deployment" className="space-y-4">
-          <AgentDeployment agents={agents} onDeploy={handleDeployAgent} />
+          <AgentDeployment agents={deploymentAgents} onDeploy={handleDeployAgent} />
         </TabsContent>
       </Tabs>
     </div>

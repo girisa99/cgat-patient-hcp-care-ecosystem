@@ -1,26 +1,34 @@
 
 /**
- * API SERVICES HOOK - Real data management
+ * API Services Hook - Following Stability Framework Structure
+ * Uses useTypeSafeModuleTemplate for consistency
  */
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+
+import { useTypeSafeModuleTemplate } from '@/templates/hooks/useTypeSafeModuleTemplate';
+
+const apiServicesConfig = {
+  tableName: 'api_integration_registry',
+  moduleName: 'API Services',
+  requiredFields: ['name', 'type', 'status'],
+  customValidation: (data: any) => {
+    return data.name && data.name.length > 0;
+  }
+};
 
 export const useApiServices = () => {
-  const { data: apiServices = [], isLoading } = useQuery({
-    queryKey: ['api-services'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('api_integration_registry')
-        .select('*')
-        .order('name');
-      
-      if (error) throw error;
-      return data || [];
-    }
-  });
+  const templateResult = useTypeSafeModuleTemplate(apiServicesConfig);
 
   return {
-    apiServices,
-    isLoading
+    ...templateResult,
+    // Legacy compatibility
+    apiServices: templateResult.items,
+    isLoading: templateResult.isLoading,
+    // Specific API service methods
+    activateService: async (serviceId: string) => {
+      return templateResult.updateItem(serviceId, { status: 'active' });
+    },
+    deactivateService: async (serviceId: string) => {
+      return templateResult.updateItem(serviceId, { status: 'inactive' });
+    }
   };
 };
