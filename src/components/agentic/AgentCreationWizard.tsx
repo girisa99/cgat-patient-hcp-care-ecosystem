@@ -505,59 +505,160 @@ export const AgentCreationWizard = () => {
       />
     </div>,
     
-    // Step 4: Connectors & AI Models
+    // Step 4: Category & Connectors
     <div className="space-y-6" key="step-4">
       <div>
-        <h3 className="text-lg font-medium">System Connectors & AI Models</h3>
-        <p className="text-muted-foreground">Connect external systems and select AI models for your agent</p>
+        <h3 className="text-lg font-medium">Agent Category & System Connectors</h3>
+        <p className="text-muted-foreground">Choose a category and connect external systems for your agent</p>
         {state.isFirstTime && (
           <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg mt-2">
             <p className="text-sm text-blue-800 dark:text-blue-200">
-              🔗 <strong>Connectors:</strong> Integrate with external APIs, databases, and services. 
-              You can always add more connectors later.
+              🏷️ <strong>Category:</strong> Select the primary category that best describes your agent's purpose.
+              <br />
+              🔗 <strong>Connectors:</strong> Integrate with external APIs, databases, and services including your own internal APIs.
             </p>
           </div>
         )}
       </div>
       
-      <Tabs defaultValue="connectors" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+      <Tabs defaultValue="category" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="category">Agent Category</TabsTrigger>
           <TabsTrigger value="connectors">System Connectors</TabsTrigger>
           <TabsTrigger value="ai-models">AI Models</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="connectors" className="space-y-4">
+        <TabsContent value="category" className="space-y-4">
           <div className="space-y-4">
+            <h4 className="font-medium">Select Agent Category</h4>
             <p className="text-sm text-muted-foreground">
-              Select system connectors to integrate with your agent
+              Choose the primary category that best fits your agent's purpose
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {['OpenAI GPT-4', 'Salesforce CRM', 'PostgreSQL', 'Email SMTP', 'Slack', 'GitHub'].map((connector) => (
-                <Card key={connector} className="p-4">
-                  <div className="flex items-center space-x-2">
-                    <input 
-                      type="checkbox" 
-                      id={connector}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          handleConnectorChange([...state.connectorIds, connector]);
-                        } else {
-                          handleConnectorChange(state.connectorIds.filter(id => id !== connector));
-                        }
-                      }}
-                    />
-                    <Label htmlFor={connector} className="text-sm font-medium">{connector}</Label>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+              {[
+                'Healthcare', 'Insurance', 'Clinical', 'Support', 'Safety', 
+                'Development', 'Product', 'CRM', 'Scheduling', 'Quality', 
+                'Research', 'Onboarding', 'Market Access', 'Compliance'
+              ].map((category) => (
+                <Card 
+                  key={category} 
+                  className={`p-3 cursor-pointer transition-all ${
+                    state.connectorIds.includes(`category-${category}`) 
+                      ? 'ring-2 ring-primary bg-primary/5' 
+                      : 'hover:bg-muted/50'
+                  }`}
+                  onClick={() => {
+                    const categoryId = `category-${category}`;
+                    // Only allow one category selection
+                    const otherCategories = state.connectorIds.filter(id => !id.startsWith('category-'));
+                    const isSelected = state.connectorIds.includes(categoryId);
+                    handleConnectorChange(isSelected ? otherCategories : [...otherCategories, categoryId]);
+                  }}
+                >
+                  <div className="text-center">
+                    <div className="text-sm font-medium">{category}</div>
                   </div>
                 </Card>
               ))}
+            </div>
+            <div className="mt-4 p-3 bg-muted/50 rounded-lg">
+              <p className="text-sm text-muted-foreground">
+                💡 <strong>Selected Category:</strong> {
+                  state.connectorIds.find(id => id.startsWith('category-'))?.replace('category-', '') || 'None selected'
+                }
+              </p>
+            </div>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="connectors" className="space-y-4">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="font-medium">System Connectors</h4>
+                <p className="text-sm text-muted-foreground">
+                  Select connectors including internal APIs and external services
+                </p>
+              </div>
+              <Badge variant="outline" className="text-xs">
+                {state.connectorIds.filter(id => !id.startsWith('category-')).length} selected
+              </Badge>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Internal APIs */}
+              <div className="col-span-full">
+                <h5 className="text-sm font-medium text-primary mb-2">Internal APIs</h5>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {[
+                    'Healthcare Admin API', 'User Management API', 'Facility API', 
+                    'Patient API', 'Clinical Data API', 'Compliance API'
+                  ].map((connector) => (
+                    <Card key={connector} className="p-3">
+                      <div className="flex items-center space-x-2">
+                        <input 
+                          type="checkbox" 
+                          id={connector}
+                          checked={state.connectorIds.includes(connector)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              handleConnectorChange([...state.connectorIds, connector]);
+                            } else {
+                              handleConnectorChange(state.connectorIds.filter(id => id !== connector));
+                            }
+                          }}
+                        />
+                        <Label htmlFor={connector} className="text-xs font-medium">{connector}</Label>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+              
+              {/* External APIs */}
+              <div className="col-span-full">
+                <h5 className="text-sm font-medium text-blue-600 mb-2">External APIs</h5>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {[
+                    'OpenAI GPT-4', 'Salesforce CRM', 'PostgreSQL', 'Email SMTP', 
+                    'Slack', 'GitHub', 'Veeva CRM', 'OpenFDA API', 'NPI Registry',
+                    'Twilio SMS', 'Benefit Verification', 'Prior Auth API'
+                  ].map((connector) => (
+                    <Card key={connector} className="p-3">
+                      <div className="flex items-center space-x-2">
+                        <input 
+                          type="checkbox" 
+                          id={connector}
+                          checked={state.connectorIds.includes(connector)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              handleConnectorChange([...state.connectorIds, connector]);
+                            } else {
+                              handleConnectorChange(state.connectorIds.filter(id => id !== connector));
+                            }
+                          }}
+                        />
+                        <Label htmlFor={connector} className="text-xs font-medium">{connector}</Label>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            </div>
+            
+            <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+              <p className="text-sm text-blue-800 dark:text-blue-200">
+                <strong>Internal APIs:</strong> Your application's internal APIs are automatically detected and available for selection. 
+                These include all endpoints from your Healthcare Admin API, User Management, and other internal services.
+              </p>
             </div>
           </div>
         </TabsContent>
         
         <TabsContent value="ai-models" className="space-y-4">
           <div>
-            <h3 className="text-lg font-medium">Select AI Models</h3>
-            <p className="text-muted-foreground">Choose the AI models that will power your agent</p>
+            <h4 className="font-medium">Select AI Models</h4>
+            <p className="text-sm text-muted-foreground">Choose the AI models that will power your agent</p>
           </div>
           <div className="text-center py-8">
             <Button onClick={() => setShowAIModelSelector(true)}>
