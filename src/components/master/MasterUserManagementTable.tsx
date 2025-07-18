@@ -17,6 +17,10 @@ import { useMasterUserManagement } from '@/hooks/useMasterUserManagement';
 import { useAdminRealtime } from '@/hooks/useRealtime';
 import { useMasterToast } from '@/hooks/useMasterToast';
 import { supabase } from '@/integrations/supabase/client';
+import { CreateUserForm } from '@/components/forms/CreateUserForm';
+import { UserActionDialogs } from '@/components/users/UserActionDialogs';
+import { useMasterData } from '@/hooks/useMasterData';
+import { useMasterRoleManagement } from '@/hooks/useMasterRoleManagement';
 
 export const MasterUserManagementTable: React.FC = () => {
   // Enable real-time updates for user management
@@ -31,6 +35,7 @@ export const MasterUserManagementTable: React.FC = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
   const [isModuleModalOpen, setIsModuleModalOpen] = useState(false);
+  const [selectedUserForActions, setSelectedUserForActions] = useState<any>(null);
 
   const { 
     users, 
@@ -50,6 +55,8 @@ export const MasterUserManagementTable: React.FC = () => {
   } = useMasterUserManagement();
   
   const { showSuccess, showError } = useMasterToast();
+  const { facilities } = useMasterData();
+  const { roles } = useMasterRoleManagement();
   
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const stats = getUserStats();
@@ -72,13 +79,19 @@ export const MasterUserManagementTable: React.FC = () => {
   };
 
   const handleAssignRoles = (userId: string, userName: string) => {
-    setSelectedUser(userId);
-    setIsRoleModalOpen(true);
+    const user = users.find(u => u.id === userId);
+    if (user) {
+      setSelectedUserForActions(user);
+      setIsRoleModalOpen(true);
+    }
   };
 
   const handleAssignModules = (userId: string, userName: string) => {
-    setSelectedUser(userId);
-    setIsModuleModalOpen(true);
+    const user = users.find(u => u.id === userId);
+    if (user) {
+      setSelectedUserForActions(user);
+      setIsModuleModalOpen(true);
+    }
   };
 
   const handleResendEmailClick = (userId: string, userEmail: string, userName: string) => {
@@ -340,6 +353,50 @@ export const MasterUserManagementTable: React.FC = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Create User Form */}
+      <CreateUserForm 
+        open={isCreateModalOpen} 
+        onOpenChange={setIsCreateModalOpen}
+      />
+
+      {/* User Action Dialogs */}
+      <UserActionDialogs
+        selectedUser={selectedUserForActions ? {
+          id: selectedUserForActions.id,
+          firstName: selectedUserForActions.first_name,
+          lastName: selectedUserForActions.last_name,
+          email: selectedUserForActions.email,
+          role: selectedUserForActions.user_roles?.[0]?.roles?.name || 'No Role',
+          roles: selectedUserForActions.user_roles?.map((ur: any) => ({
+            name: ur.roles?.name || 'Unknown',
+            description: ur.roles?.description
+          })) || []
+        } : null}
+        assignRoleOpen={isRoleModalOpen}
+        setAssignRoleOpen={setIsRoleModalOpen}
+        removeRoleOpen={false}
+        setRemoveRoleOpen={() => {}}
+        assignFacilityOpen={false}
+        setAssignFacilityOpen={() => {}}
+        onAssignRole={(userId, roleName) => {
+          const role = roles.find(r => r.name === roleName);
+          if (role) {
+            assignRole(userId, role.id);
+          }
+        }}
+        onRemoveRole={(userId, roleName) => {
+          const role = roles.find(r => r.name === roleName);
+          if (role) {
+            removeRole(userId, role.id);
+          }
+        }}
+        onAssignFacility={(userId, facilityId) => {
+          assignFacility();
+        }}
+        availableRoles={roles}
+        availableFacilities={facilities}
+      />
     </div>
   );
 };

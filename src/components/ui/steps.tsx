@@ -1,84 +1,78 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 
+interface StepsProps {
+  children: React.ReactNode;
+  className?: string;
+  currentStep?: number;
+  onStepClick?: (stepIndex: number) => void;
+}
+
 interface StepProps {
   title: string;
   description?: string;
+  children?: React.ReactNode;
+  className?: string;
   isActive?: boolean;
-  isComplete?: boolean;
-  stepNumber?: number;
+  isCompleted?: boolean;
   onClick?: () => void;
 }
 
-interface StepsProps {
-  children: React.ReactNode;
-  currentStep: number;
-  onStepClick?: (step: number) => void;
-  className?: string;
-}
-
-export function Step({
-  title,
-  description,
-  isActive = false,
-  isComplete = false,
-  stepNumber,
-  onClick
-}: StepProps) {
+export const Steps: React.FC<StepsProps> = ({ children, className, currentStep, onStepClick }) => {
   return (
-    <div
-      className={cn(
-        "flex items-center gap-2 cursor-pointer",
-        isActive ? "opacity-100" : "opacity-70"
-      )}
-      onClick={onClick}
-    >
-      <div
-        className={cn(
-          "flex h-8 w-8 items-center justify-center rounded-full text-center text-sm font-medium",
-          isActive
-            ? "bg-primary text-primary-foreground"
-            : isComplete
-            ? "bg-green-600 text-white"
-            : "bg-muted text-muted-foreground"
-        )}
-      >
-        {isComplete ? (
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-        ) : (
-          stepNumber
-        )}
-      </div>
-      <div>
-        <div className="font-medium">{title}</div>
-        {description && (
-          <div className="text-xs text-muted-foreground">{description}</div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-export function Steps({ children, currentStep, onStepClick, className }: StepsProps) {
-  // Count React children and clone them with props
-  const stepsArray = React.Children.toArray(children);
-  const totalSteps = stepsArray.length;
-
-  return (
-    <div className={cn("flex justify-between", className)}>
+    <div className={cn("space-y-4", className)}>
       {React.Children.map(children, (child, index) => {
         if (React.isValidElement(child)) {
-          return React.cloneElement(child as React.ReactElement<StepProps>, {
+          return React.cloneElement(child, {
             isActive: currentStep === index,
-            isComplete: currentStep > index,
-            stepNumber: index + 1,
-            onClick: () => onStepClick?.(index),
+            isCompleted: currentStep !== undefined && index < currentStep,
+            onClick: onStepClick ? () => onStepClick(index) : undefined,
+            ...child.props
           });
         }
         return child;
       })}
     </div>
   );
-}
+};
+
+export const Step: React.FC<StepProps> = ({ 
+  title, 
+  description, 
+  children, 
+  className, 
+  isActive = false, 
+  isCompleted = false,
+  onClick
+}) => {
+  return (
+    <div 
+      className={cn(
+        "border rounded-lg p-4",
+        onClick && "cursor-pointer hover:bg-muted/50",
+        isActive && "border-primary bg-primary/5",
+        isCompleted && "border-green-500 bg-green-50",
+        className
+      )}
+      onClick={onClick}
+    >
+      <div className="flex items-center gap-3 mb-2">
+        <div className={cn(
+          "w-6 h-6 rounded-full flex items-center justify-center text-sm font-medium",
+          isActive && "bg-primary text-primary-foreground",
+          isCompleted && "bg-green-500 text-white",
+          !isActive && !isCompleted && "bg-muted text-muted-foreground"
+        )}>
+          {isCompleted ? '✓' : '•'}
+        </div>
+        <h3 className="font-semibold">{title}</h3>
+      </div>
+      {description && (
+        <p className="text-sm text-muted-foreground mb-3 ml-9">{description}</p>
+      )}
+      {children && (
+        <div className="ml-9">{children}</div>
+      )}
+    </div>
+  );
+};
