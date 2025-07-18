@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, X, ChevronDown, ChevronUp, UserX } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 interface CategoryMappingProps {
@@ -257,14 +257,36 @@ export const CategoryMapping: React.FC<CategoryMappingProps> = ({
                       </Button>
                     </div>
                   </div>
-                ) : (
-                  <div
-                    className="p-2 text-sm cursor-pointer rounded text-muted-foreground hover:bg-muted/50 border-t text-center"
+                ) : null}
+                
+                {/* Add/Deactivate Actions at Bottom */}
+                <div className="border-t p-2 flex justify-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setShowAddCategory(true)}
+                    className="text-xs flex items-center gap-1"
                   >
-                    Add new
-                  </div>
-                )}
+                    <Plus className="h-3 w-3" />
+                    Add
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      // Close dropdown when deactivating
+                      setOpenDropdowns(prev => ({ ...prev, categories: false }));
+                      toast({
+                        title: 'Info',
+                        description: 'Categories can be removed individually using the X button'
+                      });
+                    }}
+                    className="text-xs flex items-center gap-1 text-muted-foreground"
+                  >
+                    <UserX className="h-3 w-3" />
+                    Deactivate
+                  </Button>
+                </div>
               </div>
             </Card>
           )}
@@ -339,14 +361,35 @@ export const CategoryMapping: React.FC<CategoryMappingProps> = ({
                       </Button>
                     </div>
                   </div>
-                ) : (
-                  <div
-                    className="p-2 text-sm cursor-pointer rounded text-muted-foreground hover:bg-muted/50 border-t text-center"
+                ) : null}
+                
+                {/* Add/Deactivate Actions at Bottom */}
+                <div className="border-t p-2 flex justify-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setShowAddBusinessUnit(true)}
+                    className="text-xs flex items-center gap-1"
                   >
-                    Add new
-                  </div>
-                )}
+                    <Plus className="h-3 w-3" />
+                    Add
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setOpenDropdowns(prev => ({ ...prev, businessUnits: false }));
+                      toast({
+                        title: 'Info',
+                        description: 'Business units can be removed individually using the X button'
+                      });
+                    }}
+                    className="text-xs flex items-center gap-1 text-muted-foreground"
+                  >
+                    <UserX className="h-3 w-3" />
+                    Deactivate
+                  </Button>
+                </div>
               </div>
             </Card>
           )}
@@ -421,14 +464,35 @@ export const CategoryMapping: React.FC<CategoryMappingProps> = ({
                       </Button>
                     </div>
                   </div>
-                ) : (
-                  <div
-                    className="p-2 text-sm cursor-pointer rounded text-muted-foreground hover:bg-muted/50 border-t text-center"
+                ) : null}
+                
+                {/* Add/Deactivate Actions at Bottom */}
+                <div className="border-t p-2 flex justify-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setShowAddTopic(true)}
+                    className="text-xs flex items-center gap-1"
                   >
-                    Add New
-                  </div>
-                )}
+                    <Plus className="h-3 w-3" />
+                    Add
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setOpenDropdowns(prev => ({ ...prev, topics: false }));
+                      toast({
+                        title: 'Info',
+                        description: 'Topics can be removed individually using the X button'
+                      });
+                    }}
+                    className="text-xs flex items-center gap-1 text-muted-foreground"
+                  >
+                    <UserX className="h-3 w-3" />
+                    Deactivate
+                  </Button>
+                </div>
               </div>
             </Card>
           )}
