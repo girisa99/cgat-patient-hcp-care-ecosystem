@@ -5,6 +5,7 @@
  * Version: consolidated-data-import-v1.0.0
  */
 import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { useMasterData } from './useMasterData';
 import { useMasterToast } from './useMasterToast';
 import type { ImportResult, ImportStats, ValidationResult } from '@/types/common';
@@ -19,11 +20,31 @@ export const useConsolidatedDataImport = () => {
     status?: string;
     completedAt?: string;
   }>>([]);
+  const [lastImport, setLastImport] = useState<ImportResult | null>(null);
   
   const { createUser } = useMasterData();
   const { showSuccess, showError } = useMasterToast();
 
   console.log('📊 Consolidated Data Import - Single source of truth active');
+
+  // Enhanced import function that uses edge function for processing
+  const processDataWithEdgeFunction = async (data: Array<Record<string, unknown>>, type: string) => {
+    try {
+      const { data: result, error } = await supabase.functions.invoke('data-processor', {
+        body: {
+          data,
+          type,
+          userId: supabase.auth.getUser().then(u => u.data.user?.id)
+        }
+      });
+
+      if (error) throw error;
+      return result;
+    } catch (error) {
+      console.error('Edge function processing failed:', error);
+      throw error;
+    }
+  };
 
   // Import users
   const importUsers = async (userData: Array<Record<string, unknown>>) => {

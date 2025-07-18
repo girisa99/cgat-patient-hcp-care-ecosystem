@@ -378,10 +378,12 @@ export const ApiImportTab: React.FC = () => {
       {isImporting && (
         <ImportProgress
           isImporting={isImporting}
-          progress={typeof importProgress === 'number' ? importProgress : 0}
+          progress={typeof importProgress === 'object' && importProgress.total > 0 
+            ? Math.round((importProgress.current / importProgress.total) * 100) 
+            : 0}
           currentStep="Processing..."
           totalRecords={apiData.length}
-          processedRecords={0}
+          processedRecords={typeof importProgress === 'object' ? importProgress.current : 0}
           errors={errors}
           status={errors.length > 0 ? 'error' : 'processing'}
         />
