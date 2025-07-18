@@ -239,17 +239,17 @@ const AgenticEcosystem = () => {
             <Plus className="h-4 w-4 mr-2" />
             Templates
           </TabsTrigger>
-          <TabsTrigger value="deployment">
-            <Rocket className="h-4 w-4 mr-2" />
-            Deployment
-          </TabsTrigger>
           <TabsTrigger value="knowledge">
             <Bot className="h-4 w-4 mr-2" />
-            Knowledge
+            Knowledge Base
           </TabsTrigger>
           <TabsTrigger value="rag">
             <Bot className="h-4 w-4 mr-2" />
             RAG
+          </TabsTrigger>
+          <TabsTrigger value="deployment">
+            <Rocket className="h-4 w-4 mr-2" />
+            Deployment
           </TabsTrigger>
         </TabsList>
 
@@ -343,16 +343,16 @@ const AgenticEcosystem = () => {
           <AgentTemplates />
         </TabsContent>
 
-        <TabsContent value="deployment" className="space-y-4">
-          <AgentDeployment agents={agents} onDeploy={handleDeployAgent} />
-        </TabsContent>
-
         <TabsContent value="knowledge" className="space-y-4">
           <KnowledgeBaseManager />
         </TabsContent>
 
         <TabsContent value="rag" className="space-y-4">
           <RAGRecommendations />
+        </TabsContent>
+
+        <TabsContent value="deployment" className="space-y-4">
+          <AgentDeployment agents={agents} onDeploy={handleDeployAgent} />
         </TabsContent>
       </Tabs>
     </div>

@@ -37,18 +37,20 @@ interface DocumentUploadProps {
 
 export const DocumentUpload: React.FC<DocumentUploadProps> = ({
   onUploadComplete,
-  acceptedFileTypes = ['.pdf', '.docx', '.txt', '.md', '.json'],
-  maxFileSize = 10 * 1024 * 1024, // 10MB
-  maxFiles = 10
+  acceptedFileTypes = ['.pdf', '.doc', '.docx', '.ppt', '.pptx', '.png', '.jpg', '.jpeg', '.svg', '.txt', '.md'],
+  maxFileSize = 50 * 1024 * 1024, // 50MB
+  maxFiles = 20
 }) => {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const getFileIcon = (fileType: string) => {
-    if (fileType.includes('image')) return <Image className="h-4 w-4" />;
+    if (fileType.includes('image')) return <Image className="h-4 w-4 text-green-500" />;
     if (fileType.includes('pdf')) return <FileText className="h-4 w-4 text-red-500" />;
     if (fileType.includes('word') || fileType.includes('document')) return <FileText className="h-4 w-4 text-blue-500" />;
+    if (fileType.includes('presentation') || fileType.includes('powerpoint')) return <FileText className="h-4 w-4 text-orange-500" />;
+    if (fileType.includes('text') || fileType.includes('markdown')) return <FileText className="h-4 w-4 text-gray-500" />;
     return <File className="h-4 w-4" />;
   };
 
@@ -246,7 +248,7 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
             Document Upload
           </CardTitle>
           <CardDescription>
-            Upload documents to add to your knowledge base. Supports {acceptedFileTypes.join(', ')} files up to {formatFileSize(maxFileSize)}.
+            Upload documents to add to your knowledge base. Supports PDF, Word (DOC/DOCX), PowerPoint (PPT/PPTX), Images (PNG/JPG/JPEG/SVG), and Text files up to {formatFileSize(maxFileSize)}.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -265,7 +267,7 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
               Drop your files here, or click to browse
             </h3>
             <p className="text-muted-foreground mb-4">
-              Supports {acceptedFileTypes.join(', ')} files up to {formatFileSize(maxFileSize)}
+              Supports PDF, Word, PowerPoint, Images (PNG/JPG/JPEG/SVG), and Text files up to {formatFileSize(maxFileSize)}
             </p>
             <Button 
               onClick={() => fileInputRef.current?.click()}

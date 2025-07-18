@@ -16,17 +16,28 @@ import {
   ExternalLink,
   Star,
   Clock,
-  Users
+  Users,
+  Download,
+  ThumbsUp,
+  ThumbsDown,
+  FileText,
+  Edit,
+  Save
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Recommendation {
+  id?: string;
   type: string;
   title: string;
   description: string;
   confidence: number;
   source?: string;
   category: string;
+  approved?: boolean;
+  approvedBy?: string;
+  approvedAt?: string;
+  generatedContent?: string;
 }
 
 interface NextBestAction {
@@ -53,6 +64,8 @@ export const RAGRecommendations: React.FC<RAGRecommendationsProps> = ({
   const [treatmentRecommendations, setTreatmentRecommendations] = useState<any[]>([]);
   const [confidence, setConfidence] = useState<number>(0);
   const [sourceCount, setSourceCount] = useState<number>(0);
+  const [editingRecommendation, setEditingRecommendation] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState<string>('');
 
   const handleGetRecommendations = async () => {
     if (!query.trim()) {
@@ -123,6 +136,130 @@ export const RAGRecommendations: React.FC<RAGRecommendationsProps> = ({
     if (conf >= 0.8) return 'text-green-600';
     if (conf >= 0.6) return 'text-yellow-600';
     return 'text-red-600';
+  };
+
+  const handleApproveRecommendation = async (recommendation: Recommendation, approved: boolean) => {
+    try {
+      // Get user info first
+      const { data: userData } = await supabase.auth.getUser();
+      
+      // Update recommendation approval status
+      const updatedRecommendations = recommendations.map(rec => 
+        rec.id === recommendation.id 
+          ? { 
+              ...rec, 
+              approved, 
+              approvedBy: userData.user?.email,
+              approvedAt: new Date().toISOString()
+            }
+          : rec
+      );
+      setRecommendations(updatedRecommendations);
+
+      toast({
+        title: approved ? "Recommendation Approved" : "Recommendation Rejected",
+        description: `The recommendation has been ${approved ? 'approved' : 'rejected'}.`,
+        variant: approved ? "default" : "destructive"
+      });
+    } catch (error: any) {
+      toast({
+        title: "Approval Failed",
+        description: error.message || 'Failed to update approval status.',
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleEditRecommendation = (recommendation: Recommendation) => {
+    setEditingRecommendation(recommendation.id || '');
+    setEditContent(recommendation.generatedContent || recommendation.description);
+  };
+
+  const handleSaveEdit = (recommendationId: string) => {
+    const updatedRecommendations = recommendations.map(rec => 
+      rec.id === recommendationId 
+        ? { ...rec, generatedContent: editContent, description: editContent }
+        : rec
+    );
+    setRecommendations(updatedRecommendations);
+    setEditingRecommendation(null);
+    setEditContent('');
+
+    toast({
+      title: "Recommendation Updated",
+      description: "The recommendation content has been updated.",
+    });
+  };
+
+  const handleDownloadRecommendations = () => {
+    const content = {
+      query,
+      timestamp: new Date().toISOString(),
+      confidence,
+      sourceCount,
+      recommendations,
+      nextBestActions,
+      treatmentRecommendations,
+      clinicalInsights
+    };
+
+    const blob = new Blob([JSON.stringify(content, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `rag-recommendations-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: "Download Started",
+      description: "RAG recommendations have been downloaded as JSON file.",
+    });
+  };
+
+  const handleDownloadReport = () => {
+    let reportContent = `RAG Recommendations Report\n`;
+    reportContent += `Generated: ${new Date().toLocaleString()}\n`;
+    reportContent += `Query: ${query}\n`;
+    reportContent += `Confidence: ${(confidence * 100).toFixed(1)}%\n`;
+    reportContent += `Sources: ${sourceCount}\n\n`;
+
+    reportContent += `RECOMMENDATIONS (${recommendations.length}):\n`;
+    recommendations.forEach((rec, index) => {
+      reportContent += `${index + 1}. ${rec.title}\n`;
+      reportContent += `   Category: ${rec.category}\n`;
+      reportContent += `   Confidence: ${(rec.confidence * 100).toFixed(1)}%\n`;
+      reportContent += `   Description: ${rec.description}\n`;
+      reportContent += `   Approved: ${rec.approved ? 'Yes' : 'No'}\n`;
+      if (rec.source) reportContent += `   Source: ${rec.source}\n`;
+      reportContent += `\n`;
+    });
+
+    if (nextBestActions.length > 0) {
+      reportContent += `NEXT BEST ACTIONS (${nextBestActions.length}):\n`;
+      nextBestActions.forEach((action, index) => {
+        reportContent += `${index + 1}. ${action.action} (${action.priority} priority)\n`;
+        reportContent += `   ${action.description}\n`;
+        reportContent += `   Timeline: ${action.timeline}\n\n`;
+      });
+    }
+
+    const blob = new Blob([reportContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `rag-report-${new Date().toISOString().split('T')[0]}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: "Report Downloaded",
+      description: "RAG recommendations report has been downloaded as text file.",
+    });
   };
 
   return (
@@ -197,10 +334,22 @@ export const RAGRecommendations: React.FC<RAGRecommendationsProps> = ({
       {recommendations.length > 0 && (
         <Card>
           <CardHeader>
+          <div className="flex items-center justify-between">
             <CardTitle className="text-base flex items-center gap-2">
               <Target className="h-5 w-5" />
               Healthcare Recommendations
             </CardTitle>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={handleDownloadRecommendations}>
+                <Download className="h-4 w-4 mr-2" />
+                Download JSON
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleDownloadReport}>
+                <FileText className="h-4 w-4 mr-2" />
+                Download Report
+              </Button>
+            </div>
+          </div>
           </CardHeader>
           <CardContent>
             <ScrollArea className="h-96">
@@ -216,21 +365,87 @@ export const RAGRecommendations: React.FC<RAGRecommendationsProps> = ({
                         <span className={`text-xs font-medium ${getConfidenceColor(rec.confidence)}`}>
                           {(rec.confidence * 100).toFixed(0)}%
                         </span>
+                        {rec.approved !== undefined && (
+                          <Badge variant={rec.approved ? "default" : "destructive"} className="text-xs">
+                            {rec.approved ? "Approved" : "Rejected"}
+                          </Badge>
+                        )}
                       </div>
                     </div>
-                    <p className="text-sm text-muted-foreground mb-2">{rec.description}</p>
-                    {rec.source && (
-                      <div className="flex items-center gap-1 text-xs">
-                        <ExternalLink className="h-3 w-3" />
-                        <a 
-                          href={rec.source} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:underline"
-                        >
-                          View Source
-                        </a>
+                    
+                    {editingRecommendation === rec.id ? (
+                      <div className="space-y-3">
+                        <textarea
+                          value={editContent}
+                          onChange={(e) => setEditContent(e.target.value)}
+                          className="w-full p-2 border rounded-md text-sm min-h-[100px]"
+                          placeholder="Edit recommendation content..."
+                        />
+                        <div className="flex gap-2">
+                          <Button size="sm" onClick={() => handleSaveEdit(rec.id || '')}>
+                            <Save className="h-3 w-3 mr-1" />
+                            Save
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => setEditingRecommendation(null)}>
+                            Cancel
+                          </Button>
+                        </div>
                       </div>
+                    ) : (
+                      <>
+                        <p className="text-sm text-muted-foreground mb-3">{rec.description}</p>
+                        
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            {rec.source && (
+                              <div className="flex items-center gap-1 text-xs">
+                                <ExternalLink className="h-3 w-3" />
+                                <a 
+                                  href={rec.source} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 hover:underline"
+                                >
+                                  View Source
+                                </a>
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div className="flex items-center gap-1">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleEditRecommendation(rec)}
+                            >
+                              <Edit className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleApproveRecommendation(rec, true)}
+                              className="text-green-600 hover:text-green-700"
+                            >
+                              <ThumbsUp className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleApproveRecommendation(rec, false)}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <ThumbsDown className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                        
+                        {rec.approved !== undefined && (
+                          <div className="text-xs text-muted-foreground mt-2 pt-2 border-t">
+                            {rec.approved ? 'Approved' : 'Rejected'} by {rec.approvedBy} 
+                            {rec.approvedAt && ` on ${new Date(rec.approvedAt).toLocaleDateString()}`}
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 ))}
