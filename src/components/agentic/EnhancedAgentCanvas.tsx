@@ -709,11 +709,39 @@ export const EnhancedAgentCanvas: React.FC<EnhancedAgentCanvasProps> = ({
               </ScrollArea>
               
               <div className="flex gap-2 pt-2">
-                <Button variant="outline" size="sm" onClick={() => setSelectedTemplate('')}>
+                <Button variant="outline" size="sm" onClick={() => {
+                  setSelectedTemplate('');
+                  // Reset to default colors and values
+                  const defaultTemplate = templates.find(t => t.isDefault);
+                  if (defaultTemplate) {
+                    handleTemplateSelect(defaultTemplate.id);
+                  }
+                  toast({
+                    title: "Template Reset",
+                    description: "Canvas has been reset to default template."
+                  });
+                }}>
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Reset
                 </Button>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" onClick={() => {
+                  // Create a new custom template
+                  const customTemplate: CanvasTemplate = {
+                    id: `custom-${Date.now()}`,
+                    name: 'Custom Template',
+                    description: 'Your custom template',
+                    tagline: 'Custom Tagline',
+                    primaryColor: '#3b82f6',
+                    secondaryColor: '#8b5cf6',
+                    accentColor: '#06b6d4'
+                  };
+                  setTemplates(prev => [...prev, customTemplate]);
+                  handleTemplateSelect(customTemplate.id);
+                  toast({
+                    title: "Custom Template Added",
+                    description: "New custom template has been created and applied."
+                  });
+                }}>
                   <Plus className="h-4 w-4 mr-2" />
                   Custom Template
                 </Button>
@@ -819,27 +847,50 @@ export const EnhancedAgentCanvas: React.FC<EnhancedAgentCanvasProps> = ({
                     <div className={`flex gap-2 ${previewMode === 'mobile' ? 'flex-col' : ''}`}>
                       <Button 
                         size={previewMode === 'mobile' ? 'sm' : 'default'}
-                        style={{ backgroundColor: primaryColor }}
+                        style={{ 
+                          backgroundColor: primaryColor,
+                          color: 'white',
+                          border: 'none'
+                        }}
                         onClick={() => handlePreviewAction('Primary')}
-                        className="hover:opacity-90 transition-opacity"
+                        className="hover:opacity-90 transition-opacity text-white"
                       >
                         Primary Action
                       </Button>
                       <Button 
                         variant="outline" 
                         size={previewMode === 'mobile' ? 'sm' : 'default'}
-                        style={{ borderColor: secondaryColor, color: secondaryColor }}
+                        style={{ 
+                          borderColor: secondaryColor, 
+                          color: secondaryColor,
+                          backgroundColor: 'transparent'
+                        }}
                         onClick={() => handlePreviewAction('Secondary')}
-                        className="hover:bg-opacity-10 transition-all"
+                        className="hover:opacity-80 transition-all"
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = `${secondaryColor}10`;
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = 'transparent';
+                        }}
                       >
                         Secondary Action
                       </Button>
                       <Button 
                         variant="ghost" 
                         size={previewMode === 'mobile' ? 'sm' : 'default'}
-                        style={{ color: accentColor }}
+                        style={{ 
+                          color: accentColor,
+                          backgroundColor: 'transparent'
+                        }}
                         onClick={() => handlePreviewAction('Accent')}
-                        className="hover:bg-opacity-10 transition-all"
+                        className="hover:opacity-80 transition-all"
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = `${accentColor}10`;
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = 'transparent';
+                        }}
                       >
                         Accent Action
                       </Button>
