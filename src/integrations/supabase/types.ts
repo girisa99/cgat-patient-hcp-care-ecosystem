@@ -14,6 +14,182 @@ export type Database = {
   }
   public: {
     Tables: {
+      action_execution_logs: {
+        Row: {
+          action_id: string
+          agent_id: string | null
+          completed_at: string | null
+          created_at: string
+          duration_ms: number | null
+          error_details: Json | null
+          execution_context: Json | null
+          execution_id: string
+          id: string
+          input_data: Json | null
+          output_data: Json | null
+          started_at: string
+          status: string
+          triggered_by: string | null
+        }
+        Insert: {
+          action_id: string
+          agent_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          error_details?: Json | null
+          execution_context?: Json | null
+          execution_id?: string
+          id?: string
+          input_data?: Json | null
+          output_data?: Json | null
+          started_at?: string
+          status?: string
+          triggered_by?: string | null
+        }
+        Update: {
+          action_id?: string
+          agent_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          error_details?: Json | null
+          execution_context?: Json | null
+          execution_id?: string
+          id?: string
+          input_data?: Json | null
+          output_data?: Json | null
+          started_at?: string
+          status?: string
+          triggered_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "action_execution_logs_action_id_fkey"
+            columns: ["action_id"]
+            isOneToOne: false
+            referencedRelation: "agent_actions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "action_execution_logs_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      action_template_tasks: {
+        Row: {
+          created_at: string
+          expected_outputs: Json | null
+          id: string
+          is_critical: boolean | null
+          required_inputs: Json | null
+          retry_attempts: number | null
+          task_description: string | null
+          task_name: string
+          task_order: number
+          task_type: string
+          template_id: string
+          timeout_minutes: number | null
+          updated_at: string
+          validation_rules: Json | null
+        }
+        Insert: {
+          created_at?: string
+          expected_outputs?: Json | null
+          id?: string
+          is_critical?: boolean | null
+          required_inputs?: Json | null
+          retry_attempts?: number | null
+          task_description?: string | null
+          task_name: string
+          task_order?: number
+          task_type?: string
+          template_id: string
+          timeout_minutes?: number | null
+          updated_at?: string
+          validation_rules?: Json | null
+        }
+        Update: {
+          created_at?: string
+          expected_outputs?: Json | null
+          id?: string
+          is_critical?: boolean | null
+          required_inputs?: Json | null
+          retry_attempts?: number | null
+          task_description?: string | null
+          task_name?: string
+          task_order?: number
+          task_type?: string
+          template_id?: string
+          timeout_minutes?: number | null
+          updated_at?: string
+          validation_rules?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "action_template_tasks_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "action_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      action_templates: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          estimated_duration: number | null
+          id: string
+          is_active: boolean | null
+          is_system_template: boolean | null
+          name: string
+          priority: string
+          requires_approval: boolean | null
+          template_config: Json | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          estimated_duration?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_system_template?: boolean | null
+          name: string
+          priority?: string
+          requires_approval?: boolean | null
+          template_config?: Json | null
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          estimated_duration?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_system_template?: boolean | null
+          name?: string
+          priority?: string
+          requires_approval?: boolean | null
+          template_config?: Json | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       active_issues: {
         Row: {
           category: string
@@ -55,6 +231,97 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      agent_actions: {
+        Row: {
+          agent_id: string | null
+          ai_model_id: string | null
+          average_duration_ms: number | null
+          category: string
+          created_at: string
+          description: string | null
+          estimated_duration: number | null
+          execution_count: number | null
+          id: string
+          is_enabled: boolean | null
+          last_executed_at: string | null
+          mcp_server_id: string | null
+          name: string
+          parameters: Json | null
+          priority: string
+          requires_approval: boolean | null
+          success_rate: number | null
+          template_id: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          agent_id?: string | null
+          ai_model_id?: string | null
+          average_duration_ms?: number | null
+          category?: string
+          created_at?: string
+          description?: string | null
+          estimated_duration?: number | null
+          execution_count?: number | null
+          id?: string
+          is_enabled?: boolean | null
+          last_executed_at?: string | null
+          mcp_server_id?: string | null
+          name: string
+          parameters?: Json | null
+          priority?: string
+          requires_approval?: boolean | null
+          success_rate?: number | null
+          template_id?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          agent_id?: string | null
+          ai_model_id?: string | null
+          average_duration_ms?: number | null
+          category?: string
+          created_at?: string
+          description?: string | null
+          estimated_duration?: number | null
+          execution_count?: number | null
+          id?: string
+          is_enabled?: boolean | null
+          last_executed_at?: string | null
+          mcp_server_id?: string | null
+          name?: string
+          parameters?: Json | null
+          priority?: string
+          requires_approval?: boolean | null
+          success_rate?: number | null
+          template_id?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_actions_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_actions_ai_model_id_fkey"
+            columns: ["ai_model_id"]
+            isOneToOne: false
+            referencedRelation: "ai_model_integrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_actions_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "action_templates"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       agent_compliance_monitoring: {
         Row: {
@@ -2542,6 +2809,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      mcp_servers: {
+        Row: {
+          capabilities: Json | null
+          connection_config: Json | null
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          reliability_score: number | null
+          server_id: string
+          status: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          capabilities?: Json | null
+          connection_config?: Json | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          reliability_score?: number | null
+          server_id: string
+          status?: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          capabilities?: Json | null
+          connection_config?: Json | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          reliability_score?: number | null
+          server_id?: string
+          status?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       modalities: {
         Row: {

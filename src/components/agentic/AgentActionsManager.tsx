@@ -9,10 +9,12 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Plus, X, Bot, Zap, MessageSquare, Search, FileText, 
   Database, Settings, AlertCircle, CheckCircle, Brain,
-  Sparkles, Target, Clock, Users
+  Sparkles, Target, Clock, Users, RefreshCw, Upload, Download
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -117,45 +119,8 @@ const MCP_SERVERS: MCPServer[] = [
   }
 ];
 
-// Predefined action templates
-const ACTION_TEMPLATES: Partial<AgentAction>[] = [
-  {
-    name: 'Patient Query Response',
-    description: 'Respond to patient queries with accurate, compliant information',
-    category: 'communication',
-    type: 'trigger',
-    priority: 'high',
-    estimatedDuration: 2,
-    requiresApproval: false
-  },
-  {
-    name: 'Clinical Data Analysis',
-    description: 'Analyze clinical data patterns and generate insights',
-    category: 'analysis',
-    type: 'on_demand',
-    priority: 'medium',
-    estimatedDuration: 15,
-    requiresApproval: true
-  },
-  {
-    name: 'Compliance Monitoring',
-    description: 'Monitor and flag potential compliance issues',
-    category: 'automation',
-    type: 'scheduled',
-    priority: 'critical',
-    estimatedDuration: 5,
-    requiresApproval: false
-  },
-  {
-    name: 'Document Summarization',
-    description: 'Summarize medical documents and reports',
-    category: 'data_processing',
-    type: 'on_demand',
-    priority: 'medium',
-    estimatedDuration: 3,
-    requiresApproval: false
-  }
-];
+// Import the new ActionTemplateManager
+import { ActionTemplateManager } from './ActionTemplateManager';
 
 export const AgentActionsManager: React.FC<AgentActionsManagerProps> = ({
   onActionsChange,
@@ -176,20 +141,43 @@ export const AgentActionsManager: React.FC<AgentActionsManagerProps> = ({
     }
   }, [agentType, agentPurpose]);
 
-  const suggestActionsForAgent = () => {
-    const suggestedActions = ACTION_TEMPLATES.slice(0, 3).map((template, index) => ({
-      id: `suggested-${index}`,
-      ...template,
-      aiModelId: getRecommendedModel(template.category!).id,
-      mcpServerId: getRecommendedMCPServer(template.category!).id,
-      isEnabled: true,
-      parameters: {}
-    } as AgentAction));
+  const suggestActionsForAgent = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-action-templates', {
+        body: {
+          agentType,
+          agentPurpose,
+          count: 3,
+          context: 'healthcare'
+        }
+      });
 
-    setActions(suggestedActions);
-    onActionsChange(suggestedActions);
-    
-    toast.success(`Added ${suggestedActions.length} recommended actions based on your agent configuration.`);
+      if (error) throw error;
+
+      const generatedTemplates = data.templates || [];
+      const suggestedActions = generatedTemplates.map((template: any, index: number) => ({
+        id: `suggested-${index}`,
+        name: template.name,
+        description: template.description,
+        category: template.category,
+        type: template.type,
+        priority: template.priority,
+        estimatedDuration: template.estimated_duration,
+        requiresApproval: template.requires_approval,
+        aiModelId: getRecommendedModel(template.category).id,
+        mcpServerId: getRecommendedMCPServer(template.category).id,
+        isEnabled: true,
+        parameters: {}
+      } as AgentAction));
+
+      setActions(suggestedActions);
+      onActionsChange(suggestedActions);
+      
+      toast.success(`Added ${suggestedActions.length} AI-generated actions based on your agent configuration.`);
+    } catch (error) {
+      console.error('Error generating actions:', error);
+      toast.error('Failed to generate actions. Using default templates.');
+    }
   };
 
   const getRecommendedModel = (category: string): AIModel => {
@@ -393,46 +381,32 @@ export const AgentActionsManager: React.FC<AgentActionsManagerProps> = ({
             </CardContent>
           </Card>
 
-          {/* Action Templates */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Sparkles className="h-5 w-5" />
-                Action Templates
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {ACTION_TEMPLATES.map((template, index) => (
-                  <Card key={index} className="cursor-pointer hover:shadow-md transition-all">
-                    <CardContent className="p-3">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            {getCategoryIcon(template.category!)}
-                            <h5 className="font-medium text-sm">{template.name}</h5>
-                          </div>
-                          <p className="text-xs text-muted-foreground mb-2">
-                            {template.description}
-                          </p>
-                          <Badge variant="outline" className="text-xs">
-                            {template.category}
-                          </Badge>
-                        </div>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => addAction(template)}
-                        >
-                          <Plus className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          {/* Action Templates - New Component */}
+          <ActionTemplateManager
+            agentType={agentType}
+            agentPurpose={agentPurpose}
+            onTemplateSelect={(template) => {
+              const actionFromTemplate = {
+                id: `action-${Date.now()}`,
+                name: template.name,
+                description: template.description || '',
+                category: template.category as AgentAction['category'],
+                type: template.type as AgentAction['type'],
+                priority: template.priority as AgentAction['priority'],
+                estimatedDuration: template.estimated_duration,
+                requiresApproval: template.requires_approval,
+                aiModelId: getRecommendedModel(template.category).id,
+                mcpServerId: getRecommendedMCPServer(template.category).id,
+                isEnabled: true,
+                parameters: {}
+              };
+              
+              const updatedActions = [...actions, actionFromTemplate];
+              setActions(updatedActions);
+              onActionsChange(updatedActions);
+              toast.success(`Added action: ${template.name}`);
+            }}
+          />
         </div>
 
         {/* Action Details/Editor */}
