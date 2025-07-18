@@ -10,7 +10,7 @@ import { SystemConnectors } from '@/components/agentic/SystemConnectors';
 import { AgentDeployment } from '@/components/agentic/AgentDeployment';
 import { KnowledgeBaseManager } from '@/components/rag/KnowledgeBaseManager';
 import { RAGRecommendations } from '@/components/rag/RAGRecommendations';
-import { Bot, Network, Settings, Rocket, Plus } from 'lucide-react';
+import { Bot, Network, Settings, Rocket, Plus, Brain } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -218,7 +218,7 @@ const AgenticEcosystem = () => {
 
       {/* Main Interface */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-8">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview">
             <Settings className="h-4 w-4 mr-2" />
             Overview
@@ -226,14 +226,6 @@ const AgenticEcosystem = () => {
           <TabsTrigger value="wizard">
             <Plus className="h-4 w-4 mr-2" />
             Create Agent
-          </TabsTrigger>
-          <TabsTrigger value="canvas">
-            <Bot className="h-4 w-4 mr-2" />
-            Canvas
-          </TabsTrigger>
-          <TabsTrigger value="connectors">
-            <Network className="h-4 w-4 mr-2" />
-            Connectors
           </TabsTrigger>
           <TabsTrigger value="templates">
             <Plus className="h-4 w-4 mr-2" />
@@ -244,8 +236,8 @@ const AgenticEcosystem = () => {
             Knowledge Base
           </TabsTrigger>
           <TabsTrigger value="rag">
-            <Bot className="h-4 w-4 mr-2" />
-            RAG
+            <Brain className="h-4 w-4 mr-2" />
+            RAG Recommendations
           </TabsTrigger>
           <TabsTrigger value="deployment">
             <Rocket className="h-4 w-4 mr-2" />
@@ -329,14 +321,6 @@ const AgenticEcosystem = () => {
 
         <TabsContent value="wizard" className="space-y-4">
           <AgentCreationWizard />
-        </TabsContent>
-
-        <TabsContent value="canvas" className="space-y-4">
-          <AgentCanvas />
-        </TabsContent>
-
-        <TabsContent value="connectors" className="space-y-4">
-          <SystemConnectors />
         </TabsContent>
 
         <TabsContent value="templates" className="space-y-4">
