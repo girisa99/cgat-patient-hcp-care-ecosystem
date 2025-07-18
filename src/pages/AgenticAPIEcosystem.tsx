@@ -18,44 +18,78 @@ import {
   Clock
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-// Following Stability Framework - Use Template System
-import { useApiServices } from '@/hooks/useApiServices';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 const AgenticAPIEcosystem = () => {
   const [activeTab, setActiveTab] = useState('overview');
 
-  // Using Stability Framework Template System
-  const { apiServices, isLoading: apisLoading } = useApiServices();
+  // Fetch real API services data
+  const { data: apiServices = [], isLoading: apisLoading } = useQuery({
+    queryKey: ['api-services'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('api_integration_registry')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching API services:', error);
+        return [];
+      }
+      
+      return data || [];
+    },
+    refetchInterval: 30000,
+  });
 
-  // Transform API services to compatible format
-  const safeApiServices = (apiServices || []).map((api: any) => ({
-    id: api.id,
-    name: api.name || 'Unnamed API',
-    description: api.description || '',
-    status: api.status || 'inactive',
-    version: api.version || '1.0',
-    type: api.type || 'api'
-  }));
+  // Fetch connected agents data
+  const { data: connectedAgents = [] } = useQuery({
+    queryKey: ['connected-agents'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('api_integration_registry')
+        .select('*')
+        .eq('category', 'agent')
+        .eq('status', 'active');
+      
+      if (error) {
+        console.error('Error fetching connected agents:', error);
+        return [];
+      }
+      
+      return (data || []).map(agent => ({
+        id: agent.id,
+        name: agent.name,
+        connectedAPIs: ['Healthcare API'], // This would be determined by actual connections
+        status: 'active',
+        lastActivity: new Date(agent.updated_at).toLocaleString()
+      }));
+    },
+  });
 
-  // Connected agents from agents with category 'agent'
-  const connectedAgents = safeApiServices
-    .filter(service => service.type === 'agent' && service.status === 'active')
-    .map(agent => ({
-      id: agent.id,
-      name: agent.name,
-      connectedAPIs: ['Healthcare API'],
-      status: 'active',
-      lastActivity: 'Recent'
-    }));
+  // Fetch API usage analytics
+  const { data: apiStats } = useQuery({
+    queryKey: ['api-stats'],
+    queryFn: async () => {
+      const { data: usageLogs } = await supabase
+        .from('api_usage_logs')
+        .select('*')
+        .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
 
-  // API stats calculation
-  const apiStats = {
-    totalAPIs: safeApiServices.length,
-    connectedAgents: connectedAgents.length,
-    totalRequests: 0, // Would come from usage logs
-    avgUptime: '99.2%',
-    avgResponseTime: 125
-  };
+      const totalRequests = usageLogs?.length || 0;
+      const avgResponseTime = usageLogs?.reduce((acc, log) => acc + (log.response_time_ms || 0), 0) / (usageLogs?.length || 1);
+
+      return {
+        totalAPIs: apiServices.length,
+        connectedAgents: connectedAgents.length,
+        totalRequests,
+        avgUptime: '99.2%',
+        avgResponseTime: Math.round(avgResponseTime)
+      };
+    },
+    enabled: !apisLoading,
+  });
 
   const handleCreateIntegration = () => {
     toast({
@@ -187,10 +221,10 @@ const AgenticAPIEcosystem = () => {
                         <span>API Health:</span>
                         <span className="text-green-600">Healthy</span>
                       </div>
-                       <div className="flex justify-between">
-                         <span>Active Endpoints:</span>
-                         <span className="text-blue-600">{safeApiServices.length}</span>
-                       </div>
+                      <div className="flex justify-between">
+                        <span>Active Endpoints:</span>
+                        <span className="text-blue-600">{apiServices.length}</span>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -223,10 +257,10 @@ const AgenticAPIEcosystem = () => {
                         <span>Total Requests:</span>
                         <span>{apiStats?.totalRequests || 0}</span>
                       </div>
-                       <div className="flex justify-between">
-                         <span>Active APIs:</span>
-                         <span>{safeApiServices.filter(api => api.status === 'active').length}</span>
-                       </div>
+                      <div className="flex justify-between">
+                        <span>Active APIs:</span>
+                        <span>{apiServices.filter(api => api.status === 'active').length}</span>
+                      </div>
                       <div className="flex justify-between">
                         <span>Uptime:</span>
                         <span>{apiStats?.avgUptime || '99.2%'}</span>
@@ -251,9 +285,9 @@ const AgenticAPIEcosystem = () => {
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                     <span className="ml-2">Loading API services...</span>
                   </div>
-                 ) : safeApiServices.length > 0 ? (
-                   safeApiServices.map((api) => (
-                     <div key={api.id} className="flex items-center justify-between p-4 border rounded-lg">
+                ) : apiServices.length > 0 ? (
+                  apiServices.map((api) => (
+                    <div key={api.id} className="flex items-center justify-between p-4 border rounded-lg">
                       <div className="flex items-center space-x-4">
                         <Network className="h-8 w-8 text-primary" />
                         <div>

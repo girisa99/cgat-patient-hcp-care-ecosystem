@@ -14,16 +14,15 @@ import { Bot, Network, Settings, Rocket, Plus, Brain } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-// Following Stability Framework - Use Template System
-import { useAgents } from '@/hooks/useAgents';
 
 interface Agent {
   id: string;
   name: string;
   description: string;
   status: 'draft' | 'deployed' | 'paused';
-  agent_type?: string;
-  template_id?: string;
+  connections: string[];
+  role: string;
+  template: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -31,52 +30,59 @@ interface Agent {
 const AgenticEcosystem = () => {
   const [activeTab, setActiveTab] = useState('overview');
 
-  // Using Stability Framework Template System
-  const { 
-    items: rawAgents, 
-    isLoading: agentsLoading, 
-    refetch: refetchAgents,
-    deployAgent,
-    pauseAgent,
-    createItem: createAgent
-  } = useAgents();
+  // Fetch real agents data from database
+  const { data: agents = [], isLoading: agentsLoading, refetch: refetchAgents } = useQuery({
+    queryKey: ['agents'],
+    queryFn: async () => {
+      // For now, we'll use a table structure. In a real implementation, 
+      // you might want to create an 'agents' table in your database
+      const { data, error } = await supabase
+        .from('api_integration_registry')
+        .select('*')
+        .eq('category', 'agent');
+      
+      if (error) {
+        console.error('Error fetching agents:', error);
+        return [];
+      }
+      
+      // Transform the data to match our Agent interface
+      return (data || []).map(item => ({
+        id: item.id,
+        name: item.name,
+        description: item.description || '',
+        status: item.status === 'active' ? 'deployed' : 'draft',
+        connections: item.rate_limits ? Object.keys(item.rate_limits) : [],
+        role: item.type || 'general',
+        template: item.category || 'default',
+        created_at: item.created_at,
+        updated_at: item.updated_at
+      })) as Agent[];
+    },
+    refetchInterval: 30000, // Refresh every 30 seconds
+  });
 
-  // Transform raw data to Agent interface compatible with both our needs and AgentDeployment
-  const agents: Agent[] = (rawAgents || []).map((item: any) => ({
-    id: item.id,
-    name: item.name || 'Unnamed Agent',
-    description: item.description || '',
-    status: item.status || 'draft',
-    agent_type: item.agent_type || 'general',
-    template_id: item.template_id,
-    created_at: item.created_at,
-    updated_at: item.updated_at
-  }));
-
-  // Create deployment-compatible agents for AgentDeployment component
-  const deploymentAgents = agents.map(agent => ({
-    ...agent,
-    connections: [], // Default empty connections
-    role: agent.agent_type || 'general',
-    template: agent.template_id || 'default'
-  }));
-
-  // Fetch real ecosystem stats from proper tables
+  // Fetch real ecosystem stats
   const { data: ecosystemStats } = useQuery({
     queryKey: ['ecosystem-stats'],
     queryFn: async () => {
-      const { data: agentKnowledgeBases } = await supabase
-        .from('agent_knowledge_bases')
+      const { data: apiServices } = await supabase
+        .from('api_integration_registry')
+        .select('status')
+        .eq('status', 'active');
+
+      const { data: connectors } = await supabase
+        .from('api_endpoints')
         .select('id');
 
       const { data: conversations } = await supabase
-        .from('agent_conversations')
+        .from('audit_logs')
         .select('id')
         .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
 
       return {
         activeAgents: agents.filter(a => a.status === 'deployed').length,
-        connectedChannels: agentKnowledgeBases?.length || 0,
+        connectedChannels: connectors?.length || 0,
         conversationsToday: conversations?.length || 0,
         uptime: '99.2%'
       };
@@ -94,7 +100,14 @@ const AgenticEcosystem = () => {
 
   const handleDeployAgent = async (agentId: string) => {
     try {
-      await deployAgent(agentId);
+      // Update agent status in database
+      const { error } = await supabase
+        .from('api_integration_registry')
+        .update({ status: 'active' })
+        .eq('id', agentId);
+
+      if (error) throw error;
+
       await refetchAgents();
       
       toast({
@@ -112,7 +125,13 @@ const AgenticEcosystem = () => {
 
   const handlePauseAgent = async (agentId: string) => {
     try {
-      await pauseAgent(agentId);
+      const { error } = await supabase
+        .from('api_integration_registry')
+        .update({ status: 'paused' })
+        .eq('id', agentId);
+
+      if (error) throw error;
+
       await refetchAgents();
       
       toast({
@@ -249,14 +268,14 @@ const AgenticEcosystem = () => {
                           <h3 className="font-semibold">{agent.name}</h3>
                           <p className="text-sm text-muted-foreground">{agent.description}</p>
                           <div className="flex items-center space-x-2 mt-2">
-                             <Badge 
-                               variant={agent.status === 'deployed' ? 'default' : agent.status === 'draft' ? 'secondary' : 'outline'}
-                             >
-                               {agent.status}
+                            <Badge 
+                              variant={agent.status === 'deployed' ? 'default' : agent.status === 'draft' ? 'secondary' : 'outline'}
+                            >
+                              {agent.status}
                             </Badge>
-                             <span className="text-xs text-muted-foreground">
-                               {agent.agent_type || 'general'} • {agent.created_at ? new Date(agent.created_at).toLocaleDateString() : 'Recent'}
-                             </span>
+                            <span className="text-xs text-muted-foreground">
+                              {agent.connections.length} connections
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -317,7 +336,7 @@ const AgenticEcosystem = () => {
         </TabsContent>
 
         <TabsContent value="deployment" className="space-y-4">
-          <AgentDeployment agents={deploymentAgents} onDeploy={handleDeployAgent} />
+          <AgentDeployment agents={agents} onDeploy={handleDeployAgent} />
         </TabsContent>
       </Tabs>
     </div>
