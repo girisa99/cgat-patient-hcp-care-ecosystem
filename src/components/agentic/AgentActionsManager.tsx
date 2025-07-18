@@ -132,8 +132,9 @@ const MCP_SERVERS: MCPServer[] = [
   }
 ];
 
-// Import the new ActionTemplateManager
+// Import components
 import { ActionTemplateManager } from './ActionTemplateManager';
+import { ActionTemplateSummary } from './ActionTemplateSummary';
 
 export const AgentActionsManager: React.FC<AgentActionsManagerProps> = ({
   onActionsChange,
@@ -147,6 +148,10 @@ export const AgentActionsManager: React.FC<AgentActionsManagerProps> = ({
   const [models, setModels] = useState<AIModel[]>([]);
   const [mcpServers, setMcpServers] = useState<MCPServer[]>([]);
   const [editingTasks, setEditingTasks] = useState<AgentTask[]>([]);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [customTaskTypes, setCustomTaskTypes] = useState<string[]>([]);
+  const [newTaskTypeInput, setNewTaskTypeInput] = useState('');
+  const [showSummary, setShowSummary] = useState(false);
 
   // Load real data from database
   useEffect(() => {
@@ -219,6 +224,7 @@ export const AgentActionsManager: React.FC<AgentActionsManagerProps> = ({
   }, [agentType, agentPurpose]);
 
   const suggestActionsForAgent = async () => {
+    setIsGenerating(true);
     try {
       const { data, error } = await supabase.functions.invoke('generate-action-templates', {
         body: {
@@ -261,6 +267,8 @@ export const AgentActionsManager: React.FC<AgentActionsManagerProps> = ({
     } catch (error) {
       console.error('Error generating actions:', error);
       toast.error('Failed to generate actions. Using default templates.');
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -397,6 +405,38 @@ export const AgentActionsManager: React.FC<AgentActionsManagerProps> = ({
     }
   };
 
+  // Show summary if requested
+  if (showSummary) {
+    return (
+      <ActionTemplateSummary
+        selectedTemplates={actions.map(action => ({
+          id: action.id,
+          name: action.name,
+          description: action.description,
+          category: action.category,
+          type: action.type,
+          priority: action.priority,
+          estimated_duration: action.estimatedDuration || 5,
+          requires_approval: action.requiresApproval || false,
+          tasks: action.tasks?.map(task => ({
+            id: task.id,
+            task_name: task.name,
+            task_description: task.description,
+            task_type: task.type,
+            timeout_minutes: task.timeout,
+            is_critical: task.isRequired
+          }))
+        }))}
+        onEdit={() => setShowSummary(false)}
+        onApprove={() => {
+          toast.success('Action templates approved! Ready to proceed.');
+          // Here you could call a callback to proceed to next step
+        }}
+        onReject={() => setShowSummary(false)}
+      />
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -408,14 +448,29 @@ export const AgentActionsManager: React.FC<AgentActionsManagerProps> = ({
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={suggestActionsForAgent}>
-            <Sparkles className="h-4 w-4 mr-2" />
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={suggestActionsForAgent}
+            disabled={isGenerating}
+          >
+            {isGenerating ? (
+              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Sparkles className="h-4 w-4 mr-2" />
+            )}
             Auto-Suggest
           </Button>
           <Button size="sm" onClick={() => addAction()}>
             <Plus className="h-4 w-4 mr-2" />
             Add Action
           </Button>
+          {actions.length > 0 && (
+            <Button variant="default" size="sm" onClick={() => setShowSummary(true)}>
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Review & Continue
+            </Button>
+          )}
         </div>
       </div>
 
@@ -574,7 +629,7 @@ export const AgentActionsManager: React.FC<AgentActionsManagerProps> = ({
                       />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-4">
                       <div>
                         <Label>AI Model</Label>
                         <Select 
@@ -587,13 +642,13 @@ export const AgentActionsManager: React.FC<AgentActionsManagerProps> = ({
                           <SelectTrigger>
                             <SelectValue placeholder="Select AI model" />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="max-h-60">
                             {models.map((model) => (
                               <SelectItem key={model.id} value={model.id}>
-                                <div className="flex flex-col">
-                                  <span>{model.name}</span>
-                                  <span className="text-xs text-muted-foreground">
-                                    {model.provider} • {model.specialization.join(', ')}
+                                <div className="flex flex-col py-1 w-full">
+                                  <span className="font-medium">{model.name}</span>
+                                  <span className="text-xs text-muted-foreground truncate">
+                                    {model.provider} • {model.specialization.slice(0, 2).join(', ')}
                                   </span>
                                 </div>
                               </SelectItem>
@@ -614,13 +669,13 @@ export const AgentActionsManager: React.FC<AgentActionsManagerProps> = ({
                           <SelectTrigger>
                             <SelectValue placeholder="Select MCP server" />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="max-h-60">
                             {mcpServers.map((server) => (
                               <SelectItem key={server.id} value={server.id}>
-                                <div className="flex flex-col">
-                                  <span>{server.name}</span>
-                                  <span className="text-xs text-muted-foreground">
-                                    {server.type} • {server.capabilities.join(', ')}
+                                <div className="flex flex-col py-1 w-full">
+                                  <span className="font-medium">{server.name}</span>
+                                  <span className="text-xs text-muted-foreground truncate">
+                                    {server.type} • {server.capabilities.slice(0, 2).join(', ')}
                                   </span>
                                 </div>
                               </SelectItem>
@@ -693,12 +748,15 @@ export const AgentActionsManager: React.FC<AgentActionsManagerProps> = ({
                                       <SelectTrigger className="h-8">
                                         <SelectValue />
                                       </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="action">Action</SelectItem>
-                                        <SelectItem value="validation">Validation</SelectItem>
-                                        <SelectItem value="analysis">Analysis</SelectItem>
-                                        <SelectItem value="notification">Notification</SelectItem>
-                                      </SelectContent>
+                                       <SelectContent>
+                                         <SelectItem value="action">Action</SelectItem>
+                                         <SelectItem value="validation">Validation</SelectItem>
+                                         <SelectItem value="analysis">Analysis</SelectItem>
+                                         <SelectItem value="notification">Notification</SelectItem>
+                                         {customTaskTypes.map(type => (
+                                           <SelectItem key={type} value={type}>{type}</SelectItem>
+                                         ))}
+                                       </SelectContent>
                                     </Select>
                                   </div>
                                 </div>
@@ -731,10 +789,36 @@ export const AgentActionsManager: React.FC<AgentActionsManagerProps> = ({
                                         ))}
                                       </SelectContent>
                                     </Select>
-                                  </div>
-                                  
-                                  <div>
-                                    <Label className="text-xs">Timeout (min)</Label>
+                                   </div>
+                                   
+                                   <div>
+                                     <div className="flex gap-2 mt-1">
+                                       <Input
+                                         placeholder="Add task type"
+                                         value={newTaskTypeInput}
+                                         onChange={(e) => setNewTaskTypeInput(e.target.value)}
+                                         className="h-8 text-xs"
+                                       />
+                                       <Button 
+                                         type="button"
+                                         variant="outline" 
+                                         size="sm"
+                                         onClick={() => {
+                                           if (newTaskTypeInput.trim() && !customTaskTypes.includes(newTaskTypeInput.trim())) {
+                                             setCustomTaskTypes([...customTaskTypes, newTaskTypeInput.trim()]);
+                                             updateTask(task.id, { type: newTaskTypeInput.trim() as AgentTask['type'] });
+                                             setNewTaskTypeInput('');
+                                           }
+                                         }}
+                                         className="h-8 px-2"
+                                       >
+                                         <Plus className="h-3 w-3" />
+                                       </Button>
+                                     </div>
+                                   </div>
+                                   
+                                   <div>
+                                     <Label className="text-xs">Timeout (min)</Label>
                                     <Input
                                       type="number"
                                       min="1"

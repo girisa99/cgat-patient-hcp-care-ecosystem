@@ -95,6 +95,12 @@ export const ActionTemplateManager: React.FC<ActionTemplateManagerProps> = ({
   const [isGenerating, setIsGenerating] = useState(false);
   const [editForm, setEditForm] = useState<Partial<ActionTemplate>>({});
   const [tasks, setTasks] = useState<ActionTemplateTask[]>([]);
+  const [customCategories, setCustomCategories] = useState<string[]>([]);
+  const [customTypes, setCustomTypes] = useState<string[]>([]);
+  const [customTaskTypes, setCustomTaskTypes] = useState<string[]>([]);
+  const [newCategoryInput, setNewCategoryInput] = useState('');
+  const [newTypeInput, setNewTypeInput] = useState('');
+  const [newTaskTypeInput, setNewTaskTypeInput] = useState('');
 
   // Load data from database
   useEffect(() => {
@@ -559,8 +565,33 @@ export const ActionTemplateManager: React.FC<ActionTemplateManagerProps> = ({
                         <SelectItem value="integration">Integration</SelectItem>
                         <SelectItem value="automation">Automation</SelectItem>
                         <SelectItem value="custom">Custom</SelectItem>
+                        {customCategories.map(category => (
+                          <SelectItem key={category} value={category}>{category}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
+                    <div className="flex gap-2 mt-2">
+                      <Input
+                        placeholder="Add new category"
+                        value={newCategoryInput}
+                        onChange={(e) => setNewCategoryInput(e.target.value)}
+                        className="h-8"
+                      />
+                      <Button 
+                        type="button"
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          if (newCategoryInput.trim() && !customCategories.includes(newCategoryInput.trim())) {
+                            setCustomCategories([...customCategories, newCategoryInput.trim()]);
+                            setEditForm({...editForm, category: newCategoryInput.trim()});
+                            setNewCategoryInput('');
+                          }
+                        }}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                   
                   <div>
@@ -576,8 +607,33 @@ export const ActionTemplateManager: React.FC<ActionTemplateManagerProps> = ({
                         <SelectItem value="trigger">Trigger</SelectItem>
                         <SelectItem value="scheduled">Scheduled</SelectItem>
                         <SelectItem value="on_demand">On Demand</SelectItem>
+                        {customTypes.map(type => (
+                          <SelectItem key={type} value={type}>{type}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
+                    <div className="flex gap-2 mt-2">
+                      <Input
+                        placeholder="Add new type"
+                        value={newTypeInput}
+                        onChange={(e) => setNewTypeInput(e.target.value)}
+                        className="h-8"
+                      />
+                      <Button 
+                        type="button"
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          if (newTypeInput.trim() && !customTypes.includes(newTypeInput.trim())) {
+                            setCustomTypes([...customTypes, newTypeInput.trim()]);
+                            setEditForm({...editForm, type: newTypeInput.trim()});
+                            setNewTypeInput('');
+                          }
+                        }}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
 
@@ -745,8 +801,33 @@ export const ActionTemplateManager: React.FC<ActionTemplateManagerProps> = ({
                                     <SelectItem value="validation">Validation</SelectItem>
                                     <SelectItem value="analysis">Analysis</SelectItem>
                                     <SelectItem value="notification">Notification</SelectItem>
+                                    {customTaskTypes.map(type => (
+                                      <SelectItem key={type} value={type}>{type}</SelectItem>
+                                    ))}
                                   </SelectContent>
                                 </Select>
+                                <div className="flex gap-2 mt-2">
+                                  <Input
+                                    placeholder="Add task type"
+                                    value={newTaskTypeInput}
+                                    onChange={(e) => setNewTaskTypeInput(e.target.value)}
+                                    className="h-8"
+                                  />
+                                  <Button 
+                                    type="button"
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => {
+                                      if (newTaskTypeInput.trim() && !customTaskTypes.includes(newTaskTypeInput.trim())) {
+                                        setCustomTaskTypes([...customTaskTypes, newTaskTypeInput.trim()]);
+                                        updateTask(task.id, { task_type: newTaskTypeInput.trim() });
+                                        setNewTaskTypeInput('');
+                                      }
+                                    }}
+                                  >
+                                    <Plus className="h-4 w-4" />
+                                  </Button>
+                                </div>
                               </div>
                             </div>
                             
@@ -1089,8 +1170,33 @@ export const ActionTemplateManager: React.FC<ActionTemplateManagerProps> = ({
                                   <SelectItem value="validation">Validation</SelectItem>
                                   <SelectItem value="analysis">Analysis</SelectItem>
                                   <SelectItem value="notification">Notification</SelectItem>
+                                  {customTaskTypes.map(type => (
+                                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                                  ))}
                                 </SelectContent>
                               </Select>
+                              <div className="flex gap-2 mt-2">
+                                <Input
+                                  placeholder="Add task type"
+                                  value={newTaskTypeInput}
+                                  onChange={(e) => setNewTaskTypeInput(e.target.value)}
+                                  className="h-8"
+                                />
+                                <Button 
+                                  type="button"
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => {
+                                    if (newTaskTypeInput.trim() && !customTaskTypes.includes(newTaskTypeInput.trim())) {
+                                      setCustomTaskTypes([...customTaskTypes, newTaskTypeInput.trim()]);
+                                      updateTask(task.id, { task_type: newTaskTypeInput.trim() });
+                                      setNewTaskTypeInput('');
+                                    }
+                                  }}
+                                >
+                                  <Plus className="h-4 w-4" />
+                                </Button>
+                              </div>
                             </div>
                           </div>
                           
