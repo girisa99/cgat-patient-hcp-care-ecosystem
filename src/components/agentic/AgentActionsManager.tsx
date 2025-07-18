@@ -135,6 +135,8 @@ const MCP_SERVERS: MCPServer[] = [
 // Import components
 import { ActionTemplateManager } from './ActionTemplateManager';
 import { ActionTemplateSummary } from './ActionTemplateSummary';
+import { ConnectorAssignmentManager } from './ConnectorAssignmentManager';
+import { KnowledgeBaseManager } from './KnowledgeBaseManager';
 
 export const AgentActionsManager: React.FC<AgentActionsManagerProps> = ({
   onActionsChange,
@@ -152,6 +154,9 @@ export const AgentActionsManager: React.FC<AgentActionsManagerProps> = ({
   const [customTaskTypes, setCustomTaskTypes] = useState<string[]>([]);
   const [newTaskTypeInput, setNewTaskTypeInput] = useState('');
   const [showSummary, setShowSummary] = useState(false);
+  const [activeTab, setActiveTab] = useState('actions');
+  const [connectorAssignments, setConnectorAssignments] = useState<any[]>([]);
+  const [knowledgeSources, setKnowledgeSources] = useState<any[]>([]);
 
   // Load real data from database
   useEffect(() => {
@@ -444,7 +449,7 @@ export const AgentActionsManager: React.FC<AgentActionsManagerProps> = ({
         <div>
           <h3 className="text-lg font-medium">Agent Actions & Tasks</h3>
           <p className="text-sm text-muted-foreground">
-            Configure what your agent can do and how it should behave
+            Configure actions, assign connectors, and manage knowledge base
           </p>
         </div>
         <div className="flex gap-2">
@@ -474,7 +479,17 @@ export const AgentActionsManager: React.FC<AgentActionsManagerProps> = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Main Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="actions">Actions & Templates</TabsTrigger>
+          <TabsTrigger value="connectors">System Connectors</TabsTrigger>
+          <TabsTrigger value="knowledge">Knowledge Base</TabsTrigger>
+        </TabsList>
+
+        {/* Actions Tab */}
+        <TabsContent value="actions" className="mt-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Actions List */}
         <div className="lg:col-span-2 space-y-4">
           <Card>
@@ -931,7 +946,39 @@ export const AgentActionsManager: React.FC<AgentActionsManagerProps> = ({
             </Card>
           )}
         </div>
-      </div>
+          </div>
+        </TabsContent>
+
+        {/* Connectors Tab */}
+        <TabsContent value="connectors" className="mt-6">
+          <ConnectorAssignmentManager
+            agentId="temp-agent-id" // This should come from props
+            actions={actions.map(action => ({
+              id: action.id,
+              name: action.name,
+              type: action.type,
+              category: action.category,
+              description: action.description
+            }))}
+            onAssignmentsChange={setConnectorAssignments}
+          />
+        </TabsContent>
+
+        {/* Knowledge Base Tab */}
+        <TabsContent value="knowledge" className="mt-6">
+          <KnowledgeBaseManager
+            agentId="temp-agent-id" // This should come from props
+            actions={actions.map(action => ({
+              id: action.id,
+              name: action.name,
+              type: action.type,
+              category: action.category,
+              description: action.description
+            }))}
+            onKnowledgeSourcesChange={setKnowledgeSources}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
