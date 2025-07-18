@@ -11,9 +11,14 @@ import type { ImportResult, ImportStats, ValidationResult } from '@/types/common
 
 export const useConsolidatedDataImport = () => {
   const [isImporting, setIsImporting] = useState(false);
-  const [importProgress, setImportProgress] = useState(0);
+  const [importProgress, setImportProgress] = useState({ current: 0, total: 0 });
   const [importResults, setImportResults] = useState<ImportResult[]>([]);
-  const [importHistory, setImportHistory] = useState<ImportResult[]>([]);
+  const [importHistory, setImportHistory] = useState<Array<ImportResult & { 
+    recordsProcessed?: number;
+    source?: string; 
+    status?: string;
+    completedAt?: string;
+  }>>([]);
   
   const { createUser } = useMasterData();
   const { showSuccess, showError } = useMasterToast();
@@ -23,22 +28,36 @@ export const useConsolidatedDataImport = () => {
   // Import users
   const importUsers = async (userData: Array<Record<string, unknown>>) => {
     setIsImporting(true);
+    setImportProgress({ current: 0, total: userData.length });
+    
     try {
       const results: ImportResult[] = [];
       for (let i = 0; i < userData.length; i++) {
         const user = userData[i];
         createUser(); // TODO: Implement actual user creation with parameters
         results.push({ success: true, data: user, rowIndex: i });
-        setImportProgress(((i + 1) / userData.length) * 100);
+        setImportProgress({ current: i + 1, total: userData.length });
       }
       setImportResults(results);
+      
+      // Add to history with extended properties
+      const importRecord = {
+        success: true,
+        data: { count: results.length },
+        recordsProcessed: results.length,
+        source: 'csv_upload',
+        status: 'completed',
+        completedAt: new Date().toISOString()
+      };
+      setImportHistory(prev => [...prev, importRecord]);
+      
       showSuccess('Import Complete', `Successfully imported ${results.length} users`);
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to import users';
       showError('Import Failed', errorMessage);
     } finally {
       setIsImporting(false);
-      setImportProgress(0);
+      setImportProgress({ current: 0, total: 0 });
     }
   };
 
