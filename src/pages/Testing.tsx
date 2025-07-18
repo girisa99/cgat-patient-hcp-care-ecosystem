@@ -66,9 +66,15 @@ const Testing: React.FC = () => {
   // Enhanced statistics for testing module
   const testingStats = () => {
     const stats = testing.getStatistics();
-    const passed = testing.items.filter(item => item.test_status === 'passed').length;
-    const failed = testing.items.filter(item => item.test_status === 'failed').length;
-    const pending = testing.items.filter(item => !item.test_status || item.test_status === 'pending').length;
+    const items = Array.isArray(testing.items) ? testing.items : [];
+    
+    const isValidItem = (item: any): item is Record<string, any> => {
+      return item != null && typeof item === 'object' && 'test_status' in item;
+    };
+    
+    const passed = items.filter(item => isValidItem(item) && (item as any).test_status === 'passed').length;
+    const failed = items.filter(item => isValidItem(item) && (item as any).test_status === 'failed').length;
+    const pending = items.filter(item => isValidItem(item) && (!(item as any).test_status || (item as any).test_status === 'pending')).length;
     
     return {
       total: stats.total,

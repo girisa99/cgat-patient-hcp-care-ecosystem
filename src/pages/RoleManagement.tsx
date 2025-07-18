@@ -62,8 +62,14 @@ const RoleManagement = () => {
   // Enhanced statistics for role management
   const roleStats = () => {
     const stats = roles.getStatistics();
-    const defaultRoles = roles.items.filter(item => item.is_default).length;
-    const customRoles = roles.items.filter(item => !item.is_default).length;
+    const items = Array.isArray(roles.items) ? roles.items : [];
+    
+    const isValidRole = (item: any): item is Record<string, any> => {
+      return item != null && typeof item === 'object' && 'is_default' in item;
+    };
+    
+    const defaultRoles = items.filter(item => isValidRole(item) && (item as any).is_default).length;
+    const customRoles = items.filter(item => isValidRole(item) && !(item as any).is_default).length;
     
     return {
       total: stats.total,

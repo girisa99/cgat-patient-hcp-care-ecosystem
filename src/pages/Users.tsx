@@ -79,8 +79,18 @@ const UserManagement = () => {
   // Enhanced statistics for user management
   const userStats = () => {
     const stats = users.getStatistics();
-    const withRoles = users.items.filter(item => item.user_roles && item.user_roles.length > 0).length;
-    const withoutRoles = users.items.filter(item => !item.user_roles || item.user_roles.length === 0).length;
+    const items = Array.isArray(users.items) ? users.items : [];
+    
+    const isValidUser = (item: any): item is Record<string, any> => {
+      return item != null && typeof item === 'object' && 'user_roles' in item;
+    };
+    
+    const withRoles = items.filter(item => 
+      isValidUser(item) && (item as any).user_roles && Array.isArray((item as any).user_roles) && (item as any).user_roles.length > 0
+    ).length;
+    const withoutRoles = items.filter(item => 
+      isValidUser(item) && (!(item as any).user_roles || !Array.isArray((item as any).user_roles) || (item as any).user_roles.length === 0)
+    ).length;
     
     return {
       total: stats.total,
