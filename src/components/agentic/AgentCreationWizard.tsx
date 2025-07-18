@@ -145,19 +145,17 @@ export const AgentCreationWizard = () => {
     switch (step) {
       case 0: // Start preference
         return state.startOption !== null;
-      case 1: // Template/Agent type selection
+      case 1: // Template/Agent type selection with category mapping
         return state.startOption === 'template' ? state.templateId !== null : (state.name !== '' && state.agentType !== null);
-      case 2: // Category mapping
-        return true; // Optional step
-      case 3: // Canvas customization
+      case 2: // Canvas customization
         return state.name !== '' && state.tagline !== '';
-      case 4: // Connectors & templates (if needed)
+      case 3: // Connectors & AI Models
         return true; // Optional
-      case 5: // Knowledge Base
+      case 4: // Knowledge Base
         return true; // Optional
-      case 6: // RAG & Compliance
+      case 5: // RAG & Compliance
         return true; // Optional
-      case 7: // Deployment
+      case 6: // Deployment
         return true; // Configuration is always valid
       default:
         return false;
@@ -478,25 +476,25 @@ export const AgentCreationWizard = () => {
                 />
               </div>
             </div>
+
+            {/* Category Mapping Section */}
+            <div className="mt-8">
+              <CategoryMapping
+                selectedCategories={state.selectedCategories}
+                selectedBusinessUnits={state.selectedBusinessUnits}
+                selectedTopics={state.selectedTopics}
+                onCategoriesChange={(categories) => updateField('selectedCategories', categories)}
+                onBusinessUnitsChange={(units) => updateField('selectedBusinessUnits', units)}
+                onTopicsChange={(topics) => updateField('selectedTopics', topics)}
+              />
+            </div>
           </div>
         </div>
       )}
     </div>,
     
-    // Step 3: Category Mapping
+    // Step 3: Canvas Customization  
     <div className="space-y-6" key="step-3">
-      <CategoryMapping
-        selectedCategories={state.selectedCategories}
-        selectedBusinessUnits={state.selectedBusinessUnits}
-        selectedTopics={state.selectedTopics}
-        onCategoriesChange={(categories) => updateField('selectedCategories', categories)}
-        onBusinessUnitsChange={(units) => updateField('selectedBusinessUnits', units)}
-        onTopicsChange={(topics) => updateField('selectedTopics', topics)}
-      />
-    </div>,
-
-    // Step 4: Canvas Customization
-    <div className="space-y-6" key="step-4">
       <div>
         <h3 className="text-lg font-medium">Customize Your Agent</h3>
         <p className="text-muted-foreground">Brand and customize your agent appearance</p>
@@ -527,8 +525,8 @@ export const AgentCreationWizard = () => {
         }}
       />
     </div>,
-    
-    // Step 5: System Connectors & AI Models
+
+    // Step 4: System Connectors & AI Models
     <div className="space-y-6" key="step-5">
       <div>
         <h3 className="text-lg font-medium">System Connectors & AI Models</h3>
@@ -807,7 +805,6 @@ export const AgentCreationWizard = () => {
           >
             <Step title="Start" description="Choose approach" />
             <Step title="Setup" description="Template or custom" />
-            <Step title="Category" description="Map categories" />
             <Step title="Canvas" description="Customize appearance" />
             <Step title="Connectors" description="System integrations" />
             <Step title="Knowledge" description="Add knowledge base" />
