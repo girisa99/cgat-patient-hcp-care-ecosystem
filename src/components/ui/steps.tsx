@@ -16,19 +16,34 @@ interface StepProps {
   isActive?: boolean;
   isCompleted?: boolean;
   onClick?: () => void;
+  stepIndex?: number;
 }
 
 export const Steps: React.FC<StepsProps> = ({ children, className, currentStep, onStepClick }) => {
   return (
-    <div className={cn("space-y-4", className)}>
+    <div className={cn("flex items-center justify-between space-x-2 overflow-x-auto", className)}>
       {React.Children.map(children, (child, index) => {
         if (React.isValidElement(child)) {
-          return React.cloneElement(child, {
-            isActive: currentStep === index,
-            isCompleted: currentStep !== undefined && index < currentStep,
-            onClick: onStepClick ? () => onStepClick(index) : undefined,
-            ...child.props
-          });
+          const isLast = index === React.Children.count(children) - 1;
+          return (
+            <div key={index} className="flex items-center flex-shrink-0">
+              {React.cloneElement(child, {
+                isActive: currentStep === index,
+                isCompleted: currentStep !== undefined && index < currentStep,
+                onClick: onStepClick ? () => onStepClick(index) : undefined,
+                stepIndex: index + 1,
+                ...child.props
+              })}
+              {!isLast && (
+                <div className={cn(
+                  "h-px w-8 mx-3 transition-colors",
+                  currentStep !== undefined && index < currentStep 
+                    ? "bg-primary" 
+                    : "bg-muted-foreground/30"
+                )} />
+              )}
+            </div>
+          );
         }
         return child;
       })}
@@ -43,35 +58,47 @@ export const Step: React.FC<StepProps> = ({
   className, 
   isActive = false, 
   isCompleted = false,
-  onClick
+  onClick,
+  stepIndex
 }) => {
   return (
     <div 
       className={cn(
-        "border rounded-lg p-4",
-        onClick && "cursor-pointer hover:bg-muted/50",
-        isActive && "border-primary bg-primary/5",
-        isCompleted && "border-green-500 bg-green-50",
+        "flex flex-col items-center text-center p-3 rounded-lg transition-all min-w-[120px]",
+        onClick && "cursor-pointer hover:bg-muted/30",
+        isActive && "bg-primary/10",
         className
       )}
       onClick={onClick}
     >
-      <div className="flex items-center gap-3 mb-2">
-        <div className={cn(
-          "w-6 h-6 rounded-full flex items-center justify-center text-sm font-medium",
-          isActive && "bg-primary text-primary-foreground",
-          isCompleted && "bg-green-500 text-white",
-          !isActive && !isCompleted && "bg-muted text-muted-foreground"
-        )}>
-          {isCompleted ? '✓' : '•'}
-        </div>
-        <h3 className="font-semibold">{title}</h3>
+      <div className={cn(
+        "w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium mb-2 transition-all",
+        isActive && "bg-primary text-primary-foreground ring-2 ring-primary/30",
+        isCompleted && "bg-green-500 text-white",
+        !isActive && !isCompleted && "bg-muted text-muted-foreground"
+      )}>
+        {isCompleted ? '✓' : stepIndex || '•'}
       </div>
+      <h3 className={cn(
+        "font-semibold text-sm mb-1",
+        isActive && "text-primary",
+        isCompleted && "text-green-600",
+        !isActive && !isCompleted && "text-muted-foreground"
+      )}>
+        {title}
+      </h3>
       {description && (
-        <p className="text-sm text-muted-foreground mb-3 ml-9">{description}</p>
+        <p className={cn(
+          "text-xs",
+          isActive && "text-primary/70",
+          isCompleted && "text-green-600/70", 
+          !isActive && !isCompleted && "text-muted-foreground/70"
+        )}>
+          {description}
+        </p>
       )}
       {children && (
-        <div className="ml-9">{children}</div>
+        <div className="mt-2">{children}</div>
       )}
     </div>
   );
