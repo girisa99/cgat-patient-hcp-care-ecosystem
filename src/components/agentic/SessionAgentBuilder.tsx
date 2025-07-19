@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -300,6 +300,36 @@ export const SessionAgentBuilder = () => {
                 <CardDescription>Configure your agent's basic details, categories, and purpose</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
+                {/* Agent Type Selection */}
+                <div>
+                  <Label className="text-base font-medium">Agent Type</Label>
+                  <p className="text-sm text-muted-foreground mb-3">Choose between single agent or multi-agent configuration</p>
+                  <Select
+                    value={currentSession.basic_info?.agent_type || 'single'}
+                    onValueChange={(value) => {
+                      if (currentSessionId) {
+                        updateSession.mutate({
+                          sessionId: currentSessionId,
+                          updates: {
+                            basic_info: {
+                              ...currentSession.basic_info,
+                              agent_type: value
+                            }
+                          }
+                        });
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="bg-background">
+                      <SelectValue placeholder="Select agent type" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background border shadow-md z-50">
+                      <SelectItem value="single">Single Agent</SelectItem>
+                      <SelectItem value="multi">Multi-Agent Workflow</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="agent-name">Agent Name</Label>
@@ -604,126 +634,241 @@ export const SessionAgentBuilder = () => {
                   </div>
                 )}
               </CardContent>
+              <CardFooter className="flex justify-between">
+                <Button variant="outline" onClick={() => setShowSessionList(true)}>
+                  Back to Sessions
+                </Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={handleSaveAndContinue}>
+                    Save & Continue Later
+                  </Button>
+                  <Button onClick={() => setCurrentStep('canvas')}>
+                    Next: Canvas
+                  </Button>
+                </div>
+              </CardFooter>
             </Card>
           </div>
         </TabsContent>
 
         <TabsContent value="canvas" className="space-y-4">
-          <EnhancedAgentCanvas 
-            initialName={currentSession.basic_info?.name || currentSession.name}
-            initialTagline={currentSession.basic_info?.brand || ''}
-            onNameChange={(name) => {
-              if (currentSessionId) {
-                updateSession.mutate({
-                  sessionId: currentSessionId,
-                  updates: {
-                    basic_info: {
-                      ...currentSession.basic_info,
-                      name
+          <div className="space-y-6">
+            <EnhancedAgentCanvas 
+              initialName={currentSession.basic_info?.name || currentSession.name}
+              initialTagline={currentSession.basic_info?.brand || ''}
+              onNameChange={(name) => {
+                if (currentSessionId) {
+                  updateSession.mutate({
+                    sessionId: currentSessionId,
+                    updates: {
+                      basic_info: {
+                        ...currentSession.basic_info,
+                        name
+                      }
                     }
-                  }
-                });
-              }
-            }}
-            onTaglineChange={(tagline) => {
-              if (currentSessionId) {
-                updateSession.mutate({
-                  sessionId: currentSessionId,
-                  updates: {
-                    basic_info: {
-                      ...currentSession.basic_info,
-                      brand: tagline
+                  });
+                }
+              }}
+              onTaglineChange={(tagline) => {
+                if (currentSessionId) {
+                  updateSession.mutate({
+                    sessionId: currentSessionId,
+                    updates: {
+                      basic_info: {
+                        ...currentSession.basic_info,
+                        brand: tagline
+                      }
                     }
-                  }
-                });
-              }
-            }}
-          />
+                  });
+                }
+              }}
+            />
+            <Card>
+              <CardFooter className="flex justify-between">
+                <Button variant="outline" onClick={() => setCurrentStep('basic_info')}>
+                  Previous: Basic Info
+                </Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={handleSaveAndContinue}>
+                    Save & Continue Later
+                  </Button>
+                  <Button onClick={() => setCurrentStep('actions')}>
+                    Next: Actions
+                  </Button>
+                </div>
+              </CardFooter>
+            </Card>
+          </div>
         </TabsContent>
 
         <TabsContent value="actions" className="space-y-4">
-          <AgentActionsManager
-            onActionsChange={(actions) => {
-              if (currentSessionId) {
-                updateSession.mutate({
-                  sessionId: currentSessionId,
-                  updates: {
-                    actions: {
-                      assigned_actions: actions,
-                      custom_actions: [],
-                      configurations: {}
+          <div className="space-y-6">
+            <AgentActionsManager
+              onActionsChange={(actions) => {
+                if (currentSessionId) {
+                  updateSession.mutate({
+                    sessionId: currentSessionId,
+                    updates: {
+                      actions: {
+                        assigned_actions: actions,
+                        custom_actions: [],
+                        configurations: {}
+                      }
                     }
-                  }
-                });
-              }
-            }}
-            initialActions={currentSession.actions?.assigned_actions || []}
-            agentType={currentSession.basic_info?.use_case || 'assistant'}
-            agentPurpose={currentSession.basic_info?.purpose || ''}
-          />
+                  });
+                }
+              }}
+              initialActions={currentSession.actions?.assigned_actions || []}
+              agentType={currentSession.basic_info?.use_case || 'assistant'}
+              agentPurpose={currentSession.basic_info?.purpose || ''}
+            />
+            <Card>
+              <CardFooter className="flex justify-between">
+                <Button variant="outline" onClick={() => setCurrentStep('canvas')}>
+                  Previous: Canvas
+                </Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={handleSaveAndContinue}>
+                    Save & Continue Later
+                  </Button>
+                  <Button onClick={() => setCurrentStep('connectors')}>
+                    Next: Connectors
+                  </Button>
+                </div>
+              </CardFooter>
+            </Card>
+          </div>
         </TabsContent>
 
         <TabsContent value="connectors" className="space-y-4">
-          <SystemConnectors />
+          <div className="space-y-6">
+            <SystemConnectors />
+            <Card>
+              <CardFooter className="flex justify-between">
+                <Button variant="outline" onClick={() => setCurrentStep('actions')}>
+                  Previous: Actions
+                </Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={handleSaveAndContinue}>
+                    Save & Continue Later
+                  </Button>
+                  <Button onClick={() => setCurrentStep('knowledge')}>
+                    Next: Knowledge
+                  </Button>
+                </div>
+              </CardFooter>
+            </Card>
+          </div>
         </TabsContent>
 
         <TabsContent value="knowledge" className="space-y-4">
-          <EnhancedKnowledgeBase 
-            onKnowledgeBaseChange={(ids) => {
-              if (currentSessionId) {
-                updateSession.mutate({
-                  sessionId: currentSessionId,
-                  updates: {
-                    knowledge: {
-                      knowledge_bases: ids,
-                      documents: [],
-                      urls: [],
-                      auto_generated_content: []
+          <div className="space-y-6">
+            <EnhancedKnowledgeBase 
+              onKnowledgeBaseChange={(ids) => {
+                if (currentSessionId) {
+                  updateSession.mutate({
+                    sessionId: currentSessionId,
+                    updates: {
+                      knowledge: {
+                        knowledge_bases: ids,
+                        documents: [],
+                        urls: [],
+                        auto_generated_content: []
+                      }
                     }
-                  }
-                });
-              }
-            }}
-            selectedIds={currentSession.knowledge?.knowledge_bases || []}
-          />
+                  });
+                }
+              }}
+              selectedIds={currentSession.knowledge?.knowledge_bases || []}
+            />
+            <Card>
+              <CardFooter className="flex justify-between">
+                <Button variant="outline" onClick={() => setCurrentStep('connectors')}>
+                  Previous: Connectors
+                </Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={handleSaveAndContinue}>
+                    Save & Continue Later
+                  </Button>
+                  <Button onClick={() => setCurrentStep('rag')}>
+                    Next: RAG
+                  </Button>
+                </div>
+              </CardFooter>
+            </Card>
+          </div>
         </TabsContent>
 
         <TabsContent value="rag" className="space-y-4">
-          <RAGComplianceWorkflow
-            knowledgeBaseIds={currentSession.knowledge?.knowledge_bases || []}
-            complianceEnabled={true}
-            onComplianceChange={(enabled) => {
-              if (currentSessionId) {
-                updateSession.mutate({
-                  sessionId: currentSessionId,
-                  updates: {
-                    rag: {
-                      ...currentSession.rag,
-                      configurations: {
-                        ...currentSession.rag?.configurations,
-                        compliance_enabled: enabled
+          <div className="space-y-6">
+            <RAGComplianceWorkflow
+              knowledgeBaseIds={currentSession.knowledge?.knowledge_bases || []}
+              complianceEnabled={true}
+              onComplianceChange={(enabled) => {
+                if (currentSessionId) {
+                  updateSession.mutate({
+                    sessionId: currentSessionId,
+                    updates: {
+                      rag: {
+                        ...currentSession.rag,
+                        configurations: {
+                          ...currentSession.rag?.configurations,
+                          compliance_enabled: enabled
+                        }
                       }
                     }
-                  }
-                });
-              }
-            }}
-          />
+                  });
+                }
+              }}
+            />
+            <Card>
+              <CardFooter className="flex justify-between">
+                <Button variant="outline" onClick={() => setCurrentStep('knowledge')}>
+                  Previous: Knowledge
+                </Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={handleSaveAndContinue}>
+                    Save & Continue Later
+                  </Button>
+                  <Button onClick={() => setCurrentStep('deploy')}>
+                    Next: Deploy
+                  </Button>
+                </div>
+              </CardFooter>
+            </Card>
+          </div>
         </TabsContent>
 
         <TabsContent value="deploy" className="space-y-4">
-          <AgentDeployment 
-            agents={[{
-              id: currentSessionId || '',
-              name: currentSession.basic_info?.name || currentSession.name,
-              description: currentSession.basic_info?.description || currentSession.description,
-              status: 'draft',
-              connections: [],
-              role: 'Assistant',
-              template: 'custom'
-            }]}
-            onDeploy={() => handleDeployAgent()}
-          />
+          <div className="space-y-6">
+            <AgentDeployment 
+              agents={[{
+                id: currentSessionId || '',
+                name: currentSession.basic_info?.name || currentSession.name,
+                description: currentSession.basic_info?.description || currentSession.description,
+                status: 'draft',
+                connections: [],
+                role: 'Assistant',
+                template: 'custom'
+              }]}
+              onDeploy={() => handleDeployAgent()}
+            />
+            <Card>
+              <CardFooter className="flex justify-between">
+                <Button variant="outline" onClick={() => setCurrentStep('rag')}>
+                  Previous: RAG
+                </Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={handleSaveAndContinue}>
+                    Save Progress
+                  </Button>
+                  <Button onClick={handleDeployAgent} disabled={deployAgent.isPending}>
+                    {deployAgent.isPending ? 'Deploying...' : 'Deploy Agent'}
+                  </Button>
+                </div>
+              </CardFooter>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

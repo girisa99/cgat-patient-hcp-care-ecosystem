@@ -17,6 +17,7 @@ export interface AgentSession {
     purpose?: string;
     use_case?: string;
     brand?: string;
+    agent_type?: string;
     categories?: string[];
     topics?: string[];
     business_units?: string[];
