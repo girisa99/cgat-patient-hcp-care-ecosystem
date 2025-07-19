@@ -6,14 +6,15 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
 import { SessionControls, SessionList } from '@/components/agentic/SessionControls';
-import { AgentCanvas } from '@/components/agentic/AgentCanvas';
+import { EnhancedAgentCanvas } from '@/components/agentic/EnhancedAgentCanvas';
 import { AgentTemplates } from '@/components/agentic/AgentTemplates';
-import { AgentCreationWizard } from '@/components/agentic/AgentCreationWizard';
+import { AgentActionsManager } from '@/components/agentic/AgentActionsManager';
 import { SystemConnectors } from '@/components/agentic/SystemConnectors';
 import { AgentDeployment } from '@/components/agentic/AgentDeployment';
-import { KnowledgeBaseManager } from '@/components/rag/KnowledgeBaseManager';
-import { RAGRecommendations } from '@/components/rag/RAGRecommendations';
+import { EnhancedKnowledgeBase } from '@/components/rag/EnhancedKnowledgeBase';
+import { RAGComplianceWorkflow } from '@/components/rag/RAGComplianceWorkflow';
 import { useAgentSession } from '@/hooks/useAgentSession';
 import { AgentSession } from '@/types/agent-session';
 import { Plus, Bot } from 'lucide-react';
@@ -290,25 +291,162 @@ export const SessionAgentBuilder = () => {
         </TabsList>
 
         <TabsContent value="basic_info" className="space-y-4">
-          <AgentCreationWizard />
-        </TabsContent>
-
-        <TabsContent value="canvas" className="space-y-4">
-          <AgentCanvas />
-        </TabsContent>
-
-        <TabsContent value="actions" className="space-y-4">
-          <div className="space-y-4">
+          <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Agent Actions</CardTitle>
-                <CardDescription>Configure actions and behaviors for your agent</CardDescription>
+                <CardTitle>Basic Information</CardTitle>
+                <CardDescription>Configure your agent's basic details, categories, and purpose</CardDescription>
               </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">Configure the actions your agent can perform and the tasks it can execute.</p>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="agent-name">Agent Name</Label>
+                    <Input
+                      id="agent-name"
+                      value={currentSession.basic_info?.name || currentSession.name}
+                      onChange={(e) => {
+                        if (currentSessionId) {
+                          updateSession.mutate({
+                            sessionId: currentSessionId,
+                            updates: {
+                              basic_info: {
+                                ...currentSession.basic_info,
+                                name: e.target.value
+                              }
+                            }
+                          });
+                        }
+                      }}
+                      placeholder="Enter agent name"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="agent-purpose">Purpose</Label>
+                    <Input
+                      id="agent-purpose"
+                      value={currentSession.basic_info?.purpose || ''}
+                      onChange={(e) => {
+                        if (currentSessionId) {
+                          updateSession.mutate({
+                            sessionId: currentSessionId,
+                            updates: {
+                              basic_info: {
+                                ...currentSession.basic_info,
+                                purpose: e.target.value
+                              }
+                            }
+                          });
+                        }
+                      }}
+                      placeholder="What is this agent's main purpose?"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="agent-description">Description</Label>
+                  <Textarea
+                    id="agent-description"
+                    value={currentSession.basic_info?.description || currentSession.description}
+                    onChange={(e) => {
+                      if (currentSessionId) {
+                        updateSession.mutate({
+                          sessionId: currentSessionId,
+                          updates: {
+                            basic_info: {
+                              ...currentSession.basic_info,
+                              description: e.target.value
+                            }
+                          }
+                        });
+                      }
+                    }}
+                    placeholder="Describe what this agent will do"
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label>Categories</Label>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {(currentSession.basic_info?.categories || []).map((category, index) => (
+                        <Badge key={index} variant="secondary">{category}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Topics</Label>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {(currentSession.basic_info?.topics || []).map((topic, index) => (
+                        <Badge key={index} variant="outline">{topic}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Business Units</Label>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {(currentSession.basic_info?.business_units || []).map((unit, index) => (
+                        <Badge key={index} variant="default">{unit}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="canvas" className="space-y-4">
+          <EnhancedAgentCanvas 
+            initialName={currentSession.basic_info?.name || currentSession.name}
+            initialTagline={currentSession.basic_info?.brand || ''}
+            onNameChange={(name) => {
+              if (currentSessionId) {
+                updateSession.mutate({
+                  sessionId: currentSessionId,
+                  updates: {
+                    basic_info: {
+                      ...currentSession.basic_info,
+                      name
+                    }
+                  }
+                });
+              }
+            }}
+            onTaglineChange={(tagline) => {
+              if (currentSessionId) {
+                updateSession.mutate({
+                  sessionId: currentSessionId,
+                  updates: {
+                    basic_info: {
+                      ...currentSession.basic_info,
+                      brand: tagline
+                    }
+                  }
+                });
+              }
+            }}
+          />
+        </TabsContent>
+
+        <TabsContent value="actions" className="space-y-4">
+          <AgentActionsManager
+            onActionsChange={(actions) => {
+              if (currentSessionId) {
+                updateSession.mutate({
+                  sessionId: currentSessionId,
+                  updates: {
+                    actions: {
+                      assigned_actions: actions,
+                      custom_actions: [],
+                      configurations: {}
+                    }
+                  }
+                });
+              }
+            }}
+            initialActions={currentSession.actions?.assigned_actions || []}
+            agentType={currentSession.basic_info?.use_case || 'assistant'}
+            agentPurpose={currentSession.basic_info?.purpose || ''}
+          />
         </TabsContent>
 
         <TabsContent value="connectors" className="space-y-4">
@@ -316,11 +454,47 @@ export const SessionAgentBuilder = () => {
         </TabsContent>
 
         <TabsContent value="knowledge" className="space-y-4">
-          <KnowledgeBaseManager />
+          <EnhancedKnowledgeBase 
+            onKnowledgeBaseChange={(ids) => {
+              if (currentSessionId) {
+                updateSession.mutate({
+                  sessionId: currentSessionId,
+                  updates: {
+                    knowledge: {
+                      knowledge_bases: ids,
+                      documents: [],
+                      urls: [],
+                      auto_generated_content: []
+                    }
+                  }
+                });
+              }
+            }}
+            selectedIds={currentSession.knowledge?.knowledge_bases || []}
+          />
         </TabsContent>
 
         <TabsContent value="rag" className="space-y-4">
-          <RAGRecommendations />
+          <RAGComplianceWorkflow
+            knowledgeBaseIds={currentSession.knowledge?.knowledge_bases || []}
+            complianceEnabled={true}
+            onComplianceChange={(enabled) => {
+              if (currentSessionId) {
+                updateSession.mutate({
+                  sessionId: currentSessionId,
+                  updates: {
+                    rag: {
+                      ...currentSession.rag,
+                      configurations: {
+                        ...currentSession.rag?.configurations,
+                        compliance_enabled: enabled
+                      }
+                    }
+                  }
+                });
+              }
+            }}
+          />
         </TabsContent>
 
         <TabsContent value="deploy" className="space-y-4">
