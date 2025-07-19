@@ -290,144 +290,52 @@ export const SessionAgentBuilder = () => {
         </TabsList>
 
         <TabsContent value="basic_info" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Basic Information</CardTitle>
-              <CardDescription>Configure your agent's basic details</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="agent-name">Agent Name</Label>
-                  <Input
-                    id="agent-name"
-                    value={currentSession.basic_info?.name || currentSession.name}
-                    onChange={(e) => {
-                      if (currentSessionId) {
-                        updateSession.mutate({
-                          sessionId: currentSessionId,
-                          updates: {
-                            basic_info: {
-                              ...currentSession.basic_info,
-                              name: e.target.value
-                            }
-                          }
-                        });
-                      }
-                    }}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="agent-description">Description</Label>
-                  <Textarea
-                    id="agent-description"
-                    value={currentSession.basic_info?.description || currentSession.description}
-                    onChange={(e) => {
-                      if (currentSessionId) {
-                        updateSession.mutate({
-                          sessionId: currentSessionId,
-                          updates: {
-                            basic_info: {
-                              ...currentSession.basic_info,
-                              description: e.target.value
-                            }
-                          }
-                        });
-                      }
-                    }}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <AgentCreationWizard />
         </TabsContent>
 
         <TabsContent value="canvas" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Agent Canvas</CardTitle>
-              <CardDescription>Design your agent's workflow and interactions</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">Canvas configuration will be implemented here.</p>
-            </CardContent>
-          </Card>
+          <AgentCanvas />
         </TabsContent>
 
         <TabsContent value="actions" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Agent Actions</CardTitle>
-              <CardDescription>Configure actions and behaviors for your agent</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">Actions configuration will be implemented here.</p>
-            </CardContent>
-          </Card>
+          <div className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Agent Actions</CardTitle>
+                <CardDescription>Configure actions and behaviors for your agent</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">Configure the actions your agent can perform and the tasks it can execute.</p>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         <TabsContent value="connectors" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>System Connectors</CardTitle>
-              <CardDescription>Connect your agent to external systems</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">Connectors configuration will be implemented here.</p>
-            </CardContent>
-          </Card>
+          <SystemConnectors />
         </TabsContent>
 
         <TabsContent value="knowledge" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Knowledge Base</CardTitle>
-              <CardDescription>Manage your agent's knowledge sources</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">Knowledge base configuration will be implemented here.</p>
-            </CardContent>
-          </Card>
+          <KnowledgeBaseManager />
         </TabsContent>
 
         <TabsContent value="rag" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>RAG Configuration</CardTitle>
-              <CardDescription>Configure retrieval-augmented generation</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">RAG configuration will be implemented here.</p>
-            </CardContent>
-          </Card>
+          <RAGRecommendations />
         </TabsContent>
 
         <TabsContent value="deploy" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Deploy Agent</CardTitle>
-              <CardDescription>Review and deploy your agent</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="p-4 bg-muted rounded-lg">
-                  <h4 className="font-medium mb-2">Agent Summary</h4>
-                  <div className="space-y-2 text-sm">
-                    <p><strong>Name:</strong> {currentSession.basic_info?.name || currentSession.name}</p>
-                    <p><strong>Description:</strong> {currentSession.basic_info?.description || currentSession.description}</p>
-                    <p><strong>Status:</strong> {currentSession.status}</p>
-                  </div>
-                </div>
-                <Button 
-                  onClick={handleDeployAgent}
-                  disabled={deployAgent.isPending}
-                  className="w-full"
-                >
-                  {deployAgent.isPending ? 'Deploying...' : 'Deploy Agent'}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <AgentDeployment 
+            agents={[{
+              id: currentSessionId || '',
+              name: currentSession.basic_info?.name || currentSession.name,
+              description: currentSession.basic_info?.description || currentSession.description,
+              status: 'draft',
+              connections: [],
+              role: 'Assistant',
+              template: 'custom'
+            }]}
+            onDeploy={() => handleDeployAgent()}
+          />
         </TabsContent>
       </Tabs>
     </div>
