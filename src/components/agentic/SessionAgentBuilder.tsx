@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { SessionControls, SessionList } from '@/components/agentic/SessionControls';
 import { EnhancedAgentCanvas } from '@/components/agentic/EnhancedAgentCanvas';
 import { AgentTemplates } from '@/components/agentic/AgentTemplates';
@@ -297,7 +299,7 @@ export const SessionAgentBuilder = () => {
                 <CardTitle>Basic Information</CardTitle>
                 <CardDescription>Configure your agent's basic details, categories, and purpose</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="agent-name">Agent Name</Label>
@@ -342,6 +344,7 @@ export const SessionAgentBuilder = () => {
                     />
                   </div>
                 </div>
+
                 <div>
                   <Label htmlFor="agent-description">Description</Label>
                   <Textarea
@@ -361,34 +364,245 @@ export const SessionAgentBuilder = () => {
                       }
                     }}
                     placeholder="Describe what this agent will do"
+                    rows={3}
                   />
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label>Categories</Label>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {(currentSession.basic_info?.categories || []).map((category, index) => (
-                        <Badge key={index} variant="secondary">{category}</Badge>
-                      ))}
-                    </div>
+                    <Label htmlFor="agent-brand">Brand/Organization</Label>
+                    <Input
+                      id="agent-brand"
+                      value={currentSession.basic_info?.brand || ''}
+                      onChange={(e) => {
+                        if (currentSessionId) {
+                          updateSession.mutate({
+                            sessionId: currentSessionId,
+                            updates: {
+                              basic_info: {
+                                ...currentSession.basic_info,
+                                brand: e.target.value
+                              }
+                            }
+                          });
+                        }
+                      }}
+                      placeholder="Your organization or brand name"
+                    />
                   </div>
                   <div>
-                    <Label>Topics</Label>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {(currentSession.basic_info?.topics || []).map((topic, index) => (
-                        <Badge key={index} variant="outline">{topic}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <Label>Business Units</Label>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {(currentSession.basic_info?.business_units || []).map((unit, index) => (
-                        <Badge key={index} variant="default">{unit}</Badge>
-                      ))}
-                    </div>
+                    <Label htmlFor="agent-use-case">Use Case</Label>
+                    <Select
+                      value={currentSession.basic_info?.use_case || ''}
+                      onValueChange={(value) => {
+                        if (currentSessionId) {
+                          updateSession.mutate({
+                            sessionId: currentSessionId,
+                            updates: {
+                              basic_info: {
+                                ...currentSession.basic_info,
+                                use_case: value
+                              }
+                            }
+                          });
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="bg-background">
+                        <SelectValue placeholder="Select use case" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-background border shadow-md z-50">
+                        <SelectItem value="customer_support">Customer Support</SelectItem>
+                        <SelectItem value="sales_assistant">Sales Assistant</SelectItem>
+                        <SelectItem value="content_creator">Content Creator</SelectItem>
+                        <SelectItem value="data_analyst">Data Analyst</SelectItem>
+                        <SelectItem value="healthcare_assistant">Healthcare Assistant</SelectItem>
+                        <SelectItem value="education_tutor">Education Tutor</SelectItem>
+                        <SelectItem value="research_assistant">Research Assistant</SelectItem>
+                        <SelectItem value="general_assistant">General Assistant</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
+
+                {/* Categories Selection */}
+                <div>
+                  <Label className="text-base font-medium">Categories</Label>
+                  <p className="text-sm text-muted-foreground mb-3">Select relevant categories for your agent</p>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {[
+                      'Healthcare', 'Finance', 'Education', 'Customer Service',
+                      'Sales & Marketing', 'Human Resources', 'IT Support', 'Legal',
+                      'Real Estate', 'E-commerce', 'Content Creation', 'Research'
+                    ].map((category) => {
+                      const isSelected = (currentSession.basic_info?.categories || []).includes(category);
+                      return (
+                        <div key={category} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={category}
+                            checked={isSelected}
+                            onCheckedChange={(checked) => {
+                              if (currentSessionId) {
+                                const currentCategories = currentSession.basic_info?.categories || [];
+                                const newCategories = checked
+                                  ? [...currentCategories, category]
+                                  : currentCategories.filter(c => c !== category);
+                                
+                                updateSession.mutate({
+                                  sessionId: currentSessionId,
+                                  updates: {
+                                    basic_info: {
+                                      ...currentSession.basic_info,
+                                      categories: newCategories
+                                    }
+                                  }
+                                });
+                              }
+                            }}
+                          />
+                          <Label htmlFor={category} className="text-sm cursor-pointer">
+                            {category}
+                          </Label>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Topics Selection */}
+                <div>
+                  <Label className="text-base font-medium">Topics</Label>
+                  <p className="text-sm text-muted-foreground mb-3">Choose specific topics your agent will handle</p>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {[
+                      'Patient Care', 'Financial Planning', 'Product Support', 'Lead Generation',
+                      'Data Analysis', 'Content Writing', 'Scheduling', 'Compliance',
+                      'Training', 'Documentation', 'Automation', 'Integration'
+                    ].map((topic) => {
+                      const isSelected = (currentSession.basic_info?.topics || []).includes(topic);
+                      return (
+                        <div key={topic} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={topic}
+                            checked={isSelected}
+                            onCheckedChange={(checked) => {
+                              if (currentSessionId) {
+                                const currentTopics = currentSession.basic_info?.topics || [];
+                                const newTopics = checked
+                                  ? [...currentTopics, topic]
+                                  : currentTopics.filter(t => t !== topic);
+                                
+                                updateSession.mutate({
+                                  sessionId: currentSessionId,
+                                  updates: {
+                                    basic_info: {
+                                      ...currentSession.basic_info,
+                                      topics: newTopics
+                                    }
+                                  }
+                                });
+                              }
+                            }}
+                          />
+                          <Label htmlFor={topic} className="text-sm cursor-pointer">
+                            {topic}
+                          </Label>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Business Units Selection */}
+                <div>
+                  <Label className="text-base font-medium">Business Units</Label>
+                  <p className="text-sm text-muted-foreground mb-3">Select which business units will use this agent</p>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {[
+                      'Operations', 'Marketing', 'Sales', 'Customer Success',
+                      'Human Resources', 'IT', 'Finance', 'Legal',
+                      'Product', 'Engineering', 'Support', 'Research & Development'
+                    ].map((unit) => {
+                      const isSelected = (currentSession.basic_info?.business_units || []).includes(unit);
+                      return (
+                        <div key={unit} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={unit}
+                            checked={isSelected}
+                            onCheckedChange={(checked) => {
+                              if (currentSessionId) {
+                                const currentUnits = currentSession.basic_info?.business_units || [];
+                                const newUnits = checked
+                                  ? [...currentUnits, unit]
+                                  : currentUnits.filter(u => u !== unit);
+                                
+                                updateSession.mutate({
+                                  sessionId: currentSessionId,
+                                  updates: {
+                                    basic_info: {
+                                      ...currentSession.basic_info,
+                                      business_units: newUnits
+                                    }
+                                  }
+                                });
+                              }
+                            }}
+                          />
+                          <Label htmlFor={unit} className="text-sm cursor-pointer">
+                            {unit}
+                          </Label>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Selected Items Summary */}
+                {((currentSession.basic_info?.categories?.length || 0) > 0 || 
+                  (currentSession.basic_info?.topics?.length || 0) > 0 || 
+                  (currentSession.basic_info?.business_units?.length || 0) > 0) && (
+                  <div className="mt-6 p-4 bg-muted/50 rounded-lg">
+                    <h4 className="font-medium mb-3">Selected Options</h4>
+                    <div className="space-y-2">
+                      {(currentSession.basic_info?.categories?.length || 0) > 0 && (
+                        <div>
+                          <span className="text-sm font-medium text-muted-foreground">Categories: </span>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {currentSession.basic_info?.categories?.map((category, index) => (
+                              <Badge key={index} variant="secondary" className="text-xs">
+                                {category}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {(currentSession.basic_info?.topics?.length || 0) > 0 && (
+                        <div>
+                          <span className="text-sm font-medium text-muted-foreground">Topics: </span>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {currentSession.basic_info?.topics?.map((topic, index) => (
+                              <Badge key={index} variant="outline" className="text-xs">
+                                {topic}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {(currentSession.basic_info?.business_units?.length || 0) > 0 && (
+                        <div>
+                          <span className="text-sm font-medium text-muted-foreground">Business Units: </span>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {currentSession.basic_info?.business_units?.map((unit, index) => (
+                              <Badge key={index} variant="default" className="text-xs">
+                                {unit}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
