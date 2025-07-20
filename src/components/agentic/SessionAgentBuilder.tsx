@@ -461,9 +461,10 @@ export const SessionAgentBuilder = () => {
                   <p className="text-sm text-muted-foreground mb-3">Select relevant categories for your agent</p>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                     {[
-                      'Healthcare', 'Finance', 'Education', 'Customer Service',
-                      'Sales & Marketing', 'Human Resources', 'IT Support', 'Legal',
-                      'Real Estate', 'E-commerce', 'Content Creation', 'Research'
+                      'Onboarding and Credentialing', 'Market access', 'Distribution', 'Manufacturing',
+                      'Claims Management', 'Clinical information', 'Product Information', 'Packaging',
+                      'Scheduling', 'Buy & Build', 'Insurance', 'Prior Authorization',
+                      'Compliance & Regulatory', 'Add new'
                     ].map((category) => {
                       const isSelected = (currentSession.basic_info?.categories || []).includes(category);
                       return (
@@ -505,9 +506,10 @@ export const SessionAgentBuilder = () => {
                   <p className="text-sm text-muted-foreground mb-3">Choose specific topics your agent will handle</p>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                     {[
-                      'Patient Care', 'Financial Planning', 'Product Support', 'Lead Generation',
-                      'Data Analysis', 'Content Writing', 'Scheduling', 'Compliance',
-                      'Training', 'Documentation', 'Automation', 'Integration'
+                      'Patient onboarding', 'Treatment center', 'Provider onboarding', 'Pharma/Biotech onboarding',
+                      'Eligibility Investigation', 'Eligibility Verification', 'Delivery/Fulfillment', 'Label & Adverse Events',
+                      'Product details', 'Billing & Coding', 'Appointments scheduling and communication', '21 CFR Part 11',
+                      'Add New'
                     ].map((topic) => {
                       const isSelected = (currentSession.basic_info?.topics || []).includes(topic);
                       return (
@@ -549,9 +551,9 @@ export const SessionAgentBuilder = () => {
                   <p className="text-sm text-muted-foreground mb-3">Select which business units will use this agent</p>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                     {[
-                      'Operations', 'Marketing', 'Sales', 'Customer Success',
-                      'Human Resources', 'IT', 'Finance', 'Legal',
-                      'Product', 'Engineering', 'Support', 'Research & Development'
+                      'Commercial', 'Research & Development', 'Supply Chain', 'IT',
+                      'Manufacturing', 'Compliance', 'Finance', 'HR',
+                      'Add new'
                     ].map((unit) => {
                       const isSelected = (currentSession.basic_info?.business_units || []).includes(unit);
                       return (
