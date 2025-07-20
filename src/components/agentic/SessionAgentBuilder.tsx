@@ -22,6 +22,7 @@ import { AgentSession } from '@/types/agent-session';
 import { Plus, Bot } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { CategoryMapping } from './CategoryMapping';
+import { UseCaseSelector } from './UseCaseSelector';
 
 export const SessionAgentBuilder = () => {
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
@@ -423,9 +424,9 @@ export const SessionAgentBuilder = () => {
                   </div>
                   <div>
                     <Label htmlFor="agent-use-case">Use Case</Label>
-                    <Select
-                      value={currentSession.basic_info?.use_case || ''}
-                      onValueChange={(value) => {
+                    <UseCaseSelector
+                      selectedUseCase={currentSession.basic_info?.use_case || ''}
+                      onUseCaseChange={(value) => {
                         if (currentSessionId) {
                           updateSession.mutate({
                             sessionId: currentSessionId,
@@ -438,21 +439,9 @@ export const SessionAgentBuilder = () => {
                           });
                         }
                       }}
-                    >
-                      <SelectTrigger className="bg-background">
-                        <SelectValue placeholder="Select use case" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-background border shadow-md z-50">
-                        <SelectItem value="customer_support">Customer Support</SelectItem>
-                        <SelectItem value="sales_assistant">Sales Assistant</SelectItem>
-                        <SelectItem value="content_creator">Content Creator</SelectItem>
-                        <SelectItem value="data_analyst">Data Analyst</SelectItem>
-                        <SelectItem value="healthcare_assistant">Healthcare Assistant</SelectItem>
-                        <SelectItem value="education_tutor">Education Tutor</SelectItem>
-                        <SelectItem value="research_assistant">Research Assistant</SelectItem>
-                        <SelectItem value="general_assistant">General Assistant</SelectItem>
-                      </SelectContent>
-                    </Select>
+                      selectedCategories={currentSession.basic_info?.categories || []}
+                      selectedTopics={currentSession.basic_info?.topics || []}
+                    />
                   </div>
                 </div>
 
