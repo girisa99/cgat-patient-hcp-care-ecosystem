@@ -21,6 +21,7 @@ import { EnhancedKnowledgeBase } from '@/components/rag/EnhancedKnowledgeBase';
 import { RAGComplianceWorkflow } from '@/components/rag/RAGComplianceWorkflow';
 import { APIAssignmentManager } from '@/components/agentic/APIAssignmentManager';
 import { useAgentSession } from '@/hooks/useAgentSession';
+import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { AgentSession } from '@/types/agent-session';
 import { Plus, Bot } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
@@ -28,6 +29,7 @@ import { CategoryMapping } from './CategoryMapping';
 import { UseCaseSelector } from './UseCaseSelector';
 
 export const SessionAgentBuilder = () => {
+  const { user } = useMasterAuth();
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState<AgentSession['current_step']>('basic_info');
   const [showNewSessionDialog, setShowNewSessionDialog] = useState(false);
@@ -64,6 +66,17 @@ export const SessionAgentBuilder = () => {
   }, [currentStep, currentSession, currentSessionId, autoSave]);
 
   const handleCreateNewSession = () => {
+    console.log('Creating new session, user:', user);
+    
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to create an agent session.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     if (!newSessionData.name.trim()) {
       toast({
         title: "Name Required",
@@ -73,6 +86,7 @@ export const SessionAgentBuilder = () => {
       return;
     }
 
+    console.log('Creating session with data:', newSessionData);
     createSession.mutate({
       ...newSessionData,
       basic_info: {
@@ -81,10 +95,19 @@ export const SessionAgentBuilder = () => {
       }
     }, {
       onSuccess: (session) => {
+        console.log('Session created successfully:', session);
         setCurrentSessionId(session.id);
         setCurrentStep('basic_info');
         setShowNewSessionDialog(false);
         setNewSessionData({ name: '', description: '', template_id: '', template_type: 'custom' });
+      },
+      onError: (error) => {
+        console.error('Failed to create session:', error);
+        toast({
+          title: "Error",
+          description: "Failed to create agent session. Please try again.",
+          variant: "destructive"
+        });
       }
     });
   };
@@ -143,6 +166,18 @@ export const SessionAgentBuilder = () => {
   };
 
   const handleTemplateSelect = (template: any) => {
+    console.log('Template selected:', template);
+    console.log('User from auth:', user);
+    
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to create an agent session.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     const sessionData = {
       name: template.name,
       description: template.description,
@@ -160,13 +195,23 @@ export const SessionAgentBuilder = () => {
       }
     };
 
+    console.log('Creating session with data:', sessionData);
     createSession.mutate(sessionData, {
       onSuccess: (session) => {
+        console.log('Session created successfully:', session);
         setCurrentSessionId(session.id);
         setCurrentStep('basic_info');
         toast({
           title: "Template Applied",
           description: "You can now edit and customize this template.",
+        });
+      },
+      onError: (error) => {
+        console.error('Failed to create session:', error);
+        toast({
+          title: "Error",
+          description: "Failed to create agent session. Please try again.",
+          variant: "destructive"
         });
       }
     });
