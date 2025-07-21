@@ -227,7 +227,19 @@ export const SessionAgentBuilder = () => {
             <p className="text-muted-foreground">Create and manage your AI agents</p>
           </div>
           <div className="flex gap-2">
-            <Button onClick={() => setShowNewSessionDialog(true)}>
+            <Button onClick={() => {
+              console.log('New Agent button clicked, user:', user);
+              if (!user) {
+                toast({
+                  title: "Authentication Required",
+                  description: "Please log in to create an agent session.",
+                  variant: "destructive"
+                });
+                return;
+              }
+              console.log('Opening new session dialog');
+              setShowNewSessionDialog(true);
+            }}>
               <Plus className="h-4 w-4 mr-2" />
               New Agent
             </Button>
@@ -258,11 +270,22 @@ export const SessionAgentBuilder = () => {
           <CardContent>
             <div className="text-center p-8">
               <p className="text-muted-foreground">Template selection will be implemented here.</p>
-              <Button onClick={() => handleTemplateSelect({ 
-                id: 'sample', 
-                name: 'Sample Template', 
-                description: 'A sample AI agent template' 
-              })}>
+              <Button onClick={() => {
+                console.log('Try Sample Template button clicked, user:', user);
+                if (!user) {
+                  toast({
+                    title: "Authentication Required", 
+                    description: "Please log in to create an agent session.",
+                    variant: "destructive"
+                  });
+                  return;
+                }
+                handleTemplateSelect({ 
+                  id: 'sample', 
+                  name: 'Sample Template', 
+                  description: 'A sample AI agent template' 
+                });
+              }}>
                 Try Sample Template
               </Button>
             </div>
