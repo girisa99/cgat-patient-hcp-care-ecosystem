@@ -219,6 +219,8 @@ export const SessionAgentBuilder = () => {
 
   // If no session is active, show session management
   if (!currentSessionId || !currentSession) {
+    console.log('🚨 SessionAgentBuilder: No active session, showing session management UI');
+    console.log('🚨 User auth state:', user);
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
