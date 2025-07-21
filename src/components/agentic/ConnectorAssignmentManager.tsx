@@ -86,6 +86,8 @@ export const ConnectorAssignmentManager: React.FC<ConnectorAssignmentManagerProp
   const [suggestions, setSuggestions] = useState<Record<string, SystemConnector[]>>({});
   const [loading, setLoading] = useState(false);
   const [autoSuggestEnabled, setAutoSuggestEnabled] = useState(true);
+  const [manualAssignAction, setManualAssignAction] = useState<string | null>(null);
+  const [showAllConnectors, setShowAllConnectors] = useState(false);
 
   useEffect(() => {
     loadConnectors();
@@ -226,6 +228,20 @@ export const ConnectorAssignmentManager: React.FC<ConnectorAssignmentManagerProp
     
     if (!action || !connector) return;
 
+    // Check if this connector is already assigned to this action
+    const existingAssignment = assignments.find(a => 
+      a.action_id === actionId && a.connector_id === connectorId
+    );
+    
+    if (existingAssignment) {
+      toast({
+        title: "Already Assigned",
+        description: `${connector.name} is already assigned to ${action.name}`,
+        variant: "destructive"
+      });
+      return;
+    }
+
     const assignment: ActionAssignment = {
       action_id: actionId,
       action_name: action.name,
@@ -246,9 +262,7 @@ export const ConnectorAssignmentManager: React.FC<ConnectorAssignmentManagerProp
       }
     };
 
-    const updatedAssignments = assignments.filter(a => a.action_id !== actionId);
-    updatedAssignments.push(assignment);
-    
+    const updatedAssignments = [...assignments, assignment];
     setAssignments(updatedAssignments);
     onAssignmentsChange(updatedAssignments);
 
@@ -258,10 +272,19 @@ export const ConnectorAssignmentManager: React.FC<ConnectorAssignmentManagerProp
     });
   };
 
-  const removeAssignment = (actionId: string) => {
-    const updatedAssignments = assignments.filter(a => a.action_id !== actionId);
+  const removeAssignment = (actionId: string, connectorId?: string) => {
+    const updatedAssignments = connectorId 
+      ? assignments.filter(a => !(a.action_id === actionId && a.connector_id === connectorId))
+      : assignments.filter(a => a.action_id !== actionId);
     setAssignments(updatedAssignments);
     onAssignmentsChange(updatedAssignments);
+  };
+
+  const acceptAllSuggestions = (actionId: string) => {
+    const actionSuggestions = suggestions[actionId] || [];
+    actionSuggestions.forEach(connector => {
+      assignConnector(actionId, connector.id, 'default', 'auto_suggested');
+    });
   };
 
   const updateTokenConfig = (actionId: string, tokenConfig: TokenConfig) => {
@@ -333,16 +356,20 @@ export const ConnectorAssignmentManager: React.FC<ConnectorAssignmentManagerProp
         </CardContent>
       </Card>
 
-      {/* Main Assignment Interface */}
+        {/* Main Assignment Interface */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Actions & Suggestions */}
         <Card>
           <CardHeader>
             <CardTitle>Actions & Suggested Connectors</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              <strong>System Connectors</strong> are pre-built integrations with external services, APIs, and databases. 
+              Regular <strong>Connectors</strong> are custom integrations you create. Each action/task can have multiple connectors assigned.
+            </p>
           </CardHeader>
           <CardContent className="space-y-4">
             {actions.map(action => {
-              const assignment = assignments.find(a => a.action_id === action.id);
+              const actionAssignments = assignments.filter(a => a.action_id === action.id);
               const actionSuggestions = suggestions[action.id] || [];
 
               return (
@@ -354,85 +381,217 @@ export const ConnectorAssignmentManager: React.FC<ConnectorAssignmentManagerProp
                         {action.type} • {action.category}
                       </p>
                     </div>
-                    {assignment ? (
-                      <Badge variant="outline" className="text-green-600">
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        Assigned
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="text-orange-600">
-                        <AlertCircle className="h-3 w-3 mr-1" />
-                        Pending
-                      </Badge>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {actionAssignments.length > 0 ? (
+                        <Badge variant="outline" className="text-green-600">
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          {actionAssignments.length} Assigned
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-orange-600">
+                          <AlertCircle className="h-3 w-3 mr-1" />
+                          Pending
+                        </Badge>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setManualAssignAction(action.id)}
+                      >
+                        <PlusCircle className="h-3 w-3 mr-1" />
+                        Assign
+                      </Button>
+                    </div>
                   </div>
 
-                  {assignment ? (
-                    <div className="bg-green-50 p-3 rounded">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium text-sm">
-                            {connectors.find(c => c.id === assignment.connector_id)?.name}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Confidence: {assignment.confidence_score}%
-                          </p>
+                  {/* Show assigned connectors */}
+                  {actionAssignments.length > 0 && (
+                    <div className="space-y-2">
+                      {actionAssignments.map(assignment => (
+                        <div key={assignment.connector_id} className="bg-green-50 p-3 rounded">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-medium text-sm">
+                                {connectors.find(c => c.id === assignment.connector_id)?.name}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {assignment.assignment_type === 'auto_suggested' ? 'Auto-suggested' : 'Manual'} • 
+                                Confidence: {assignment.confidence_score}%
+                              </p>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => removeAssignment(action.id, assignment.connector_id)}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
                         </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Auto-suggestions */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-medium">Auto-Suggestions</Label>
+                      {actionSuggestions.length > 0 && (
                         <Button
                           size="sm"
                           variant="ghost"
-                          onClick={() => removeAssignment(action.id)}
+                          onClick={() => acceptAllSuggestions(action.id)}
                         >
-                          <Trash2 className="h-3 w-3" />
+                          Accept All
                         </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {actionSuggestions.length > 0 ? (
-                        actionSuggestions.map(connector => (
-                          <div
-                            key={connector.id}
-                            className="flex items-center justify-between p-2 bg-blue-50 rounded cursor-pointer hover:bg-blue-100"
-                            onClick={() => assignConnector(action.id, connector.id, 'default', 'auto_suggested')}
-                          >
-                            <div className="flex items-center gap-2">
-                              <Database className="h-4 w-4 text-blue-500" />
-                              <div>
-                                <p className="text-sm font-medium">{connector.name}</p>
-                                <p className="text-xs text-muted-foreground">{connector.type}</p>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Progress 
-                                value={connector.confidence_score || 0} 
-                                className="w-16 h-2"
-                              />
-                              <span className="text-xs font-medium">
-                                {connector.confidence_score}%
-                              </span>
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <p className="text-sm text-muted-foreground italic">
-                          No suggestions available. Try manual assignment.
-                        </p>
                       )}
                     </div>
-                  )}
+                    {actionSuggestions.length > 0 ? (
+                      actionSuggestions.map(connector => (
+                        <div
+                          key={connector.id}
+                          className="flex items-center justify-between p-2 bg-blue-50 rounded cursor-pointer hover:bg-blue-100"
+                          onClick={() => assignConnector(action.id, connector.id, 'default', 'auto_suggested')}
+                        >
+                          <div className="flex items-center gap-2">
+                            <Database className="h-4 w-4 text-blue-500" />
+                            <div>
+                              <p className="text-sm font-medium">{connector.name}</p>
+                              <p className="text-xs text-muted-foreground">{connector.type}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Progress 
+                              value={connector.confidence_score || 0} 
+                              className="w-16 h-2"
+                            />
+                            <span className="text-xs font-medium">
+                              {connector.confidence_score}%
+                            </span>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-muted-foreground italic">
+                        No auto-suggestions available.
+                      </p>
+                    )}
+                  </div>
                 </div>
               );
             })}
           </CardContent>
         </Card>
 
-        {/* Token & Threshold Configuration */}
+        {/* Manual Connector Assignment & Available Connectors */}
         <Card>
           <CardHeader>
-            <CardTitle>Token & Threshold Configuration</CardTitle>
+            <CardTitle>Manual Connector Assignment</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Browse and manually assign connectors when auto-suggestions aren't sufficient
+            </p>
           </CardHeader>
           <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label>Show All Available Connectors</Label>
+                <Switch
+                  checked={showAllConnectors}
+                  onCheckedChange={setShowAllConnectors}
+                />
+              </div>
+              
+              {showAllConnectors && (
+                <div className="space-y-3 max-h-96 overflow-y-auto">
+                  <div className="grid gap-3">
+                    {connectors.map(connector => (
+                      <div key={connector.id} className="border rounded-lg p-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="flex flex-col">
+                              {connector.type === 'database' && <Database className="h-5 w-5 text-blue-500" />}
+                              {connector.type === 'api' && <Cloud className="h-5 w-5 text-green-500" />}
+                              {connector.type === 'messaging' && <Zap className="h-5 w-5 text-purple-500" />}
+                              {connector.type === 'file_system' && <FileText className="h-5 w-5 text-orange-500" />}
+                              {connector.type === 'external_service' && <Globe className="h-5 w-5 text-red-500" />}
+                            </div>
+                            <div>
+                              <p className="font-medium">{connector.name}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {connector.type} • {connector.category}
+                              </p>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            <Badge variant={connector.status === 'active' ? 'default' : 'secondary'}>
+                              {connector.status}
+                            </Badge>
+                            {manualAssignAction && (
+                              <Button
+                                size="sm"
+                                onClick={() => {
+                                  assignConnector(manualAssignAction, connector.id, 'default', 'manual');
+                                  setManualAssignAction(null);
+                                }}
+                              >
+                                Assign
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                        
+                        {connector.capabilities.length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {connector.capabilities.slice(0, 3).map(cap => (
+                              <Badge key={cap} variant="outline" className="text-xs">
+                                {cap}
+                              </Badge>
+                            ))}
+                            {connector.capabilities.length > 3 && (
+                              <Badge variant="outline" className="text-xs">
+                                +{connector.capabilities.length - 3} more
+                              </Badge>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {manualAssignAction && (
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Settings className="h-4 w-4 text-blue-600" />
+                    <span className="font-medium text-blue-900">
+                      Assigning to: {actions.find(a => a.id === manualAssignAction)?.name}
+                    </span>
+                  </div>
+                  <p className="text-sm text-blue-700 mb-3">
+                    Select a connector from the list above or cancel to close this mode.
+                  </p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setManualAssignAction(null)}
+                  >
+                    Cancel Assignment
+                  </Button>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Token & Threshold Configuration */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Token & Threshold Configuration</CardTitle>
+        </CardHeader>
+        <CardContent>
             {assignments.length > 0 ? (
               <Tabs defaultValue={assignments[0]?.action_id} className="w-full">
                 <TabsList className="grid w-full grid-cols-1">
@@ -570,8 +729,7 @@ export const ConnectorAssignmentManager: React.FC<ConnectorAssignmentManagerProp
               </div>
             )}
           </CardContent>
-        </Card>
-      </div>
+         </Card>
     </div>
   );
 };

@@ -465,39 +465,63 @@ export const KnowledgeBaseManager: React.FC<KnowledgeBaseManagerProps> = ({
 
         {/* Knowledge Sources Tab */}
         <TabsContent value="sources" className="space-y-4">
-          <div className="grid gap-4">
-            {knowledgeSources.map(source => (
-              <Card key={source.id}>
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start gap-3 flex-1">
-                      <div className="mt-1">
-                        {getSourceIcon(source.type)}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h4 className="font-medium">{source.title}</h4>
-                          <Badge variant="outline" className={getStatusColor(source.status)}>
-                            {source.status}
-                          </Badge>
-                          {source.auto_generated && (
-                            <Badge variant="secondary">Auto</Badge>
-                          )}
+          {knowledgeSources.length === 0 ? (
+            <div className="text-center py-12 border-2 border-dashed border-muted-foreground/20 rounded-lg">
+              <Brain className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+              <h3 className="text-lg font-medium mb-2">No Knowledge Sources Yet</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Add URLs, upload files, or enable auto-generation to build your agent's knowledge base
+              </p>
+              <div className="flex justify-center gap-2">
+                <Button onClick={() => setActiveTab('add-content')} size="sm">
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  Add Content
+                </Button>
+                <Button 
+                  onClick={generateActionBasedContent} 
+                  variant="outline" 
+                  size="sm"
+                  disabled={generatingContent}
+                >
+                  <Zap className="h-4 w-4 mr-2" />
+                  Auto-Generate
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="grid gap-4">
+              {knowledgeSources.map(source => (
+                <Card key={source.id}>
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start gap-3 flex-1">
+                        <div className="mt-1">
+                          {getSourceIcon(source.type)}
                         </div>
-                        
-                        {source.url && (
-                          <div className="flex items-center gap-1 mb-2">
-                            <ExternalLink className="h-3 w-3" />
-                            <a 
-                              href={source.url} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="text-xs text-blue-600 hover:underline"
-                            >
-                              {source.url}
-                            </a>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-medium">{source.title}</h4>
+                            <Badge variant="outline" className={getStatusColor(source.status)}>
+                              {source.status}
+                            </Badge>
+                            {source.auto_generated && (
+                              <Badge variant="secondary">Auto</Badge>
+                            )}
                           </div>
-                        )}
+                          
+                          {source.url && (
+                            <div className="flex items-center gap-1 mb-2">
+                              <ExternalLink className="h-3 w-3" />
+                              <a 
+                                href={source.url} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-xs text-blue-600 hover:underline"
+                              >
+                                {source.url}
+                              </a>
+                            </div>
+                          )}
                         
                         <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
                           {source.content.substring(0, 200)}...
@@ -518,31 +542,22 @@ export const KnowledgeBaseManager: React.FC<KnowledgeBaseManagerProps> = ({
                             ))}
                           </div>
                         )}
-                      </div>
-                    </div>
-                    
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => removeSource(source.id)}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-            
-            {knowledgeSources.length === 0 && (
-              <Card>
-                <CardContent className="p-8 text-center">
-                  <Brain className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                  <p className="text-muted-foreground">No knowledge sources yet</p>
-                  <p className="text-sm text-muted-foreground">Add URLs or enable auto-generation</p>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+                         </div>
+                       </div>
+                       
+                       <Button
+                         size="sm"
+                         variant="ghost"
+                         onClick={() => removeSource(source.id)}
+                       >
+                         <Trash2 className="h-3 w-3" />
+                       </Button>
+                     </div>
+                   </CardContent>
+                 </Card>
+               ))}
+             </div>
+           )}
         </TabsContent>
 
         {/* Configuration Tab */}

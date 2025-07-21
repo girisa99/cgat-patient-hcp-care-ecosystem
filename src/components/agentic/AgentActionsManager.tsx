@@ -45,6 +45,7 @@ interface AgentTask {
   timeout: number;
   isRequired: boolean;
   order: number;
+  connectors?: string[];
 }
 
 interface AIModel {
@@ -787,23 +788,42 @@ export const AgentActionsManager: React.FC<AgentActionsManagerProps> = ({
                                 </div>
                                 
                                 <div className="grid grid-cols-3 gap-3">
-                                  <div>
-                                    <Label className="text-xs">AI Model</Label>
-                                    <Select 
-                                      value={task.aiModelId || ''} 
-                                      onValueChange={(value) => updateTask(task.id, { aiModelId: value })}
-                                    >
-                                      <SelectTrigger className="h-8">
-                                        <SelectValue placeholder="Select model" />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        {models.map((model) => (
-                                          <SelectItem key={model.id} value={model.id}>
-                                            {model.name}
-                                          </SelectItem>
-                                        ))}
-                                      </SelectContent>
-                                    </Select>
+                                   <div>
+                                     <Label className="text-xs">AI Model</Label>
+                                     <Select 
+                                       value={task.aiModelId || ''} 
+                                       onValueChange={(value) => updateTask(task.id, { aiModelId: value })}
+                                     >
+                                       <SelectTrigger className="h-8">
+                                         <SelectValue placeholder="Select model" />
+                                       </SelectTrigger>
+                                       <SelectContent>
+                                         {models.map((model) => (
+                                           <SelectItem key={model.id} value={model.id}>
+                                             {model.name}
+                                           </SelectItem>
+                                         ))}
+                                       </SelectContent>
+                                     </Select>
+                                   </div>
+                                   
+                                   <div>
+                                     <Label className="text-xs">Connectors</Label>
+                                     <div className="text-xs text-muted-foreground">
+                                       {task.connectors?.length || 0} assigned
+                                     </div>
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-8 text-xs mt-1"
+                                        onClick={() => {
+                                          setActiveTab('connectors');
+                                          toast.success('Switch to System Connectors tab to assign connectors to this task');
+                                        }}
+                                      >
+                                        Assign Connectors
+                                      </Button>
                                    </div>
                                    
                                    <div>
