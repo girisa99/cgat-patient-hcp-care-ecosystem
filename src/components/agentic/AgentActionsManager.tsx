@@ -260,8 +260,8 @@ export const AgentActionsManager: React.FC<AgentActionsManagerProps> = ({
         priority: template.priority,
         estimatedDuration: template.estimated_duration,
         requiresApproval: template.requires_approval,
-        aiModelId: getRecommendedModel(template.category).id,
-        mcpServerId: getRecommendedMCPServer(template.category).id,
+        aiModelId: getRecommendedModel(template.category)?.id,
+        mcpServerId: getRecommendedMCPServer(template.category)?.id,
         isEnabled: true,
         parameters: {}
       } as AgentAction));
@@ -278,26 +278,30 @@ export const AgentActionsManager: React.FC<AgentActionsManagerProps> = ({
     }
   };
 
-  const getRecommendedModel = (category: string): AIModel => {
+  const getRecommendedModel = (category: string): AIModel | null => {
+    if (models.length === 0) return null;
+    
     switch (category) {
       case 'analysis':
         return models.find(m => m.specialization.includes('clinical reasoning')) || models[0];
       case 'communication':
-        return models.find(m => m.capabilities.includes('real-time')) || models[1];
+        return models.find(m => m.capabilities.includes('real-time')) || models[1] || models[0];
       case 'data_processing':
-        return models.find(m => m.capabilities.includes('multimodal')) || models[1];
+        return models.find(m => m.capabilities.includes('multimodal')) || models[1] || models[0];
       default:
         return models[0];
     }
   };
 
-  const getRecommendedMCPServer = (category: string): MCPServer => {
+  const getRecommendedMCPServer = (category: string): MCPServer | null => {
+    if (mcpServers.length === 0) return null;
+    
     switch (category) {
       case 'analysis':
       case 'communication':
         return mcpServers.find(s => s.type === 'healthcare') || mcpServers[0];
       case 'data_processing':
-        return mcpServers.find(s => s.type === 'filesystem') || mcpServers[1];
+        return mcpServers.find(s => s.type === 'filesystem') || mcpServers[1] || mcpServers[0];
       default:
         return mcpServers[0];
     }
@@ -313,8 +317,8 @@ export const AgentActionsManager: React.FC<AgentActionsManagerProps> = ({
       priority: template?.priority || 'medium',
       estimatedDuration: template?.estimatedDuration || 5,
       requiresApproval: template?.requiresApproval || false,
-      aiModelId: template?.aiModelId || getRecommendedModel('custom').id,
-      mcpServerId: template?.mcpServerId || getRecommendedMCPServer('custom').id,
+      aiModelId: template?.aiModelId || getRecommendedModel('custom')?.id,
+      mcpServerId: template?.mcpServerId || getRecommendedMCPServer('custom')?.id,
       isEnabled: true,
       parameters: {},
       tasks: []
@@ -588,8 +592,8 @@ export const AgentActionsManager: React.FC<AgentActionsManagerProps> = ({
                 priority: template.priority as AgentAction['priority'],
                 estimatedDuration: template.estimated_duration,
                 requiresApproval: template.requires_approval,
-                aiModelId: getRecommendedModel(template.category).id,
-                mcpServerId: getRecommendedMCPServer(template.category).id,
+                aiModelId: getRecommendedModel(template.category)?.id,
+                mcpServerId: getRecommendedMCPServer(template.category)?.id,
                 isEnabled: true,
                 parameters: {}
               };
