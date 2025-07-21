@@ -21,6 +21,7 @@ import { EnhancedKnowledgeBase } from '@/components/rag/EnhancedKnowledgeBase';
 import { RAGComplianceWorkflow } from '@/components/rag/RAGComplianceWorkflow';
 import { EnhancedAPIAssignmentManager } from '@/components/agentic/EnhancedAPIAssignmentManager';
 import { AgentIntegrationStatus } from '@/components/agentic/AgentIntegrationStatus';
+import { AgentAssignmentOverview } from '@/components/agentic/AgentAssignmentOverview';
 import { useAgentSession } from '@/hooks/useAgentSession';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { AgentSession } from '@/types/agent-session';
@@ -706,6 +707,21 @@ export const SessionAgentBuilder = () => {
               agentType={currentSession.basic_info?.use_case || 'assistant'}
               agentPurpose={currentSession.basic_info?.purpose || ''}
             />
+            
+            {/* Assignment Overview - Show hierarchical view of all assignments */}
+            {currentSessionId && currentSession.actions?.assigned_actions?.length > 0 && (
+              <AgentAssignmentOverview
+                sessionId={currentSessionId}
+                actions={currentSession.actions?.assigned_actions || []}
+                onAssignmentChange={() => {
+                  // Trigger a refresh of the session data
+                  if (currentSessionId) {
+                    // Session data will be automatically updated via the mutation in AgentAssignmentOverview
+                    console.log('Assignment changed for session:', currentSessionId);
+                  }
+                }}
+              />
+            )}
             <Card>
               <CardFooter className="flex justify-between">
                 <Button variant="outline" onClick={() => setCurrentStep('canvas')}>
