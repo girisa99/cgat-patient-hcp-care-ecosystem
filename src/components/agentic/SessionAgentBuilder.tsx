@@ -14,6 +14,8 @@ import { EnhancedAgentCanvas } from '@/components/agentic/EnhancedAgentCanvas';
 import { AgentTemplates } from '@/components/agentic/AgentTemplates';
 import { AgentActionsManager } from '@/components/agentic/AgentActionsManager';
 import { SystemConnectors } from '@/components/agentic/SystemConnectors';
+import { ConnectorConfiguration } from '@/components/agentic/ConnectorConfiguration';
+import { KnowledgeSourceManager } from '@/components/rag/KnowledgeSourceManager';
 import { AgentDeployment } from '@/components/agentic/AgentDeployment';
 import { EnhancedKnowledgeBase } from '@/components/rag/EnhancedKnowledgeBase';
 import { RAGComplianceWorkflow } from '@/components/rag/RAGComplianceWorkflow';
@@ -647,6 +649,14 @@ export const SessionAgentBuilder = () => {
         <TabsContent value="connectors" className="space-y-4">
           <div className="space-y-6">
             <SystemConnectors />
+            <ConnectorConfiguration 
+              autoSuggestMode={true}
+              tokenThreshold={0.8}
+              onAutoSuggestChange={() => {}}
+              onTokenThresholdChange={() => {}}
+              onRefreshSuggestions={() => {}}
+              isRefreshing={false}
+            />
             <Card>
               <CardFooter className="flex justify-between">
                 <Button variant="outline" onClick={() => setCurrentStep('actions')}>

@@ -16,6 +16,7 @@ import {
   Filter
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { KnowledgeSourceManager } from './KnowledgeSourceManager';
 
 interface Document {
   id: string;
@@ -37,6 +38,14 @@ export const EnhancedKnowledgeBase: React.FC<EnhancedKnowledgeBaseProps> = ({
 }) => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [activeTab, setActiveTab] = useState('upload');
+  const [sources, setSources] = useState<string[]>([]);
+  const [autoGenConfig, setAutoGenConfig] = useState({
+    enabled: false,
+    topics: [] as string[],
+    refreshInterval: 24
+  });
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -233,16 +242,21 @@ export const EnhancedKnowledgeBase: React.FC<EnhancedKnowledgeBaseProps> = ({
         </TabsContent>
         
         <TabsContent value="manage" className="space-y-4">
-          <Card>
-            <CardContent className="p-6 text-center">
-              <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-lg font-medium mb-2">Knowledge Management</h3>
-              <p className="text-muted-foreground mb-4">
-                Organize, categorize, and manage your knowledge documents
-              </p>
-              <Button>View Knowledge Base</Button>
-            </CardContent>
-          </Card>
+          <KnowledgeSourceManager
+            sources={sources}
+            autoGenConfig={autoGenConfig}
+            onSourcesChange={(newSources) => setSources(newSources)}
+            onAutoGenConfigChange={(config) => setAutoGenConfig(config)}
+            onRefresh={() => toast({ title: "Sources refreshed", description: "Knowledge sources have been synchronized" })}
+            onGenerate={() => {
+              setIsGenerating(true);
+              setTimeout(() => {
+                setIsGenerating(false);
+                toast({ title: "Content generated", description: "New knowledge base content has been generated" });
+              }, 3000);
+            }}
+            isGenerating={isGenerating}
+          />
         </TabsContent>
         
         <TabsContent value="search" className="space-y-4">

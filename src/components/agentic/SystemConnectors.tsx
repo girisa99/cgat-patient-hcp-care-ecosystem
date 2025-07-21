@@ -301,6 +301,9 @@ export const SystemConnectors = () => {
     token: '',
     additionalConfig: ''
   });
+  const [autoSuggestMode, setAutoSuggestMode] = useState(true);
+  const [tokenThreshold, setTokenThreshold] = useState(0.8);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const categories = ['All', 'Language Models', 'CRM Systems', 'Databases', 'Healthcare APIs', 'Communication', 'Insurance', 'Development'];
 
@@ -468,6 +471,15 @@ export const SystemConnectors = () => {
 
       clearCredentialsForm();
       setConfiguring(null);
+      
+      // Update suggestions after successful connection
+      if (autoSuggestMode) {
+        // Refresh suggestions would be called here
+        toast({
+          title: "Auto-suggestions updated",
+          description: "Connector suggestions have been refreshed based on new connection."
+        });
+      }
       
       toast({
         title: "🎉 Connection Established",

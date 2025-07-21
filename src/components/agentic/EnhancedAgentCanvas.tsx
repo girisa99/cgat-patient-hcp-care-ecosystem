@@ -316,7 +316,7 @@ export const EnhancedAgentCanvas: React.FC<EnhancedAgentCanvasProps> = ({
     if (template) {
       setSelectedTemplate(id);
       
-      // Update local state and notify parent
+      // Update all state and notify parent
       setPrimaryColor(template.primaryColor);
       onPrimaryColorChange?.(template.primaryColor);
       
@@ -329,18 +329,21 @@ export const EnhancedAgentCanvas: React.FC<EnhancedAgentCanvasProps> = ({
       setTagline(template.tagline);
       onTaglineChange?.(template.tagline);
       
+      // Reset existing logo first
+      setLogo(null);
+      setLogoPreview(null);
+      
+      // Apply template logo if available
       if (template.logo) {
         setLogoPreview(template.logo);
         onLogoChange?.(null, template.logo);
       } else {
-        setLogoPreview(null);
-        setLogo(null);
         onLogoChange?.(null, '');
       }
       
       toast({
         title: "Template Applied",
-        description: `Applied ${template.name} template to your canvas.`
+        description: `Applied ${template.name} template to your canvas. Logo and color scheme updated.`
       });
     }
   };

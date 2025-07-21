@@ -95,9 +95,15 @@ export const ActionTemplateManager: React.FC<ActionTemplateManagerProps> = ({
   const [isGenerating, setIsGenerating] = useState(false);
   const [editForm, setEditForm] = useState<Partial<ActionTemplate>>({});
   const [tasks, setTasks] = useState<ActionTemplateTask[]>([]);
-  const [customCategories, setCustomCategories] = useState<string[]>([]);
-  const [customTypes, setCustomTypes] = useState<string[]>([]);
-  const [customTaskTypes, setCustomTaskTypes] = useState<string[]>([]);
+  const [customCategories, setCustomCategories] = useState<string[]>([
+    'communication', 'data_processing', 'analysis', 'integration', 'automation', 'compliance'
+  ]);
+  const [customTypes, setCustomTypes] = useState<string[]>([
+    'on_demand', 'scheduled', 'trigger_based', 'workflow', 'approval_required'
+  ]);
+  const [customTaskTypes, setCustomTaskTypes] = useState<string[]>([
+    'action', 'validation', 'notification', 'data_transformation', 'api_call', 'decision'
+  ]);
   const [newCategoryInput, setNewCategoryInput] = useState('');
   const [newTypeInput, setNewTypeInput] = useState('');
   const [newTaskTypeInput, setNewTaskTypeInput] = useState('');
@@ -434,14 +440,14 @@ export const ActionTemplateManager: React.FC<ActionTemplateManagerProps> = ({
     }
   };
 
-  const addTask = () => {
+  const addTask = (taskType: string = 'action') => {
     const newTask: ActionTemplateTask = {
       id: `temp-${Date.now()}`,
       template_id: selectedTemplate?.id || '',
       task_name: 'New Task',
       task_description: '',
       task_order: tasks.length + 1,
-      task_type: 'action',
+      task_type: taskType,
       required_inputs: [],
       expected_outputs: [],
       validation_rules: {},
@@ -450,6 +456,32 @@ export const ActionTemplateManager: React.FC<ActionTemplateManagerProps> = ({
       is_critical: false
     };
     setTasks([...tasks, newTask]);
+    
+    toast.success(`New ${taskType} task added to template`);
+  };
+
+  const addCustomCategory = () => {
+    if (newCategoryInput.trim() && !customCategories.includes(newCategoryInput.trim())) {
+      setCustomCategories([...customCategories, newCategoryInput.trim()]);
+      setNewCategoryInput('');
+      toast.success('New category added successfully');
+    }
+  };
+
+  const addCustomType = () => {
+    if (newTypeInput.trim() && !customTypes.includes(newTypeInput.trim())) {
+      setCustomTypes([...customTypes, newTypeInput.trim()]);
+      setNewTypeInput('');
+      toast.success('New template type added successfully');
+    }
+  };
+
+  const addCustomTaskType = () => {
+    if (newTaskTypeInput.trim() && !customTaskTypes.includes(newTaskTypeInput.trim())) {
+      setCustomTaskTypes([...customTaskTypes, newTaskTypeInput.trim()]);
+      setNewTaskTypeInput('');
+      toast.success('New task type added successfully');
+    }
   };
 
   const updateTask = (taskId: string, updates: Partial<ActionTemplateTask>) => {
@@ -744,7 +776,7 @@ export const ActionTemplateManager: React.FC<ActionTemplateManagerProps> = ({
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <Label className="text-base font-medium">Tasks</Label>
-                    <Button type="button" variant="outline" size="sm" onClick={addTask}>
+                    <Button type="button" variant="outline" size="sm" onClick={() => addTask('action')}>
                       <Plus className="h-4 w-4 mr-2" />
                       Add Task
                     </Button>
@@ -1113,7 +1145,7 @@ export const ActionTemplateManager: React.FC<ActionTemplateManagerProps> = ({
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <Label className="text-base font-medium">Tasks</Label>
-                  <Button type="button" variant="outline" size="sm" onClick={addTask}>
+                  <Button type="button" variant="outline" size="sm" onClick={() => addTask('action')}>
                     <Plus className="h-4 w-4 mr-2" />
                     Add Task
                   </Button>
