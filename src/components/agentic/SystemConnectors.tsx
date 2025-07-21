@@ -1133,34 +1133,55 @@ export const SystemConnectors = () => {
                   return;
                 }
                 
-                try {
-                  await createConnector.mutateAsync({
-                    name: newConnector.name,
-                    description: newConnector.description || 'Custom connector',
-                    type: 'external_service',
-                    category: newConnector.category,
-                    status: 'inactive',
-                    base_url: newConnector.apiEndpoint,
-                    auth_type: newConnector.authMethod,
-                    configuration: {},
-                    endpoints: [],
-                    usage_count: 0,
-                    success_rate: 0
-                  });
-                  
-                  setNewConnector({
-                    name: '',
-                    category: '',
-                    description: '',
-                    apiEndpoint: '',
-                    authMethod: 'api_key',
-                    capabilities: [],
-                    cost: 'Free'
-                  });
-                  setShowCreateConnector(false);
-                } catch (error) {
-                  console.error('Failed to create connector:', error);
-                }
+                 try {
+                   const result = await createConnector.mutateAsync({
+                     name: newConnector.name,
+                     description: newConnector.description || 'Custom connector',
+                     type: 'external_service',
+                     category: newConnector.category,
+                     status: 'inactive',
+                     base_url: newConnector.apiEndpoint,
+                     auth_type: newConnector.authMethod,
+                     configuration: {},
+                     endpoints: [],
+                     usage_count: 0,
+                     success_rate: 0
+                   });
+                   
+                   // Reset form
+                   setNewConnector({
+                     name: '',
+                     category: '',
+                     description: '',
+                     apiEndpoint: '',
+                     authMethod: 'api_key',
+                     capabilities: [],
+                     cost: 'Free'
+                   });
+                   setShowCreateConnector(false);
+                   
+                   // Show success message with next steps
+                   toast({
+                     title: "✅ Connector Created Successfully",
+                     description: `"${newConnector.name}" has been added. You can now configure and connect to it.`,
+                   });
+                   
+                   // Auto-open configuration for the new connector after a brief delay
+                   setTimeout(() => {
+                     const newConnectorInList = allConnectors.find(c => c.name === newConnector.name);
+                     if (newConnectorInList) {
+                       handleConnect(newConnectorInList.id);
+                     }
+                   }, 1000);
+                   
+                 } catch (error) {
+                   console.error('Failed to create connector:', error);
+                   toast({
+                     title: "Error",
+                     description: "Failed to create connector. Please try again.",
+                     variant: "destructive"
+                   });
+                 }
               }}
               disabled={createConnector.isPending}
             >
