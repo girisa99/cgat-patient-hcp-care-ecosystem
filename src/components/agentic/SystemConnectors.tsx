@@ -1153,8 +1153,8 @@ export const SystemConnectors = () => {
 
       {/* Create New Connector Dialog */}
       <Dialog open={showCreateConnector} onOpenChange={setShowCreateConnector}>
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
-          <DialogHeader>
+        <DialogContent className="max-w-5xl h-[85vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>Add New Connector</DialogTitle>
             <DialogDescription>
               Choose from 45+ pre-configured connectors or create a completely custom one
@@ -1162,8 +1162,8 @@ export const SystemConnectors = () => {
           </DialogHeader>
           
           {/* Mode Selection */}
-          <Tabs value={createMode} onValueChange={(value: any) => setCreateMode(value)} className="flex-1 flex flex-col">
-            <TabsList className="grid w-full grid-cols-2">
+          <Tabs value={createMode} onValueChange={(value: any) => setCreateMode(value)} className="flex-1 flex flex-col min-h-0">
+            <TabsList className="grid w-full grid-cols-2 flex-shrink-0">
               <TabsTrigger value="missing" className="flex items-center gap-2">
                 <Zap className="h-4 w-4" />
                 Add Missing Connector
@@ -1174,13 +1174,13 @@ export const SystemConnectors = () => {
               </TabsTrigger>
             </TabsList>
             
-            <TabsContent value="missing" className="flex-1 flex flex-col space-y-4">
-              <div className="text-sm text-muted-foreground">
+            <TabsContent value="missing" className="flex-1 flex flex-col space-y-4 min-h-0">
+              <div className="text-sm text-muted-foreground flex-shrink-0">
                 Browse and add from our comprehensive library of 45+ connectors
               </div>
               
               {/* Search */}
-              <div className="relative">
+              <div className="relative flex-shrink-0">
                 <Input
                   placeholder="Search connectors by name, category, or type..."
                   value={searchQuery}
@@ -1197,8 +1197,8 @@ export const SystemConnectors = () => {
                 </Button>
               </div>
               
-              {/* Connector Grid */}
-              <div className="flex-1 overflow-auto">
+              {/* Connector Grid - scrollable */}
+              <div className="flex-1 overflow-auto min-h-0">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pb-4">
                   {searchConnectorBrands(searchQuery).map((connector) => (
                     <Card 
@@ -1242,12 +1242,13 @@ export const SystemConnectors = () => {
                 </div>
               </div>
               
+              {/* Selected connector info - fixed height */}
               {selectedMissingConnector && (() => {
                 const selectedConnector = CONNECTOR_BRANDS.find(c => c.id === selectedMissingConnector);
                 if (!selectedConnector) return null;
                 
                 return (
-                  <Card className="p-4 bg-primary/5 border-primary/20">
+                  <Card className="p-4 bg-primary/5 border-primary/20 flex-shrink-0">
                     <div className="flex items-start gap-3">
                       <img 
                         src={selectedConnector.logoUrl} 
@@ -1288,7 +1289,7 @@ export const SystemConnectors = () => {
               })()}
             </TabsContent>
             
-            <TabsContent value="custom" className="flex-1 space-y-4">
+            <TabsContent value="custom" className="flex-1 space-y-4 overflow-auto">
               <div className="text-sm text-muted-foreground">
                 Create a completely custom connector for services not in our library
               </div>
@@ -1300,7 +1301,7 @@ export const SystemConnectors = () => {
                     id="connector-name"
                     value={newConnector.name}
                     onChange={(e) => setNewConnector(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="e.g., Your Custom API"
+                    placeholder="e.g., Zoho CRM"
                   />
                 </div>
                 
@@ -1366,7 +1367,10 @@ export const SystemConnectors = () => {
               
               <Button 
                 variant="outline" 
-                onClick={() => setShowConnectorWizard(true)}
+                onClick={() => {
+                  // Pre-populate wizard with custom connector data
+                  setShowConnectorWizard(true);
+                }}
                 className="w-full"
               >
                 Use Advanced Wizard for Configuration
@@ -1374,7 +1378,7 @@ export const SystemConnectors = () => {
             </TabsContent>
           </Tabs>
           
-          <DialogFooter>
+          <DialogFooter className="flex-shrink-0 pt-4 border-t">
             <Button variant="outline" onClick={() => {
               setShowCreateConnector(false);
               setSelectedMissingConnector('');
@@ -1450,36 +1454,54 @@ export const SystemConnectors = () => {
                     return;
                   }
                   
-                  try {
-                    await createConnector.mutateAsync({
-                      name: newConnector.name,
-                      description: newConnector.description || 'Custom connector',
-                      type: 'external_service',
-                      category: newConnector.category,
-                      status: 'inactive',
-                      base_url: newConnector.apiEndpoint,
-                      auth_type: newConnector.authMethod,
-                      configuration: {},
-                      endpoints: [],
-                      usage_count: 0,
-                      success_rate: 0
-                    });
-                    
-                    setNewConnector({
-                      name: '',
-                      category: '',
-                      description: '',
-                      apiEndpoint: '',
-                      authMethod: 'api_key',
-                      capabilities: [],
-                      cost: 'Free'
-                    });
-                    setShowCreateConnector(false);
-                    
-                    toast({
-                      title: "✅ Connector Created Successfully",
-                      description: `"${newConnector.name}" has been created. Configure it to start connecting.`,
-                    });
+                   try {
+                     await createConnector.mutateAsync({
+                       name: newConnector.name,
+                       description: newConnector.description || 'Custom connector',
+                       type: 'external_service',
+                       category: newConnector.category,
+                       status: 'inactive',
+                       base_url: newConnector.apiEndpoint,
+                       auth_type: newConnector.authMethod,
+                       configuration: {},
+                       endpoints: [],
+                       usage_count: 0,
+                       success_rate: 0
+                     });
+                     
+                     // Save to localStorage for wizard access
+                     const customConnectorForWizard = {
+                       id: `custom-${Date.now()}`,
+                       name: newConnector.name,
+                       logoUrl: 'https://via.placeholder.com/32x32/6366f1/ffffff?text=' + newConnector.name.charAt(0),
+                       category: newConnector.category,
+                       type: 'external_service' as const,
+                       description: newConnector.description || 'Custom connector',
+                       baseUrl: newConnector.apiEndpoint,
+                       commonEndpoints: ['/api/data', '/api/status'],
+                       authTypes: [newConnector.authMethod as 'api_key' | 'bearer' | 'oauth' | 'custom']
+                     };
+                     
+                     const savedCustomConnectors = localStorage.getItem('customConnectors');
+                     const existingCustomConnectors = savedCustomConnectors ? JSON.parse(savedCustomConnectors) : [];
+                     existingCustomConnectors.push(customConnectorForWizard);
+                     localStorage.setItem('customConnectors', JSON.stringify(existingCustomConnectors));
+                     
+                     setNewConnector({
+                       name: '',
+                       category: '',
+                       description: '',
+                       apiEndpoint: '',
+                       authMethod: 'api_key',
+                       capabilities: [],
+                       cost: 'Free'
+                     });
+                     setShowCreateConnector(false);
+                     
+                     toast({
+                       title: "✅ Connector Created Successfully",
+                       description: `"${newConnector.name}" has been created and is now available in the wizard.`,
+                     });
                     
                   } catch (error) {
                     console.error('Failed to create connector:', error);

@@ -96,14 +96,32 @@ export const ConnectorCreationWizard: React.FC<ConnectorCreationWizardProps> = (
   const [filteredBrands, setFilteredBrands] = useState<ConnectorBrand[]>([]);
   const [isGeneratingTasks, setIsGeneratingTasks] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
+  const [customConnectors, setCustomConnectors] = useState<ConnectorBrand[]>([]);
 
   useEffect(() => {
-    if (searchQuery.trim()) {
-      setFilteredBrands(searchConnectorBrands(searchQuery));
-    } else {
-      setFilteredBrands(searchConnectorBrands('').slice(0, 12)); // Show top 12 by default
+    // Load any custom connectors from localStorage or state
+    const savedCustomConnectors = localStorage.getItem('customConnectors');
+    if (savedCustomConnectors) {
+      try {
+        setCustomConnectors(JSON.parse(savedCustomConnectors));
+      } catch (error) {
+        console.error('Failed to load custom connectors:', error);
+      }
     }
-  }, [searchQuery]);
+  }, []);
+
+  useEffect(() => {
+    const allBrands = [...searchConnectorBrands(''), ...customConnectors];
+    if (searchQuery.trim()) {
+      setFilteredBrands(allBrands.filter(brand =>
+        brand.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        brand.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        brand.category.toLowerCase().includes(searchQuery.toLowerCase())
+      ));
+    } else {
+      setFilteredBrands(allBrands.slice(0, 12)); // Show top 12 by default
+    }
+  }, [searchQuery, customConnectors]);
 
   const updateWizardData = (updates: Partial<WizardData>) => {
     setWizardData(prev => ({ ...prev, ...updates }));
