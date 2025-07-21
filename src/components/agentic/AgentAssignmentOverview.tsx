@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAgentAPIAssignments, type APIAssignment } from '@/hooks/useAgentAPIAssignments';
+import { useConnectorAssignments } from '@/hooks/useConnectorAssignments';
 
 interface AgentAction {
   id: string;
@@ -95,8 +96,15 @@ export const AgentAssignmentOverview: React.FC<AgentAssignmentOverviewProps> = (
     updateAssignment 
   } = useAgentAPIAssignments(sessionId);
 
+  const {
+    assignments: connectorAssignments,
+    availableConnectors,
+    assignConnector,
+    removeAssignment: removeConnectorAssignment,
+    updateAssignment: updateConnectorAssignment
+  } = useConnectorAssignments(sessionId);
+
   // Mock data for other assignment types - in real app, these would come from hooks
-  const connectorAssignments: ConnectorAssignment[] = [];
   const aiModelAssignments: AIModelAssignment[] = [];
   const mcpAssignments: MCPAssignment[] = [];
 
@@ -137,7 +145,7 @@ export const AgentAssignmentOverview: React.FC<AgentAssignmentOverviewProps> = (
     
     switch (type) {
       case 'connector':
-        return connectorAssignments.filter(ca => ca.taskId === taskId);
+        return connectorAssignments.filter(ca => ca.task_id === taskId && ca.task_type === 'workflow_step');
       case 'api':
         return apiAssignments.filter(aa => aa.task_id === taskId);
       case 'ai_model':
@@ -162,7 +170,7 @@ export const AgentAssignmentOverview: React.FC<AgentAssignmentOverviewProps> = (
     
     switch (type) {
       case 'connector':
-        return connectorAssignments.filter(ca => ca.actionId === actionId);
+        return connectorAssignments.filter(ca => ca.task_id === actionId && ca.task_type === 'action');
       case 'api':
         return apiAssignments.filter(aa => aa.task_type === 'action' && aa.task_id === actionId);
       case 'ai_model':
@@ -197,6 +205,7 @@ export const AgentAssignmentOverview: React.FC<AgentAssignmentOverviewProps> = (
       taskId, 
       type: selectedAssignmentType,
       apiService: '',
+      connectorId: '',
       configuration: {}
     });
     setIsDialogOpen(true);
@@ -213,6 +222,14 @@ export const AgentAssignmentOverview: React.FC<AgentAssignmentOverviewProps> = (
           task_type: editingAssignment.taskId ? 'workflow_step' : 'action',
           assigned_api_service: editingAssignment.apiService,
           api_configuration: editingAssignment.configuration || {}
+        });
+      } else if (editingAssignment.type === 'connector') {
+        await assignConnector.mutateAsync({
+          agent_session_id: sessionId,
+          connector_id: editingAssignment.connectorId,
+          task_id: editingAssignment.taskId || editingAssignment.actionId,
+          task_type: editingAssignment.taskId ? 'workflow_step' : 'action',
+          assignment_config: editingAssignment.configuration || {}
         });
       }
       // Handle other assignment types here
@@ -231,6 +248,8 @@ export const AgentAssignmentOverview: React.FC<AgentAssignmentOverviewProps> = (
     try {
       if (type === 'api') {
         await removeAssignment.mutateAsync(assignmentId);
+      } else if (type === 'connector') {
+        await removeConnectorAssignment.mutateAsync(assignmentId);
       }
       // Handle other assignment types here
 
@@ -277,8 +296,8 @@ export const AgentAssignmentOverview: React.FC<AgentAssignmentOverviewProps> = (
             </div>
             <div className="text-2xl font-bold">{connectorAssignments.length}</div>
             <p className="text-xs text-muted-foreground">
-              {connectorAssignments.filter(c => c.connectorType === 'external').length} External, 
-              {connectorAssignments.filter(c => c.connectorType === 'internal').length} Internal
+              {connectorAssignments.filter(c => c.connector?.type === 'external_service').length} External, 
+              {connectorAssignments.filter(c => c.connector?.type !== 'external_service').length} Internal
             </p>
           </CardContent>
         </Card>
@@ -368,7 +387,9 @@ export const AgentAssignmentOverview: React.FC<AgentAssignmentOverviewProps> = (
                               <div className="flex items-center gap-2">
                                 {getAssignmentIcon(selectedAssignmentType)}
                                 <span className="text-sm">
-                                  {selectedAssignmentType === 'api' ? assignment.assigned_api_service : assignment.name}
+                                  {selectedAssignmentType === 'api' ? assignment.assigned_api_service : 
+                                   selectedAssignmentType === 'connector' ? assignment.connector?.name || assignment.connector_id :
+                                   assignment.name}
                                 </span>
                                 <Badge variant="secondary" className="text-xs">Action</Badge>
                               </div>
@@ -423,7 +444,9 @@ export const AgentAssignmentOverview: React.FC<AgentAssignmentOverviewProps> = (
                                       <div className="flex items-center gap-2">
                                         {getAssignmentIcon(selectedAssignmentType)}
                                         <span>
-                                          {selectedAssignmentType === 'api' ? assignment.assigned_api_service : assignment.name}
+                                          {selectedAssignmentType === 'api' ? assignment.assigned_api_service : 
+                                           selectedAssignmentType === 'connector' ? assignment.connector?.name || assignment.connector_id :
+                                           assignment.name}
                                         </span>
                                         <Badge variant="secondary" className="text-xs">Task</Badge>
                                       </div>
@@ -495,9 +518,26 @@ export const AgentAssignmentOverview: React.FC<AgentAssignmentOverviewProps> = (
             {selectedAssignmentType === 'connector' && (
               <div>
                 <Label>Connector</Label>
-                <div className="text-sm text-muted-foreground mb-2">
-                  Connector assignment functionality coming soon. Switch to System Connectors tab to manage connectors.
-                </div>
+                <Select 
+                  value={editingAssignment?.connectorId || ''} 
+                  onValueChange={(value) => setEditingAssignment(prev => ({ ...prev, connectorId: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select connector" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableConnectors.map((connector) => (
+                      <SelectItem key={connector.id} value={connector.id}>
+                        <div className="flex items-center gap-2">
+                          <span className={`w-2 h-2 rounded-full ${
+                            connector.status === 'active' ? 'bg-green-500' : 'bg-gray-500'
+                          }`} />
+                          {connector.name} ({connector.type})
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             )}
             
@@ -524,7 +564,7 @@ export const AgentAssignmentOverview: React.FC<AgentAssignmentOverviewProps> = (
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
               Cancel
             </Button>
-            {selectedAssignmentType === 'api' && (
+            {(selectedAssignmentType === 'api' || selectedAssignmentType === 'connector') && (
               <Button onClick={handleSaveAssignment}>
                 Assign
               </Button>

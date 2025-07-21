@@ -15,6 +15,7 @@ import {
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
+import { useConnectorMetrics } from '@/hooks/useConnectorMetrics';
 
 interface Connector {
   id: string;
@@ -29,6 +30,8 @@ interface Connector {
   capabilities: string[];
   rateLimit?: string;
   cost: 'Free' | 'Paid' | 'Enterprise';
+  usage_count?: number;
+  success_rate?: number;
 }
 
 const initialConnectors: Connector[] = [
@@ -315,9 +318,35 @@ export const SystemConnectors = () => {
     cost: 'Free' as const
   });
 
-  const categories = ['All', 'Language Models', 'CRM Systems', 'Databases', 'Healthcare APIs', 'Communication', 'Insurance', 'Development'];
+  const {
+    metrics,
+    connectors: dbConnectors,
+    createConnector,
+    testConnector,
+    isLoadingMetrics,
+    isLoadingConnectors
+  } = useConnectorMetrics();
 
-  const filteredConnectors = connectors.filter(connector => {
+  const categories = ['All', 'Language Models', 'CRM Systems', 'Databases', 'Healthcare APIs', 'Communication', 'Insurance', 'Development'];
+  
+  // Combine mock connectors with database connectors
+  const allConnectors = [...connectors, ...(dbConnectors || []).map(dc => ({
+    id: dc.id,
+    name: dc.name,
+    category: dc.category,
+    icon: Database, // Default icon, would map based on type
+    description: dc.description || '',
+    status: dc.status as 'connected' | 'available' | 'configuring',
+    apiEndpoint: dc.base_url,
+    authMethod: dc.auth_type as 'api_key' | 'oauth' | 'basic' | 'token',
+    capabilities: [], // Would extract from configuration
+    rateLimit: '',
+    cost: 'Free' as const,
+    usage_count: dc.usage_count,
+    success_rate: dc.success_rate
+  }))];
+
+  const filteredConnectors = allConnectors.filter(connector => {
     const matchesCategory = selectedCategory === 'All' || connector.category === selectedCategory;
     const matchesSearch = connector.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          connector.description.toLowerCase().includes(searchTerm.toLowerCase());
@@ -366,7 +395,7 @@ export const SystemConnectors = () => {
 
   const handleTest = async (connectorId: string) => {
     setTesting(connectorId);
-    const connector = connectors.find(c => c.id === connectorId);
+    const connector = allConnectors.find(c => c.id === connectorId);
     
     if (!connector) {
       setTesting(null);
@@ -374,44 +403,50 @@ export const SystemConnectors = () => {
     }
 
     try {
-      // Simulate real connection testing with different scenarios
-      await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
-      
-      // More realistic success rates based on connector type
-      let successRate = 0.8; // Default 80%
-      
-      if (connector.category === 'Language Models') {
-        successRate = 0.85; // AI APIs are generally reliable
-      } else if (connector.category === 'Healthcare APIs') {
-        successRate = 0.9; // Government APIs are stable
-      } else if (connector.category === 'CRM Systems') {
-        successRate = 0.75; // Enterprise systems can be more complex
-      } else if (connector.category === 'Databases') {
-        successRate = 0.95; // Direct DB connections are usually stable
-      }
-      
-      const isSuccess = Math.random() < successRate;
-      
-      if (isSuccess) {
-        toast({
-          title: "✅ Connection Test Successful",
-          description: `${connector.name} is responding correctly. Latency: ${Math.floor(Math.random() * 200 + 50)}ms`,
-        });
+      // Check if it's a database connector and use the real test function
+      const dbConnector = dbConnectors?.find(dc => dc.id === connectorId);
+      if (dbConnector) {
+        await testConnector.mutateAsync(connectorId);
       } else {
-        const errorReasons = [
-          "Authentication failed - check your API key",
-          "Network timeout - service may be unavailable", 
-          "Rate limit exceeded - try again later",
-          "Invalid endpoint configuration",
-          "Service temporarily unavailable"
-        ];
-        const randomError = errorReasons[Math.floor(Math.random() * errorReasons.length)];
+        // Simulate testing for mock connectors
+        await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
         
-        toast({
-          title: "❌ Connection Test Failed",
-          description: `${connector.name}: ${randomError}`,
-          variant: "destructive"
-        });
+        // More realistic success rates based on connector type
+        let successRate = 0.8; // Default 80%
+        
+        if (connector.category === 'Language Models') {
+          successRate = 0.85; // AI APIs are generally reliable
+        } else if (connector.category === 'Healthcare APIs') {
+          successRate = 0.9; // Government APIs are stable
+        } else if (connector.category === 'CRM Systems') {
+          successRate = 0.75; // Enterprise systems can be more complex
+        } else if (connector.category === 'Databases') {
+          successRate = 0.95; // Direct DB connections are usually stable
+        }
+        
+        const isSuccess = Math.random() < successRate;
+        
+        if (isSuccess) {
+          toast({
+            title: "✅ Connection Test Successful",
+            description: `${connector.name} is responding correctly. Latency: ${Math.floor(Math.random() * 200 + 50)}ms`,
+          });
+        } else {
+          const errorReasons = [
+            "Authentication failed - check your API key",
+            "Network timeout - service may be unavailable", 
+            "Rate limit exceeded - try again later",
+            "Invalid endpoint configuration",
+            "Service temporarily unavailable"
+          ];
+          const randomError = errorReasons[Math.floor(Math.random() * errorReasons.length)];
+          
+          toast({
+            title: "❌ Connection Test Failed",
+            description: `${connector.name}: ${randomError}`,
+            variant: "destructive"
+          });
+        }
       }
     } catch (error) {
       toast({
@@ -573,6 +608,59 @@ export const SystemConnectors = () => {
         <p className="text-muted-foreground">Configure and manage integrations with external systems</p>
       </div>
 
+      {/* Metrics Overview */}
+      {metrics && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Zap className="h-5 w-5 text-blue-500" />
+                <span className="font-medium">Total Connectors</span>
+              </div>
+              <div className="text-2xl font-bold">{metrics.totalConnectors}</div>
+              <p className="text-xs text-muted-foreground">
+                {metrics.activeConnectors} active, {metrics.inactiveConnectors} inactive
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <CheckCircle className="h-5 w-5 text-green-500" />
+                <span className="font-medium">Success Rate</span>
+              </div>
+              <div className="text-2xl font-bold">{metrics.averageSuccessRate}%</div>
+              <p className="text-xs text-muted-foreground">Average across all connectors</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Database className="h-5 w-5 text-purple-500" />
+                <span className="font-medium">Total Usage</span>
+              </div>
+              <div className="text-2xl font-bold">{metrics.totalUsage.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground">Total requests processed</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <AlertCircle className="h-5 w-5 text-red-500" />
+                <span className="font-medium">Issues</span>
+              </div>
+              <div className="text-2xl font-bold">{metrics.errorConnectors}</div>
+              <p className="text-xs text-muted-foreground">
+                {metrics.testingConnectors} testing, {metrics.errorConnectors} errors
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Search and Filter */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="flex-1">
@@ -651,12 +739,26 @@ export const SystemConnectors = () => {
                   </Badge>
                 </div>
                 
-                {connector.rateLimit && (
-                  <div>
-                    <h4 className="font-medium text-sm text-muted-foreground mb-1">Rate Limit</h4>
-                    <p className="text-xs text-muted-foreground">{connector.rateLimit}</p>
-                  </div>
-                )}
+                 {connector.rateLimit && (
+                   <div>
+                     <h4 className="font-medium text-sm text-muted-foreground mb-1">Rate Limit</h4>
+                     <p className="text-xs text-muted-foreground">{connector.rateLimit}</p>
+                   </div>
+                 )}
+
+                 {/* Real usage metrics for database connectors */}
+                 {(connector.usage_count || connector.success_rate) && (
+                   <div className="grid grid-cols-2 gap-2 text-center p-2 bg-muted/50 rounded">
+                     <div>
+                       <p className="text-xs text-muted-foreground">Usage</p>
+                       <p className="font-semibold text-sm">{connector.usage_count || 0}</p>
+                     </div>
+                     <div>
+                       <p className="text-xs text-muted-foreground">Success Rate</p>
+                       <p className="font-semibold text-sm">{connector.success_rate || 0}%</p>
+                     </div>
+                   </div>
+                 )}
                 
                 <div>
                   <h4 className="font-medium text-sm text-muted-foreground mb-2">Capabilities</h4>
@@ -1021,7 +1123,7 @@ export const SystemConnectors = () => {
               Cancel
             </Button>
             <Button 
-              onClick={() => {
+              onClick={async () => {
                 if (!newConnector.name.trim() || !newConnector.category) {
                   toast({
                     title: "Validation Error",
@@ -1031,36 +1133,36 @@ export const SystemConnectors = () => {
                   return;
                 }
                 
-                const connector: Connector = {
-                  id: `custom-${Date.now()}`,
-                  name: newConnector.name,
-                  category: newConnector.category,
-                  icon: Zap, // Default icon for custom connectors
-                  description: newConnector.description || 'Custom connector',
-                  status: 'available',
-                  apiEndpoint: newConnector.apiEndpoint,
-                  authMethod: newConnector.authMethod,
-                  capabilities: ['Custom Integration'],
-                  cost: newConnector.cost
-                };
-                
-                setConnectors(prev => [...prev, connector]);
-                setNewConnector({
-                  name: '',
-                  category: '',
-                  description: '',
-                  apiEndpoint: '',
-                  authMethod: 'api_key',
-                  capabilities: [],
-                  cost: 'Free'
-                });
-                setShowCreateConnector(false);
-                
-                toast({
-                  title: "Connector Created",
-                  description: `${connector.name} has been added to your available connectors.`
-                });
+                try {
+                  await createConnector.mutateAsync({
+                    name: newConnector.name,
+                    description: newConnector.description || 'Custom connector',
+                    type: 'external_service',
+                    category: newConnector.category,
+                    status: 'inactive',
+                    base_url: newConnector.apiEndpoint,
+                    auth_type: newConnector.authMethod,
+                    configuration: {},
+                    endpoints: [],
+                    usage_count: 0,
+                    success_rate: 0
+                  });
+                  
+                  setNewConnector({
+                    name: '',
+                    category: '',
+                    description: '',
+                    apiEndpoint: '',
+                    authMethod: 'api_key',
+                    capabilities: [],
+                    cost: 'Free'
+                  });
+                  setShowCreateConnector(false);
+                } catch (error) {
+                  console.error('Failed to create connector:', error);
+                }
               }}
+              disabled={createConnector.isPending}
             >
               Create Connector
             </Button>

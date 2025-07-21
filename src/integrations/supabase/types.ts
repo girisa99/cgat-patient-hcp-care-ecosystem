@@ -1847,6 +1847,94 @@ export type Database = {
         }
         Relationships: []
       }
+      connector_activity_logs: {
+        Row: {
+          action_description: string | null
+          action_type: string
+          connector_id: string | null
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          action_description?: string | null
+          action_type: string
+          connector_id?: string | null
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          status: string
+          user_id?: string | null
+        }
+        Update: {
+          action_description?: string | null
+          action_type?: string
+          connector_id?: string | null
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "connector_activity_logs_connector_id_fkey"
+            columns: ["connector_id"]
+            isOneToOne: false
+            referencedRelation: "system_connectors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      connector_assignments: {
+        Row: {
+          agent_session_id: string
+          assignment_config: Json | null
+          connector_id: string | null
+          created_at: string | null
+          created_by: string | null
+          id: string
+          is_active: boolean | null
+          task_id: string
+          task_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          agent_session_id: string
+          assignment_config?: Json | null
+          connector_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          task_id: string
+          task_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          agent_session_id?: string
+          assignment_config?: Json | null
+          connector_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          task_id?: string
+          task_type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "connector_assignments_connector_id_fkey"
+            columns: ["connector_id"]
+            isOneToOne: false
+            referencedRelation: "system_connectors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversation_exports: {
         Row: {
           completed_at: string | null
@@ -5022,6 +5110,63 @@ export type Database = {
           updated_at?: string
           user_id?: string | null
           violation_details?: Json | null
+        }
+        Relationships: []
+      }
+      system_connectors: {
+        Row: {
+          auth_type: string
+          base_url: string | null
+          category: string
+          configuration: Json | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          endpoints: Json | null
+          id: string
+          last_tested: string | null
+          name: string
+          status: string
+          success_rate: number | null
+          type: string
+          updated_at: string | null
+          usage_count: number | null
+        }
+        Insert: {
+          auth_type: string
+          base_url?: string | null
+          category: string
+          configuration?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          endpoints?: Json | null
+          id?: string
+          last_tested?: string | null
+          name: string
+          status?: string
+          success_rate?: number | null
+          type: string
+          updated_at?: string | null
+          usage_count?: number | null
+        }
+        Update: {
+          auth_type?: string
+          base_url?: string | null
+          category?: string
+          configuration?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          endpoints?: Json | null
+          id?: string
+          last_tested?: string | null
+          name?: string
+          status?: string
+          success_rate?: number | null
+          type?: string
+          updated_at?: string | null
+          usage_count?: number | null
         }
         Relationships: []
       }

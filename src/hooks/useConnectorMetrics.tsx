@@ -179,7 +179,7 @@ export const useConnectorMetrics = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      return (data || []) as Connector[];
     },
     staleTime: 30000,
   });
