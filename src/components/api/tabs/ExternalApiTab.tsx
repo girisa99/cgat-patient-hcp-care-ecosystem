@@ -6,12 +6,16 @@ import { Input } from "@/components/ui/input";
 import { 
   ExternalLink, Plus, RefreshCw, Settings, Globe,
   Zap, Clock, Shield, CheckCircle, AlertCircle,
-  Search, Cloud, Code, Database
+  Search, Cloud, Code, Database, Eye
 } from "lucide-react";
 import { useExternalApis } from '@/hooks/useExternalApis';
+import ExternalSystemDialog from '../ExternalSystemDialog';
+import TaskActionApiTracker from '../TaskActionApiTracker';
 
 const ExternalApiTab: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [isExternalSystemDialogOpen, setIsExternalSystemDialogOpen] = useState(false);
+  const [isApiTrackerOpen, setIsApiTrackerOpen] = useState(false);
   
   const {
     externalApis,
@@ -89,6 +93,11 @@ const ExternalApiTab: React.FC = () => {
     console.log('Refreshing external APIs...');
   };
 
+  const handleSystemAdded = (system: any) => {
+    console.log('🎉 New external system added:', system);
+    handleRefresh(); // Refresh the list to show the new system
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -102,9 +111,13 @@ const ExternalApiTab: React.FC = () => {
             <RefreshCw className={`h-4 w-4 mr-2 ${isLoadingExternalApis ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
-          <Button>
+          <Button onClick={() => setIsApiTrackerOpen(true)} variant="outline">
+            <Eye className="h-4 w-4 mr-2" />
+            Track APIs
+          </Button>
+          <Button onClick={() => setIsExternalSystemDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
-            Add Integration
+            Add External System
           </Button>
         </div>
       </div>
@@ -311,6 +324,19 @@ const ExternalApiTab: React.FC = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* External System Configuration Dialog */}
+      <ExternalSystemDialog
+        isOpen={isExternalSystemDialogOpen}
+        onClose={() => setIsExternalSystemDialogOpen(false)}
+        onSystemAdded={handleSystemAdded}
+      />
+
+      {/* API Assignment Tracker */}
+      <TaskActionApiTracker
+        isOpen={isApiTrackerOpen}
+        onClose={() => setIsApiTrackerOpen(false)}
+      />
     </div>
   );
 };
