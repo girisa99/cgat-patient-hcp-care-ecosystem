@@ -37,7 +37,7 @@ export const SessionAgentBuilder = () => {
   const [newSessionData, setNewSessionData] = useState({
     name: '',
     description: '',
-    template_id: '',
+    template_id: null as string | null,
     template_type: 'custom' as const,
   });
 
@@ -99,7 +99,7 @@ export const SessionAgentBuilder = () => {
         setCurrentSessionId(session.id);
         setCurrentStep('basic_info');
         setShowNewSessionDialog(false);
-        setNewSessionData({ name: '', description: '', template_id: '', template_type: 'custom' });
+        setNewSessionData({ name: '', description: '', template_id: null, template_type: 'custom' });
       },
       onError: (error) => {
         console.error('Failed to create session:', error);
@@ -181,7 +181,7 @@ export const SessionAgentBuilder = () => {
     const sessionData = {
       name: template.name,
       description: template.description,
-      template_id: template.id,
+      template_id: template.id === 'sample' ? null : template.id, // Convert 'sample' to null for UUID
       template_type: 'ai_generated' as const,
       basic_info: {
         name: template.name,

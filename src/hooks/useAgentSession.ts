@@ -59,8 +59,8 @@ export const useAgentSession = (sessionId?: string) => {
 
       const newSessionData = {
         name: sessionData.name || 'Untitled Agent',
-        description: sessionData.description,
-        template_id: sessionData.template_id,
+        description: sessionData.description || null,
+        template_id: sessionData.template_id || null, // Convert empty string to null for UUID
         template_type: sessionData.template_type || 'custom',
         current_step: 'basic_info',
         status: 'draft',
