@@ -19,7 +19,8 @@ import { KnowledgeSourceManager } from '@/components/rag/KnowledgeSourceManager'
 import { AgentDeployment } from '@/components/agentic/AgentDeployment';
 import { EnhancedKnowledgeBase } from '@/components/rag/EnhancedKnowledgeBase';
 import { RAGComplianceWorkflow } from '@/components/rag/RAGComplianceWorkflow';
-import { APIAssignmentManager } from '@/components/agentic/APIAssignmentManager';
+import { EnhancedAPIAssignmentManager } from '@/components/agentic/EnhancedAPIAssignmentManager';
+import { AgentIntegrationStatus } from '@/components/agentic/AgentIntegrationStatus';
 import { useAgentSession } from '@/hooks/useAgentSession';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { AgentSession } from '@/types/agent-session';
@@ -353,6 +354,12 @@ export const SessionAgentBuilder = () => {
         onSave={handleSaveAndContinue}
         onExit={handleExit}
         isSaving={updateSession.isPending}
+      />
+
+      {/* Integration Status */}
+      <AgentIntegrationStatus 
+        sessionId={currentSessionId!}
+        sessionData={currentSession}
       />
 
       {/* Main Tabs */}
@@ -721,29 +728,86 @@ export const SessionAgentBuilder = () => {
           <div className="space-y-6">
             <SystemConnectors />
             <ConnectorConfiguration 
-              autoSuggestMode={true}
-              tokenThreshold={0.8}
-              onAutoSuggestChange={() => {}}
-              onTokenThresholdChange={() => {}}
+              autoSuggestMode={currentSession.connectors?.configurations?.autoSuggestMode ?? true}
+              tokenThreshold={currentSession.connectors?.configurations?.tokenThreshold ?? 0.8}
+              onAutoSuggestChange={(enabled) => {
+                if (currentSessionId && updateSession) {
+                  updateSession.mutate({
+                    sessionId: currentSessionId,
+                    updates: {
+                      connectors: {
+                        ...currentSession.connectors,
+                        configurations: {
+                          ...currentSession.connectors?.configurations,
+                          autoSuggestMode: enabled
+                        }
+                      }
+                    }
+                  });
+                }
+              }}
+              onTokenThresholdChange={(threshold) => {
+                if (currentSessionId && updateSession) {
+                  updateSession.mutate({
+                    sessionId: currentSessionId,
+                    updates: {
+                      connectors: {
+                        ...currentSession.connectors,
+                        configurations: {
+                          ...currentSession.connectors?.configurations,
+                          tokenThreshold: threshold
+                        }
+                      }
+                    }
+                  });
+                }
+              }}
               onRefreshSuggestions={() => {}}
               isRefreshing={false}
+              sessionId={currentSessionId!}
             />
             
             <Card>
               <CardHeader>
                 <CardTitle>API Integration Assignments</CardTitle>
-                <CardDescription>Assign specific APIs to tasks and actions for clear mapping</CardDescription>
+                <CardDescription>Assign specific APIs to tasks and actions with enhanced management</CardDescription>
               </CardHeader>
               <CardContent>
-                <APIAssignmentManager 
+                 <EnhancedAPIAssignmentManager 
                   sessionId={currentSessionId!}
                   tasks={[
-                    { id: 'action-1', name: 'Patient Data Processing', type: 'action', description: 'Process and validate patient information' },
-                    { id: 'action-2', name: 'Clinical Decision Support', type: 'action', description: 'Provide clinical recommendations' },
-                    { id: 'connector-1', name: 'EHR Integration', type: 'connector', description: 'Connect to Electronic Health Records' },
-                    { id: 'connector-2', name: 'Lab Results API', type: 'connector', description: 'Fetch laboratory test results' },
-                    { id: 'workflow-1', name: 'Compliance Check', type: 'workflow_step', description: 'Validate compliance with healthcare regulations' },
-                    { id: 'workflow-2', name: 'Alert Generation', type: 'workflow_step', description: 'Generate alerts for critical conditions' },
+                    ...(currentSession.actions?.assigned_actions || []).map((action, index) => ({
+                      id: action.id || `action-${index}`,
+                      name: action.name || 'Unnamed Action',
+                      type: 'action' as const,
+                      description: action.description || '',
+                      category: action.category || 'custom',
+                      priority: (action.priority as 'low' | 'medium' | 'high' | 'critical') || 'medium'
+                    })),
+                    ...(currentSession.connectors?.assigned_connectors || []).map((connector, index) => ({
+                      id: connector.id || `connector-${index}`,
+                      name: connector.name || 'Unnamed Connector',
+                      type: 'connector' as const,
+                      description: connector.description || '',
+                      category: connector.category || 'custom',
+                      priority: (connector.priority as 'low' | 'medium' | 'high' | 'critical') || 'medium'
+                    })),
+                    {
+                      id: 'workflow-compliance',
+                      name: 'Healthcare Compliance Check',
+                      type: 'workflow_step' as const,
+                      description: 'Validate compliance with healthcare regulations',
+                      category: 'compliance',
+                      priority: 'high' as const
+                    },
+                    {
+                      id: 'workflow-alerts',
+                      name: 'Clinical Alert Generation',
+                      type: 'workflow_step' as const,
+                      description: 'Generate alerts for critical patient conditions',
+                      category: 'clinical',
+                      priority: 'critical' as const
+                    }
                   ]}
                 />
               </CardContent>
