@@ -53,8 +53,38 @@ export const useAgentSession = (sessionId?: string) => {
     mutationFn: async (sessionData: Partial<AgentSession>) => {
       const user = await supabase.auth.getUser();
       
+      console.log('Auth user:', user.data.user);
+      
       if (!user.data.user?.id) {
-        throw new Error('User not authenticated');
+        // For development purposes, create an anonymous session if no user is authenticated
+        console.warn('No authenticated user found, creating anonymous session');
+        const anonymousUserId = crypto.randomUUID();
+        
+        const newSessionData = {
+          name: sessionData.name || 'Untitled Agent',
+          description: sessionData.description,
+          template_id: sessionData.template_id,
+          template_type: sessionData.template_type || 'custom',
+          current_step: 'basic_info',
+          status: 'draft',
+          basic_info: sessionData.basic_info || { 
+            name: sessionData.name || 'Untitled Agent', 
+            description: sessionData.description || '' 
+          },
+          user_id: anonymousUserId,
+        };
+
+        const { data, error } = await supabase
+          .from('agent_sessions')
+          .insert([newSessionData])
+          .select()
+          .single();
+
+        if (error) {
+          throw new Error(`Failed to create session: ${error.message}`);
+        }
+
+        return data as AgentSession;
       }
 
       const newSessionData = {
