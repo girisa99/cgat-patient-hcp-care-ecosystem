@@ -3,9 +3,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { AgentSession, AgentSessionUpdate } from '@/types/agent-session';
 import { toast } from '@/hooks/use-toast';
+import { useMasterAuth } from '@/hooks/useMasterAuth';
 
 export const useAgentSession = (sessionId?: string) => {
   const queryClient = useQueryClient();
+  const { user } = useMasterAuth();
   const [currentSession, setCurrentSession] = useState<AgentSession | null>(null);
 
   // Fetch session if sessionId provided
@@ -51,40 +53,8 @@ export const useAgentSession = (sessionId?: string) => {
   // Create new session
   const createSession = useMutation({
     mutationFn: async (sessionData: Partial<AgentSession>) => {
-      const user = await supabase.auth.getUser();
-      
-      console.log('Auth user:', user.data.user);
-      
-      if (!user.data.user?.id) {
-        // For development purposes, create an anonymous session if no user is authenticated
-        console.warn('No authenticated user found, creating anonymous session');
-        const anonymousUserId = crypto.randomUUID();
-        
-        const newSessionData = {
-          name: sessionData.name || 'Untitled Agent',
-          description: sessionData.description,
-          template_id: sessionData.template_id,
-          template_type: sessionData.template_type || 'custom',
-          current_step: 'basic_info',
-          status: 'draft',
-          basic_info: sessionData.basic_info || { 
-            name: sessionData.name || 'Untitled Agent', 
-            description: sessionData.description || '' 
-          },
-          user_id: anonymousUserId,
-        };
-
-        const { data, error } = await supabase
-          .from('agent_sessions')
-          .insert([newSessionData])
-          .select()
-          .single();
-
-        if (error) {
-          throw new Error(`Failed to create session: ${error.message}`);
-        }
-
-        return data as AgentSession;
+      if (!user?.id) {
+        throw new Error('User not authenticated');
       }
 
       const newSessionData = {
@@ -98,7 +68,7 @@ export const useAgentSession = (sessionId?: string) => {
           name: sessionData.name || 'Untitled Agent', 
           description: sessionData.description || '' 
         },
-        user_id: user.data.user.id,
+        user_id: user.id,
       };
 
       const { data, error } = await supabase
