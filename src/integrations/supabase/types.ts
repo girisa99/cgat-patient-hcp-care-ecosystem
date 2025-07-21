@@ -323,6 +323,47 @@ export type Database = {
           },
         ]
       }
+      agent_api_assignments: {
+        Row: {
+          agent_session_id: string
+          api_configuration: Json | null
+          assigned_api_service: string
+          created_at: string | null
+          id: string
+          task_id: string
+          task_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          agent_session_id: string
+          api_configuration?: Json | null
+          assigned_api_service: string
+          created_at?: string | null
+          id?: string
+          task_id: string
+          task_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          agent_session_id?: string
+          api_configuration?: Json | null
+          assigned_api_service?: string
+          created_at?: string | null
+          id?: string
+          task_id?: string
+          task_type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_api_assignments_agent_session_id_fkey"
+            columns: ["agent_session_id"]
+            isOneToOne: false
+            referencedRelation: "agent_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agent_compliance_monitoring: {
         Row: {
           agent_id: string

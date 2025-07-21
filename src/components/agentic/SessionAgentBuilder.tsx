@@ -19,6 +19,7 @@ import { KnowledgeSourceManager } from '@/components/rag/KnowledgeSourceManager'
 import { AgentDeployment } from '@/components/agentic/AgentDeployment';
 import { EnhancedKnowledgeBase } from '@/components/rag/EnhancedKnowledgeBase';
 import { RAGComplianceWorkflow } from '@/components/rag/RAGComplianceWorkflow';
+import { APIAssignmentManager } from '@/components/agentic/APIAssignmentManager';
 import { useAgentSession } from '@/hooks/useAgentSession';
 import { AgentSession } from '@/types/agent-session';
 import { Plus, Bot } from 'lucide-react';
@@ -657,6 +658,27 @@ export const SessionAgentBuilder = () => {
               onRefreshSuggestions={() => {}}
               isRefreshing={false}
             />
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>API Integration Assignments</CardTitle>
+                <CardDescription>Assign specific APIs to tasks and actions for clear mapping</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <APIAssignmentManager 
+                  sessionId={currentSessionId!}
+                  tasks={[
+                    { id: 'action-1', name: 'Patient Data Processing', type: 'action', description: 'Process and validate patient information' },
+                    { id: 'action-2', name: 'Clinical Decision Support', type: 'action', description: 'Provide clinical recommendations' },
+                    { id: 'connector-1', name: 'EHR Integration', type: 'connector', description: 'Connect to Electronic Health Records' },
+                    { id: 'connector-2', name: 'Lab Results API', type: 'connector', description: 'Fetch laboratory test results' },
+                    { id: 'workflow-1', name: 'Compliance Check', type: 'workflow_step', description: 'Validate compliance with healthcare regulations' },
+                    { id: 'workflow-2', name: 'Alert Generation', type: 'workflow_step', description: 'Generate alerts for critical conditions' },
+                  ]}
+                />
+              </CardContent>
+            </Card>
+            
             <Card>
               <CardFooter className="flex justify-between">
                 <Button variant="outline" onClick={() => setCurrentStep('actions')}>
