@@ -16,6 +16,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
 import { useConnectorMetrics } from '@/hooks/useConnectorMetrics';
+import { ConnectorCreationWizard } from './enhanced-connector/ConnectorCreationWizard';
+import { CONNECTOR_BRANDS, searchConnectorBrands } from './enhanced-connector/ConnectorBrandRegistry';
 
 interface Connector {
   id: string;
@@ -414,8 +416,10 @@ export const SystemConnectors = () => {
   const [tokenThreshold, setTokenThreshold] = useState(0.8);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showCreateConnector, setShowCreateConnector] = useState(false);
+  const [showConnectorWizard, setShowConnectorWizard] = useState(false);
   const [createMode, setCreateMode] = useState<'missing' | 'custom'>('missing');
   const [selectedMissingConnector, setSelectedMissingConnector] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [newConnector, setNewConnector] = useState({
     name: '',
     category: '',
@@ -1149,16 +1153,16 @@ export const SystemConnectors = () => {
 
       {/* Create New Connector Dialog */}
       <Dialog open={showCreateConnector} onOpenChange={setShowCreateConnector}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle>Add New Connector</DialogTitle>
             <DialogDescription>
-              Add a missing connector or create a completely custom one for your actions and tasks
+              Choose from 45+ pre-configured connectors or create a completely custom one
             </DialogDescription>
           </DialogHeader>
           
           {/* Mode Selection */}
-          <Tabs value={createMode} onValueChange={(value: any) => setCreateMode(value)} className="w-full">
+          <Tabs value={createMode} onValueChange={(value: any) => setCreateMode(value)} className="flex-1 flex flex-col">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="missing" className="flex items-center gap-2">
                 <Zap className="h-4 w-4" />
@@ -1170,61 +1174,113 @@ export const SystemConnectors = () => {
               </TabsTrigger>
             </TabsList>
             
-            <TabsContent value="missing" className="space-y-4">
-              <div className="text-sm text-muted-foreground mb-4">
-                Select from commonly needed connectors that aren't currently in your system
+            <TabsContent value="missing" className="flex-1 flex flex-col space-y-4">
+              <div className="text-sm text-muted-foreground">
+                Browse and add from our comprehensive library of 45+ connectors
               </div>
               
-              <div>
-                <Label htmlFor="missing-connector-select">Select Connector to Add</Label>
-                <Select 
-                  value={selectedMissingConnector} 
-                  onValueChange={setSelectedMissingConnector}
+              {/* Search */}
+              <div className="relative">
+                <Input
+                  placeholder="Search connectors by name, category, or type..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="absolute right-2 top-1/2 -translate-y-1/2 h-6 px-2"
+                  onClick={() => setShowConnectorWizard(true)}
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose a connector to add..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {/* Show connectors that are not currently added */}
-                    {initialConnectors
-                      .filter(connector => !allConnectors.some(ac => ac.id === connector.id))
-                      .map((connector) => (
-                        <SelectItem key={connector.id} value={connector.id}>
-                          <div className="flex items-center gap-2">
-                            <connector.icon className="h-4 w-4" />
-                            <span>{connector.name}</span>
-                            <Badge variant="outline" className="text-xs ml-2">
-                              {connector.category}
-                            </Badge>
+                  Use Full Wizard
+                </Button>
+              </div>
+              
+              {/* Connector Grid */}
+              <div className="flex-1 overflow-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pb-4">
+                  {searchConnectorBrands(searchQuery).map((connector) => (
+                    <Card 
+                      key={connector.id} 
+                      className={`cursor-pointer transition-all hover:shadow-md hover:scale-[1.02] ${
+                        selectedMissingConnector === connector.id ? 'ring-2 ring-primary bg-primary/5' : ''
+                      }`}
+                      onClick={() => setSelectedMissingConnector(
+                        selectedMissingConnector === connector.id ? '' : connector.id
+                      )}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-3 mb-3">
+                          <img 
+                            src={connector.logoUrl} 
+                            alt={connector.name}
+                            className="w-10 h-10 object-contain rounded"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
+                          <div className="flex-1">
+                            <h3 className="font-medium text-sm leading-tight">{connector.name}</h3>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              <Badge variant="outline" className="text-xs px-1 py-0">{connector.category}</Badge>
+                              <Badge variant="secondary" className="text-xs px-1 py-0">{connector.type.replace('_', ' ')}</Badge>
+                            </div>
                           </div>
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
+                        </div>
+                        <p className="text-xs text-muted-foreground leading-relaxed mb-2">{connector.description}</p>
+                        <div className="flex flex-wrap gap-1">
+                          {connector.authTypes.map((auth, idx) => (
+                            <Badge key={idx} className="text-xs px-1 py-0" variant="outline">
+                              {auth.replace('_', ' ').toUpperCase()}
+                            </Badge>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               </div>
               
               {selectedMissingConnector && (() => {
-                const selectedConnector = initialConnectors.find(c => c.id === selectedMissingConnector);
+                const selectedConnector = CONNECTOR_BRANDS.find(c => c.id === selectedMissingConnector);
                 if (!selectedConnector) return null;
                 
                 return (
-                  <Card className="p-4 bg-muted/50">
+                  <Card className="p-4 bg-primary/5 border-primary/20">
                     <div className="flex items-start gap-3">
-                      <selectedConnector.icon className="h-8 w-8 text-primary mt-1" />
+                      <img 
+                        src={selectedConnector.logoUrl} 
+                        alt={selectedConnector.name}
+                        className="w-12 h-12 object-contain rounded"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
                       <div className="space-y-2 flex-1">
                         <div>
-                          <h4 className="font-medium">{selectedConnector.name}</h4>
+                          <h4 className="font-semibold">{selectedConnector.name}</h4>
                           <p className="text-sm text-muted-foreground">{selectedConnector.description}</p>
                         </div>
                         <div className="flex flex-wrap gap-2">
-                          <Badge variant="outline" className="text-xs">{selectedConnector.category}</Badge>
-                          <Badge className="text-xs">{selectedConnector.authMethod.toUpperCase()}</Badge>
-                          <Badge variant="secondary" className="text-xs">{selectedConnector.cost}</Badge>
+                          <Badge variant="outline">{selectedConnector.category}</Badge>
+                          <Badge>{selectedConnector.type.replace('_', ' ')}</Badge>
+                          {selectedConnector.authTypes.map((auth, idx) => (
+                            <Badge key={idx} variant="secondary">
+                              {auth.replace('_', ' ').toUpperCase()}
+                            </Badge>
+                          ))}
                         </div>
-                        <div className="text-xs text-muted-foreground">
-                          Capabilities: {selectedConnector.capabilities.slice(0, 3).join(', ')}
-                          {selectedConnector.capabilities.length > 3 && ` +${selectedConnector.capabilities.length - 3} more`}
-                        </div>
+                        {selectedConnector.baseUrl && (
+                          <div className="text-xs text-muted-foreground">
+                            Base URL: {selectedConnector.baseUrl}
+                          </div>
+                        )}
+                        {selectedConnector.commonEndpoints && selectedConnector.commonEndpoints.length > 0 && (
+                          <div className="text-xs text-muted-foreground">
+                            Common endpoints: {selectedConnector.commonEndpoints.join(', ')}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </Card>
@@ -1232,9 +1288,9 @@ export const SystemConnectors = () => {
               })()}
             </TabsContent>
             
-            <TabsContent value="custom" className="space-y-4">
-              <div className="text-sm text-muted-foreground mb-4">
-                Create a completely custom connector for services not listed above
+            <TabsContent value="custom" className="flex-1 space-y-4">
+              <div className="text-sm text-muted-foreground">
+                Create a completely custom connector for services not in our library
               </div>
               
               <div className="grid grid-cols-2 gap-4">
@@ -1280,7 +1336,7 @@ export const SystemConnectors = () => {
                 </div>
                 
                 <div>
-                  <Label htmlFor="connector-endpoint">API Endpoint (Optional)</Label>
+                  <Label htmlFor="connector-endpoint">API Endpoint</Label>
                   <Input
                     id="connector-endpoint"
                     value={newConnector.apiEndpoint}
@@ -1307,6 +1363,14 @@ export const SystemConnectors = () => {
                   </Select>
                 </div>
               </div>
+              
+              <Button 
+                variant="outline" 
+                onClick={() => setShowConnectorWizard(true)}
+                className="w-full"
+              >
+                Use Advanced Wizard for Configuration
+              </Button>
             </TabsContent>
           </Tabs>
           
@@ -1314,6 +1378,7 @@ export const SystemConnectors = () => {
             <Button variant="outline" onClick={() => {
               setShowCreateConnector(false);
               setSelectedMissingConnector('');
+              setSearchQuery('');
               setNewConnector({
                 name: '',
                 category: '',
@@ -1329,7 +1394,6 @@ export const SystemConnectors = () => {
             <Button 
               onClick={async () => {
                 if (createMode === 'missing') {
-                  // Add missing connector
                   if (!selectedMissingConnector) {
                     toast({
                       title: "Validation Error",
@@ -1339,19 +1403,22 @@ export const SystemConnectors = () => {
                     return;
                   }
                   
-                  const selectedConnector = initialConnectors.find(c => c.id === selectedMissingConnector);
+                  const selectedConnector = CONNECTOR_BRANDS.find(c => c.id === selectedMissingConnector);
                   if (!selectedConnector) return;
                   
                   try {
                     await createConnector.mutateAsync({
                       name: selectedConnector.name,
                       description: selectedConnector.description,
-                      type: 'external_service',
+                      type: selectedConnector.type,
                       category: selectedConnector.category,
                       status: 'inactive',
-                      base_url: selectedConnector.apiEndpoint,
-                      auth_type: selectedConnector.authMethod,
-                      configuration: { capabilities: selectedConnector.capabilities },
+                      base_url: selectedConnector.baseUrl || '',
+                      auth_type: selectedConnector.authTypes[0],
+                      configuration: { 
+                        commonEndpoints: selectedConnector.commonEndpoints || [],
+                        authTypes: selectedConnector.authTypes
+                      },
                       endpoints: [],
                       usage_count: 0,
                       success_rate: 0
@@ -1362,7 +1429,7 @@ export const SystemConnectors = () => {
                     
                     toast({
                       title: "✅ Connector Added Successfully",
-                      description: `"${selectedConnector.name}" has been added. You can now configure and connect to it.`,
+                      description: `"${selectedConnector.name}" has been added. Configure it to start connecting.`,
                     });
                     
                   } catch (error) {
@@ -1374,7 +1441,6 @@ export const SystemConnectors = () => {
                     });
                   }
                 } else {
-                  // Create custom connector
                   if (!newConnector.name.trim() || !newConnector.category) {
                     toast({
                       title: "Validation Error",
@@ -1412,7 +1478,7 @@ export const SystemConnectors = () => {
                     
                     toast({
                       title: "✅ Connector Created Successfully",
-                      description: `"${newConnector.name}" has been added. You can now configure and connect to it.`,
+                      description: `"${newConnector.name}" has been created. Configure it to start connecting.`,
                     });
                     
                   } catch (error) {
@@ -1427,11 +1493,29 @@ export const SystemConnectors = () => {
               }}
               disabled={createConnector.isPending}
             >
+              {createConnector.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               {createMode === 'missing' ? 'Add Connector' : 'Create Connector'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Full Connector Creation Wizard */}
+      <ConnectorCreationWizard
+        isOpen={showConnectorWizard}
+        onClose={() => setShowConnectorWizard(false)}
+        onConnectorCreated={(newConnector) => {
+          console.log('Connector created via wizard:', newConnector);
+          setShowConnectorWizard(false);
+          setShowCreateConnector(false);
+          toast({
+            title: "✅ Connector Created via Wizard",
+            description: `"${newConnector.name}" has been fully configured and is ready to use.`,
+          });
+        }}
+        agentId="current-session"
+        availableActions={[]}
+      />
     </div>
   );
 };
