@@ -304,6 +304,16 @@ export const SystemConnectors = () => {
   const [autoSuggestMode, setAutoSuggestMode] = useState(true);
   const [tokenThreshold, setTokenThreshold] = useState(0.8);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showCreateConnector, setShowCreateConnector] = useState(false);
+  const [newConnector, setNewConnector] = useState({
+    name: '',
+    category: '',
+    description: '',
+    apiEndpoint: '',
+    authMethod: 'api_key' as const,
+    capabilities: [] as string[],
+    cost: 'Free' as const
+  });
 
   const categories = ['All', 'Language Models', 'CRM Systems', 'Databases', 'Healthcare APIs', 'Communication', 'Insurance', 'Development'];
 
@@ -585,6 +595,13 @@ export const SystemConnectors = () => {
             </Button>
           ))}
         </div>
+        <Button 
+          onClick={() => setShowCreateConnector(true)}
+          className="flex items-center gap-2"
+        >
+          <Zap className="h-4 w-4" />
+          Create Connector
+        </Button>
       </div>
 
       {/* Connectors Grid */}
@@ -915,6 +932,141 @@ export const SystemConnectors = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* Create New Connector Dialog */}
+      <Dialog open={showCreateConnector} onOpenChange={setShowCreateConnector}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Create New Connector</DialogTitle>
+            <DialogDescription>
+              Add a custom connector to integrate with external services
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="connector-name">Connector Name</Label>
+              <Input
+                id="connector-name"
+                value={newConnector.name}
+                onChange={(e) => setNewConnector(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="e.g., Zapier Integration"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="connector-category">Category</Label>
+              <Select 
+                value={newConnector.category} 
+                onValueChange={(value) => setNewConnector(prev => ({ ...prev, category: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.filter(c => c !== 'All').map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                  <SelectItem value="Automation">Automation</SelectItem>
+                  <SelectItem value="Analytics">Analytics</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="col-span-2">
+              <Label htmlFor="connector-description">Description</Label>
+              <Textarea
+                id="connector-description"
+                value={newConnector.description}
+                onChange={(e) => setNewConnector(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Describe what this connector does..."
+                className="h-20"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="connector-endpoint">API Endpoint (Optional)</Label>
+              <Input
+                id="connector-endpoint"
+                value={newConnector.apiEndpoint}
+                onChange={(e) => setNewConnector(prev => ({ ...prev, apiEndpoint: e.target.value }))}
+                placeholder="https://api.example.com/v1"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="connector-auth">Authentication Method</Label>
+              <Select 
+                value={newConnector.authMethod} 
+                onValueChange={(value: any) => setNewConnector(prev => ({ ...prev, authMethod: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="api_key">API Key</SelectItem>
+                  <SelectItem value="oauth">OAuth</SelectItem>
+                  <SelectItem value="basic">Basic Auth</SelectItem>
+                  <SelectItem value="token">Token</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreateConnector(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => {
+                if (!newConnector.name.trim() || !newConnector.category) {
+                  toast({
+                    title: "Validation Error",
+                    description: "Please fill in the connector name and category.",
+                    variant: "destructive"
+                  });
+                  return;
+                }
+                
+                const connector: Connector = {
+                  id: `custom-${Date.now()}`,
+                  name: newConnector.name,
+                  category: newConnector.category,
+                  icon: Zap, // Default icon for custom connectors
+                  description: newConnector.description || 'Custom connector',
+                  status: 'available',
+                  apiEndpoint: newConnector.apiEndpoint,
+                  authMethod: newConnector.authMethod,
+                  capabilities: ['Custom Integration'],
+                  cost: newConnector.cost
+                };
+                
+                setConnectors(prev => [...prev, connector]);
+                setNewConnector({
+                  name: '',
+                  category: '',
+                  description: '',
+                  apiEndpoint: '',
+                  authMethod: 'api_key',
+                  capabilities: [],
+                  cost: 'Free'
+                });
+                setShowCreateConnector(false);
+                
+                toast({
+                  title: "Connector Created",
+                  description: `${connector.name} has been added to your available connectors.`
+                });
+              }}
+            >
+              Create Connector
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -122,13 +122,34 @@ export const AgentAssignmentOverview: React.FC<AgentAssignmentOverviewProps> = (
   };
 
   const getTaskAssignments = (taskId: string, type: 'connector' | 'api' | 'ai_model' | 'mcp') => {
+    // Find the task across all actions
+    let task: AgentTask | undefined;
+    let action: AgentAction | undefined;
+    
+    for (const act of actions) {
+      const foundTask = act.tasks?.find(t => t.id === taskId);
+      if (foundTask) {
+        task = foundTask;
+        action = act;
+        break;
+      }
+    }
+    
     switch (type) {
       case 'connector':
         return connectorAssignments.filter(ca => ca.taskId === taskId);
       case 'api':
         return apiAssignments.filter(aa => aa.task_id === taskId);
       case 'ai_model':
-        return aiModelAssignments.filter(ai => ai.taskId === taskId);
+        // Return task-level AI model assignment if exists
+        return task?.aiModelId ? [{
+          id: `${taskId}-ai-model`,
+          modelId: task.aiModelId,
+          modelName: task.aiModelId, // Would be resolved from models list in real app
+          provider: 'Various',
+          taskId: taskId,
+          isActive: true
+        }] : [];
       case 'mcp':
         return mcpAssignments.filter(ma => ma.taskId === taskId);
       default:
@@ -137,22 +158,47 @@ export const AgentAssignmentOverview: React.FC<AgentAssignmentOverviewProps> = (
   };
 
   const getActionAssignments = (actionId: string, type: 'connector' | 'api' | 'ai_model' | 'mcp') => {
+    const action = actions.find(a => a.id === actionId);
+    
     switch (type) {
       case 'connector':
         return connectorAssignments.filter(ca => ca.actionId === actionId);
       case 'api':
         return apiAssignments.filter(aa => aa.task_type === 'action' && aa.task_id === actionId);
       case 'ai_model':
-        return aiModelAssignments.filter(ai => ai.actionId === actionId);
+        // Return action-level AI model assignment if exists
+        return action?.aiModelId ? [{
+          id: `${actionId}-ai-model`,
+          modelId: action.aiModelId,
+          modelName: action.aiModelId, // Would be resolved from models list in real app
+          provider: 'Various',
+          actionId: actionId,
+          isActive: true
+        }] : [];
       case 'mcp':
-        return mcpAssignments.filter(ma => ma.actionId === actionId);
+        // Return action-level MCP assignment if exists  
+        return action?.mcpServerId ? [{
+          id: `${actionId}-mcp`,
+          mcpId: action.mcpServerId,
+          mcpName: action.mcpServerId, // Would be resolved from MCP servers list in real app
+          mcpType: 'server' as const,
+          actionId: actionId,
+          isActive: true
+        }] : [];
       default:
         return [];
     }
   };
 
   const handleCreateAssignment = (actionId: string, taskId?: string) => {
-    setEditingAssignment({ actionId, taskId, type: selectedAssignmentType });
+    console.log('Creating assignment for:', { actionId, taskId, type: selectedAssignmentType });
+    setEditingAssignment({ 
+      actionId, 
+      taskId, 
+      type: selectedAssignmentType,
+      apiService: '',
+      configuration: {}
+    });
     setIsDialogOpen(true);
   };
 
@@ -420,12 +466,13 @@ export const AgentAssignmentOverview: React.FC<AgentAssignmentOverviewProps> = (
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>
-              Create {selectedAssignmentType.replace('_', ' ')} Assignment
+              Assign {selectedAssignmentType.replace('_', ' ').toUpperCase()}
             </DialogTitle>
           </DialogHeader>
+          
           <div className="space-y-4">
             {selectedAssignmentType === 'api' && (
-              <div className="space-y-2">
+              <div>
                 <Label>API Service</Label>
                 <Select 
                   value={editingAssignment?.apiService || ''} 
@@ -437,7 +484,7 @@ export const AgentAssignmentOverview: React.FC<AgentAssignmentOverviewProps> = (
                   <SelectContent>
                     {availableAPIs.map((api) => (
                       <SelectItem key={api.id} value={api.name}>
-                        {api.name} - {api.type}
+                        {api.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -445,16 +492,43 @@ export const AgentAssignmentOverview: React.FC<AgentAssignmentOverviewProps> = (
               </div>
             )}
             
-            {/* Add similar sections for other assignment types */}
+            {selectedAssignmentType === 'connector' && (
+              <div>
+                <Label>Connector</Label>
+                <div className="text-sm text-muted-foreground mb-2">
+                  Connector assignment functionality coming soon. Switch to System Connectors tab to manage connectors.
+                </div>
+              </div>
+            )}
             
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                Cancel
-              </Button>
+            {selectedAssignmentType === 'ai_model' && (
+              <div>
+                <Label>AI Model</Label>
+                <div className="text-sm text-muted-foreground mb-2">
+                  AI Model assignments are managed in the action configuration. Use the edit action form to assign AI models.
+                </div>
+              </div>
+            )}
+            
+            {selectedAssignmentType === 'mcp' && (
+              <div>
+                <Label>MCP Server</Label>
+                <div className="text-sm text-muted-foreground mb-2">
+                  MCP Server assignments are managed in the action configuration. Use the edit action form to assign MCP servers.
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              Cancel
+            </Button>
+            {selectedAssignmentType === 'api' && (
               <Button onClick={handleSaveAssignment}>
-                Create Assignment
+                Assign
               </Button>
-            </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>

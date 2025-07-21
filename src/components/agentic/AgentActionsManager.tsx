@@ -374,6 +374,11 @@ export const AgentActionsManager: React.FC<AgentActionsManagerProps> = ({
     );
     setActions(updatedActions);
     onActionsChange(updatedActions);
+    
+    // If this action is currently selected, update the selected state too
+    if (selectedAction?.id === updatedAction.id) {
+      setSelectedAction(updatedAction);
+    }
   };
 
   const removeAction = (actionId: string) => {
