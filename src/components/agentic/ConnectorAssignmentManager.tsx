@@ -432,19 +432,29 @@ export const ConnectorAssignmentManager: React.FC<ConnectorAssignmentManagerProp
                     </div>
                   )}
 
-                  {/* Auto-suggestions */}
+                    {/* Auto-suggestions and Manual Add */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <Label className="text-sm font-medium">Auto-Suggestions</Label>
-                      {actionSuggestions.length > 0 && (
+                      <div className="flex gap-2">
+                        {actionSuggestions.length > 0 && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => acceptAllSuggestions(action.id)}
+                          >
+                            Accept All
+                          </Button>
+                        )}
                         <Button
                           size="sm"
-                          variant="ghost"
-                          onClick={() => acceptAllSuggestions(action.id)}
+                          variant="outline"
+                          onClick={() => setManualAssignAction(action.id)}
                         >
-                          Accept All
+                          <PlusCircle className="h-3 w-3 mr-1" />
+                          Add External
                         </Button>
-                      )}
+                      </div>
                     </div>
                     {actionSuggestions.length > 0 ? (
                       actionSuggestions.map(connector => (
@@ -471,11 +481,13 @@ export const ConnectorAssignmentManager: React.FC<ConnectorAssignmentManagerProp
                           </div>
                         </div>
                       ))
-                    ) : (
-                      <p className="text-sm text-muted-foreground italic">
-                        No auto-suggestions available.
-                      </p>
-                    )}
+                     ) : (
+                       <div className="p-4 text-center text-muted-foreground bg-gray-50 rounded">
+                         <AlertCircle className="h-5 w-5 mx-auto mb-2" />
+                         <p className="text-sm">No auto-suggestions available</p>
+                         <p className="text-xs">Use the "Add External" button above to manually add connectors or AI models</p>
+                       </div>
+                     )}
                   </div>
                 </div>
               );
@@ -590,146 +602,95 @@ export const ConnectorAssignmentManager: React.FC<ConnectorAssignmentManagerProp
       <Card>
         <CardHeader>
           <CardTitle>Token & Threshold Configuration</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Configure global settings for all connector assignments
+          </p>
         </CardHeader>
         <CardContent>
-            {assignments.length > 0 ? (
-              <Tabs defaultValue={assignments[0]?.action_id} className="w-full">
-                <TabsList className="grid w-full grid-cols-1">
-                  {assignments.map(assignment => (
-                    <TabsTrigger key={assignment.action_id} value={assignment.action_id}>
-                      {assignment.action_name}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-
-                {assignments.map(assignment => (
-                  <TabsContent key={assignment.action_id} value={assignment.action_id} className="space-y-4">
-                    {/* Token Configuration */}
-                    <div className="space-y-3">
-                      <h4 className="font-medium flex items-center gap-2">
-                        <Settings className="h-4 w-4" />
-                        Token Configuration
-                      </h4>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <Label>Token Type</Label>
-                          <select
-                            className="w-full p-2 border rounded"
-                            value={assignment.token_config?.type || 'api_key'}
-                            onChange={(e) => updateTokenConfig(assignment.action_id, {
-                              ...assignment.token_config!,
-                              type: e.target.value as any
-                            })}
-                          >
-                            <option value="api_key">API Key</option>
-                            <option value="bearer">Bearer Token</option>
-                            <option value="oauth">OAuth</option>
-                            <option value="custom">Custom</option>
-                          </select>
-                        </div>
-                        <div>
-                          <Label>Max Tokens</Label>
-                          <Input
-                            type="number"
-                            value={assignment.token_config?.max_tokens || 1000}
-                            onChange={(e) => updateTokenConfig(assignment.action_id, {
-                              ...assignment.token_config!,
-                              max_tokens: parseInt(e.target.value)
-                            })}
-                          />
-                        </div>
-                        <div>
-                          <Label>Rate Limit</Label>
-                          <Input
-                            type="number"
-                            value={assignment.token_config?.rate_limit || 100}
-                            onChange={(e) => updateTokenConfig(assignment.action_id, {
-                              ...assignment.token_config!,
-                              rate_limit: parseInt(e.target.value)
-                            })}
-                          />
-                        </div>
-                        <div>
-                          <Label>Cost per Token</Label>
-                          <Input
-                            type="number"
-                            step="0.001"
-                            value={assignment.token_config?.cost_per_token || 0.001}
-                            onChange={(e) => updateTokenConfig(assignment.action_id, {
-                              ...assignment.token_config!,
-                              cost_per_token: parseFloat(e.target.value)
-                            })}
-                          />
-                        </div>
-                      </div>
+          {assignments.length > 0 ? (
+            <div className="space-y-6">
+              {/* Global Configuration */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Token Configuration */}
+                <div className="space-y-4">
+                  <h4 className="font-medium flex items-center gap-2">
+                    <Settings className="h-4 w-4" />
+                    Default Token Configuration
+                  </h4>
+                  <div className="space-y-3">
+                    <div>
+                      <Label>Default Token Type</Label>
+                      <select className="w-full p-2 border rounded">
+                        <option value="api_key">API Key</option>
+                        <option value="bearer">Bearer Token</option>
+                        <option value="oauth">OAuth</option>
+                        <option value="custom">Custom</option>
+                      </select>
                     </div>
-
-                    {/* Threshold Configuration */}
-                    <div className="space-y-3">
-                      <h4 className="font-medium flex items-center gap-2">
-                        <Activity className="h-4 w-4" />
-                        Threshold Configuration
-                      </h4>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <Label>Max Requests/Min</Label>
-                          <Input
-                            type="number"
-                            value={assignment.threshold_config?.max_requests_per_minute || 60}
-                            onChange={(e) => updateThresholdConfig(assignment.action_id, {
-                              ...assignment.threshold_config!,
-                              max_requests_per_minute: parseInt(e.target.value)
-                            })}
-                          />
-                        </div>
-                        <div>
-                          <Label>Max Response Time (ms)</Label>
-                          <Input
-                            type="number"
-                            value={assignment.threshold_config?.max_response_time_ms || 5000}
-                            onChange={(e) => updateThresholdConfig(assignment.action_id, {
-                              ...assignment.threshold_config!,
-                              max_response_time_ms: parseInt(e.target.value)
-                            })}
-                          />
-                        </div>
-                        <div>
-                          <Label>Error Threshold (%)</Label>
-                          <Input
-                            type="number"
-                            max="100"
-                            value={assignment.threshold_config?.error_threshold_percent || 5}
-                            onChange={(e) => updateThresholdConfig(assignment.action_id, {
-                              ...assignment.threshold_config!,
-                              error_threshold_percent: parseInt(e.target.value)
-                            })}
-                          />
-                        </div>
-                        <div>
-                          <Label>Retry Attempts</Label>
-                          <Input
-                            type="number"
-                            value={assignment.threshold_config?.retry_attempts || 3}
-                            onChange={(e) => updateThresholdConfig(assignment.action_id, {
-                              ...assignment.threshold_config!,
-                              retry_attempts: parseInt(e.target.value)
-                            })}
-                          />
-                        </div>
-                      </div>
+                    <div>
+                      <Label>Default Max Tokens</Label>
+                      <Input type="number" defaultValue="1000" />
                     </div>
-                  </TabsContent>
-                ))}
-              </Tabs>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <Settings className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                <p>No assignments to configure</p>
-                <p className="text-sm">Assign connectors to actions first</p>
+                    <div>
+                      <Label>Default Rate Limit</Label>
+                      <Input type="number" defaultValue="100" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Threshold Configuration */}
+                <div className="space-y-4">
+                  <h4 className="font-medium flex items-center gap-2">
+                    <Activity className="h-4 w-4" />
+                    Default Threshold Configuration
+                  </h4>
+                  <div className="space-y-3">
+                    <div>
+                      <Label>Max Requests/Min</Label>
+                      <Input type="number" defaultValue="60" />
+                    </div>
+                    <div>
+                      <Label>Max Response Time (ms)</Label>
+                      <Input type="number" defaultValue="5000" />
+                    </div>
+                    <div>
+                      <Label>Error Threshold (%)</Label>
+                      <Input type="number" max="100" defaultValue="5" />
+                    </div>
+                  </div>
+                </div>
               </div>
-            )}
-          </CardContent>
-         </Card>
+
+              {/* Assignment Override */}
+              <div className="border-t pt-4">
+                <h4 className="font-medium mb-3">Per-Assignment Overrides</h4>
+                <div className="space-y-2">
+                  {assignments.map(assignment => (
+                    <div key={assignment.action_id} className="flex items-center justify-between p-3 border rounded">
+                      <div>
+                        <p className="font-medium text-sm">{assignment.action_name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {connectors.find(c => c.id === assignment.connector_id)?.name}
+                        </p>
+                      </div>
+                      <Button size="sm" variant="outline">
+                        <Settings className="h-3 w-3 mr-1" />
+                        Override
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <Settings className="h-12 w-12 mx-auto mb-3 opacity-50" />
+              <p>No assignments to configure</p>
+              <p className="text-sm">Assign connectors to actions first</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
