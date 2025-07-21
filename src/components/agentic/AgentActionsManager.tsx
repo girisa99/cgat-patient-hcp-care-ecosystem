@@ -136,7 +136,7 @@ const MCP_SERVERS: MCPServer[] = [
 // Import components
 import { ActionTemplateManager } from './ActionTemplateManager';
 import { ActionTemplateSummary } from './ActionTemplateSummary';
-import { ConnectorAssignmentManager } from './ConnectorAssignmentManager';
+import { EnhancedConnectorSystem } from './enhanced-connector/EnhancedConnectorSystem';
 import { KnowledgeBaseManager } from './KnowledgeBaseManager';
 
 export const AgentActionsManager: React.FC<AgentActionsManagerProps> = ({
@@ -975,7 +975,7 @@ export const AgentActionsManager: React.FC<AgentActionsManagerProps> = ({
 
         {/* Connectors Tab */}
         <TabsContent value="connectors" className="mt-6">
-          <ConnectorAssignmentManager
+          <EnhancedConnectorSystem
             agentId="temp-agent-id" // This should come from props
             actions={actions.map(action => ({
               id: action.id,
