@@ -4,20 +4,20 @@ import { toast } from '@/hooks/use-toast';
 
 export interface AgentSessionData {
   id?: string;
-  user_id?: string;
+  user_id: string;
   name: string;
   description?: string;
   template_id?: string;
   template_type?: string;
   current_step: string;
   status: string;
-  basic_info?: Record<string, any>;
-  canvas?: Record<string, any>;
-  actions?: Record<string, any>;
-  connectors?: Record<string, any>;
-  knowledge?: Record<string, any>;
-  rag?: Record<string, any>;
-  deployment?: Record<string, any>;
+  basic_info?: any;
+  canvas?: any;
+  actions?: any;
+  connectors?: any;
+  knowledge?: any;
+  rag?: any;
+  deployment?: any;
   created_at?: string;
   updated_at?: string;
 }
@@ -53,13 +53,21 @@ export const useAgentPersistence = (sessionId?: string) => {
         if (error) throw error;
         result = updatedData;
       } else {
-        // Create new session
+        // Create new session - ensure user is authenticated and required fields are provided
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user?.id) throw new Error('User not authenticated');
+        
+        const insertData = {
+          user_id: user.id,
+          name: updateData.name || 'Untitled Agent',
+          current_step: updateData.current_step || 'basic_info',
+          status: updateData.status || 'draft',
+          ...updateData
+        };
+
         const { data: newData, error } = await supabase
           .from('agent_sessions')
-          .insert([{
-            user_id: (await supabase.auth.getUser()).data.user?.id,
-            ...updateData
-          }])
+          .insert(insertData)
           .select()
           .single();
 
