@@ -276,6 +276,19 @@ export const UnifiedAgentBuilder: React.FC<UnifiedAgentBuilderProps> = ({ step }
     );
   }
 
+  // If step prop is provided but no session exists, auto-create one
+  if (step && !currentSessionId && !isLoading) {
+    handleCreateNewSession();
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Creating new agent session...</p>
+        </div>
+      </div>
+    );
+  }
+
   // If no session is active or session failed to load, show session management
   if (!currentSessionId || (!currentSession && !isLoading)) {
     return (
