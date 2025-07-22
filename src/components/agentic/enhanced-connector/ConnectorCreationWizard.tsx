@@ -449,85 +449,246 @@ export const ConnectorCreationWizard: React.FC<ConnectorCreationWizardProps> = (
               </div>
             )}
 
-            {/* Step 2: Configuration */}
+            {/* Step 2: Configuration - Dynamic based on connector type */}
             {currentStep === 1 && (
               <div className="space-y-6">
                 <div>
-                  <Label className="text-lg font-medium mb-4 block">Configure Connection</Label>
+                  <Label className="text-lg font-medium mb-4 block">
+                    Configure {wizardData.selectedBrand?.type === 'database' ? 'Database' : 
+                              wizardData.selectedBrand?.type === 'api' ? 'API' :
+                              wizardData.selectedBrand?.type === 'messaging' ? 'Messaging' :
+                              wizardData.selectedBrand?.type === 'file_system' ? 'File System' :
+                              wizardData.selectedBrand?.type === 'ai_model' ? 'AI Model' :
+                              'Connection'}
+                  </Label>
                   
-                  <div className="space-y-4">
-                    <div>
-                      <Label>Base URL</Label>
-                      <Input
-                        value={wizardData.baseUrl}
-                        onChange={(e) => updateWizardData({ baseUrl: e.target.value })}
-                        placeholder="https://api.example.com"
-                      />
-                    </div>
-
-                    <div>
-                      <Label>Endpoints</Label>
-                      <div className="space-y-3">
-                        {wizardData.endpoints.map((endpoint, index) => (
-                          <div key={endpoint.id} className="flex gap-2">
-                            <Select
-                              value={endpoint.method}
-                              onValueChange={(value) => {
-                                const updated = [...wizardData.endpoints];
-                                updated[index].method = value;
-                                updateWizardData({ endpoints: updated });
-                              }}
-                            >
-                              <SelectTrigger className="w-24">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="GET">GET</SelectItem>
-                                <SelectItem value="POST">POST</SelectItem>
-                                <SelectItem value="PUT">PUT</SelectItem>
-                                <SelectItem value="DELETE">DELETE</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <Input
-                              value={endpoint.path}
-                              onChange={(e) => {
-                                const updated = [...wizardData.endpoints];
-                                updated[index].path = e.target.value;
-                                updateWizardData({ endpoints: updated });
-                              }}
-                              placeholder="/api/endpoint"
-                              className="flex-1"
-                            />
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                const updated = wizardData.endpoints.filter((_, i) => i !== index);
-                                updateWizardData({ endpoints: updated });
-                              }}
-                            >
-                              Remove
-                            </Button>
-                          </div>
-                        ))}
-                        <Button
-                          variant="outline"
-                          onClick={() => {
-                            const newEndpoint = {
-                              id: `endpoint-${Date.now()}`,
-                              path: '',
-                              method: 'GET',
-                              description: ''
-                            };
-                            updateWizardData({ 
-                              endpoints: [...wizardData.endpoints, newEndpoint] 
-                            });
-                          }}
-                        >
-                          Add Endpoint
-                        </Button>
+                  {/* Dynamic configuration based on connector type */}
+                  {wizardData.selectedBrand?.type === 'database' && (
+                    <div className="space-y-4">
+                      <div>
+                        <Label>Database Type</Label>
+                        <Select onValueChange={(value) => updateWizardData({ 
+                          authConfig: { ...wizardData.authConfig, dbType: value }
+                        })}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select database type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="postgresql">PostgreSQL</SelectItem>
+                            <SelectItem value="mysql">MySQL</SelectItem>
+                            <SelectItem value="mongodb">MongoDB</SelectItem>
+                            <SelectItem value="redis">Redis</SelectItem>
+                            <SelectItem value="elasticsearch">Elasticsearch</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>Connection String</Label>
+                        <Input
+                          value={wizardData.baseUrl}
+                          onChange={(e) => updateWizardData({ baseUrl: e.target.value })}
+                          placeholder="postgresql://user:password@host:port/database"
+                        />
                       </div>
                     </div>
+                  )}
+                  
+                  {wizardData.selectedBrand?.type === 'ai_model' && (
+                    <div className="space-y-4">
+                      <div>
+                        <Label>Model Provider</Label>
+                        <Select onValueChange={(value) => updateWizardData({ 
+                          authConfig: { ...wizardData.authConfig, provider: value }
+                        })}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select AI provider" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="openai">OpenAI</SelectItem>
+                            <SelectItem value="anthropic">Anthropic</SelectItem>
+                            <SelectItem value="google">Google AI</SelectItem>
+                            <SelectItem value="azure">Azure OpenAI</SelectItem>
+                            <SelectItem value="huggingface">Hugging Face</SelectItem>
+                            <SelectItem value="local">Local Model</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>Model Name</Label>
+                        <Input
+                          value={wizardData.authConfig.modelName || ''}
+                          onChange={(e) => updateWizardData({ 
+                            authConfig: { ...wizardData.authConfig, modelName: e.target.value }
+                          })}
+                          placeholder="gpt-4, claude-3, llama-2, etc."
+                        />
+                      </div>
+                      <div>
+                        <Label>Model Type</Label>
+                        <Select onValueChange={(value) => updateWizardData({ 
+                          authConfig: { ...wizardData.authConfig, modelType: value }
+                        })}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select model type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="large_language">Large Language Model</SelectItem>
+                            <SelectItem value="small_language">Small Language Model</SelectItem>
+                            <SelectItem value="vision">Vision Model</SelectItem>
+                            <SelectItem value="embedding">Embedding Model</SelectItem>
+                            <SelectItem value="labeling">Labeling Studio</SelectItem>
+                            <SelectItem value="multimodal">Multimodal</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>API Endpoint</Label>
+                        <Input
+                          value={wizardData.baseUrl}
+                          onChange={(e) => updateWizardData({ baseUrl: e.target.value })}
+                          placeholder="https://api.openai.com/v1/"
+                        />
+                      </div>
+                    </div>
+                  )}
+                  
+                  {(wizardData.selectedBrand?.type === 'api' || wizardData.selectedBrand?.type === 'external_service') && (
+                    <div className="space-y-4">
+                      <div>
+                        <Label>Base URL</Label>
+                        <Input
+                          value={wizardData.baseUrl}
+                          onChange={(e) => updateWizardData({ baseUrl: e.target.value })}
+                          placeholder="https://api.example.com"
+                        />
+                      </div>
+
+                      <div>
+                        <Label>Endpoints</Label>
+                        <div className="space-y-3">
+                          {wizardData.endpoints.map((endpoint, index) => (
+                            <div key={endpoint.id} className="flex gap-2">
+                              <Select
+                                value={endpoint.method}
+                                onValueChange={(value) => {
+                                  const updated = [...wizardData.endpoints];
+                                  updated[index].method = value;
+                                  updateWizardData({ endpoints: updated });
+                                }}
+                              >
+                                <SelectTrigger className="w-24">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="GET">GET</SelectItem>
+                                  <SelectItem value="POST">POST</SelectItem>
+                                  <SelectItem value="PUT">PUT</SelectItem>
+                                  <SelectItem value="DELETE">DELETE</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <Input
+                                value={endpoint.path}
+                                onChange={(e) => {
+                                  const updated = [...wizardData.endpoints];
+                                  updated[index].path = e.target.value;
+                                  updateWizardData({ endpoints: updated });
+                                }}
+                                placeholder="/api/endpoint"
+                                className="flex-1"
+                              />
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  const updated = wizardData.endpoints.filter((_, i) => i !== index);
+                                  updateWizardData({ endpoints: updated });
+                                }}
+                              >
+                                Remove
+                              </Button>
+                            </div>
+                          ))}
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              const newEndpoint = {
+                                id: `endpoint-${Date.now()}`,
+                                path: '',
+                                method: 'GET',
+                                description: ''
+                              };
+                              updateWizardData({ 
+                                endpoints: [...wizardData.endpoints, newEndpoint] 
+                              });
+                            }}
+                          >
+                            Add Endpoint
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  
+                  {wizardData.selectedBrand?.type === 'messaging' && (
+                    <div className="space-y-4">
+                      <div>
+                        <Label>Messaging Platform</Label>
+                        <Select onValueChange={(value) => updateWizardData({ 
+                          authConfig: { ...wizardData.authConfig, platform: value }
+                        })}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select messaging platform" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="slack">Slack</SelectItem>
+                            <SelectItem value="teams">Microsoft Teams</SelectItem>
+                            <SelectItem value="discord">Discord</SelectItem>
+                            <SelectItem value="telegram">Telegram</SelectItem>
+                            <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                            <SelectItem value="email">Email</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>Webhook URL</Label>
+                        <Input
+                          value={wizardData.baseUrl}
+                          onChange={(e) => updateWizardData({ baseUrl: e.target.value })}
+                          placeholder="https://hooks.slack.com/services/..."
+                        />
+                      </div>
+                    </div>
+                  )}
+                  
+                  {wizardData.selectedBrand?.type === 'file_system' && (
+                    <div className="space-y-4">
+                      <div>
+                        <Label>Storage Type</Label>
+                        <Select onValueChange={(value) => updateWizardData({ 
+                          authConfig: { ...wizardData.authConfig, storageType: value }
+                        })}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select storage type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="aws_s3">AWS S3</SelectItem>
+                            <SelectItem value="google_cloud">Google Cloud Storage</SelectItem>
+                            <SelectItem value="azure_blob">Azure Blob Storage</SelectItem>
+                            <SelectItem value="ftp">FTP/SFTP</SelectItem>
+                            <SelectItem value="local">Local File System</SelectItem>
+                            <SelectItem value="dropbox">Dropbox</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>Connection Details</Label>
+                        <Input
+                          value={wizardData.baseUrl}
+                          onChange={(e) => updateWizardData({ baseUrl: e.target.value })}
+                          placeholder="Bucket name, FTP host, or file path"
+                        />
+                      </div>
+                    </div>
+                  )}
                   </div>
                 </div>
               </div>
