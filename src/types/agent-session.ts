@@ -27,6 +27,13 @@ export interface AgentSession {
     workflow_steps?: any[];
     connections?: any[];
     layout?: any;
+    name?: string;
+    tagline?: string;
+    logo?: string;
+    logoFile?: string;
+    primaryColor?: string;
+    secondaryColor?: string;
+    accentColor?: string;
   };
   
   actions?: {

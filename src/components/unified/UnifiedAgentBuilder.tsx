@@ -439,15 +439,86 @@ export const UnifiedAgentBuilder: React.FC<UnifiedAgentBuilderProps> = ({ step }
       </CardHeader>
       <CardContent>
         <EnhancedAgentCanvas 
-          initialName={currentSession?.basic_info?.name || ''}
+          initialName={currentSession?.canvas?.name || currentSession?.basic_info?.name || ''}
+          initialTagline={currentSession?.canvas?.tagline || 'Your AI healthcare partner'}
+          initialPrimaryColor={currentSession?.canvas?.primaryColor || '#3b82f6'}
+          initialSecondaryColor={currentSession?.canvas?.secondaryColor || '#8b5cf6'} 
+          initialAccentColor={currentSession?.canvas?.accentColor || '#06b6d4'}
+          initialLogo={currentSession?.canvas?.logo || ''}
           onNameChange={(name) => {
             if (currentSessionId) {
               updateSession.mutate({
                 sessionId: currentSessionId,
                 updates: {
                   canvas: {
-                    ...currentSession.canvas,
-                    workflow_steps: [{ name: name }]
+                    ...currentSession?.canvas,
+                    name: name
+                  }
+                }
+              });
+            }
+          }}
+          onTaglineChange={(tagline) => {
+            if (currentSessionId) {
+              updateSession.mutate({
+                sessionId: currentSessionId,
+                updates: {
+                  canvas: {
+                    ...currentSession?.canvas,
+                    tagline: tagline
+                  }
+                }
+              });
+            }
+          }}
+          onPrimaryColorChange={(color) => {
+            if (currentSessionId) {
+              updateSession.mutate({
+                sessionId: currentSessionId,
+                updates: {
+                  canvas: {
+                    ...currentSession?.canvas,
+                    primaryColor: color
+                  }
+                }
+              });
+            }
+          }}
+          onSecondaryColorChange={(color) => {
+            if (currentSessionId) {
+              updateSession.mutate({
+                sessionId: currentSessionId,
+                updates: {
+                  canvas: {
+                    ...currentSession?.canvas,
+                    secondaryColor: color
+                  }
+                }
+              });
+            }
+          }}
+          onAccentColorChange={(color) => {
+            if (currentSessionId) {
+              updateSession.mutate({
+                sessionId: currentSessionId,
+                updates: {
+                  canvas: {
+                    ...currentSession?.canvas,
+                    accentColor: color
+                  }
+                }
+              });
+            }
+          }}
+          onLogoChange={(file, url) => {
+            if (currentSessionId) {
+              updateSession.mutate({
+                sessionId: currentSessionId,
+                updates: {
+                  canvas: {
+                    ...currentSession?.canvas,
+                    logo: url,
+                    logoFile: file?.name || null
                   }
                 }
               });
