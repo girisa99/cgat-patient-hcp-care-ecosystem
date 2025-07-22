@@ -431,11 +431,9 @@ export const SystemConnectors = () => {
   });
 
   const {
-    metrics,
     connectors: dbConnectors,
     createConnector,
     testConnector,
-    isLoadingMetrics,
     isLoadingConnectors,
     refetchConnectors
   } = useConnectorMetrics();
@@ -458,29 +456,22 @@ export const SystemConnectors = () => {
 
   const categories = ['All', 'Language Models', 'CRM Systems', 'Databases', 'Healthcare APIs', 'Communication', 'Insurance', 'Development', 'Automation', 'Analytics'];
   
-  // Combine mock connectors with database connectors (prioritize database connectors)
-  const allConnectors = [
-    // First add database connectors
-    ...(dbConnectors || []).map(dc => ({
-      id: dc.id,
-      name: dc.name,
-      category: dc.category,
-      icon: Database, // Default icon, would map based on type
-      description: dc.description || '',
-      status: dc.status as 'connected' | 'available' | 'configuring',
-      apiEndpoint: dc.base_url,
-      authMethod: dc.auth_type as 'api_key' | 'oauth' | 'basic' | 'token',
-      capabilities: [], // Would extract from configuration
-      rateLimit: '',
-      cost: 'Free' as const,
-      usage_count: dc.usage_count,
-      success_rate: dc.success_rate
-    })),
-    // Then add mock connectors that don't conflict with database ones
-    ...connectors.filter(mockConnector => 
-      !dbConnectors?.some(dbConnector => dbConnector.name === mockConnector.name)
-    )
-  ];
+  // Only use database connectors (no mock data)
+  const allConnectors = (dbConnectors || []).map(dc => ({
+    id: dc.id,
+    name: dc.name,
+    category: dc.category,
+    icon: Database, // Default icon, would map based on type
+    description: dc.description || '',
+    status: dc.status as 'connected' | 'available' | 'configuring',
+    apiEndpoint: dc.base_url,
+    authMethod: dc.auth_type as 'api_key' | 'oauth' | 'basic' | 'token',
+    capabilities: [], // Would extract from configuration
+    rateLimit: '',
+    cost: 'Free' as const,
+    usage_count: dc.usage_count,
+    success_rate: dc.success_rate
+  }));
 
   const filteredConnectors = allConnectors.filter(connector => {
     const matchesCategory = selectedCategory === 'All' || connector.category === selectedCategory;
@@ -743,59 +734,6 @@ export const SystemConnectors = () => {
         <h2 className="text-2xl font-bold text-foreground">System Connectors</h2>
         <p className="text-muted-foreground">Configure and manage integrations with external systems</p>
       </div>
-
-      {/* Metrics Overview */}
-      {metrics && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Zap className="h-5 w-5 text-blue-500" />
-                <span className="font-medium">Total Connectors</span>
-              </div>
-              <div className="text-2xl font-bold">{metrics.totalConnectors}</div>
-              <p className="text-xs text-muted-foreground">
-                {metrics.activeConnectors} active, {metrics.inactiveConnectors} inactive
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <CheckCircle className="h-5 w-5 text-green-500" />
-                <span className="font-medium">Success Rate</span>
-              </div>
-              <div className="text-2xl font-bold">{metrics.averageSuccessRate}%</div>
-              <p className="text-xs text-muted-foreground">Average across all connectors</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Database className="h-5 w-5 text-purple-500" />
-                <span className="font-medium">Total Usage</span>
-              </div>
-              <div className="text-2xl font-bold">{metrics.totalUsage.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground">Total requests processed</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <AlertCircle className="h-5 w-5 text-red-500" />
-                <span className="font-medium">Issues</span>
-              </div>
-              <div className="text-2xl font-bold">{metrics.errorConnectors}</div>
-              <p className="text-xs text-muted-foreground">
-                {metrics.testingConnectors} testing, {metrics.errorConnectors} errors
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      )}
 
       {/* Search and Filter */}
       <div className="flex flex-col sm:flex-row gap-4">
