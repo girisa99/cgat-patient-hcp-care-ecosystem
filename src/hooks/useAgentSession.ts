@@ -53,7 +53,11 @@ export const useAgentSession = (sessionId?: string) => {
   // Create new session
   const createSession = useMutation({
     mutationFn: async (sessionData: Partial<AgentSession>) => {
+      console.log('🚀 createSession mutationFn called with:', sessionData);
+      console.log('🚀 Current user:', user);
+      
       if (!user?.id) {
+        console.log('❌ User not authenticated, throwing error');
         throw new Error('User not authenticated');
       }
 
@@ -71,16 +75,22 @@ export const useAgentSession = (sessionId?: string) => {
         user_id: user.id,
       };
 
+      console.log('🚀 Prepared session data for insert:', newSessionData);
+
       const { data, error } = await supabase
         .from('agent_sessions')
         .insert([newSessionData])
         .select()
         .single();
 
+      console.log('🚀 Supabase insert result:', { data, error });
+
       if (error) {
+        console.log('❌ Supabase insert error:', error);
         throw new Error(`Failed to create session: ${error.message}`);
       }
 
+      console.log('✅ Session created successfully:', data);
       return data as AgentSession;
     },
     onSuccess: (data) => {

@@ -63,9 +63,12 @@ export const SessionAgentBuilder = () => {
   }, [currentStep, currentSession, currentSessionId, autoSave]);
 
   const handleCreateNewSession = () => {
-    console.log('Creating new session, user:', user);
+    console.log('🚀 handleCreateNewSession called');
+    console.log('🚀 User state:', user);
+    console.log('🚀 Session data to create:', newSessionData);
     
     if (!user) {
+      console.log('❌ No user found, showing auth error');
       toast({
         title: "Authentication Required",
         description: "Please log in to create an agent session.",
@@ -75,6 +78,7 @@ export const SessionAgentBuilder = () => {
     }
 
     if (!newSessionData.name.trim()) {
+      console.log('❌ No agent name provided');
       toast({
         title: "Name Required",
         description: "Please enter a name for your agent.",
@@ -83,7 +87,7 @@ export const SessionAgentBuilder = () => {
       return;
     }
 
-    console.log('Creating session with data:', newSessionData);
+    console.log('✅ Calling createSession.mutate with data:', newSessionData);
     createSession.mutate({
       ...newSessionData,
       basic_info: {
@@ -92,14 +96,14 @@ export const SessionAgentBuilder = () => {
       }
     }, {
       onSuccess: (session) => {
-        console.log('Session created successfully:', session);
+        console.log('✅ Session created successfully:', session);
         setCurrentSessionId(session.id);
         setCurrentStep('basic_info');
         setShowNewSessionDialog(false);
         setNewSessionData({ name: '', description: '', template_id: null, template_type: 'custom' });
       },
       onError: (error) => {
-        console.error('Failed to create session:', error);
+        console.error('❌ Failed to create session:', error);
         toast({
           title: "Error",
           description: "Failed to create agent session. Please try again.",
@@ -241,6 +245,22 @@ export const SessionAgentBuilder = () => {
             }}>
               <Plus className="h-4 w-4 mr-2" />
               New Agent
+            </Button>
+            {/* Debug button for testing session creation directly */}
+            <Button variant="outline" onClick={() => {
+              console.log('🧪 Test session creation button clicked');
+              if (!user) {
+                console.log('❌ No user for test');
+                return;
+              }
+              console.log('🧪 Testing direct session creation...');
+              createSession.mutate({
+                name: 'Test Agent ' + Date.now(),
+                description: 'Test agent for debugging',
+                template_type: 'custom'
+              });
+            }}>
+              🧪 Test Create
             </Button>
             {userSessions.length > 0 && (
               <Button variant="outline" onClick={() => setShowSessionList(true)}>
