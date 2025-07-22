@@ -1469,23 +1469,7 @@ export const SystemConnectors = () => {
                        success_rate: 0
                      });
                      
-                     // Save to localStorage for wizard access
-                     const customConnectorForWizard = {
-                       id: `custom-${Date.now()}`,
-                       name: newConnector.name,
-                       logoUrl: 'https://via.placeholder.com/32x32/6366f1/ffffff?text=' + newConnector.name.charAt(0),
-                       category: newConnector.category,
-                       type: 'external_service' as const,
-                       description: newConnector.description || 'Custom connector',
-                       baseUrl: newConnector.apiEndpoint,
-                       commonEndpoints: ['/api/data', '/api/status'],
-                       authTypes: [newConnector.authMethod as 'api_key' | 'bearer' | 'oauth' | 'custom']
-                     };
-                     
-                     const savedCustomConnectors = localStorage.getItem('customConnectors');
-                     const existingCustomConnectors = savedCustomConnectors ? JSON.parse(savedCustomConnectors) : [];
-                     existingCustomConnectors.push(customConnectorForWizard);
-                     localStorage.setItem('customConnectors', JSON.stringify(existingCustomConnectors));
+                      // Connector is now created in Supabase and will be available system-wide
                      
                      setNewConnector({
                        name: '',

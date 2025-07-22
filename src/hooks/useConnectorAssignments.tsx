@@ -59,8 +59,8 @@ export const useConnectorAssignments = (agentSessionId?: string) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('system_connectors')
-        .select('id, name, type, status, description')
-        .eq('status', 'active')
+        .select('id, name, type, status, description, category')
+        .in('status', ['active', 'inactive']) // Include both active and inactive connectors for assignment
         .order('name');
 
       if (error) throw error;
