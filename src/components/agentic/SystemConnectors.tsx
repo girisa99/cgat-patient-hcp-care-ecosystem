@@ -1381,18 +1381,13 @@ export const SystemConnectors = () => {
               
               <Button 
                 variant="outline" 
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  console.log('🔥 WIZARD BUTTON CLICKED!');
-                  alert('Wizard button clicked - check if dialog opens');
+                onClick={() => {
                   setShowConnectorWizard(true);
-                  console.log('showConnectorWizard set to true');
                 }}
                 className="w-full"
                 type="button"
               >
-                🎯 Use Advanced Wizard for Configuration
+                Use Advanced Wizard for Configuration
               </Button>
             </TabsContent>
           </Tabs>
@@ -1543,7 +1538,13 @@ export const SystemConnectors = () => {
             });
           }}
           agentId="current-session"
-          availableActions={[]}
+          availableActions={[
+            { id: 'data-fetch', name: 'Fetch Data', type: 'read', category: 'data', description: 'Retrieve data from external systems' },
+            { id: 'data-update', name: 'Update Records', type: 'write', category: 'data', description: 'Update records in external systems' },
+            { id: 'data-create', name: 'Create Records', type: 'write', category: 'data', description: 'Create new records in external systems' },
+            { id: 'status-check', name: 'Health Check', type: 'read', category: 'monitoring', description: 'Check system status and health' },
+            { id: 'notification-send', name: 'Send Notification', type: 'action', category: 'communication', description: 'Send notifications or messages' }
+          ]}
         />
       )}
     </div>
