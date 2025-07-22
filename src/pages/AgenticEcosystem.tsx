@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { SessionAgentBuilder } from '@/components/agentic/SessionAgentBuilder';
+import { UnifiedAgentBuilder } from '@/components/unified/UnifiedAgentBuilder';
 import { AgentTemplates } from '@/components/agentic/AgentTemplates';
 import { KnowledgeBaseManager } from '@/components/rag/KnowledgeBaseManager';
 import { RAGRecommendations } from '@/components/rag/RAGRecommendations';
@@ -318,7 +318,7 @@ const AgenticEcosystem = () => {
         </TabsContent>
 
         <TabsContent value="builder" className="space-y-4">
-          <SessionAgentBuilder />
+          <UnifiedAgentBuilder />
         </TabsContent>
 
         <TabsContent value="deploy" className="space-y-4">
