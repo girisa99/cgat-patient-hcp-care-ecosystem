@@ -49,130 +49,26 @@ export const ConsolidatedActionsTab: React.FC<ConsolidatedActionsTabProps> = ({
         </div>
       </div>
 
-      {/* Consolidated Configuration Tabs */}
-      <Tabs defaultValue="actions" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="actions" className="flex items-center gap-2">
-            <Target className="h-4 w-4" />
-            Actions & Templates
-          </TabsTrigger>
-          <TabsTrigger value="connectors" className="flex items-center gap-2">
-            <Plug className="h-4 w-4" />
-            System Connectors
-          </TabsTrigger>
-          <TabsTrigger value="knowledge" className="flex items-center gap-2">
-            <Brain className="h-4 w-4" />
-            Knowledge Base & RAG
-          </TabsTrigger>
-        </TabsList>
-
-        {/* Actions Tab */}
-        <TabsContent value="actions" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Agent Actions & Tasks</CardTitle>
-              <CardDescription>
-                Configure agent actions, assign AI models, and manage task workflows
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <AgentActionsManager
-                onActionsChange={onActionsChange}
-                initialActions={actions}
-                agentType={agentType}
-                agentPurpose={agentPurpose}
-                agentId={agentId || sessionId}
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* System Connectors Tab */}
-        <TabsContent value="connectors" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>System Connectors & Integration</CardTitle>
-              <CardDescription>
-                Manage system connectors and assign them to agent actions
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Tabs defaultValue="system" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="system">Available Connectors</TabsTrigger>
-                  <TabsTrigger value="enhanced">Enhanced & Assignment</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="system">
-                  <SystemConnectors />
-                </TabsContent>
-                
-                <TabsContent value="enhanced">
-                  <EnhancedConnectorSystem 
-                    agentId={agentId || sessionId}
-                    actions={actions.map(action => ({
-                      id: action.id,
-                      name: action.name,
-                      type: action.type,
-                      category: action.category,
-                      description: action.description
-                    }))}
-                    onAssignmentsChange={() => {
-                      console.log('Connector assignments changed');
-                    }}
-                    agentType={agentType}
-                    agentPurpose={agentPurpose}
-                  />
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Knowledge Tab */}
-        <TabsContent value="knowledge" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Knowledge Base & RAG</CardTitle>
-              <CardDescription>
-                Manage knowledge sources, RAG workflows, and knowledge base assignments
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Tabs defaultValue="knowledge" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="knowledge">Knowledge Base</TabsTrigger>
-                  <TabsTrigger value="rag">RAG Configuration</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="knowledge">
-                  <KnowledgeBaseManager 
-                    agentId={agentId || sessionId}
-                    actions={actions.map(action => ({
-                      id: action.id,
-                      name: action.name,
-                      type: action.type,
-                      category: action.category,
-                      description: action.description
-                    }))}
-                    onKnowledgeSourcesChange={(sources) => {
-                      console.log('Knowledge sources changed:', sources);
-                    }}
-                  />
-                </TabsContent>
-                
-                <TabsContent value="rag">
-                  <RAGComplianceWorkflow 
-                    knowledgeBaseIds={[]}
-                    complianceEnabled={true}
-                    onComplianceChange={() => {}}
-                  />
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+      {/* Unified Configuration Component */}
+      <div className="mt-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Agent Configuration</CardTitle>
+            <CardDescription>
+              Configure actions, connectors, and knowledge base in one unified workflow
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <AgentActionsManager
+              onActionsChange={onActionsChange}
+              initialActions={actions}
+              agentType={agentType}
+              agentPurpose={agentPurpose}
+              agentId={agentId || sessionId}
+            />
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
