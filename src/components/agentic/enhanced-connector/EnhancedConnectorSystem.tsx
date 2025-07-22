@@ -104,7 +104,7 @@ export const EnhancedConnectorSystem: React.FC<EnhancedConnectorSystemProps> = (
   const { toast } = useToast();
   const [connectors, setConnectors] = useState<Connector[]>([]);
   const [isWizardOpen, setIsWizardOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('assignments');
+  const [activeTab, setActiveTab] = useState('create');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
@@ -349,11 +349,183 @@ export const EnhancedConnectorSystem: React.FC<EnhancedConnectorSystemProps> = (
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-1">
-          <TabsTrigger value="assignments">Connector Assignments</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="create" className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Create Connector
+          </TabsTrigger>
+          <TabsTrigger value="assignments" className="flex items-center gap-2">
+            <Target className="h-4 w-4" />
+            Assign Connector
+          </TabsTrigger>
         </TabsList>
 
+        {/* Create Connector Tab */}
+        <TabsContent value="create" className="mt-6">
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Plus className="h-5 w-5" />
+                  Create New Connector
+                </CardTitle>
+                <div className="text-sm text-gray-600 mt-2">
+                  <p>Set up new system integrations and data connectors for your agent</p>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  {/* Quick Create Options */}
+                  <div>
+                    <h4 className="font-medium mb-3">Quick Create Options</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {/* Database Connector */}
+                      <Card className="cursor-pointer hover:bg-gray-50 transition-colors border-2 border-dashed border-gray-200" 
+                            onClick={() => setIsWizardOpen(true)}>
+                        <CardContent className="p-4 text-center">
+                          <Database className="h-8 w-8 mx-auto mb-2 text-blue-500" />
+                          <h5 className="font-medium">Database</h5>
+                          <p className="text-xs text-gray-500 mt-1">Oracle, MySQL, PostgreSQL</p>
+                        </CardContent>
+                      </Card>
 
+                      {/* API Connector */}
+                      <Card className="cursor-pointer hover:bg-gray-50 transition-colors border-2 border-dashed border-gray-200" 
+                            onClick={() => setIsWizardOpen(true)}>
+                        <CardContent className="p-4 text-center">
+                          <Cloud className="h-8 w-8 mx-auto mb-2 text-green-500" />
+                          <h5 className="font-medium">REST API</h5>
+                          <p className="text-xs text-gray-500 mt-1">HTTP REST endpoints</p>
+                        </CardContent>
+                      </Card>
+
+                      {/* Messaging Connector */}
+                      <Card className="cursor-pointer hover:bg-gray-50 transition-colors border-2 border-dashed border-gray-200" 
+                            onClick={() => setIsWizardOpen(true)}>
+                        <CardContent className="p-4 text-center">
+                          <MessageSquare className="h-8 w-8 mx-auto mb-2 text-purple-500" />
+                          <h5 className="font-medium">Messaging</h5>
+                          <p className="text-xs text-gray-500 mt-1">Kafka, RabbitMQ, SQS</p>
+                        </CardContent>
+                      </Card>
+
+                      {/* File System Connector */}
+                      <Card className="cursor-pointer hover:bg-gray-50 transition-colors border-2 border-dashed border-gray-200" 
+                            onClick={() => setIsWizardOpen(true)}>
+                        <CardContent className="p-4 text-center">
+                          <FileText className="h-8 w-8 mx-auto mb-2 text-orange-500" />
+                          <h5 className="font-medium">File System</h5>
+                          <p className="text-xs text-gray-500 mt-1">FTP, SFTP, S3</p>
+                        </CardContent>
+                      </Card>
+
+                      {/* External Service Connector */}
+                      <Card className="cursor-pointer hover:bg-gray-50 transition-colors border-2 border-dashed border-gray-200" 
+                            onClick={() => setIsWizardOpen(true)}>
+                        <CardContent className="p-4 text-center">
+                          <Globe className="h-8 w-8 mx-auto mb-2 text-red-500" />
+                          <h5 className="font-medium">External Service</h5>
+                          <p className="text-xs text-gray-500 mt-1">Salesforce, Workday</p>
+                        </CardContent>
+                      </Card>
+
+                      {/* AI Model Connector */}
+                      <Card className="cursor-pointer hover:bg-gray-50 transition-colors border-2 border-dashed border-gray-200" 
+                            onClick={() => setIsWizardOpen(true)}>
+                        <CardContent className="p-4 text-center">
+                          <Zap className="h-8 w-8 mx-auto mb-2 text-indigo-500" />
+                          <h5 className="font-medium">AI Model</h5>
+                          <p className="text-xs text-gray-500 mt-1">OpenAI, Anthropic</p>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </div>
+
+                  {/* Existing Connectors */}
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-medium">Existing Connectors</h4>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          placeholder="Search connectors..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="w-64"
+                        />
+                        <Select value={statusFilter} onValueChange={setStatusFilter}>
+                          <SelectTrigger className="w-32">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Status</SelectItem>
+                            <SelectItem value="active">Active</SelectItem>
+                            <SelectItem value="testing">Testing</SelectItem>
+                            <SelectItem value="error">Error</SelectItem>
+                            <SelectItem value="inactive">Inactive</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    
+                    {filteredConnectors.length > 0 ? (
+                      <div className="space-y-3">
+                        {filteredConnectors.map((connector) => (
+                          <Card key={connector.id} className="p-4">
+                            <div className="flex items-start justify-between">
+                              <div className="flex items-start gap-3">
+                                {getTypeIcon(connector.type)}
+                                <div>
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <h5 className="font-medium">{connector.name}</h5>
+                                    {getStatusIcon(connector.status)}
+                                    <Badge variant="outline">{connector.category}</Badge>
+                                  </div>
+                                  <p className="text-sm text-gray-600 mb-1">{connector.description}</p>
+                                  <div className="flex items-center gap-4 text-xs text-gray-500">
+                                    <span>Created: {new Date(connector.created_at).toLocaleDateString()}</span>
+                                    {connector.last_tested && (
+                                      <span>Last tested: {new Date(connector.last_tested).toLocaleDateString()}</span>
+                                    )}
+                                    {connector.success_rate && (
+                                      <span>Success: {connector.success_rate}%</span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Button variant="outline" size="sm" onClick={() => handleTestConnector(connector.id)}>
+                                  <Play className="h-4 w-4 mr-1" />
+                                  Test
+                                </Button>
+                                <Button variant="outline" size="sm" onClick={() => handleViewConnector(connector)}>
+                                  <Eye className="h-4 w-4 mr-1" />
+                                  View
+                                </Button>
+                                <Button variant="outline" size="sm" onClick={() => handleEditConnector(connector)}>
+                                  <Edit className="h-4 w-4 mr-1" />
+                                  Edit
+                                </Button>
+                              </div>
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    ) : (
+                      <Card className="p-6 text-center border-dashed">
+                        <Plus className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                        <p className="text-sm text-gray-500">
+                          No connectors found. Create your first connector using the options above.
+                        </p>
+                      </Card>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* Assign Connector Tab */}
         <TabsContent value="assignments" className="mt-6">
           <div className="space-y-6">
             <Card>
