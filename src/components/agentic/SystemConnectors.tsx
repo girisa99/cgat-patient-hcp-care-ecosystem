@@ -1382,8 +1382,14 @@ export const SystemConnectors = () => {
               <Button 
                 variant="outline" 
                 onClick={() => {
+                  console.log('Advanced Wizard button clicked, current state:', { showConnectorWizard });
+                  console.log('Setting showConnectorWizard to true');
                   // Pre-populate wizard with custom connector data
                   setShowConnectorWizard(true);
+                  toast({
+                    title: "Opening Advanced Wizard",
+                    description: "Loading the advanced connector configuration wizard...",
+                  });
                 }}
                 className="w-full"
               >
@@ -1520,22 +1526,27 @@ export const SystemConnectors = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Full Connector Creation Wizard */}
-      <ConnectorCreationWizard
-        isOpen={showConnectorWizard}
-        onClose={() => setShowConnectorWizard(false)}
-        onConnectorCreated={(newConnector) => {
-          console.log('Connector created via wizard:', newConnector);
-          setShowConnectorWizard(false);
-          setShowCreateConnector(false);
-          toast({
-            title: "✅ Connector Created via Wizard",
-            description: `"${newConnector.name}" has been fully configured and is ready to use.`,
-          });
-        }}
-        agentId="current-session"
-        availableActions={[]}
-      />
+      {/* Full Connector Creation Wizard - ensure it renders above everything */}
+      {showConnectorWizard && (
+        <ConnectorCreationWizard
+          isOpen={showConnectorWizard}
+          onClose={() => {
+            console.log('Closing wizard');
+            setShowConnectorWizard(false);
+          }}
+          onConnectorCreated={(newConnector) => {
+            console.log('Connector created via wizard:', newConnector);
+            setShowConnectorWizard(false);
+            setShowCreateConnector(false);
+            toast({
+              title: "✅ Connector Created via Wizard",
+              description: `"${newConnector.name}" has been fully configured and is ready to use.`,
+            });
+          }}
+          agentId="current-session"
+          availableActions={[]}
+        />
+      )}
     </div>
   );
 };
