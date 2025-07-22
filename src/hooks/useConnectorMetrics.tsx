@@ -169,7 +169,8 @@ export const useConnectorMetrics = () => {
   const {
     data: connectors,
     isLoading: isLoadingConnectors,
-    error: connectorsError
+    error: connectorsError,
+    refetch: refetchConnectors
   } = useQuery({
     queryKey: ['connectors'],
     queryFn: async (): Promise<Connector[]> => {
@@ -181,7 +182,7 @@ export const useConnectorMetrics = () => {
       if (error) throw error;
       return (data || []) as Connector[];
     },
-    staleTime: 30000,
+    staleTime: 10000, // Reduced for more frequent updates
   });
 
   // Create connector mutation
@@ -331,6 +332,9 @@ export const useConnectorMetrics = () => {
     updateConnector,
     deleteConnector,
     testConnector,
+    
+    // Refetch functions
+    refetchConnectors,
     
     // Utility functions
     getConnectorById: (id: string) => connectors?.find(c => c.id === id),

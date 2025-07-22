@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -436,27 +436,51 @@ export const SystemConnectors = () => {
     createConnector,
     testConnector,
     isLoadingMetrics,
-    isLoadingConnectors
+    isLoadingConnectors,
+    refetchConnectors
   } = useConnectorMetrics();
+
+  // Listen for connector creation events to refresh
+  React.useEffect(() => {
+    const handleConnectorCreated = () => {
+      console.log('SystemConnectors: Received connectorCreated event, refreshing...');
+      refetchConnectors?.();
+    };
+
+    window.addEventListener('connectorCreated', handleConnectorCreated);
+    return () => window.removeEventListener('connectorCreated', handleConnectorCreated);
+  }, [refetchConnectors]);
+
+  // Log database connectors for debugging
+  React.useEffect(() => {
+    console.log('SystemConnectors: Database connectors updated:', dbConnectors);
+  }, [dbConnectors]);
 
   const categories = ['All', 'Language Models', 'CRM Systems', 'Databases', 'Healthcare APIs', 'Communication', 'Insurance', 'Development', 'Automation', 'Analytics'];
   
-  // Combine mock connectors with database connectors
-  const allConnectors = [...connectors, ...(dbConnectors || []).map(dc => ({
-    id: dc.id,
-    name: dc.name,
-    category: dc.category,
-    icon: Database, // Default icon, would map based on type
-    description: dc.description || '',
-    status: dc.status as 'connected' | 'available' | 'configuring',
-    apiEndpoint: dc.base_url,
-    authMethod: dc.auth_type as 'api_key' | 'oauth' | 'basic' | 'token',
-    capabilities: [], // Would extract from configuration
-    rateLimit: '',
-    cost: 'Free' as const,
-    usage_count: dc.usage_count,
-    success_rate: dc.success_rate
-  }))];
+  // Combine mock connectors with database connectors (prioritize database connectors)
+  const allConnectors = [
+    // First add database connectors
+    ...(dbConnectors || []).map(dc => ({
+      id: dc.id,
+      name: dc.name,
+      category: dc.category,
+      icon: Database, // Default icon, would map based on type
+      description: dc.description || '',
+      status: dc.status as 'connected' | 'available' | 'configuring',
+      apiEndpoint: dc.base_url,
+      authMethod: dc.auth_type as 'api_key' | 'oauth' | 'basic' | 'token',
+      capabilities: [], // Would extract from configuration
+      rateLimit: '',
+      cost: 'Free' as const,
+      usage_count: dc.usage_count,
+      success_rate: dc.success_rate
+    })),
+    // Then add mock connectors that don't conflict with database ones
+    ...connectors.filter(mockConnector => 
+      !dbConnectors?.some(dbConnector => dbConnector.name === mockConnector.name)
+    )
+  ];
 
   const filteredConnectors = allConnectors.filter(connector => {
     const matchesCategory = selectedCategory === 'All' || connector.category === selectedCategory;
@@ -1532,6 +1556,8 @@ export const SystemConnectors = () => {
             console.log('Connector created via wizard:', newConnector);
             setShowConnectorWizard(false);
             setShowCreateConnector(false);
+            // Refresh the connectors list
+            refetchConnectors?.();
             toast({
               title: "✅ Connector Created via Wizard",
               description: `"${newConnector.name}" has been fully configured and is ready to use.`,

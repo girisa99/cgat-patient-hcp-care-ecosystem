@@ -103,8 +103,20 @@ export const AgentAssignmentOverview: React.FC<AgentAssignmentOverviewProps> = (
     availableConnectors,
     assignConnector,
     removeAssignment: removeConnectorAssignment,
-    updateAssignment: updateConnectorAssignment
+    updateAssignment: updateConnectorAssignment,
+    refetchConnectors
   } = useConnectorAssignments(sessionId);
+
+  // Listen for connector creation events to refresh assignment options
+  React.useEffect(() => {
+    const handleConnectorCreated = () => {
+      console.log('AgentAssignmentOverview: Refreshing connectors after creation...');
+      refetchConnectors?.();
+    };
+
+    window.addEventListener('connectorCreated', handleConnectorCreated);
+    return () => window.removeEventListener('connectorCreated', handleConnectorCreated);
+  }, [refetchConnectors]);
 
   // Mock data for other assignment types - in real app, these would come from hooks
   const aiModelAssignments: AIModelAssignment[] = [];

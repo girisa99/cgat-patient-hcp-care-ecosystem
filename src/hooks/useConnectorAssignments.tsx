@@ -245,6 +245,9 @@ export const useConnectorAssignments = (agentSessionId?: string) => {
     updateAssignment,
     removeAssignment,
     
+    // Refetch functions
+    refetchConnectors,
+    
     // Utility functions
     getTaskAssignment,
     getAssignmentsByType,
