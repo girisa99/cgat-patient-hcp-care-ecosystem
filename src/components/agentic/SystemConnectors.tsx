@@ -10,7 +10,7 @@ import {
   Bot, Database, MessageSquare, Globe, Settings, 
   Stethoscope, ShieldCheck, CreditCard, FileText,
   Building, Workflow, GitBranch, Server, Phone,
-  CheckCircle, AlertCircle, Clock, Zap, Loader2
+  CheckCircle, AlertCircle, Clock, Zap, Loader2, Plus
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -795,17 +795,31 @@ export const SystemConnectors = () => {
             </Button>
           ))}
         </div>
-        <Button 
-          onClick={() => {
-            setShowCreateConnector(true);
-            setCreateMode('missing');
-            setSelectedMissingConnector('');
-          }}
-          className="flex items-center gap-2"
-        >
-          <Zap className="h-4 w-4" />
-          Create Connector
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button 
+            onClick={() => {
+              setShowCreateConnector(true);
+              setCreateMode('missing');
+              setSelectedMissingConnector('');
+            }}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Add Connector
+          </Button>
+          <Button 
+            onClick={() => {
+              setShowCreateConnector(true);
+              setCreateMode('custom');
+              setSelectedMissingConnector('');
+            }}
+            className="flex items-center gap-2"
+          >
+            <Zap className="h-4 w-4" />
+            Create Custom Connector
+          </Button>
+        </div>
       </div>
 
       {/* Connectors Grid */}

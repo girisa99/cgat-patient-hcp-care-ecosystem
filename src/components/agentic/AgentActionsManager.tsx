@@ -821,18 +821,25 @@ export const AgentActionsManager: React.FC<AgentActionsManagerProps> = ({
                                      <div className="text-xs text-muted-foreground">
                                        {task.connectors?.length || 0} assigned
                                      </div>
-                                      <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="sm"
-                                        className="h-8 text-xs mt-1"
-                                        onClick={() => {
-                                          setActiveTab('connectors');
-                                          toast.success('Switch to System Connectors tab to assign connectors to this task');
-                                        }}
-                                      >
-                                        Assign Connectors
-                                      </Button>
+                                       <Button
+                                         type="button"
+                                         variant="outline"
+                                         size="sm"
+                                         className="h-8 text-xs mt-1"
+                                         onClick={() => {
+                                           // Switch to assignments tab which has the proper assignment functionality
+                                           const assignmentsTab = document.querySelector('[data-radix-collection-item][value="assignments"]') as HTMLElement;
+                                           if (assignmentsTab) {
+                                             assignmentsTab.click();
+                                             toast.success('Switched to Assignments tab. Use the "Assign connector" button for this task.');
+                                           } else {
+                                             setActiveTab('connectors');
+                                             toast.success('Switch to Assignments tab to assign connectors to this task');
+                                           }
+                                         }}
+                                       >
+                                         Assign Connectors
+                                       </Button>
                                    </div>
                                    
                                    <div>
