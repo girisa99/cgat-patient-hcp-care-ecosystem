@@ -652,6 +652,66 @@ export type Database = {
           },
         ]
       }
+      agent_session_tasks: {
+        Row: {
+          action_id: string
+          ai_model_id: string | null
+          created_at: string
+          expected_outputs: Json | null
+          id: string
+          is_critical: boolean | null
+          mcp_server_id: string | null
+          required_inputs: Json | null
+          retry_attempts: number | null
+          session_id: string
+          task_description: string | null
+          task_name: string
+          task_order: number
+          task_type: string
+          timeout_minutes: number | null
+          updated_at: string
+          validation_rules: Json | null
+        }
+        Insert: {
+          action_id: string
+          ai_model_id?: string | null
+          created_at?: string
+          expected_outputs?: Json | null
+          id?: string
+          is_critical?: boolean | null
+          mcp_server_id?: string | null
+          required_inputs?: Json | null
+          retry_attempts?: number | null
+          session_id: string
+          task_description?: string | null
+          task_name: string
+          task_order?: number
+          task_type: string
+          timeout_minutes?: number | null
+          updated_at?: string
+          validation_rules?: Json | null
+        }
+        Update: {
+          action_id?: string
+          ai_model_id?: string | null
+          created_at?: string
+          expected_outputs?: Json | null
+          id?: string
+          is_critical?: boolean | null
+          mcp_server_id?: string | null
+          required_inputs?: Json | null
+          retry_attempts?: number | null
+          session_id?: string
+          task_description?: string | null
+          task_name?: string
+          task_order?: number
+          task_type?: string
+          timeout_minutes?: number | null
+          updated_at?: string
+          validation_rules?: Json | null
+        }
+        Relationships: []
+      }
       agent_sessions: {
         Row: {
           actions: Json | null
