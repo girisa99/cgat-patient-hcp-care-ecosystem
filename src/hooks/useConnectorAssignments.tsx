@@ -1,3 +1,4 @@
+import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -22,6 +23,16 @@ export interface ConnectorAssignment {
 
 export const useConnectorAssignments = (agentSessionId?: string) => {
   const queryClient = useQueryClient();
+
+  // Listen for connector creation events to refresh the list
+  React.useEffect(() => {
+    const handleConnectorCreated = () => {
+      queryClient.invalidateQueries({ queryKey: ['available-connectors'] });
+    };
+
+    window.addEventListener('connectorCreated', handleConnectorCreated);
+    return () => window.removeEventListener('connectorCreated', handleConnectorCreated);
+  }, [queryClient]);
 
   // Fetch connector assignments
   const {
@@ -53,7 +64,7 @@ export const useConnectorAssignments = (agentSessionId?: string) => {
     staleTime: 30000,
   });
 
-  // Fetch available connectors
+  // Fetch available connectors (both system connectors and internal APIs)
   const {
     data: availableConnectors,
     isLoading: isLoadingConnectors,
@@ -61,16 +72,40 @@ export const useConnectorAssignments = (agentSessionId?: string) => {
   } = useQuery({
     queryKey: ['available-connectors'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Fetch system connectors
+      const { data: systemConnectors, error: systemError } = await supabase
         .from('system_connectors')
         .select('id, name, type, status, description, category')
-        .in('status', ['active', 'inactive']) // Include both active and inactive connectors for assignment
+        .in('status', ['active', 'inactive'])
         .order('name');
 
-      if (error) throw error;
-      return data || [];
+      if (systemError) throw systemError;
+
+      // Fetch internal APIs from api_integration_registry
+      const { data: internalAPIs, error: apiError } = await supabase
+        .from('api_integration_registry')
+        .select('id, name, type, status, description, category')
+        .eq('type', 'internal')
+        .in('status', ['active', 'inactive'])
+        .order('name');
+
+      if (apiError) {
+        console.warn('Error fetching internal APIs:', apiError);
+      }
+
+      // Combine both data sources
+      const allConnectors = [
+        ...(systemConnectors || []),
+        ...(internalAPIs || []).map(api => ({
+          ...api,
+          type: 'api',
+          category: api.category || 'api'
+        }))
+      ];
+
+      return allConnectors;
     },
-    staleTime: 30000, // Reduced stale time for more frequent updates
+    staleTime: 10000, // Reduced stale time for more frequent updates
   });
 
   // Create assignment mutation
@@ -107,6 +142,7 @@ export const useConnectorAssignments = (agentSessionId?: string) => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['connector-assignments'] });
+      queryClient.invalidateQueries({ queryKey: ['available-connectors'] });
       toast.success(`Connector "${data.connector?.name}" assigned successfully`);
     },
     onError: (error) => {

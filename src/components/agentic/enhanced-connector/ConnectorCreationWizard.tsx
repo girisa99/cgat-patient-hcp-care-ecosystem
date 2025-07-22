@@ -239,6 +239,7 @@ export const ConnectorCreationWizard: React.FC<ConnectorCreationWizardProps> = (
     try {
       // Import the useConnectorMetrics hook dynamically
       const { supabase } = await import("@/integrations/supabase/client");
+      const { useQueryClient } = await import("@tanstack/react-query");
       
       // Save connector to database
       const { data: newConnector, error } = await supabase
@@ -268,6 +269,9 @@ export const ConnectorCreationWizard: React.FC<ConnectorCreationWizardProps> = (
         .single();
 
       if (error) throw error;
+      
+      // Trigger refresh of available connectors
+      window.dispatchEvent(new CustomEvent('connectorCreated', { detail: newConnector }));
       
       onConnectorCreated(newConnector);
       onClose();
