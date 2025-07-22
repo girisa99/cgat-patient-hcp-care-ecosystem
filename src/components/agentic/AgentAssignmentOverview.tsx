@@ -17,6 +17,7 @@ import {
 import { toast } from 'sonner';
 import { useAgentAPIAssignments, type APIAssignment } from '@/hooks/useAgentAPIAssignments';
 import { useConnectorAssignments } from '@/hooks/useConnectorAssignments';
+import { QuickConnectorCreator } from '@/components/agentic/enhanced-connector/QuickConnectorCreator';
 
 interface AgentAction {
   id: string;
@@ -87,6 +88,7 @@ export const AgentAssignmentOverview: React.FC<AgentAssignmentOverviewProps> = (
   const [selectedAssignmentType, setSelectedAssignmentType] = useState<'connector' | 'api' | 'ai_model' | 'mcp'>('connector');
   const [editingAssignment, setEditingAssignment] = useState<any>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [showQuickCreator, setShowQuickCreator] = useState(false);
 
   const { 
     apiAssignments, 
@@ -516,28 +518,47 @@ export const AgentAssignmentOverview: React.FC<AgentAssignmentOverviewProps> = (
             )}
             
             {selectedAssignmentType === 'connector' && (
-              <div>
-                <Label>Connector</Label>
-                <Select 
-                  value={editingAssignment?.connectorId || ''} 
-                  onValueChange={(value) => setEditingAssignment(prev => ({ ...prev, connectorId: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select connector" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableConnectors.map((connector) => (
-                      <SelectItem key={connector.id} value={connector.id}>
-                        <div className="flex items-center gap-2">
-                          <span className={`w-2 h-2 rounded-full ${
-                            connector.status === 'active' ? 'bg-green-500' : 'bg-gray-500'
-                          }`} />
-                          {connector.name} ({connector.type})
+              <div className="space-y-3">
+                <div>
+                  <Label>Connector</Label>
+                  <Select 
+                    value={editingAssignment?.connectorId || ''} 
+                    onValueChange={(value) => {
+                      if (value === 'create_new') {
+                        setShowQuickCreator(true);
+                      } else {
+                        setEditingAssignment(prev => ({ ...prev, connectorId: value }));
+                      }
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select connector" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableConnectors.map((connector) => (
+                        <SelectItem key={connector.id} value={connector.id}>
+                          <div className="flex items-center gap-2">
+                            <span className={`w-2 h-2 rounded-full ${
+                              connector.status === 'active' ? 'bg-green-500' : 'bg-gray-500'
+                            }`} />
+                            {connector.name} ({connector.type})
+                          </div>
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="create_new">
+                        <div className="flex items-center gap-2 text-primary">
+                          <Plus className="h-4 w-4" />
+                          Create New Connector
                         </div>
                       </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {availableConnectors.length === 0 && (
+                  <div className="text-sm text-muted-foreground">
+                    No connectors available. Create one using the option above.
+                  </div>
+                )}
               </div>
             )}
             
@@ -572,6 +593,17 @@ export const AgentAssignmentOverview: React.FC<AgentAssignmentOverviewProps> = (
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Quick Connector Creator */}
+      <QuickConnectorCreator
+        isOpen={showQuickCreator}
+        onClose={() => setShowQuickCreator(false)}
+        onConnectorCreated={(connector) => {
+          setEditingAssignment(prev => ({ ...prev, connectorId: connector.id }));
+          setShowQuickCreator(false);
+          toast.success(`Connector "${connector.name}" created and selected.`);
+        }}
+      />
     </div>
   );
 };

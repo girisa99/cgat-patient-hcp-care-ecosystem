@@ -12,7 +12,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { 
   ArrowRight, ArrowLeft, Check, AlertCircle, Zap, 
   Database, Cloud, MessageSquare, FileText, Globe,
-  Key, Shield, TestTube, Play, Brain, Sparkles, Settings
+  Key, Shield, TestTube, Play, Brain, Sparkles, Settings, Plus
 } from "lucide-react";
 import { ConnectorBrand, searchConnectorBrands, getConnectorBrandById } from './ConnectorBrandRegistry';
 import { useToast } from "@/hooks/use-toast";
@@ -353,6 +353,45 @@ export const ConnectorCreationWizard: React.FC<ConnectorCreationWizardProps> = (
                         </CardContent>
                       </Card>
                     ))}
+                    
+                    {/* Custom Connector Option */}
+                    <Card 
+                      className={`cursor-pointer transition-all hover:shadow-md border-dashed border-2 ${
+                        wizardData.selectedBrand?.id === 'custom' ? 'ring-2 ring-blue-500 bg-blue-50' : ''
+                      }`}
+                      onClick={() => {
+                        const customBrand: ConnectorBrand = {
+                          id: 'custom',
+                          name: searchQuery || 'Custom Connector',
+                          logoUrl: '/placeholder.svg',
+                          category: 'Custom',
+                          type: 'api',
+                          description: 'Create a custom connector for services not in our library',
+                          authTypes: ['api_key', 'bearer', 'oauth', 'custom']
+                        };
+                        selectBrand(customBrand);
+                        updateWizardData({ 
+                          connectorName: searchQuery || 'Custom Connector',
+                          connectorDescription: `Custom connector${searchQuery ? ` for ${searchQuery}` : ''}`
+                        });
+                      }}
+                    >
+                      <CardContent className="p-4 text-center">
+                        <div className="flex items-center justify-center gap-3 mb-3">
+                          <Plus className="w-8 h-8 text-blue-500" />
+                          <div>
+                            <h3 className="font-medium">Custom Connector</h3>
+                            <Badge variant="outline" className="text-xs">Custom</Badge>
+                          </div>
+                        </div>
+                        <p className="text-sm text-gray-600">
+                          {searchQuery 
+                            ? `Create custom "${searchQuery}" connector`
+                            : 'Create a custom connector for services not in our library'
+                          }
+                        </p>
+                      </CardContent>
+                    </Card>
                   </div>
                 </div>
 
