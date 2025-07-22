@@ -178,6 +178,41 @@ export const EnhancedAgentCanvas: React.FC<EnhancedAgentCanvasProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
 
+  // Load saved templates from database on component mount
+  useEffect(() => {
+    const loadSavedTemplates = async () => {
+      try {
+        const { data: savedTemplates, error } = await supabase
+          .from('agent_templates')
+          .select('*')
+          .eq('template_type', 'canvas')
+          .order('created_at', { ascending: false });
+          
+        if (error) throw error;
+        
+        if (savedTemplates && savedTemplates.length > 0) {
+          const formattedTemplates = savedTemplates.map(template => ({
+            id: `saved-${template.id}`,
+            name: template.name,
+            description: template.description || '',
+            tagline: template.tagline || '',
+            primaryColor: template.primary_color,
+            secondaryColor: template.secondary_color,
+            accentColor: template.accent_color,
+            logo: template.logo_url || undefined
+          }));
+          
+          // Add saved templates to the existing default templates
+          setTemplates(prev => [...prev, ...formattedTemplates]);
+        }
+      } catch (error) {
+        console.error('Failed to load saved templates:', error);
+      }
+    };
+    
+    loadSavedTemplates();
+  }, []);
+
   // Handle canvas name change with parent callback
   const handleCanvasNameChange = (name: string) => {
     setCanvasName(name);
@@ -255,9 +290,18 @@ export const EnhancedAgentCanvas: React.FC<EnhancedAgentCanvasProps> = ({
 
   const handleSaveTemplate = async () => {
     try {
-      let logoUrl = null;
+      if (!canvasName?.trim()) {
+        toast({
+          title: "Canvas Name Required",
+          description: "Please enter a name for your canvas template before saving.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      let logoUrl = logoPreview; // Use existing logo preview URL
       
-      // Upload logo if available
+      // Upload logo if it's a new file
       if (logo) {
         const fileName = `canvas-logos/${Date.now()}-${logo.name}`;
         const { error: uploadError } = await supabase
@@ -275,12 +319,12 @@ export const EnhancedAgentCanvas: React.FC<EnhancedAgentCanvasProps> = ({
         logoUrl = data.publicUrl;
       }
       
-      // Save template data to agent_templates table instead
-      const { error } = await supabase
+      // Save template data to agent_templates table
+      const { data: newTemplate, error } = await supabase
         .from('agent_templates')
         .insert({
-          name: canvasName || 'Unnamed Canvas',
-          description: 'Custom canvas template created in wizard',
+          name: canvasName,
+          description: `Custom canvas template: ${canvasName}`,
           tagline,
           primary_color: primaryColor,
           secondary_color: secondaryColor,
@@ -288,24 +332,41 @@ export const EnhancedAgentCanvas: React.FC<EnhancedAgentCanvasProps> = ({
           logo_url: logoUrl,
           template_type: 'canvas',
           created_by: (await supabase.auth.getUser()).data.user?.id
-        });
+        })
+        .select()
+        .single();
         
       if (error) throw error;
       
+      // Add the new template to the templates list
+      if (newTemplate) {
+        const customTemplate: CanvasTemplate = {
+          id: `saved-${newTemplate.id}`,
+          name: newTemplate.name,
+          description: newTemplate.description || '',
+          tagline: newTemplate.tagline || '',
+          primaryColor: newTemplate.primary_color,
+          secondaryColor: newTemplate.secondary_color,
+          accentColor: newTemplate.accent_color,
+          logo: newTemplate.logo_url || undefined
+        };
+        
+        setTemplates(prev => [...prev, customTemplate]);
+        setSelectedTemplate(customTemplate.id);
+      }
+      
       toast({
         title: "Canvas Template Saved",
-        description: "Your canvas template has been saved successfully."
+        description: `Your "${canvasName}" template has been saved successfully and added to your template library.`
       });
       
-      // Reset form
-      setCanvasName('');
-      setLogo(null);
-      setLogoPreview(null);
+      // Don't reset form - keep user's work intact
       
     } catch (error: any) {
+      console.error('Save template error:', error);
       toast({
         title: "Save Failed",
-        description: error.message,
+        description: error.message || "Failed to save template. Please try again.",
         variant: "destructive"
       });
     }
@@ -316,7 +377,7 @@ export const EnhancedAgentCanvas: React.FC<EnhancedAgentCanvasProps> = ({
     if (template) {
       setSelectedTemplate(id);
       
-      // Update all state and notify parent
+      // Update colors and tagline
       setPrimaryColor(template.primaryColor);
       onPrimaryColorChange?.(template.primaryColor);
       
@@ -329,22 +390,22 @@ export const EnhancedAgentCanvas: React.FC<EnhancedAgentCanvasProps> = ({
       setTagline(template.tagline);
       onTaglineChange?.(template.tagline);
       
-      // Reset existing logo first
-      setLogo(null);
-      setLogoPreview(null);
-      
-      // Apply template logo if available
+      // Only reset logo if template has a specific logo, otherwise preserve user's logo
       if (template.logo) {
+        setLogo(null);
         setLogoPreview(template.logo);
         onLogoChange?.(null, template.logo);
+        toast({
+          title: "Template Applied",
+          description: `Applied ${template.name} template. Colors, tagline, and logo updated.`
+        });
       } else {
-        onLogoChange?.(null, '');
+        // Keep existing logo when switching to templates without logos
+        toast({
+          title: "Template Applied", 
+          description: `Applied ${template.name} template. Colors and tagline updated, logo preserved.`
+        });
       }
-      
-      toast({
-        title: "Template Applied",
-        description: `Applied ${template.name} template to your canvas. Logo and color scheme updated.`
-      });
     }
   };
 
