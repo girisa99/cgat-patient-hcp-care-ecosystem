@@ -749,6 +749,28 @@ export const UnifiedAgentBuilder: React.FC<UnifiedAgentBuilderProps> = ({ step }
             }
           }}
         />
+        
+        {/* Navigation Footer */}
+        <div className="flex justify-between items-center pt-6 border-t mt-6">
+          <Button variant="outline" onClick={() => setCurrentStep('basic_info')}>
+            Previous: Basic Info
+          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => {
+              if (currentSessionId) {
+                updateSession.mutate({
+                  sessionId: currentSessionId,
+                  updates: { current_step: currentStep }
+                });
+              }
+            }}>
+              Save & Continue Later
+            </Button>
+            <Button onClick={() => setCurrentStep('actions')}>
+              Next: Actions
+            </Button>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
