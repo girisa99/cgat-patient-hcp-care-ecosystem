@@ -98,8 +98,23 @@ interface UnifiedAgentBuilderProps {
 
 export const UnifiedAgentBuilder: React.FC<UnifiedAgentBuilderProps> = ({ step }) => {
   const { user } = useMasterAuth();
-  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
-  const [currentStep, setCurrentStep] = useState<AgentSession['current_step']>(step || 'basic_info');
+  
+  // Initialize state with localStorage persistence
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('unifiedBuilder_currentSessionId') || null;
+    }
+    return null;
+  });
+  
+  const [currentStep, setCurrentStep] = useState<AgentSession['current_step']>(() => {
+    if (typeof window !== 'undefined') {
+      const savedStep = localStorage.getItem('unifiedBuilder_currentStep') as AgentSession['current_step'];
+      return savedStep || step || 'basic_info';
+    }
+    return step || 'basic_info';
+  });
+  
   const [showNewSessionDialog, setShowNewSessionDialog] = useState(false);
   const [showSessionList, setShowSessionList] = useState(false);
   const [actions, setActions] = useState<AgentAction[]>([]);
@@ -113,6 +128,22 @@ export const UnifiedAgentBuilder: React.FC<UnifiedAgentBuilderProps> = ({ step }
     deleteSession,
     deployAgent,
   } = useAgentSession(currentSessionId || undefined);
+
+  // Persist current session ID to localStorage
+  useEffect(() => {
+    if (currentSessionId) {
+      localStorage.setItem('unifiedBuilder_currentSessionId', currentSessionId);
+    } else {
+      localStorage.removeItem('unifiedBuilder_currentSessionId');
+    }
+  }, [currentSessionId]);
+
+  // Persist current step to localStorage
+  useEffect(() => {
+    if (currentStep) {
+      localStorage.setItem('unifiedBuilder_currentStep', currentStep);
+    }
+  }, [currentStep]);
 
   // Calculate overall progress
   const calculateProgress = () => {
