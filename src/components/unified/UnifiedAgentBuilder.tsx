@@ -812,44 +812,7 @@ export const UnifiedAgentBuilder: React.FC<UnifiedAgentBuilderProps> = ({ step }
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="system" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="system">System Connectors</TabsTrigger>
-            <TabsTrigger value="enhanced">Enhanced Connectors</TabsTrigger>
-            <TabsTrigger value="assignments">Assignments</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="system">
-            <SystemConnectors />
-          </TabsContent>
-          
-          <TabsContent value="enhanced">
-            <EnhancedConnectorSystem 
-              agentId={currentSessionId || ''}
-              actions={actions}
-              onAssignmentsChange={() => {}}
-            />
-          </TabsContent>
-          
-          <TabsContent value="assignments">
-            <ConnectorAssignmentManager 
-              agentId={currentSessionId || ''}
-              actions={actions}
-              onAssignmentsChange={(assignments) => {
-                if (currentSessionId) {
-                  updateSession.mutate({
-                    sessionId: currentSessionId,
-                    updates: {
-                      connectors: {
-                        assigned_connectors: assignments
-                      }
-                    }
-                  });
-                }
-              }}
-            />
-          </TabsContent>
-        </Tabs>
+        <SystemConnectors />
       </CardContent>
     </Card>
   );
