@@ -16,6 +16,8 @@ import { ConnectorAssignmentManager } from '@/components/agentic/ConnectorAssign
 import { KnowledgeBaseManager } from '@/components/agentic/KnowledgeBaseManager';
 import { RAGComplianceWorkflow } from '@/components/rag/RAGComplianceWorkflow';
 import { AgentChannelAssignmentMatrix } from '@/components/agent-deployment/AgentChannelAssignmentMatrix';
+import { CategoryMapping } from '@/components/agentic/CategoryMapping';
+import { UseCaseSelector } from '@/components/agentic/UseCaseSelector';
 
 // Import existing hooks to preserve functionality
 import { useAgentSession } from '@/hooks/useAgentSession';
@@ -381,76 +383,239 @@ export const UnifiedAgentBuilder: React.FC<UnifiedAgentBuilderProps> = ({ step }
             </TabsList>
             
             <TabsContent value="manual" className="mt-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium">Agent Name</label>
-                    <input 
-                      type="text"
-                      className="w-full mt-1 px-3 py-2 border rounded-md"
-                      value={currentSession?.basic_info?.name || currentSession?.name || ''}
-                      onChange={(e) => {
-                        if (currentSessionId) {
-                          updateSession.mutate({
-                            sessionId: currentSessionId,
-                            updates: {
-                              basic_info: {
-                                ...currentSession.basic_info,
-                                name: e.target.value
+              <div className="space-y-6">
+                {/* Basic Information Section */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium">Agent Name</label>
+                      <input 
+                        type="text"
+                        className="w-full mt-1 px-3 py-2 border rounded-md"
+                        value={currentSession?.basic_info?.name || currentSession?.name || ''}
+                        onChange={(e) => {
+                          if (currentSessionId) {
+                            updateSession.mutate({
+                              sessionId: currentSessionId,
+                              updates: {
+                                basic_info: {
+                                  ...currentSession.basic_info,
+                                  name: e.target.value
+                                }
                               }
-                            }
-                          });
-                        }
-                      }}
-                      placeholder="Enter agent name"
-                    />
+                            });
+                          }
+                        }}
+                        placeholder="Enter agent name"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">Purpose</label>
+                      <input 
+                        type="text"
+                        className="w-full mt-1 px-3 py-2 border rounded-md"
+                        value={currentSession?.basic_info?.purpose || ''}
+                        onChange={(e) => {
+                          if (currentSessionId) {
+                            updateSession.mutate({
+                              sessionId: currentSessionId,
+                              updates: {
+                                basic_info: {
+                                  ...currentSession.basic_info,
+                                  purpose: e.target.value
+                                }
+                              }
+                            });
+                          }
+                        }}
+                        placeholder="What is this agent's main purpose?"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">Brand/Organization</label>
+                      <input 
+                        type="text"
+                        className="w-full mt-1 px-3 py-2 border rounded-md"
+                        value={currentSession?.basic_info?.brand || ''}
+                        onChange={(e) => {
+                          if (currentSessionId) {
+                            updateSession.mutate({
+                              sessionId: currentSessionId,
+                              updates: {
+                                basic_info: {
+                                  ...currentSession.basic_info,
+                                  brand: e.target.value
+                                }
+                              }
+                            });
+                          }
+                        }}
+                        placeholder="Your organization or brand name"
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <label className="text-sm font-medium">Purpose</label>
-                    <input 
-                      type="text"
-                      className="w-full mt-1 px-3 py-2 border rounded-md"
-                      value={currentSession?.basic_info?.purpose || ''}
-                      onChange={(e) => {
-                        if (currentSessionId) {
-                          updateSession.mutate({
-                            sessionId: currentSessionId,
-                            updates: {
-                              basic_info: {
-                                ...currentSession.basic_info,
-                                purpose: e.target.value
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium">Description</label>
+                      <textarea 
+                        className="w-full mt-1 px-3 py-2 border rounded-md h-24"
+                        value={currentSession?.basic_info?.description || currentSession?.description || ''}
+                        onChange={(e) => {
+                          if (currentSessionId) {
+                            updateSession.mutate({
+                              sessionId: currentSessionId,
+                              updates: {
+                                basic_info: {
+                                  ...currentSession.basic_info,
+                                  description: e.target.value
+                                }
                               }
-                            }
-                          });
-                        }
-                      }}
-                      placeholder="What is this agent's main purpose?"
-                    />
+                            });
+                          }
+                        }}
+                        placeholder="Describe what this agent will do"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">Use Case</label>
+                      <UseCaseSelector
+                        selectedUseCase={currentSession?.basic_info?.use_case || ''}
+                        onUseCaseChange={(value) => {
+                          if (currentSessionId) {
+                            updateSession.mutate({
+                              sessionId: currentSessionId,
+                              updates: {
+                                basic_info: {
+                                  ...currentSession.basic_info,
+                                  use_case: value
+                                }
+                              }
+                            });
+                          }
+                        }}
+                        selectedCategories={currentSession?.basic_info?.categories || []}
+                        selectedTopics={currentSession?.basic_info?.topics || []}
+                      />
+                    </div>
                   </div>
                 </div>
-                <div>
-                  <label className="text-sm font-medium">Description</label>
-                  <textarea 
-                    className="w-full mt-1 px-3 py-2 border rounded-md h-24"
-                    value={currentSession?.basic_info?.description || currentSession?.description || ''}
-                    onChange={(e) => {
+
+                {/* Categories, Business Units, and Topics Selection */}
+                <CategoryMapping
+                  selectedCategories={currentSession?.basic_info?.categories || []}
+                  selectedBusinessUnits={currentSession?.basic_info?.business_units || []}
+                  selectedTopics={currentSession?.basic_info?.topics || []}
+                  onCategoriesChange={(categories) => {
+                    if (currentSessionId) {
+                      updateSession.mutate({
+                        sessionId: currentSessionId,
+                        updates: {
+                          basic_info: {
+                            ...currentSession.basic_info,
+                            categories
+                          }
+                        }
+                      });
+                    }
+                  }}
+                  onBusinessUnitsChange={(business_units) => {
+                    if (currentSessionId) {
+                      updateSession.mutate({
+                        sessionId: currentSessionId,
+                        updates: {
+                          basic_info: {
+                            ...currentSession.basic_info,
+                            business_units
+                          }
+                        }
+                      });
+                    }
+                  }}
+                  onTopicsChange={(topics) => {
+                    if (currentSessionId) {
+                      updateSession.mutate({
+                        sessionId: currentSessionId,
+                        updates: {
+                          basic_info: {
+                            ...currentSession.basic_info,
+                            topics
+                          }
+                        }
+                      });
+                    }
+                  }}
+                />
+
+                {/* Selected Items Summary */}
+                {((currentSession?.basic_info?.categories?.length || 0) > 0 || 
+                  (currentSession?.basic_info?.topics?.length || 0) > 0 || 
+                  (currentSession?.basic_info?.business_units?.length || 0) > 0) && (
+                  <div className="mt-6 p-4 bg-muted/50 rounded-lg">
+                    <h4 className="font-medium mb-3">Selected Options</h4>
+                    <div className="space-y-2">
+                      {(currentSession?.basic_info?.categories?.length || 0) > 0 && (
+                        <div>
+                          <span className="text-sm font-medium text-muted-foreground">Categories: </span>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {currentSession?.basic_info?.categories?.map((category, index) => (
+                              <Badge key={index} variant="secondary" className="text-xs">
+                                {category}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {(currentSession?.basic_info?.topics?.length || 0) > 0 && (
+                        <div>
+                          <span className="text-sm font-medium text-muted-foreground">Topics: </span>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {currentSession?.basic_info?.topics?.map((topic, index) => (
+                              <Badge key={index} variant="outline" className="text-xs">
+                                {topic}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {(currentSession?.basic_info?.business_units?.length || 0) > 0 && (
+                        <div>
+                          <span className="text-sm font-medium text-muted-foreground">Business Units: </span>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {currentSession?.basic_info?.business_units?.map((unit, index) => (
+                              <Badge key={index} variant="default" className="text-xs">
+                                {unit}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Navigation Footer */}
+                <div className="flex justify-between items-center pt-6 border-t">
+                  <Button variant="outline" onClick={() => setShowSessionList(true)}>
+                    Back to Sessions
+                  </Button>
+                  <div className="flex gap-2">
+                    <Button variant="outline" onClick={() => {
                       if (currentSessionId) {
                         updateSession.mutate({
                           sessionId: currentSessionId,
-                          updates: {
-                            basic_info: {
-                              ...currentSession.basic_info,
-                              description: e.target.value
-                            }
-                          }
+                          updates: { current_step: currentStep }
                         });
                       }
-                    }}
-                      placeholder="Describe what this agent will do"
-                    />
+                    }}>
+                      Save & Continue Later
+                    </Button>
+                    <Button onClick={() => handleStepComplete('basic_info')}>
+                      Next: Canvas
+                    </Button>
                   </div>
                 </div>
-              </TabsContent>
+              </div>
+            </TabsContent>
               
               <TabsContent value="templates" className="mt-6">
                 <div className="space-y-4">
