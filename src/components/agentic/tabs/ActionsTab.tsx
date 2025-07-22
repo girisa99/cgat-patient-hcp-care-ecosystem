@@ -3,7 +3,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { AgentActionsManager } from '@/components/agentic/AgentActionsManager';
 import { AgentAssignmentOverview } from '@/components/agentic/AgentAssignmentOverview';
-import { Target, Info } from 'lucide-react';
+import { SystemConnectors } from '@/components/agentic/SystemConnectors';
+import { EnhancedConnectorSystem } from '@/components/agentic/enhanced-connector/EnhancedConnectorSystem';
+import { KnowledgeBaseManager } from '@/components/agentic/KnowledgeBaseManager';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Target, Info, Plug, Zap, Settings, BookOpen, Database } from 'lucide-react';
 import { AgentAction } from '@/components/agentic/AgentActionsManager';
 
 interface ActionsTabProps {
@@ -28,10 +32,10 @@ export const ActionsTab: React.FC<ActionsTabProps> = ({
         <div>
           <h3 className="text-lg font-medium flex items-center gap-2">
             <Target className="h-5 w-5" />
-            Actions & Tasks
+            Actions, Connectors & Knowledge
           </h3>
           <p className="text-sm text-muted-foreground">
-            Configure agent actions, assign AI models, and manage task workflows
+            Complete agent configuration: actions, connectors, knowledge bases, and assignments
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -42,35 +46,167 @@ export const ActionsTab: React.FC<ActionsTabProps> = ({
         </div>
       </div>
 
-      {/* Actions Configuration */}
-      <AgentActionsManager
-        onActionsChange={onActionsChange}
-        initialActions={actions}
-        agentType={agentType}
-        agentPurpose={agentPurpose}
-      />
+      {/* Consolidated Configuration Tabs */}
+      <Tabs defaultValue="actions" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="actions" className="flex items-center gap-2">
+            <Target className="h-4 w-4" />
+            Actions
+          </TabsTrigger>
+          <TabsTrigger value="connectors" className="flex items-center gap-2">
+            <Plug className="h-4 w-4" />
+            Connectors
+          </TabsTrigger>
+          <TabsTrigger value="knowledge" className="flex items-center gap-2">
+            <BookOpen className="h-4 w-4" />
+            Knowledge
+          </TabsTrigger>
+          <TabsTrigger value="assignments" className="flex items-center gap-2">
+            <Database className="h-4 w-4" />
+            Assignments
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Assignment Overview */}
-      {actions.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Assignment Overview</CardTitle>
-            <CardDescription>
-              View and manage connector, API, AI model, and MCP assignments for all actions and tasks
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <AgentAssignmentOverview
-              sessionId={sessionId}
-              actions={actions}
-              onAssignmentChange={() => {
-                // Refresh could be triggered here if needed
-                console.log('Assignments changed');
-              }}
-            />
-          </CardContent>
-        </Card>
-      )}
+        {/* Actions Tab */}
+        <TabsContent value="actions" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Agent Actions & Tasks</CardTitle>
+              <CardDescription>
+                Configure agent actions, assign AI models, and manage task workflows
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <AgentActionsManager
+                onActionsChange={onActionsChange}
+                initialActions={actions}
+                agentType={agentType}
+                agentPurpose={agentPurpose}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Connectors Tab */}
+        <TabsContent value="connectors" className="mt-6">
+          <div className="space-y-6">
+            <Tabs defaultValue="system" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="system" className="flex items-center gap-2">
+                  <Settings className="h-4 w-4" />
+                  System Connectors
+                </TabsTrigger>
+                <TabsTrigger value="enhanced" className="flex items-center gap-2">
+                  <Zap className="h-4 w-4" />
+                  Enhanced Connectors
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="system" className="mt-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Available System Connectors</CardTitle>
+                    <CardDescription>
+                      Connect to external services, APIs, and integrations. Test connections and manage credentials.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <SystemConnectors />
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="enhanced" className="mt-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Enhanced Connector System</CardTitle>
+                    <CardDescription>
+                      Advanced connector management with workflow automation and business intelligence.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <EnhancedConnectorSystem 
+                      agentId={sessionId}
+                      actions={actions.map(action => ({
+                        id: action.id,
+                        name: action.name,
+                        type: action.type,
+                        category: action.category,
+                        description: action.description
+                      }))}
+                      onAssignmentsChange={() => {
+                        console.log('Connector assignments changed');
+                      }}
+                    />
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          </div>
+        </TabsContent>
+
+        {/* Knowledge Tab */}
+        <TabsContent value="knowledge" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Knowledge Base Management</CardTitle>
+              <CardDescription>
+                Manage knowledge sources, RAG workflows, and knowledge base assignments for your agent.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <KnowledgeBaseManager 
+                agentId={sessionId}
+                actions={actions.map(action => ({
+                  id: action.id,
+                  name: action.name,
+                  type: action.type,
+                  category: action.category,
+                  description: action.description
+                }))}
+                onKnowledgeSourcesChange={(sources) => {
+                  console.log('Knowledge sources changed:', sources);
+                }}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Assignments Overview Tab */}
+        <TabsContent value="assignments" className="mt-6">
+          {actions.length > 0 ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Assignment Overview</CardTitle>
+                <CardDescription>
+                  View and manage connector, API, AI model, and MCP assignments for all actions and tasks
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <AgentAssignmentOverview
+                  sessionId={sessionId}
+                  actions={actions}
+                  onAssignmentChange={() => {
+                    console.log('Assignments changed');
+                  }}
+                />
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardContent className="flex items-center justify-center py-12">
+                <div className="text-center">
+                  <Database className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-medium mb-2">No Actions Configured</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Configure actions in the Actions tab to see assignment options
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

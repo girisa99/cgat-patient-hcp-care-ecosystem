@@ -13,18 +13,10 @@ import { SessionControls, SessionList } from '@/components/agentic/SessionContro
 import { EnhancedAgentCanvas } from '@/components/agentic/EnhancedAgentCanvas';
 import { AgentTemplates } from '@/components/agentic/AgentTemplates';
 import { AgentActionsManager } from '@/components/agentic/AgentActionsManager';
-import { SystemConnectors } from '@/components/agentic/SystemConnectors';
-import { ConnectorConfiguration } from '@/components/agentic/ConnectorConfiguration';
-import { KnowledgeSourceManager } from '@/components/rag/KnowledgeSourceManager';
 import { AgentDeployment } from '@/components/agentic/AgentDeployment';
-import { EnhancedKnowledgeBase } from '@/components/rag/EnhancedKnowledgeBase';
 import { RAGComplianceWorkflow } from '@/components/rag/RAGComplianceWorkflow';
-import { EnhancedAPIAssignmentManager } from '@/components/agentic/EnhancedAPIAssignmentManager';
 import { AgentIntegrationStatus } from '@/components/agentic/AgentIntegrationStatus';
-import { AgentAssignmentOverview } from '@/components/agentic/AgentAssignmentOverview';
 import { ActionsTab } from '@/components/agentic/tabs/ActionsTab';
-import { ConnectorsTab } from '@/components/agentic/tabs/ConnectorsTab';
-import { TemplatesTab } from '@/components/agentic/tabs/TemplatesTab';
 import { useAgentSession } from '@/hooks/useAgentSession';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { AgentSession } from '@/types/agent-session';
@@ -368,12 +360,10 @@ export const SessionAgentBuilder = () => {
 
       {/* Main Tabs */}
       <Tabs value={currentStep} onValueChange={(value) => setCurrentStep(value as AgentSession['current_step'])}>
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="basic_info">Agent Creation</TabsTrigger>
           <TabsTrigger value="canvas">Canvas</TabsTrigger>
-          <TabsTrigger value="actions">Actions</TabsTrigger>
-          <TabsTrigger value="connectors">Connectors</TabsTrigger>
-          <TabsTrigger value="knowledge">Knowledge</TabsTrigger>
+          <TabsTrigger value="actions">Actions & Config</TabsTrigger>
           <TabsTrigger value="rag">RAG</TabsTrigger>
           <TabsTrigger value="deploy">Deploy</TabsTrigger>
         </TabsList>
@@ -691,7 +681,9 @@ export const SessionAgentBuilder = () => {
 
         <TabsContent value="actions" className="space-y-4">
           <div className="space-y-6">
-            <AgentActionsManager
+            <ActionsTab
+              sessionId={currentSessionId!}
+              actions={currentSession.actions?.assigned_actions || []}
               onActionsChange={(actions) => {
                 if (currentSessionId) {
                   updateSession.mutate({
@@ -706,174 +698,13 @@ export const SessionAgentBuilder = () => {
                   });
                 }
               }}
-              initialActions={currentSession.actions?.assigned_actions || []}
               agentType={currentSession.basic_info?.use_case || 'assistant'}
               agentPurpose={currentSession.basic_info?.purpose || ''}
             />
-            
-            {/* Assignment Overview - Show hierarchical view of all assignments */}
-            {currentSessionId && currentSession.actions?.assigned_actions?.length > 0 && (
-              <AgentAssignmentOverview
-                sessionId={currentSessionId}
-                actions={currentSession.actions?.assigned_actions || []}
-                onAssignmentChange={() => {
-                  // Trigger a refresh of the session data
-                  if (currentSessionId) {
-                    // Session data will be automatically updated via the mutation in AgentAssignmentOverview
-                    console.log('Assignment changed for session:', currentSessionId);
-                  }
-                }}
-              />
-            )}
             <Card>
               <CardFooter className="flex justify-between">
                 <Button variant="outline" onClick={() => setCurrentStep('canvas')}>
                   Previous: Canvas
-                </Button>
-                <div className="flex gap-2">
-                  <Button variant="outline" onClick={handleSaveAndContinue}>
-                    Save & Continue Later
-                  </Button>
-                  <Button onClick={() => setCurrentStep('connectors')}>
-                    Next: Connectors
-                  </Button>
-                </div>
-              </CardFooter>
-            </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="connectors" className="space-y-4">
-          <div className="space-y-6">
-            <SystemConnectors />
-            <ConnectorConfiguration 
-              autoSuggestMode={currentSession.connectors?.configurations?.autoSuggestMode ?? true}
-              tokenThreshold={currentSession.connectors?.configurations?.tokenThreshold ?? 0.8}
-              onAutoSuggestChange={(enabled) => {
-                if (currentSessionId && updateSession) {
-                  updateSession.mutate({
-                    sessionId: currentSessionId,
-                    updates: {
-                      connectors: {
-                        ...currentSession.connectors,
-                        configurations: {
-                          ...currentSession.connectors?.configurations,
-                          autoSuggestMode: enabled
-                        }
-                      }
-                    }
-                  });
-                }
-              }}
-              onTokenThresholdChange={(threshold) => {
-                if (currentSessionId && updateSession) {
-                  updateSession.mutate({
-                    sessionId: currentSessionId,
-                    updates: {
-                      connectors: {
-                        ...currentSession.connectors,
-                        configurations: {
-                          ...currentSession.connectors?.configurations,
-                          tokenThreshold: threshold
-                        }
-                      }
-                    }
-                  });
-                }
-              }}
-              onRefreshSuggestions={() => {}}
-              isRefreshing={false}
-              sessionId={currentSessionId!}
-            />
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>API Integration Assignments</CardTitle>
-                <CardDescription>Assign specific APIs to tasks and actions with enhanced management</CardDescription>
-              </CardHeader>
-              <CardContent>
-                 <EnhancedAPIAssignmentManager 
-                  sessionId={currentSessionId!}
-                  tasks={[
-                    ...(currentSession.actions?.assigned_actions || []).map((action, index) => ({
-                      id: action.id || `action-${index}`,
-                      name: action.name || 'Unnamed Action',
-                      type: 'action' as const,
-                      description: action.description || '',
-                      category: action.category || 'custom',
-                      priority: (action.priority as 'low' | 'medium' | 'high' | 'critical') || 'medium'
-                    })),
-                    ...(currentSession.connectors?.assigned_connectors || []).map((connector, index) => ({
-                      id: connector.id || `connector-${index}`,
-                      name: connector.name || 'Unnamed Connector',
-                      type: 'connector' as const,
-                      description: connector.description || '',
-                      category: connector.category || 'custom',
-                      priority: (connector.priority as 'low' | 'medium' | 'high' | 'critical') || 'medium'
-                    })),
-                    {
-                      id: 'workflow-compliance',
-                      name: 'Healthcare Compliance Check',
-                      type: 'workflow_step' as const,
-                      description: 'Validate compliance with healthcare regulations',
-                      category: 'compliance',
-                      priority: 'high' as const
-                    },
-                    {
-                      id: 'workflow-alerts',
-                      name: 'Clinical Alert Generation',
-                      type: 'workflow_step' as const,
-                      description: 'Generate alerts for critical patient conditions',
-                      category: 'clinical',
-                      priority: 'critical' as const
-                    }
-                  ]}
-                />
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardFooter className="flex justify-between">
-                <Button variant="outline" onClick={() => setCurrentStep('actions')}>
-                  Previous: Actions
-                </Button>
-                <div className="flex gap-2">
-                  <Button variant="outline" onClick={handleSaveAndContinue}>
-                    Save & Continue Later
-                  </Button>
-                  <Button onClick={() => setCurrentStep('knowledge')}>
-                    Next: Knowledge
-                  </Button>
-                </div>
-              </CardFooter>
-            </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="knowledge" className="space-y-4">
-          <div className="space-y-6">
-            <EnhancedKnowledgeBase 
-              onKnowledgeBaseChange={(ids) => {
-                if (currentSessionId) {
-                  updateSession.mutate({
-                    sessionId: currentSessionId,
-                    updates: {
-                      knowledge: {
-                        knowledge_bases: ids,
-                        documents: [],
-                        urls: [],
-                        auto_generated_content: []
-                      }
-                    }
-                  });
-                }
-              }}
-              selectedIds={currentSession.knowledge?.knowledge_bases || []}
-            />
-            <Card>
-              <CardFooter className="flex justify-between">
-                <Button variant="outline" onClick={() => setCurrentStep('connectors')}>
-                  Previous: Connectors
                 </Button>
                 <div className="flex gap-2">
                   <Button variant="outline" onClick={handleSaveAndContinue}>
@@ -887,6 +718,7 @@ export const SessionAgentBuilder = () => {
             </Card>
           </div>
         </TabsContent>
+
 
         <TabsContent value="rag" className="space-y-4">
           <div className="space-y-6">
@@ -912,8 +744,8 @@ export const SessionAgentBuilder = () => {
             />
             <Card>
               <CardFooter className="flex justify-between">
-                <Button variant="outline" onClick={() => setCurrentStep('knowledge')}>
-                  Previous: Knowledge
+                <Button variant="outline" onClick={() => setCurrentStep('actions')}>
+                  Previous: Actions
                 </Button>
                 <div className="flex gap-2">
                   <Button variant="outline" onClick={handleSaveAndContinue}>
