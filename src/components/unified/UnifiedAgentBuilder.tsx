@@ -354,7 +354,7 @@ export const UnifiedAgentBuilder: React.FC = () => {
       </Card>
 
       {/* Main Tabs - Unified Interface */}
-      <Tabs value={currentStep} onValueChange={setCurrentStep}>
+      <Tabs value={currentStep} onValueChange={(value) => setCurrentStep(value as AgentSession['current_step'])}>
         <TabsList className="grid w-full grid-cols-6">
           {BUILDER_STEPS.map((step) => (
             <TabsTrigger key={step.id} value={step.id} className="flex items-center gap-2">
@@ -473,7 +473,7 @@ export const UnifiedAgentBuilder: React.FC = () => {
                       updates: {
                         canvas: {
                           ...currentSession.canvas,
-                          name: name
+                          workflow_steps: [{ name: name }]
                         }
                       }
                     });
@@ -505,8 +505,7 @@ export const UnifiedAgentBuilder: React.FC = () => {
                       sessionId: currentSessionId,
                       updates: {
                         actions: {
-                          actions: newActions,
-                          updated_at: new Date().toISOString()
+                          assigned_actions: newActions
                         }
                       }
                     });
@@ -563,8 +562,7 @@ export const UnifiedAgentBuilder: React.FC = () => {
                             sessionId: currentSessionId,
                             updates: {
                               connectors: {
-                                assignments: assignments,
-                                updated_at: new Date().toISOString()
+                                assigned_connectors: assignments
                               }
                             }
                           });

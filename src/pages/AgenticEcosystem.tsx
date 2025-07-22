@@ -216,7 +216,7 @@ const AgenticEcosystem = () => {
 
       {/* Main Interface */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="overview">
             <Settings className="h-4 w-4 mr-2" />
             Overview
@@ -225,21 +225,9 @@ const AgenticEcosystem = () => {
             <Plus className="h-4 w-4 mr-2" />
             Agent Builder
           </TabsTrigger>
-          <TabsTrigger value="deploy">
-            <Satellite className="h-4 w-4 mr-2" />
-            Deploy
-          </TabsTrigger>
           <TabsTrigger value="templates">
             <Plus className="h-4 w-4 mr-2" />
             Templates
-          </TabsTrigger>
-          <TabsTrigger value="knowledge">
-            <Bot className="h-4 w-4 mr-2" />
-            Knowledge Base
-          </TabsTrigger>
-          <TabsTrigger value="rag">
-            <Brain className="h-4 w-4 mr-2" />
-            RAG Recommendations
           </TabsTrigger>
         </TabsList>
 
@@ -281,10 +269,10 @@ const AgenticEcosystem = () => {
                         {agent.status === 'draft' && (
                           <Button 
                             size="sm" 
-                            onClick={() => setActiveTab('deploy')}
+                            onClick={() => setActiveTab('builder')}
                           >
                             <Rocket className="h-4 w-4 mr-2" />
-                            Deploy
+                            Edit
                           </Button>
                         )}
                         {agent.status === 'deployed' && (
@@ -321,20 +309,8 @@ const AgenticEcosystem = () => {
           <UnifiedAgentBuilder />
         </TabsContent>
 
-        <TabsContent value="deploy" className="space-y-4">
-          <AgentChannelAssignmentMatrix />
-        </TabsContent>
-
         <TabsContent value="templates" className="space-y-4">
           <AgentTemplates />
-        </TabsContent>
-
-        <TabsContent value="knowledge" className="space-y-4">
-          <KnowledgeBaseManager />
-        </TabsContent>
-
-        <TabsContent value="rag" className="space-y-4">
-          <RAGRecommendations />
         </TabsContent>
 
       </Tabs>
