@@ -31,7 +31,7 @@ export const useConnectorAssignments = (agentSessionId?: string) => {
   } = useQuery({
     queryKey: ['connector-assignments', agentSessionId],
     queryFn: async (): Promise<ConnectorAssignment[]> => {
-      if (!agentSessionId) return [];
+      if (!agentSessionId || agentSessionId === 'temp-agent-id') return [];
       
       const { data, error } = await supabase
         .from('connector_assignments')
@@ -43,10 +43,13 @@ export const useConnectorAssignments = (agentSessionId?: string) => {
         .eq('is_active', true)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching connector assignments:', error);
+        return [];
+      }
       return (data || []) as ConnectorAssignment[];
     },
-    enabled: !!agentSessionId,
+    enabled: !!agentSessionId && agentSessionId !== 'temp-agent-id',
     staleTime: 30000,
   });
 
@@ -78,6 +81,11 @@ export const useConnectorAssignments = (agentSessionId?: string) => {
       task_type: 'action' | 'workflow_step' | 'connector';
       assignment_config?: Record<string, any>;
     }) => {
+      if (!assignment.agent_session_id || assignment.agent_session_id === 'temp-agent-id') {
+        console.error('Cannot assign connector to temporary agent ID');
+        throw new Error('Cannot assign connector to temporary agent ID. Please save the agent first.');
+      }
+      
       const { data, error } = await supabase
         .from('connector_assignments')
         .insert([{
@@ -90,7 +98,10 @@ export const useConnectorAssignments = (agentSessionId?: string) => {
         `)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error assigning connector:', error);
+        throw error;
+      }
       return data;
     },
     onSuccess: (data) => {

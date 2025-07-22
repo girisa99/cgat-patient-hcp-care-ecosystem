@@ -74,6 +74,7 @@ interface AgentActionsManagerProps {
   initialActions?: AgentAction[];
   agentType?: string;
   agentPurpose?: string;
+  agentId?: string;
 }
 
 // AI Model database simulation (would come from actual DB)
@@ -143,7 +144,8 @@ export const AgentActionsManager: React.FC<AgentActionsManagerProps> = ({
   onActionsChange,
   initialActions = [],
   agentType,
-  agentPurpose
+  agentPurpose,
+  agentId
 }) => {
   const [actions, setActions] = useState<AgentAction[]>(initialActions);
   const [selectedAction, setSelectedAction] = useState<AgentAction | null>(null);
@@ -988,7 +990,7 @@ export const AgentActionsManager: React.FC<AgentActionsManagerProps> = ({
         {/* Connectors Tab */}
         <TabsContent value="connectors" className="mt-6">
           <EnhancedConnectorSystem
-            agentId="temp-agent-id" // This should come from props
+            agentId={agentId || ''}
             actions={actions.map(action => ({
               id: action.id,
               name: action.name,
@@ -1003,7 +1005,7 @@ export const AgentActionsManager: React.FC<AgentActionsManagerProps> = ({
         {/* Knowledge Base Tab */}
         <TabsContent value="knowledge" className="mt-6">
           <KnowledgeBaseManager
-            agentId="temp-agent-id" // This should come from props
+            agentId={agentId || ''}
             actions={actions.map(action => ({
               id: action.id,
               name: action.name,

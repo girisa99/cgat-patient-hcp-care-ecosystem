@@ -20,7 +20,7 @@ export const useAgentAPIAssignments = (sessionId?: string) => {
   const { data: apiAssignments = [], isLoading } = useQuery({
     queryKey: ['agent-api-assignments', sessionId],
     queryFn: async () => {
-      if (!sessionId) return [];
+      if (!sessionId || sessionId === 'temp-agent-id') return [];
       
       const { data, error } = await supabase
         .from('agent_api_assignments')
@@ -35,7 +35,7 @@ export const useAgentAPIAssignments = (sessionId?: string) => {
 
       return data as APIAssignment[];
     },
-    enabled: !!sessionId,
+    enabled: !!sessionId && sessionId !== 'temp-agent-id',
   });
 
   // Fetch available API services from integration registry
@@ -66,6 +66,11 @@ export const useAgentAPIAssignments = (sessionId?: string) => {
       assigned_api_service: string;
       api_configuration?: Record<string, any>;
     }) => {
+      if (!assignment.agent_session_id || assignment.agent_session_id === 'temp-agent-id') {
+        console.error('Cannot assign API to temporary agent ID');
+        throw new Error('Cannot assign API to temporary agent ID. Please save the agent first.');
+      }
+      
       const { data, error } = await supabase
         .from('agent_api_assignments')
         .insert([{
@@ -76,6 +81,7 @@ export const useAgentAPIAssignments = (sessionId?: string) => {
         .single();
 
       if (error) {
+        console.error('Error assigning API:', error);
         throw new Error(`Failed to assign API: ${error.message}`);
       }
 
