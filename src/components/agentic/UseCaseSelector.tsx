@@ -191,8 +191,8 @@ export const UseCaseSelector: React.FC<UseCaseSelectorProps> = ({
       </Button>
       
       {isOpen && (
-        <Card className="absolute top-full left-0 right-0 z-50 mt-1 max-h-80 overflow-hidden shadow-lg">
-          <div className="p-2 space-y-1 overflow-y-auto max-h-64">
+        <Card className="absolute top-full left-0 right-0 z-[100] mt-1 max-h-80 overflow-hidden shadow-lg bg-background border">
+          <div className="p-2 space-y-1 overflow-y-auto max-h-64 bg-background">
             {allUseCases.length === 0 ? (
               <div className="p-2 text-sm text-muted-foreground text-center">
                 Select categories or topics to see suggested use cases

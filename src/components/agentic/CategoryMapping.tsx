@@ -204,8 +204,8 @@ export const CategoryMapping: React.FC<CategoryMappingProps> = ({
           </Button>
           
           {openDropdowns.categories && (
-            <Card className="absolute top-full left-0 right-0 z-50 mt-1 max-h-80 overflow-hidden shadow-lg">
-              <div className="p-2 space-y-1 overflow-y-auto max-h-72">
+            <Card className="absolute top-full left-0 right-0 z-[100] mt-1 max-h-80 overflow-hidden shadow-lg bg-background border">
+              <div className="p-2 space-y-1 overflow-y-auto max-h-72 bg-background">
                 {categories.map((category) => (
                   <div key={category} className="flex items-center justify-between group">
                     <div
@@ -308,8 +308,8 @@ export const CategoryMapping: React.FC<CategoryMappingProps> = ({
           </Button>
           
           {openDropdowns.businessUnits && (
-            <Card className="absolute top-full left-0 right-0 z-50 mt-1 max-h-80 overflow-hidden shadow-lg">
-              <div className="p-2 space-y-1 overflow-y-auto max-h-72">
+            <Card className="absolute top-full left-0 right-0 z-[100] mt-1 max-h-80 overflow-hidden shadow-lg bg-background border">
+              <div className="p-2 space-y-1 overflow-y-auto max-h-72 bg-background">
                 {businessUnits.map((unit) => (
                   <div key={unit} className="flex items-center justify-between group">
                     <div
@@ -411,8 +411,8 @@ export const CategoryMapping: React.FC<CategoryMappingProps> = ({
           </Button>
           
           {openDropdowns.topics && (
-            <Card className="absolute top-full left-0 right-0 z-50 mt-1 max-h-80 overflow-hidden shadow-lg">
-              <div className="p-2 space-y-1 overflow-y-auto max-h-72">
+            <Card className="absolute top-full left-0 right-0 z-[100] mt-1 max-h-80 overflow-hidden shadow-lg bg-background border">
+              <div className="p-2 space-y-1 overflow-y-auto max-h-72 bg-background">
                 {topics.map((topic) => (
                   <div key={topic} className="flex items-center justify-between group">
                     <div
