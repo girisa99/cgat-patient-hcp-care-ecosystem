@@ -127,6 +127,7 @@ export const UnifiedAgentBuilder: React.FC<UnifiedAgentBuilderProps> = ({ step }
     autoSave,
     deleteSession,
     deployAgent,
+    isLoading,
   } = useAgentSession(currentSessionId || undefined);
 
   // Persist current session ID to localStorage
@@ -261,8 +262,20 @@ export const UnifiedAgentBuilder: React.FC<UnifiedAgentBuilderProps> = ({ step }
     return <step.icon className="h-4 w-4 text-gray-400" />;
   };
 
-  // If no session is active, show session management
-  if (!currentSessionId || !currentSession) {
+  // Show loading state while session is being fetched
+  if (currentSessionId && isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading agent session...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If no session is active or session failed to load, show session management
+  if (!currentSessionId || (!currentSession && !isLoading)) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
