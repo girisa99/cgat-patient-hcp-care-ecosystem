@@ -18,6 +18,7 @@ import { RAGComplianceWorkflow } from '@/components/rag/RAGComplianceWorkflow';
 import { AgentChannelAssignmentMatrix } from '@/components/agent-deployment/AgentChannelAssignmentMatrix';
 import { CategoryMapping } from '@/components/agentic/CategoryMapping';
 import { UseCaseSelector } from '@/components/agentic/UseCaseSelector';
+import { ConsolidatedActionsTab } from '@/components/agentic/tabs/ConsolidatedActionsTab';
 
 // Import existing hooks to preserve functionality
 import { useAgentSession } from '@/hooks/useAgentSession';
@@ -63,25 +64,13 @@ const BUILDER_STEPS: BuilderStep[] = [
   {
     id: 'actions',
     title: 'Actions & Configuration',
-    description: 'Set up actions, tasks, AI models, and workflows',
+    description: 'Configure actions, connectors, knowledge base, and RAG',
     icon: Zap,
-    isCompleted: (session) => !!(session?.actions && Object.keys(session.actions).length > 0),
-    isRequired: true
-  },
-  {
-    id: 'connectors',
-    title: 'System Connectors',
-    description: 'Connect to APIs, databases, and external services',
-    icon: Plug,
-    isCompleted: (session) => !!(session?.connectors && Object.keys(session.connectors).length > 0),
-    isRequired: true
-  },
-  {
-    id: 'knowledge',
-    title: 'Knowledge & RAG',
-    description: 'Configure knowledge base and RAG capabilities',
-    icon: Brain,
-    isCompleted: (session) => !!(session?.rag && Object.keys(session.rag).length > 0),
+    isCompleted: (session) => !!(
+      session?.actions && Object.keys(session.actions).length > 0 &&
+      session?.connectors && Object.keys(session.connectors).length > 0 &&
+      session?.rag && Object.keys(session.rag).length > 0
+    ),
     isRequired: true
   },
   {
@@ -780,14 +769,16 @@ export const UnifiedAgentBuilder: React.FC<UnifiedAgentBuilderProps> = ({ step }
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Zap className="h-5 w-5" />
-          Actions & Task Configuration
+          Actions & Configuration
         </CardTitle>
         <CardDescription>
-          Configure agent actions, assign AI models, and manage task workflows
+          Configure actions, connectors, knowledge base, and RAG in one unified workflow
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <AgentActionsManager
+        <ConsolidatedActionsTab
+          sessionId={currentSessionId || ''}
+          actions={actions}
           onActionsChange={(newActions) => {
             setActions(newActions);
             if (currentSessionId) {
@@ -801,9 +792,9 @@ export const UnifiedAgentBuilder: React.FC<UnifiedAgentBuilderProps> = ({ step }
               });
             }
           }}
-          initialActions={actions}
           agentType={currentSession?.basic_info?.agent_type}
           agentPurpose={currentSession?.basic_info?.purpose}
+          agentId={currentSessionId || ''}
         />
       </CardContent>
     </Card>

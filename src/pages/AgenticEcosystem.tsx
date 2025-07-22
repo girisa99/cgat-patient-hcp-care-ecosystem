@@ -222,7 +222,7 @@ const AgenticEcosystem = () => {
         // Persist tab state to localStorage
         localStorage.setItem('agenticEcosystem_activeTab', value);
       }} className="w-full">
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="overview">
             <Settings className="h-4 w-4 mr-2" />
             Overview
@@ -237,15 +237,7 @@ const AgenticEcosystem = () => {
           </TabsTrigger>
           <TabsTrigger value="actions">
             <Plus className="h-4 w-4 mr-2" />
-            Actions
-          </TabsTrigger>
-          <TabsTrigger value="connectors">
-            <Network className="h-4 w-4 mr-2" />
-            Connectors
-          </TabsTrigger>
-          <TabsTrigger value="knowledge">
-            <Brain className="h-4 w-4 mr-2" />
-            Knowledge
+            Actions & Configuration
           </TabsTrigger>
           <TabsTrigger value="deploy">
             <Rocket className="h-4 w-4 mr-2" />
@@ -253,103 +245,95 @@ const AgenticEcosystem = () => {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-6">
-          {/* My Agents - Real Data */}
-          <Card>
-            <CardHeader>
-              <CardTitle>My Agents</CardTitle>
-              <CardDescription>Manage and monitor your deployed agents</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4">
-                {agentsLoading ? (
-                  <div className="flex items-center justify-center p-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                    <span className="ml-2">Loading agents...</span>
-                  </div>
-                ) : agents.length > 0 ? (
-                  agents.map((agent) => (
-                    <div key={agent.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center space-x-4">
-                        <Bot className="h-8 w-8 text-primary" />
-                        <div>
-                          <h3 className="font-semibold">{agent.name}</h3>
-                          <p className="text-sm text-muted-foreground">{agent.description}</p>
-                          <div className="flex items-center space-x-2 mt-2">
-                            <Badge 
-                              variant={agent.status === 'deployed' ? 'default' : agent.status === 'draft' ? 'secondary' : 'outline'}
-                            >
-                              {agent.status}
-                            </Badge>
-                            <span className="text-xs text-muted-foreground">
-                              {agent.connections.length} connections
-                            </span>
+           <TabsContent value="overview" className="space-y-6">
+            {/* My Agents - Real Data */}
+            <Card>
+              <CardHeader>
+                <CardTitle>My Agents</CardTitle>
+                <CardDescription>Manage and monitor your deployed agents</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4">
+                  {agentsLoading ? (
+                    <div className="flex items-center justify-center p-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                      <span className="ml-2">Loading agents...</span>
+                    </div>
+                  ) : agents.length > 0 ? (
+                    agents.map((agent) => (
+                      <div key={agent.id} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex items-center space-x-4">
+                          <Bot className="h-8 w-8 text-primary" />
+                          <div>
+                            <h3 className="font-semibold">{agent.name}</h3>
+                            <p className="text-sm text-muted-foreground">{agent.description}</p>
+                            <div className="flex items-center space-x-2 mt-2">
+                              <Badge 
+                                variant={agent.status === 'deployed' ? 'default' : agent.status === 'draft' ? 'secondary' : 'outline'}
+                              >
+                                {agent.status}
+                              </Badge>
+                              <span className="text-xs text-muted-foreground">
+                                {agent.connections.length} connections
+                              </span>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <div className="flex space-x-2">
-                        {agent.status === 'draft' && (
-                          <Button 
-                            size="sm" 
-                            onClick={() => setActiveTab('basic_info')}
-                          >
-                            <Rocket className="h-4 w-4 mr-2" />
-                            Edit
+                        <div className="flex space-x-2">
+                          {agent.status === 'draft' && (
+                            <Button 
+                              size="sm" 
+                              onClick={() => setActiveTab('basic_info')}
+                            >
+                              <Rocket className="h-4 w-4 mr-2" />
+                              Edit
+                            </Button>
+                          )}
+                          {agent.status === 'deployed' && (
+                            <Button 
+                              variant="outline"
+                              size="sm" 
+                              onClick={() => handlePauseAgent(agent.id)}
+                            >
+                              Pause
+                            </Button>
+                          )}
+                          <Button variant="outline" size="sm">
+                            <Settings className="h-4 w-4" />
                           </Button>
-                        )}
-                        {agent.status === 'deployed' && (
-                          <Button 
-                            variant="outline"
-                            size="sm" 
-                            onClick={() => handlePauseAgent(agent.id)}
-                          >
-                            Pause
-                          </Button>
-                        )}
-                        <Button variant="outline" size="sm">
-                          <Settings className="h-4 w-4" />
-                        </Button>
+                        </div>
                       </div>
+                    ))
+                  ) : (
+                    <div className="text-center p-8">
+                      <Bot className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">No agents found. Create your first agent to get started.</p>
+                      <Button onClick={handleCreateAgent} className="mt-4">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Create Agent
+                      </Button>
                     </div>
-                  ))
-                ) : (
-                  <div className="text-center p-8">
-                    <Bot className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">No agents found. Create your first agent to get started.</p>
-                    <Button onClick={handleCreateAgent} className="mt-4">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Create Agent
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-        <TabsContent value="basic_info" className="space-y-4">
-          <UnifiedAgentBuilder step="basic_info" />
-        </TabsContent>
+          <TabsContent value="basic_info" className="mt-6">
+            <UnifiedAgentBuilder step="basic_info" />
+          </TabsContent>
 
-        <TabsContent value="canvas" className="space-y-4">
-          <UnifiedAgentBuilder step="canvas" />
-        </TabsContent>
+          <TabsContent value="canvas" className="mt-6">
+            <UnifiedAgentBuilder step="canvas" />
+          </TabsContent>
 
-        <TabsContent value="actions" className="space-y-4">
-          <UnifiedAgentBuilder step="actions" />
-        </TabsContent>
+          <TabsContent value="actions" className="mt-6">
+            <UnifiedAgentBuilder step="actions" />
+          </TabsContent>
 
-        <TabsContent value="connectors" className="space-y-4">
-          <UnifiedAgentBuilder step="connectors" />
-        </TabsContent>
-
-        <TabsContent value="knowledge" className="space-y-4">
-          <UnifiedAgentBuilder step="knowledge" />
-        </TabsContent>
-
-        <TabsContent value="deploy" className="space-y-4">
-          <UnifiedAgentBuilder step="deploy" />
-        </TabsContent>
+          <TabsContent value="deploy" className="mt-6">
+            <UnifiedAgentBuilder step="deploy" />
+          </TabsContent>
 
       </Tabs>
     </div>
