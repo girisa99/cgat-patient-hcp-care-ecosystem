@@ -942,6 +942,9 @@ export const ActionTemplateManager: React.FC<ActionTemplateManagerProps> = ({
                                     <SelectItem value="validation">Validation</SelectItem>
                                     <SelectItem value="analysis">Analysis</SelectItem>
                                     <SelectItem value="notification">Notification</SelectItem>
+                                    <SelectItem value="data_transformation">Data Transformation</SelectItem>
+                                    <SelectItem value="api_call">API Call</SelectItem>
+                                    <SelectItem value="decision">Decision</SelectItem>
                                     {customTaskTypes.map(type => (
                                       <SelectItem key={type} value={type}>{type}</SelectItem>
                                     ))}
@@ -1189,8 +1192,33 @@ export const ActionTemplateManager: React.FC<ActionTemplateManagerProps> = ({
                       <SelectItem value="integration">Integration</SelectItem>
                       <SelectItem value="automation">Automation</SelectItem>
                       <SelectItem value="custom">Custom</SelectItem>
+                      {customCategories.map(category => (
+                        <SelectItem key={category} value={category}>{category}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
+                  <div className="flex gap-2 mt-2">
+                    <Input
+                      placeholder="Add new category"
+                      value={newCategoryInput}
+                      onChange={(e) => setNewCategoryInput(e.target.value)}
+                      className="h-8"
+                    />
+                    <Button 
+                      type="button"
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        if (newCategoryInput.trim() && !customCategories.includes(newCategoryInput.trim())) {
+                          setCustomCategories([...customCategories, newCategoryInput.trim()]);
+                          setEditForm({...editForm, category: newCategoryInput.trim()});
+                          setNewCategoryInput('');
+                        }
+                      }}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
                 
                 <div>
@@ -1206,8 +1234,33 @@ export const ActionTemplateManager: React.FC<ActionTemplateManagerProps> = ({
                       <SelectItem value="trigger">Trigger</SelectItem>
                       <SelectItem value="scheduled">Scheduled</SelectItem>
                       <SelectItem value="on_demand">On Demand</SelectItem>
+                      {customTypes.map(type => (
+                        <SelectItem key={type} value={type}>{type}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
+                  <div className="flex gap-2 mt-2">
+                    <Input
+                      placeholder="Add new type"
+                      value={newTypeInput}
+                      onChange={(e) => setNewTypeInput(e.target.value)}
+                      className="h-8"
+                    />
+                    <Button 
+                      type="button"
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        if (newTypeInput.trim() && !customTypes.includes(newTypeInput.trim())) {
+                          setCustomTypes([...customTypes, newTypeInput.trim()]);
+                          setEditForm({...editForm, type: newTypeInput.trim()});
+                          setNewTypeInput('');
+                        }
+                      }}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
 
@@ -1311,6 +1364,9 @@ export const ActionTemplateManager: React.FC<ActionTemplateManagerProps> = ({
                                   <SelectItem value="validation">Validation</SelectItem>
                                   <SelectItem value="analysis">Analysis</SelectItem>
                                   <SelectItem value="notification">Notification</SelectItem>
+                                  <SelectItem value="data_transformation">Data Transformation</SelectItem>
+                                  <SelectItem value="api_call">API Call</SelectItem>
+                                  <SelectItem value="decision">Decision</SelectItem>
                                   {customTaskTypes.map(type => (
                                     <SelectItem key={type} value={type}>{type}</SelectItem>
                                   ))}
