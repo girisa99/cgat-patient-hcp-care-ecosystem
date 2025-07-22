@@ -8,7 +8,7 @@ import {
   Zap, Plus, Search, RefreshCw, BarChart3, Settings,
   Database, Cloud, MessageSquare, FileText, Globe,
   CheckCircle, AlertTriangle, Clock, Filter,
-  Eye, Edit, Trash2, Play, TrendingUp, X
+  Eye, Edit, Trash2, Play, TrendingUp, X, Target
 } from "lucide-react";
 import { 
   Dialog, 
@@ -358,102 +358,119 @@ export const EnhancedConnectorSystem: React.FC<EnhancedConnectorSystemProps> = (
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-2">
-                    <Settings className="h-5 w-5" />
-                    Connector Assignments
-                  </CardTitle>
-                  <Button 
-                    onClick={() => setIsAssignmentDialogOpen(true)}
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Assign Connector
-                  </Button>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="h-5 w-5" />
+                  Agent Actions & Connector Assignments
+                </CardTitle>
+                <div className="text-sm text-gray-600 mt-2">
+                  {agentType && agentPurpose && (
+                    <p>Managing connectors for <strong>{agentType}</strong> agent: <em>{agentPurpose}</em></p>
+                  )}
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
+                <div className="space-y-6">
+                  {/* Available Actions from Actions and Templates Tab */}
+                  <div>
+                    <h4 className="font-medium mb-3 flex items-center gap-2">
+                      <Target className="h-4 w-4" />
+                      Actions from Actions & Templates Tab
+                    </h4>
+                    {actions.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {actions.map((action) => {
+                          const hasAssignment = apiAssignments?.some((assignment: any) => 
+                            assignment.task_id === action.id
+                          );
+                          return (
+                            <Card key={action.id} className={`p-4 ${hasAssignment ? 'bg-green-50 border-green-200' : 'border-gray-200'}`}>
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <h5 className="font-medium text-sm">{action.name}</h5>
+                                    {hasAssignment && (
+                                      <Badge variant="default" className="text-xs bg-green-100 text-green-800">
+                                        Assigned
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <p className="text-xs text-gray-600 mb-1">
+                                    <strong>Category:</strong> {action.category}
+                                  </p>
+                                  <p className="text-xs text-gray-600 mb-1">
+                                    <strong>Type:</strong> {action.type}
+                                  </p>
+                                  {action.description && (
+                                    <p className="text-xs text-gray-500 mt-2">{action.description}</p>
+                                  )}
+                                </div>
+                                <Button 
+                                  variant={hasAssignment ? "outline" : "default"}
+                                  size="sm"
+                                  onClick={() => {
+                                    setSelectedActionForAssignment(action);
+                                    setIsAssignmentDialogOpen(true);
+                                  }}
+                                  className={hasAssignment ? "" : "bg-blue-600 hover:bg-blue-700"}
+                                >
+                                  <Plus className="h-3 w-3 mr-1" />
+                                  {hasAssignment ? 'Reassign' : 'Assign Connector'}
+                                </Button>
+                              </div>
+                            </Card>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <Card className="p-6 text-center border-dashed">
+                        <Target className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                        <p className="text-sm text-gray-500">
+                          No actions configured. Go to the <strong>Actions</strong> tab to create actions first.
+                        </p>
+                      </Card>
+                    )}
+                  </div>
+
                   {/* Current Assignments */}
-                  {apiAssignments && apiAssignments.length > 0 ? (
-                    <div className="space-y-3">
-                      <h4 className="font-medium">Current Assignments</h4>
-                      {apiAssignments.map((assignment: any) => (
-                        <Card key={assignment.id} className="p-4">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="font-medium">{assignment.assigned_api_service}</p>
-                              <p className="text-sm text-gray-600">
-                                Task: {assignment.task_id} ({assignment.task_type})
-                              </p>
-                              <p className="text-xs text-gray-500">
-                                Created: {new Date(assignment.created_at).toLocaleDateString()}
-                              </p>
+                  {apiAssignments && apiAssignments.length > 0 && (
+                    <div>
+                      <h4 className="font-medium mb-3 flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                        Active Connector Assignments
+                      </h4>
+                      <div className="space-y-3">
+                        {apiAssignments.map((assignment: any) => (
+                          <Card key={assignment.id} className="p-4 bg-green-50 border-green-200">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="font-medium text-sm">{assignment.assigned_api_service}</p>
+                                <p className="text-sm text-gray-600">
+                                  Assigned to: <strong>{actions.find(a => a.id === assignment.task_id)?.name || assignment.task_id}</strong>
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  Type: {assignment.task_type} • Created: {new Date(assignment.created_at).toLocaleDateString()}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Button variant="outline" size="sm">
+                                  <Eye className="h-4 w-4 mr-1" />
+                                  View
+                                </Button>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => removeAssignment.mutate(assignment.id)}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-1" />
+                                  Remove
+                                </Button>
+                              </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <Button variant="outline" size="sm">
-                                <Eye className="h-4 w-4 mr-1" />
-                                View
-                              </Button>
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => removeAssignment.mutate(assignment.id)}
-                              >
-                                <Trash2 className="h-4 w-4 mr-1" />
-                                Remove
-                              </Button>
-                            </div>
-                          </div>
-                        </Card>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8 text-gray-500">
-                      <Settings className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <h3 className="font-medium mb-2">No Assignments Yet</h3>
-                      <p className="text-sm mb-4">
-                        Start assigning connectors to actions and tasks to enable automated workflows.
-                      </p>
-                      <Button 
-                        onClick={() => setIsAssignmentDialogOpen(true)}
-                        variant="outline"
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Create First Assignment
-                      </Button>
+                          </Card>
+                        ))}
+                      </div>
                     </div>
                   )}
-
-                  {/* Available Actions */}
-                  <div className="mt-6">
-                    <h4 className="font-medium mb-3">Available Actions for Assignment</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {actions.map((action) => (
-                        <Card key={action.id} className="p-3">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="font-medium text-sm">{action.name}</p>
-                              <p className="text-xs text-gray-600">{action.category}</p>
-                              {action.description && (
-                                <p className="text-xs text-gray-500 mt-1">{action.description}</p>
-                              )}
-                            </div>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => {
-                                setSelectedActionForAssignment(action);
-                                setIsAssignmentDialogOpen(true);
-                              }}
-                            >
-                              Assign
-                            </Button>
-                          </div>
-                        </Card>
-                      ))}
-                    </div>
-                  </div>
                 </div>
               </CardContent>
             </Card>
