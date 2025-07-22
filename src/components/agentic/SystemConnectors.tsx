@@ -1381,19 +1381,18 @@ export const SystemConnectors = () => {
               
               <Button 
                 variant="outline" 
-                onClick={() => {
-                  console.log('Advanced Wizard button clicked, current state:', { showConnectorWizard });
-                  console.log('Setting showConnectorWizard to true');
-                  // Pre-populate wizard with custom connector data
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log('🔥 WIZARD BUTTON CLICKED!');
+                  alert('Wizard button clicked - check if dialog opens');
                   setShowConnectorWizard(true);
-                  toast({
-                    title: "Opening Advanced Wizard",
-                    description: "Loading the advanced connector configuration wizard...",
-                  });
+                  console.log('showConnectorWizard set to true');
                 }}
                 className="w-full"
+                type="button"
               >
-                Use Advanced Wizard for Configuration
+                🎯 Use Advanced Wizard for Configuration
               </Button>
             </TabsContent>
           </Tabs>
