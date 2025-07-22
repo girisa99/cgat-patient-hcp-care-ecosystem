@@ -34,10 +34,12 @@ export const ActionsTab: React.FC<ActionsTabProps> = ({
             Configure agent actions, assign AI models, and manage task workflows
           </p>
         </div>
-        <Badge variant="secondary" className="flex items-center gap-1">
-          <Info className="h-3 w-3" />
-          {actions.length} Actions Configured
-        </Badge>
+        <div className="flex items-center gap-3">
+          <Badge variant="secondary" className="flex items-center gap-1">
+            <Info className="h-3 w-3" />
+            {actions.length} Actions Configured
+          </Badge>
+        </div>
       </div>
 
       {/* Actions Configuration */}
