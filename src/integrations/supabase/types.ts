@@ -364,6 +364,71 @@ export type Database = {
           },
         ]
       }
+      agent_channel_deployments: {
+        Row: {
+          agent_id: string
+          assigned_at: string | null
+          channel_id: string
+          channel_type: string
+          created_at: string | null
+          created_by: string | null
+          deployed_at: string | null
+          deployment_config: Json | null
+          deployment_status: string
+          health_status: string | null
+          id: string
+          last_health_check: string | null
+          max_concurrent_sessions: number | null
+          performance_metrics: Json | null
+          priority: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          agent_id: string
+          assigned_at?: string | null
+          channel_id: string
+          channel_type: string
+          created_at?: string | null
+          created_by?: string | null
+          deployed_at?: string | null
+          deployment_config?: Json | null
+          deployment_status?: string
+          health_status?: string | null
+          id?: string
+          last_health_check?: string | null
+          max_concurrent_sessions?: number | null
+          performance_metrics?: Json | null
+          priority?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          agent_id?: string
+          assigned_at?: string | null
+          channel_id?: string
+          channel_type?: string
+          created_at?: string | null
+          created_by?: string | null
+          deployed_at?: string | null
+          deployment_config?: Json | null
+          deployment_status?: string
+          health_status?: string | null
+          id?: string
+          last_health_check?: string | null
+          max_concurrent_sessions?: number | null
+          performance_metrics?: Json | null
+          priority?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_channel_deployments_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agent_compliance_monitoring: {
         Row: {
           agent_id: string
@@ -416,6 +481,54 @@ export type Database = {
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "agent_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_conversation_engines: {
+        Row: {
+          agent_id: string
+          conditions: Json | null
+          conversation_engine_id: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          priority: number | null
+          role: string
+        }
+        Insert: {
+          agent_id: string
+          conditions?: Json | null
+          conversation_engine_id: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          priority?: number | null
+          role: string
+        }
+        Update: {
+          agent_id?: string
+          conditions?: Json | null
+          conversation_engine_id?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          priority?: number | null
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_conversation_engines_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_conversation_engines_conversation_engine_id_fkey"
+            columns: ["conversation_engine_id"]
+            isOneToOne: false
+            referencedRelation: "conversation_engines"
             referencedColumns: ["id"]
           },
         ]
@@ -1935,6 +2048,51 @@ export type Database = {
           },
         ]
       }
+      conversation_engines: {
+        Row: {
+          capabilities: Json | null
+          configuration: Json
+          created_at: string | null
+          created_by: string | null
+          engine_type: string
+          id: string
+          is_active: boolean | null
+          model_identifier: string
+          name: string
+          performance_profile: Json | null
+          provider: string
+          updated_at: string | null
+        }
+        Insert: {
+          capabilities?: Json | null
+          configuration?: Json
+          created_at?: string | null
+          created_by?: string | null
+          engine_type: string
+          id?: string
+          is_active?: boolean | null
+          model_identifier: string
+          name: string
+          performance_profile?: Json | null
+          provider: string
+          updated_at?: string | null
+        }
+        Update: {
+          capabilities?: Json | null
+          configuration?: Json
+          created_at?: string | null
+          created_by?: string | null
+          engine_type?: string
+          id?: string
+          is_active?: boolean | null
+          model_identifier?: string
+          name?: string
+          performance_profile?: Json | null
+          provider?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       conversation_exports: {
         Row: {
           completed_at: string | null
@@ -1978,6 +2136,50 @@ export type Database = {
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "agent_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversation_message_routing: {
+        Row: {
+          conversation_id: string | null
+          created_at: string | null
+          entity_extraction: Json | null
+          id: string
+          intent_classification: Json | null
+          message_id: string
+          processing_status: string | null
+          routing_decision: Json
+          selected_models: Json
+        }
+        Insert: {
+          conversation_id?: string | null
+          created_at?: string | null
+          entity_extraction?: Json | null
+          id?: string
+          intent_classification?: Json | null
+          message_id: string
+          processing_status?: string | null
+          routing_decision: Json
+          selected_models?: Json
+        }
+        Update: {
+          conversation_id?: string | null
+          created_at?: string | null
+          entity_extraction?: Json | null
+          id?: string
+          intent_classification?: Json | null
+          message_id?: string
+          processing_status?: string | null
+          routing_decision?: Json
+          selected_models?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_message_routing_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "multi_model_conversations"
             referencedColumns: ["id"]
           },
         ]
@@ -3146,6 +3348,51 @@ export type Database = {
           is_active?: boolean | null
           name?: string
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      multi_model_conversations: {
+        Row: {
+          active_models: Json
+          context_data: Json | null
+          conversation_history: Json
+          conversation_mode: string
+          created_at: string | null
+          id: string
+          model_responses: Json | null
+          session_id: string
+          status: string
+          updated_at: string | null
+          user_id: string | null
+          user_preferences: Json | null
+        }
+        Insert: {
+          active_models?: Json
+          context_data?: Json | null
+          conversation_history?: Json
+          conversation_mode: string
+          created_at?: string | null
+          id?: string
+          model_responses?: Json | null
+          session_id: string
+          status?: string
+          updated_at?: string | null
+          user_id?: string | null
+          user_preferences?: Json | null
+        }
+        Update: {
+          active_models?: Json
+          context_data?: Json | null
+          conversation_history?: Json
+          conversation_mode?: string
+          created_at?: string | null
+          id?: string
+          model_responses?: Json | null
+          session_id?: string
+          status?: string
+          updated_at?: string | null
+          user_id?: string | null
+          user_preferences?: Json | null
         }
         Relationships: []
       }
@@ -5799,6 +6046,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      voice_providers: {
+        Row: {
+          api_credentials: Json | null
+          capabilities: Json | null
+          configuration: Json
+          created_at: string | null
+          created_by: string | null
+          health_check_config: Json | null
+          id: string
+          is_active: boolean | null
+          name: string
+          provider_type: string
+          rate_limits: Json | null
+          updated_at: string | null
+          webhook_config: Json | null
+        }
+        Insert: {
+          api_credentials?: Json | null
+          capabilities?: Json | null
+          configuration?: Json
+          created_at?: string | null
+          created_by?: string | null
+          health_check_config?: Json | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          provider_type: string
+          rate_limits?: Json | null
+          updated_at?: string | null
+          webhook_config?: Json | null
+        }
+        Update: {
+          api_credentials?: Json | null
+          capabilities?: Json | null
+          configuration?: Json
+          created_at?: string | null
+          created_by?: string | null
+          health_check_config?: Json | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          provider_type?: string
+          rate_limits?: Json | null
+          updated_at?: string | null
+          webhook_config?: Json | null
+        }
+        Relationships: []
       }
     }
     Views: {
