@@ -7,7 +7,8 @@ import { SessionAgentBuilder } from '@/components/agentic/SessionAgentBuilder';
 import { AgentTemplates } from '@/components/agentic/AgentTemplates';
 import { KnowledgeBaseManager } from '@/components/rag/KnowledgeBaseManager';
 import { RAGRecommendations } from '@/components/rag/RAGRecommendations';
-import { Bot, Network, Settings, Rocket, Plus, Brain } from 'lucide-react';
+import { AgentChannelAssignmentMatrix } from '@/components/agent-deployment/AgentChannelAssignmentMatrix';
+import { Bot, Network, Settings, Rocket, Plus, Brain, Satellite } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -215,7 +216,7 @@ const AgenticEcosystem = () => {
 
       {/* Main Interface */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview">
             <Settings className="h-4 w-4 mr-2" />
             Overview
@@ -223,6 +224,10 @@ const AgenticEcosystem = () => {
           <TabsTrigger value="builder">
             <Plus className="h-4 w-4 mr-2" />
             Agent Builder
+          </TabsTrigger>
+          <TabsTrigger value="deploy">
+            <Satellite className="h-4 w-4 mr-2" />
+            Deploy
           </TabsTrigger>
           <TabsTrigger value="templates">
             <Plus className="h-4 w-4 mr-2" />
@@ -276,7 +281,7 @@ const AgenticEcosystem = () => {
                         {agent.status === 'draft' && (
                           <Button 
                             size="sm" 
-                            onClick={() => handleDeployAgent(agent.id)}
+                            onClick={() => setActiveTab('deploy')}
                           >
                             <Rocket className="h-4 w-4 mr-2" />
                             Deploy
@@ -314,6 +319,10 @@ const AgenticEcosystem = () => {
 
         <TabsContent value="builder" className="space-y-4">
           <SessionAgentBuilder />
+        </TabsContent>
+
+        <TabsContent value="deploy" className="space-y-4">
+          <AgentChannelAssignmentMatrix />
         </TabsContent>
 
         <TabsContent value="templates" className="space-y-4">
