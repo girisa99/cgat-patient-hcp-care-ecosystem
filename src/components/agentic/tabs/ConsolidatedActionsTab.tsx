@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AgentActionsContent } from '@/components/agentic/AgentActionsContent';
 import { AgentAssignmentOverview } from '@/components/agentic/AgentAssignmentOverview';
 import { SystemConnectors } from '@/components/agentic/SystemConnectors';
@@ -57,7 +58,15 @@ export const ConsolidatedActionsTab: React.FC<ConsolidatedActionsTabProps> = ({
       toast.error('Please configure at least one action before continuing');
       return;
     }
-    toast.success('Actions reviewed successfully! Ready to proceed.');
+    
+    const totalTasks = actions.reduce((sum, action) => sum + (action.tasks?.length || 0), 0);
+    
+    toast.success(`Review completed! ${actions.length} actions with ${totalTasks} tasks ready. You can now configure connectors, knowledge base, and RAG settings.`);
+    
+    // Auto-switch to connectors tab after review
+    setTimeout(() => {
+      setActiveTab('connectors');
+    }, 2000);
   };
 
   return (
@@ -97,10 +106,58 @@ export const ConsolidatedActionsTab: React.FC<ConsolidatedActionsTabProps> = ({
               Add Action
             </Button>
             {actions.length > 0 && (
-              <Button variant="default" size="sm" onClick={handleReviewContinue}>
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Review & Continue
-              </Button>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="default" size="sm">
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Review & Continue
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Review Actions Configuration</DialogTitle>
+                    <DialogDescription>
+                      Review your configured actions and tasks before proceeding to system connectors, knowledge base, and RAG configuration.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="border rounded-lg p-4">
+                      <h4 className="font-medium mb-2">Summary:</h4>
+                      <ul className="space-y-1 text-sm">
+                        <li>• {actions.length} actions configured</li>
+                        <li>• {actions.reduce((sum, action) => sum + (action.tasks?.length || 0), 0)} total tasks</li>
+                        <li>• {actions.filter(a => a.isEnabled).length} actions enabled</li>
+                        <li>• {actions.filter(a => a.requiresApproval).length} actions require approval</li>
+                      </ul>
+                    </div>
+                    <div className="space-y-2">
+                      {actions.map((action) => (
+                        <div key={action.id} className="flex items-center justify-between p-2 border rounded">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{action.name}</span>
+                            <Badge variant={action.isEnabled ? "default" : "outline"}>
+                              {action.isEnabled ? "Enabled" : "Disabled"}
+                            </Badge>
+                            {action.tasks && action.tasks.length > 0 && (
+                              <Badge variant="secondary">{action.tasks.length} tasks</Badge>
+                            )}
+                          </div>
+                          <Badge variant="outline">{action.priority}</Badge>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="pt-4 border-t">
+                      <p className="text-sm text-muted-foreground mb-4">
+                        After continuing, you'll configure system connectors to connect these actions to external services, 
+                        set up knowledge bases for data sources, and configure RAG compliance workflows.
+                      </p>
+                      <Button onClick={handleReviewContinue} className="w-full">
+                        Continue to System Configuration
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
             )}
           </div>
         </div>

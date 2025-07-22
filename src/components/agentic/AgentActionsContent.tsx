@@ -28,6 +28,19 @@ interface AIModel {
   specialization: string[];
 }
 
+interface AgentTask {
+  id: string;
+  name: string;
+  description: string;
+  type: 'action' | 'validation' | 'analysis' | 'notification';
+  category?: string;
+  aiModelId?: string;
+  timeout: number;
+  isRequired: boolean;
+  order: number;
+  connectors?: string[];
+}
+
 interface MCPServer {
   id: string;
   name: string;
@@ -100,6 +113,7 @@ export const AgentActionsContent: React.FC<AgentActionsContentProps> = ({
   const [actions, setActions] = useState<AgentAction[]>(initialActions);
   const [selectedAction, setSelectedAction] = useState<AgentAction | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [editingTasks, setEditingTasks] = useState<AgentTask[]>([]);
   const [models, setModels] = useState<AIModel[]>([]);
   const [mcpServers, setMcpServers] = useState<MCPServer[]>([]);
 
@@ -162,6 +176,42 @@ export const AgentActionsContent: React.FC<AgentActionsContentProps> = ({
     }
   };
 
+  const addTask = () => {
+    const newTask: AgentTask = {
+      id: `task-${Date.now()}`,
+      name: 'New Task',
+      description: '',
+      type: 'action',
+      aiModelId: models[0]?.id,
+      timeout: 30,
+      isRequired: false,
+      order: editingTasks.length + 1
+    };
+    setEditingTasks([...editingTasks, newTask]);
+  };
+
+  const updateTask = (taskId: string, updates: Partial<AgentTask>) => {
+    setEditingTasks(editingTasks.map(task => 
+      task.id === taskId ? { ...task, ...updates } : task
+    ));
+  };
+
+  const removeTask = (taskId: string) => {
+    setEditingTasks(editingTasks.filter(task => task.id !== taskId));
+  };
+
+  const saveActionWithTasks = () => {
+    if (!selectedAction) return;
+    
+    const updatedAction = {
+      ...selectedAction,
+      tasks: editingTasks
+    };
+    
+    updateAction(updatedAction);
+    setIsEditing(false);
+  };
+
   const addAction = (template?: Partial<AgentAction>) => {
     const newAction: AgentAction = {
       id: `action-${Date.now()}`,
@@ -183,6 +233,7 @@ export const AgentActionsContent: React.FC<AgentActionsContentProps> = ({
     setActions(updatedActions);
     onActionsChange(updatedActions);
     setSelectedAction(newAction);
+    setEditingTasks(newAction.tasks || []);
     setIsEditing(true);
   };
 
@@ -259,7 +310,10 @@ export const AgentActionsContent: React.FC<AgentActionsContentProps> = ({
                   {actions.map((action) => (
                     <Card key={action.id} className={`cursor-pointer transition-all ${
                       selectedAction?.id === action.id ? 'ring-2 ring-primary' : 'hover:shadow-md'
-                    }`} onClick={() => setSelectedAction(action)}>
+                    }`} onClick={() => {
+                      setSelectedAction(action);
+                      setEditingTasks(action.tasks || []);
+                    }}>
                       <CardContent className="p-4">
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
@@ -271,6 +325,9 @@ export const AgentActionsContent: React.FC<AgentActionsContentProps> = ({
                               </Badge>
                               {!action.isEnabled && (
                                 <Badge variant="outline">Disabled</Badge>
+                              )}
+                              {action.tasks && action.tasks.length > 0 && (
+                                <Badge variant="secondary">{action.tasks.length} tasks</Badge>
                               )}
                             </div>
                             <p className="text-sm text-muted-foreground mb-2">
@@ -294,6 +351,7 @@ export const AgentActionsContent: React.FC<AgentActionsContentProps> = ({
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setSelectedAction(action);
+                                setEditingTasks(action.tasks || []);
                                 setIsEditing(true);
                               }}
                             >
@@ -457,6 +515,127 @@ export const AgentActionsContent: React.FC<AgentActionsContentProps> = ({
                       })}
                     />
                     <Label htmlFor="action-enabled">Enabled</Label>
+                  </div>
+
+                  {/* Tasks Section */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-base font-medium">Tasks</Label>
+                      <Button type="button" variant="outline" size="sm" onClick={addTask}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Task
+                      </Button>
+                    </div>
+                    
+                    {editingTasks.length === 0 ? (
+                      <div className="text-center py-4 border-2 border-dashed border-muted-foreground/20 rounded-lg">
+                        <p className="text-sm text-muted-foreground">No tasks added</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {editingTasks.map((task) => (
+                          <Card key={task.id} className="p-3">
+                            <div className="space-y-3">
+                              <div className="flex items-center justify-between">
+                                <Badge variant="outline">Task {task.order}</Badge>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => removeTask(task.id)}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </div>
+                              
+                              <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                  <Label className="text-xs">Task Name</Label>
+                                  <Input
+                                    value={task.name}
+                                    onChange={(e) => updateTask(task.id, { name: e.target.value })}
+                                    className="h-8"
+                                    placeholder="Enter task name"
+                                  />
+                                </div>
+                                
+                                <div>
+                                  <Label className="text-xs">Type</Label>
+                                  <Select 
+                                    value={task.type} 
+                                    onValueChange={(value: any) => updateTask(task.id, { type: value })}
+                                  >
+                                    <SelectTrigger className="h-8">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="action">Action</SelectItem>
+                                      <SelectItem value="validation">Validation</SelectItem>
+                                      <SelectItem value="analysis">Analysis</SelectItem>
+                                      <SelectItem value="notification">Notification</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              </div>
+                              
+                              <div>
+                                <Label className="text-xs">Description</Label>
+                                <Textarea
+                                  value={task.description}
+                                  onChange={(e) => updateTask(task.id, { description: e.target.value })}
+                                  placeholder="Describe what this task does"
+                                  className="h-16 text-xs"
+                                />
+                              </div>
+                              
+                              <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                  <Label className="text-xs">AI Model</Label>
+                                  <Select 
+                                    value={task.aiModelId || ''} 
+                                    onValueChange={(value) => updateTask(task.id, { aiModelId: value })}
+                                  >
+                                    <SelectTrigger className="h-8">
+                                      <SelectValue placeholder="Select model" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {models.map((model) => (
+                                        <SelectItem key={model.id} value={model.id}>
+                                          {model.name}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                
+                                <div>
+                                  <Label className="text-xs">Timeout (min)</Label>
+                                  <Input
+                                    type="number"
+                                    value={task.timeout}
+                                    onChange={(e) => updateTask(task.id, { timeout: parseInt(e.target.value) || 30 })}
+                                    className="h-8"
+                                    min="1"
+                                    max="120"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Save Tasks Button */}
+                    {editingTasks.length > 0 && (
+                      <Button 
+                        onClick={saveActionWithTasks}
+                        className="w-full"
+                        variant="default"
+                      >
+                        Save Action with Tasks
+                      </Button>
+                    )}
                   </div>
                 </div>
               ) : (
