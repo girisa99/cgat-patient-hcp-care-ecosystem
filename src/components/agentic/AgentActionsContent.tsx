@@ -449,6 +449,73 @@ export const AgentActionsContent: React.FC<AgentActionsContentProps> = ({
                     />
                   </div>
 
+                  {/* Category, Type, and Priority Row */}
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <Label>Category</Label>
+                      <Select 
+                        value={selectedAction.category || ''} 
+                        onValueChange={(value) => updateAction({
+                          ...selectedAction,
+                          category: value as AgentAction['category']
+                        })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="communication">Communication</SelectItem>
+                          <SelectItem value="data_processing">Data Processing</SelectItem>
+                          <SelectItem value="analysis">Analysis</SelectItem>
+                          <SelectItem value="integration">Integration</SelectItem>
+                          <SelectItem value="automation">Automation</SelectItem>
+                          <SelectItem value="custom">Custom</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label>Type</Label>
+                      <Select 
+                        value={selectedAction.type || ''} 
+                        onValueChange={(value) => updateAction({
+                          ...selectedAction,
+                          type: value as AgentAction['type']
+                        })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="trigger">Trigger</SelectItem>
+                          <SelectItem value="scheduled">Scheduled</SelectItem>
+                          <SelectItem value="on_demand">On Demand</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label>Priority</Label>
+                      <Select 
+                        value={selectedAction.priority || ''} 
+                        onValueChange={(value) => updateAction({
+                          ...selectedAction,
+                          priority: value as AgentAction['priority']
+                        })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select priority" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="critical">Critical</SelectItem>
+                          <SelectItem value="high">High</SelectItem>
+                          <SelectItem value="medium">Medium</SelectItem>
+                          <SelectItem value="low">Low</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
                   <div className="space-y-4">
                     <div>
                       <Label>AI Model</Label>
@@ -573,6 +640,9 @@ export const AgentActionsContent: React.FC<AgentActionsContentProps> = ({
                                       <SelectItem value="validation">Validation</SelectItem>
                                       <SelectItem value="analysis">Analysis</SelectItem>
                                       <SelectItem value="notification">Notification</SelectItem>
+                                      <SelectItem value="data_transformation">Data Transformation</SelectItem>
+                                      <SelectItem value="api_call">API Call</SelectItem>
+                                      <SelectItem value="decision">Decision</SelectItem>
                                     </SelectContent>
                                   </Select>
                                 </div>
