@@ -69,6 +69,8 @@ export interface AgentSession {
 }
 
 export interface AgentSessionUpdate {
+  name?: string;
+  description?: string;
   current_step?: AgentSession['current_step'];
   status?: AgentSession['status'];
   basic_info?: AgentSession['basic_info'];

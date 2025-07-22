@@ -407,10 +407,11 @@ export const UnifiedAgentBuilder: React.FC<UnifiedAgentBuilderProps> = ({ step }
                         className="w-full mt-1 px-3 py-2 border rounded-md"
                         value={currentSession?.basic_info?.name || currentSession?.name || ''}
                         onChange={(e) => {
-                          if (currentSessionId) {
+                          if (currentSessionId && currentSession) {
                             updateSession.mutate({
                               sessionId: currentSessionId,
                               updates: {
+                                name: e.target.value,
                                 basic_info: {
                                   ...currentSession.basic_info,
                                   name: e.target.value
@@ -429,7 +430,7 @@ export const UnifiedAgentBuilder: React.FC<UnifiedAgentBuilderProps> = ({ step }
                         className="w-full mt-1 px-3 py-2 border rounded-md"
                         value={currentSession?.basic_info?.purpose || ''}
                         onChange={(e) => {
-                          if (currentSessionId) {
+                          if (currentSessionId && currentSession) {
                             updateSession.mutate({
                               sessionId: currentSessionId,
                               updates: {
@@ -451,7 +452,7 @@ export const UnifiedAgentBuilder: React.FC<UnifiedAgentBuilderProps> = ({ step }
                         className="w-full mt-1 px-3 py-2 border rounded-md"
                         value={currentSession?.basic_info?.brand || ''}
                         onChange={(e) => {
-                          if (currentSessionId) {
+                          if (currentSessionId && currentSession) {
                             updateSession.mutate({
                               sessionId: currentSessionId,
                               updates: {
@@ -474,10 +475,11 @@ export const UnifiedAgentBuilder: React.FC<UnifiedAgentBuilderProps> = ({ step }
                         className="w-full mt-1 px-3 py-2 border rounded-md h-24"
                         value={currentSession?.basic_info?.description || currentSession?.description || ''}
                         onChange={(e) => {
-                          if (currentSessionId) {
+                          if (currentSessionId && currentSession) {
                             updateSession.mutate({
                               sessionId: currentSessionId,
                               updates: {
+                                description: e.target.value,
                                 basic_info: {
                                   ...currentSession.basic_info,
                                   description: e.target.value
