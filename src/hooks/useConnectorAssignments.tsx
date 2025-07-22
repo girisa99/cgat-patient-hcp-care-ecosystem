@@ -56,7 +56,8 @@ export const useConnectorAssignments = (agentSessionId?: string) => {
   // Fetch available connectors
   const {
     data: availableConnectors,
-    isLoading: isLoadingConnectors
+    isLoading: isLoadingConnectors,
+    refetch: refetchConnectors
   } = useQuery({
     queryKey: ['available-connectors'],
     queryFn: async () => {
@@ -69,7 +70,7 @@ export const useConnectorAssignments = (agentSessionId?: string) => {
       if (error) throw error;
       return data || [];
     },
-    staleTime: 60000,
+    staleTime: 30000, // Reduced stale time for more frequent updates
   });
 
   // Create assignment mutation

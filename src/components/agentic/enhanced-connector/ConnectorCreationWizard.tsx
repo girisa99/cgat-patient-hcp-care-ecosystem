@@ -235,32 +235,55 @@ export const ConnectorCreationWizard: React.FC<ConnectorCreationWizardProps> = (
     }
   };
 
-  const finishWizard = () => {
-    const newConnector = {
-      id: `connector-${Date.now()}`,
-      name: wizardData.connectorName,
-      description: wizardData.connectorDescription,
-      type: wizardData.selectedBrand?.type || 'external_service',
-      category: wizardData.selectedBrand?.category || 'integration',
-      brand: wizardData.selectedBrand?.name,
-      baseUrl: wizardData.baseUrl,
-      endpoints: wizardData.endpoints,
-      authType: wizardData.authType,
-      authConfig: wizardData.authConfig,
-      assignedActions: wizardData.assignedActions,
-      aiGeneratedTasks: wizardData.aiGeneratedTasks,
-      testResults: wizardData.testResults,
-      status: 'active',
-      created_at: new Date().toISOString()
-    };
-    
-    onConnectorCreated(newConnector);
-    onClose();
-    
-    toast({
-      title: "Connector Created",
-      description: `${wizardData.connectorName} has been successfully created and configured`,
-    });
+  const finishWizard = async () => {
+    try {
+      // Import the useConnectorMetrics hook dynamically
+      const { supabase } = await import("@/integrations/supabase/client");
+      
+      // Save connector to database
+      const { data: newConnector, error } = await supabase
+        .from('system_connectors')
+        .insert({
+          name: wizardData.connectorName,
+          description: wizardData.connectorDescription,
+          type: wizardData.selectedBrand?.type || 'external_service',
+          category: wizardData.selectedBrand?.category || 'integration',
+          status: 'active',
+          base_url: wizardData.baseUrl,
+          auth_type: wizardData.authType,
+          configuration: {
+            brand: wizardData.selectedBrand?.name,
+            endpoints: wizardData.endpoints,
+            authConfig: wizardData.authConfig,
+            assignedActions: wizardData.assignedActions,
+            aiGeneratedTasks: wizardData.aiGeneratedTasks,
+            testResults: wizardData.testResults
+          },
+          endpoints: wizardData.endpoints,
+          usage_count: 0,
+          success_rate: 0,
+          created_by: (await supabase.auth.getUser()).data.user?.id
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      onConnectorCreated(newConnector);
+      onClose();
+      
+      toast({
+        title: "Connector Created",
+        description: `${wizardData.connectorName} has been successfully created and saved to the database`,
+      });
+    } catch (error) {
+      console.error('Error creating connector:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create connector. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   if (!isOpen) return null;
