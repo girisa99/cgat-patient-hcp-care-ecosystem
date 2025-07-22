@@ -22,7 +22,13 @@ interface Agent {
 }
 
 const AgenticEcosystem = () => {
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState(() => {
+    // Restore tab from localStorage on page load
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('agenticEcosystem_activeTab') || 'overview';
+    }
+    return 'overview';
+  });
 
   // Fetch real agents data from database
   const { data: agents = [], isLoading: agentsLoading, refetch: refetchAgents } = useQuery({
@@ -211,7 +217,11 @@ const AgenticEcosystem = () => {
       </div>
 
       {/* Main Interface */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs value={activeTab} onValueChange={(value) => {
+        setActiveTab(value);
+        // Persist tab state to localStorage
+        localStorage.setItem('agenticEcosystem_activeTab', value);
+      }} className="w-full">
         <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="overview">
             <Settings className="h-4 w-4 mr-2" />

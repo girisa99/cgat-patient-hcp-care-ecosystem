@@ -669,10 +669,25 @@ export const UnifiedAgentBuilder: React.FC<UnifiedAgentBuilderProps> = ({ step }
             });
           }
         }}
+        onDelete={() => {
+          if (currentSessionId && deleteSession) {
+            deleteSession.mutate(currentSessionId, {
+              onSuccess: () => {
+                setCurrentSessionId(null);
+                setCurrentStep('basic_info');
+                // Go back to overview after deleting
+                window.localStorage.setItem('agenticEcosystem_activeTab', 'overview');
+                window.location.reload(); // Refresh to show overview
+              }
+            });
+          }
+        }}
         onExit={() => {
           setCurrentSessionId(null);
           setCurrentStep('basic_info');
-          setShowSessionList(true);
+          // Go back to overview when exiting
+          window.localStorage.setItem('agenticEcosystem_activeTab', 'overview');
+          window.location.reload(); // Refresh to show overview
         }}
         isSaving={updateSession.isPending}
       />

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Save, LogOut, RotateCcw, Edit } from 'lucide-react';
+import { Save, LogOut, RotateCcw, Edit, Trash2 } from 'lucide-react';
 import { useAgentSession } from '@/hooks/useAgentSession';
 import { AgentSession } from '@/types/agent-session';
 import { toast } from '@/hooks/use-toast';
@@ -11,6 +11,7 @@ interface SessionControlsProps {
   session: AgentSession | null;
   onSave: () => void;
   onExit: () => void;
+  onDelete?: () => void;
   onContinue?: () => void;
   isSaving?: boolean;
 }
@@ -19,6 +20,7 @@ export const SessionControls: React.FC<SessionControlsProps> = ({
   session,
   onSave,
   onExit,
+  onDelete,
   onContinue,
   isSaving = false,
 }) => {
@@ -59,6 +61,21 @@ export const SessionControls: React.FC<SessionControlsProps> = ({
           <Save className="h-4 w-4 mr-2" />
           {isSaving ? 'Saving...' : 'Save & Continue'}
         </Button>
+        
+        {onDelete && (
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => {
+              if (confirm('Are you sure you want to delete this agent session? This action cannot be undone.')) {
+                onDelete();
+              }
+            }}
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Delete
+          </Button>
+        )}
         
         <Button
           variant="ghost"
