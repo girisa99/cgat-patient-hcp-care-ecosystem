@@ -338,100 +338,14 @@ export const EnhancedConnectorSystem: React.FC<EnhancedConnectorSystemProps> = (
             <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
-          <div className="flex gap-2">
-            <Button
-              onClick={() => setIsWizardOpen(true)}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Connector
-            </Button>
-            <Button
-              onClick={() => setIsAssignmentDialogOpen(true)}
-              variant="outline"
-            >
-              <Settings className="h-4 w-4 mr-2" />
-              Assign Connector to Agent
-            </Button>
-          </div>
+          <Button
+            onClick={() => setIsWizardOpen(true)}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Create Connector
+          </Button>
         </div>
-      </div>
-
-      {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-        <Card className="bg-blue-50 border-blue-200">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-blue-600">Total</p>
-                <p className="text-2xl font-bold text-blue-900">{stats.total}</p>
-              </div>
-              <Zap className="h-8 w-8 text-blue-500" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-green-50 border-green-200">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-green-600">Active</p>
-                <p className="text-2xl font-bold text-green-900">{stats.active}</p>
-              </div>
-              <CheckCircle className="h-8 w-8 text-green-500" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-yellow-50 border-yellow-200">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-yellow-600">Testing</p>
-                <p className="text-2xl font-bold text-yellow-900">{stats.testing}</p>
-              </div>
-              <Clock className="h-8 w-8 text-yellow-500" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-red-50 border-red-200">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-red-600">Errors</p>
-                <p className="text-2xl font-bold text-red-900">{stats.error}</p>
-              </div>
-              <AlertTriangle className="h-8 w-8 text-red-500" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-purple-50 border-purple-200">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-purple-600">Success Rate</p>
-                <p className="text-2xl font-bold text-purple-900">{stats.avgSuccessRate}%</p>
-              </div>
-              <TrendingUp className="h-8 w-8 text-purple-500" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-indigo-50 border-indigo-200">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-indigo-600">Total Usage</p>
-                <p className="text-2xl font-bold text-indigo-900">
-                  {stats.totalUsage.toLocaleString()}
-                </p>
-              </div>
-              <BarChart3 className="h-8 w-8 text-indigo-500" />
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
