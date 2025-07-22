@@ -277,7 +277,14 @@ export const ConnectorCreationWizard: React.FC<ConnectorCreationWizardProps> = (
                 Step {currentStep + 1} of {WIZARD_STEPS.length}: {WIZARD_STEPS[currentStep].title}
               </p>
             </div>
-            <Button variant="outline" onClick={onClose}>
+            <Button 
+              variant="outline" 
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onClose();
+              }}
+            >
               Cancel
             </Button>
           </div>
