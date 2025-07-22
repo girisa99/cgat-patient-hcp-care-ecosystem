@@ -10,7 +10,8 @@ import {
   Bot, Database, MessageSquare, Globe, Settings, 
   Stethoscope, ShieldCheck, CreditCard, FileText,
   Building, Workflow, GitBranch, Server, Phone,
-  CheckCircle, AlertCircle, Clock, Zap, Loader2, Plus
+  CheckCircle, AlertCircle, Clock, Zap, Loader2, Plus,
+  Brain, TestTube, Trash2, Eye
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -172,13 +173,20 @@ export const SystemConnectors = () => {
     capabilities: [] as string[],
     cost: 'Free' as const
   });
+  
+  // State for connector operations
+  const [viewingConnector, setViewingConnector] = useState<any>(null);
+  const [testingConnector, setTestingConnector] = useState<string | null>(null);
 
   // Use the connector metrics hook
   const { 
     connectors: dbConnectors, 
     isLoadingConnectors: connectorsLoading, 
     refetchConnectors,
-    createConnector
+    createConnector,
+    updateConnector,
+    deleteConnector,
+    testConnector
   } = useConnectorMetrics();
 
   // Use the assignments hook for assignment functionality
@@ -281,158 +289,211 @@ export const SystemConnectors = () => {
               />
             </div>
             <div className="flex flex-wrap gap-2">
-              {categories.map((category) => (
-                <Button
-                  key={category}
-                  variant={selectedCategory === category ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedCategory(category)}
-                >
-                  {category}
-                </Button>
-              ))}
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="All">All Status</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="testing">Testing</SelectItem>
+                  <SelectItem value="error">Error</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
-          {/* Connectors Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredConnectors.map((connector) => {
-              const IconComponent = connector.icon;
-              
-              return (
-                <Card key={connector.id} className="hover:shadow-lg transition-shadow">
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-3">
-                        <IconComponent className="h-8 w-8 text-primary" />
-                        <div>
-                          <CardTitle className="text-lg">{connector.name}</CardTitle>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Badge variant="outline" className="text-xs">{connector.category}</Badge>
-                            <Badge className={getCostColor(connector.cost)}>{connector.cost}</Badge>
+          {/* Database Connectors Grid */}
+          {connectorsLoading ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {dbConnectors
+                  ?.filter(connector => {
+                    const matchesSearch = connector.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                         connector.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                         connector.category.toLowerCase().includes(searchTerm.toLowerCase());
+                    const matchesCategory = selectedCategory === 'All' || connector.status === selectedCategory;
+                    return matchesSearch && matchesCategory;
+                  })
+                  ?.map((connector) => (
+                    <Card key={connector.id} className="hover:shadow-lg transition-shadow">
+                      <CardHeader>
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-lg bg-primary/10">
+                              {connector.type === 'database' && <Database className="h-6 w-6 text-primary" />}
+                              {connector.type === 'api' && <Globe className="h-6 w-6 text-primary" />}
+                              {connector.type === 'messaging' && <MessageSquare className="h-6 w-6 text-primary" />}
+                              {connector.type === 'file_system' && <FileText className="h-6 w-6 text-primary" />}
+                              {connector.type === 'external_service' && <Server className="h-6 w-6 text-primary" />}
+                              {connector.type === 'ai_model' && <Brain className="h-6 w-6 text-primary" />}
+                            </div>
+                            <div>
+                              <CardTitle className="text-lg">{connector.name}</CardTitle>
+                              <div className="flex items-center gap-2 mt-1">
+                                <Badge variant="outline" className="text-xs">{connector.category}</Badge>
+                                <Badge variant="outline" className="text-xs">{connector.type}</Badge>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {connector.status === 'active' && <CheckCircle className="h-4 w-4 text-green-500" />}
+                            {connector.status === 'inactive' && <AlertCircle className="h-4 w-4 text-gray-500" />}
+                            {connector.status === 'testing' && <Clock className="h-4 w-4 text-yellow-500" />}
+                            {connector.status === 'error' && <AlertCircle className="h-4 w-4 text-red-500" />}
+                            <Badge className={
+                              connector.status === 'active' ? 'bg-green-100 text-green-800' :
+                              connector.status === 'testing' ? 'bg-yellow-100 text-yellow-800' :
+                              connector.status === 'error' ? 'bg-red-100 text-red-800' :
+                              'bg-gray-100 text-gray-800'
+                            }>
+                              {connector.status}
+                            </Badge>
                           </div>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        {getStatusIcon(connector.status)}
-                        <Badge className={getStatusColor(connector.status)}>
-                          {connector.status}
-                        </Badge>
-                      </div>
-                    </div>
-                    <CardDescription className="mt-3">
-                      {connector.description}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {connector.apiEndpoint && (
-                      <div>
-                        <h4 className="font-medium text-sm text-muted-foreground mb-1">API Endpoint</h4>
-                        <p className="text-xs font-mono bg-muted p-2 rounded truncate">
-                          {connector.apiEndpoint}
-                        </p>
-                      </div>
-                    )}
-                    
-                    <div>
-                      <h4 className="font-medium text-sm text-muted-foreground mb-1">Authentication</h4>
-                      <Badge variant="secondary" className="text-xs">
-                        {connector.authMethod.toUpperCase()}
-                      </Badge>
-                    </div>
-                    
-                    {connector.rateLimit && (
-                      <div>
-                        <h4 className="font-medium text-sm text-muted-foreground mb-1">Rate Limit</h4>
-                        <p className="text-xs text-muted-foreground">{connector.rateLimit}</p>
-                      </div>
-                    )}
-
-                    {/* Capabilities */}
-                    <div>
-                      <h4 className="font-medium text-sm text-muted-foreground mb-2">Capabilities</h4>
-                      <div className="flex flex-wrap gap-1">
-                        {connector.capabilities.slice(0, 3).map((capability, index) => (
-                          <Badge key={index} variant="outline" className="text-xs">
-                            {capability}
-                          </Badge>
-                        ))}
-                        {connector.capabilities.length > 3 && (
-                          <Badge variant="outline" className="text-xs">
-                            +{connector.capabilities.length - 3} more
-                          </Badge>
+                        <CardDescription className="mt-3">
+                          {connector.description || 'No description available'}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        {connector.base_url && (
+                          <div>
+                            <h4 className="font-medium text-sm text-muted-foreground mb-1">Base URL</h4>
+                            <p className="text-xs font-mono bg-muted p-2 rounded truncate">
+                              {connector.base_url}
+                            </p>
+                          </div>
                         )}
-                      </div>
-                    </div>
+                        
+                        <div>
+                          <h4 className="font-medium text-sm text-muted-foreground mb-1">Authentication</h4>
+                          <Badge variant="secondary" className="text-xs">
+                            {connector.auth_type.toUpperCase()}
+                          </Badge>
+                        </div>
 
-                    {/* Usage Stats */}
-                    {connector.usage_count !== undefined && (
-                      <div className="pt-2 border-t">
-                        <div className="flex justify-between text-xs text-muted-foreground">
-                          <span>Usage: {connector.usage_count.toLocaleString()}</span>
-                          {connector.success_rate !== undefined && (
-                            <span>Success: {connector.success_rate}%</span>
+                        {/* Usage Stats */}
+                        <div className="pt-2 border-t">
+                          <div className="flex justify-between text-xs text-muted-foreground">
+                            <span>Usage: {connector.usage_count || 0}</span>
+                            <span>Success: {connector.success_rate || 0}%</span>
+                          </div>
+                          {connector.last_tested && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Last tested: {new Date(connector.last_tested).toLocaleDateString()}
+                            </p>
                           )}
                         </div>
-                      </div>
-                    )}
 
-                    {/* Action Buttons */}
-                    <div className="flex gap-2 pt-2">
-                      {connector.status === 'available' && (
-                        <Button 
-                          size="sm" 
-                          onClick={() => setConfiguring(connector.id)}
-                          className="flex-1"
-                        >
-                          <Settings className="h-3 w-3 mr-1" />
-                          Configure
-                        </Button>
-                      )}
-                      {connector.status === 'connected' && (
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => setConfiguring(connector.id)}
-                          className="flex-1"
-                        >
-                          <Settings className="h-3 w-3 mr-1" />
-                          Settings
-                        </Button>
-                      )}
-                      {connector.documentation && (
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => window.open(connector.documentation, '_blank')}
-                        >
-                          <FileText className="h-3 w-3" />
-                        </Button>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-
-          {filteredConnectors.length === 0 && (
-            <div className="text-center py-12">
-              <div className="max-w-md mx-auto">
-                <Globe className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-muted-foreground mb-2">No connectors found</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Try adjusting your search terms or category filter, or create a new connector.
-                </p>
-                <Button 
-                  onClick={() => setShowCreateConnector(true)}
-                  className="flex items-center gap-2"
-                >
-                  <Plus className="h-4 w-4" />
-                  Create Connector
-                </Button>
+                        {/* Action Buttons */}
+                        <div className="flex gap-2 pt-2">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={async () => {
+                              setTestingConnector(connector.id);
+                              try {
+                                await testConnector.mutateAsync(connector.id);
+                                toast({
+                                  title: "✅ Test Successful",
+                                  description: `Connection to ${connector.name} is working properly.`
+                                });
+                              } catch (error) {
+                                toast({
+                                  title: "❌ Test Failed",
+                                  description: `Failed to connect to ${connector.name}. Check configuration.`,
+                                  variant: "destructive"
+                                });
+                              } finally {
+                                setTestingConnector(null);
+                              }
+                            }}
+                            disabled={testingConnector === connector.id}
+                            className="flex-1"
+                          >
+                            {testingConnector === connector.id ? (
+                              <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                            ) : (
+                              <TestTube className="h-3 w-3 mr-1" />
+                            )}
+                            Test
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => setViewingConnector(connector)}
+                            className="flex-1"
+                          >
+                            <Eye className="h-3 w-3 mr-1" />
+                            View
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => setConfiguring(connector.id)}
+                            className="flex-1"
+                          >
+                            <Settings className="h-3 w-3 mr-1" />
+                            Edit
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="destructive"
+                            onClick={async () => {
+                              if (confirm(`Are you sure you want to delete ${connector.name}? This action cannot be undone.`)) {
+                                try {
+                                  await deleteConnector.mutateAsync(connector.id);
+                                  toast({
+                                    title: "✅ Connector Deleted",
+                                    description: `${connector.name} has been permanently deleted.`
+                                  });
+                                } catch (error) {
+                                  toast({
+                                    title: "❌ Delete Failed",
+                                    description: `Failed to delete ${connector.name}. Please try again.`,
+                                    variant: "destructive"
+                                  });
+                                }
+                              }
+                            }}
+                            disabled={deleteConnector.isPending}
+                          >
+                            {deleteConnector.isPending ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-3 w-3" />
+                            )}
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
               </div>
-            </div>
+
+              {(!dbConnectors || dbConnectors.length === 0) && (
+                <div className="text-center py-12">
+                  <div className="max-w-md mx-auto">
+                    <Globe className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-muted-foreground mb-2">No connectors found</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Create your first connector to get started with system integrations.
+                    </p>
+                    <Button 
+                      onClick={() => setShowCreateConnector(true)}
+                      className="flex items-center gap-2"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Create Connector
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </TabsContent>
 
@@ -441,11 +502,13 @@ export const SystemConnectors = () => {
             <CardHeader>
               <CardTitle>Create New Connector</CardTitle>
               <CardDescription>
-                Add integrations to expand your system's capabilities
+                Set up new system integrations and data connectors for your agent
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <CardContent className="space-y-6">
+              
+              {/* Quick Create Options */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Button 
                   onClick={() => {
                     setShowCreateConnector(true);
@@ -457,8 +520,8 @@ export const SystemConnectors = () => {
                 >
                   <Plus className="h-6 w-6" />
                   <div className="text-left">
-                    <div className="font-medium">Add from Library</div>
-                    <div className="text-sm text-muted-foreground">Choose from popular services</div>
+                    <div className="font-medium">Brand Library</div>
+                    <div className="text-sm text-muted-foreground">Popular services & APIs</div>
                   </div>
                 </Button>
                 <Button 
@@ -471,11 +534,237 @@ export const SystemConnectors = () => {
                 >
                   <Zap className="h-6 w-6" />
                   <div className="text-left">
-                    <div className="font-medium">Create Custom</div>
+                    <div className="font-medium">Custom Connector</div>
                     <div className="text-sm opacity-90">Build your own integration</div>
                   </div>
                 </Button>
+                <Button 
+                  onClick={() => setShowConnectorWizard(true)}
+                  variant="outline"
+                  className="flex items-center gap-2 p-6 h-auto"
+                >
+                  <Workflow className="h-6 w-6" />
+                  <div className="text-left">
+                    <div className="font-medium">Enhanced Wizard</div>
+                    <div className="text-sm text-muted-foreground">Full guided setup</div>
+                  </div>
+                </Button>
               </div>
+
+              {/* Connector Type Categories */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Quick Create by Type</h3>
+                <p className="text-sm text-muted-foreground">
+                  Choose a connector type below to see available options and brands
+                </p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  
+                  {/* Database Connectors */}
+                  <Card className="hover:shadow-md transition-shadow cursor-pointer" 
+                        onClick={() => {
+                          setShowCreateConnector(true);
+                          setCreateMode('missing');
+                          setSearchTerm('database');
+                        }}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3 mb-3">
+                        <Database className="h-8 w-8 text-blue-500" />
+                        <div>
+                          <h4 className="font-medium">Database</h4>
+                          <Badge variant="outline" className="text-xs">Data Storage</Badge>
+                        </div>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        Oracle, MySQL, PostgreSQL, MongoDB, Redis, etc.
+                      </p>
+                      <div className="text-xs text-muted-foreground">
+                        Connect to relational and NoSQL databases
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* REST API Connectors */}
+                  <Card className="hover:shadow-md transition-shadow cursor-pointer"
+                        onClick={() => {
+                          setShowCreateConnector(true);
+                          setCreateMode('missing');
+                          setSearchTerm('api');
+                        }}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3 mb-3">
+                        <Globe className="h-8 w-8 text-green-500" />
+                        <div>
+                          <h4 className="font-medium">REST API</h4>
+                          <Badge variant="outline" className="text-xs">Web Services</Badge>
+                        </div>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        HTTP REST endpoints, webhooks, GraphQL
+                      </p>
+                      <div className="text-xs text-muted-foreground">
+                        Integrate with web APIs and services
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Messaging Connectors */}
+                  <Card className="hover:shadow-md transition-shadow cursor-pointer"
+                        onClick={() => {
+                          setShowCreateConnector(true);
+                          setCreateMode('missing');
+                          setSearchTerm('messaging');
+                        }}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3 mb-3">
+                        <MessageSquare className="h-8 w-8 text-purple-500" />
+                        <div>
+                          <h4 className="font-medium">Messaging</h4>
+                          <Badge variant="outline" className="text-xs">Communication</Badge>
+                        </div>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        Kafka, RabbitMQ, SQS, Teams, Slack
+                      </p>
+                      <div className="text-xs text-muted-foreground">
+                        Message queues and chat platforms
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* File System Connectors */}
+                  <Card className="hover:shadow-md transition-shadow cursor-pointer"
+                        onClick={() => {
+                          setShowCreateConnector(true);
+                          setCreateMode('missing');
+                          setSearchTerm('file');
+                        }}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3 mb-3">
+                        <FileText className="h-8 w-8 text-orange-500" />
+                        <div>
+                          <h4 className="font-medium">File System</h4>
+                          <Badge variant="outline" className="text-xs">Storage</Badge>
+                        </div>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        FTP, SFTP, S3, Google Drive, SharePoint
+                      </p>
+                      <div className="text-xs text-muted-foreground">
+                        File storage and document systems
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* External Services */}
+                  <Card className="hover:shadow-md transition-shadow cursor-pointer"
+                        onClick={() => {
+                          setShowCreateConnector(true);
+                          setCreateMode('missing');
+                          setSearchTerm('external');
+                        }}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3 mb-3">
+                        <Server className="h-8 w-8 text-indigo-500" />
+                        <div>
+                          <h4 className="font-medium">External Service</h4>
+                          <Badge variant="outline" className="text-xs">Third-party</Badge>
+                        </div>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        Salesforce, Workday, SAP, ServiceNow
+                      </p>
+                      <div className="text-xs text-muted-foreground">
+                        Enterprise applications and services
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* AI Models */}
+                  <Card className="hover:shadow-md transition-shadow cursor-pointer"
+                        onClick={() => {
+                          setShowCreateConnector(true);
+                          setCreateMode('missing');
+                          setSearchTerm('ai');
+                        }}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3 mb-3">
+                        <Brain className="h-8 w-8 text-pink-500" />
+                        <div>
+                          <h4 className="font-medium">AI Model</h4>
+                          <Badge variant="outline" className="text-xs">Machine Learning</Badge>
+                        </div>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        OpenAI, Anthropic, Cohere, Azure AI
+                      </p>
+                      <div className="text-xs text-muted-foreground">
+                        Language models and AI services
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                </div>
+              </div>
+
+              {/* Internal APIs Section */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold">Internal APIs</h3>
+                  <Badge variant="secondary">System Generated</Badge>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  APIs and services created within your system
+                </p>
+                
+                {assignableConnectors && assignableConnectors.filter(c => c.type === 'internal').length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {assignableConnectors
+                      .filter(c => c.type === 'internal')
+                      .map((api) => (
+                        <Card key={api.id} className="hover:shadow-md transition-shadow">
+                          <CardContent className="p-4">
+                            <div className="flex items-center gap-3 mb-2">
+                              <Globe className="h-6 w-6 text-blue-500" />
+                              <div>
+                                <h4 className="font-medium">{api.name}</h4>
+                                <Badge variant="outline" className="text-xs">Internal API</Badge>
+                              </div>
+                            </div>
+                            <p className="text-sm text-muted-foreground mb-3">
+                              {api.description || 'Internal system API'}
+                            </p>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => {
+                                toast({
+                                  title: "Internal API",
+                                  description: `"${api.name}" is available for connector assignment.`
+                                });
+                              }}
+                              className="w-full"
+                            >
+                              <Settings className="h-3 w-3 mr-2" />
+                              Configure
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      ))}
+                  </div>
+                ) : (
+                  <Card className="border-dashed">
+                    <CardContent className="p-6 text-center">
+                      <Globe className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                      <h4 className="font-medium text-muted-foreground mb-2">No Internal APIs Found</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Internal APIs will appear here when they are created in your system.
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+              
             </CardContent>
           </Card>
         </TabsContent>
@@ -559,6 +848,140 @@ export const SystemConnectors = () => {
         </TabsContent>
       </Tabs>
 
+      {/* View Connector Details Dialog */}
+      <Dialog open={!!viewingConnector} onOpenChange={() => setViewingConnector(null)}>
+        <DialogContent className="sm:max-w-[700px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {viewingConnector?.type === 'database' && <Database className="h-5 w-5" />}
+              {viewingConnector?.type === 'api' && <Globe className="h-5 w-5" />}
+              {viewingConnector?.type === 'messaging' && <MessageSquare className="h-5 w-5" />}
+              {viewingConnector?.type === 'file_system' && <FileText className="h-5 w-5" />}
+              {viewingConnector?.type === 'external_service' && <Server className="h-5 w-5" />}
+              {viewingConnector?.type === 'ai_model' && <Brain className="h-5 w-5" />}
+              {viewingConnector?.name || 'Connector Details'}
+            </DialogTitle>
+            <DialogDescription>
+              Detailed information and configuration for this connector
+            </DialogDescription>
+          </DialogHeader>
+          
+          {viewingConnector && (
+            <div className="space-y-6">
+              {/* Basic Information */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium">Type</Label>
+                  <p className="text-sm text-muted-foreground">{viewingConnector.type}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Category</Label>
+                  <p className="text-sm text-muted-foreground">{viewingConnector.category}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Status</Label>
+                  <div className="flex items-center gap-2">
+                    {viewingConnector.status === 'active' && <CheckCircle className="h-4 w-4 text-green-500" />}
+                    {viewingConnector.status === 'inactive' && <AlertCircle className="h-4 w-4 text-gray-500" />}
+                    {viewingConnector.status === 'testing' && <Clock className="h-4 w-4 text-yellow-500" />}
+                    {viewingConnector.status === 'error' && <AlertCircle className="h-4 w-4 text-red-500" />}
+                    <Badge className={
+                      viewingConnector.status === 'active' ? 'bg-green-100 text-green-800' :
+                      viewingConnector.status === 'testing' ? 'bg-yellow-100 text-yellow-800' :
+                      viewingConnector.status === 'error' ? 'bg-red-100 text-red-800' :
+                      'bg-gray-100 text-gray-800'
+                    }>
+                      {viewingConnector.status}
+                    </Badge>
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Authentication</Label>
+                  <p className="text-sm text-muted-foreground">{viewingConnector.auth_type}</p>
+                </div>
+              </div>
+
+              {/* Description */}
+              <div>
+                <Label className="text-sm font-medium">Description</Label>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {viewingConnector.description || 'No description available'}
+                </p>
+              </div>
+
+              {/* Base URL */}
+              {viewingConnector.base_url && (
+                <div>
+                  <Label className="text-sm font-medium">Base URL</Label>
+                  <p className="text-sm font-mono bg-muted p-2 rounded mt-1 break-all">
+                    {viewingConnector.base_url}
+                  </p>
+                </div>
+              )}
+
+              {/* Usage Statistics */}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="text-center p-3 bg-muted rounded">
+                  <p className="text-2xl font-bold text-primary">{viewingConnector.usage_count || 0}</p>
+                  <p className="text-xs text-muted-foreground">Total Usage</p>
+                </div>
+                <div className="text-center p-3 bg-muted rounded">
+                  <p className="text-2xl font-bold text-green-600">{viewingConnector.success_rate || 0}%</p>
+                  <p className="text-xs text-muted-foreground">Success Rate</p>
+                </div>
+                <div className="text-center p-3 bg-muted rounded">
+                  <p className="text-sm font-medium text-muted-foreground">
+                    {viewingConnector.last_tested 
+                      ? new Date(viewingConnector.last_tested).toLocaleDateString()
+                      : 'Never tested'
+                    }
+                  </p>
+                  <p className="text-xs text-muted-foreground">Last Tested</p>
+                </div>
+              </div>
+
+              {/* Configuration */}
+              {viewingConnector.configuration && Object.keys(viewingConnector.configuration).length > 0 && (
+                <div>
+                  <Label className="text-sm font-medium">Configuration</Label>
+                  <pre className="text-xs bg-muted p-3 rounded mt-1 overflow-auto max-h-32">
+                    {JSON.stringify(viewingConnector.configuration, null, 2)}
+                  </pre>
+                </div>
+              )}
+
+              {/* Endpoints */}
+              {viewingConnector.endpoints && viewingConnector.endpoints.length > 0 && (
+                <div>
+                  <Label className="text-sm font-medium">Endpoints</Label>
+                  <div className="space-y-2 mt-2">
+                    {viewingConnector.endpoints.map((endpoint: any, index: number) => (
+                      <div key={index} className="flex items-center gap-2 p-2 bg-muted rounded text-sm">
+                        <Badge variant="outline" className="text-xs">{endpoint.method || 'GET'}</Badge>
+                        <span className="font-mono">{endpoint.path || endpoint}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewingConnector(null)}>
+              Close
+            </Button>
+            <Button onClick={() => {
+              setViewingConnector(null);
+              setConfiguring(viewingConnector?.id);
+            }}>
+              <Settings className="h-4 w-4 mr-2" />
+              Edit Connector
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Create Connector Dialog */}
       <Dialog open={showCreateConnector} onOpenChange={setShowCreateConnector}>
         <DialogContent className="sm:max-w-[600px]">
@@ -584,7 +1007,18 @@ export const SystemConnectors = () => {
                       <SelectValue placeholder="Choose a connector..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {getMissingConnectorSuggestions().map((brand) => (
+                      {getMissingConnectorSuggestions()
+                        .filter(brand => {
+                          // Filter by search term if it was set from clicking a connector type
+                          if (searchTerm) {
+                            return brand.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                   brand.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                   brand.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                   brand.type.toLowerCase().includes(searchTerm.toLowerCase());
+                          }
+                          return true;
+                        })
+                        .map((brand) => (
                         <SelectItem key={brand.id} value={brand.id}>
                           <div className="flex items-center gap-2">
                             <span>{brand.name}</span>
@@ -710,6 +1144,7 @@ export const SystemConnectors = () => {
                     
                     setSelectedMissingConnector('');
                     setShowCreateConnector(false);
+                    setSearchTerm(''); // Clear search term
                     
                     toast({
                       title: "✅ Connector Added Successfully",
