@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { ConnectorCreationWizard } from './ConnectorCreationWizard';
 import { useAgentAPIAssignments } from '@/hooks/useAgentAPIAssignments';
+import { useConnectorMetrics, type Connector } from '@/hooks/useConnectorMetrics';
 
 // Helper functions for icons
 const getStatusIcon = (status: 'active' | 'inactive' | 'testing' | 'error') => {
@@ -65,35 +66,6 @@ interface EnhancedConnectorSystemProps {
   agentPurpose?: string;
 }
 
-interface Connector {
-  id: string;
-  name: string;
-  description: string;
-  type: 'database' | 'api' | 'messaging' | 'file_system' | 'external_service' | 'ai_model';
-  category: string;
-  brand?: string;
-  status: 'active' | 'inactive' | 'testing' | 'error';
-  baseUrl?: string;
-  endpoints: Array<{
-    id: string;
-    path: string;
-    method: string;
-    description: string;
-  }>;
-  assignedActions: string[];
-  aiGeneratedTasks: Array<{
-    id: string;
-    name: string;
-    description: string;
-    suggestedEndpoint: string;
-  }>;
-  authType: string;
-  created_at: string;
-  last_tested?: string;
-  success_rate?: number;
-  usage_count?: number;
-}
-
 export const EnhancedConnectorSystem: React.FC<EnhancedConnectorSystemProps> = ({
   agentId,
   actions,
@@ -102,16 +74,16 @@ export const EnhancedConnectorSystem: React.FC<EnhancedConnectorSystemProps> = (
   agentPurpose
 }) => {
   const { toast } = useToast();
-  const [connectors, setConnectors] = useState<Connector[]>([]);
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('create');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isAssignmentDialogOpen, setIsAssignmentDialogOpen] = useState(false);
   const [selectedActionForAssignment, setSelectedActionForAssignment] = useState<any>(null);
   const [selectedConnector, setSelectedConnector] = useState<Connector | null>(null);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   const {
     apiAssignments,
@@ -121,70 +93,20 @@ export const EnhancedConnectorSystem: React.FC<EnhancedConnectorSystemProps> = (
     getTaskAssignment
   } = useAgentAPIAssignments(agentId);
 
-  useEffect(() => {
-    loadConnectors();
-  }, []);
-
-  const loadConnectors = async () => {
-    // Load existing connectors - this would typically come from an API
-    const mockConnectors: Connector[] = [
-      {
-        id: 'oracle-connector-1',
-        name: 'Oracle Healthcare DB',
-        description: 'Main Oracle database for patient records',
-        type: 'database',
-        category: 'Healthcare',
-        brand: 'Oracle',
-        status: 'active',
-        baseUrl: 'oracle://healthcare-db:1521',
-        endpoints: [
-          { id: 'ep1', path: '/patients', method: 'GET', description: 'Get patient records' },
-          { id: 'ep2', path: '/appointments', method: 'GET', description: 'Get appointments' }
-        ],
-        assignedActions: ['action-1', 'action-2'],
-        aiGeneratedTasks: [],
-        authType: 'bearer',
-        created_at: '2024-01-15T10:00:00Z',
-        last_tested: '2024-01-20T10:00:00Z',
-        success_rate: 98,
-        usage_count: 1247
-      },
-      {
-        id: 'salesforce-connector-1',
-        name: 'Salesforce CRM Integration',
-        description: 'Integration with Salesforce for customer data',
-        type: 'external_service',
-        category: 'CRM',
-        brand: 'Salesforce',
-        status: 'testing',
-        baseUrl: 'https://api.salesforce.com',
-        endpoints: [
-          { id: 'ep3', path: '/sobjects/Account', method: 'GET', description: 'Get accounts' },
-          { id: 'ep4', path: '/sobjects/Contact', method: 'GET', description: 'Get contacts' }
-        ],
-        assignedActions: [],
-        aiGeneratedTasks: [
-          {
-            id: 'task1',
-            name: 'Sync Customer Data',
-            description: 'Synchronize customer information from Salesforce',
-            suggestedEndpoint: '/sobjects/Account'
-          }
-        ],
-        authType: 'oauth',
-        created_at: '2024-01-18T14:30:00Z',
-        success_rate: 85,
-        usage_count: 342
-      }
-    ];
-    
-    setConnectors(mockConnectors);
-  };
+  const {
+    connectors,
+    isLoadingConnectors,
+    connectorsError,
+    createConnector,
+    updateConnector,
+    deleteConnector,
+    testConnector,
+    refetchConnectors
+  } = useConnectorMetrics();
 
   const handleRefresh = async () => {
-    setIsRefreshing(true);
     try {
-      await loadConnectors();
+      await refetchConnectors();
       toast({
         title: "Refreshed",
         description: "Connector data has been refreshed",
@@ -196,11 +118,10 @@ export const EnhancedConnectorSystem: React.FC<EnhancedConnectorSystemProps> = (
         variant: "destructive"
       });
     }
-    setIsRefreshing(false);
   };
 
   const handleConnectorCreated = (newConnector: any) => {
-    setConnectors(prev => [...prev, newConnector]);
+    refetchConnectors();
     toast({
       title: "Connector Created",
       description: `${newConnector.name} has been successfully created`,
@@ -208,66 +129,37 @@ export const EnhancedConnectorSystem: React.FC<EnhancedConnectorSystemProps> = (
   };
 
   const handleTestConnector = async (connectorId: string) => {
-    const connector = connectors.find(c => c.id === connectorId);
+    const connector = connectors?.find(c => c.id === connectorId);
     if (!connector) return;
 
-    setConnectors(prev => 
-      prev.map(c => 
-        c.id === connectorId ? { ...c, status: 'testing' as const } : c
-      )
-    );
-
-    // Simulate testing
-    setTimeout(() => {
-      const success = Math.random() > 0.2; // 80% success rate
-      setConnectors(prev => 
-        prev.map(c => 
-          c.id === connectorId 
-            ? { 
-                ...c, 
-                status: success ? 'active' as const : 'error' as const,
-                last_tested: new Date().toISOString(),
-                success_rate: success ? (c.success_rate || 0) + 1 : Math.max((c.success_rate || 0) - 5, 0)
-              } 
-            : c
-        )
-      );
-
-      toast({
-        title: success ? "Test Successful" : "Test Failed",
-        description: success 
-          ? `${connector.name} is working correctly`
-          : `${connector.name} connection failed`,
-        variant: success ? "default" : "destructive"
-      });
-    }, 2000);
+    try {
+      await testConnector.mutateAsync(connectorId);
+    } catch (error) {
+      console.error('Test failed:', error);
+    }
   };
 
   const handleViewConnector = (connector: Connector) => {
     setSelectedConnector(connector);
-    // Could open a detailed view modal
-    toast({
-      title: "Connector Details",
-      description: `Viewing details for ${connector.name}`,
-    });
+    setIsViewDialogOpen(true);
   };
 
   const handleEditConnector = (connector: Connector) => {
     setSelectedConnector(connector);
-    // Could open edit modal
-    toast({
-      title: "Edit Connector",
-      description: `Edit functionality for ${connector.name} would open here`,
-    });
+    setIsEditDialogOpen(true);
   };
 
-  const handleConfigureConnector = (connector: Connector) => {
-    setSelectedConnector(connector);
-    // Could open configuration modal
-    toast({
-      title: "Configure Connector",
-      description: `Configuration for ${connector.name} would open here`,
-    });
+  const handleDeleteConnector = async (connectorId: string) => {
+    const connector = connectors?.find(c => c.id === connectorId);
+    if (!connector) return;
+
+    if (confirm(`Are you sure you want to delete "${connector.name}"?`)) {
+      try {
+        await deleteConnector.mutateAsync(connectorId);
+      } catch (error) {
+        console.error('Delete failed:', error);
+      }
+    }
   };
 
   const handleCreateAssignment = async (assignmentData: any) => {
@@ -296,7 +188,7 @@ export const EnhancedConnectorSystem: React.FC<EnhancedConnectorSystemProps> = (
     }
   };
 
-  const filteredConnectors = connectors.filter(connector => {
+  const filteredConnectors = (connectors || []).filter(connector => {
     const matchesSearch = connector.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          connector.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          connector.category.toLowerCase().includes(searchQuery.toLowerCase());
@@ -307,17 +199,27 @@ export const EnhancedConnectorSystem: React.FC<EnhancedConnectorSystemProps> = (
     return matchesSearch && matchesStatus && matchesType;
   });
 
-
   const stats = {
-    total: connectors.length,
-    active: connectors.filter(c => c.status === 'active').length,
-    testing: connectors.filter(c => c.status === 'testing').length,
-    error: connectors.filter(c => c.status === 'error').length,
-    avgSuccessRate: connectors.length > 0 
+    total: connectors?.length || 0,
+    active: connectors?.filter(c => c.status === 'active').length || 0,
+    testing: connectors?.filter(c => c.status === 'testing').length || 0,
+    error: connectors?.filter(c => c.status === 'error').length || 0,
+    avgSuccessRate: connectors && connectors.length > 0 
       ? Math.round(connectors.reduce((sum, c) => sum + (c.success_rate || 0), 0) / connectors.length)
       : 0,
-    totalUsage: connectors.reduce((sum, c) => sum + (c.usage_count || 0), 0)
+    totalUsage: connectors?.reduce((sum, c) => sum + (c.usage_count || 0), 0) || 0
   };
+
+  if (isLoadingConnectors) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-center p-8">
+          <RefreshCw className="h-6 w-6 animate-spin mr-2" />
+          <span>Loading connectors...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -333,9 +235,9 @@ export const EnhancedConnectorSystem: React.FC<EnhancedConnectorSystemProps> = (
           <Button
             variant="outline"
             onClick={handleRefresh}
-            disabled={isRefreshing}
+            disabled={isLoadingConnectors}
           >
-            <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`h-4 w-4 mr-2 ${isLoadingConnectors ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
           <Button
@@ -352,15 +254,15 @@ export const EnhancedConnectorSystem: React.FC<EnhancedConnectorSystemProps> = (
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="create" className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
-            Create Connector
+            Browse & Configure
           </TabsTrigger>
           <TabsTrigger value="assignments" className="flex items-center gap-2">
             <Target className="h-4 w-4" />
-            Assign Connector
+            Assign Connectors
           </TabsTrigger>
         </TabsList>
 
-        {/* Create Connector Tab */}
+        {/* Browse & Configure Tab */}
         <TabsContent value="create" className="mt-6">
           <div className="space-y-6">
             <Card>
@@ -493,7 +395,12 @@ export const EnhancedConnectorSystem: React.FC<EnhancedConnectorSystemProps> = (
                                 </div>
                               </div>
                               <div className="flex items-center gap-2">
-                                <Button variant="outline" size="sm" onClick={() => handleTestConnector(connector.id)}>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  onClick={() => handleTestConnector(connector.id)}
+                                  disabled={testConnector.isPending}
+                                >
                                   <Play className="h-4 w-4 mr-1" />
                                   Test
                                 </Button>
@@ -504,6 +411,16 @@ export const EnhancedConnectorSystem: React.FC<EnhancedConnectorSystemProps> = (
                                 <Button variant="outline" size="sm" onClick={() => handleEditConnector(connector)}>
                                   <Edit className="h-4 w-4 mr-1" />
                                   Edit
+                                </Button>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  onClick={() => handleDeleteConnector(connector.id)}
+                                  disabled={deleteConnector.isPending}
+                                  className="text-red-600 hover:text-red-700"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-1" />
+                                  Delete
                                 </Button>
                               </div>
                             </div>
@@ -666,9 +583,34 @@ export const EnhancedConnectorSystem: React.FC<EnhancedConnectorSystemProps> = (
           setIsAssignmentDialogOpen(false);
           setSelectedActionForAssignment(null);
         }}
-        connectors={connectors}
+        connectors={connectors || []}
         selectedAction={selectedActionForAssignment}
         onAssignmentCreate={handleCreateAssignment}
+      />
+
+      {/* View Connector Dialog */}
+      <ViewConnectorDialog
+        isOpen={isViewDialogOpen}
+        onClose={() => {
+          setIsViewDialogOpen(false);
+          setSelectedConnector(null);
+        }}
+        connector={selectedConnector}
+      />
+
+      {/* Edit Connector Dialog */}
+      <EditConnectorDialog
+        isOpen={isEditDialogOpen}
+        onClose={() => {
+          setIsEditDialogOpen(false);
+          setSelectedConnector(null);
+        }}
+        connector={selectedConnector}
+        onUpdate={(updated) => {
+          refetchConnectors();
+          setIsEditDialogOpen(false);
+          setSelectedConnector(null);
+        }}
       />
     </div>
   );
@@ -713,7 +655,7 @@ const AssignmentDialog: React.FC<AssignmentDialogProps> = ({
         connector_id: selectedConnector,
         connector_name: connector.name,
         endpoint_path: selectedEndpoint,
-        auth_type: connector.authType
+        auth_type: connector.auth_type
       }
     });
   };
@@ -773,7 +715,7 @@ const AssignmentDialog: React.FC<AssignmentDialogProps> = ({
               </Select>
             </div>
 
-            {selectedConnectorData && selectedConnectorData.endpoints.length > 0 && (
+            {selectedConnectorData && selectedConnectorData.endpoints && selectedConnectorData.endpoints.length > 0 && (
               <div>
                 <Label>Endpoint</Label>
                 <Select value={selectedEndpoint} onValueChange={setSelectedEndpoint}>
@@ -781,7 +723,7 @@ const AssignmentDialog: React.FC<AssignmentDialogProps> = ({
                     <SelectValue placeholder="Select an endpoint" />
                   </SelectTrigger>
                   <SelectContent>
-                    {selectedConnectorData.endpoints.map((endpoint) => (
+                    {selectedConnectorData.endpoints.map((endpoint: any) => (
                       <SelectItem key={endpoint.id} value={endpoint.path}>
                         <div>
                           <span className="font-medium">{endpoint.method}</span>
@@ -804,9 +746,9 @@ const AssignmentDialog: React.FC<AssignmentDialogProps> = ({
                   <div className="space-y-2 text-sm">
                     <p><strong>Type:</strong> {selectedConnectorData.type}</p>
                     <p><strong>Status:</strong> {selectedConnectorData.status}</p>
-                    <p><strong>Auth:</strong> {selectedConnectorData.authType}</p>
-                    {selectedConnectorData.baseUrl && (
-                      <p><strong>Base URL:</strong> {selectedConnectorData.baseUrl}</p>
+                    <p><strong>Auth:</strong> {selectedConnectorData.auth_type}</p>
+                    {selectedConnectorData.base_url && (
+                      <p><strong>Base URL:</strong> {selectedConnectorData.base_url}</p>
                     )}
                   </div>
                 </CardContent>
@@ -825,6 +767,238 @@ const AssignmentDialog: React.FC<AssignmentDialogProps> = ({
             className="bg-blue-600 hover:bg-blue-700"
           >
             Create Assignment
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+// View Connector Dialog Component
+interface ViewConnectorDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  connector: Connector | null;
+}
+
+const ViewConnectorDialog: React.FC<ViewConnectorDialogProps> = ({
+  isOpen,
+  onClose,
+  connector
+}) => {
+  if (!connector) return null;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            {getTypeIcon(connector.type)}
+            {connector.name}
+          </DialogTitle>
+        </DialogHeader>
+        
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 gap-4">
+            <Card>
+              <CardContent className="p-4">
+                <h4 className="font-medium mb-2">Basic Information</h4>
+                <div className="space-y-2 text-sm">
+                  <p><strong>Name:</strong> {connector.name}</p>
+                  <p><strong>Type:</strong> {connector.type}</p>
+                  <p><strong>Category:</strong> {connector.category}</p>
+                  <p><strong>Status:</strong> {connector.status}</p>
+                  <p><strong>Description:</strong> {connector.description}</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-4">
+                <h4 className="font-medium mb-2">Usage Statistics</h4>
+                <div className="space-y-2 text-sm">
+                  <p><strong>Success Rate:</strong> {connector.success_rate || 0}%</p>
+                  <p><strong>Usage Count:</strong> {connector.usage_count || 0}</p>
+                  <p><strong>Created:</strong> {new Date(connector.created_at).toLocaleDateString()}</p>
+                  {connector.last_tested && (
+                    <p><strong>Last Tested:</strong> {new Date(connector.last_tested).toLocaleDateString()}</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card>
+            <CardContent className="p-4">
+              <h4 className="font-medium mb-2">Configuration</h4>
+              <div className="space-y-2 text-sm">
+                {connector.base_url && (
+                  <p><strong>Base URL:</strong> {connector.base_url}</p>
+                )}
+                <p><strong>Auth Type:</strong> {connector.auth_type}</p>
+                {connector.endpoints && connector.endpoints.length > 0 && (
+                  <div>
+                    <p><strong>Endpoints:</strong></p>
+                    <ul className="list-disc list-inside ml-4 mt-1">
+                      {connector.endpoints.map((endpoint: any) => (
+                        <li key={endpoint.id}>
+                          <span className="font-medium">{endpoint.method}</span> {endpoint.path}
+                          {endpoint.description && (
+                            <span className="text-gray-500"> - {endpoint.description}</span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            Close
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+// Edit Connector Dialog Component
+interface EditConnectorDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  connector: Connector | null;
+  onUpdate: (connector: Connector) => void;
+}
+
+const EditConnectorDialog: React.FC<EditConnectorDialogProps> = ({
+  isOpen,
+  onClose,
+  connector,
+  onUpdate
+}) => {
+  const { toast } = useToast();
+  const { updateConnector } = useConnectorMetrics();
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    category: '',
+    base_url: '',
+    auth_type: ''
+  });
+
+  React.useEffect(() => {
+    if (connector) {
+      setFormData({
+        name: connector.name,
+        description: connector.description,
+        category: connector.category,
+        base_url: connector.base_url || '',
+        auth_type: connector.auth_type
+      });
+    }
+  }, [connector]);
+
+  const handleSave = async () => {
+    if (!connector) return;
+
+    try {
+      await updateConnector.mutateAsync({
+        connectorId: connector.id,
+        updates: formData
+      });
+      
+      toast({
+        title: "Connector Updated",
+        description: `${formData.name} has been updated successfully`,
+      });
+      
+      onUpdate({ ...connector, ...formData });
+    } catch (error) {
+      toast({
+        title: "Update Failed",
+        description: "Failed to update connector",
+        variant: "destructive"
+      });
+    }
+  };
+
+  if (!connector) return null;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Edit Connector</DialogTitle>
+        </DialogHeader>
+        
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="name">Name</Label>
+            <Input
+              id="name"
+              value={formData.name}
+              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="description">Description</Label>
+            <Input
+              id="description"
+              value={formData.description}
+              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="category">Category</Label>
+            <Input
+              id="category"
+              value={formData.category}
+              onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="base_url">Base URL</Label>
+            <Input
+              id="base_url"
+              value={formData.base_url}
+              onChange={(e) => setFormData(prev => ({ ...prev, base_url: e.target.value }))}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="auth_type">Auth Type</Label>
+            <Select value={formData.auth_type} onValueChange={(value) => setFormData(prev => ({ ...prev, auth_type: value }))}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select auth type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                <SelectItem value="bearer">Bearer Token</SelectItem>
+                <SelectItem value="api_key">API Key</SelectItem>
+                <SelectItem value="oauth">OAuth</SelectItem>
+                <SelectItem value="basic">Basic Auth</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleSave}
+            disabled={updateConnector.isPending}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            {updateConnector.isPending ? 'Saving...' : 'Save Changes'}
           </Button>
         </DialogFooter>
       </DialogContent>
