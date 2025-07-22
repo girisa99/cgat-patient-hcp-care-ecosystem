@@ -451,16 +451,15 @@ export const EnhancedAgentCanvas: React.FC<EnhancedAgentCanvasProps> = ({
   };
 
   const handleCreateCustomTemplate = () => {
-    // Check for duplicates based on name and tagline
+    // Simplified duplicate check - only check name
     const duplicateExists = templates.some(template => 
-      template.name === (canvasName || 'Custom Template') && 
-      template.tagline === (tagline || 'Custom Tagline')
+      template.name.toLowerCase() === (canvasName || 'Custom Template').toLowerCase()
     );
     
     if (duplicateExists) {
       toast({
-        title: "Duplicate Template",
-        description: "A template with this name and tagline already exists. Please modify the canvas name or tagline to create a unique template.",
+        title: "Duplicate Template Name",
+        description: "A template with this name already exists. Please choose a different canvas name.",
         variant: "destructive"
       });
       return;
@@ -846,32 +845,20 @@ export const EnhancedAgentCanvas: React.FC<EnhancedAgentCanvasProps> = ({
                         {selectedTemplate === template.id && (
                           <Check className="h-4 w-4 text-primary" />
                         )}
-                        {/* Delete button for saved templates */}
-                        {template.id.startsWith('saved-') && (
+                        {/* Delete button for non-default templates */}
+                        {!template.isDefault && (
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-6 w-6 p-0 hover:bg-destructive hover:text-destructive-foreground"
+                            className="h-8 w-8 p-0 hover:bg-destructive hover:text-destructive-foreground z-10 relative"
                             onClick={(e) => {
                               e.stopPropagation();
+                              e.preventDefault();
                               handleDeleteTemplate(template.id);
                             }}
+                            title="Delete template"
                           >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        )}
-                        {/* Delete button for custom templates */}
-                        {template.id.startsWith('custom-') && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0 hover:bg-destructive hover:text-destructive-foreground"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteTemplate(template.id);
-                            }}
-                          >
-                            <Trash2 className="h-3 w-3" />
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         )}
                       </div>
@@ -1000,7 +987,7 @@ export const EnhancedAgentCanvas: React.FC<EnhancedAgentCanvasProps> = ({
                     </div>
                     
                     <div className={`flex gap-2 ${previewMode === 'mobile' ? 'flex-col' : ''}`}>
-                      <Button 
+                       <Button 
                         size={previewMode === 'mobile' ? 'sm' : 'default'}
                         style={{ 
                           backgroundColor: primaryColor,
@@ -1008,7 +995,7 @@ export const EnhancedAgentCanvas: React.FC<EnhancedAgentCanvasProps> = ({
                           border: 'none'
                         }}
                         onClick={() => handlePreviewAction('Primary')}
-                        className="hover:opacity-90 transition-opacity text-white"
+                        className="hover:opacity-90 transition-opacity text-white shadow-sm"
                       >
                         Primary Action
                       </Button>
@@ -1021,9 +1008,9 @@ export const EnhancedAgentCanvas: React.FC<EnhancedAgentCanvasProps> = ({
                           backgroundColor: 'transparent'
                         }}
                         onClick={() => handlePreviewAction('Secondary')}
-                        className="hover:opacity-80 transition-all"
+                        className="hover:opacity-80 transition-all shadow-sm"
                         onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = `${secondaryColor}10`;
+                          e.currentTarget.style.backgroundColor = `${secondaryColor}15`;
                         }}
                         onMouseLeave={(e) => {
                           e.currentTarget.style.backgroundColor = 'transparent';
@@ -1039,9 +1026,9 @@ export const EnhancedAgentCanvas: React.FC<EnhancedAgentCanvasProps> = ({
                           backgroundColor: 'transparent'
                         }}
                         onClick={() => handlePreviewAction('Accent')}
-                        className="hover:opacity-80 transition-all"
+                        className="hover:opacity-80 transition-all shadow-sm"
                         onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = `${accentColor}10`;
+                          e.currentTarget.style.backgroundColor = `${accentColor}15`;
                         }}
                         onMouseLeave={(e) => {
                           e.currentTarget.style.backgroundColor = 'transparent';
