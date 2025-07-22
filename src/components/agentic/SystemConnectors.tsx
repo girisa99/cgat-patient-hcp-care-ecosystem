@@ -397,6 +397,7 @@ const initialConnectors: Connector[] = [
 ];
 
 export const SystemConnectors = () => {
+  console.log('🔍 SystemConnectors component rendered!');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [configuring, setConfiguring] = useState<string | null>(null);
@@ -452,6 +453,10 @@ export const SystemConnectors = () => {
   // Log database connectors for debugging
   React.useEffect(() => {
     console.log('SystemConnectors: Database connectors updated:', dbConnectors);
+    console.log('SystemConnectors: Total connectors found:', dbConnectors?.length || 0);
+    if (dbConnectors?.length === 0) {
+      console.log('🚨 No database connectors found! Make sure you create some connectors first.');
+    }
   }, [dbConnectors]);
 
   const categories = ['All', 'Language Models', 'CRM Systems', 'Databases', 'Healthcare APIs', 'Communication', 'Insurance', 'Development', 'Automation', 'Analytics'];
@@ -733,6 +738,12 @@ export const SystemConnectors = () => {
       <div>
         <h2 className="text-2xl font-bold text-foreground">System Connectors</h2>
         <p className="text-muted-foreground">Configure and manage integrations with external systems</p>
+        <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+          <p className="text-sm text-blue-800 dark:text-blue-200">
+            🎯 <strong>You're in the System Connectors!</strong> This page shows connectors from your database. 
+            Use the "Create New" tab to add Zapier, APIs, and other integrations.
+          </p>
+        </div>
       </div>
 
       {/* Search and Filter */}
