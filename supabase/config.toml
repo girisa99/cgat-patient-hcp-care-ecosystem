@@ -16,3 +16,9 @@ jwt_expiry = 3600
 
 [functions.data-processor]
 verify_jwt = true
+
+[functions.generate-knowledge-content]
+verify_jwt = true
+
+[functions.crawl-relevant-content]
+verify_jwt = true
