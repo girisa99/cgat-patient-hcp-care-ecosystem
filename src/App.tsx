@@ -31,6 +31,7 @@ import Stability from '@/pages/Stability';
 import Governance from '@/pages/Governance';
 import Agents from '@/pages/Agents';
 import Login from '@/pages/Login';
+import DeploymentManagement from '@/pages/DeploymentManagement';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -73,10 +74,11 @@ const AppContent = () => {
                   <Route path="/index" element={<Index />} />
                   <Route path="/users" element={<Users />} />
                   <Route path="/patients" element={<Patients />} />
-                  <Route path="/agents" element={<Agents />} />
-                  <Route path="/facilities" element={<Facilities />} />
-                  
-                   <Route path="/modules" element={<Modules />} />
+                   <Route path="/agents" element={<Agents />} />
+                   <Route path="/facilities" element={<Facilities />} />
+                   <Route path="/deployment" element={<DeploymentManagement />} />
+                   
+                    <Route path="/modules" element={<Modules />} />
                    <Route path="/api-services" element={<ApiServices />} />
                    <Route path="/data-import" element={<DataImport />} />
                    <Route path="/ngrok" element={<NgrokIntegration />} />
