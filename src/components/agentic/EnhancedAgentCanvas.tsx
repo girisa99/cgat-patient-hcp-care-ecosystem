@@ -409,6 +409,84 @@ export const EnhancedAgentCanvas: React.FC<EnhancedAgentCanvasProps> = ({
     }
   };
 
+  const handleDeleteTemplate = async (templateId: string) => {
+    try {
+      // Check if template is from database (saved templates)
+      if (templateId.startsWith('saved-')) {
+        const dbId = templateId.replace('saved-', '');
+        const { error } = await supabase
+          .from('agent_templates')
+          .delete()
+          .eq('id', dbId);
+          
+        if (error) throw error;
+      }
+      
+      // Remove from local templates array
+      setTemplates(prev => prev.filter(t => t.id !== templateId));
+      
+      // If deleted template was selected, reset to default
+      if (selectedTemplate === templateId) {
+        const defaultTemplate = templates.find(t => t.isDefault);
+        if (defaultTemplate) {
+          handleTemplateSelect(defaultTemplate.id);
+        } else {
+          setSelectedTemplate('');
+        }
+      }
+      
+      toast({
+        title: "Template Deleted",
+        description: "Template has been successfully removed."
+      });
+      
+    } catch (error: any) {
+      console.error('Delete template error:', error);
+      toast({
+        title: "Delete Failed",
+        description: error.message || "Failed to delete template. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleCreateCustomTemplate = () => {
+    // Check for duplicates based on name and tagline
+    const duplicateExists = templates.some(template => 
+      template.name === (canvasName || 'Custom Template') && 
+      template.tagline === (tagline || 'Custom Tagline')
+    );
+    
+    if (duplicateExists) {
+      toast({
+        title: "Duplicate Template",
+        description: "A template with this name and tagline already exists. Please modify the canvas name or tagline to create a unique template.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Create template using current canvas settings
+    const customTemplate: CanvasTemplate = {
+      id: `custom-${Date.now()}`,
+      name: canvasName || 'Custom Template',
+      description: `Custom template: ${canvasName || 'Unnamed'}`,
+      tagline: tagline || 'Custom Tagline',
+      primaryColor: primaryColor,
+      secondaryColor: secondaryColor,
+      accentColor: accentColor,
+      logo: logoPreview || undefined
+    };
+    
+    setTemplates(prev => [...prev, customTemplate]);
+    setSelectedTemplate(customTemplate.id);
+    
+    toast({
+      title: "Custom Template Created",
+      description: `New custom template "${customTemplate.name}" has been created using your current settings.`
+    });
+  };
+
   const handleColorPaletteSelect = (colors: string[]) => {
     setPrimaryColor(colors[0]);
     setSecondaryColor(colors[1]);
@@ -747,26 +825,56 @@ export const EnhancedAgentCanvas: React.FC<EnhancedAgentCanvasProps> = ({
                   {templates.map(template => (
                     <div 
                       key={template.id}
-                      onClick={() => handleTemplateSelect(template.id)}
                       className={`p-3 border rounded-lg cursor-pointer flex items-center gap-3 transition-all hover:shadow-md ${selectedTemplate === template.id ? 'border-primary bg-primary/5 ring-1 ring-primary/20' : 'hover:border-primary/50'}`}
                     >
                       <div 
                         className="w-10 h-10 rounded-md shadow-sm"
                         style={{ background: `linear-gradient(135deg, ${template.primaryColor}, ${template.secondaryColor})` }}
+                        onClick={() => handleTemplateSelect(template.id)}
                       ></div>
-                      <div className="flex-1">
+                      <div className="flex-1" onClick={() => handleTemplateSelect(template.id)}>
                         <p className="font-medium text-sm">{template.name}</p>
                         <p className="text-xs text-muted-foreground">{template.description}</p>
                         <p className="text-xs font-medium mt-1" style={{ color: template.primaryColor }}>
                           {template.tagline}
                         </p>
                       </div>
-                      {template.isDefault && (
-                        <Badge variant="outline" className="text-xs">Default</Badge>
-                      )}
-                      {selectedTemplate === template.id && (
-                        <Check className="h-4 w-4 text-primary" />
-                      )}
+                      <div className="flex items-center gap-2">
+                        {template.isDefault && (
+                          <Badge variant="outline" className="text-xs">Default</Badge>
+                        )}
+                        {selectedTemplate === template.id && (
+                          <Check className="h-4 w-4 text-primary" />
+                        )}
+                        {/* Delete button for saved templates */}
+                        {template.id.startsWith('saved-') && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 hover:bg-destructive hover:text-destructive-foreground"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteTemplate(template.id);
+                            }}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        )}
+                        {/* Delete button for custom templates */}
+                        {template.id.startsWith('custom-') && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 hover:bg-destructive hover:text-destructive-foreground"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteTemplate(template.id);
+                            }}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -788,24 +896,7 @@ export const EnhancedAgentCanvas: React.FC<EnhancedAgentCanvasProps> = ({
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Reset
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => {
-                  // Create a new custom template
-                  const customTemplate: CanvasTemplate = {
-                    id: `custom-${Date.now()}`,
-                    name: 'Custom Template',
-                    description: 'Your custom template',
-                    tagline: 'Custom Tagline',
-                    primaryColor: '#3b82f6',
-                    secondaryColor: '#8b5cf6',
-                    accentColor: '#06b6d4'
-                  };
-                  setTemplates(prev => [...prev, customTemplate]);
-                  handleTemplateSelect(customTemplate.id);
-                  toast({
-                    title: "Custom Template Added",
-                    description: "New custom template has been created and applied."
-                  });
-                }}>
+                <Button variant="outline" size="sm" onClick={handleCreateCustomTemplate}>
                   <Plus className="h-4 w-4 mr-2" />
                   Custom Template
                 </Button>
