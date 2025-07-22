@@ -92,10 +92,14 @@ const BUILDER_STEPS: BuilderStep[] = [
   }
 ];
 
-export const UnifiedAgentBuilder: React.FC = () => {
+interface UnifiedAgentBuilderProps {
+  step?: AgentSession['current_step'];
+}
+
+export const UnifiedAgentBuilder: React.FC<UnifiedAgentBuilderProps> = ({ step }) => {
   const { user } = useMasterAuth();
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
-  const [currentStep, setCurrentStep] = useState<AgentSession['current_step']>('basic_info');
+  const [currentStep, setCurrentStep] = useState<AgentSession['current_step']>(step || 'basic_info');
   const [showNewSessionDialog, setShowNewSessionDialog] = useState(false);
   const [showSessionList, setShowSessionList] = useState(false);
   const [actions, setActions] = useState<AgentAction[]>([]);
@@ -116,6 +120,13 @@ export const UnifiedAgentBuilder: React.FC = () => {
     const completedSteps = BUILDER_STEPS.filter(step => step.isCompleted(currentSession)).length;
     return Math.round((completedSteps / BUILDER_STEPS.length) * 100);
   };
+
+  // Update current step when step prop changes
+  useEffect(() => {
+    if (step && step !== currentStep) {
+      setCurrentStep(step);
+    }
+  }, [step]);
 
   // Auto-save functionality
   useEffect(() => {
@@ -285,6 +296,348 @@ export const UnifiedAgentBuilder: React.FC = () => {
     );
   }
 
+  // Render specific step content when step prop is provided
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 'basic_info':
+        return renderBasicInfoStep();
+      case 'canvas':
+        return renderCanvasStep();
+      case 'actions':
+        return renderActionsStep();
+      case 'connectors':
+        return renderConnectorsStep();
+      case 'knowledge':
+        return renderKnowledgeStep();
+      case 'deploy':
+        return renderDeployStep();
+      default:
+        return renderBasicInfoStep();
+    }
+  };
+
+  const renderBasicInfoStep = () => (
+    <div className="space-y-6">
+      {/* Agent Configuration */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Bot className="h-5 w-5" />
+            Agent Creation & Configuration
+          </CardTitle>
+          <CardDescription>
+            Define your agent's core identity, purpose, and capabilities or start from a template
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="manual" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="manual">Manual Creation</TabsTrigger>
+              <TabsTrigger value="templates">From Template</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="manual" className="mt-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium">Agent Name</label>
+                    <input 
+                      type="text"
+                      className="w-full mt-1 px-3 py-2 border rounded-md"
+                      value={currentSession?.basic_info?.name || currentSession?.name || ''}
+                      onChange={(e) => {
+                        if (currentSessionId) {
+                          updateSession.mutate({
+                            sessionId: currentSessionId,
+                            updates: {
+                              basic_info: {
+                                ...currentSession.basic_info,
+                                name: e.target.value
+                              }
+                            }
+                          });
+                        }
+                      }}
+                      placeholder="Enter agent name"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Purpose</label>
+                    <input 
+                      type="text"
+                      className="w-full mt-1 px-3 py-2 border rounded-md"
+                      value={currentSession?.basic_info?.purpose || ''}
+                      onChange={(e) => {
+                        if (currentSessionId) {
+                          updateSession.mutate({
+                            sessionId: currentSessionId,
+                            updates: {
+                              basic_info: {
+                                ...currentSession.basic_info,
+                                purpose: e.target.value
+                              }
+                            }
+                          });
+                        }
+                      }}
+                      placeholder="What is this agent's main purpose?"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Description</label>
+                  <textarea 
+                    className="w-full mt-1 px-3 py-2 border rounded-md h-24"
+                    value={currentSession?.basic_info?.description || currentSession?.description || ''}
+                    onChange={(e) => {
+                      if (currentSessionId) {
+                        updateSession.mutate({
+                          sessionId: currentSessionId,
+                          updates: {
+                            basic_info: {
+                              ...currentSession.basic_info,
+                              description: e.target.value
+                            }
+                          }
+                        });
+                      }
+                    }}
+                      placeholder="Describe what this agent will do"
+                    />
+                  </div>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="templates" className="mt-6">
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    Choose from pre-built agent templates to get started quickly
+                  </p>
+                  <div className="text-center py-8 text-muted-foreground">
+                    <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>Agent templates will be integrated here</p>
+                    <p className="text-sm">Pre-configured agents for different use cases</p>
+                  </div>
+                </div>
+              </TabsContent>
+            </Tabs>
+        </CardContent>
+      </Card>
+    </div>
+  );
+
+  const renderCanvasStep = () => (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Palette className="h-5 w-5" />
+          Canvas & Branding Configuration
+        </CardTitle>
+        <CardDescription>
+          Customize your agent's visual identity and white-label settings
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <EnhancedAgentCanvas 
+          initialName={currentSession?.basic_info?.name || ''}
+          onNameChange={(name) => {
+            if (currentSessionId) {
+              updateSession.mutate({
+                sessionId: currentSessionId,
+                updates: {
+                  canvas: {
+                    ...currentSession.canvas,
+                    workflow_steps: [{ name: name }]
+                  }
+                }
+              });
+            }
+          }}
+        />
+      </CardContent>
+    </Card>
+  );
+
+  const renderActionsStep = () => (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Zap className="h-5 w-5" />
+          Actions & Task Configuration
+        </CardTitle>
+        <CardDescription>
+          Configure agent actions, assign AI models, and manage task workflows
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <AgentActionsManager
+          onActionsChange={(newActions) => {
+            setActions(newActions);
+            if (currentSessionId) {
+              updateSession.mutate({
+                sessionId: currentSessionId,
+                updates: {
+                  actions: {
+                    assigned_actions: newActions
+                  }
+                }
+              });
+            }
+          }}
+          initialActions={actions}
+          agentType={currentSession?.basic_info?.agent_type}
+          agentPurpose={currentSession?.basic_info?.purpose}
+        />
+      </CardContent>
+    </Card>
+  );
+
+  const renderConnectorsStep = () => (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Plug className="h-5 w-5" />
+          System Connectors & Integrations
+        </CardTitle>
+        <CardDescription>
+          Connect to APIs, databases, and external services. Assign connectors to actions and tasks.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Tabs defaultValue="system" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="system">System Connectors</TabsTrigger>
+            <TabsTrigger value="enhanced">Enhanced Connectors</TabsTrigger>
+            <TabsTrigger value="assignments">Assignments</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="system">
+            <SystemConnectors />
+          </TabsContent>
+          
+          <TabsContent value="enhanced">
+            <EnhancedConnectorSystem 
+              agentId={currentSessionId || ''}
+              actions={actions}
+              onAssignmentsChange={() => {}}
+            />
+          </TabsContent>
+          
+          <TabsContent value="assignments">
+            <ConnectorAssignmentManager 
+              agentId={currentSessionId || ''}
+              actions={actions}
+              onAssignmentsChange={(assignments) => {
+                if (currentSessionId) {
+                  updateSession.mutate({
+                    sessionId: currentSessionId,
+                    updates: {
+                      connectors: {
+                        assigned_connectors: assignments
+                      }
+                    }
+                  });
+                }
+              }}
+            />
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
+  );
+
+  const renderKnowledgeStep = () => (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Brain className="h-5 w-5" />
+          Knowledge Base & RAG Configuration
+        </CardTitle>
+        <CardDescription>
+          Configure knowledge bases, upload documents, and set up RAG capabilities
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Tabs defaultValue="knowledge" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="knowledge">Knowledge Base</TabsTrigger>
+            <TabsTrigger value="rag">RAG Configuration</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="knowledge">
+            <KnowledgeBaseManager 
+              agentId={currentSessionId || ''}
+              actions={actions}
+              onKnowledgeSourcesChange={() => {}}
+            />
+          </TabsContent>
+          
+          <TabsContent value="rag">
+            <RAGComplianceWorkflow 
+              knowledgeBaseIds={[]}
+              complianceEnabled={true}
+              onComplianceChange={() => {}}
+            />
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
+  );
+
+  const renderDeployStep = () => (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Rocket className="h-5 w-5" />
+          Agent Deployment
+        </CardTitle>
+        <CardDescription>
+          Deploy your agent to channels and configure omni-channel deployment
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-6">
+          {/* Pre-deployment checklist */}
+          <div className="border rounded-lg p-4 bg-gray-50">
+            <h4 className="font-medium mb-3">Pre-deployment Checklist</h4>
+            <div className="space-y-2">
+              {BUILDER_STEPS.slice(0, -1).map((step) => (
+                <div key={step.id} className="flex items-center gap-2">
+                  {step.isCompleted(currentSession) ? (
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                  ) : (
+                    <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                  )}
+                  <span className={`text-sm ${step.isCompleted(currentSession) ? 'text-green-700' : 'text-yellow-700'}`}>
+                    {step.title}
+                  </span>
+                  {step.isRequired && !step.isCompleted(currentSession) && (
+                    <Badge variant="destructive" className="text-xs">Required</Badge>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Deployment interface */}
+          <AgentChannelAssignmentMatrix />
+          
+          {/* Deployment actions */}
+          <div className="flex justify-end items-center pt-4 border-t">
+            <Button 
+              onClick={handleDeployAgent}
+              disabled={deployAgent.isPending || !BUILDER_STEPS.slice(0, -1).every(step => step.isCompleted(currentSession) || !step.isRequired)}
+              className="gap-2"
+            >
+              <Rocket className="h-4 w-4" />
+              {deployAgent.isPending ? 'Deploying...' : 'Deploy Agent'}
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
   // Main unified builder interface
   return (
     <div className="space-y-6">
@@ -318,7 +671,7 @@ export const UnifiedAgentBuilder: React.FC = () => {
         }}
         onExit={() => {
           setCurrentSessionId(null);
-        setCurrentStep('basic_info');
+          setCurrentStep('basic_info');
           setShowSessionList(true);
         }}
         isSaving={updateSession.isPending}
@@ -353,328 +706,9 @@ export const UnifiedAgentBuilder: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Main Tabs - Unified Interface */}
-      <Tabs value={currentStep} onValueChange={(value) => setCurrentStep(value as AgentSession['current_step'])}>
-        <TabsList className="grid w-full grid-cols-6">
-          {BUILDER_STEPS.map((step) => (
-            <TabsTrigger key={step.id} value={step.id} className="flex items-center gap-2">
-              {getStepIcon(step)}
-              <span className="hidden sm:inline">{step.title}</span>
-            </TabsTrigger>
-          ))}
-        </TabsList>
+      {/* Render step content based on current step */}
+      {renderStepContent()}
 
-        {/* Step 1: Agent Creation */}
-        <TabsContent value="basic_info" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Bot className="h-5 w-5" />
-                Agent Creation & Configuration
-              </CardTitle>
-              <CardDescription>
-                Define your agent's core identity, purpose, and capabilities
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {/* Keep existing basic_info functionality from SessionAgentBuilder */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium">Agent Name</label>
-                    <input 
-                      type="text"
-                      className="w-full mt-1 px-3 py-2 border rounded-md"
-                      value={currentSession.basic_info?.name || currentSession.name}
-                      onChange={(e) => {
-                        if (currentSessionId) {
-                          updateSession.mutate({
-                            sessionId: currentSessionId,
-                            updates: {
-                              basic_info: {
-                                ...currentSession.basic_info,
-                                name: e.target.value
-                              }
-                            }
-                          });
-                        }
-                      }}
-                      placeholder="Enter agent name"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Purpose</label>
-                    <input 
-                      type="text"
-                      className="w-full mt-1 px-3 py-2 border rounded-md"
-                      value={currentSession.basic_info?.purpose || ''}
-                      onChange={(e) => {
-                        if (currentSessionId) {
-                          updateSession.mutate({
-                            sessionId: currentSessionId,
-                            updates: {
-                              basic_info: {
-                                ...currentSession.basic_info,
-                                purpose: e.target.value
-                              }
-                            }
-                          });
-                        }
-                      }}
-                      placeholder="What is this agent's main purpose?"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Description</label>
-                  <textarea 
-                    className="w-full mt-1 px-3 py-2 border rounded-md h-24"
-                    value={currentSession.basic_info?.description || currentSession.description}
-                    onChange={(e) => {
-                      if (currentSessionId) {
-                        updateSession.mutate({
-                          sessionId: currentSessionId,
-                          updates: {
-                            basic_info: {
-                              ...currentSession.basic_info,
-                              description: e.target.value
-                            }
-                          }
-                        });
-                      }
-                    }}
-                    placeholder="Describe what this agent will do"
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Step 2: Canvas & Branding */}
-        <TabsContent value="canvas" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Palette className="h-5 w-5" />
-                Canvas & Branding Configuration
-              </CardTitle>
-              <CardDescription>
-                Customize your agent's visual identity and white-label settings
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <EnhancedAgentCanvas 
-                initialName={currentSession.basic_info?.name || ''}
-                onNameChange={(name) => {
-                  if (currentSessionId) {
-                    updateSession.mutate({
-                      sessionId: currentSessionId,
-                      updates: {
-                        canvas: {
-                          ...currentSession.canvas,
-                          workflow_steps: [{ name: name }]
-                        }
-                      }
-                    });
-                  }
-                }}
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Step 3: Actions & Configuration */}
-        <TabsContent value="actions" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Zap className="h-5 w-5" />
-                Actions & Task Configuration
-              </CardTitle>
-              <CardDescription>
-                Configure agent actions, assign AI models, and manage task workflows
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <AgentActionsManager
-                onActionsChange={(newActions) => {
-                  setActions(newActions);
-                  if (currentSessionId) {
-                    updateSession.mutate({
-                      sessionId: currentSessionId,
-                      updates: {
-                        actions: {
-                          assigned_actions: newActions
-                        }
-                      }
-                    });
-                  }
-                }}
-                initialActions={actions}
-                agentType={currentSession.basic_info?.agent_type}
-                agentPurpose={currentSession.basic_info?.purpose}
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Step 4: System Connectors */}
-        <TabsContent value="connectors" className="space-y-4">
-          <div className="grid grid-cols-1 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Plug className="h-5 w-5" />
-                  System Connectors & Integrations
-                </CardTitle>
-                <CardDescription>
-                  Connect to APIs, databases, and external services. Assign connectors to actions and tasks.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Tabs defaultValue="system" className="w-full">
-                  <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="system">System Connectors</TabsTrigger>
-                    <TabsTrigger value="enhanced">Enhanced Connectors</TabsTrigger>
-                    <TabsTrigger value="assignments">Assignments</TabsTrigger>
-                  </TabsList>
-                  
-                  <TabsContent value="system">
-                    <SystemConnectors />
-                  </TabsContent>
-                  
-                  <TabsContent value="enhanced">
-                    <EnhancedConnectorSystem 
-                      agentId={currentSessionId || ''}
-                      actions={actions}
-                      onAssignmentsChange={() => {}}
-                    />
-                  </TabsContent>
-                  
-                  <TabsContent value="assignments">
-                    <ConnectorAssignmentManager 
-                      agentId={currentSessionId || ''}
-                      actions={actions}
-                      onAssignmentsChange={(assignments) => {
-                        if (currentSessionId) {
-                          updateSession.mutate({
-                            sessionId: currentSessionId,
-                            updates: {
-                              connectors: {
-                                assigned_connectors: assignments
-                              }
-                            }
-                          });
-                        }
-                      }}
-                    />
-                  </TabsContent>
-                </Tabs>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        {/* Step 5: Knowledge & RAG */}
-        <TabsContent value="knowledge" className="space-y-4">
-          <div className="grid grid-cols-1 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Brain className="h-5 w-5" />
-                  Knowledge Base & RAG Configuration
-                </CardTitle>
-                <CardDescription>
-                  Configure knowledge bases, upload documents, and set up RAG capabilities
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Tabs defaultValue="knowledge" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="knowledge">Knowledge Base</TabsTrigger>
-                    <TabsTrigger value="rag">RAG Configuration</TabsTrigger>
-                  </TabsList>
-                  
-                  <TabsContent value="knowledge">
-                    <KnowledgeBaseManager 
-                      agentId={currentSessionId || ''}
-                      actions={actions}
-                      onKnowledgeSourcesChange={() => {}}
-                    />
-                  </TabsContent>
-                  
-                  <TabsContent value="rag">
-                    <RAGComplianceWorkflow 
-                      knowledgeBaseIds={[]}
-                      complianceEnabled={true}
-                      onComplianceChange={() => {}}
-                    />
-                  </TabsContent>
-                </Tabs>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        {/* Step 6: Deployment */}
-        <TabsContent value="deploy" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Rocket className="h-5 w-5" />
-                Agent Deployment
-              </CardTitle>
-              <CardDescription>
-                Deploy your agent to channels and configure omni-channel deployment
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                {/* Pre-deployment checklist */}
-                <div className="border rounded-lg p-4 bg-gray-50">
-                  <h4 className="font-medium mb-3">Pre-deployment Checklist</h4>
-                  <div className="space-y-2">
-                    {BUILDER_STEPS.slice(0, -1).map((step) => (
-                      <div key={step.id} className="flex items-center gap-2">
-                        {step.isCompleted(currentSession) ? (
-                          <CheckCircle className="h-4 w-4 text-green-600" />
-                        ) : (
-                          <AlertTriangle className="h-4 w-4 text-yellow-600" />
-                        )}
-                        <span className={`text-sm ${step.isCompleted(currentSession) ? 'text-green-700' : 'text-yellow-700'}`}>
-                          {step.title}
-                        </span>
-                        {step.isRequired && !step.isCompleted(currentSession) && (
-                          <Badge variant="destructive" className="text-xs">Required</Badge>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Deployment interface */}
-                <AgentChannelAssignmentMatrix />
-                
-                {/* Deployment actions */}
-                <div className="flex justify-between items-center pt-4 border-t">
-                  <Button variant="outline" onClick={() => setCurrentStep('knowledge')}>
-                    <span>← Back to Knowledge</span>
-                  </Button>
-                  <Button 
-                    onClick={handleDeployAgent}
-                    disabled={deployAgent.isPending || !BUILDER_STEPS.slice(0, -1).every(step => step.isCompleted(currentSession) || !step.isRequired)}
-                    className="gap-2"
-                  >
-                    <Rocket className="h-4 w-4" />
-                    {deployAgent.isPending ? 'Deploying...' : 'Deploy Agent'}
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
     </div>
   );
 };

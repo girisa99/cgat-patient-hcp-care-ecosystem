@@ -4,11 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { UnifiedAgentBuilder } from '@/components/unified/UnifiedAgentBuilder';
-import { AgentTemplates } from '@/components/agentic/AgentTemplates';
-import { KnowledgeBaseManager } from '@/components/rag/KnowledgeBaseManager';
-import { RAGRecommendations } from '@/components/rag/RAGRecommendations';
-import { AgentChannelAssignmentMatrix } from '@/components/agent-deployment/AgentChannelAssignmentMatrix';
-import { Bot, Network, Settings, Rocket, Plus, Brain, Satellite } from 'lucide-react';
+import { Bot, Network, Settings, Rocket, Plus, Brain } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -89,10 +85,10 @@ const AgenticEcosystem = () => {
   });
 
   const handleCreateAgent = () => {
-    setActiveTab('builder');
+    setActiveTab('basic_info');
     toast({
       title: "Agent Builder",
-      description: "Opening enhanced agent builder with save/continue functionality...",
+      description: "Starting agent creation process...",
     });
   };
 
@@ -216,18 +212,34 @@ const AgenticEcosystem = () => {
 
       {/* Main Interface */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="overview">
             <Settings className="h-4 w-4 mr-2" />
             Overview
           </TabsTrigger>
-          <TabsTrigger value="builder">
-            <Plus className="h-4 w-4 mr-2" />
-            Agent Builder
+          <TabsTrigger value="basic_info">
+            <Bot className="h-4 w-4 mr-2" />
+            Agent Creation
           </TabsTrigger>
-          <TabsTrigger value="templates">
+          <TabsTrigger value="canvas">
+            <Settings className="h-4 w-4 mr-2" />
+            Canvas
+          </TabsTrigger>
+          <TabsTrigger value="actions">
             <Plus className="h-4 w-4 mr-2" />
-            Templates
+            Actions
+          </TabsTrigger>
+          <TabsTrigger value="connectors">
+            <Network className="h-4 w-4 mr-2" />
+            Connectors
+          </TabsTrigger>
+          <TabsTrigger value="knowledge">
+            <Brain className="h-4 w-4 mr-2" />
+            Knowledge
+          </TabsTrigger>
+          <TabsTrigger value="deploy">
+            <Rocket className="h-4 w-4 mr-2" />
+            Deploy
           </TabsTrigger>
         </TabsList>
 
@@ -269,7 +281,7 @@ const AgenticEcosystem = () => {
                         {agent.status === 'draft' && (
                           <Button 
                             size="sm" 
-                            onClick={() => setActiveTab('builder')}
+                            onClick={() => setActiveTab('basic_info')}
                           >
                             <Rocket className="h-4 w-4 mr-2" />
                             Edit
@@ -305,12 +317,28 @@ const AgenticEcosystem = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="builder" className="space-y-4">
-          <UnifiedAgentBuilder />
+        <TabsContent value="basic_info" className="space-y-4">
+          <UnifiedAgentBuilder step="basic_info" />
         </TabsContent>
 
-        <TabsContent value="templates" className="space-y-4">
-          <AgentTemplates />
+        <TabsContent value="canvas" className="space-y-4">
+          <UnifiedAgentBuilder step="canvas" />
+        </TabsContent>
+
+        <TabsContent value="actions" className="space-y-4">
+          <UnifiedAgentBuilder step="actions" />
+        </TabsContent>
+
+        <TabsContent value="connectors" className="space-y-4">
+          <UnifiedAgentBuilder step="connectors" />
+        </TabsContent>
+
+        <TabsContent value="knowledge" className="space-y-4">
+          <UnifiedAgentBuilder step="knowledge" />
+        </TabsContent>
+
+        <TabsContent value="deploy" className="space-y-4">
+          <UnifiedAgentBuilder step="deploy" />
         </TabsContent>
 
       </Tabs>
