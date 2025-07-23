@@ -89,6 +89,7 @@ export const ActionsTab: React.FC<ActionsTabProps> = ({
                 initialActions={actions}
                 agentType={agentType}
                 agentPurpose={agentPurpose}
+                sessionId={sessionId}
               />
             </CardContent>
           </Card>

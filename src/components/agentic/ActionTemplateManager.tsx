@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { useAgentSessionTasks } from '@/hooks/useAgentSessionTasks';
 
 interface ActionTemplate {
   id: string;
@@ -76,7 +77,9 @@ interface ActionTemplateManagerProps {
   agentPurpose?: string;
   categories?: string[];
   businessUnits?: string[];
+  sessionId?: string; // Add sessionId to create agent session tasks
   onTemplateSelect?: (template: ActionTemplate) => void;
+  onSessionTasksCreated?: (tasks: any[]) => void; // Callback when session tasks are created
 }
 
 export const ActionTemplateManager: React.FC<ActionTemplateManagerProps> = ({
@@ -84,7 +87,9 @@ export const ActionTemplateManager: React.FC<ActionTemplateManagerProps> = ({
   agentPurpose,
   categories,
   businessUnits,
-  onTemplateSelect
+  sessionId,
+  onTemplateSelect,
+  onSessionTasksCreated
 }) => {
   const [templates, setTemplates] = useState<ActionTemplate[]>([]);
   const [aiModels, setAIModels] = useState<AIModel[]>([]);
@@ -107,6 +112,15 @@ export const ActionTemplateManager: React.FC<ActionTemplateManagerProps> = ({
   const [newCategoryInput, setNewCategoryInput] = useState('');
   const [newTypeInput, setNewTypeInput] = useState('');
   const [newTaskTypeInput, setNewTaskTypeInput] = useState('');
+
+  // Use agent session tasks hook - rename to avoid conflicts
+  const { 
+    tasks: sessionTasks, 
+    createTask: createSessionTask, 
+    updateTask: updateSessionTask, 
+    deleteTask: deleteSessionTask, 
+    createMultipleTasks: createMultipleSessionTasks 
+  } = useAgentSessionTasks(sessionId);
 
   // Load data from database
   useEffect(() => {
@@ -476,6 +490,39 @@ export const ActionTemplateManager: React.FC<ActionTemplateManagerProps> = ({
     } catch (error) {
       console.error('Error updating template:', error);
       toast.error('Failed to update template');
+    }
+  };
+
+  // Create agent session tasks from template tasks
+  const createSessionTasksFromTemplate = async (template: ActionTemplate, actionId: string) => {
+    if (!sessionId || !template.tasks || template.tasks.length === 0) return;
+
+    try {
+      const sessionTasksData = template.tasks.map(task => ({
+        session_id: sessionId,
+        action_id: actionId,
+        task_name: task.task_name,
+        task_description: task.task_description || '',
+        task_type: task.task_type as 'action' | 'workflow_step' | 'connector',
+        task_order: task.task_order,
+        required_inputs: task.required_inputs,
+        expected_outputs: task.expected_outputs,
+        validation_rules: task.validation_rules,
+        timeout_minutes: task.timeout_minutes,
+        retry_attempts: task.retry_attempts,
+        is_critical: task.is_critical
+      }));
+
+      await createMultipleSessionTasks.mutateAsync(sessionTasksData);
+      
+      if (onSessionTasksCreated) {
+        onSessionTasksCreated(sessionTasksData);
+      }
+      
+      toast.success(`Created ${sessionTasksData.length} session tasks from template`);
+    } catch (error) {
+      console.error('Error creating session tasks:', error);
+      toast.error('Failed to create session tasks from template');
     }
   };
 
@@ -1112,9 +1159,20 @@ export const ActionTemplateManager: React.FC<ActionTemplateManagerProps> = ({
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={(e) => {
+                    onClick={async (e) => {
                       e.stopPropagation();
-                      onTemplateSelect?.(template);
+                      console.log('🎯 Template selected:', template.name, 'with tasks:', template.tasks?.length || 0);
+                      if (onTemplateSelect) {
+                        onTemplateSelect(template);
+                        // Create session tasks if sessionId is provided
+                        if (sessionId && template.tasks && template.tasks.length > 0) {
+                          console.log('📝 Creating session tasks for sessionId:', sessionId);
+                          const actionId = `action-${Date.now()}`;
+                          await createSessionTasksFromTemplate(template, actionId);
+                        } else {
+                          console.log('⚠️ No session tasks created:', { sessionId, hasTemplateTask: !!template.tasks?.length });
+                        }
+                      }
                     }}
                   >
                     <Plus className="h-4 w-4" />

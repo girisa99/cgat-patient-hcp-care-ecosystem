@@ -75,6 +75,7 @@ interface AgentActionsManagerProps {
   agentType?: string;
   agentPurpose?: string;
   agentId?: string;
+  sessionId?: string; // Add sessionId prop
 }
 
 // AI Model database simulation (would come from actual DB)
@@ -145,7 +146,8 @@ export const AgentActionsManager: React.FC<AgentActionsManagerProps> = ({
   initialActions = [],
   agentType,
   agentPurpose,
-  agentId
+  agentId,
+  sessionId
 }) => {
   const [actions, setActions] = useState<AgentAction[]>(initialActions);
   const [selectedAction, setSelectedAction] = useState<AgentAction | null>(null);
@@ -589,6 +591,7 @@ export const AgentActionsManager: React.FC<AgentActionsManagerProps> = ({
           <ActionTemplateManager
             agentType={agentType}
             agentPurpose={agentPurpose}
+            sessionId={sessionId}
             onTemplateSelect={(template) => {
               const actionFromTemplate = {
                 id: `action-${Date.now()}`,
@@ -609,6 +612,10 @@ export const AgentActionsManager: React.FC<AgentActionsManagerProps> = ({
               setActions(updatedActions);
               onActionsChange(updatedActions);
               toast.success(`Added action: ${template.name}`);
+            }}
+            onSessionTasksCreated={(tasks) => {
+              console.log('Session tasks created:', tasks);
+              toast.success(`Created ${tasks.length} tasks for the action`);
             }}
           />
         </div>
