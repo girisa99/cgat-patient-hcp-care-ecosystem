@@ -1,5 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AgentActionsManager } from '@/components/agentic/AgentActionsManager';
 import { AgentAssignmentOverview } from '@/components/agentic/AgentAssignmentOverview';
@@ -16,6 +17,9 @@ interface ActionsTabProps {
   onActionsChange: (actions: AgentAction[]) => void;
   agentType?: string;
   agentPurpose?: string;
+  onNavigatePrevious?: () => void;
+  onNavigateNext?: () => void;
+  onSaveAndContinue?: () => void;
 }
 
 export const ActionsTab: React.FC<ActionsTabProps> = ({
@@ -23,7 +27,10 @@ export const ActionsTab: React.FC<ActionsTabProps> = ({
   actions,
   onActionsChange,
   agentType,
-  agentPurpose
+  agentPurpose,
+  onNavigatePrevious,
+  onNavigateNext,
+  onSaveAndContinue
 }) => {
   return (
     <div className="space-y-6">
@@ -181,6 +188,25 @@ export const ActionsTab: React.FC<ActionsTabProps> = ({
           )}
         </TabsContent>
       </Tabs>
+      
+      {/* Navigation Footer for Actions Tab */}
+      <Card className="mt-6">
+        <CardContent className="pt-6">
+          <div className="flex justify-between items-center">
+            <Button variant="outline" onClick={onNavigatePrevious || (() => console.log('Navigate to previous step'))}>
+              Previous: Canvas & Branding
+            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={onSaveAndContinue || (() => console.log('Save and continue later'))}>
+                Save & Continue Later
+              </Button>
+              <Button onClick={onNavigateNext || (() => console.log('Navigate to next step'))}>
+                Next: RAG & Deployment
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

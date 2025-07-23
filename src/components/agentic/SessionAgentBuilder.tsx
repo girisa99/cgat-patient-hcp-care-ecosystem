@@ -720,22 +720,10 @@ export const SessionAgentBuilder = () => {
               }}
               agentType={currentSession.basic_info?.use_case || 'assistant'}
               agentPurpose={currentSession.basic_info?.purpose || ''}
+              onNavigatePrevious={() => setCurrentStep('canvas')}
+              onNavigateNext={() => setCurrentStep('rag')}
+              onSaveAndContinue={handleSaveAndContinue}
             />
-            <Card>
-              <CardFooter className="flex justify-between">
-                <Button variant="outline" onClick={() => setCurrentStep('canvas')}>
-                  Previous: Canvas
-                </Button>
-                <div className="flex gap-2">
-                  <Button variant="outline" onClick={handleSaveAndContinue}>
-                    Save & Continue Later
-                  </Button>
-                  <Button onClick={() => setCurrentStep('rag')}>
-                    Next: RAG
-                  </Button>
-                </div>
-              </CardFooter>
-            </Card>
           </div>
         </TabsContent>
 
