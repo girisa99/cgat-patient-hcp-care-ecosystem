@@ -16,6 +16,7 @@ import { ConnectorAssignmentManager } from '@/components/agentic/ConnectorAssign
 import { KnowledgeBaseManager } from '@/components/agentic/KnowledgeBaseManager';
 import { RAGComplianceWorkflow } from '@/components/rag/RAGComplianceWorkflow';
 import { AgentChannelAssignmentMatrix } from '@/components/agent-deployment/AgentChannelAssignmentMatrix';
+import { PreDeploymentReview } from '@/components/agent-deployment/PreDeploymentReview';
 import { CategoryMapping } from '@/components/agentic/CategoryMapping';
 import { UseCaseSelector } from '@/components/agentic/UseCaseSelector';
 import { ConsolidatedActionsTab } from '@/components/agentic/tabs/ConsolidatedActionsTab';
@@ -999,57 +1000,54 @@ export const UnifiedAgentBuilder: React.FC<UnifiedAgentBuilderProps> = ({ step }
   );
 
   const renderDeployStep = () => (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Rocket className="h-5 w-5" />
-          Agent Deployment
-        </CardTitle>
-        <CardDescription>
-          Deploy your agent to channels and configure omni-channel deployment
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-6">
-          {/* Pre-deployment checklist */}
-          <div className="border rounded-lg p-4 bg-gray-50">
-            <h4 className="font-medium mb-3">Pre-deployment Checklist</h4>
-            <div className="space-y-2">
-              {BUILDER_STEPS.slice(0, -1).map((step) => (
-                <div key={step.id} className="flex items-center gap-2">
-                  {step.isCompleted(currentSession) ? (
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                  ) : (
-                    <AlertTriangle className="h-4 w-4 text-yellow-600" />
-                  )}
-                  <span className={`text-sm ${step.isCompleted(currentSession) ? 'text-green-700' : 'text-yellow-700'}`}>
-                    {step.title}
-                  </span>
-                  {step.isRequired && !step.isCompleted(currentSession) && (
-                    <Badge variant="destructive" className="text-xs">Required</Badge>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Deployment interface */}
+    <div className="space-y-6">
+      {/* Pre-deployment Comprehensive Review */}
+      <PreDeploymentReview session={currentSession} />
+      
+      {/* Channel Assignment Matrix */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Rocket className="h-5 w-5" />
+            Channel Deployment
+          </CardTitle>
+          <CardDescription>
+            Configure deployment to channels and environments
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
           <AgentChannelAssignmentMatrix />
-          
-          {/* Deployment actions */}
-          <div className="flex justify-end items-center pt-4 border-t">
+        </CardContent>
+      </Card>
+      
+      {/* Final Deployment Actions */}
+      <Card className="border-primary">
+        <CardHeader>
+          <CardTitle>Deploy Agent</CardTitle>
+          <CardDescription>
+            All configurations have been reviewed and validated. Ready for deployment.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex justify-between items-center">
+            <div>
+              <p className="text-sm text-muted-foreground">
+                Deployment will create a production-ready agent with all configured features.
+              </p>
+            </div>
             <Button 
               onClick={handleDeployAgent}
               disabled={deployAgent.isPending || !BUILDER_STEPS.slice(0, -1).every(step => step.isCompleted(currentSession) || !step.isRequired)}
               className="gap-2"
+              size="lg"
             >
               <Rocket className="h-4 w-4" />
               {deployAgent.isPending ? 'Deploying...' : 'Deploy Agent'}
             </Button>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 
   // Main unified builder interface

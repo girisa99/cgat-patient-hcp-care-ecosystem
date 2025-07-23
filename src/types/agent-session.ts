@@ -65,6 +65,17 @@ export interface AgentSession {
     config?: any;
     environment?: string;
     scaling_config?: any;
+    ai_models?: {
+      id: string;
+      name: string;
+      provider: string;
+      type: string;
+      capabilities: string[];
+      max_context?: number;
+      is_primary?: boolean;
+      use_cases?: string[];
+      configuration?: Record<string, any>;
+    }[];
   };
 }
 
