@@ -351,17 +351,38 @@ ${action.description || 'Healthcare action for improving patient care and operat
     try {
       // Try to search for relevant URLs, fallback gracefully
       try {
+        // Generate some example URLs based on action type and description
+        const generateRelevantUrls = (action: any): string[] => {
+          const healthcareUrls = [
+            'https://www.healthit.gov/',
+            'https://www.cms.gov/',
+            'https://www.hl7.org/',
+            'https://www.hipaajournal.com/',
+            'https://www.healthcaredive.com/'
+          ];
+          
+          // Return a subset based on action type
+          if (action.category?.includes('clinical')) {
+            return healthcareUrls.slice(0, 2);
+          } else if (action.category?.includes('administrative')) {
+            return healthcareUrls.slice(2, 4);
+          }
+          return healthcareUrls.slice(0, 3);
+        };
+
         const { data, error } = await supabase.functions.invoke('crawl-relevant-content', {
           body: {
-            action: action,
-            agent_id: agentId,
-            max_results: 3
+            urls: generateRelevantUrls(action),
+            topic: action.name || 'Healthcare Operations',
+            agentType: action.category || 'healthcare',
+            agentPurpose: action.description || 'Healthcare automation and support',
+            maxPages: 3
           }
         });
 
         if (error) throw error;
 
-        return (data.sources || []).map((source: any) => ({
+        return (data.content || []).map((source: any) => ({
           id: `crawled_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           type: 'scraped_content' as const,
           title: source.title,
