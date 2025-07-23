@@ -63,12 +63,18 @@ interface KnowledgeBaseManagerProps {
     description?: string;
   }>;
   onKnowledgeSourcesChange: (sources: KnowledgeSource[]) => void;
+  agentType?: string;
+  agentPurpose?: string;
+  agentTopic?: string;
 }
 
 export const KnowledgeBaseManager: React.FC<KnowledgeBaseManagerProps> = ({
   agentId,
   actions,
-  onKnowledgeSourcesChange
+  onKnowledgeSourcesChange,
+  agentType = 'healthcare',
+  agentPurpose = 'Healthcare automation and support',
+  agentTopic = 'Healthcare Operations'
 }) => {
   const { toast } = useToast();
   const [knowledgeSources, setKnowledgeSources] = useState<KnowledgeSource[]>([]);
@@ -193,9 +199,10 @@ export const KnowledgeBaseManager: React.FC<KnowledgeBaseManagerProps> = ({
       try {
         const { data, error } = await supabase.functions.invoke('generate-knowledge-content', {
           body: {
-            action: action,
-            agent_id: agentId,
-            config: config
+            topic: agentTopic || action.name || 'Healthcare Operations',
+            agentType: agentType || action.category || 'healthcare',
+            agentPurpose: agentPurpose || action.description || 'Healthcare automation and support',
+            contentType: 'comprehensive_guide'
           }
         });
 

@@ -138,6 +138,9 @@ export const ActionsTab: React.FC<ActionsTabProps> = ({
                 onKnowledgeSourcesChange={(sources) => {
                   console.log('Knowledge sources changed:', sources);
                 }}
+                agentType={agentType}
+                agentPurpose={agentPurpose}
+                agentTopic={agentType ? `${agentType} Knowledge and modalaties` : 'Healthcare Operations'}
               />
             </CardContent>
           </Card>

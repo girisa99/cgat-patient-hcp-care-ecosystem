@@ -242,6 +242,9 @@ export const ConsolidatedActionsTab: React.FC<ConsolidatedActionsTabProps> = ({
                   onKnowledgeSourcesChange={(sources) => {
                     setKnowledgeBaseIds(sources.map(s => s.id));
                   }}
+                  agentType={agentType}
+                  agentPurpose={agentPurpose}
+                  agentTopic={agentType ? `${agentType} Knowledge and modalaties` : 'Healthcare Operations'}
                 />
               </CardContent>
             </Card>

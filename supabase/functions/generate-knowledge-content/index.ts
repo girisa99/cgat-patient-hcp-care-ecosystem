@@ -93,16 +93,22 @@ Format the response as structured markdown with clear headings and sections.`;
     const { data: knowledgeEntry, error: insertError } = await supabase
       .from('knowledge_base')
       .insert({
-        title: `${topic} - ${agentType} Guide`,
-        content: generatedContent,
+        name: `${topic} - ${agentType} Guide`,
+        description: `AI-generated comprehensive guide for ${topic}`,
+        category: 'ai_generated',
+        source_type: 'ai_generated', 
+        raw_content: generatedContent,
+        processed_content: generatedContent,
         content_type: contentType,
-        tags: [topic, agentType, agentPurpose],
+        healthcare_tags: [topic, agentType, agentPurpose],
+        modality_type: agentType,
         metadata: {
           generated_by: 'ai',
           agent_type: agentType,
           agent_purpose: agentPurpose,
           generation_date: new Date().toISOString()
-        }
+        },
+        created_by: null // System generated
       })
       .select()
       .single();
