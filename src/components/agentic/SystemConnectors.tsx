@@ -162,6 +162,11 @@ export const SystemConnectors = () => {
   const [connectors, setConnectors] = useState<Connector[]>(initialConnectors);
   const [showCreateConnector, setShowCreateConnector] = useState(false);
   const [showConnectorWizard, setShowConnectorWizard] = useState(false);
+  
+  // Debug state changes
+  React.useEffect(() => {
+    console.log('🔍 Dialog state changed:', { showCreateConnector, showConnectorWizard });
+  }, [showCreateConnector, showConnectorWizard]);
   const [createMode, setCreateMode] = useState<'missing' | 'custom'>('missing');
   const [selectedMissingConnector, setSelectedMissingConnector] = useState('');
   const [newConnector, setNewConnector] = useState({
@@ -511,6 +516,7 @@ export const SystemConnectors = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Button 
                   onClick={() => {
+                    console.log('🔘 Brand Library button clicked');
                     setShowCreateConnector(true);
                     setCreateMode('missing');
                     setSelectedMissingConnector('');
@@ -526,6 +532,7 @@ export const SystemConnectors = () => {
                 </Button>
                 <Button 
                   onClick={() => {
+                    console.log('🔘 Custom Connector button clicked');
                     setShowCreateConnector(true);
                     setCreateMode('custom');
                     setSelectedMissingConnector('');
@@ -539,7 +546,10 @@ export const SystemConnectors = () => {
                   </div>
                 </Button>
                 <Button 
-                  onClick={() => setShowConnectorWizard(true)}
+                  onClick={() => {
+                    console.log('🔘 Enhanced Wizard button clicked');
+                    setShowConnectorWizard(true);
+                  }}
                   variant="outline"
                   className="flex items-center gap-2 p-6 h-auto"
                 >
@@ -984,7 +994,7 @@ export const SystemConnectors = () => {
 
       {/* Create Connector Dialog */}
       <Dialog open={showCreateConnector} onOpenChange={setShowCreateConnector}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[600px] z-[9999]">
           <DialogHeader>
             <DialogTitle>
               {createMode === 'missing' ? 'Add Connector from Library' : 'Create Custom Connector'}
