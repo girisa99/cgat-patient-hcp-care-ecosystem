@@ -380,10 +380,12 @@ export const SessionAgentBuilder = () => {
 
       {/* Main Tabs */}
       <Tabs value={currentStep} onValueChange={(value) => setCurrentStep(value as AgentSession['current_step'])}>
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="basic_info">Agent Creation</TabsTrigger>
           <TabsTrigger value="canvas">Canvas</TabsTrigger>
-          <TabsTrigger value="actions">Actions & Config</TabsTrigger>
+          <TabsTrigger value="actions">Actions</TabsTrigger>
+          <TabsTrigger value="connectors">Connectors</TabsTrigger>
+          <TabsTrigger value="knowledge">Knowledge</TabsTrigger>
           <TabsTrigger value="rag">RAG</TabsTrigger>
           <TabsTrigger value="deploy">Deploy</TabsTrigger>
         </TabsList>
@@ -721,9 +723,63 @@ export const SessionAgentBuilder = () => {
               agentType={currentSession.basic_info?.use_case || 'assistant'}
               agentPurpose={currentSession.basic_info?.purpose || ''}
               onNavigatePrevious={() => setCurrentStep('canvas')}
-              onNavigateNext={() => setCurrentStep('rag')}
+              onNavigateNext={() => setCurrentStep('connectors')}
               onSaveAndContinue={handleSaveAndContinue}
             />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="connectors" className="space-y-4">
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>System Connectors & Integrations</CardTitle>
+                <CardDescription>Connect to APIs, databases, and external services</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">Configure system connectors for your agent</p>
+              </CardContent>
+              <CardFooter className="flex justify-between">
+                <Button variant="outline" onClick={() => setCurrentStep('actions')}>
+                  Previous: Actions
+                </Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={handleSaveAndContinue}>
+                    Save & Continue Later
+                  </Button>
+                  <Button onClick={() => setCurrentStep('knowledge')}>
+                    Next: Knowledge
+                  </Button>
+                </div>
+              </CardFooter>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="knowledge" className="space-y-4">
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Knowledge Base Management</CardTitle>
+                <CardDescription>Configure knowledge sources and data for your agent</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">Configure knowledge bases and sources</p>
+              </CardContent>
+              <CardFooter className="flex justify-between">
+                <Button variant="outline" onClick={() => setCurrentStep('connectors')}>
+                  Previous: Connectors
+                </Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={handleSaveAndContinue}>
+                    Save & Continue Later
+                  </Button>
+                  <Button onClick={() => setCurrentStep('rag')}>
+                    Next: RAG
+                  </Button>
+                </div>
+              </CardFooter>
+            </Card>
           </div>
         </TabsContent>
 

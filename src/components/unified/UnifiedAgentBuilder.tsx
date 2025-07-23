@@ -55,22 +55,42 @@ const BUILDER_STEPS: BuilderStep[] = [
   },
   {
     id: 'canvas',
-    title: 'Canvas & Branding',
-    description: 'Configure visual identity and white-label settings',
+    title: 'Canvas',
+    description: 'Configure visual identity and branding',
     icon: Palette,
     isCompleted: (session) => !!(session?.canvas && Object.keys(session.canvas).length > 0),
     isRequired: false
   },
   {
     id: 'actions',
-    title: 'Actions & Configuration',
-    description: 'Configure actions, connectors, knowledge base, and RAG',
+    title: 'Actions',
+    description: 'Configure agent actions and workflows',
     icon: Zap,
-    isCompleted: (session) => !!(
-      session?.actions && Object.keys(session.actions).length > 0 &&
-      session?.connectors && Object.keys(session.connectors).length > 0 &&
-      session?.rag && Object.keys(session.rag).length > 0
-    ),
+    isCompleted: (session) => !!(session?.actions && Object.keys(session.actions).length > 0),
+    isRequired: true
+  },
+  {
+    id: 'connectors',
+    title: 'Connectors',
+    description: 'Set up external system integrations',
+    icon: Plug,
+    isCompleted: (session) => !!(session?.connectors && Object.keys(session.connectors).length > 0),
+    isRequired: true
+  },
+  {
+    id: 'knowledge',
+    title: 'Knowledge',
+    description: 'Configure knowledge bases and sources',
+    icon: Brain,
+    isCompleted: (session) => !!(session?.knowledge && Object.keys(session.knowledge).length > 0),
+    isRequired: true
+  },
+  {
+    id: 'rag',
+    title: 'RAG',
+    description: 'Set up retrieval augmented generation',
+    icon: Database,
+    isCompleted: (session) => !!(session?.rag && Object.keys(session.rag).length > 0),
     isRequired: true
   },
   {
@@ -357,6 +377,8 @@ export const UnifiedAgentBuilder: React.FC<UnifiedAgentBuilderProps> = ({ step }
         return renderConnectorsStep();
       case 'knowledge':
         return renderKnowledgeStep();
+      case 'rag':
+        return renderRAGStep();
       case 'deploy':
         return renderDeployStep();
       default:
@@ -769,16 +791,15 @@ export const UnifiedAgentBuilder: React.FC<UnifiedAgentBuilderProps> = ({ step }
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Zap className="h-5 w-5" />
-          Actions & Configuration
+          Actions Configuration
         </CardTitle>
         <CardDescription>
-          Configure actions, connectors, knowledge base, and RAG in one unified workflow
+          Configure agent actions, workflows, and task management
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <ConsolidatedActionsTab
-          sessionId={currentSessionId || ''}
-          actions={actions}
+        <AgentActionsManager
+          agentId={currentSessionId || ''}
           onActionsChange={(newActions) => {
             setActions(newActions);
             if (currentSessionId) {
@@ -786,16 +807,39 @@ export const UnifiedAgentBuilder: React.FC<UnifiedAgentBuilderProps> = ({ step }
                 sessionId: currentSessionId,
                 updates: {
                   actions: {
-                    assigned_actions: newActions
+                    assigned_actions: newActions,
+                    custom_actions: [],
+                    configurations: {}
                   }
                 }
               });
             }
           }}
-          agentType={currentSession?.basic_info?.agent_type}
-          agentPurpose={currentSession?.basic_info?.purpose}
-          agentId={currentSessionId || ''}
+          agentType={currentSession?.basic_info?.agent_type || 'single'}
+          agentPurpose={currentSession?.basic_info?.purpose || ''}
         />
+        
+        {/* Navigation Footer */}
+        <div className="flex justify-between items-center pt-6 border-t mt-6">
+          <Button variant="outline" onClick={() => setCurrentStep('canvas')}>
+            Previous: Canvas
+          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => {
+              if (currentSessionId) {
+                updateSession.mutate({
+                  sessionId: currentSessionId,
+                  updates: { current_step: currentStep }
+                });
+              }
+            }}>
+              Save & Continue Later
+            </Button>
+            <Button onClick={() => setCurrentStep('connectors')}>
+              Next: Connectors
+            </Button>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
@@ -813,6 +857,28 @@ export const UnifiedAgentBuilder: React.FC<UnifiedAgentBuilderProps> = ({ step }
       </CardHeader>
       <CardContent>
         <SystemConnectors />
+        
+        {/* Navigation Footer */}
+        <div className="flex justify-between items-center pt-6 border-t mt-6">
+          <Button variant="outline" onClick={() => setCurrentStep('actions')}>
+            Previous: Actions
+          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => {
+              if (currentSessionId) {
+                updateSession.mutate({
+                  sessionId: currentSessionId,
+                  updates: { current_step: currentStep }
+                });
+              }
+            }}>
+              Save & Continue Later
+            </Button>
+            <Button onClick={() => setCurrentStep('knowledge')}>
+              Next: Knowledge
+            </Button>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
@@ -822,35 +888,112 @@ export const UnifiedAgentBuilder: React.FC<UnifiedAgentBuilderProps> = ({ step }
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Brain className="h-5 w-5" />
-          Knowledge Base & RAG Configuration
+          Knowledge Base Management
         </CardTitle>
         <CardDescription>
-          Configure knowledge bases, upload documents, and set up RAG capabilities
+          Configure knowledge sources, documents, and data for your agent
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="knowledge" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="knowledge">Knowledge Base</TabsTrigger>
-            <TabsTrigger value="rag">RAG Configuration</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="knowledge">
-            <KnowledgeBaseManager 
-              agentId={currentSessionId || ''}
-              actions={actions}
-              onKnowledgeSourcesChange={() => {}}
-            />
-          </TabsContent>
-          
-          <TabsContent value="rag">
-            <RAGComplianceWorkflow 
-              knowledgeBaseIds={[]}
-              complianceEnabled={true}
-              onComplianceChange={() => {}}
-            />
-          </TabsContent>
-        </Tabs>
+        <KnowledgeBaseManager 
+          agentId={currentSessionId || ''}
+          actions={actions}
+          onKnowledgeSourcesChange={(knowledgeSources) => {
+            if (currentSessionId) {
+              updateSession.mutate({
+                sessionId: currentSessionId,
+                updates: { 
+                  knowledge: {
+                    knowledge_bases: knowledgeSources,
+                    documents: [],
+                    urls: [],
+                    auto_generated_content: []
+                  }
+                }
+              });
+            }
+          }}
+        />
+        
+        {/* Navigation Footer */}
+        <div className="flex justify-between items-center pt-6 border-t mt-6">
+          <Button variant="outline" onClick={() => setCurrentStep('connectors')}>
+            Previous: Connectors
+          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => {
+              if (currentSessionId) {
+                updateSession.mutate({
+                  sessionId: currentSessionId,
+                  updates: { current_step: currentStep }
+                });
+              }
+            }}>
+              Save & Continue Later
+            </Button>
+            <Button onClick={() => setCurrentStep('rag')}>
+              Next: RAG
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  const renderRAGStep = () => (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Database className="h-5 w-5" />
+          RAG Configuration
+        </CardTitle>
+        <CardDescription>
+          Set up retrieval augmented generation and AI reasoning capabilities
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <RAGComplianceWorkflow
+          knowledgeBaseIds={[]}
+          complianceEnabled={true}
+          onComplianceChange={(enabled) => {
+            if (currentSessionId) {
+              updateSession.mutate({
+                sessionId: currentSessionId,
+                updates: { 
+                  rag: {
+                    ...currentSession?.rag,
+                    configurations: {
+                      ...currentSession?.rag?.configurations,
+                      compliance_enabled: enabled
+                    }
+                  }
+                }
+              });
+            }
+          }}
+        />
+        
+        {/* Navigation Footer */}
+        <div className="flex justify-between items-center pt-6 border-t mt-6">
+          <Button variant="outline" onClick={() => setCurrentStep('knowledge')}>
+            Previous: Knowledge
+          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => {
+              if (currentSessionId) {
+                updateSession.mutate({
+                  sessionId: currentSessionId,
+                  updates: { current_step: currentStep }
+                });
+              }
+            }}>
+              Save & Continue Later
+            </Button>
+            <Button onClick={() => setCurrentStep('deploy')}>
+              Next: Deploy
+            </Button>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
