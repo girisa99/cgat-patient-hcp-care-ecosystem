@@ -62,12 +62,17 @@ export const MasterAuthForm: React.FC<MasterAuthFormProps> = ({
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('🎯 Login button clicked!', { email: loginData.email, password: loginData.password ? '[HIDDEN]' : 'EMPTY' });
     setIsLoading(true);
 
     try {
       // Validate login data
+      console.log('🔍 Starting validation...');
       const validation = MasterAuthValidation.validateLogin(loginData.email, loginData.password);
+      console.log('📋 Validation result:', validation);
+      
       if (!validation.isValid) {
+        console.log('❌ Validation failed:', validation.message);
         toast({
           title: "Validation Error",
           description: validation.message,
@@ -76,7 +81,7 @@ export const MasterAuthForm: React.FC<MasterAuthFormProps> = ({
         return;
       }
 
-      console.log('🔐 MASTER AUTH - Attempting secure login for:', loginData.email);
+      console.log('✅ Validation passed, attempting secure login for:', loginData.email);
       
       // Use AuthStateManager for secure sign-in with proper cleanup
       const result = await AuthStateManager.secureSignIn(loginData.email, loginData.password);
