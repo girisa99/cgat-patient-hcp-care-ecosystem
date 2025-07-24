@@ -147,15 +147,23 @@ export const useMasterUserManagement = () => {
     }
   });
 
-  // Assign role mutation
+  // Assign role mutation (using secure function)
   const assignRoleMutation = useMutation({
-    mutationFn: async ({ userId, roleId }: { userId: string; roleId: string }) => {
-      const { error } = await supabase
-        .from('user_roles')
-        .insert({ user_id: userId, role_id: roleId });
+    mutationFn: async ({ userId, roleName }: { userId: string; roleName: string }) => {
+      const { data, error } = await supabase.rpc('secure_assign_user_role', {
+        target_user_id: userId,
+        target_role_name: roleName
+      });
       
       if (error) throw error;
-      return { userId, roleId };
+      
+      // Check if the function returned an error
+      const response = data as any;
+      if (response && !response.success) {
+        throw new Error(response.error || 'Role assignment failed');
+      }
+      
+      return response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['master-users'] });
@@ -168,17 +176,23 @@ export const useMasterUserManagement = () => {
     }
   });
 
-  // Remove role mutation
+  // Remove role mutation (using secure function)
   const removeRoleMutation = useMutation({
-    mutationFn: async ({ userId, roleId }: { userId: string; roleId: string }) => {
-      const { error } = await supabase
-        .from('user_roles')
-        .delete()
-        .eq('user_id', userId)
-        .eq('role_id', roleId);
+    mutationFn: async ({ userId, roleName }: { userId: string; roleName: string }) => {
+      const { data, error } = await supabase.rpc('secure_remove_user_role', {
+        target_user_id: userId,
+        target_role_name: roleName
+      });
       
       if (error) throw error;
-      return { userId, roleId };
+      
+      // Check if the function returned an error
+      const response = data as any;
+      if (response && !response.success) {
+        throw new Error(response.error || 'Role removal failed');
+      }
+      
+      return response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['master-users'] });
@@ -210,19 +224,19 @@ export const useMasterUserManagement = () => {
     }
   };
 
-  const assignRole = (userId?: string, roleId?: string) => {
-    if (userId && roleId) {
+  const assignRole = (userId?: string, roleName?: string) => {
+    if (userId && roleName) {
       setIsAssigningRole(true);
-      assignRoleMutation.mutate({ userId, roleId });
+      assignRoleMutation.mutate({ userId, roleName });
     } else {
       showError('Role Assignment', 'Please select a user and role');
     }
   };
 
-  const removeRole = (userId?: string, roleId?: string) => {
-    if (userId && roleId) {
+  const removeRole = (userId?: string, roleName?: string) => {
+    if (userId && roleName) {
       setIsRemovingRole(true);
-      removeRoleMutation.mutate({ userId, roleId });
+      removeRoleMutation.mutate({ userId, roleName });
     } else {
       showError('Role Removal', 'Please select a user and role');
     }

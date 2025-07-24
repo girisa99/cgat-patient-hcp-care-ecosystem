@@ -12,7 +12,7 @@ import { Users, Download, Upload, Mail, Trash2, UserPlus } from 'lucide-react';
 interface BulkOperationsTabProps {
   selectedUsers: string[];
   onSelectAll: (checked: boolean) => void;
-  onBulkAssignRole: (roleId: string) => void;
+  onBulkAssignRole: (roleName: string) => void;
   onBulkAssignFacility: (facilityId: string) => void;
   onBulkDeactivate: () => void;
   onBulkDelete: () => void;
@@ -62,7 +62,7 @@ export const BulkOperationsTab: React.FC<BulkOperationsTabProps> = ({
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Button
               variant="outline"
-              onClick={() => onBulkAssignRole('example-role-id')}
+              onClick={() => onBulkAssignRole('staff')}
               disabled={selectedUsers.length === 0}
             >
               <UserPlus className="h-4 w-4 mr-2" />

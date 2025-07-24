@@ -114,12 +114,18 @@ const RoleManagement = () => {
     }
 
     try {
-      const { error } = await supabase.rpc('assign_user_role', {
-        p_user_id: selectedUser,
-        p_role_name: selectedRoleForAssignment as any
+      const { data, error } = await supabase.rpc('secure_assign_user_role', {
+        target_user_id: selectedUser,
+        target_role_name: selectedRoleForAssignment as any
       });
 
       if (error) throw error;
+      
+      // Check if the function returned an error
+      const response = data as any;
+      if (response && !response.success) {
+        throw new Error(response.error || 'Role assignment failed');
+      }
       
       showSuccess('Role assigned to user successfully');
       setSelectedUser('');

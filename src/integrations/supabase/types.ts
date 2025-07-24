@@ -6373,6 +6373,14 @@ export type Database = {
         }
         Returns: undefined
       }
+      secure_assign_user_role: {
+        Args: { target_user_id: string; target_role_name: string }
+        Returns: Json
+      }
+      secure_remove_user_role: {
+        Args: { target_user_id: string; target_role_name: string }
+        Returns: Json
+      }
       sync_active_issues: {
         Args: { issues_data: Json }
         Returns: undefined

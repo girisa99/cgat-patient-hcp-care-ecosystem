@@ -380,16 +380,10 @@ export const MasterUserManagementTable: React.FC = () => {
         assignFacilityOpen={false}
         setAssignFacilityOpen={() => {}}
         onAssignRole={(userId, roleName) => {
-          const role = roles.find(r => r.name === roleName);
-          if (role) {
-            assignRole(userId, role.id);
-          }
+          assignRole(userId, roleName);
         }}
         onRemoveRole={(userId, roleName) => {
-          const role = roles.find(r => r.name === roleName);
-          if (role) {
-            removeRole(userId, role.id);
-          }
+          removeRole(userId, roleName);
         }}
         onAssignFacility={(userId, facilityId) => {
           assignFacility();

@@ -464,11 +464,9 @@ export const MasterApplicationTable: React.FC = () => {
         setRemoveRoleOpen={() => {}}
         assignFacilityOpen={showModuleAssignment}
         setAssignFacilityOpen={setShowModuleAssignment}
-        onAssignRole={(roleId) => {
-          if (selectedUserForDialog) {
-            userManagement.assignRole(selectedUserForDialog.id, roleId);
-            setShowRoleAssignment(false);
-          }
+        onAssignRole={(userId, roleName) => {
+          userManagement.assignRole(userId, roleName);
+          setShowRoleAssignment(false);
         }}
         onRemoveRole={() => {}}
         onAssignFacility={(facilityId) => {

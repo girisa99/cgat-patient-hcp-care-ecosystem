@@ -15,6 +15,13 @@ interface Role {
   updated_at?: string;
 }
 
+interface SecureRoleResponse {
+  success: boolean;
+  error?: string;
+  message?: string;
+  data?: any;
+}
+
 export const useRoles = () => {
   const { showSuccess, showError } = useMasterToast();
   const queryClient = useQueryClient();
@@ -42,16 +49,22 @@ export const useRoles = () => {
     refetchOnWindowFocus: false,
   });
 
-  // Assign role to user mutation
+  // Assign role to user mutation (using secure function)
   const assignRoleMutation = useMutation({
-    mutationFn: async ({ userId, roleId }: { userId: string; roleId: string }) => {
-      const { data, error } = await supabase
-        .from('user_roles')
-        .insert({ user_id: userId, role_id: roleId })
-        .select()
-        .single();
+    mutationFn: async ({ userId, roleName }: { userId: string; roleName: string }) => {
+      const { data, error } = await supabase.rpc('secure_assign_user_role', {
+        target_user_id: userId,
+        target_role_name: roleName
+      });
       
       if (error) throw error;
+      
+      // Check if the function returned an error
+      const response = data as unknown as SecureRoleResponse;
+      if (response && !response.success) {
+        throw new Error(response.error || 'Role assignment failed');
+      }
+      
       return data;
     },
     onSuccess: () => {
@@ -64,17 +77,23 @@ export const useRoles = () => {
     }
   });
 
-  // Remove role from user mutation
+  // Remove role from user mutation (using secure function)
   const removeRoleMutation = useMutation({
-    mutationFn: async ({ userId, roleId }: { userId: string; roleId: string }) => {
-      const { error } = await supabase
-        .from('user_roles')
-        .delete()
-        .eq('user_id', userId)
-        .eq('role_id', roleId);
+    mutationFn: async ({ userId, roleName }: { userId: string; roleName: string }) => {
+      const { data, error } = await supabase.rpc('secure_remove_user_role', {
+        target_user_id: userId,
+        target_role_name: roleName
+      });
       
       if (error) throw error;
-      return { userId, roleId };
+      
+      // Check if the function returned an error
+      const response = data as unknown as SecureRoleResponse;
+      if (response && !response.success) {
+        throw new Error(response.error || 'Role removal failed');
+      }
+      
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['roles'] });
@@ -125,10 +144,10 @@ export const useRoles = () => {
     error,
     
     // Actions
-    assignRole: (userId: string, roleId: string) => 
-      assignRoleMutation.mutate({ userId, roleId }),
-    removeRole: (userId: string, roleId: string) => 
-      removeRoleMutation.mutate({ userId, roleId }),
+    assignRole: (userId: string, roleName: string) => 
+      assignRoleMutation.mutate({ userId, roleName }),
+    removeRole: (userId: string, roleName: string) => 
+      removeRoleMutation.mutate({ userId, roleName }),
     
     // Utilities
     getRoleStats,
