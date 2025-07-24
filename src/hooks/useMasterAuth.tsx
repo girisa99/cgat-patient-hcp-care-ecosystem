@@ -7,6 +7,7 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { AuthStateManager } from '@/utils/auth/authStateManager';
 
 interface AuthContextType {
   user: User | null;
@@ -233,18 +234,14 @@ export const MasterAuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signOut = async () => {
-    console.log('🔐 Signing out user');
+    console.log('🔐 Signing out user using AuthStateManager');
     setIsLoading(true);
     setError(null);
 
     try {
-      const { error } = await supabase.auth.signOut();
-      
-      if (error) {
-        console.error('❌ Sign out error:', error);
-      } else {
-        console.log('✅ User signed out');
-      }
+      // Use AuthStateManager for secure sign out with proper cleanup
+      await AuthStateManager.secureSignOut();
+      console.log('✅ Secure sign out completed');
     } catch (err) {
       console.error('❌ Sign out failed:', err);
     } finally {

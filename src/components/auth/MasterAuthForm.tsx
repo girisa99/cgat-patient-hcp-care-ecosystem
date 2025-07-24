@@ -9,6 +9,7 @@ import { Loader2, Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
+import { AuthStateManager } from '@/utils/auth/authStateManager';
 import HealthcareAuthLayout from './HealthcareAuthLayout';
 import MasterAuthTabs from './MasterAuthTabs';
 import MasterAuthValidation from './MasterAuthValidation';
@@ -75,34 +76,30 @@ export const MasterAuthForm: React.FC<MasterAuthFormProps> = ({
         return;
       }
 
-      console.log('🔐 MASTER AUTH - Attempting login for:', loginData.email);
+      console.log('🔐 MASTER AUTH - Attempting secure login for:', loginData.email);
       
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: loginData.email,
-        password: loginData.password
-      });
+      // Use AuthStateManager for secure sign-in with proper cleanup
+      const result = await AuthStateManager.secureSignIn(loginData.email, loginData.password);
 
-      if (error) {
-        console.error('❌ Login error:', error.message);
+      if (!result.success) {
+        console.error('❌ Secure login failed:', result.error);
         toast({
           title: "Login Failed",
-          description: error.message,
+          description: result.error || "Invalid email or password",
           variant: "destructive"
         });
         return;
       }
 
-      if (data.user) {
-        console.log('✅ Login successful:', data.user.email);
-        toast({
-          title: "Login Successful",
-          description: "Redirecting to dashboard..."
-        });
-        
-        await refreshAuth(data.user.id);
-        onSuccess?.();
-        navigate('/', { replace: true });
-      }
+      console.log('✅ Secure login successful - redirecting...');
+      toast({
+        title: "Login Successful",
+        description: "Redirecting to dashboard..."
+      });
+      
+      // AuthStateManager handles the redirect, so we don't need to do it here
+      onSuccess?.();
+      
     } catch (error) {
       console.error('💥 Login exception:', error);
       toast({
