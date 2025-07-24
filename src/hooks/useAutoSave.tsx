@@ -1,6 +1,6 @@
 
 import { useEffect, useRef } from 'react';
-import { useTreatmentCenterOnboarding } from './useTreatmentCenterOnboarding';
+import { useMasterOnboarding } from './useMasterOnboarding';
 import { TreatmentCenterOnboarding, OnboardingStep } from '@/types/onboarding';
 import { useToast } from './use-toast';
 
@@ -17,7 +17,7 @@ export const useAutoSave = ({
   applicationId, 
   enabled = true 
 }: UseAutoSaveProps) => {
-  const { createApplication, updateApplication, isCreating, isUpdating } = useTreatmentCenterOnboarding();
+  const { createApplication, updateApplication, isCreating, isUpdating } = useMasterOnboarding();
   const { toast } = useToast();
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const lastSavedRef = useRef<string>('');

@@ -32,6 +32,7 @@ import Governance from '@/pages/Governance';
 import Agents from '@/pages/Agents';
 import Login from '@/pages/Login';
 import DeploymentManagement from '@/pages/DeploymentManagement';
+import OnboardingDashboard from '@/pages/OnboardingDashboard';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -72,10 +73,11 @@ const AppContent = () => {
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/index" element={<Index />} />
-                  <Route path="/users" element={<Users />} />
-                  <Route path="/patients" element={<Patients />} />
-                   <Route path="/agents" element={<Agents />} />
-                   <Route path="/facilities" element={<Facilities />} />
+                   <Route path="/users" element={<Users />} />
+                   <Route path="/patients" element={<Patients />} />
+                    <Route path="/agents" element={<Agents />} />
+                    <Route path="/facilities" element={<Facilities />} />
+                    <Route path="/onboarding" element={<OnboardingDashboard />} />
                    <Route path="/deployment" element={<DeploymentManagement />} />
                    
                     <Route path="/modules" element={<Modules />} />
