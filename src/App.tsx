@@ -46,9 +46,9 @@ const queryClient = new QueryClient({
 
 const AppContent = () => {
   console.log('🎯 AppContent rendering...');
-  const { isAuthenticated, isLoading } = useMasterAuth();
+  const { isAuthenticated, isLoading, userRoles } = useMasterAuth();
 
-  console.log('🎯 Auth state:', { isAuthenticated, isLoading });
+  console.log('🎯 Auth state:', { isAuthenticated, isLoading, userRoles });
 
   // Show loading screen while auth is initializing
   if (isLoading) {
@@ -70,7 +70,12 @@ const AppContent = () => {
               {/* Protected routes */}
               {isAuthenticated ? (
                 <>
-                  <Route path="/" element={<Dashboard />} />
+                  {/* Role-based default route */}
+                  <Route path="/" element={
+                    userRoles.includes('onboardingTeam') && !userRoles.includes('superAdmin') 
+                      ? <OnboardingDashboard /> 
+                      : <Dashboard />
+                  } />
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/index" element={<Index />} />
                    <Route path="/users" element={<Users />} />
