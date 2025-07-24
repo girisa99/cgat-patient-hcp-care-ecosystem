@@ -26,12 +26,21 @@ Can you help me find the correct package names that exist on npm? Please provide
 
       console.log('Claude AI Response:', data.response);
       
-      // Display the response
+      // Display the response safely (no XSS risk)
       const responseDiv = document.createElement('div');
-      responseDiv.innerHTML = `
-        <h3>Claude AI Package Research Results:</h3>
-        <pre style="background: #f5f5f5; padding: 15px; border-radius: 5px; white-space: pre-wrap;">${data.response}</pre>
-      `;
+      
+      const heading = document.createElement('h3');
+      heading.textContent = 'Claude AI Package Research Results:';
+      
+      const pre = document.createElement('pre');
+      pre.style.background = '#f5f5f5';
+      pre.style.padding = '15px';
+      pre.style.borderRadius = '5px';
+      pre.style.whiteSpace = 'pre-wrap';
+      pre.textContent = data.response; // Safe text content, no HTML injection
+      
+      responseDiv.appendChild(heading);
+      responseDiv.appendChild(pre);
       document.body.appendChild(responseDiv);
       
     } catch (err) {
