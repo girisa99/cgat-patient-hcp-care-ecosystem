@@ -102,7 +102,7 @@ export class MasterAuthValidation {
    * Validate email format
    */
   private static isValidEmail(email: string): boolean {
-    const emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   }
 
