@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Bot, Network, Users, Settings } from 'lucide-react';
@@ -65,11 +65,22 @@ const Agents = () => {
   const availableTabs = getAvailableTabs();
 
   // Set default tab based on role
-  React.useEffect(() => {
+  useEffect(() => {
     if (isOnboardingTeam && !isSuperAdmin) {
       setActiveTab('onboarding-agents');
     }
   }, [isOnboardingTeam, isSuperAdmin]);
+
+  // Get grid class based on number of tabs
+  const getGridClass = (tabCount: number) => {
+    switch(tabCount) {
+      case 1: return 'grid-cols-1';
+      case 2: return 'grid-cols-2';
+      case 3: return 'grid-cols-3';
+      case 4: return 'grid-cols-4';
+      default: return 'grid-cols-2';
+    }
+  };
 
   return (
     <AppLayout>
@@ -91,7 +102,7 @@ const Agents = () => {
 
         {/* Dynamic Tabs based on role */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className={`grid w-full grid-cols-${availableTabs.length}`}>
+          <TabsList className={`grid w-full ${getGridClass(availableTabs.length)}`}>
             {availableTabs.map((tab) => (
               <TabsTrigger 
                 key={tab.value} 
