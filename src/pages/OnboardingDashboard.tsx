@@ -25,7 +25,7 @@ import AppLayout from '@/components/layout/AppLayout';
 import { useMasterOnboarding } from '@/hooks/useMasterOnboarding';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
-import { ComprehensiveOnboardingWizard } from '@/components/onboarding/ComprehensiveOnboardingWizard';
+import { EnhancedOnboardingWizard } from '@/components/onboarding/EnhancedOnboardingWizard';
 import { OnboardingTable } from '@/components/onboarding/OnboardingTable';
 import { TreatmentCenterOnboarding } from '@/types/onboarding';
 
@@ -65,12 +65,12 @@ const OnboardingDashboard: React.FC = () => {
 
   const handleCreateNew = () => {
     setEditingApplicationId(null);
-    setView('comprehensive'); // Use comprehensive wizard
+    setView('wizard'); // Use original wizard with existing functionality
   };
 
   const handleEditApplication = (applicationId: string) => {
     setEditingApplicationId(applicationId);
-    setView('comprehensive'); // Use comprehensive wizard for editing
+    setView('wizard'); // Use original wizard with existing functionality
   };
 
   const handleWizardSubmit = async (data: any) => {
@@ -123,7 +123,7 @@ const OnboardingDashboard: React.FC = () => {
 
     return (
       <AppLayout>
-        <ComprehensiveOnboardingWizard
+        <EnhancedOnboardingWizard
           applicationId={editingApplicationId}
           onSubmit={handleWizardSubmit}
           onSaveAndExit={handleSaveAndExit}
