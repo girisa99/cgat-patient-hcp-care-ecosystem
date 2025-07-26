@@ -10,6 +10,7 @@ import { PageLoading } from '@/components/ui/LoadingStates';
 import { initializeStabilityFramework } from '@/utils/framework/init';
 import { StabilityProvider } from '@/components/stability/StabilityProvider';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import { TenantProvider } from '@/contexts/TenantContext';
 
 // Import pages that exist
 import Index from '@/pages/Index';
@@ -224,12 +225,14 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <MasterAuthProvider>
-        <StabilityProvider>
-          <TooltipProvider>
-            <Toaster />
-            <AppContent />
-          </TooltipProvider>
-        </StabilityProvider>
+        <TenantProvider>
+          <StabilityProvider>
+            <TooltipProvider>
+              <Toaster />
+              <AppContent />
+            </TooltipProvider>
+          </StabilityProvider>
+        </TenantProvider>
       </MasterAuthProvider>
     </QueryClientProvider>
   );
