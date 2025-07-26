@@ -25,10 +25,12 @@ import AppLayout from '@/components/layout/AppLayout';
 import { useMasterOnboarding } from '@/hooks/useMasterOnboarding';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
+import { ComprehensiveOnboardingWizard } from '@/components/onboarding/ComprehensiveOnboardingWizard';
 import { OnboardingTable } from '@/components/onboarding/OnboardingTable';
+import { TreatmentCenterOnboarding } from '@/types/onboarding';
 
 const OnboardingDashboard: React.FC = () => {
-  const [view, setView] = useState<'dashboard' | 'wizard'>('dashboard');
+  const [view, setView] = useState<'dashboard' | 'wizard' | 'comprehensive'>('dashboard');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [editingApplicationId, setEditingApplicationId] = useState<string | null>(null);
@@ -63,12 +65,12 @@ const OnboardingDashboard: React.FC = () => {
 
   const handleCreateNew = () => {
     setEditingApplicationId(null);
-    setView('wizard');
+    setView('comprehensive'); // Use comprehensive wizard
   };
 
   const handleEditApplication = (applicationId: string) => {
     setEditingApplicationId(applicationId);
-    setView('wizard');
+    setView('comprehensive'); // Use comprehensive wizard for editing
   };
 
   const handleWizardSubmit = async (data: any) => {
@@ -85,6 +87,20 @@ const OnboardingDashboard: React.FC = () => {
     }
   };
 
+  const handleSaveAndExit = async (data: any) => {
+    try {
+      if (editingApplicationId) {
+        await updateApplication({ id: editingApplicationId, updates: { ...data, status: 'draft' } });
+      } else {
+        await createApplication({ ...data, status: 'draft' });
+      }
+      setView('dashboard');
+      setEditingApplicationId(null);
+    } catch (error) {
+      console.error('Error saving draft:', error);
+    }
+  };
+
   const handleBackToDashboard = () => {
     setView('dashboard');
     setEditingApplicationId(null);
@@ -96,6 +112,27 @@ const OnboardingDashboard: React.FC = () => {
     const matchesStatus = statusFilter === 'all' || app.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+  if (view === 'comprehensive') {
+    const currentApplication = editingApplicationId 
+      ? onboardingApplications.find(app => app.id === editingApplicationId)
+      : null;
+
+    // Simplified initial data - let the wizard handle type conversion
+    const initialData = currentApplication as any;
+
+    return (
+      <AppLayout>
+        <ComprehensiveOnboardingWizard
+          applicationId={editingApplicationId}
+          onSubmit={handleWizardSubmit}
+          onSaveAndExit={handleSaveAndExit}
+          onBack={handleBackToDashboard}
+          initialData={initialData}
+        />
+      </AppLayout>
+    );
+  }
 
   if (view === 'wizard') {
     return (
@@ -126,14 +163,14 @@ const OnboardingDashboard: React.FC = () => {
           </Button>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        {/* Enhanced Stats Cards with Treatment Center Progress */}
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center gap-2">
                 <Users className="h-4 w-4 text-blue-500" />
                 <div>
-                  <p className="text-sm text-muted-foreground">Total</p>
+                  <p className="text-sm text-muted-foreground">Treatment Centers</p>
                   <p className="text-2xl font-bold">{onboardingStats.total}</p>
                 </div>
               </div>
@@ -184,6 +221,77 @@ const OnboardingDashboard: React.FC = () => {
                   <p className="text-sm text-muted-foreground">Approved</p>
                   <p className="text-2xl font-bold">{onboardingStats.approved}</p>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2">
+                <XCircle className="h-4 w-4 text-red-500" />
+                <div>
+                  <p className="text-sm text-muted-foreground">Rejected</p>
+                  <p className="text-2xl font-bold">{onboardingStats.rejected}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Onboarding Progress Overview */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Onboarding Progress Overview</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Completion Rate</span>
+                  <span className="text-sm font-medium">
+                    {Math.round((onboardingStats.approved / Math.max(onboardingStats.total, 1)) * 100)}%
+                  </span>
+                </div>
+                <div className="w-full bg-secondary rounded-full h-2">
+                  <div 
+                    className="bg-primary h-2 rounded-full transition-all duration-300"
+                    style={{ 
+                      width: `${Math.round((onboardingStats.approved / Math.max(onboardingStats.total, 1)) * 100)}%` 
+                    }}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-muted-foreground">In Progress</p>
+                    <p className="font-medium">{onboardingStats.submitted + onboardingStats.under_review}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Pending Start</p>
+                    <p className="font-medium">{onboardingStats.draft}</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Quick Actions</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <Button onClick={handleCreateNew} className="w-full gap-2">
+                  <Plus className="h-4 w-4" />
+                  Start New Treatment Center Onboarding
+                </Button>
+                <Button variant="outline" className="w-full gap-2">
+                  <Download className="h-4 w-4" />
+                  Export Progress Report
+                </Button>
+                <Button variant="outline" className="w-full gap-2">
+                  <FileText className="h-4 w-4" />
+                  Download Onboarding Template
+                </Button>
               </div>
             </CardContent>
           </Card>
