@@ -183,6 +183,24 @@ export const EnhancedOnboardingWizard: React.FC<EnhancedOnboardingWizardProps> =
       component: <DocumentsStep formData={formData} updateFormData={updateFormData} />
     },
     {
+      id: 'therapy_selection',
+      title: 'Therapy Areas',
+      description: 'Select therapeutic areas of focus',
+      icon: <Database className="h-5 w-5" />,
+      category: 'operations',
+      required: true,
+      component: <TherapySelectionStep formData={formData} updateFormData={updateFormData} />
+    },
+    {
+      id: 'service_selection',
+      title: 'Service Selection',
+      description: 'Choose required services and programs',
+      icon: <Settings className="h-5 w-5" />,
+      category: 'operations',
+      required: true,
+      component: <ServiceSelectionStep formData={formData} updateFormData={updateFormData} />
+    },
+    {
       id: 'authorizations',
       title: 'Authorizations & Signatures',
       description: 'Legal authorizations and electronic signatures',
@@ -949,3 +967,249 @@ const ReviewStep = ({ formData }: any) => (
     </div>
   </div>
 );
+
+// Add the therapy and service selection step components
+const TherapySelectionStep = ({ formData, updateFormData }: any) => {
+  const [selectedTherapies, setSelectedTherapies] = useState<any[]>(formData.therapy_selections || []);
+
+  const therapyTypes = [
+    { id: 'car_t_cell', name: 'CAR-T Cell Therapy' },
+    { id: 'gene_therapy', name: 'Gene Therapy' },
+    { id: 'advanced_biologics', name: 'Advanced Biologics' },
+    { id: 'personalized_medicine', name: 'Personalized Medicine' },
+    { id: 'radioligand_therapy', name: 'Radioligand Therapy' },
+    { id: 'cell_therapy', name: 'Cell Therapy' },
+    { id: 'immunotherapy', name: 'Immunotherapy' },
+    { id: 'other_cgat', name: 'Other CGAT Therapies' }
+  ];
+
+  const handleTherapySelection = (therapyType: string, selected: boolean) => {
+    if (selected) {
+      const newSelection = {
+        therapy_type: therapyType,
+        priority_level: 'medium',
+        treatment_readiness_level: 'planning',
+        patient_volume_estimate: 0,
+        selection_rationale: '',
+        preferred_start_date: ''
+      };
+      const updated = [...selectedTherapies, newSelection];
+      setSelectedTherapies(updated);
+      updateFormData({ therapy_selections: updated });
+    } else {
+      const updated = selectedTherapies.filter(t => t.therapy_type !== therapyType);
+      setSelectedTherapies(updated);
+      updateFormData({ therapy_selections: updated });
+    }
+  };
+
+  const updateTherapyDetails = (index: number, field: string, value: any) => {
+    const updated = [...selectedTherapies];
+    updated[index] = { ...updated[index], [field]: value };
+    setSelectedTherapies(updated);
+    updateFormData({ therapy_selections: updated });
+  };
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h4 className="font-medium mb-4">Select Therapy Areas of Interest</h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {therapyTypes.map((therapy) => (
+            <div key={therapy.id} className="flex items-center space-x-3 p-3 border rounded-lg">
+              <Checkbox
+                id={therapy.id}
+                checked={selectedTherapies.some(t => t.therapy_type === therapy.id)}
+                onCheckedChange={(checked) => handleTherapySelection(therapy.id, checked as boolean)}
+              />
+              <Label htmlFor={therapy.id} className="flex-1">{therapy.name}</Label>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {selectedTherapies.length > 0 && (
+        <div className="space-y-4">
+          <h4 className="font-medium">Therapy Details</h4>
+          {selectedTherapies.map((therapy, index) => (
+            <div key={index} className="p-4 border rounded-lg space-y-4">
+              <h5 className="font-medium text-sm">
+                {therapyTypes.find(t => t.id === therapy.therapy_type)?.name}
+              </h5>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label>Priority Level</Label>
+                  <select
+                    value={therapy.priority_level || 'medium'}
+                    onChange={(e) => updateTherapyDetails(index, 'priority_level', e.target.value)}
+                    className="w-full px-3 py-2 border rounded-md"
+                  >
+                    <option value="high">High Priority</option>
+                    <option value="medium">Medium Priority</option>
+                    <option value="low">Low Priority</option>
+                  </select>
+                </div>
+                <div>
+                  <Label>Readiness Level</Label>
+                  <select
+                    value={therapy.treatment_readiness_level || 'planning'}
+                    onChange={(e) => updateTherapyDetails(index, 'treatment_readiness_level', e.target.value)}
+                    className="w-full px-3 py-2 border rounded-md"
+                  >
+                    <option value="planning">Planning</option>
+                    <option value="preparing">Preparing</option>
+                    <option value="ready">Ready to Start</option>
+                    <option value="active">Active Treatment</option>
+                  </select>
+                </div>
+                <div>
+                  <Label>Estimated Patient Volume (annual)</Label>
+                  <Input
+                    type="number"
+                    value={therapy.patient_volume_estimate || ''}
+                    onChange={(e) => updateTherapyDetails(index, 'patient_volume_estimate', parseInt(e.target.value) || 0)}
+                    placeholder="Estimated annual patients"
+                  />
+                </div>
+              </div>
+              <div>
+                <Label>Selection Rationale</Label>
+                <Textarea
+                  value={therapy.selection_rationale || ''}
+                  onChange={(e) => updateTherapyDetails(index, 'selection_rationale', e.target.value)}
+                  placeholder="Explain why this therapy area is important for your facility..."
+                />
+              </div>
+              <div>
+                <Label>Preferred Start Date</Label>
+                <Input
+                  type="date"
+                  value={therapy.preferred_start_date || ''}
+                  onChange={(e) => updateTherapyDetails(index, 'preferred_start_date', e.target.value)}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const ServiceSelectionStep = ({ formData, updateFormData }: any) => {
+  const [selectedServices, setSelectedServices] = useState<any[]>(formData.service_selections || []);
+
+  const serviceTypes = [
+    { id: '3pl', name: '3PL Logistics', description: 'Third-party logistics services' },
+    { id: 'specialty_distribution', name: 'Specialty Distribution', description: 'Specialized pharmaceutical distribution' },
+    { id: 'specialty_pharmacy', name: 'Specialty Pharmacy', description: 'Specialty pharmacy services' },
+    { id: 'order_management', name: 'Order Management', description: 'Order management systems' },
+    { id: 'patient_hub_services', name: 'Patient Hub Services', description: 'Patient support and hub services' }
+  ];
+
+  const therapyAreas = [
+    'CAR-T Cell Therapy',
+    'Gene Therapy', 
+    'Advanced Biologics',
+    'Personalized Medicine',
+    'Radioligand Therapy',
+    'Cell Therapy',
+    'Immunotherapy',
+    'Other CGAT Therapies'
+  ];
+
+  const handleServiceSelection = (serviceType: string, selected: boolean) => {
+    if (selected) {
+      const newSelection = {
+        service_type: serviceType,
+        therapy_area: '',
+        selection_rationale: '',
+        custom_requirements: {},
+        estimated_volume: {},
+        preferred_start_date: ''
+      };
+      const updated = [...selectedServices, newSelection];
+      setSelectedServices(updated);
+      updateFormData({ service_selections: updated });
+    } else {
+      const updated = selectedServices.filter(s => s.service_type !== serviceType);
+      setSelectedServices(updated);
+      updateFormData({ service_selections: updated });
+    }
+  };
+
+  const updateServiceDetails = (index: number, field: string, value: any) => {
+    const updated = [...selectedServices];
+    updated[index] = { ...updated[index], [field]: value };
+    setSelectedServices(updated);
+    updateFormData({ service_selections: updated });
+  };
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h4 className="font-medium mb-4">Select Required Services</h4>
+        <div className="space-y-3">
+          {serviceTypes.map((service) => (
+            <div key={service.id} className="flex items-start space-x-3 p-4 border rounded-lg">
+              <Checkbox
+                id={service.id}
+                checked={selectedServices.some(s => s.service_type === service.id)}
+                onCheckedChange={(checked) => handleServiceSelection(service.id, checked as boolean)}
+                className="mt-1"
+              />
+              <div className="flex-1">
+                <Label htmlFor={service.id} className="font-medium">{service.name}</Label>
+                <p className="text-sm text-muted-foreground mt-1">{service.description}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {selectedServices.length > 0 && (
+        <div className="space-y-4">
+          <h4 className="font-medium">Service Configuration</h4>
+          {selectedServices.map((service, index) => (
+            <div key={index} className="p-4 border rounded-lg space-y-4">
+              <h5 className="font-medium text-sm">
+                {serviceTypes.find(s => s.id === service.service_type)?.name}
+              </h5>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label>Primary Therapy Area</Label>
+                  <select
+                    value={service.therapy_area || ''}
+                    onChange={(e) => updateServiceDetails(index, 'therapy_area', e.target.value)}
+                    className="w-full px-3 py-2 border rounded-md"
+                  >
+                    <option value="">Select therapy area</option>
+                    {therapyAreas.map(area => (
+                      <option key={area} value={area}>{area}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <Label>Preferred Start Date</Label>
+                  <Input
+                    type="date"
+                    value={service.preferred_start_date || ''}
+                    onChange={(e) => updateServiceDetails(index, 'preferred_start_date', e.target.value)}
+                  />
+                </div>
+              </div>
+              <div>
+                <Label>Selection Rationale</Label>
+                <Textarea
+                  value={service.selection_rationale || ''}
+                  onChange={(e) => updateServiceDetails(index, 'selection_rationale', e.target.value)}
+                  placeholder="Explain why this service is needed for your facility..."
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
