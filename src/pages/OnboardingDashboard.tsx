@@ -65,12 +65,12 @@ const OnboardingDashboard: React.FC = () => {
 
   const handleCreateNew = () => {
     setEditingApplicationId(null);
-    setView('wizard'); // Use original wizard with existing functionality
+    setView('comprehensive'); // Use comprehensive wizard with all therapy and service selections
   };
 
   const handleEditApplication = (applicationId: string) => {
     setEditingApplicationId(applicationId);
-    setView('wizard'); // Use original wizard with existing functionality
+    setView('comprehensive'); // Use comprehensive wizard with all therapy and service selections
   };
 
   const handleWizardSubmit = async (data: any) => {
