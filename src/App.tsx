@@ -9,6 +9,7 @@ import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { PageLoading } from '@/components/ui/LoadingStates';
 import { initializeStabilityFramework } from '@/utils/framework/init';
 import { StabilityProvider } from '@/components/stability/StabilityProvider';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 // Import pages that exist
 import Index from '@/pages/Index';
@@ -76,37 +77,126 @@ const AppContent = () => {
                       ? <OnboardingDashboard /> 
                       : <Dashboard />
                   } />
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/index" element={<Index />} />
-                   <Route path="/users" element={<Users />} />
-                   <Route path="/patients" element={<Patients />} />
-                    <Route path="/agents" element={<Agents />} />
-                    <Route path="/facilities" element={<Facilities />} />
-                    <Route path="/onboarding" element={<OnboardingDashboard />} />
-                   <Route path="/deployment" element={<DeploymentManagement />} />
-                   
-                    <Route path="/modules" element={<Modules />} />
-                   <Route path="/api-services" element={<ApiServices />} />
-                   <Route path="/data-import" element={<DataImport />} />
-                   <Route path="/ngrok" element={<NgrokIntegration />} />
-                   <Route path="/security" element={<Security />} />
-                   <Route path="/reports" element={<Reports />} />
-                    <Route path="/testing" element={<Testing />} />
-                    <Route path="/framework" element={<FrameworkDashboard />} />
-                   <Route path="/role-management" element={<RoleManagement />} />
-                   <Route path="/stability" element={<Stability />} />
-                   <Route path="/stability/dashboard" element={
-                     <Suspense fallback={<PageLoading message="Loading stability dashboard..." />}>
-                       {React.createElement(React.lazy(() => import('@/components/stability/StabilityDashboard').then(m => ({ default: m.StabilityDashboard }))))}
-                     </Suspense>
-                   } />
-                   <Route path="/governance" element={<Governance />} />
-                   <Route path="/healthcare-ai" element={
-                     <Suspense fallback={<PageLoading message="Loading healthcare AI..." />}>
-                       {React.createElement(React.lazy(() => import('@/components/healthcare/HealthcareAIDashboard').then(m => ({ default: m.default }))))}
-                     </Suspense>
-                   } />
-                   <Route path="/research" element={<PackageResearch />} />
+                  
+                  {/* SuperAdmin & Admin only routes */}
+                  <Route path="/dashboard" element={
+                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'healthcareProvider', 'nurse', 'caseManager']}>
+                      <Dashboard />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/index" element={
+                    <ProtectedRoute requiredRoles={['superAdmin', 'admin']}>
+                      <Index />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/users" element={
+                    <ProtectedRoute requiredRoles={['superAdmin', 'admin']}>
+                      <Users />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/patients" element={
+                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'healthcareProvider', 'nurse', 'caseManager']}>
+                      <Patients />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/agents" element={
+                    <ProtectedRoute requiredRoles={['superAdmin', 'admin']}>
+                      <Agents />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/facilities" element={
+                    <ProtectedRoute requiredRoles={['superAdmin', 'admin']}>
+                      <Facilities />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Onboarding route - accessible to onboardingTeam and superAdmin */}
+                  <Route path="/onboarding" element={
+                    <ProtectedRoute requiredRoles={['superAdmin', 'onboardingTeam']}>
+                      <OnboardingDashboard />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Technical/Admin routes - SuperAdmin only */}
+                  <Route path="/deployment" element={
+                    <ProtectedRoute requiredRoles={['superAdmin']}>
+                      <DeploymentManagement />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/modules" element={
+                    <ProtectedRoute requiredRoles={['superAdmin']}>
+                      <Modules />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/api-services" element={
+                    <ProtectedRoute requiredRoles={['superAdmin']}>
+                      <ApiServices />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/data-import" element={
+                    <ProtectedRoute requiredRoles={['superAdmin']}>
+                      <DataImport />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/ngrok" element={
+                    <ProtectedRoute requiredRoles={['superAdmin']}>
+                      <NgrokIntegration />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/security" element={
+                    <ProtectedRoute requiredRoles={['superAdmin']}>
+                      <Security />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/reports" element={
+                    <ProtectedRoute requiredRoles={['superAdmin', 'admin']}>
+                      <Reports />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/testing" element={
+                    <ProtectedRoute requiredRoles={['superAdmin']}>
+                      <Testing />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/framework" element={
+                    <ProtectedRoute requiredRoles={['superAdmin']}>
+                      <FrameworkDashboard />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/role-management" element={
+                    <ProtectedRoute requiredRoles={['superAdmin']}>
+                      <RoleManagement />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/stability" element={
+                    <ProtectedRoute requiredRoles={['superAdmin']}>
+                      <Stability />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/stability/dashboard" element={
+                    <ProtectedRoute requiredRoles={['superAdmin']}>
+                      <Suspense fallback={<PageLoading message="Loading stability dashboard..." />}>
+                        {React.createElement(React.lazy(() => import('@/components/stability/StabilityDashboard').then(m => ({ default: m.StabilityDashboard }))))}
+                      </Suspense>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/governance" element={
+                    <ProtectedRoute requiredRoles={['superAdmin']}>
+                      <Governance />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/healthcare-ai" element={
+                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'healthcareProvider']}>
+                      <Suspense fallback={<PageLoading message="Loading healthcare AI..." />}>
+                        {React.createElement(React.lazy(() => import('@/components/healthcare/HealthcareAIDashboard').then(m => ({ default: m.default }))))}
+                      </Suspense>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/research" element={
+                    <ProtectedRoute requiredRoles={['superAdmin']}>
+                      <PackageResearch />
+                    </ProtectedRoute>
+                  } />
                 </>
               ) : (
                 <>
