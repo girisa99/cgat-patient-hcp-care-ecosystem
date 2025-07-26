@@ -78,9 +78,9 @@ const AppContent = () => {
                       : <Dashboard />
                   } />
                   
-                  {/* SuperAdmin & Admin only routes */}
+                  {/* SuperAdmin & Admin & Healthcare Staff routes */}
                   <Route path="/dashboard" element={
-                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'healthcareProvider', 'nurse', 'caseManager']}>
+                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'healthcareProvider', 'nurse', 'caseManager', 'onboardingTeam']}>
                       <Dashboard />
                     </ProtectedRoute>
                   } />
@@ -99,11 +99,24 @@ const AppContent = () => {
                       <Patients />
                     </ProtectedRoute>
                   } />
+                  
+                  {/* OnboardingTeam accessible routes */}
                   <Route path="/agents" element={
-                    <ProtectedRoute requiredRoles={['superAdmin', 'admin']}>
+                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'onboardingTeam']}>
                       <Agents />
                     </ProtectedRoute>
                   } />
+                  <Route path="/testing" element={
+                    <ProtectedRoute requiredRoles={['superAdmin', 'onboardingTeam']}>
+                      <Testing />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/data-import" element={
+                    <ProtectedRoute requiredRoles={['superAdmin', 'onboardingTeam']}>
+                      <DataImport />
+                    </ProtectedRoute>
+                  } />
+                  
                   <Route path="/facilities" element={
                     <ProtectedRoute requiredRoles={['superAdmin', 'admin']}>
                       <Facilities />
@@ -133,11 +146,6 @@ const AppContent = () => {
                       <ApiServices />
                     </ProtectedRoute>
                   } />
-                  <Route path="/data-import" element={
-                    <ProtectedRoute requiredRoles={['superAdmin']}>
-                      <DataImport />
-                    </ProtectedRoute>
-                  } />
                   <Route path="/ngrok" element={
                     <ProtectedRoute requiredRoles={['superAdmin']}>
                       <NgrokIntegration />
@@ -151,11 +159,6 @@ const AppContent = () => {
                   <Route path="/reports" element={
                     <ProtectedRoute requiredRoles={['superAdmin', 'admin']}>
                       <Reports />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/testing" element={
-                    <ProtectedRoute requiredRoles={['superAdmin']}>
-                      <Testing />
                     </ProtectedRoute>
                   } />
                   <Route path="/framework" element={
