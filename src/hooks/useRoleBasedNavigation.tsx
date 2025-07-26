@@ -33,27 +33,27 @@ export const useRoleBasedNavigation = () => {
       return navItems;
     }
 
-    // Define role-based access - more permissive for development
+    // Define role-based access - restricted for onboardingTeam to customer onboarding only
     const roleAccess = {
       dashboard: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'provider', 'patientCaregiver'],
-      users: ['superAdmin', 'onboardingTeam'],
-      patients: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'provider', 'patientCaregiver'],
+      users: ['superAdmin'], // Remove onboardingTeam - admin only
+      patients: ['superAdmin', 'caseManager', 'nurse', 'provider', 'patientCaregiver'], // Remove onboardingTeam - not needed for customer onboarding
       agents: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'provider', 'patientCaregiver'],
-      facilities: ['superAdmin', 'onboardingTeam'],
-      onboarding: ['superAdmin', 'onboardingTeam'],
-      modules: ['superAdmin', 'onboardingTeam'],
-      'api-services': ['superAdmin', 'onboardingTeam'],
-      ngrok: ['superAdmin', 'onboardingTeam'],
+      facilities: ['superAdmin'], // Remove onboardingTeam - admin only
+      onboarding: ['superAdmin', 'onboardingTeam'], // Keep for onboarding team
+      modules: ['superAdmin'], // Remove onboardingTeam - admin only
+      'api-services': ['superAdmin', 'onboardingTeam'], // Keep for onboarding workflow
+      ngrok: ['superAdmin'], // Remove onboardingTeam - technical admin tool only
       security: ['superAdmin'],
-      reports: ['superAdmin', 'onboardingTeam', 'caseManager'],
-      testing: ['superAdmin', 'onboardingTeam'],
+      reports: ['superAdmin', 'caseManager'],
+      testing: ['superAdmin'],
       'role-management': ['superAdmin'],
-      'data-import': ['superAdmin', 'onboardingTeam'],
-      'governance': ['superAdmin', 'onboardingTeam'],
-      'active-verification': ['superAdmin', 'onboardingTeam'],
-      'framework': ['superAdmin', 'onboardingTeam'],
-      'stability': ['superAdmin', 'onboardingTeam'],
-      'healthcare-ai': ['superAdmin', 'onboardingTeam'],
+      'data-import': ['superAdmin'],
+      'governance': ['superAdmin'],
+      'active-verification': ['superAdmin'],
+      'framework': ['superAdmin'],
+      'stability': ['superAdmin'],
+      'healthcare-ai': ['superAdmin', 'onboardingTeam'], // Keep for AI-assisted onboarding
     };
 
     const filteredItems = navItems.filter(item => {
@@ -87,24 +87,24 @@ export const useRoleBasedNavigation = () => {
     const cleanPath = path.replace('/', '') || 'dashboard';
     const roleAccess = {
       dashboard: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'provider', 'patientCaregiver'],
-      users: ['superAdmin', 'onboardingTeam'],
-      patients: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'provider', 'patientCaregiver'],
+      users: ['superAdmin'], // Remove onboardingTeam - admin only
+      patients: ['superAdmin', 'caseManager', 'nurse', 'provider', 'patientCaregiver'], // Remove onboardingTeam - not needed for customer onboarding
       agents: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'provider', 'patientCaregiver'],
-      facilities: ['superAdmin', 'onboardingTeam'],
-      onboarding: ['superAdmin', 'onboardingTeam'],
-      modules: ['superAdmin', 'onboardingTeam'],
-      'api-services': ['superAdmin', 'onboardingTeam'],
-      ngrok: ['superAdmin', 'onboardingTeam'],
+      facilities: ['superAdmin'], // Remove onboardingTeam - admin only
+      onboarding: ['superAdmin', 'onboardingTeam'], // Keep for onboarding team
+      modules: ['superAdmin'], // Remove onboardingTeam - admin only
+      'api-services': ['superAdmin', 'onboardingTeam'], // Keep for onboarding workflow
+      ngrok: ['superAdmin'], // Remove onboardingTeam - technical admin tool only
       security: ['superAdmin'],
-      reports: ['superAdmin', 'onboardingTeam', 'caseManager'],
-      testing: ['superAdmin', 'onboardingTeam'],
+      reports: ['superAdmin', 'caseManager'],
+      testing: ['superAdmin'],
       'role-management': ['superAdmin'],
-      'data-import': ['superAdmin', 'onboardingTeam'],
-      'active-verification': ['superAdmin', 'onboardingTeam'],
-      'governance': ['superAdmin', 'onboardingTeam'],
-      'framework': ['superAdmin', 'onboardingTeam'],
-      'stability': ['superAdmin', 'onboardingTeam'],
-      'healthcare-ai': ['superAdmin', 'onboardingTeam'],
+      'data-import': ['superAdmin'],
+      'active-verification': ['superAdmin'],
+      'governance': ['superAdmin'],
+      'framework': ['superAdmin'],
+      'stability': ['superAdmin'],
+      'healthcare-ai': ['superAdmin', 'onboardingTeam'], // Keep for AI-assisted onboarding
     };
 
     const allowedRoles = roleAccess[cleanPath as keyof typeof roleAccess] || [];
@@ -132,24 +132,24 @@ export const useRoleBasedNavigation = () => {
         const path = item.url.replace('/', '') || 'dashboard';
         const roleAccess = {
           dashboard: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'provider', 'patientCaregiver'],
-          users: ['superAdmin', 'onboardingTeam'],
-          patients: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'provider', 'patientCaregiver'],
+          users: ['superAdmin'], // Remove onboardingTeam - admin only
+          patients: ['superAdmin', 'caseManager', 'nurse', 'provider', 'patientCaregiver'], // Remove onboardingTeam - not needed for customer onboarding
           agents: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'provider', 'patientCaregiver'],
-          facilities: ['superAdmin', 'onboardingTeam'],
-          onboarding: ['superAdmin', 'onboardingTeam'],
-          modules: ['superAdmin', 'onboardingTeam'],
-          'api-services': ['superAdmin', 'onboardingTeam'],
-          ngrok: ['superAdmin', 'onboardingTeam'],
+          facilities: ['superAdmin'], // Remove onboardingTeam - admin only
+          onboarding: ['superAdmin', 'onboardingTeam'], // Keep for onboarding team
+          modules: ['superAdmin'], // Remove onboardingTeam - admin only
+          'api-services': ['superAdmin', 'onboardingTeam'], // Keep for onboarding workflow
+          ngrok: ['superAdmin'], // Remove onboardingTeam - technical admin tool only
           security: ['superAdmin'],
-          reports: ['superAdmin', 'onboardingTeam', 'caseManager'],
-          testing: ['superAdmin', 'onboardingTeam'],
+          reports: ['superAdmin', 'caseManager'],
+          testing: ['superAdmin'],
           'role-management': ['superAdmin'],
-          'data-import': ['superAdmin', 'onboardingTeam'],
-          'active-verification': ['superAdmin', 'onboardingTeam'],
-          'governance': ['superAdmin', 'onboardingTeam'],
-          'framework': ['superAdmin', 'onboardingTeam'],
-          'stability': ['superAdmin', 'onboardingTeam'],
-          'healthcare-ai': ['superAdmin', 'onboardingTeam'],
+          'data-import': ['superAdmin'],
+          'active-verification': ['superAdmin'],
+          'governance': ['superAdmin'],
+          'framework': ['superAdmin'],
+          'stability': ['superAdmin'],
+          'healthcare-ai': ['superAdmin', 'onboardingTeam'], // Keep for AI-assisted onboarding
         };
         
         const allowedRoles = roleAccess[path as keyof typeof roleAccess] || [];
