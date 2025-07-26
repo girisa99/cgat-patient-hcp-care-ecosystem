@@ -46,9 +46,9 @@ export const useRoleBasedNavigation = () => {
       ngrok: ['superAdmin'], // Remove onboardingTeam - technical admin tool only
       security: ['superAdmin'],
       reports: ['superAdmin', 'caseManager'],
-      testing: ['superAdmin'],
+      testing: ['superAdmin', 'onboardingTeam'], // Add back for onboarding team
       'role-management': ['superAdmin'],
-      'data-import': ['superAdmin'],
+      'data-import': ['superAdmin', 'onboardingTeam'], // Add back for onboarding team
       'governance': ['superAdmin'],
       'active-verification': ['superAdmin'],
       'framework': ['superAdmin'],
@@ -97,9 +97,9 @@ export const useRoleBasedNavigation = () => {
       ngrok: ['superAdmin'], // Remove onboardingTeam - technical admin tool only
       security: ['superAdmin'],
       reports: ['superAdmin', 'caseManager'],
-      testing: ['superAdmin'],
+      testing: ['superAdmin', 'onboardingTeam'], // Add back for onboarding team
       'role-management': ['superAdmin'],
-      'data-import': ['superAdmin'],
+      'data-import': ['superAdmin', 'onboardingTeam'], // Add back for onboarding team
       'active-verification': ['superAdmin'],
       'governance': ['superAdmin'],
       'framework': ['superAdmin'],
@@ -142,9 +142,9 @@ export const useRoleBasedNavigation = () => {
           ngrok: ['superAdmin'], // Remove onboardingTeam - technical admin tool only
           security: ['superAdmin'],
           reports: ['superAdmin', 'caseManager'],
-          testing: ['superAdmin'],
+          testing: ['superAdmin', 'onboardingTeam'], // Add back for onboarding team
           'role-management': ['superAdmin'],
-          'data-import': ['superAdmin'],
+          'data-import': ['superAdmin', 'onboardingTeam'], // Add back for onboarding team
           'active-verification': ['superAdmin'],
           'governance': ['superAdmin'],
           'framework': ['superAdmin'],
