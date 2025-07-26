@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
 import { 
   ArrowLeft, 
   ArrowRight, 
@@ -33,6 +33,15 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { TreatmentCenterOnboarding, OnboardingStep } from '@/types/onboarding';
+import { 
+  DetailedBusinessClassificationStep,
+  DetailedCreditApplicationStep, 
+  DetailedGPOMembershipStep,
+  DetailedFinancialAssessmentStep,
+  DetailedOperatingHoursStep,
+  DetailedAuthorizationsStep,
+  DetailedDocumentsStep
+} from './DetailedStepComponents';
 
 interface ComprehensiveOnboardingWizardProps {
   applicationId?: string | null;
@@ -507,102 +516,110 @@ const CompanyInfoStep = ({ formData, updateFormData }: any) => (
   </div>
 );
 
-// Placeholder components for other steps
-const BusinessClassificationStep = ({ formData, updateFormData }: any) => (
-  <div className="p-8 text-center">
-    <p className="text-muted-foreground">Business Classification form would go here</p>
-  </div>
-);
-
+const BusinessClassificationStep = DetailedBusinessClassificationStep;
 const ContactsStep = ({ formData, updateFormData }: any) => (
-  <div className="p-8 text-center">
-    <p className="text-muted-foreground">Contacts form would go here</p>
+  <div className="space-y-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <Label htmlFor="primary_contact_name">Primary Contact Name</Label>
+        <Input
+          id="primary_contact_name"
+          value={formData.contacts?.primary_contact?.name || ''}
+          onChange={(e) => updateFormData('contacts', { 
+            primary_contact: { ...formData.contacts?.primary_contact, name: e.target.value }
+          })}
+          placeholder="Contact person name"
+        />
+      </div>
+      <div>
+        <Label htmlFor="primary_contact_email">Email</Label>
+        <Input
+          id="primary_contact_email"
+          type="email"
+          value={formData.contacts?.primary_contact?.email || ''}
+          onChange={(e) => updateFormData('contacts', { 
+            primary_contact: { ...formData.contacts?.primary_contact, email: e.target.value }
+          })}
+          placeholder="email@example.com"
+        />
+      </div>
+    </div>
   </div>
 );
-
 const OwnershipStep = ({ formData, updateFormData }: any) => (
-  <div className="p-8 text-center">
-    <p className="text-muted-foreground">Ownership structure form would go here</p>
+  <div className="space-y-6">
+    <div className="p-4 border rounded-lg">
+      <h4 className="font-medium mb-3">Principal Owners & Controlling Entities</h4>
+      <Button variant="outline" className="w-full">Add Principal Owner</Button>
+    </div>
   </div>
 );
-
 const ReferencesStep = ({ formData, updateFormData }: any) => (
-  <div className="p-8 text-center">
-    <p className="text-muted-foreground">Business references form would go here</p>
+  <div className="space-y-6">
+    <div className="p-4 border rounded-lg">
+      <h4 className="font-medium mb-3">Business References</h4>
+      <Button variant="outline" className="w-full">Add Reference</Button>
+    </div>
   </div>
 );
-
 const PaymentBankingStep = ({ formData, updateFormData }: any) => (
-  <div className="p-8 text-center">
-    <p className="text-muted-foreground">Payment & banking form would go here</p>
+  <div className="space-y-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <Label htmlFor="bank_name">Bank Name</Label>
+        <Input id="bank_name" placeholder="Bank name" />
+      </div>
+      <div>
+        <Label htmlFor="routing_number">Routing Number</Label>
+        <Input id="routing_number" placeholder="9-digit routing number" />
+      </div>
+    </div>
   </div>
 );
-
 const LicensesStep = ({ formData, updateFormData }: any) => (
-  <div className="p-8 text-center">
-    <p className="text-muted-foreground">Licenses & certifications form would go here</p>
+  <div className="space-y-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <Label htmlFor="dea_number">DEA Number</Label>
+        <Input id="dea_number" placeholder="DEA registration number" />
+      </div>
+      <div>
+        <Label htmlFor="medical_license">Medical License</Label>
+        <Input id="medical_license" placeholder="Medical license number" />
+      </div>
+    </div>
   </div>
 );
-
-const DocumentsStep = ({ formData, updateFormData }: any) => (
-  <div className="p-8 text-center">
-    <p className="text-muted-foreground">Document upload form would go here</p>
-  </div>
-);
-
+const DocumentsStep = DetailedDocumentsStep;
 const TherapySelectionStep = ({ formData, updateFormData }: any) => (
-  <div className="p-8 text-center">
-    <p className="text-muted-foreground">Therapy selection form would go here</p>
+  <div className="p-4 border rounded-lg">
+    <h4 className="font-medium mb-3">Therapy Areas</h4>
+    <p className="text-sm text-muted-foreground">Select therapeutic areas of focus</p>
   </div>
 );
-
 const ServiceSelectionStep = ({ formData, updateFormData }: any) => (
-  <div className="p-8 text-center">
-    <p className="text-muted-foreground">Service selection form would go here</p>
+  <div className="p-4 border rounded-lg">
+    <h4 className="font-medium mb-3">Service Selection</h4>
+    <p className="text-sm text-muted-foreground">Choose required services and programs</p>
   </div>
 );
-
 const OnlineServicesStep = ({ formData, updateFormData }: any) => (
-  <div className="p-8 text-center">
-    <p className="text-muted-foreground">Online platform setup form would go here</p>
+  <div className="p-4 border rounded-lg">
+    <h4 className="font-medium mb-3">Online Platform Setup</h4>
+    <p className="text-sm text-muted-foreground">Configure online ordering and management</p>
   </div>
 );
-
 const PurchasingPreferencesStep = ({ formData, updateFormData }: any) => (
-  <div className="p-8 text-center">
-    <p className="text-muted-foreground">Purchasing preferences form would go here</p>
+  <div className="p-4 border rounded-lg">
+    <h4 className="font-medium mb-3">Purchasing Preferences</h4>
+    <p className="text-sm text-muted-foreground">Order methods and inventory management</p>
   </div>
 );
-
-const FinancialAssessmentStep = ({ formData, updateFormData }: any) => (
-  <div className="p-8 text-center">
-    <p className="text-muted-foreground">Financial assessment form would go here</p>
-  </div>
-);
-
-const CreditApplicationStep = ({ formData, updateFormData }: any) => (
-  <div className="p-8 text-center">
-    <p className="text-muted-foreground">Credit application form would go here</p>
-  </div>
-);
-
-const GPOMembershipStep = ({ formData, updateFormData }: any) => (
-  <div className="p-8 text-center">
-    <p className="text-muted-foreground">GPO membership form would go here</p>
-  </div>
-);
-
-const OfficeHoursStep = ({ formData, updateFormData }: any) => (
-  <div className="p-8 text-center">
-    <p className="text-muted-foreground">Office hours form would go here</p>
-  </div>
-);
-
-const AuthorizationsStep = ({ formData, updateFormData }: any) => (
-  <div className="p-8 text-center">
-    <p className="text-muted-foreground">Authorizations & signatures form would go here</p>
-  </div>
-);
+const FinancialAssessmentStep = DetailedFinancialAssessmentStep;
+const CreditApplicationStep = DetailedCreditApplicationStep;
+const GPOMembershipStep = DetailedGPOMembershipStep;
+const OfficeHoursStep = DetailedOperatingHoursStep;
+const AuthorizationsStep = DetailedAuthorizationsStep;
 
 const ReviewStep = ({ formData }: any) => (
   <div className="space-y-6">
