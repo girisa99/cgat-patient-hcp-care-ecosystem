@@ -140,7 +140,7 @@ export const DashboardManagementTable: React.FC = () => {
                   <Button 
                     className="w-full justify-start" 
                     variant="outline"
-                    onClick={() => window.location.href = '/users'}
+                    onClick={() => { window.location.href = '/users'; }}  // Using window.location for full reload
                   >
                     <Users className="h-4 w-4 mr-2" />
                     Manage Users
@@ -148,7 +148,7 @@ export const DashboardManagementTable: React.FC = () => {
                   <Button 
                     className="w-full justify-start" 
                     variant="outline"
-                    onClick={() => window.location.href = '/facilities'}
+                    onClick={() => { window.location.href = '/facilities'; }}  // Using window.location for full reload
                   >
                     <Building className="h-4 w-4 mr-2" />
                     Add Facility
@@ -156,7 +156,7 @@ export const DashboardManagementTable: React.FC = () => {
                   <Button 
                     className="w-full justify-start" 
                     variant="outline"
-                    onClick={() => window.location.href = '/modules'}
+                    onClick={() => { window.location.href = '/modules'; }}  // Using window.location for full reload
                   >
                     <Package className="h-4 w-4 mr-2" />
                     Configure Modules
