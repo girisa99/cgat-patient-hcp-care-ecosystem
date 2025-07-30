@@ -50,9 +50,15 @@ export const useJsonDataImport = () => {
           });
 
           try {
+            // Validate table name for security
+            const validTables = ['facilities', 'modules', 'profiles', 'roles', 'user_roles'];
+            if (!validTables.includes(tableName)) {
+              throw new Error(`Invalid table name: ${tableName}`);
+            }
+            
             // Check if item already exists
-            const { data: existingData, error: checkError } = await supabase
-              .from(tableName as any)
+            const { data: existingData, error: checkError } = await (supabase as any)
+              .from(tableName)
               .select('id')
               .eq(uniqueField, item[uniqueField])
               .maybeSingle();
@@ -68,8 +74,8 @@ export const useJsonDataImport = () => {
             }
 
             // Insert new item using simple insert (no ON CONFLICT)
-            const { error: insertError } = await supabase
-              .from(tableName as any)
+            const { error: insertError } = await (supabase as any)
+              .from(tableName)
               .insert(item);
 
             if (insertError) {

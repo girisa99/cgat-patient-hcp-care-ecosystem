@@ -1,4 +1,3 @@
-
 /**
  * Executes bulk operations in batches
  */
@@ -10,8 +9,14 @@ export class BulkBatchExecutor {
    * Execute batch insert
    */
   async executeBatchInsert(tableName: string, data: any[]) {
-    // Use type assertion to handle dynamic table names
-    return await (supabase.from as any)(tableName)
+    // Validate table name for security
+    const validTables = ['facilities', 'modules', 'profiles', 'roles', 'user_roles'];
+    if (!validTables.includes(tableName)) {
+      throw new Error(`Invalid table name: ${tableName}`);
+    }
+    
+    // Use type assertion with validation for dynamic table access
+    return await (supabase as any).from(tableName)
       .insert(data)
       .select();
   }
@@ -20,13 +25,19 @@ export class BulkBatchExecutor {
    * Execute batch update
    */
   async executeBatchUpdate(tableName: string, data: any[]) {
+    // Validate table name for security
+    const validTables = ['facilities', 'modules', 'profiles', 'roles', 'user_roles'];
+    if (!validTables.includes(tableName)) {
+      throw new Error(`Invalid table name: ${tableName}`);
+    }
+    
     // For updates, we need to update each record individually
     // This is a limitation of Supabase's bulk update capabilities
     const results = [];
     
     for (const item of data) {
       const { id, ...updateData } = item;
-      const result = await (supabase.from as any)(tableName)
+      const result = await (supabase as any).from(tableName)
         .update(updateData)
         .eq('id', id)
         .select();
@@ -43,9 +54,15 @@ export class BulkBatchExecutor {
    * Execute batch delete
    */
   async executeBatchDelete(tableName: string, data: any[]) {
+    // Validate table name for security
+    const validTables = ['facilities', 'modules', 'profiles', 'roles', 'user_roles'];
+    if (!validTables.includes(tableName)) {
+      throw new Error(`Invalid table name: ${tableName}`);
+    }
+    
     const ids = data.map(item => item.id || item);
     
-    return await (supabase.from as any)(tableName)
+    return await (supabase as any).from(tableName)
       .delete()
       .in('id', ids)
       .select();
@@ -55,7 +72,13 @@ export class BulkBatchExecutor {
    * Execute batch upsert
    */
   async executeBatchUpsert(tableName: string, data: any[]) {
-    return await (supabase.from as any)(tableName)
+    // Validate table name for security
+    const validTables = ['facilities', 'modules', 'profiles', 'roles', 'user_roles'];
+    if (!validTables.includes(tableName)) {
+      throw new Error(`Invalid table name: ${tableName}`);
+    }
+    
+    return await (supabase as any).from(tableName)
       .upsert(data)
       .select();
   }

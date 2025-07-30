@@ -158,9 +158,14 @@ class DatabaseSchemaAnalyzerClass {
         return null;
       }
 
-      // Get row count
-      const { count } = await supabase
-        .from(tableName as any)
+      // Get row count with table validation
+      const validTables = ['facilities', 'modules', 'profiles', 'roles', 'user_roles'];
+      if (!validTables.includes(tableName)) {
+        throw new Error(`Invalid table name: ${tableName}`);
+      }
+      
+      const { count } = await (supabase as any)
+        .from(tableName)
         .select('*', { count: 'exact', head: true });
 
       // Analyze framework alignment
