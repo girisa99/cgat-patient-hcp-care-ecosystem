@@ -10,7 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Building, Users, CreditCard, FileText, Clock, Stethoscope, Settings, Globe, Package, Truck, X, CheckCircle } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Building, Users, CreditCard, FileText, Clock, Stethoscope, Settings, Globe, Package, Truck, X, CheckCircle, Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { SERVICE_TYPES } from '@/types/services';
@@ -441,6 +442,12 @@ export const DetailedServiceSelectionStep = ({ formData, updateFormData }: any) 
   const [serviceSelections, setServiceSelections] = useState<ServiceSelection[]>(
     formData.service_selections || []
   );
+  const [showAddServiceForm, setShowAddServiceForm] = useState<string | null>(null);
+  const [newServiceData, setNewServiceData] = useState({
+    name: '',
+    description: '',
+    service_type: ''
+  });
 
   useEffect(() => {
     fetchServices();
@@ -505,6 +512,55 @@ export const DetailedServiceSelectionStep = ({ formData, updateFormData }: any) 
     updateFormData('service_selections', updated);
   };
 
+  const handleAddNewService = async () => {
+    if (!newServiceData.name.trim() || !newServiceData.service_type) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in service name and select a type",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('services')
+        .insert([{
+          name: newServiceData.name.trim(),
+          description: newServiceData.description.trim(),
+          service_type: newServiceData.service_type as '3pl' | 'specialty_distribution' | 'specialty_pharmacy' | 'order_management' | 'patient_hub_services',
+          is_active: true,
+          requirements: {},
+          pricing_model: {},
+          sla_requirements: {}
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Add to local services state
+      setServices(prev => [...prev, data]);
+      
+      // Reset form
+      setNewServiceData({ name: '', description: '', service_type: '' });
+      setShowAddServiceForm(null);
+      
+      toast({
+        title: "Success",
+        description: `${data.name} has been added successfully`,
+      });
+      
+    } catch (error) {
+      console.error('Error adding service:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add new service",
+        variant: "destructive"
+      });
+    }
+  };
+
   const getServiceTypeColor = (type: string) => {
     const colors = {
       '3pl': 'bg-blue-100 text-blue-800',
@@ -517,11 +573,10 @@ export const DetailedServiceSelectionStep = ({ formData, updateFormData }: any) 
     return colors[type as keyof typeof colors] || colors.default;
   };
 
-  const groupedServices = services.reduce((acc, service) => {
-    if (!acc[service.service_type]) {
-      acc[service.service_type] = [];
-    }
-    acc[service.service_type].push(service);
+  // Create complete service type groups including empty ones
+  const allServiceTypes = Object.keys(SERVICE_TYPES) as Array<keyof typeof SERVICE_TYPES>;
+  const groupedServices = allServiceTypes.reduce((acc, serviceType) => {
+    acc[serviceType] = services.filter(service => service.service_type === serviceType);
     return acc;
   }, {} as Record<string, Service[]>);
 
@@ -558,10 +613,23 @@ export const DetailedServiceSelectionStep = ({ formData, updateFormData }: any) 
           <SelectContent className="max-h-[300px] bg-background border border-border shadow-lg z-50">
             {Object.entries(groupedServices).map(([serviceType, serviceList]) => (
               <div key={serviceType}>
-                <div className="px-3 py-2 text-sm font-medium text-muted-foreground border-b">
-                  {SERVICE_TYPES[serviceType as keyof typeof SERVICE_TYPES] || serviceType.replace('_', ' ')}
+                <div className="px-3 py-2 text-sm font-medium text-muted-foreground border-b flex items-center justify-between">
+                  <span>{SERVICE_TYPES[serviceType as keyof typeof SERVICE_TYPES] || serviceType.replace('_', ' ')}</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setNewServiceData({ ...newServiceData, service_type: serviceType });
+                      setShowAddServiceForm(serviceType);
+                    }}
+                    className="h-6 px-2 text-xs hover:bg-accent"
+                  >
+                    + Add New
+                  </Button>
                 </div>
-                {serviceList.map((service) => {
+                {serviceList.length > 0 ? serviceList.map((service) => {
                   const isSelected = serviceSelections.some(s => s.service_id === service.id);
                   return (
                     <SelectItem 
@@ -581,7 +649,11 @@ export const DetailedServiceSelectionStep = ({ formData, updateFormData }: any) 
                       </div>
                     </SelectItem>
                   );
-                })}
+                }) : (
+                  <div className="px-3 py-2 text-sm text-muted-foreground italic">
+                    No services available. Click "Add New" above to create one.
+                  </div>
+                )}
               </div>
             ))}
           </SelectContent>
@@ -653,6 +725,46 @@ export const DetailedServiceSelectionStep = ({ formData, updateFormData }: any) 
           </div>
         </div>
       )}
+      
+      {/* Add Service Dialog */}
+      <Dialog open={!!showAddServiceForm} onOpenChange={() => setShowAddServiceForm(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              Add New {showAddServiceForm ? SERVICE_TYPES[showAddServiceForm as keyof typeof SERVICE_TYPES] : ''} Service
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="new-service-name">Service Name</Label>
+              <Input
+                id="new-service-name"
+                value={newServiceData.name}
+                onChange={(e) => setNewServiceData({ ...newServiceData, name: e.target.value })}
+                placeholder="Enter service name"
+              />
+            </div>
+            <div>
+              <Label htmlFor="new-service-description">Description (Optional)</Label>
+              <Textarea
+                id="new-service-description"
+                value={newServiceData.description}
+                onChange={(e) => setNewServiceData({ ...newServiceData, description: e.target.value })}
+                placeholder="Enter service description"
+                rows={3}
+              />
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setShowAddServiceForm(null)}>
+                Cancel
+              </Button>
+              <Button onClick={handleAddNewService}>
+                Add Service
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
