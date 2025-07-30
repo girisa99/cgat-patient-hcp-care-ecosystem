@@ -301,9 +301,12 @@ export const TherapyServiceSelector: React.FC<TherapyServiceSelectorProps> = ({
       });
       
       try {
+        // Get all existing therapy IDs to generate products for all therapies
+        const allTherapyIds = therapies.map(t => t.id);
+        
         const response = await supabase.functions.invoke('healthcare-agentic-orchestrator', {
           body: { 
-            generate_all_modalities: true,
+            therapy_ids: allTherapyIds.length > 0 ? allTherapyIds : ['all'], // Fallback to 'all' if no therapies exist
             ai_providers: ['openai', 'claude'],
             use_mcp: true,
             small_model_fallback: true
@@ -403,28 +406,27 @@ export const TherapyServiceSelector: React.FC<TherapyServiceSelectorProps> = ({
                               key={therapy.id} 
                               value={therapy.id}
                               disabled={isGenerating}
-                              className="flex-col items-start p-3 space-y-1"
+                              className="focus:bg-accent focus:text-accent-foreground"
                             >
-                              <div className="flex items-center justify-between w-full">
-                                <span className="font-medium">{therapy.name}</span>
-                                <div className="flex items-center space-x-2">
-                                  {isGenerating && (
-                                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-purple-600"></div>
-                                  )}
-                                  {isSelected && <CheckCircle className="h-3 w-3 text-blue-600" />}
+                              <div className="flex items-center justify-between w-full min-h-[2.5rem]">
+                                <div className="flex flex-col min-w-0 flex-1">
+                                  <div className="flex items-center space-x-2 mb-1">
+                                    <span className="font-medium truncate">{therapy.name}</span>
+                                    {isSelected && <CheckCircle className="h-4 w-4 text-primary flex-shrink-0" />}
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <Badge variant="outline" className="text-xs flex-shrink-0">
+                                      {THERAPY_TYPES[therapy.therapy_type]}
+                                    </Badge>
+                                    <span className="text-xs text-muted-foreground">
+                                      {isGenerating ? 'Generating...' : `${therapyProducts.length} products`}
+                                    </span>
+                                  </div>
                                 </div>
+                                {isGenerating && (
+                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary flex-shrink-0 ml-2"></div>
+                                )}
                               </div>
-                              <div className="flex items-center space-x-2">
-                                <Badge variant="outline" className="text-xs">
-                                  {THERAPY_TYPES[therapy.therapy_type]}
-                                </Badge>
-                                <span className="text-xs text-muted-foreground">
-                                  {isGenerating ? 'Generating...' : `${therapyProducts.length} products`}
-                                </span>
-                              </div>
-                              {therapy.indication && (
-                                <span className="text-xs text-muted-foreground">{therapy.indication}</span>
-                              )}
                             </SelectItem>
                           );
                         })}
