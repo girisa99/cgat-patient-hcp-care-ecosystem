@@ -22,3 +22,12 @@ verify_jwt = true
 
 [functions.crawl-relevant-content]
 verify_jwt = true
+
+[functions.generate-therapy-products]
+verify_jwt = true
+
+[functions.claude-ai-chat]
+verify_jwt = true
+
+[functions.healthcare-agentic-orchestrator]
+verify_jwt = true

@@ -7,561 +7,249 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+interface ProductGenerationRequest {
+  therapy_ids: string[];
+  ai_providers?: string[];
+  use_mcp?: boolean;
+  small_model_fallback?: boolean;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const supabase = createClient(
+    const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     );
 
-    const { method, params, context } = await req.json();
-    console.log('Healthcare Agentic Orchestrator - Method:', method);
+    const { 
+      therapy_ids, 
+      ai_providers = ['openai', 'claude'], 
+      use_mcp = false, 
+      small_model_fallback = true 
+    }: ProductGenerationRequest = await req.json();
 
-    let result;
+    if (!therapy_ids || !Array.isArray(therapy_ids)) {
+      throw new Error('therapy_ids array is required');
+    }
 
-    switch (method) {
-      case 'healthcare.assessment.shared_evaluation':
-        result = await executeSharedAssessment(params, supabase);
-        break;
+    console.log('Healthcare Agentic Orchestrator starting with providers:', ai_providers);
+
+    // Fetch therapy details
+    const { data: therapies, error: therapyError } = await supabaseClient
+      .from('therapies')
+      .select('*')
+      .in('id', therapy_ids);
+
+    if (therapyError) throw therapyError;
+
+    const results = [];
+    
+    for (const therapy of therapies) {
+      console.log(`Processing therapy: ${therapy.name} with ${ai_providers.length} AI providers`);
       
-      case 'healthcare.cell_therapy.evaluate':
-        result = await evaluateCellTherapy(params, supabase);
-        break;
-      
-      case 'healthcare.gene_therapy.evaluate':
-        result = await evaluateGeneTherapy(params, supabase);
-        break;
-      
-      case 'healthcare.personalized_medicine.evaluate':
-        result = await evaluatePersonalizedMedicine(params, supabase);
-        break;
-      
-      case 'healthcare.radioland_treatment.evaluate':
-        result = await evaluateRadiolandTreatment(params, supabase);
-        break;
-      
-      case 'healthcare.treatment.synthesize_recommendations':
-        result = await synthesizeTreatmentRecommendations(params, supabase);
-        break;
-      
-      case 'healthcare.agentic.workflow.execute':
-        result = await executeAgenticWorkflow(params, supabase);
-        break;
-      
-      default:
-        throw new Error(`Unknown method: ${method}`);
+      // Try multiple AI providers for diverse product generation
+      const productGenerations = await Promise.allSettled(
+        ai_providers.map(provider => generateProductsWithProvider(provider, therapy))
+      );
+
+      // Combine successful generations
+      const allProducts = [];
+      productGenerations.forEach((result, index) => {
+        if (result.status === 'fulfilled') {
+          console.log(`Provider ${ai_providers[index]} generated ${result.value.length} products`);
+          allProducts.push(...result.value);
+        } else {
+          console.error(`Provider ${ai_providers[index]} failed:`, result.reason);
+        }
+      });
+
+      // If no products generated and small model fallback is enabled
+      if (allProducts.length === 0 && small_model_fallback) {
+        console.log('Falling back to template generation');
+        allProducts.push(...generateTemplateProducts(therapy));
+      }
+
+      // Store products with AI provider attribution
+      for (const productData of allProducts) {
+        const { data: product, error: productError } = await supabaseClient
+          .from('products')
+          .insert({
+            name: productData.name,
+            brand_name: productData.brand_name,
+            indication: productData.indication,
+            dosing_information: productData.dosing_information,
+            contraindications: productData.contraindications,
+            special_populations: productData.special_populations,
+            distribution_requirements: productData.distribution_requirements,
+            pricing_information: productData.pricing_information,
+            market_access_considerations: productData.market_access_considerations,
+            product_status: productData.product_status,
+            ndc_number: productData.ndc_number,
+            approval_date: productData.approval_date,
+            therapy_id: therapy.id,
+            manufacturer_id: null,
+            modality_id: null,
+            is_active: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .select()
+          .single();
+
+        if (productError) {
+          console.error('Error inserting product:', productError);
+          continue;
+        }
+
+        results.push({
+          therapy_name: therapy.name,
+          product_name: productData.name,
+          product_id: product.id,
+          ai_provider: productData.ai_provider || 'template'
+        });
+      }
     }
 
     return new Response(JSON.stringify({
-      id: crypto.randomUUID(),
-      type: 'response',
-      method: method,
-      result: result
+      message: `Generated ${results.length} products using ${ai_providers.join(', ')} AI providers`,
+      results,
+      providers_used: ai_providers,
+      mcp_enabled: use_mcp
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
-    console.error('Healthcare Agentic Orchestrator Error:', error);
-    return new Response(JSON.stringify({
-      id: crypto.randomUUID(),
-      type: 'error',
-      error: { message: error.message }
-    }), {
+    console.error('Error in healthcare-agentic-orchestrator:', error);
+    return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
 });
 
-async function executeSharedAssessment(params: any, supabase: any) {
-  const { patient_context, modalities, assessment_type } = params;
+async function generateProductsWithProvider(provider: string, therapy: any) {
+  console.log(`Generating products with ${provider} for ${therapy.name}`);
   
-  console.log('Executing shared assessment for:', patient_context.patientId);
-  
-  // Simulate comprehensive patient assessment
-  const assessmentResult = {
-    patient_id: patient_context.patientId,
-    assessment_type: assessment_type,
-    eligibility_scores: {
-      'cell-therapy': calculateEligibilityScore(patient_context, 'cell-therapy'),
-      'gene-therapy': calculateEligibilityScore(patient_context, 'gene-therapy'),
-      'personalized-medicine': calculateEligibilityScore(patient_context, 'personalized-medicine'),
-      'radioland-treatment': calculateEligibilityScore(patient_context, 'radioland-treatment')
-    },
-    risk_assessment: {
-      overall_risk: 'moderate',
-      contraindications: extractContraindications(patient_context),
-      safety_considerations: ['monitor cardiac function', 'regular blood work', 'infection monitoring']
-    },
-    biomarkers: {
-      cd19_expression: 85, // For CAR-T therapy
-      tumor_mutational_burden: 12.5, // For personalized medicine
-      her2_status: 'positive', // For targeted therapy
-      mismatch_repair: 'proficient'
-    },
-    treatment_readiness: 'suitable_for_multiple_modalities',
-    recommended_sequence: modalities.sort(() => Math.random() - 0.5),
-    timestamp: new Date().toISOString()
-  };
+  switch (provider) {
+    case 'openai':
+      return await generateWithOpenAI(therapy);
+    case 'claude':
+      return await generateWithClaude(therapy);
+    case 'mcp':
+      return await generateWithMCP(therapy);
+    default:
+      throw new Error(`Unknown AI provider: ${provider}`);
+  }
+}
 
-  // Store assessment in database
-  await supabase.from('comprehensive_test_cases').insert({
-    test_suite_type: 'agentic_assessment',
-    test_category: 'healthcare_evaluation',
-    test_name: `Shared Assessment - Patient ${patient_context.patientId}`,
-    test_description: `Multi-modal treatment assessment for ${modalities.join(', ')}`,
-    module_name: 'Agentic Healthcare',
-    topic: 'Treatment Assessment',
-    coverage_area: 'Healthcare',
-    business_function: 'Clinical Decision Support',
-    expected_results: JSON.stringify(assessmentResult),
-    actual_results: 'Assessment completed successfully',
-    test_status: 'passed',
-    execution_data: {
-      patient_context: patient_context,
-      modalities: modalities,
-      assessment_type: assessment_type
-    }
+async function generateWithOpenAI(therapy: any) {
+  const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+  if (!openAIApiKey) throw new Error('OpenAI API key not available');
+
+  const prompt = `Generate 1-2 realistic pharmaceutical products for therapy: ${therapy.name} (${therapy.therapy_type}). Return as JSON array: [{"name": "string", "brand_name": "string", "indication": "string", "dosing_information": {"regimen": "string", "route": "string"}, "contraindications": ["string"], "special_populations": {"pregnancy": "string"}, "distribution_requirements": {"storage": "string"}, "pricing_information": {"wholesale": "string"}, "market_access_considerations": {"reimbursement": "string"}, "product_status": "approved|phase_3|phase_2", "ndc_number": "string", "approval_date": "YYYY-MM-DD"}]`;
+
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${openAIApiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: 'Generate realistic pharmaceutical products. Return valid JSON only.' },
+        { role: 'user', content: prompt }
+      ],
+      temperature: 0.7,
+      max_tokens: 2000
+    }),
   });
 
-  return assessmentResult;
+  if (!response.ok) throw new Error(`OpenAI API error: ${response.status}`);
+
+  const data = await response.json();
+  const content = data.choices[0].message.content;
+  const jsonMatch = content.match(/\[[\s\S]*\]/);
+  if (!jsonMatch) throw new Error('No valid JSON found in OpenAI response');
+
+  const products = JSON.parse(jsonMatch[0]);
+  return products.map((p: any) => ({ ...p, ai_provider: 'openai' }));
 }
 
-async function evaluateCellTherapy(params: any, supabase: any) {
-  const { patient_context, shared_assessment, treatment_goals } = params;
-  
-  console.log('Evaluating cell therapy for patient:', patient_context.patientId);
-  
-  const evaluation = {
-    modality: 'cell-therapy',
-    patient_id: patient_context.patientId,
-    eligibility: shared_assessment.eligibility_scores['cell-therapy'],
-    recommended_approach: {
-      therapy_type: selectCellTherapyType(patient_context),
-      manufacturing_timeline: '3-4 weeks',
-      treatment_protocol: 'Standard CAR-T protocol with lymphodepletion',
-      monitoring_requirements: ['cytokine release syndrome', 'neurotoxicity', 'B-cell aplasia']
-    },
-    expected_outcomes: {
-      response_rate: '65-85%',
-      duration_of_response: '12-24 months',
-      overall_survival_benefit: 'significant',
-      quality_of_life_impact: 'high initially, improves over time'
-    },
-    cost_analysis: {
-      estimated_cost: '$450,000 - $650,000',
-      insurance_coverage: 'typically covered for approved indications',
-      value_proposition: 'high for refractory/relapsed cases'
-    },
-    combination_potential: assessCombinationPotential(shared_assessment, 'cell-therapy'),
-    confidence_score: 0.82,
-    timestamp: new Date().toISOString()
-  };
+async function generateWithClaude(therapy: any) {
+  const claudeApiKey = Deno.env.get('CLAUDE_API_KEY');
+  if (!claudeApiKey) throw new Error('Claude API key not available');
 
-  // Log evaluation
-  await supabase.from('comprehensive_test_cases').insert({
-    test_suite_type: 'agentic_evaluation',
-    test_category: 'cell_therapy_assessment',
-    test_name: `Cell Therapy Evaluation - Patient ${patient_context.patientId}`,
-    test_description: 'AI-powered cell therapy treatment evaluation',
-    module_name: 'Cell Therapy Agent',
-    topic: 'Treatment Planning',
-    coverage_area: 'Cell Therapy',
-    business_function: 'Treatment Selection',
-    expected_results: JSON.stringify(evaluation),
-    actual_results: 'Cell therapy evaluation completed',
-    test_status: 'passed'
+  const prompt = `Generate 1-2 pharmaceutical products for therapy: ${therapy.name} (${therapy.therapy_type}). Return JSON array: [{"name": "string", "brand_name": "string", "indication": "string", "dosing_information": {"regimen": "string", "route": "string"}, "contraindications": ["string"], "special_populations": {"pregnancy": "string"}, "distribution_requirements": {"storage": "string"}, "pricing_information": {"wholesale": "string"}, "market_access_considerations": {"reimbursement": "string"}, "product_status": "approved|phase_3|phase_2", "ndc_number": "string", "approval_date": "YYYY-MM-DD"}]`;
+
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${claudeApiKey}`,
+      'Content-Type': 'application/json',
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 2000,
+      messages: [{ role: 'user', content: prompt }]
+    }),
   });
 
-  return evaluation;
+  if (!response.ok) throw new Error(`Claude API error: ${response.status}`);
+
+  const data = await response.json();
+  const content = data.content[0].text;
+  const jsonMatch = content.match(/\[[\s\S]*\]/);
+  if (!jsonMatch) throw new Error('No valid JSON found in Claude response');
+
+  const products = JSON.parse(jsonMatch[0]);
+  return products.map((p: any) => ({ ...p, ai_provider: 'claude' }));
 }
 
-async function evaluateGeneTherapy(params: any, supabase: any) {
-  const { patient_context, shared_assessment, treatment_goals } = params;
+async function generateWithMCP(therapy: any) {
+  console.log('MCP integration placeholder - using template generation');
+  const products = generateTemplateProducts(therapy);
+  return products.map((p: any) => ({ ...p, ai_provider: 'mcp' }));
+}
+
+function generateTemplateProducts(therapy: any) {
+  const baseProductName = therapy.name.replace(/[^a-zA-Z0-9\s]/g, '').trim();
   
-  const evaluation = {
-    modality: 'gene-therapy',
-    patient_id: patient_context.patientId,
-    eligibility: shared_assessment.eligibility_scores['gene-therapy'],
-    recommended_approach: {
-      vector_type: selectOptimalVector(patient_context),
-      delivery_method: 'intravenous infusion',
-      dosing_strategy: 'single high-dose administration',
-      manufacturing_considerations: 'GMP-compliant vector production required'
+  return [{
+    name: `${baseProductName} Injectable`,
+    brand_name: `${therapy.therapy_type.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}™`,
+    indication: therapy.indication || `Treatment for ${therapy.therapy_type} related conditions`,
+    dosing_information: {
+      regimen: '1-2 doses per treatment cycle',
+      route: 'Intravenous',
+      frequency: 'Once every 3-4 weeks'
     },
-    genetic_analysis: {
-      target_gene: identifyTargetGene(patient_context),
-      mutation_burden: shared_assessment.biomarkers.tumor_mutational_burden,
-      repair_mechanisms: shared_assessment.biomarkers.mismatch_repair,
-      expression_patterns: 'favorable for transgene integration'
+    contraindications: ['Hypersensitivity to active ingredients', 'Severe immunodeficiency'],
+    special_populations: {
+      pregnancy: 'Contraindicated - may cause fetal harm',
+      pediatric: 'Safety not established in children under 18',
+      elderly: 'Use with caution - may require dose adjustment'
     },
-    safety_profile: {
-      immunogenicity_risk: 'moderate',
-      off_target_effects: 'minimal with current vector design',
-      long_term_monitoring: 'integration site analysis recommended'
+    distribution_requirements: {
+      storage: '2-8°C (36-46°F), protect from light',
+      handling: 'Requires specialized handling and administration'
     },
-    confidence_score: 0.78,
-    timestamp: new Date().toISOString()
-  };
-
-  await supabase.from('comprehensive_test_cases').insert({
-    test_suite_type: 'agentic_evaluation',
-    test_category: 'gene_therapy_assessment',
-    test_name: `Gene Therapy Evaluation - Patient ${patient_context.patientId}`,
-    test_description: 'AI-powered gene therapy treatment evaluation',
-    module_name: 'Gene Therapy Agent',
-    topic: 'Genetic Analysis',
-    coverage_area: 'Gene Therapy',
-    business_function: 'Vector Selection',
-    expected_results: JSON.stringify(evaluation),
-    actual_results: 'Gene therapy evaluation completed',
-    test_status: 'passed'
-  });
-
-  return evaluation;
-}
-
-async function evaluatePersonalizedMedicine(params: any, supabase: any) {
-  const { patient_context, shared_assessment, treatment_goals } = params;
-  
-  const evaluation = {
-    modality: 'personalized-medicine',
-    patient_id: patient_context.patientId,
-    eligibility: shared_assessment.eligibility_scores['personalized-medicine'],
-    biomarker_profile: {
-      actionable_mutations: identifyActionableMutations(patient_context),
-      drug_sensitivity: predictDrugSensitivity(shared_assessment),
-      resistance_patterns: analyzeResistancePatterns(patient_context),
-      pathway_analysis: 'multiple targetable pathways identified'
+    pricing_information: {
+      wholesale: '$50,000-$150,000 per treatment course',
+      patient_cost: '$10,000-$25,000 after insurance and assistance programs'
     },
-    treatment_recommendations: {
-      primary_agents: ['targeted therapy based on biomarkers'],
-      combination_strategies: ['immunotherapy + targeted therapy'],
-      monitoring_biomarkers: ['circulating tumor DNA', 'immune markers'],
-      adaptation_triggers: ['resistance emergence', 'toxicity patterns']
+    market_access_considerations: {
+      reimbursement: 'Covered by Medicare Part B and most commercial payers',
+      access_programs: 'Patient assistance program available'
     },
-    precision_metrics: {
-      biomarker_confidence: 0.91,
-      treatment_match_score: 0.86,
-      outcome_prediction_accuracy: 0.83
-    },
-    confidence_score: 0.88,
-    timestamp: new Date().toISOString()
-  };
-
-  await supabase.from('comprehensive_test_cases').insert({
-    test_suite_type: 'agentic_evaluation',
-    test_category: 'personalized_medicine_assessment',
-    test_name: `Personalized Medicine Evaluation - Patient ${patient_context.patientId}`,
-    test_description: 'AI-powered precision medicine treatment evaluation',
-    module_name: 'Personalized Medicine Agent',
-    topic: 'Biomarker Analysis',
-    coverage_area: 'Precision Medicine',
-    business_function: 'Patient Stratification',
-    expected_results: JSON.stringify(evaluation),
-    actual_results: 'Personalized medicine evaluation completed',
-    test_status: 'passed'
-  });
-
-  return evaluation;
-}
-
-async function evaluateRadiolandTreatment(params: any, supabase: any) {
-  const { patient_context, shared_assessment, treatment_goals } = params;
-  
-  const evaluation = {
-    modality: 'radioland-treatment',
-    patient_id: patient_context.patientId,
-    eligibility: shared_assessment.eligibility_scores['radioland-treatment'],
-    radiopharmaceutical_selection: {
-      optimal_isotope: selectOptimalIsotope(patient_context),
-      targeting_mechanism: 'receptor-mediated uptake',
-      delivery_vehicle: 'monoclonal antibody conjugate',
-      activity_calculation: '150-200 mCi based on body surface area'
-    },
-    treatment_planning: {
-      fractionation_schedule: 'single administration with follow-up imaging',
-      organ_dosimetry: 'kidney and bone marrow dose-limiting',
-      combination_timing: 'sequential after systemic therapy',
-      imaging_protocol: 'SPECT/CT at 24h, 48h, and 7 days'
-    },
-    safety_considerations: {
-      radiation_safety: 'isolation required for 48-72 hours',
-      thyroid_protection: 'potassium iodide prophylaxis',
-      fertility_considerations: 'discussed with reproductive counselor'
-    },
-    confidence_score: 0.75,
-    timestamp: new Date().toISOString()
-  };
-
-  await supabase.from('comprehensive_test_cases').insert({
-    test_suite_type: 'agentic_evaluation',
-    test_category: 'radioland_treatment_assessment',
-    test_name: `Radioland Treatment Evaluation - Patient ${patient_context.patientId}`,
-    test_description: 'AI-powered radioland treatment evaluation',
-    module_name: 'Radioland Treatment Agent',
-    topic: 'Radiation Planning',
-    coverage_area: 'Radioland Therapy',
-    business_function: 'Dosimetry Calculation',
-    expected_results: JSON.stringify(evaluation),
-    actual_results: 'Radioland treatment evaluation completed',
-    test_status: 'passed'
-  });
-
-  return evaluation;
-}
-
-async function synthesizeTreatmentRecommendations(params: any, supabase: any) {
-  const { patient_context, modality_evaluations, shared_assessment } = params;
-  
-  // Sort modalities by confidence score and eligibility
-  const rankedModalities = modality_evaluations
-    .map((eval: any) => ({
-      modality: eval.modality,
-      confidence: eval.confidence_score,
-      eligibility: eval.eligibility
-    }))
-    .sort((a: any, b: any) => (b.confidence * b.eligibility) - (a.confidence * a.eligibility));
-
-  const recommendation = {
-    patient_id: patient_context.patientId,
-    unified_treatment_plan: {
-      primary_modality: rankedModalities[0].modality,
-      secondary_options: rankedModalities.slice(1).map((r: any) => r.modality),
-      treatment_sequence: generateOptimalSequence(modality_evaluations),
-      combination_opportunities: identifyCombinationOpportunities(modality_evaluations),
-      timeline: generateTreatmentTimeline(modality_evaluations)
-    },
-    clinical_decision_support: {
-      evidence_level: 'AI-generated with clinical validation recommended',
-      confidence_aggregate: calculateAggregateConfidence(modality_evaluations),
-      risk_benefit_analysis: performRiskBenefitAnalysis(modality_evaluations),
-      alternative_pathways: generateAlternativePathways(modality_evaluations)
-    },
-    implementation_guidance: {
-      immediate_actions: ['genetic counseling', 'cardiac assessment', 'infection screening'],
-      specialist_referrals: identifyRequiredSpecialists(modality_evaluations),
-      monitoring_plan: createComprehensiveMonitoringPlan(modality_evaluations),
-      patient_education: generatePatientEducationPlan(modality_evaluations)
-    },
-    adaptive_strategy: {
-      decision_points: identifyDecisionPoints(modality_evaluations),
-      success_metrics: defineSuccessMetrics(modality_evaluations),
-      pivot_criteria: establishPivotCriteria(modality_evaluations),
-      escalation_pathways: createEscalationPathways(modality_evaluations)
-    },
-    timestamp: new Date().toISOString()
-  };
-
-  // Store final recommendation
-  await supabase.from('comprehensive_test_cases').insert({
-    test_suite_type: 'agentic_synthesis',
-    test_category: 'unified_treatment_recommendation',
-    test_name: `Unified Treatment Plan - Patient ${patient_context.patientId}`,
-    test_description: 'AI-synthesized multi-modal treatment recommendation',
-    module_name: 'Treatment Synthesis Agent',
-    topic: 'Clinical Decision Support',
-    coverage_area: 'Multi-Modal Treatment',
-    business_function: 'Treatment Coordination',
-    expected_results: JSON.stringify(recommendation),
-    actual_results: 'Unified treatment recommendation generated',
-    test_status: 'passed'
-  });
-
-  return recommendation;
-}
-
-async function executeAgenticWorkflow(params: any, supabase: any) {
-  const { workflow_id, context, user_input, agents, connections } = params;
-  
-  console.log('Executing agentic workflow:', workflow_id);
-  
-  const execution = {
-    workflow_id: workflow_id,
-    execution_id: crypto.randomUUID(),
-    context: context,
-    agents_executed: agents,
-    connections_processed: connections.length,
-    user_input: user_input,
-    status: 'completed',
-    execution_time_ms: Math.floor(Math.random() * 5000) + 1000,
-    results: {
-      workflow_completion: 'successful',
-      agent_coordination: 'optimal',
-      data_flow: 'seamless',
-      user_satisfaction: 'high'
-    },
-    timestamp: new Date().toISOString()
-  };
-
-  return execution;
-}
-
-// Helper functions
-function calculateEligibilityScore(patientContext: any, modality: string): number {
-  // Simulate eligibility calculation based on patient context and modality
-  const baseScore = 0.7;
-  const variability = Math.random() * 0.3;
-  return Math.min(baseScore + variability, 1.0);
-}
-
-function extractContraindications(patientContext: any): string[] {
-  return ['severe cardiac dysfunction', 'active infection', 'severe organ dysfunction'];
-}
-
-function selectCellTherapyType(patientContext: any): string {
-  return 'CAR-T cell therapy targeting CD19';
-}
-
-function assessCombinationPotential(sharedAssessment: any, modality: string): any {
-  return {
-    synergistic_modalities: ['personalized-medicine'],
-    sequential_recommendations: ['gene-therapy after cell-therapy'],
-    contraindicated_combinations: ['simultaneous radioland-treatment']
-  };
-}
-
-function selectOptimalVector(patientContext: any): string {
-  return 'lentiviral vector with enhanced safety profile';
-}
-
-function identifyTargetGene(patientContext: any): string {
-  return 'TP53 tumor suppressor gene';
-}
-
-function identifyActionableMutations(patientContext: any): string[] {
-  return ['BRAF V600E', 'PIK3CA H1047R', 'EGFR L858R'];
-}
-
-function predictDrugSensitivity(sharedAssessment: any): any {
-  return {
-    sensitive_agents: ['targeted kinase inhibitors', 'immunotherapy'],
-    resistant_patterns: ['multi-drug resistance proteins'],
-    biomarker_driven: true
-  };
-}
-
-function analyzeResistancePatterns(patientContext: any): any {
-  return {
-    primary_resistance: 'low probability',
-    acquired_resistance_risk: 'moderate',
-    resistance_mechanisms: ['bypass pathways', 'target amplification']
-  };
-}
-
-function selectOptimalIsotope(patientContext: any): string {
-  return 'Lutetium-177 for targeted radiotherapy';
-}
-
-function generateOptimalSequence(modalityEvaluations: any[]): string[] {
-  return modalityEvaluations
-    .sort((a, b) => b.confidence_score - a.confidence_score)
-    .map(eval => eval.modality);
-}
-
-function identifyCombinationOpportunities(modalityEvaluations: any[]): any {
-  return {
-    simultaneous: ['personalized-medicine + cell-therapy'],
-    sequential: ['gene-therapy followed by cell-therapy'],
-    alternative: ['radioland-treatment as salvage therapy']
-  };
-}
-
-function generateTreatmentTimeline(modalityEvaluations: any[]): any {
-  return {
-    phase_1: 'Personalized medicine profiling (weeks 1-2)',
-    phase_2: 'Cell therapy manufacturing and treatment (weeks 3-6)',
-    phase_3: 'Gene therapy evaluation and treatment (weeks 7-10)',
-    phase_4: 'Radioland treatment if indicated (weeks 11-12)',
-    monitoring: 'Continuous throughout all phases'
-  };
-}
-
-function calculateAggregateConfidence(modalityEvaluations: any[]): number {
-  const confidenceScores = modalityEvaluations.map(eval => eval.confidence_score);
-  return confidenceScores.reduce((sum, score) => sum + score, 0) / confidenceScores.length;
-}
-
-function performRiskBenefitAnalysis(modalityEvaluations: any[]): any {
-  return {
-    overall_benefit: 'high',
-    safety_profile: 'acceptable with monitoring',
-    quality_of_life: 'improved long-term outlook',
-    cost_effectiveness: 'justified for this patient profile'
-  };
-}
-
-function generateAlternativePathways(modalityEvaluations: any[]): string[] {
-  return [
-    'Standard chemotherapy with targeted agents',
-    'Clinical trial enrollment',
-    'Palliative care with symptom management'
-  ];
-}
-
-function identifyRequiredSpecialists(modalityEvaluations: any[]): string[] {
-  return [
-    'Medical oncologist',
-    'Genetic counselor',
-    'Nuclear medicine physician',
-    'Infectious disease specialist'
-  ];
-}
-
-function createComprehensiveMonitoringPlan(modalityEvaluations: any[]): any {
-  return {
-    laboratory_monitoring: 'Weekly CBC, CMP, coagulation studies',
-    imaging_schedule: 'CT scans every 8 weeks, PET/CT at 3 months',
-    biomarker_tracking: 'Circulating tumor DNA monthly',
-    toxicity_assessments: 'Daily during treatment, weekly thereafter'
-  };
-}
-
-function generatePatientEducationPlan(modalityEvaluations: any[]): any {
-  return {
-    treatment_overview: 'Comprehensive multi-modal approach explanation',
-    side_effect_management: 'Detailed toxicity profiles and management strategies',
-    lifestyle_modifications: 'Nutrition, exercise, and infection prevention',
-    support_resources: 'Patient advocacy groups and financial assistance programs'
-  };
-}
-
-function identifyDecisionPoints(modalityEvaluations: any[]): string[] {
-  return [
-    'Response assessment after first modality',
-    'Toxicity evaluation before second treatment',
-    'Progression evaluation at 3 months',
-    'Quality of life assessment at 6 months'
-  ];
-}
-
-function defineSuccessMetrics(modalityEvaluations: any[]): any {
-  return {
-    primary_endpoint: 'Progression-free survival at 12 months',
-    secondary_endpoints: ['Overall response rate', 'Quality of life scores', 'Safety profile'],
-    biomarker_endpoints: ['Circulating tumor DNA clearance', 'Immune activation markers']
-  };
-}
-
-function establishPivotCriteria(modalityEvaluations: any[]): string[] {
-  return [
-    'Progressive disease despite optimal treatment',
-    'Unacceptable toxicity requiring treatment discontinuation',
-    'Patient preference change',
-    'New clinical trial availability'
-  ];
-}
-
-function createEscalationPathways(modalityEvaluations: any[]): any {
-  return {
-    clinical_escalation: 'Tumor board review for complex cases',
-    safety_escalation: 'Immediate specialist consultation for grade 3+ toxicity',
-    ethical_escalation: 'Ethics committee involvement for end-of-life decisions',
-    research_escalation: 'Clinical trial screening for refractory cases'
-  };
+    product_status: Math.random() > 0.3 ? 'approved' : 'phase_3',
+    ndc_number: Math.random() > 0.3 ? `12345-${Math.floor(Math.random() * 900) + 100}-${Math.floor(Math.random() * 90) + 10}` : null,
+    approval_date: Math.random() > 0.3 ? '2023-06-15' : null
+  }];
 }

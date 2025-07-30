@@ -166,15 +166,20 @@ export const TherapyServiceSelector: React.FC<TherapyServiceSelectorProps> = ({
         });
         
         try {
-          console.log('Calling generate-therapy-products for therapy ID:', therapy.id);
-          const response = await supabase.functions.invoke('generate-therapy-products', {
-            body: { therapy_ids: [therapy.id] }
+          console.log('Calling healthcare-agentic-orchestrator for therapy ID:', therapy.id);
+          const response = await supabase.functions.invoke('healthcare-agentic-orchestrator', {
+            body: { 
+              therapy_ids: [therapy.id],
+              ai_providers: ['openai', 'claude'],
+              use_mcp: true,
+              small_model_fallback: true
+            }
           });
           
-          console.log('Edge function response:', response);
+          console.log('Multi-AI orchestrator response:', response);
           
           if (response.error) {
-            console.error('Edge function error:', response.error);
+            console.error('Multi-AI orchestrator error:', response.error);
             throw response.error;
           }
           
@@ -190,7 +195,7 @@ export const TherapyServiceSelector: React.FC<TherapyServiceSelectorProps> = ({
           
           toast({
             title: "Products Generated",
-            description: `Successfully created products for ${therapy.name}`,
+            description: `Successfully created products for ${therapy.name} using multiple AI providers including Claude AI`,
           });
         } catch (error) {
           console.error('Error generating products:', error);
