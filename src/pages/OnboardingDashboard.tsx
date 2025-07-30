@@ -26,7 +26,6 @@ import { useMasterOnboarding } from '@/hooks/useMasterOnboarding';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
 import { OnboardingTable } from '@/components/onboarding/OnboardingTable';
-import { OnboardingTable } from '@/components/onboarding/OnboardingTable';
 import { TreatmentCenterOnboarding } from '@/types/onboarding';
 
 const OnboardingDashboard: React.FC = () => {
