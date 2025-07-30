@@ -46,10 +46,21 @@ export const LOCKED_COMPONENTS = {
     dependencies: [
       'useUnifiedUserManagement',
       'useUserManagementDialogs',
-      'UserManagementTabs'
+      'UserManagementTabs',
+      'useMasterUserManagement',
+      'useMasterAuth'
     ],
     status: 'LOCKED',
-    changePolicy: 'REQUIRE_EXPLICIT_APPROVAL'
+    changePolicy: 'REQUIRE_EXPLICIT_APPROVAL',
+    roleBasedAccess: ['superAdmin'],
+    protectedRoutes: ['/users', '/users/*'],
+    criticalFeatures: [
+      'User CRUD operations',
+      'Role management',
+      'Facility assignment',
+      'Bulk operations',
+      'Real-time updates'
+    ]
   },
   PATIENTS: {
     component: 'PatientsManagement',
