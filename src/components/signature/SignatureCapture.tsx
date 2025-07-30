@@ -185,35 +185,33 @@ export const SignatureCapture: React.FC<SignatureCaptureProps> = ({
       </CardHeader>
       
       <CardContent className="space-y-4">
-        <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 bg-gray-50">
+        <div className="border-2 border-dashed border-gray-300 rounded-lg p-2 bg-gray-50 relative">
           <Label className="text-sm text-gray-600 mb-2 block">
             {hasSignature ? 'Signature captured' : 'Please sign below'}
           </Label>
           
-          <div className="relative">
-            <canvas
-              ref={canvasRef}
-              className={`border border-gray-300 rounded bg-white cursor-crosshair ${
-                disabled ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
-              style={{ width: '100%', maxWidth: `${width}px`, height: `${height}px` }}
-              onMouseDown={startDrawing}
-              onMouseMove={draw}
-              onMouseUp={stopDrawing}
-              onMouseLeave={stopDrawing}
-              onTouchStart={startDrawing}
-              onTouchMove={draw}
-              onTouchEnd={stopDrawing}
-            />
-            
-            {!hasSignature && !disabled && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="text-gray-400 text-sm bg-white/80 px-3 py-1 rounded">
-                  Draw your signature here
-                </div>
+          <canvas
+            ref={canvasRef}
+            className={`border border-gray-300 rounded bg-white cursor-crosshair w-full ${
+              disabled ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
+            style={{ width: '100%', maxWidth: `${width}px`, height: `${height}px` }}
+            onMouseDown={startDrawing}
+            onMouseMove={draw}
+            onMouseUp={stopDrawing}
+            onMouseLeave={stopDrawing}
+            onTouchStart={startDrawing}
+            onTouchMove={draw}
+            onTouchEnd={stopDrawing}
+          />
+          
+          {!hasSignature && !disabled && (
+            <div className="absolute inset-2 flex items-center justify-center pointer-events-none">
+              <div className="text-gray-400 text-sm bg-white/90 px-3 py-1 rounded border">
+                Draw your signature here
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
         <div className="flex gap-2 justify-end">

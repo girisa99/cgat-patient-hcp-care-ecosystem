@@ -1014,15 +1014,15 @@ export const SecureCreditApplicationForm: React.FC = () => {
       <Card>
         <CardContent className="p-0">
           <Tabs value={currentTab} onValueChange={setCurrentTab}>
-            <TabsList className="grid w-full grid-cols-8">
-              <TabsTrigger value="basic">Basic</TabsTrigger>
-              <TabsTrigger value="contact">Contact</TabsTrigger>
-              <TabsTrigger value="sensitive">Sensitive</TabsTrigger>
-              <TabsTrigger value="credit">Credit</TabsTrigger>
-              <TabsTrigger value="documents">Documents</TabsTrigger>
-              <TabsTrigger value="terms">Terms</TabsTrigger>
-              <TabsTrigger value="signatures">Signatures</TabsTrigger>
-              <TabsTrigger value="review">Review</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-8 overflow-x-auto whitespace-nowrap">
+              <TabsTrigger value="basic" className="text-xs sm:text-sm">Basic</TabsTrigger>
+              <TabsTrigger value="contact" className="text-xs sm:text-sm">Contact</TabsTrigger>
+              <TabsTrigger value="sensitive" className="text-xs sm:text-sm">Sensitive</TabsTrigger>
+              <TabsTrigger value="credit" className="text-xs sm:text-sm">Credit</TabsTrigger>
+              <TabsTrigger value="documents" className="text-xs sm:text-sm">Docs</TabsTrigger>
+              <TabsTrigger value="terms" className="text-xs sm:text-sm">Terms</TabsTrigger>
+              <TabsTrigger value="signatures" className="text-xs sm:text-sm">Sign</TabsTrigger>
+              <TabsTrigger value="review" className="text-xs sm:text-sm">Review</TabsTrigger>
             </TabsList>
 
             <div className="p-6">
