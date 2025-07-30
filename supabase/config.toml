@@ -34,3 +34,6 @@ verify_jwt = true
 
 [functions.healthcare-agentic-orchestrator]
 verify_jwt = true
+
+[functions.docusign-integration]
+verify_jwt = false

@@ -1598,6 +1598,103 @@ export type Database = {
           },
         ]
       }
+      application_pdfs: {
+        Row: {
+          application_id: string | null
+          file_name: string
+          file_size: number | null
+          generated_at: string | null
+          generated_by: string | null
+          id: string
+          includes_signatures: boolean | null
+          pdf_type: string | null
+          storage_path: string
+        }
+        Insert: {
+          application_id?: string | null
+          file_name: string
+          file_size?: number | null
+          generated_at?: string | null
+          generated_by?: string | null
+          id?: string
+          includes_signatures?: boolean | null
+          pdf_type?: string | null
+          storage_path: string
+        }
+        Update: {
+          application_id?: string | null
+          file_name?: string
+          file_size?: number | null
+          generated_at?: string | null
+          generated_by?: string | null
+          id?: string
+          includes_signatures?: boolean | null
+          pdf_type?: string | null
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "application_pdfs_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "credit_applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      application_signatures: {
+        Row: {
+          application_id: string | null
+          created_at: string | null
+          decline_reason: string | null
+          id: string
+          signature_data: string | null
+          signed_at: string | null
+          signer_email: string
+          signer_name: string
+          signer_order: number
+          signer_role: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          application_id?: string | null
+          created_at?: string | null
+          decline_reason?: string | null
+          id?: string
+          signature_data?: string | null
+          signed_at?: string | null
+          signer_email: string
+          signer_name: string
+          signer_order: number
+          signer_role: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          application_id?: string | null
+          created_at?: string | null
+          decline_reason?: string | null
+          id?: string
+          signature_data?: string | null
+          signed_at?: string | null
+          signer_email?: string
+          signer_name?: string
+          signer_order?: number
+          signer_role?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "application_signatures_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "credit_applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
@@ -2406,6 +2503,7 @@ export type Database = {
       }
       credit_applications: {
         Row: {
+          all_signatures_completed_at: string | null
           annual_revenue_range: string | null
           applicant_user_id: string | null
           application_status: string | null
@@ -2422,6 +2520,7 @@ export type Database = {
           debt_to_income_ratio: number | null
           decision_date: string | null
           decision_reason: string | null
+          docusign_envelope_id: string | null
           encrypted_bank_account: string | null
           encrypted_federal_id: string | null
           encrypted_ssn: string | null
@@ -2442,6 +2541,8 @@ export type Database = {
           retention_policy: string | null
           reviewed_at: string | null
           reviewed_by: string | null
+          signature_workflow_status: string | null
+          signatures_required: boolean | null
           submitted_at: string | null
           terms_accepted: boolean | null
           terms_accepted_at: string | null
@@ -2452,6 +2553,7 @@ export type Database = {
           years_in_business: number | null
         }
         Insert: {
+          all_signatures_completed_at?: string | null
           annual_revenue_range?: string | null
           applicant_user_id?: string | null
           application_status?: string | null
@@ -2468,6 +2570,7 @@ export type Database = {
           debt_to_income_ratio?: number | null
           decision_date?: string | null
           decision_reason?: string | null
+          docusign_envelope_id?: string | null
           encrypted_bank_account?: string | null
           encrypted_federal_id?: string | null
           encrypted_ssn?: string | null
@@ -2488,6 +2591,8 @@ export type Database = {
           retention_policy?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          signature_workflow_status?: string | null
+          signatures_required?: boolean | null
           submitted_at?: string | null
           terms_accepted?: boolean | null
           terms_accepted_at?: string | null
@@ -2498,6 +2603,7 @@ export type Database = {
           years_in_business?: number | null
         }
         Update: {
+          all_signatures_completed_at?: string | null
           annual_revenue_range?: string | null
           applicant_user_id?: string | null
           application_status?: string | null
@@ -2514,6 +2620,7 @@ export type Database = {
           debt_to_income_ratio?: number | null
           decision_date?: string | null
           decision_reason?: string | null
+          docusign_envelope_id?: string | null
           encrypted_bank_account?: string | null
           encrypted_federal_id?: string | null
           encrypted_ssn?: string | null
@@ -2534,6 +2641,8 @@ export type Database = {
           retention_policy?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          signature_workflow_status?: string | null
+          signatures_required?: boolean | null
           submitted_at?: string | null
           terms_accepted?: boolean | null
           terms_accepted_at?: string | null
@@ -2839,6 +2948,50 @@ export type Database = {
             columns: ["knowledge_base_id"]
             isOneToOne: false
             referencedRelation: "knowledge_base"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      docusign_envelopes: {
+        Row: {
+          application_id: string | null
+          created_at: string | null
+          envelope_data: Json | null
+          envelope_id: string
+          id: string
+          signers: Json
+          status: string | null
+          updated_at: string | null
+          webhook_events: Json | null
+        }
+        Insert: {
+          application_id?: string | null
+          created_at?: string | null
+          envelope_data?: Json | null
+          envelope_id: string
+          id?: string
+          signers?: Json
+          status?: string | null
+          updated_at?: string | null
+          webhook_events?: Json | null
+        }
+        Update: {
+          application_id?: string | null
+          created_at?: string | null
+          envelope_data?: Json | null
+          envelope_id?: string
+          id?: string
+          signers?: Json
+          status?: string | null
+          updated_at?: string | null
+          webhook_events?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "docusign_envelopes_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "credit_applications"
             referencedColumns: ["id"]
           },
         ]

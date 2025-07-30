@@ -35,6 +35,9 @@ import { useDropzone } from 'react-dropzone';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useCreditApplications, type CreditApplication } from '@/hooks/useCreditApplications';
+import { SignatureCapture } from '@/components/signature/SignatureCapture';
+import { MultiPartySignature, type Signer } from '@/components/signature/MultiPartySignature';
+import { PDFGenerator } from '@/components/signature/PDFGenerator';
 
 interface DocumentUpload {
   id?: string;
@@ -101,6 +104,9 @@ export const SecureCreditApplicationForm: React.FC = () => {
   const [currentTab, setCurrentTab] = useState('basic');
   const [showTermsDialog, setShowTermsDialog] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
+  const [signers, setSigners] = useState<Signer[]>([]);
+  const [pdfGenerating, setPdfGenerating] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   
   const { toast } = useToast();
 
@@ -404,6 +410,110 @@ export const SecureCreditApplicationForm: React.FC = () => {
       ...prev,
       [field]: !prev[field]
     }));
+  };
+
+  const handleSubmitForSigning = async (signersData: Signer[]) => {
+    try {
+      if (!application.id) {
+        toast({
+          title: "Error",
+          description: "Please save the application first",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const response = await supabase.functions.invoke('docusign-integration', {
+        body: {
+          action: 'send_envelope',
+          data: {
+            applicationId: application.id,
+            signers: signersData,
+            documents: [{
+              name: `Credit Application - ${application.id}`,
+              content: await generatePDFBase64()
+            }]
+          }
+        }
+      });
+
+      if (response.error) throw response.error;
+
+      toast({
+        title: "Success",
+        description: "Signature requests sent successfully"
+      });
+
+      // Save application to ensure we have an ID
+      await saveApplication();
+
+    } catch (error) {
+      console.error('Signature workflow error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send signature requests",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const generatePDFBase64 = async (): Promise<string> => {
+    try {
+      const response = await supabase.functions.invoke('docusign-integration', {
+        body: {
+          action: 'generate_pdf',
+          data: {
+            applicationId: application.id,
+            includeSignatures: false
+          }
+        }
+      });
+
+      if (response.error) throw response.error;
+      
+      // Convert PDF URL to base64 for DocuSign
+      const pdfResponse = await fetch(response.data.pdf_url);
+      const pdfBlob = await pdfResponse.blob();
+      const reader = new FileReader();
+      
+      return new Promise((resolve, reject) => {
+        reader.onloadend = () => {
+          const base64 = (reader.result as string).split(',')[1];
+          resolve(base64);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(pdfBlob);
+      });
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      throw error;
+    }
+  };
+
+  const handleGeneratePDF = async (): Promise<string> => {
+    try {
+      setPdfGenerating(true);
+      
+      const response = await supabase.functions.invoke('docusign-integration', {
+        body: {
+          action: 'generate_pdf',
+          data: {
+            applicationId: application.id,
+            includeSignatures: true
+          }
+        }
+      });
+
+      if (response.error) throw response.error;
+      
+      setPdfUrl(response.data.pdf_url);
+      return response.data.pdf_url;
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      throw error;
+    } finally {
+      setPdfGenerating(false);
+    }
   };
 
   const renderBasicInformation = () => (
@@ -904,13 +1014,14 @@ export const SecureCreditApplicationForm: React.FC = () => {
       <Card>
         <CardContent className="p-0">
           <Tabs value={currentTab} onValueChange={setCurrentTab}>
-            <TabsList className="grid w-full grid-cols-7">
+            <TabsList className="grid w-full grid-cols-8">
               <TabsTrigger value="basic">Basic</TabsTrigger>
               <TabsTrigger value="contact">Contact</TabsTrigger>
               <TabsTrigger value="sensitive">Sensitive</TabsTrigger>
               <TabsTrigger value="credit">Credit</TabsTrigger>
               <TabsTrigger value="documents">Documents</TabsTrigger>
               <TabsTrigger value="terms">Terms</TabsTrigger>
+              <TabsTrigger value="signatures">Signatures</TabsTrigger>
               <TabsTrigger value="review">Review</TabsTrigger>
             </TabsList>
 
@@ -937,6 +1048,44 @@ export const SecureCreditApplicationForm: React.FC = () => {
 
               <TabsContent value="terms" className="mt-0">
                 {renderTermsAndConditions()}
+              </TabsContent>
+
+              <TabsContent value="signatures" className="mt-0">
+                <div className="space-y-6">
+                  <div className="flex items-center space-x-2 p-4 bg-indigo-50 rounded-lg">
+                    <Users className="h-5 w-5 text-indigo-600" />
+                    <span className="font-medium text-indigo-900">Digital Signatures</span>
+                  </div>
+
+                  {/* Individual Signature Capture */}
+                  <SignatureCapture
+                    title="Primary Authorization Signature"
+                    description="Please provide your signature to authorize this credit application"
+                    required={true}
+                    onSignatureChange={(data) => {
+                      // Handle primary signature
+                      console.log('Primary signature:', data);
+                    }}
+                  />
+
+                  {/* Multi-Party Signature Management */}
+                  <MultiPartySignature
+                    applicationId={application.id}
+                    signers={signers}
+                    onSignersChange={setSigners}
+                    currentUserEmail={application.primary_contact_email}
+                    onSubmitForSigning={handleSubmitForSigning}
+                    readOnly={false}
+                  />
+
+                  {/* PDF Generation */}
+                  <PDFGenerator
+                    applicationData={application}
+                    signatures={signers}
+                    onGeneratePDF={handleGeneratePDF}
+                    loading={pdfGenerating}
+                  />
+                </div>
               </TabsContent>
 
               <TabsContent value="review" className="mt-0">
