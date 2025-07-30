@@ -564,6 +564,25 @@ const ContactsStep = ({ formData, updateFormData }: any) => (
         />
       </div>
     </div>
+    
+    {/* Enhanced Contact Categories */}
+    <div className="p-4 border rounded-lg">
+      <h4 className="font-medium mb-3">Specialized Contacts</h4>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <Label htmlFor="regulatory_contact">Regulatory Contact</Label>
+          <Input id="regulatory_contact" placeholder="Regulatory officer name" />
+        </div>
+        <div>
+          <Label htmlFor="quality_contact">Quality Assurance Contact</Label>
+          <Input id="quality_contact" placeholder="QA officer name" />
+        </div>
+        <div>
+          <Label htmlFor="compliance_contact">Compliance Officer Contact</Label>
+          <Input id="compliance_contact" placeholder="Compliance officer name" />
+        </div>
+      </div>
+    </div>
   </div>
 );
 
