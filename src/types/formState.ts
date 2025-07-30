@@ -81,9 +81,5 @@ export {
   normalizeMasterUserFormState
 } from '@/types/masterFormState';
 
-// Legacy compatibility for existing formStateUtils
-export { 
-  createMasterFormState as createMasterUserFormState_Legacy,
-  normalizeMasterFormState as normalizeMasterUserFormState_Legacy,
-  validateMasterFormState as validateMasterUserFormState_Legacy
-} from '@/utils/formStateUtils';
+// Note: Legacy formStateUtils are available but deprecated
+// Use masterFormState utilities for new code

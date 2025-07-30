@@ -13,10 +13,10 @@ import { useMasterData } from '@/hooks/useMasterData';
 import { useMasterUserManagement } from '@/hooks/useMasterUserManagement';
 import { useMasterRoleManagement } from '@/hooks/useMasterRoleManagement';
 
-interface CreateUserFormProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}
+// Phase 1D: Using consolidated props interface - preserving modal functionality
+import type { MasterUserFormProps } from '@/types/userComponentTypes';
+
+interface CreateUserFormProps extends Pick<MasterUserFormProps, 'open' | 'onOpenChange'> {}
 
 export const CreateUserForm: React.FC<CreateUserFormProps> = ({ open, onOpenChange }) => {
   const [formData, setFormData] = useState({
