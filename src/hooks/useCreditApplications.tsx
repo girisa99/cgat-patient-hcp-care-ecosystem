@@ -5,6 +5,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 export interface CreditApplication {
   id?: string;
@@ -40,6 +41,7 @@ export interface CreditApplication {
 export const useCreditApplications = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   // Fetch user's credit applications
   const { data: applications = [], isLoading, error } = useQuery({
@@ -146,6 +148,8 @@ export const useCreditApplications = () => {
         title: "Success",
         description: "Credit application submitted successfully"
       });
+      // Navigate back to main onboarding section to continue with pending tabs
+      navigate('/onboarding');
     },
     onError: (error) => {
       toast({
