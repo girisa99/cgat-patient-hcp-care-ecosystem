@@ -61,7 +61,7 @@ export const UsersManagementTable: React.FC = () => {
         lastName: user.last_name,
         email: user.email,
         role: 'none', // Simplified role assignment
-        roles: user.user_roles?.map(ur => ({ name: ur.role?.name })) || []
+        roles: user.user_roles?.map(ur => ({ name: ur.role?.name || '' })) || []
       });
       setAssignRoleOpen(true);
     }
@@ -76,7 +76,7 @@ export const UsersManagementTable: React.FC = () => {
         lastName: user.last_name,
         email: user.email,
         role: 'none', // Simplified role assignment
-        roles: user.user_roles?.map(ur => ({ name: ur.role?.name })) || []
+        roles: user.user_roles?.map(ur => ({ name: ur.role?.name || '' })) || []
       });
       setRemoveRoleOpen(true);
     }

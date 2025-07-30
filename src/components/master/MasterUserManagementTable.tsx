@@ -227,12 +227,12 @@ export const MasterUserManagementTable: React.FC = () => {
                       </div>
                       <div className="text-sm text-muted-foreground">{user.email}</div>
                       <div className="flex gap-1 mt-1">
-                        {user.user_roles.map((ur, index) => (
+                        {user.user_roles?.map((ur, index) => (
                            <Badge key={index} variant="outline" className="text-xs">
                              {ur.role?.name}
                            </Badge>
                         ))}
-                        {user.user_roles.length === 0 && (
+                        {(!user.user_roles || user.user_roles.length === 0) && (
                           <Badge variant="secondary" className="text-xs">
                             No roles assigned
                           </Badge>
@@ -368,7 +368,7 @@ export const MasterUserManagementTable: React.FC = () => {
           lastName: selectedUserForActions.last_name,
           email: selectedUserForActions.email,
           role: selectedUserForActions.user_roles?.[0]?.role?.name || 'No Role',
-          roles: selectedUserForActions.user_roles?.map((ur: any) => ({
+          roles: selectedUserForActions.user_roles?.map((ur) => ({
             name: ur.role?.name || 'Unknown',
             description: ur.role?.description
           })) || []

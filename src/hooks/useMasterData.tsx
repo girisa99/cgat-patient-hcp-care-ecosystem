@@ -98,7 +98,7 @@ export const useMasterData = (isAuthenticated: boolean = false) => {
               isActive: true,
               is_active: true,
               user_roles: Array.isArray(roleNames) 
-                ? roleNames.map((role: any) => ({
+                ? roleNames.map((role: string | { role_name: string }) => ({
                     role: { name: typeof role === 'string' ? role : role.role_name }
                   }))
                 : []
