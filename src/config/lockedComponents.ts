@@ -112,6 +112,35 @@ export const LOCKED_COMPONENTS = {
     ],
     status: 'LOCKED',
     changePolicy: 'REQUIRE_EXPLICIT_APPROVAL'
+  },
+  ONBOARDING_TREATMENT_CENTER: {
+    component: 'OnboardingDashboard',
+    hook: 'useMasterOnboarding',
+    version: 'locked-v1.0.0',
+    lockDate: '2025-01-30',
+    reason: 'Treatment center onboarding workflow must remain stable for production',
+    dataSource: 'treatment_center_onboarding table',
+    dependencies: [
+      'OnboardingWizard',
+      'OnboardingTable',
+      'DetailedStepComponents',
+      'OnboardingSessionControls',
+      'useMasterOnboarding',
+      'useAutoSave',
+      'useSavedApplications'
+    ],
+    status: 'LOCKED',
+    changePolicy: 'REQUIRE_EXPLICIT_APPROVAL',
+    roleBasedAccess: ['onboardingTeam', 'superAdmin'],
+    protectedRoutes: ['/onboarding', '/onboarding/*'],
+    criticalFeatures: [
+      'Treatment center application workflow',
+      'Step-by-step wizard',
+      'Auto-save functionality',
+      'Real-time data validation',
+      'Role-based access control',
+      'Data persistence'
+    ]
   }
 } as const;
 
