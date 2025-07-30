@@ -3,6 +3,7 @@
  * These are the fully functional step components with all form fields and logic
  */
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -73,6 +74,7 @@ export const DetailedBusinessClassificationStep = ({ formData, updateFormData }:
 
 // ENHANCED SECURE CREDIT APPLICATION STEP
 export const DetailedCreditApplicationStep = ({ formData, updateFormData }: any) => {
+  const navigate = useNavigate();
   return (
     <div className="space-y-6">
       <div className="p-4 border rounded-lg bg-blue-50">
@@ -118,8 +120,8 @@ export const DetailedCreditApplicationStep = ({ formData, updateFormData }: any)
           <Button 
             className="mt-6"
             onClick={() => {
-              // Navigate to the full secure credit application
-              window.location.href = '/credit-application';
+              // Use React Router navigation instead of window.location
+              navigate('/credit-application');
             }}
           >
             <CreditCard className="h-4 w-4 mr-2" />
@@ -215,7 +217,15 @@ export const DetailedGPOMembershipStep = ({ formData, updateFormData }: any) => 
         
         <div className="space-y-3">
           <h5 className="font-medium">Additional GPO Memberships</h5>
-          <Button variant="outline" className="w-full">
+          <Button 
+            variant="outline" 
+            className="w-full"
+            onClick={() => {
+              // Add GPO membership functionality
+              console.log('Adding GPO membership...');
+              // TODO: Implement GPO membership addition logic
+            }}
+          >
             <Users className="h-4 w-4 mr-2" />
             Add GPO Membership
           </Button>
