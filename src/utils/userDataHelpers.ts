@@ -7,7 +7,7 @@ import type { UserWithRoles } from '@/types/userManagement';
 
 export const getPatientUsers = (users: UserWithRoles[]): UserWithRoles[] => {
   return users.filter((user: UserWithRoles) => 
-    user.user_roles?.some((userRole: any) => userRole.roles?.name === 'patientCaregiver')
+    user.user_roles?.some((userRole: any) => userRole.role?.name === 'patientCaregiver')
   );
 };
 
@@ -15,7 +15,7 @@ export const getHealthcareStaff = (users: UserWithRoles[]): UserWithRoles[] => {
   const staffRoles = ['nurse', 'provider', 'caseManager', 'socialWorker'];
   return users.filter((user: UserWithRoles) => 
     user.user_roles?.some((userRole: any) => 
-      staffRoles.includes(userRole.roles?.name)
+      staffRoles.includes(userRole.role?.name)
     )
   );
 };
@@ -24,14 +24,14 @@ export const getAdminUsers = (users: UserWithRoles[]): UserWithRoles[] => {
   const adminRoles = ['superAdmin', 'onboardingTeam', 'moderator'];
   return users.filter((user: UserWithRoles) => 
     user.user_roles?.some((userRole: any) => 
-      adminRoles.includes(userRole.roles?.name)
+      adminRoles.includes(userRole.role?.name)
     )
   );
 };
 
 export const getRegularUsers = (users: UserWithRoles[]): UserWithRoles[] => {
   return users.filter((user: UserWithRoles) => 
-    user.user_roles?.some((userRole: any) => userRole.roles?.name === 'user')
+    user.user_roles?.some((userRole: any) => userRole.role?.name === 'user')
   );
 };
 
