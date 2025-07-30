@@ -238,6 +238,11 @@ export const DetailedTherapySelectionStep = ({ formData, updateFormData }: any) 
   };
 
   const handleTherapyToggle = (therapy: Therapy) => {
+    if (!Array.isArray(therapySelections)) {
+      console.error('therapySelections is not an array:', therapySelections);
+      return;
+    }
+    
     const existingIndex = therapySelections.findIndex(t => t.therapy_id === therapy.id);
     
     if (existingIndex >= 0) {
@@ -261,6 +266,11 @@ export const DetailedTherapySelectionStep = ({ formData, updateFormData }: any) 
   };
 
   const updateTherapySelection = (therapyId: string, field: keyof TherapySelection, value: any) => {
+    if (!Array.isArray(therapySelections)) {
+      console.error('therapySelections is not an array:', therapySelections);
+      return;
+    }
+    
     const updated = therapySelections.map(selection =>
       selection.therapy_id === therapyId ? { ...selection, [field]: value } : selection
     );
@@ -300,8 +310,8 @@ export const DetailedTherapySelectionStep = ({ formData, updateFormData }: any) 
 
       <div className="grid grid-cols-1 gap-4">
         {therapies.map((therapy) => {
-          const isSelected = therapySelections.some(s => s.therapy_id === therapy.id);
-          const selection = therapySelections.find(s => s.therapy_id === therapy.id);
+          const isSelected = Array.isArray(therapySelections) && therapySelections.some(s => s.therapy_id === therapy.id);
+          const selection = Array.isArray(therapySelections) && therapySelections.find(s => s.therapy_id === therapy.id);
           
           return (
             <div
@@ -382,7 +392,7 @@ export const DetailedTherapySelectionStep = ({ formData, updateFormData }: any) 
         })}
       </div>
 
-      {therapySelections.length > 0 && (
+      {Array.isArray(therapySelections) && therapySelections.length > 0 && (
         <div className="p-4 border rounded-lg bg-green-50">
           <h4 className="font-medium mb-2 text-green-900">Selected Therapy Areas</h4>
           <div className="flex flex-wrap gap-2">
@@ -397,7 +407,7 @@ export const DetailedTherapySelectionStep = ({ formData, updateFormData }: any) 
             ))}
           </div>
           <p className="text-sm text-green-700 mt-2">
-            {therapySelections.length} therapy area{therapySelections.length !== 1 ? 's' : ''} selected for your treatment center.
+            {Array.isArray(therapySelections) ? therapySelections.length : 0} therapy area{(Array.isArray(therapySelections) ? therapySelections.length : 0) !== 1 ? 's' : ''} selected for your treatment center.
           </p>
         </div>
       )}
