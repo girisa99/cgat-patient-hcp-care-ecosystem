@@ -12,6 +12,7 @@ import {
 import { useMasterApiServices } from '@/hooks/useMasterApiServices';
 import { useApiKeys } from '@/hooks/useApiKeys';
 import { useExternalApis } from '@/hooks/useExternalApis';
+import { useRoleBasedNavigation } from '@/hooks/useRoleBasedNavigation';
 
 // Import consolidated components
 import InternalApiServicesTab from './tabs/InternalApiServicesTab';
@@ -29,6 +30,7 @@ const ApiServicesTabsContainer: React.FC<ApiServicesTabsContainerProps> = ({
   defaultTab = "internal" 
 }) => {
   const [activeTab, setActiveTab] = useState(defaultTab);
+  const { currentRole } = useRoleBasedNavigation();
 
   // Get data from hooks
   const { apiServices, isLoading: isLoadingInternal } = useMasterApiServices();
@@ -42,14 +44,34 @@ const ApiServicesTabsContainer: React.FC<ApiServicesTabsContainerProps> = ({
   } = useExternalApis();
 
   // Filter APIs by direction and type for proper categorization
-  const internalApis = apiServices?.filter(api => 
+  // For onboarding team, filter to show only onboarding-related APIs
+  const filterApisByRole = (apis: any[]) => {
+    if (currentRole === 'onboardingTeam') {
+      return apis.filter(api => 
+        api.name?.toLowerCase().includes('onboarding') ||
+        api.description?.toLowerCase().includes('onboarding') ||
+        api.category?.toLowerCase().includes('onboarding') ||
+        api.purpose?.toLowerCase().includes('onboarding') ||
+        api.name?.toLowerCase().includes('treatment') ||
+        api.name?.toLowerCase().includes('center')
+      );
+    }
+    return apis;
+  };
+
+  const baseInternalApis = apiServices?.filter(api => 
     api.type === 'internal' || api.direction === 'outbound'
   ) || [];
-  const externalIntegrationApis = apiServices?.filter(api => 
+  const baseExternalApis = apiServices?.filter(api => 
     api.type === 'external' || api.direction === 'inbound' || api.direction === 'bidirectional'
   ) || [];
-  const technicalApis = apiServices?.filter(api => api.category === 'technical') || [];
-  const businessApis = apiServices?.filter(api => api.category === 'business') || [];
+  const baseTechnicalApis = apiServices?.filter(api => api.category === 'technical') || [];
+  const baseBusinessApis = apiServices?.filter(api => api.category === 'business') || [];
+
+  const internalApis = filterApisByRole(baseInternalApis);
+  const externalIntegrationApis = filterApisByRole(baseExternalApis);
+  const technicalApis = filterApisByRole(baseTechnicalApis);
+  const businessApis = filterApisByRole(baseBusinessApis);
 
   const tabs = [
     {
@@ -106,6 +128,17 @@ const ApiServicesTabsContainer: React.FC<ApiServicesTabsContainerProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* Role-based Notice for Onboarding Team */}
+      {currentRole === 'onboardingTeam' && (
+        <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <h3 className="font-semibold text-blue-900 mb-2">Onboarding Treatment Center APIs</h3>
+          <p className="text-blue-700 text-sm">
+            Viewing onboarding-specific API services. This includes treatment center onboarding APIs, 
+            workflow integration services, and customer onboarding endpoints.
+          </p>
+        </div>
+      )}
+
       {/* Overview Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
         <Card className="bg-blue-50 border-blue-200">

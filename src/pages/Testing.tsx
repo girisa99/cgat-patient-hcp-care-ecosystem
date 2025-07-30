@@ -98,6 +98,47 @@ const Testing: React.FC = () => {
   // Use consolidated testing hook for all functionality
   const testing = useMasterTesting();
   
+  // Filter test cases based on user role
+  const filteredTestCases = React.useMemo(() => {
+    if (currentRole === 'onboardingTeam') {
+      // For onboarding team, only show onboarding-related test cases
+      return testing.testCases.filter(testCase => 
+        testCase.related_functionality?.toLowerCase().includes('onboarding') ||
+        testCase.test_description?.toLowerCase().includes('onboarding') ||
+        testCase.test_name?.toLowerCase().includes('onboarding') ||
+        testCase.module_name?.toLowerCase().includes('onboarding') ||
+        testCase.coverage_area?.toLowerCase().includes('onboarding')
+      );
+    }
+    // For superAdmin and other roles, show all test cases
+    return testing.testCases;
+  }, [testing.testCases, currentRole]);
+
+  // Calculate filtered stats for onboarding team
+  const filteredStats = React.useMemo(() => {
+    if (currentRole === 'onboardingTeam') {
+      const total = filteredTestCases.length;
+      const passed = filteredTestCases.filter(tc => tc.test_status === 'passed').length;
+      const failed = filteredTestCases.filter(tc => tc.test_status === 'failed').length;
+      const coverage = total > 0 ? (passed / total) * 100 : 0;
+      
+      return {
+        totalTests: total,
+        passedTests: passed,
+        failedTests: failed,
+        testCoverage: coverage,
+        systemHealth: testing.testingStats.systemHealth
+      };
+    }
+    return {
+      totalTests: testing.testingStats.totalTests,
+      passedTests: testing.testingStats.passedTests,
+      failedTests: testing.testingStats.failedTests,
+      testCoverage: testing.testingStats.testCoverage,
+      systemHealth: testing.testingStats.systemHealth
+    };
+  }, [filteredTestCases, currentRole, testing.testingStats]);
+  
   if (!hasAccess('/testing')) {
     return (
       <AppLayout title="Access Denied">
@@ -114,14 +155,8 @@ const Testing: React.FC = () => {
   const isLoading = testing.isLoading;
   const isExecuting = testing.isExecuting;
 
-  // Use the consolidated testing stats
-  const combinedStats = {
-    totalTests: testing.testingStats.totalTests,
-    passedTests: testing.testingStats.passedTests,
-    failedTests: testing.testingStats.failedTests,
-    testCoverage: testing.testingStats.testCoverage,
-    systemHealth: testing.testingStats.systemHealth
-  };
+  // Use the filtered stats based on user role
+  const combinedStats = filteredStats;
 
   return (
     <AppLayout title="Comprehensive Testing Suite">
@@ -178,8 +213,12 @@ const Testing: React.FC = () => {
         {/* Comprehensive Testing Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="test-cases">Test Cases</TabsTrigger>
+            <TabsTrigger value="overview">
+              {currentRole === 'onboardingTeam' ? 'Onboarding Overview' : 'Overview'}
+            </TabsTrigger>
+            <TabsTrigger value="test-cases">
+              {currentRole === 'onboardingTeam' ? 'Onboarding Tests' : 'Test Cases'}
+            </TabsTrigger>
             <TabsTrigger value="reporting">Reports & Analytics</TabsTrigger>
             <TabsTrigger value="documentation">Documentation</TabsTrigger>
             <TabsTrigger value="intelligence">Business Intelligence</TabsTrigger>
@@ -192,7 +231,7 @@ const Testing: React.FC = () => {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <TestTube className="h-5 w-5" />
-                    Test Suite Overview
+                    {currentRole === 'onboardingTeam' ? 'Onboarding Test Suite' : 'Test Suite Overview'}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -271,6 +310,15 @@ const Testing: React.FC = () => {
 
           {/* Test Cases Tab */}
           <TabsContent value="test-cases" className="space-y-4">
+            {currentRole === 'onboardingTeam' && (
+              <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <h3 className="font-semibold text-blue-900 mb-2">Onboarding Treatment Center Testing</h3>
+                <p className="text-blue-700 text-sm">
+                  Viewing onboarding-specific test cases. This includes treatment center onboarding workflows, 
+                  API integration tests, and compliance validation for the onboarding process.
+                </p>
+              </div>
+            )}
             <TestCasesDisplay />
           </TabsContent>
 

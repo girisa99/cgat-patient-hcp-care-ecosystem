@@ -75,7 +75,7 @@ export const useMasterOnboarding = () => {
         estimated_monthly_purchases: applicationData.business_info?.estimated_monthly_purchases,
         initial_order_amount: applicationData.business_info?.initial_order_amount,
         gpo_memberships: applicationData.gpo_memberships?.map(m => typeof m === 'string' ? m : m.gpo_name) || [],
-        api_requirements: applicationData.api_requirements || null,
+        api_requirements: applicationData.api_requirements ? JSON.stringify(applicationData.api_requirements) : null,
         current_step: 'company_info' as const,
         status: 'draft' as const
       };
