@@ -87,6 +87,8 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
   const [formData, setFormData] = useState<Partial<TreatmentCenterOnboarding>>(
     initialData || {
       selected_distributors: [],
+      therapy_selections: [],
+      service_selections: [],
       company_info: {
         legal_name: '',
         dba_name: '',

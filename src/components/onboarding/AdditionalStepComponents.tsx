@@ -1,7 +1,7 @@
 /**
  * ADDITIONAL STEP COMPONENTS - Service selection, therapy selection, and other specialized steps
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,41 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { Building, Users, CreditCard, FileText, Clock, Stethoscope, Settings, Globe, Package, Truck } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
+
+// Types for database entities
+interface Therapy {
+  id: string;
+  name: string;
+  therapy_type: string;
+  indication: string;
+  description: string;
+}
+
+interface Service {
+  id: string;
+  name: string;
+  service_type: string;
+  description: string;
+  service_provider_id: string;
+}
+
+interface TherapySelection {
+  therapy_id: string;
+  therapy_name: string;
+  selection_rationale: string;
+  priority_level: 'high' | 'medium' | 'low';
+  patient_volume_estimate: number;
+}
+
+interface ServiceSelection {
+  service_id: string;
+  service_name: string;
+  therapy_area: string;
+  selection_rationale: string;
+  custom_requirements: any;
+}
 
 // DISTRIBUTOR SELECTION STEP
 export const DistributorSelectionStep = ({ formData, updateFormData }: any) => {
@@ -168,127 +203,411 @@ export const DistributorSelectionStep = ({ formData, updateFormData }: any) => {
   );
 };
 
-// THERAPY SELECTION STEP
-export const DetailedTherapySelectionStep = ({ formData, updateFormData }: any) => (
-  <div className="space-y-6">
-    <div className="p-4 border rounded-lg">
-      <h4 className="font-medium mb-3">Therapeutic Areas of Focus</h4>
-      <p className="text-sm text-muted-foreground mb-4">
-        Select the therapeutic areas that are relevant to your facility.
-      </p>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {[
-          'Oncology', 'Cardiology', 'Neurology', 'Orthopedics', 'Gastroenterology',
-          'Endocrinology', 'Nephrology', 'Pulmonology', 'Rheumatology', 'Dermatology',
-          'Infectious Disease', 'Pain Management', 'Mental Health', 'Pediatrics', 'Geriatrics'
-        ].map((therapy) => (
-          <div key={therapy} className="flex items-center space-x-2 p-2 border rounded">
-            <Checkbox id={`therapy_${therapy.toLowerCase().replace(' ', '_')}`} />
-            <Label htmlFor={`therapy_${therapy.toLowerCase().replace(' ', '_')}`} className="text-sm">
-              {therapy}
-            </Label>
-          </div>
-        ))}
-      </div>
-    </div>
+// ENHANCED THERAPY SELECTION STEP
+export const DetailedTherapySelectionStep = ({ formData, updateFormData }: any) => {
+  const [therapies, setTherapies] = useState<Therapy[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [therapySelections, setTherapySelections] = useState<TherapySelection[]>(
+    formData.therapy_selections || []
+  );
+
+  useEffect(() => {
+    fetchTherapies();
+  }, []);
+
+  const fetchTherapies = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('therapies')
+        .select('id, name, therapy_type, indication, description')
+        .eq('is_active', true)
+        .order('name');
+
+      if (error) throw error;
+      setTherapies(data || []);
+    } catch (error) {
+      console.error('Error fetching therapies:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load therapy options",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTherapyToggle = (therapy: Therapy) => {
+    const existingIndex = therapySelections.findIndex(t => t.therapy_id === therapy.id);
     
-    <div className="p-4 border rounded-lg">
-      <h4 className="font-medium mb-3">Special Programs</h4>
-      <div className="space-y-3">
-        <div className="flex items-center space-x-2">
-          <Checkbox id="clinical_trials" />
-          <Label htmlFor="clinical_trials">Clinical Trials</Label>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Checkbox id="research_programs" />
-          <Label htmlFor="research_programs">Research Programs</Label>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Checkbox id="teaching_hospital" />
-          <Label htmlFor="teaching_hospital">Teaching Hospital</Label>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Checkbox id="specialty_pharmacy" />
-          <Label htmlFor="specialty_pharmacy">Specialty Pharmacy</Label>
-        </div>
+    if (existingIndex >= 0) {
+      // Remove therapy
+      const updated = therapySelections.filter(t => t.therapy_id !== therapy.id);
+      setTherapySelections(updated);
+      updateFormData('therapy_selections', updated);
+    } else {
+      // Add therapy with default values
+      const newSelection: TherapySelection = {
+        therapy_id: therapy.id,
+        therapy_name: therapy.name,
+        selection_rationale: '',
+        priority_level: 'medium',
+        patient_volume_estimate: 0
+      };
+      const updated = [...therapySelections, newSelection];
+      setTherapySelections(updated);
+      updateFormData('therapy_selections', updated);
+    }
+  };
+
+  const updateTherapySelection = (therapyId: string, field: keyof TherapySelection, value: any) => {
+    const updated = therapySelections.map(selection =>
+      selection.therapy_id === therapyId ? { ...selection, [field]: value } : selection
+    );
+    setTherapySelections(updated);
+    updateFormData('therapy_selections', updated);
+  };
+
+  const getTherapyTypeColor = (type: string) => {
+    const colors = {
+      cell_therapy: 'bg-blue-100 text-blue-800',
+      gene_therapy: 'bg-green-100 text-green-800',
+      car_t_cell: 'bg-purple-100 text-purple-800',
+      immunotherapy: 'bg-orange-100 text-orange-800',
+      default: 'bg-gray-100 text-gray-800'
+    };
+    return colors[type as keyof typeof colors] || colors.default;
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-2">Loading therapy options...</span>
       </div>
-    </div>
+    );
+  }
 
-    <div className="p-4 border rounded-lg">
-      <h4 className="font-medium mb-3">Additional Therapeutic Notes</h4>
-      <Textarea
-        placeholder="Describe any specific therapeutic focus areas or special considerations..."
-        rows={4}
-      />
-    </div>
-  </div>
-);
+  return (
+    <div className="space-y-6">
+      <div className="p-4 border rounded-lg bg-blue-50">
+        <h4 className="font-medium mb-2 text-blue-900">Therapy Area Selection</h4>
+        <p className="text-sm text-blue-800">
+          Select the therapeutic areas that your treatment center will focus on. This helps us understand 
+          your clinical capabilities and match you with appropriate products and services.
+        </p>
+      </div>
 
-// SERVICE SELECTION STEP
-export const DetailedServiceSelectionStep = ({ formData, updateFormData }: any) => (
-  <div className="space-y-6">
-    <div className="p-4 border rounded-lg">
-      <h4 className="font-medium mb-3">Distribution Services</h4>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {[
-          'Pharmaceuticals', 'Medical Supplies', 'Surgical Instruments', 'Laboratory Supplies',
-          'Radiology Supplies', 'Nutritional Products', 'Respiratory Care', 'Home Health Equipment'
-        ].map((service) => (
-          <div key={service} className="flex items-center space-x-2 p-2 border rounded">
-            <Checkbox id={`service_${service.toLowerCase().replace(' ', '_')}`} />
-            <Label htmlFor={`service_${service.toLowerCase().replace(' ', '_')}`} className="text-sm">
-              {service}
-            </Label>
+      <div className="grid grid-cols-1 gap-4">
+        {therapies.map((therapy) => {
+          const isSelected = therapySelections.some(s => s.therapy_id === therapy.id);
+          const selection = therapySelections.find(s => s.therapy_id === therapy.id);
+          
+          return (
+            <div
+              key={therapy.id}
+              className={`p-4 border-2 rounded-lg transition-all ${
+                isSelected ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-start space-x-3">
+                <Checkbox
+                  id={therapy.id}
+                  checked={isSelected}
+                  onCheckedChange={() => handleTherapyToggle(therapy)}
+                  className="mt-1"
+                />
+                <div className="flex-1">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <Label htmlFor={therapy.id} className="font-medium cursor-pointer">
+                      {therapy.name}
+                    </Label>
+                    <span className={`text-xs px-2 py-1 rounded-full ${getTherapyTypeColor(therapy.therapy_type)}`}>
+                      {therapy.therapy_type.replace('_', ' ').toUpperCase()}
+                    </span>
+                  </div>
+                  {therapy.indication && (
+                    <p className="text-sm text-gray-600 mb-2">
+                      <strong>Indication:</strong> {therapy.indication}
+                    </p>
+                  )}
+                  {therapy.description && (
+                    <p className="text-sm text-gray-600 mb-3">{therapy.description}</p>
+                  )}
+                  
+                  {isSelected && (
+                    <div className="mt-4 p-3 bg-white border rounded-lg space-y-3">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                          <Label htmlFor={`priority_${therapy.id}`}>Priority Level</Label>
+                          <select
+                            id={`priority_${therapy.id}`}
+                            value={selection?.priority_level || 'medium'}
+                            onChange={(e) => updateTherapySelection(therapy.id, 'priority_level', e.target.value as 'high' | 'medium' | 'low')}
+                            className="w-full px-3 py-2 border rounded-md bg-background"
+                          >
+                            <option value="high">High Priority</option>
+                            <option value="medium">Medium Priority</option>
+                            <option value="low">Low Priority</option>
+                          </select>
+                        </div>
+                        <div>
+                          <Label htmlFor={`volume_${therapy.id}`}>Estimated Annual Patient Volume</Label>
+                          <Input
+                            id={`volume_${therapy.id}`}
+                            type="number"
+                            value={selection?.patient_volume_estimate || 0}
+                            onChange={(e) => updateTherapySelection(therapy.id, 'patient_volume_estimate', parseInt(e.target.value) || 0)}
+                            placeholder="Number of patients"
+                            min="0"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <Label htmlFor={`rationale_${therapy.id}`}>Selection Rationale</Label>
+                        <Textarea
+                          id={`rationale_${therapy.id}`}
+                          value={selection?.selection_rationale || ''}
+                          onChange={(e) => updateTherapySelection(therapy.id, 'selection_rationale', e.target.value)}
+                          placeholder="Why is this therapy area important for your treatment center?"
+                          rows={2}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {therapySelections.length > 0 && (
+        <div className="p-4 border rounded-lg bg-green-50">
+          <h4 className="font-medium mb-2 text-green-900">Selected Therapy Areas</h4>
+          <div className="flex flex-wrap gap-2">
+            {therapySelections.map((selection) => (
+              <span
+                key={selection.therapy_id}
+                className="inline-flex items-center px-3 py-1 bg-green-200 text-green-800 rounded-full text-sm"
+              >
+                {selection.therapy_name}
+                <span className="ml-1 text-xs">({selection.priority_level})</span>
+              </span>
+            ))}
           </div>
-        ))}
-      </div>
+          <p className="text-sm text-green-700 mt-2">
+            {therapySelections.length} therapy area{therapySelections.length !== 1 ? 's' : ''} selected for your treatment center.
+          </p>
+        </div>
+      )}
     </div>
+  );
+};
+
+// ENHANCED SERVICE SELECTION STEP
+export const DetailedServiceSelectionStep = ({ formData, updateFormData }: any) => {
+  const [services, setServices] = useState<Service[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [serviceSelections, setServiceSelections] = useState<ServiceSelection[]>(
+    formData.service_selections || []
+  );
+
+  useEffect(() => {
+    fetchServices();
+  }, []);
+
+  const fetchServices = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('services')
+        .select(`
+          id, 
+          name, 
+          service_type, 
+          description,
+          service_provider_id
+        `)
+        .eq('is_active', true)
+        .order('service_type, name');
+
+      if (error) throw error;
+      setServices(data || []);
+    } catch (error) {
+      console.error('Error fetching services:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load service options",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleServiceToggle = (service: Service) => {
+    const existingIndex = serviceSelections.findIndex(s => s.service_id === service.id);
     
-    <div className="p-4 border rounded-lg">
-      <h4 className="font-medium mb-3">Value-Added Services</h4>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {[
-          'Just-in-Time Delivery', 'Inventory Management', 'Clinical Consulting', 'Staff Training',
-          'Regulatory Compliance Support', 'Data Analytics', 'Cost Containment Programs', 'Emergency Supply'
-        ].map((service) => (
-          <div key={service} className="flex items-center space-x-2 p-2 border rounded">
-            <Checkbox id={`value_service_${service.toLowerCase().replace(/[^a-z]/g, '_')}`} />
-            <Label htmlFor={`value_service_${service.toLowerCase().replace(/[^a-z]/g, '_')}`} className="text-sm">
-              {service}
-            </Label>
-          </div>
-        ))}
-      </div>
-    </div>
+    if (existingIndex >= 0) {
+      // Remove service
+      const updated = serviceSelections.filter(s => s.service_id !== service.id);
+      setServiceSelections(updated);
+      updateFormData('service_selections', updated);
+    } else {
+      // Add service with default values
+      const newSelection: ServiceSelection = {
+        service_id: service.id,
+        service_name: service.name,
+        therapy_area: '',
+        selection_rationale: '',
+        custom_requirements: {}
+      };
+      const updated = [...serviceSelections, newSelection];
+      setServiceSelections(updated);
+      updateFormData('service_selections', updated);
+    }
+  };
 
-    <div className="p-4 border rounded-lg">
-      <h4 className="font-medium mb-3">Service Priorities</h4>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="primary_service_need">Primary Service Need</Label>
-          <select className="w-full px-3 py-2 border rounded-md bg-background">
-            <option value="">Select primary need</option>
-            <option value="cost_reduction">Cost Reduction</option>
-            <option value="inventory_optimization">Inventory Optimization</option>
-            <option value="clinical_support">Clinical Support</option>
-            <option value="technology_integration">Technology Integration</option>
-          </select>
-        </div>
-        <div>
-          <Label htmlFor="service_timeline">Implementation Timeline</Label>
-          <select className="w-full px-3 py-2 border rounded-md bg-background">
-            <option value="">Select timeline</option>
-            <option value="immediate">Immediate (within 30 days)</option>
-            <option value="short_term">Short-term (1-3 months)</option>
-            <option value="medium_term">Medium-term (3-6 months)</option>
-            <option value="long_term">Long-term (6+ months)</option>
-          </select>
-        </div>
+  const updateServiceSelection = (serviceId: string, field: keyof ServiceSelection, value: any) => {
+    const updated = serviceSelections.map(selection =>
+      selection.service_id === serviceId ? { ...selection, [field]: value } : selection
+    );
+    setServiceSelections(updated);
+    updateFormData('service_selections', updated);
+  };
+
+  const getServiceTypeColor = (type: string) => {
+    const colors = {
+      '3pl': 'bg-blue-100 text-blue-800',
+      specialty_distribution: 'bg-green-100 text-green-800',
+      specialty_pharmacy: 'bg-purple-100 text-purple-800',
+      order_management: 'bg-orange-100 text-orange-800',
+      patient_hub_services: 'bg-pink-100 text-pink-800',
+      default: 'bg-gray-100 text-gray-800'
+    };
+    return colors[type as keyof typeof colors] || colors.default;
+  };
+
+  const groupedServices = services.reduce((acc, service) => {
+    if (!acc[service.service_type]) {
+      acc[service.service_type] = [];
+    }
+    acc[service.service_type].push(service);
+    return acc;
+  }, {} as Record<string, Service[]>);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-2">Loading service options...</span>
       </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="p-4 border rounded-lg bg-green-50">
+        <h4 className="font-medium mb-2 text-green-900">Service Selection</h4>
+        <p className="text-sm text-green-800">
+          Choose the services that will support your treatment center operations. These services 
+          will be coordinated with your selected distributors and therapy areas.
+        </p>
+      </div>
+
+      {Object.entries(groupedServices).map(([serviceType, serviceList]) => (
+        <div key={serviceType} className="space-y-4">
+          <h4 className="font-medium text-lg capitalize flex items-center">
+            <span className={`px-3 py-1 rounded-full text-sm mr-3 ${getServiceTypeColor(serviceType)}`}>
+              {serviceType.replace('_', ' ')}
+            </span>
+            Services
+          </h4>
+          
+          <div className="grid grid-cols-1 gap-4">
+            {serviceList.map((service) => {
+              const isSelected = serviceSelections.some(s => s.service_id === service.id);
+              const selection = serviceSelections.find(s => s.service_id === service.id);
+              
+              return (
+                <div
+                  key={service.id}
+                  className={`p-4 border-2 rounded-lg transition-all ${
+                    isSelected ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <div className="flex items-start space-x-3">
+                    <Checkbox
+                      id={service.id}
+                      checked={isSelected}
+                      onCheckedChange={() => handleServiceToggle(service)}
+                      className="mt-1"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3 mb-2">
+                        <Label htmlFor={service.id} className="font-medium cursor-pointer">
+                          {service.name}
+                        </Label>
+                      </div>
+                      {service.description && (
+                        <p className="text-sm text-gray-600 mb-3">{service.description}</p>
+                      )}
+                      
+                      {isSelected && (
+                        <div className="mt-4 p-3 bg-white border rounded-lg space-y-3">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                              <Label htmlFor={`therapy_area_${service.id}`}>Related Therapy Area</Label>
+                              <Input
+                                id={`therapy_area_${service.id}`}
+                                value={selection?.therapy_area || ''}
+                                onChange={(e) => updateServiceSelection(service.id, 'therapy_area', e.target.value)}
+                                placeholder="e.g., Oncology, Cardiology"
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <Label htmlFor={`service_rationale_${service.id}`}>Selection Rationale</Label>
+                            <Textarea
+                              id={`service_rationale_${service.id}`}
+                              value={selection?.selection_rationale || ''}
+                              onChange={(e) => updateServiceSelection(service.id, 'selection_rationale', e.target.value)}
+                              placeholder="Why do you need this service for your treatment center?"
+                              rows={2}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+
+      {serviceSelections.length > 0 && (
+        <div className="p-4 border rounded-lg bg-green-50">
+          <h4 className="font-medium mb-2 text-green-900">Selected Services</h4>
+          <div className="flex flex-wrap gap-2">
+            {serviceSelections.map((selection) => (
+              <span
+                key={selection.service_id}
+                className="inline-flex items-center px-3 py-1 bg-green-200 text-green-800 rounded-full text-sm"
+              >
+                {selection.service_name}
+              </span>
+            ))}
+          </div>
+          <p className="text-sm text-green-700 mt-2">
+            {serviceSelections.length} service{serviceSelections.length !== 1 ? 's' : ''} selected for your treatment center.
+          </p>
+        </div>
+      )}
     </div>
-  </div>
-);
+  );
+};
 
 // ONLINE SERVICES STEP
 export const DetailedOnlineServicesStep = ({ formData, updateFormData }: any) => (

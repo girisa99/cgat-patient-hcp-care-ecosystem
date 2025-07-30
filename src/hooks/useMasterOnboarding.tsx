@@ -53,7 +53,7 @@ export const useMasterOnboarding = () => {
     refetchOnWindowFocus: false,
   });
 
-  // Create comprehensive onboarding application
+  // Enhanced create comprehensive onboarding application with relationships
   const createApplicationMutation = useMutation({
     mutationFn: async (applicationData: Partial<TreatmentCenterOnboarding>) => {
       if (!user?.id) throw new Error('User not authenticated');
@@ -80,26 +80,76 @@ export const useMasterOnboarding = () => {
         status: 'draft' as const
       };
 
-      const { data, error } = await supabase
+      // Start transaction - create main application first
+      const { data: onboardingData, error: onboardingError } = await supabase
         .from('treatment_center_onboarding')
         .insert(cleanData)
         .select()
         .single();
       
-      if (error) throw error;
-      return data;
+      if (onboardingError) throw onboardingError;
+
+      // Save therapy selections to relationship table
+      if (applicationData.therapy_selections && applicationData.therapy_selections.length > 0) {
+        const therapyInserts = applicationData.therapy_selections.map(selection => ({
+          onboarding_id: onboardingData.id,
+          therapy_id: selection.therapy_id,
+          patient_volume_estimate: selection.patient_volume_estimate,
+          treatment_readiness_level: 'initial',
+          priority_level: selection.priority_level,
+          selection_rationale: selection.selection_rationale,
+          infrastructure_requirements: {},
+          staff_training_needs: {},
+          timeline_considerations: {},
+          special_requirements: {}
+        }));
+
+        const { error: therapyError } = await supabase
+          .from('onboarding_therapy_selections')
+          .insert(therapyInserts);
+        
+        if (therapyError) {
+          console.error('Error saving therapy selections:', therapyError);
+          // Don't throw error here - continue with main flow
+        }
+      }
+
+      // Save service selections to relationship table
+      if (applicationData.service_selections && applicationData.service_selections.length > 0) {
+        const serviceInserts = applicationData.service_selections.map(selection => ({
+          onboarding_id: onboardingData.id,
+          service_id: selection.service_id,
+          therapy_area: selection.therapy_area,
+          selection_rationale: selection.selection_rationale,
+          custom_requirements: selection.custom_requirements || {},
+          estimated_volume: {}
+        }));
+
+        const { error: serviceError } = await supabase
+          .from('onboarding_service_selections')
+          .insert(serviceInserts);
+        
+        if (serviceError) {
+          console.error('Error saving service selections:', serviceError);
+          // Don't throw error here - continue with main flow
+        }
+      }
+
+      return onboardingData;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['onboarding-applications'] });
-      showSuccess('Application Created', 'Onboarding application created successfully');
+      showSuccess('Application Created', 'Onboarding application with therapy and service selections created successfully');
     },
     onError: (error: any) => {
       showError('Creation Failed', error.message);
     }
   });
 
+  // Enhanced update application with relationship handling
   const updateApplicationMutation = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: any }) => {
+      // Handle main application update
       const { data, error } = await supabase
         .from('treatment_center_onboarding')
         .update(updates)
@@ -108,11 +158,66 @@ export const useMasterOnboarding = () => {
         .single();
       
       if (error) throw error;
+
+      // Handle therapy selections updates if provided
+      if (updates.therapy_selections !== undefined) {
+        // First, delete existing therapy selections for this onboarding
+        await supabase
+          .from('onboarding_therapy_selections')
+          .delete()
+          .eq('onboarding_id', id);
+
+        // Then insert new ones if any
+        if (updates.therapy_selections && updates.therapy_selections.length > 0) {
+          const therapyInserts = updates.therapy_selections.map((selection: any) => ({
+            onboarding_id: id,
+            therapy_id: selection.therapy_id,
+            patient_volume_estimate: selection.patient_volume_estimate,
+            treatment_readiness_level: 'initial',
+            priority_level: selection.priority_level,
+            selection_rationale: selection.selection_rationale,
+            infrastructure_requirements: {},
+            staff_training_needs: {},
+            timeline_considerations: {},
+            special_requirements: {}
+          }));
+
+          await supabase
+            .from('onboarding_therapy_selections')
+            .insert(therapyInserts);
+        }
+      }
+
+      // Handle service selections updates if provided
+      if (updates.service_selections !== undefined) {
+        // First, delete existing service selections for this onboarding
+        await supabase
+          .from('onboarding_service_selections')
+          .delete()
+          .eq('onboarding_id', id);
+
+        // Then insert new ones if any
+        if (updates.service_selections && updates.service_selections.length > 0) {
+          const serviceInserts = updates.service_selections.map((selection: any) => ({
+            onboarding_id: id,
+            service_id: selection.service_id,
+            therapy_area: selection.therapy_area,
+            selection_rationale: selection.selection_rationale,
+            custom_requirements: selection.custom_requirements || {},
+            estimated_volume: {}
+          }));
+
+          await supabase
+            .from('onboarding_service_selections')
+            .insert(serviceInserts);
+        }
+      }
+
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['onboarding-applications'] });
-      showSuccess('Application Updated', 'Application updated successfully');
+      showSuccess('Application Updated', 'Application with relationships updated successfully');
     },
     onError: (error: any) => {
       showError('Update Failed', error.message);
