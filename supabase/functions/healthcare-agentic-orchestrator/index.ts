@@ -221,35 +221,51 @@ async function generateWithMCP(therapy: any) {
 function generateTemplateProducts(therapy: any) {
   const baseProductName = therapy.name.replace(/[^a-zA-Z0-9\s]/g, '').trim();
   
-  return [{
-    name: `${baseProductName} Injectable`,
-    brand_name: `${therapy.therapy_type.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}™`,
-    indication: therapy.indication || `Treatment for ${therapy.therapy_type} related conditions`,
-    dosing_information: {
-      regimen: '1-2 doses per treatment cycle',
-      route: 'Intravenous',
-      frequency: 'Once every 3-4 weeks'
-    },
-    contraindications: ['Hypersensitivity to active ingredients', 'Severe immunodeficiency'],
-    special_populations: {
-      pregnancy: 'Contraindicated - may cause fetal harm',
-      pediatric: 'Safety not established in children under 18',
-      elderly: 'Use with caution - may require dose adjustment'
-    },
-    distribution_requirements: {
-      storage: '2-8°C (36-46°F), protect from light',
-      handling: 'Requires specialized handling and administration'
-    },
-    pricing_information: {
-      wholesale: '$50,000-$150,000 per treatment course',
-      patient_cost: '$10,000-$25,000 after insurance and assistance programs'
-    },
-    market_access_considerations: {
-      reimbursement: 'Covered by Medicare Part B and most commercial payers',
-      access_programs: 'Patient assistance program available'
-    },
-    product_status: Math.random() > 0.3 ? 'approved' : 'phase_3',
-    ndc_number: Math.random() > 0.3 ? `12345-${Math.floor(Math.random() * 900) + 100}-${Math.floor(Math.random() * 90) + 10}` : null,
-    approval_date: Math.random() > 0.3 ? '2023-06-15' : null
-  }];
+  // Generate 3-5 products per therapy for better diversity
+  const products = [];
+  const productCount = Math.floor(Math.random() * 3) + 3; // 3-5 products
+  
+  for (let i = 0; i < productCount; i++) {
+    const isCommercial = Math.random() > 0.4; // 60% chance of being commercial
+    const productVariants = ['Injectable', 'Oral', 'Topical', 'IV Infusion', 'Subcutaneous'];
+    const variant = productVariants[i % productVariants.length];
+    
+    products.push({
+      name: `${baseProductName} ${variant} ${i + 1}`,
+      brand_name: `${therapy.therapy_type.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}${i + 1}™`,
+      indication: therapy.indication || `Treatment for ${therapy.therapy_type} related conditions`,
+      dosing_information: {
+        regimen: `${i + 1}-${i + 2} doses per treatment cycle`,
+        route: variant === 'Oral' ? 'Oral' : variant === 'Topical' ? 'Topical' : 'Intravenous',
+        frequency: `Once every ${2 + i}-${3 + i} weeks`
+      },
+      contraindications: [
+        'Hypersensitivity to active ingredients', 
+        'Severe immunodeficiency',
+        ...(i % 2 === 0 ? ['Pregnancy'] : ['Liver impairment'])
+      ],
+      special_populations: {
+        pregnancy: isCommercial ? 'Contraindicated - may cause fetal harm' : 'Use with caution',
+        pediatric: 'Safety not established in children under 18',
+        elderly: 'Use with caution - may require dose adjustment'
+      },
+      distribution_requirements: {
+        storage: i % 2 === 0 ? '2-8°C (36-46°F), protect from light' : '-20°C, frozen storage required',
+        handling: 'Requires specialized handling and administration'
+      },
+      pricing_information: {
+        wholesale: `$${(50 + i * 25)},000-$${(150 + i * 50)},000 per treatment course`,
+        patient_cost: `$${(10 + i * 5)},000-$${(25 + i * 10)},000 after insurance and assistance programs`
+      },
+      market_access_considerations: {
+        reimbursement: isCommercial ? 'Covered by Medicare Part B and most commercial payers' : 'Limited coverage - investigational',
+        access_programs: isCommercial ? 'Patient assistance program available' : 'Clinical trial access only'
+      },
+      product_status: isCommercial ? 'approved' : (i % 2 === 0 ? 'phase_3' : 'phase_2'),
+      ndc_number: isCommercial ? `12345-${Math.floor(Math.random() * 900) + 100}-${Math.floor(Math.random() * 90) + 10}` : null,
+      approval_date: isCommercial ? `202${2 + (i % 2)}-${String(Math.floor(Math.random() * 12) + 1).padStart(2, '0')}-15` : null
+    });
+  }
+  
+  return products;
 }
