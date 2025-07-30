@@ -5,6 +5,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.2';
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS, PUT, DELETE',
 };
 
 interface ProductGenerationRequest {
@@ -36,83 +37,131 @@ serve(async (req) => {
       throw new Error('therapy_ids array is required');
     }
 
+    // Limit processing to prevent timeouts
+    const maxTherapies = 5;
+    const limitedTherapyIds = therapy_ids.slice(0, maxTherapies);
+
     console.log('Healthcare Agentic Orchestrator starting with providers:', ai_providers);
+    console.log(`Processing ${limitedTherapyIds.length} therapies (limited from ${therapy_ids.length})`);
 
-    // Fetch therapy details
-    const { data: therapies, error: therapyError } = await supabaseClient
-      .from('therapies')
-      .select('*')
-      .in('id', therapy_ids);
+    // Set a timeout for the entire operation
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Operation timed out after 45 seconds')), 45000)
+    );
 
-    if (therapyError) throw therapyError;
+    const processingPromise = (async () => {
+      // Fetch therapy details
+      const { data: therapies, error: therapyError } = await supabaseClient
+        .from('therapies')
+        .select('*')
+        .in('id', limitedTherapyIds);
 
-    const results = [];
-    
-    for (const therapy of therapies) {
-      console.log(`Processing therapy: ${therapy.name} with ${ai_providers.length} AI providers`);
+      if (therapyError) throw therapyError;
+
+      const results = [];
       
-      // Try multiple AI providers for diverse product generation
-      const productGenerations = await Promise.allSettled(
-        ai_providers.map(provider => generateProductsWithProvider(provider, therapy))
-      );
+      // Use only OpenAI for now to prevent Claude 401 errors causing timeouts
+      const workingProviders = ai_providers.filter(p => p === 'openai' || p === 'mcp');
+      
+      for (const therapy of therapies) {
+        console.log(`Processing therapy: ${therapy.name} with ${workingProviders.length} AI providers`);
+        
+        try {
+          // Use only one provider per therapy to speed up processing
+          const primaryProvider = workingProviders[0] || 'template';
+          let allProducts = [];
 
-      // Combine successful generations
-      const allProducts = [];
-      productGenerations.forEach((result, index) => {
-        if (result.status === 'fulfilled') {
-          console.log(`Provider ${ai_providers[index]} generated ${result.value.length} products`);
-          allProducts.push(...result.value);
-        } else {
-          console.error(`Provider ${ai_providers[index]} failed:`, result.reason);
+          if (primaryProvider !== 'template') {
+            try {
+              const products = await generateProductsWithProvider(primaryProvider, therapy);
+              console.log(`Provider ${primaryProvider} generated ${products.length} products`);
+              allProducts.push(...products);
+            } catch (error) {
+              console.error(`Provider ${primaryProvider} failed:`, error);
+              // Fallback to template if AI fails
+              if (small_model_fallback) {
+                console.log('Falling back to template generation');
+                allProducts.push(...generateTemplateProducts(therapy));
+              }
+            }
+          } else {
+            // Use template generation directly
+            allProducts.push(...generateTemplateProducts(therapy));
+          }
+
+          // Batch insert products for better performance
+          if (allProducts.length > 0) {
+            const productsToInsert = allProducts.map(productData => ({
+              name: productData.name,
+              brand_name: productData.brand_name,
+              indication: productData.indication,
+              dosing_information: productData.dosing_information,
+              contraindications: productData.contraindications,
+              special_populations: productData.special_populations,
+              distribution_requirements: productData.distribution_requirements,
+              pricing_information: productData.pricing_information,
+              market_access_considerations: productData.market_access_considerations,
+              product_status: productData.product_status,
+              ndc_number: productData.ndc_number,
+              approval_date: productData.approval_date,
+              therapy_id: therapy.id,
+              manufacturer_id: null,
+              modality_id: null,
+              is_active: true,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            }));
+
+            const { data: insertedProducts, error: batchError } = await supabaseClient
+              .from('products')
+              .insert(productsToInsert)
+              .select();
+
+            if (batchError) {
+              console.error('Error batch inserting products:', batchError);
+              // Try individual inserts as fallback
+              for (const productData of allProducts) {
+                try {
+                  const { data: product } = await supabaseClient
+                    .from('products')
+                    .insert(productsToInsert[0])
+                    .select()
+                    .single();
+
+                  if (product) {
+                    results.push({
+                      therapy_name: therapy.name,
+                      product_name: productData.name,
+                      product_id: product.id,
+                      ai_provider: productData.ai_provider || 'template'
+                    });
+                  }
+                } catch (individualError) {
+                  console.error('Individual insert failed:', individualError);
+                }
+              }
+            } else if (insertedProducts) {
+              insertedProducts.forEach((product, index) => {
+                results.push({
+                  therapy_name: therapy.name,
+                  product_name: allProducts[index].name,
+                  product_id: product.id,
+                  ai_provider: allProducts[index].ai_provider || 'template'
+                });
+              });
+            }
+          }
+        } catch (therapyError) {
+          console.error(`Error processing therapy ${therapy.name}:`, therapyError);
+          // Continue with next therapy
         }
-      });
-
-      // If no products generated and small model fallback is enabled
-      if (allProducts.length === 0 && small_model_fallback) {
-        console.log('Falling back to template generation');
-        allProducts.push(...generateTemplateProducts(therapy));
       }
 
-      // Store products with AI provider attribution
-      for (const productData of allProducts) {
-        const { data: product, error: productError } = await supabaseClient
-          .from('products')
-          .insert({
-            name: productData.name,
-            brand_name: productData.brand_name,
-            indication: productData.indication,
-            dosing_information: productData.dosing_information,
-            contraindications: productData.contraindications,
-            special_populations: productData.special_populations,
-            distribution_requirements: productData.distribution_requirements,
-            pricing_information: productData.pricing_information,
-            market_access_considerations: productData.market_access_considerations,
-            product_status: productData.product_status,
-            ndc_number: productData.ndc_number,
-            approval_date: productData.approval_date,
-            therapy_id: therapy.id,
-            manufacturer_id: null,
-            modality_id: null,
-            is_active: true,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          })
-          .select()
-          .single();
+      return results;
+    })();
 
-        if (productError) {
-          console.error('Error inserting product:', productError);
-          continue;
-        }
-
-        results.push({
-          therapy_name: therapy.name,
-          product_name: productData.name,
-          product_id: product.id,
-          ai_provider: productData.ai_provider || 'template'
-        });
-      }
-    }
+    // Race between processing and timeout
+    const results = await Promise.race([processingPromise, timeoutPromise]);
 
     return new Response(JSON.stringify({
       message: `Generated ${results.length} products using ${ai_providers.join(', ')} AI providers`,
