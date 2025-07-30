@@ -64,7 +64,7 @@ export const ManualConnectorDialog: React.FC<ManualConnectorDialogProps> = ({
     setFormData(prev => ({
       ...prev,
       [parent]: {
-        ...(prev[parent as keyof typeof prev] as any),
+        ...(prev[parent as keyof typeof prev] as Record<string, unknown>),
         [field]: value
       }
     }));
@@ -97,9 +97,19 @@ export const ManualConnectorDialog: React.FC<ManualConnectorDialogProps> = ({
     setIsSubmitting(true);
 
     try {
-      // Prepare final data with custom headers
+      // Prepare final data with all required fields for api_integration_registry
       const finalData = {
-        ...formData as any,
+        name: formData.name,
+        description: formData.description,
+        type: formData.type,
+        category: formData.category,
+        direction: formData.direction,
+        purpose: formData.purpose,
+        base_url: formData.base_url,
+        version: formData.version,
+        lifecycle_stage: formData.lifecycle_stage,
+        status: formData.status,
+        documentation_url: formData.documentation_url,
         security_requirements: {
           ...formData.security_requirements,
           custom_headers: customHeaders.reduce((acc, header) => {
@@ -108,12 +118,14 @@ export const ManualConnectorDialog: React.FC<ManualConnectorDialogProps> = ({
             }
             return acc;
           }, {} as Record<string, string>)
-        }
+        },
+        rate_limits: formData.rate_limits,
+        webhook_config: formData.webhook_config
       };
 
       const { data, error } = await supabase
         .from('api_integration_registry')
-        .insert([finalData])
+        .insert(finalData)
         .select()
         .single();
 

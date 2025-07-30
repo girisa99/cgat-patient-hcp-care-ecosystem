@@ -50,7 +50,7 @@ export const ConnectorConfiguration: React.FC<ConnectorConfigurationProps> = ({
     batchSize: 50 as number,
     circuitBreaker: false as boolean,
     connectionPooling: false as boolean,
-    customConfig: {} as any
+    customConfig: {} as Record<string, unknown>
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -75,11 +75,14 @@ export const ConnectorConfiguration: React.FC<ConnectorConfigurationProps> = ({
         .eq('id', sessionId)
         .single();
 
-      if (data?.connectors && typeof data.connectors === 'object' && 'configuration' in data.connectors) {
-        setAdvancedConfig(prev => ({
-          ...prev,
-          ...(data.connectors as any).configuration
-        }));
+      if (data?.connectors && typeof data.connectors === 'object' && data.connectors !== null && 'configuration' in data.connectors) {
+        const connectorConfig = data.connectors as Record<string, unknown>;
+        if (connectorConfig.configuration && typeof connectorConfig.configuration === 'object') {
+          setAdvancedConfig(prev => ({
+            ...prev,
+            ...(connectorConfig.configuration as Record<string, unknown>)
+          }));
+        }
       }
     } catch (error) {
       console.error('Error loading configuration:', error);
@@ -103,13 +106,12 @@ export const ConnectorConfiguration: React.FC<ConnectorConfigurationProps> = ({
       const { data, error } = await supabase
         .from('agent_sessions')
         .update({
-          connectors: {
-            ...{}, // existing connectors data
+          connectors: JSON.stringify({
             configuration: advancedConfig,
             auto_suggest_enabled: autoSuggestMode,
             token_threshold: tokenThreshold,
             last_updated: new Date().toISOString()
-          }
+          })
         })
         .eq('id', sessionId);
 

@@ -164,7 +164,7 @@ export const ActionTemplateSummary: React.FC<ActionTemplateSummaryProps> = ({
                         <Badge variant="outline">#{index + 1}</Badge>
                       </div>
                       <div className="flex gap-2">
-                        <Badge variant={getPriorityColor(template.priority) as any}>
+                        <Badge variant={getPriorityColor(template.priority) as "default" | "secondary" | "destructive" | "outline"}>
                           {template.priority}
                         </Badge>
                         {template.requires_approval && (

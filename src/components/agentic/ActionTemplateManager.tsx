@@ -1104,7 +1104,7 @@ export const ActionTemplateManager: React.FC<ActionTemplateManagerProps> = ({
                   <h4 className="font-medium">{template.name}</h4>
                 </div>
                 <div className="flex gap-1">
-                  <Badge variant={getPriorityColor(template.priority) as any}>
+                  <Badge variant={getPriorityColor(template.priority) as "default" | "secondary" | "destructive" | "outline"}>
                     {template.priority}
                   </Badge>
                   {template.template_config?.generated_by === 'ai' && (

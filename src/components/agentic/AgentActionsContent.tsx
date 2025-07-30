@@ -320,7 +320,7 @@ export const AgentActionsContent: React.FC<AgentActionsContentProps> = ({
                             <div className="flex items-center gap-2 mb-2">
                               {getCategoryIcon(action.category)}
                               <h4 className="font-medium">{action.name}</h4>
-                              <Badge variant={getPriorityColor(action.priority) as any}>
+                              <Badge variant={getPriorityColor(action.priority) as "default" | "secondary" | "destructive" | "outline"}>
                                 {action.priority}
                               </Badge>
                               {!action.isEnabled && (
@@ -721,7 +721,7 @@ export const AgentActionsContent: React.FC<AgentActionsContentProps> = ({
                   <div>
                     <Label className="text-sm font-medium">Status</Label>
                     <div className="flex gap-2">
-                      <Badge variant={getPriorityColor(selectedAction.priority) as any}>
+                      <Badge variant={getPriorityColor(selectedAction.priority) as "default" | "secondary" | "destructive" | "outline"}>
                         {selectedAction.priority}
                       </Badge>
                       <Badge variant={selectedAction.isEnabled ? "default" : "outline"}>

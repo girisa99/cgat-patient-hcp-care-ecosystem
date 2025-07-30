@@ -100,7 +100,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
       business_info: {
         business_type: [],
         years_in_business: 0,
-        ownership_type: 'c_corp' as any,
+        ownership_type: 'c_corp' as const,
         number_of_employees: 0,
         estimated_monthly_purchases: 0
       },
@@ -126,7 +126,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
 
   const updateFormData = (section: string, data: any) => {
     setFormData(prev => {
-      const currentSection = prev[section as keyof typeof prev] as any;
+      const currentSection = prev[section as keyof typeof prev] as Record<string, unknown>;
       return {
         ...prev,
         [section]: {

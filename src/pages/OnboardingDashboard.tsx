@@ -137,7 +137,7 @@ const OnboardingDashboard: React.FC = () => {
       : null;
 
     // Simplified initial data - let the wizard handle type conversion
-    const initialData = currentApplication as any;
+    const initialData = currentApplication as Record<string, unknown>;
 
     return (
       <AppLayout>

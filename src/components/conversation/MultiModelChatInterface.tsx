@@ -186,7 +186,7 @@ export const MultiModelChatInterface: React.FC<MultiModelChatInterfaceProps> = (
       await supabase
         .from('multi_model_conversations')
         .update({
-          conversation_history: [...messages, newMessage] as any,
+          conversation_history: [...messages, newMessage],
           updated_at: new Date().toISOString(),
         })
         .eq('id', conversation.id);

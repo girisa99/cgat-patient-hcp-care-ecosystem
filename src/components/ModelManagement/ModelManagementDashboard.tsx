@@ -216,7 +216,7 @@ export const ModelManagementDashboard: React.FC = () => {
                     value={testRequest.priority}
                     onChange={(e) => setTestRequest(prev => ({ 
                       ...prev, 
-                      priority: e.target.value as any 
+                      priority: e.target.value as 'low' | 'medium' | 'high' 
                     }))}
                   >
                     <option value="low">Low</option>
