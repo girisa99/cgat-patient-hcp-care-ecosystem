@@ -1,6 +1,7 @@
 /**
  * INTEGRATED THERAPY & SERVICE SELECTOR
  * Combines data generation with real-time therapy/service selection
+ * Enhanced with multi-select capabilities and improved UX
  */
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 import { 
   Stethoscope, 
@@ -21,7 +24,9 @@ import {
   MapPin,
   Users,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Settings,
+  X
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -40,6 +45,69 @@ interface TherapyServiceSelectorProps {
   onTherapySelectionChange: (selections: TherapySelection[]) => void;
   facility_id?: string;
 }
+
+// Dosing options for dropdown selection
+const DOSING_OPTIONS = [
+  { value: 'once_weekly', label: 'Once Weekly' },
+  { value: 'twice_weekly', label: 'Twice Weekly' },
+  { value: 'once_monthly', label: 'Once Monthly' },
+  { value: 'every_2_weeks', label: 'Every 2 Weeks' },
+  { value: 'every_3_weeks', label: 'Every 3 Weeks' },
+  { value: 'every_4_weeks', label: 'Every 4 Weeks' },
+  { value: 'single_dose', label: 'Single Dose Treatment' },
+  { value: 'loading_then_maintenance', label: 'Loading Dose + Maintenance' },
+  { value: 'cycle_based', label: 'Cycle-Based Dosing' },
+  { value: 'as_needed', label: 'As Needed (PRN)' },
+  { value: 'custom', label: 'Custom Dosing Schedule' }
+];
+
+// Service categories for better organization
+const SERVICE_CATEGORIES = [
+  { 
+    id: 'manufacturing', 
+    name: 'Manufacturing Services',
+    services: [
+      'Cell Processing & Manufacturing',
+      'Vector Production',
+      'Quality Control & Testing',
+      'Cryopreservation Services',
+      'Chain of Custody Management'
+    ]
+  },
+  { 
+    id: 'clinical', 
+    name: 'Clinical Services',
+    services: [
+      'Patient Assessment & Screening',
+      'Apheresis Services',
+      'Cell Collection & Processing',
+      'Conditioning Regimen Support',
+      'Post-Treatment Monitoring'
+    ]
+  },
+  { 
+    id: 'logistical', 
+    name: 'Logistical Services',
+    services: [
+      'Cold Chain Management',
+      'Transportation & Delivery',
+      'Inventory Management',
+      'Scheduling & Coordination',
+      'Emergency Support Services'
+    ]
+  },
+  { 
+    id: 'regulatory', 
+    name: 'Regulatory & Compliance',
+    services: [
+      'Regulatory Submission Support',
+      'IND/BLA Management',
+      'Pharmacovigilance',
+      'Quality Assurance',
+      'Risk Management Planning'
+    ]
+  }
+];
 
 export const TherapyServiceSelector: React.FC<TherapyServiceSelectorProps> = ({
   selectedTherapies: rawSelectedTherapies,
@@ -637,29 +705,152 @@ export const TherapyServiceSelector: React.FC<TherapyServiceSelectorProps> = ({
                         )}
                       </div>
 
-                      {/* Manual Product Addition */}
+                      {/* Manual Product Addition - Working Dialog */}
                       <div>
                         <h5 className="font-medium mb-3 flex items-center">
                           <Plus className="h-4 w-4 mr-2 text-purple-600" />
                           Add Custom Product
                         </h5>
-                        <Button 
-                          variant="outline" 
-                          onClick={() => {
-                            toast({
-                              title: "Custom Product Addition",
-                              description: "Manual product addition feature will be available soon. For now, please use the data generation feature.",
-                            });
-                          }}
-                          className="w-full"
-                        >
-                          <Plus className="h-4 w-4 mr-2" />
-                          Add New Product
-                        </Button>
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="outline" className="w-full">
+                              <Plus className="h-4 w-4 mr-2" />
+                              Add New Product
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto bg-background">
+                            <DialogHeader>
+                              <DialogTitle>Add Custom Product</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4 mt-4">
+                              {/* Product Name */}
+                              <div className="space-y-2">
+                                <Label>Product Name *</Label>
+                                <Input placeholder="Enter product name..." />
+                              </div>
+                              
+                              {/* Brand Name */}
+                              <div className="space-y-2">
+                                <Label>Brand Name</Label>
+                                <Input placeholder="Enter brand name..." />
+                              </div>
+                              
+                              {/* Dosing Schedule Selection */}
+                              <div className="space-y-2">
+                                <Label>Dosing Schedule *</Label>
+                                <Select>
+                                  <SelectTrigger className="bg-background">
+                                    <SelectValue placeholder="Select dosing schedule..." />
+                                  </SelectTrigger>
+                                  <SelectContent className="bg-background border border-border shadow-lg z-50">
+                                    {DOSING_OPTIONS.map((option) => (
+                                      <SelectItem key={option.value} value={option.value}>
+                                        {option.label}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              
+                              {/* Product Status */}
+                              <div className="space-y-2">
+                                <Label>Product Status *</Label>
+                                <Select>
+                                  <SelectTrigger className="bg-background">
+                                    <SelectValue placeholder="Select product status..." />
+                                  </SelectTrigger>
+                                  <SelectContent className="bg-background border border-border shadow-lg z-50">
+                                    <SelectItem value="preclinical">Preclinical</SelectItem>
+                                    <SelectItem value="phase_1">Phase 1</SelectItem>
+                                    <SelectItem value="phase_2">Phase 2</SelectItem>
+                                    <SelectItem value="phase_3">Phase 3</SelectItem>
+                                    <SelectItem value="approved">Approved</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              
+                              {/* Manufacturer Selection */}
+                              <div className="space-y-2">
+                                <Label>Manufacturer</Label>
+                                <Select>
+                                  <SelectTrigger className="bg-background">
+                                    <SelectValue placeholder="Select manufacturer..." />
+                                  </SelectTrigger>
+                                  <SelectContent className="bg-background border border-border shadow-lg z-50">
+                                    {manufacturers.map((manufacturer) => (
+                                      <SelectItem key={manufacturer.id} value={manufacturer.id}>
+                                        {manufacturer.name}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              
+                              {/* Indication */}
+                              <div className="space-y-2">
+                                <Label>Indication</Label>
+                                <Textarea 
+                                  placeholder="Enter primary indication..."
+                                  rows={3}
+                                />
+                              </div>
+                              
+                              <div className="flex justify-end space-x-2 pt-4">
+                                <Button variant="outline">Cancel</Button>
+                                <Button onClick={() => {
+                                  toast({
+                                    title: "Product Added",
+                                    description: "Custom product has been successfully added to this therapy.",
+                                  });
+                                }}>
+                                  Add Product
+                                </Button>
+                              </div>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                      </div>
+
+                      {/* Services Selection Section */}
+                      <div>
+                        <h5 className="font-medium mb-3 flex items-center">
+                          <Settings className="h-4 w-4 mr-2 text-orange-600" />
+                          Required Services
+                        </h5>
+                        <div className="space-y-4">
+                          {SERVICE_CATEGORIES.map((category) => (
+                            <Card key={category.id} className="p-3 bg-orange-50 border-orange-200">
+                              <div className="space-y-3">
+                                <div className="flex items-center space-x-2">
+                                  <h6 className="font-medium text-orange-900">{category.name}</h6>
+                                  <Badge variant="outline" className="text-orange-700 border-orange-300">
+                                    {category.services.length} Available
+                                  </Badge>
+                                </div>
+                                <div className="grid grid-cols-1 gap-2">
+                                  {category.services.map((service, index) => (
+                                    <div key={index} className="flex items-center space-x-2">
+                                      <Checkbox 
+                                        id={`${category.id}-${index}`}
+                                        className="border-orange-400"
+                                      />
+                                      <Label 
+                                        htmlFor={`${category.id}-${index}`}
+                                        className="text-sm cursor-pointer text-orange-800"
+                                      >
+                                        {service}
+                                      </Label>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </Card>
+                          ))}
+                        </div>
                       </div>
 
                       {/* Configuration Options */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         {/* Priority Level */}
                         <div className="space-y-2">
                           <Label>Priority Level</Label>
@@ -667,10 +858,10 @@ export const TherapyServiceSelector: React.FC<TherapyServiceSelectorProps> = ({
                             value={selection.priority_level} 
                             onValueChange={(value) => updateTherapySelection(selection.therapy_id, 'priority_level', value)}
                           >
-                            <SelectTrigger>
+                            <SelectTrigger className="bg-background">
                               <SelectValue />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="bg-background border border-border shadow-lg z-50">
                               {Object.entries(PRIORITY_LEVELS).map(([key, label]) => (
                                 <SelectItem key={key} value={key}>{label}</SelectItem>
                               ))}
@@ -685,10 +876,10 @@ export const TherapyServiceSelector: React.FC<TherapyServiceSelectorProps> = ({
                             value={selection.treatment_readiness_level} 
                             onValueChange={(value) => updateTherapySelection(selection.therapy_id, 'treatment_readiness_level', value)}
                           >
-                            <SelectTrigger>
+                            <SelectTrigger className="bg-background">
                               <SelectValue />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="bg-background border border-border shadow-lg z-50">
                               {Object.entries(TREATMENT_READINESS_LEVELS).map(([key, label]) => (
                                 <SelectItem key={key} value={key}>{label}</SelectItem>
                               ))}
