@@ -131,7 +131,14 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => navigate(-1)}
+              onClick={() => {
+                // For credit application, go back to onboarding instead of generic back
+                if (location.pathname === '/credit-application') {
+                  navigate('/onboarding');
+                } else {
+                  navigate(-1);
+                }
+              }}
               className="flex items-center gap-2 hover:bg-accent"
             >
               <ArrowLeft className="h-4 w-4" />
