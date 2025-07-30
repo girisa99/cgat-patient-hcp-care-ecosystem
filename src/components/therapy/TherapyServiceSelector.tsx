@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import { 
   Stethoscope, 
   Building, 
@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { TherapyDataGenerator } from '@/components/data-generation/TherapyDataGenerator';
+
 import type { 
   Therapy, 
   Product, 
@@ -290,6 +290,70 @@ export const TherapyServiceSelector: React.FC<TherapyServiceSelectorProps> = ({
     );
   };
 
+  const handleTherapyAction = async () => {
+    if (selectedTherapyId === 'generate-new') {
+      // Handle data generation
+      setGeneratingProducts(prev => new Set([...prev, 'generating']));
+      
+      toast({
+        title: "Generating Data",
+        description: "Creating comprehensive therapy data using AI...",
+      });
+      
+      try {
+        const response = await supabase.functions.invoke('healthcare-agentic-orchestrator', {
+          body: { 
+            generate_all_modalities: true,
+            ai_providers: ['openai', 'claude'],
+            use_mcp: true,
+            small_model_fallback: true
+          }
+        });
+        
+        if (response.error) {
+          throw response.error;
+        }
+        
+        // Refresh data
+        await fetchTherapyData();
+        
+        setGeneratingProducts(prev => {
+          const newSet = new Set(prev);
+          newSet.delete('generating');
+          return newSet;
+        });
+        
+        setSelectedTherapyId(''); // Reset selection
+        
+        toast({
+          title: "Data Generated",
+          description: "Successfully generated comprehensive therapy data including products and services.",
+        });
+      } catch (error) {
+        console.error('Error generating data:', error);
+        setGeneratingProducts(prev => {
+          const newSet = new Set(prev);
+          newSet.delete('generating');
+          return newSet;
+        });
+        toast({
+          title: "Generation Error",
+          description: `Failed to generate data: ${error.message || 'Unknown error'}`,
+          variant: "destructive"
+        });
+      }
+    } else {
+      // Handle therapy selection
+      const therapy = therapies.find(t => t.id === selectedTherapyId);
+      if (therapy) {
+        await handleTherapySelect(therapy);
+        setSelectedTherapyId(''); // Reset selection
+      }
+    }
+  };
+
+  const isGenerating = generatingProducts.has('generating') || Array.from(generatingProducts).some(id => id !== 'generating');
+
   if (loading) {
     return (
       <Card>
@@ -303,92 +367,130 @@ export const TherapyServiceSelector: React.FC<TherapyServiceSelectorProps> = ({
 
   return (
     <div className="space-y-6">
-      <Tabs defaultValue="select" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="select">Select Therapies</TabsTrigger>
-          <TabsTrigger value="generate">Generate New Data</TabsTrigger>
-        </TabsList>
-
-        {/* Therapy Selection Tab */}
-        <TabsContent value="select" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Stethoscope className="h-5 w-5 text-blue-600" />
-                <span>Available Therapies & Products</span>
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Select therapies and associated products with complete commercial information
-              </p>
-            </CardHeader>
-            <CardContent>
-              {therapies.length === 0 ? (
-                <div className="text-center py-8">
-                  <Stethoscope className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Therapies Available</h3>
-                  <p className="text-gray-500 mb-4">
-                    Generate therapy data first using the "Generate New Data" tab.
-                  </p>
-                </div>
-              ) : (
-                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                   {therapies.map((therapy) => {
-                     const isSelected = Array.isArray(selectedTherapies) && selectedTherapies.some(s => s.therapy_id === therapy.id);
-                     const therapyProducts = getProductsForTherapy(therapy.id);
-                     const isGenerating = generatingProducts.has(therapy.id);
-                    
-                    return (
-                      <Card 
-                        key={therapy.id} 
-                        className={`cursor-pointer transition-all hover:shadow-md ${
-                          isSelected ? 'ring-2 ring-blue-500 bg-blue-50' : ''
-                        } ${isGenerating ? 'opacity-75' : ''}`}
-                        onClick={() => !isGenerating && handleTherapySelect(therapy)}
-                      >
-                        <CardContent className="p-4">
-                          <div className="flex items-start justify-between mb-3">
-                            <h4 className="font-medium">{therapy.name}</h4>
-                            <div className="flex items-center space-x-2">
-                              {isGenerating && (
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600"></div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Stethoscope className="h-5 w-5 text-blue-600" />
+            <span>Therapy Selection & Generation</span>
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Select existing therapies or generate new therapy data using AI
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Therapy Selection Dropdown */}
+          <div className="space-y-4">
+            <div className="flex items-center space-x-4">
+              <div className="flex-1">
+                <Label htmlFor="therapy-select">Select Therapy</Label>
+                <Select value={selectedTherapyId} onValueChange={setSelectedTherapyId}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Choose a therapy or generate new data..." />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[300px] bg-background border border-border shadow-lg z-50">
+                    {therapies.length > 0 && (
+                      <>
+                        <div className="px-3 py-2 text-sm font-medium text-muted-foreground border-b">
+                          Existing Therapies
+                        </div>
+                        {therapies.map((therapy) => {
+                          const therapyProducts = getProductsForTherapy(therapy.id);
+                          const isGenerating = generatingProducts.has(therapy.id);
+                          const isSelected = Array.isArray(selectedTherapies) && selectedTherapies.some(s => s.therapy_id === therapy.id);
+                          
+                          return (
+                            <SelectItem 
+                              key={therapy.id} 
+                              value={therapy.id}
+                              disabled={isGenerating}
+                              className="flex-col items-start p-3 space-y-1"
+                            >
+                              <div className="flex items-center justify-between w-full">
+                                <span className="font-medium">{therapy.name}</span>
+                                <div className="flex items-center space-x-2">
+                                  {isGenerating && (
+                                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-purple-600"></div>
+                                  )}
+                                  {isSelected && <CheckCircle className="h-3 w-3 text-blue-600" />}
+                                </div>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <Badge variant="outline" className="text-xs">
+                                  {THERAPY_TYPES[therapy.therapy_type]}
+                                </Badge>
+                                <span className="text-xs text-muted-foreground">
+                                  {isGenerating ? 'Generating...' : `${therapyProducts.length} products`}
+                                </span>
+                              </div>
+                              {therapy.indication && (
+                                <span className="text-xs text-muted-foreground">{therapy.indication}</span>
                               )}
-                              {isSelected && <CheckCircle className="h-5 w-5 text-blue-600" />}
-                            </div>
-                          </div>
-                          
-                          <Badge variant="outline" className="mb-2">
-                            {THERAPY_TYPES[therapy.therapy_type]}
-                          </Badge>
-                          
-                          {therapy.description && (
-                            <p className="text-sm text-muted-foreground mb-3">
-                              {therapy.description}
-                            </p>
-                          )}
-                          
-                           <div className="space-y-2 text-sm">
-                             <div className="flex items-center text-muted-foreground">
-                               <Building className="h-4 w-4 mr-2" />
-                               <span>
-                                 {isGenerating ? 'Generating products...' : `${therapyProducts.length} products available`}
-                               </span>
-                             </div>
-                             
-                             {therapy.indication && (
-                               <div className="flex items-center text-muted-foreground">
-                                 <Users className="h-4 w-4 mr-2" />
-                                 <span>{therapy.indication}</span>
-                               </div>
-                             )}
-                           </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                            </SelectItem>
+                          );
+                        })}
+                      </>
+                    )}
+                    
+                    <div className="px-3 py-2 text-sm font-medium text-muted-foreground border-t border-b bg-muted/50">
+                      Generate New Data
+                    </div>
+                    <SelectItem value="generate-new" className="p-3">
+                      <div className="flex items-center space-x-2">
+                        <Sparkles className="h-4 w-4 text-purple-600" />
+                        <span>Generate New Therapy Data</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <Button 
+                onClick={handleTherapyAction}
+                disabled={!selectedTherapyId || isGenerating}
+                className="mt-6"
+              >
+                {isGenerating ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Processing...
+                  </>
+                ) : selectedTherapyId === 'generate-new' ? (
+                  <>
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Generate Data
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Therapy
+                  </>
+                )}
+              </Button>
+            </div>
+
+            {/* Generation Status */}
+            {selectedTherapyId === 'generate-new' && (
+              <Card className="bg-purple-50 border-purple-200">
+                <CardContent className="p-4">
+                  <div className="flex items-center space-x-2 mb-3">
+                    <Sparkles className="h-5 w-5 text-purple-600" />
+                    <span className="font-medium text-purple-900">AI Data Generation</span>
+                  </div>
+                  <p className="text-sm text-purple-700 mb-3">
+                    Generate comprehensive therapy data including Cell Therapy, Gene Therapy, Personalized Medicine, and Radioligand Therapy with associated products and services.
+                  </p>
+                  <div className="grid grid-cols-2 gap-2 text-xs text-purple-600">
+                    <div>• Multiple therapy modalities</div>
+                    <div>• Commercial product data</div>
+                    <div>• Manufacturing information</div>
+                    <div>• Service offerings</div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
         {/* Selected Therapies Configuration */}
         {Array.isArray(selectedTherapies) && selectedTherapies.length > 0 && (
@@ -664,26 +766,6 @@ export const TherapyServiceSelector: React.FC<TherapyServiceSelectorProps> = ({
             </CardContent>
           </Card>
         )}
-      </TabsContent>
-
-        {/* Data Generation Tab */}
-        <TabsContent value="generate" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Sparkles className="h-5 w-5 text-purple-600" />
-                <span>Generate Therapy & Product Data</span>
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Use AI to generate comprehensive therapy data including products, manufacturers, and commercial information
-              </p>
-            </CardHeader>
-            <CardContent>
-              <TherapyDataGenerator />
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
     </div>
   );
 };
