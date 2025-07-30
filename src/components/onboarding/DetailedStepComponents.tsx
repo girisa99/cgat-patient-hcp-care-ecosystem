@@ -119,7 +119,10 @@ export const DetailedCreditApplicationStep = ({ formData, updateFormData }: any)
           
           <Button 
             className="mt-6"
-            onClick={() => {
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('Credit Application button clicked!');
               // Use React Router navigation instead of window.location
               navigate('/credit-application');
             }}
@@ -220,9 +223,12 @@ export const DetailedGPOMembershipStep = ({ formData, updateFormData }: any) => 
           <Button 
             variant="outline" 
             className="w-full"
-            onClick={() => {
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('GPO Membership button clicked!');
               // Add GPO membership functionality
-              console.log('Adding GPO membership...');
+              alert('GPO Membership functionality - coming soon!');
               // TODO: Implement GPO membership addition logic
             }}
           >
