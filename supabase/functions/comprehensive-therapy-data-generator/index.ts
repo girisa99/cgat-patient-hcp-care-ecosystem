@@ -6,6 +6,15 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+interface TherapyData {
+  therapies: any[];
+  modalities: any[];
+  manufacturers: any[];
+  products: any[];
+  clinical_trials: any[];
+  commercial_products: any[];
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -17,28 +26,25 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    console.log('Generating comprehensive therapy data...');
+    console.log('Generating comprehensive therapy data for all therapeutic modalities...');
 
-    // Generate core therapy data
-    const therapyData = generateTherapyData();
-    const modalityData = generateModalityData();
-    const manufacturerData = generateManufacturerData();
+    // Generate comprehensive therapy data
+    const comprehensiveTherapyData = await generateComprehensiveTherapyData();
 
-    // Insert data in batches
-    await insertData(supabase, {
-      therapies: therapyData,
-      modalities: modalityData,
-      manufacturers: manufacturerData
-    });
+    // Insert all data in batches
+    await insertTherapyData(supabase, comprehensiveTherapyData);
 
     return new Response(
       JSON.stringify({
         success: true,
         message: 'Comprehensive therapy data generated successfully',
         data: {
-          therapies_created: therapyData.length,
-          modalities_created: modalityData.length,
-          manufacturers_created: manufacturerData.length
+          therapies_created: comprehensiveTherapyData.therapies.length,
+          modalities_created: comprehensiveTherapyData.modalities.length,
+          manufacturers_created: comprehensiveTherapyData.manufacturers.length,
+          products_created: comprehensiveTherapyData.products.length,
+          clinical_trials_created: comprehensiveTherapyData.clinical_trials.length,
+          commercial_products_created: comprehensiveTherapyData.commercial_products.length
         }
       }),
       { 
@@ -47,10 +53,10 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error('Error generating therapy data:', error);
+    console.error('Error generating comprehensive therapy data:', error);
     return new Response(
       JSON.stringify({ 
-        error: 'Failed to generate therapy data',
+        error: 'Failed to generate comprehensive therapy data',
         details: error.message 
       }),
       { 
@@ -61,10 +67,11 @@ serve(async (req) => {
   }
 });
 
-function generateTherapyData() {
+async function generateComprehensiveTherapyData(): Promise<TherapyData> {
   const now = new Date().toISOString();
-  
-  return [
+
+  // Core therapy data with all categories preserved
+  const therapies = [
     // Cell Therapies
     {
       id: crypto.randomUUID(),
@@ -88,6 +95,20 @@ function generateTherapyData() {
       indication: 'Large B-cell lymphoma, primary mediastinal B-cell lymphoma',
       target_population: 'Adults with relapsed or refractory large B-cell lymphoma',
       mechanism_of_action: 'Anti-CD19 CAR-T cell therapy',
+      special_handling_requirements: { cold_chain: true, specialized_facility: true, trained_staff: true },
+      regulatory_designations: ['FDA Approved', 'EMA Approved'],
+      is_active: true,
+      created_at: now,
+      updated_at: now
+    },
+    {
+      id: crypto.randomUUID(),
+      name: 'Breyanzi (lisocabtagene maraleucel)',
+      therapy_type: 'car_t_cell',
+      description: 'CD19-directed CAR-T cell therapy for large B-cell lymphoma',
+      indication: 'Large B-cell lymphoma',
+      target_population: 'Adults with relapsed or refractory large B-cell lymphoma',
+      mechanism_of_action: 'Anti-CD19 CAR-T cell therapy with defined composition',
       special_handling_requirements: { cold_chain: true, specialized_facility: true, trained_staff: true },
       regulatory_designations: ['FDA Approved', 'EMA Approved'],
       is_active: true,
@@ -183,12 +204,9 @@ function generateTherapyData() {
       updated_at: now
     }
   ];
-}
 
-function generateModalityData() {
-  const now = new Date().toISOString();
-  
-  return [
+  // Modality data
+  const modalities = [
     {
       id: crypto.randomUUID(),
       name: 'Autologous CAR-T',
@@ -229,12 +247,9 @@ function generateModalityData() {
       updated_at: now
     }
   ];
-}
 
-function generateManufacturerData() {
-  const now = new Date().toISOString();
-  
-  return [
+  // Manufacturer data
+  const manufacturers = [
     {
       id: crypto.randomUUID(),
       name: 'Novartis',
@@ -260,24 +275,160 @@ function generateManufacturerData() {
       is_active: true,
       created_at: now,
       updated_at: now
+    }
+  ];
+
+  // Product data (restored functionality)
+  const products = [
+    {
+      id: crypto.randomUUID(),
+      product_id: 'KYMR-001',
+      name: 'Kymriah',
+      manufacturer_id: manufacturers[0].id, // Novartis
+      therapy_category: 'CAR-T Cell Therapy',
+      indication: 'B-cell ALL, DLBCL',
+      regulatory_status: 'FDA Approved',
+      launch_date: '2017-08-30',
+      market_access_status: 'Commercial',
+      pricing_information: { list_price: 450000, currency: 'USD', per: 'treatment' },
+      is_active: true,
+      created_at: now,
+      updated_at: now
     },
     {
       id: crypto.randomUUID(),
-      name: 'Advanced Accelerator Applications (AAA)',
-      manufacturer_type: 'specialty',
-      headquarters_location: 'Saint-Genis-Pouilly, France',
-      regulatory_status: { FDA_approved: true, EMA_approved: true },
-      therapeutic_areas: ['Nuclear Medicine', 'Radioligand Therapy'],
-      manufacturing_capabilities: ['Radiopharmaceutical Production', 'Targeted Therapy'],
-      compliance_certifications: ['GMP', 'Radiation Safety', 'Nuclear Medicine'],
+      product_id: 'YESC-001',
+      name: 'Yescarta',
+      manufacturer_id: manufacturers[1].id, // Gilead
+      therapy_category: 'CAR-T Cell Therapy',
+      indication: 'Large B-cell lymphoma',
+      regulatory_status: 'FDA Approved',
+      launch_date: '2017-10-18',
+      market_access_status: 'Commercial',
+      pricing_information: { list_price: 373000, currency: 'USD', per: 'treatment' },
       is_active: true,
       created_at: now,
       updated_at: now
     }
   ];
+
+  // Clinical trials data (restored functionality)
+  const clinical_trials = [
+    {
+      id: crypto.randomUUID(),
+      trial_id: 'NCT02435849',
+      trial_name: 'Study of CTL019 in Pediatric and Young Adult Patients with Relapsed/Refractory B-cell ALL',
+      therapy_id: therapies[0].id, // Kymriah
+      phase: 'Phase II',
+      status: 'Completed',
+      primary_endpoints: ['Overall remission rate within 3 months'],
+      secondary_endpoints: ['Duration of remission', 'Overall survival'],
+      patient_population: 'Pediatric and young adult patients with R/R B-cell ALL',
+      enrollment_target: 68,
+      start_date: '2015-04-01',
+      completion_date: '2020-12-31',
+      sponsor: 'Novartis',
+      locations: ['United States', 'Canada', 'Europe'],
+      results_summary: { primary_endpoint_met: true, response_rate: 0.81, safety_profile: 'manageable' },
+      is_active: true,
+      created_at: now,
+      updated_at: now
+    },
+    {
+      id: crypto.randomUUID(),
+      trial_id: 'NCT03391466',
+      trial_name: 'Study of JCAR017 in Adult Patients with Relapsed or Refractory B-Cell Non-Hodgkin Lymphoma',
+      therapy_id: therapies[2].id, // Breyanzi
+      phase: 'Phase III',
+      status: 'Completed',
+      primary_endpoints: ['Event-free survival'],
+      secondary_endpoints: ['Overall response rate', 'Overall survival'],
+      patient_population: 'Adults with R/R large B-cell lymphoma',
+      enrollment_target: 184,
+      start_date: '2017-12-01',
+      completion_date: '2021-06-30',
+      sponsor: 'Bristol Myers Squibb',
+      locations: ['United States', 'Europe', 'Asia'],
+      results_summary: { primary_endpoint_met: true, response_rate: 0.73, safety_profile: 'acceptable' },
+      is_active: true,
+      created_at: now,
+      updated_at: now
+    }
+  ];
+
+  // Commercial products data (restored functionality)
+  const commercial_products = [
+    {
+      id: crypto.randomUUID(),
+      product_id: 'KYMR-COMM-001',
+      therapy_id: therapies[0].id, // Kymriah
+      manufacturer_id: manufacturers[0].id, // Novartis
+      product_name: 'Kymriah Commercial',
+      market_authorization_date: '2017-08-30',
+      countries_approved: ['United States', 'European Union', 'Canada', 'Australia'],
+      distribution_channels: ['Authorized Treatment Centers', 'Specialty Pharmacies'],
+      supply_chain_requirements: {
+        cold_chain: true,
+        specialized_logistics: true,
+        patient_scheduling: true,
+        manufacturing_slots: true
+      },
+      competitive_landscape: {
+        direct_competitors: ['Yescarta', 'Breyanzi'],
+        market_share: 0.35,
+        competitive_advantages: ['First to market', 'Pediatric indication']
+      },
+      commercial_metrics: {
+        annual_revenue: 456000000,
+        patient_treatments: 1200,
+        market_penetration: 0.15
+      },
+      is_active: true,
+      created_at: now,
+      updated_at: now
+    },
+    {
+      id: crypto.randomUUID(),
+      product_id: 'ZOLG-COMM-001',
+      therapy_id: therapies[3].id, // Zolgensma
+      manufacturer_id: manufacturers[0].id, // Novartis
+      product_name: 'Zolgensma Commercial',
+      market_authorization_date: '2019-05-24',
+      countries_approved: ['United States', 'European Union', 'Japan'],
+      distribution_channels: ['Specialized Gene Therapy Centers'],
+      supply_chain_requirements: {
+        cold_chain: true,
+        ultra_low_temperature: true,
+        specialized_facilities: true,
+        patient_preparation: true
+      },
+      competitive_landscape: {
+        direct_competitors: ['Spinraza'],
+        market_share: 0.60,
+        competitive_advantages: ['One-time treatment', 'Gene therapy approach']
+      },
+      commercial_metrics: {
+        annual_revenue: 920000000,
+        patient_treatments: 400,
+        market_penetration: 0.70
+      },
+      is_active: true,
+      created_at: now,
+      updated_at: now
+    }
+  ];
+
+  return {
+    therapies,
+    modalities,
+    manufacturers,
+    products,
+    clinical_trials,
+    commercial_products
+  };
 }
 
-async function insertData(supabase: any, data: any) {
+async function insertTherapyData(supabase: any, data: TherapyData) {
   // Insert therapies
   const { error: therapyError } = await supabase
     .from('therapies')
@@ -306,6 +457,36 @@ async function insertData(supabase: any, data: any) {
   if (manufacturerError) {
     console.error('Error inserting manufacturers:', manufacturerError);
     throw manufacturerError;
+  }
+
+  // Insert products
+  const { error: productError } = await supabase
+    .from('therapy_products')
+    .upsert(data.products, { onConflict: 'product_id' });
+  
+  if (productError) {
+    console.error('Error inserting products:', productError);
+    throw productError;
+  }
+
+  // Insert clinical trials
+  const { error: trialError } = await supabase
+    .from('clinical_trials')
+    .upsert(data.clinical_trials, { onConflict: 'trial_id' });
+  
+  if (trialError) {
+    console.error('Error inserting clinical trials:', trialError);
+    throw trialError;
+  }
+
+  // Insert commercial products
+  const { error: commercialError } = await supabase
+    .from('commercial_products')
+    .upsert(data.commercial_products, { onConflict: 'product_id' });
+  
+  if (commercialError) {
+    console.error('Error inserting commercial products:', commercialError);
+    throw commercialError;
   }
 
   console.log('All therapy data inserted successfully!');
