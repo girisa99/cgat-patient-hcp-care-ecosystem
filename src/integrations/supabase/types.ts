@@ -2244,6 +2244,315 @@ export type Database = {
           },
         ]
       }
+      credit_application_audit: {
+        Row: {
+          action_type: string
+          actor_ip_address: unknown | null
+          actor_user_agent: string | null
+          actor_user_id: string | null
+          additional_context: Json | null
+          created_at: string
+          credit_application_id: string
+          field_changed: string | null
+          id: string
+          new_value_hash: string | null
+          old_value_hash: string | null
+        }
+        Insert: {
+          action_type: string
+          actor_ip_address?: unknown | null
+          actor_user_agent?: string | null
+          actor_user_id?: string | null
+          additional_context?: Json | null
+          created_at?: string
+          credit_application_id: string
+          field_changed?: string | null
+          id?: string
+          new_value_hash?: string | null
+          old_value_hash?: string | null
+        }
+        Update: {
+          action_type?: string
+          actor_ip_address?: unknown | null
+          actor_user_agent?: string | null
+          actor_user_id?: string | null
+          additional_context?: Json | null
+          created_at?: string
+          credit_application_id?: string
+          field_changed?: string | null
+          id?: string
+          new_value_hash?: string | null
+          old_value_hash?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_application_audit_credit_application_id_fkey"
+            columns: ["credit_application_id"]
+            isOneToOne: false
+            referencedRelation: "credit_applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      credit_application_documents: {
+        Row: {
+          access_level: string | null
+          compliance_tags: string[] | null
+          content_type: string | null
+          created_at: string
+          credit_application_id: string
+          data_classification: string | null
+          document_name: string
+          document_type: string
+          encrypted_checksum: string | null
+          encryption_method: string | null
+          file_size: number | null
+          id: string
+          retention_years: number | null
+          storage_path: string
+          updated_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          access_level?: string | null
+          compliance_tags?: string[] | null
+          content_type?: string | null
+          created_at?: string
+          credit_application_id: string
+          data_classification?: string | null
+          document_name: string
+          document_type: string
+          encrypted_checksum?: string | null
+          encryption_method?: string | null
+          file_size?: number | null
+          id?: string
+          retention_years?: number | null
+          storage_path: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          access_level?: string | null
+          compliance_tags?: string[] | null
+          content_type?: string | null
+          created_at?: string
+          credit_application_id?: string
+          data_classification?: string | null
+          document_name?: string
+          document_type?: string
+          encrypted_checksum?: string | null
+          encryption_method?: string | null
+          file_size?: number | null
+          id?: string
+          retention_years?: number | null
+          storage_path?: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_application_documents_credit_application_id_fkey"
+            columns: ["credit_application_id"]
+            isOneToOne: false
+            referencedRelation: "credit_applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      credit_application_terms: {
+        Row: {
+          compliance_framework: string[] | null
+          content: string
+          created_at: string
+          effective_date: string
+          expiry_date: string | null
+          id: string
+          is_active: boolean | null
+          requires_signature: boolean | null
+          terms_type: string
+          title: string
+          updated_at: string
+          version: string
+        }
+        Insert: {
+          compliance_framework?: string[] | null
+          content: string
+          created_at?: string
+          effective_date?: string
+          expiry_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          requires_signature?: boolean | null
+          terms_type: string
+          title: string
+          updated_at?: string
+          version: string
+        }
+        Update: {
+          compliance_framework?: string[] | null
+          content?: string
+          created_at?: string
+          effective_date?: string
+          expiry_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          requires_signature?: boolean | null
+          terms_type?: string
+          title?: string
+          updated_at?: string
+          version?: string
+        }
+        Relationships: []
+      }
+      credit_applications: {
+        Row: {
+          annual_revenue_range: string | null
+          applicant_user_id: string | null
+          application_status: string | null
+          approved_credit_limit: number | null
+          approved_payment_terms: string | null
+          bank_references: Json | null
+          business_description: string | null
+          business_type: string
+          created_at: string
+          credit_check_authorized: boolean | null
+          credit_check_authorized_at: string | null
+          credit_score_range: string | null
+          data_classification: string | null
+          debt_to_income_ratio: number | null
+          decision_date: string | null
+          decision_reason: string | null
+          encrypted_bank_account: string | null
+          encrypted_federal_id: string | null
+          encrypted_ssn: string | null
+          encryption_key_id: string | null
+          financial_statements: Json | null
+          id: string
+          ip_address: unknown | null
+          number_of_employees: number | null
+          onboarding_id: string | null
+          payment_terms_requested: string | null
+          primary_contact_email: string | null
+          primary_contact_name: string
+          primary_contact_phone: string | null
+          primary_contact_title: string | null
+          privacy_policy_accepted: boolean | null
+          privacy_policy_accepted_at: string | null
+          requested_credit_limit: number | null
+          retention_policy: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          submitted_at: string | null
+          terms_accepted: boolean | null
+          terms_accepted_at: string | null
+          terms_version: string | null
+          trade_references: Json | null
+          updated_at: string
+          user_agent: string | null
+          years_in_business: number | null
+        }
+        Insert: {
+          annual_revenue_range?: string | null
+          applicant_user_id?: string | null
+          application_status?: string | null
+          approved_credit_limit?: number | null
+          approved_payment_terms?: string | null
+          bank_references?: Json | null
+          business_description?: string | null
+          business_type: string
+          created_at?: string
+          credit_check_authorized?: boolean | null
+          credit_check_authorized_at?: string | null
+          credit_score_range?: string | null
+          data_classification?: string | null
+          debt_to_income_ratio?: number | null
+          decision_date?: string | null
+          decision_reason?: string | null
+          encrypted_bank_account?: string | null
+          encrypted_federal_id?: string | null
+          encrypted_ssn?: string | null
+          encryption_key_id?: string | null
+          financial_statements?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          number_of_employees?: number | null
+          onboarding_id?: string | null
+          payment_terms_requested?: string | null
+          primary_contact_email?: string | null
+          primary_contact_name: string
+          primary_contact_phone?: string | null
+          primary_contact_title?: string | null
+          privacy_policy_accepted?: boolean | null
+          privacy_policy_accepted_at?: string | null
+          requested_credit_limit?: number | null
+          retention_policy?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          submitted_at?: string | null
+          terms_accepted?: boolean | null
+          terms_accepted_at?: string | null
+          terms_version?: string | null
+          trade_references?: Json | null
+          updated_at?: string
+          user_agent?: string | null
+          years_in_business?: number | null
+        }
+        Update: {
+          annual_revenue_range?: string | null
+          applicant_user_id?: string | null
+          application_status?: string | null
+          approved_credit_limit?: number | null
+          approved_payment_terms?: string | null
+          bank_references?: Json | null
+          business_description?: string | null
+          business_type?: string
+          created_at?: string
+          credit_check_authorized?: boolean | null
+          credit_check_authorized_at?: string | null
+          credit_score_range?: string | null
+          data_classification?: string | null
+          debt_to_income_ratio?: number | null
+          decision_date?: string | null
+          decision_reason?: string | null
+          encrypted_bank_account?: string | null
+          encrypted_federal_id?: string | null
+          encrypted_ssn?: string | null
+          encryption_key_id?: string | null
+          financial_statements?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          number_of_employees?: number | null
+          onboarding_id?: string | null
+          payment_terms_requested?: string | null
+          primary_contact_email?: string | null
+          primary_contact_name?: string
+          primary_contact_phone?: string | null
+          primary_contact_title?: string | null
+          privacy_policy_accepted?: boolean | null
+          privacy_policy_accepted_at?: string | null
+          requested_credit_limit?: number | null
+          retention_policy?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          submitted_at?: string | null
+          terms_accepted?: boolean | null
+          terms_accepted_at?: string | null
+          terms_version?: string | null
+          trade_references?: Json | null
+          updated_at?: string
+          user_agent?: string | null
+          years_in_business?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_applications_onboarding_id_fkey"
+            columns: ["onboarding_id"]
+            isOneToOne: false
+            referencedRelation: "treatment_center_onboarding"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       data_import_sessions: {
         Row: {
           completed_at: string | null
@@ -6310,6 +6619,17 @@ export type Database = {
       is_admin_user_safe: {
         Args: { check_user_id: string }
         Returns: boolean
+      }
+      log_credit_application_audit: {
+        Args: {
+          p_credit_application_id: string
+          p_action_type: string
+          p_field_changed?: string
+          p_old_value?: string
+          p_new_value?: string
+          p_additional_context?: Json
+        }
+        Returns: undefined
       }
       log_onboarding_audit: {
         Args: {

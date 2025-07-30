@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
-import { Building, Users, CreditCard, FileText } from 'lucide-react';
+import { Building, Users, CreditCard, FileText, Shield, Lock, Clock } from 'lucide-react';
 
 // BUSINESS CLASSIFICATION STEP
 export const DetailedBusinessClassificationStep = ({ formData, updateFormData }: any) => (
@@ -71,77 +71,109 @@ export const DetailedBusinessClassificationStep = ({ formData, updateFormData }:
   </div>
 );
 
-// DETAILED CREDIT APPLICATION STEP
-export const DetailedCreditApplicationStep = ({ formData, updateFormData }: any) => (
-  <div className="space-y-6">
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div>
-        <Label htmlFor="requested_credit_limit">Requested Credit Limit ($)</Label>
-        <Input
-          id="requested_credit_limit"
-          type="number"
-          placeholder="100000"
-          min="0"
-        />
+// ENHANCED SECURE CREDIT APPLICATION STEP
+export const DetailedCreditApplicationStep = ({ formData, updateFormData }: any) => {
+  return (
+    <div className="space-y-6">
+      <div className="p-4 border rounded-lg bg-blue-50">
+        <div className="flex items-center space-x-2 mb-2">
+          <Shield className="h-5 w-5 text-blue-600" />
+          <h4 className="font-medium text-blue-900">Secure Credit Application</h4>
+        </div>
+        <p className="text-sm text-blue-800">
+          Complete your credit application with enterprise-grade security. All sensitive data including SSN, 
+          Federal ID numbers, and financial information is encrypted and protected.
+        </p>
       </div>
-      <div>
-        <Label htmlFor="payment_terms_requested">Requested Payment Terms</Label>
-        <select className="w-full px-3 py-2 border rounded-md">
-          <option value="">Select terms</option>
-          <option value="net_30">Net 30 Days</option>
-          <option value="net_60">Net 60 Days</option>
-          <option value="net_90">Net 90 Days</option>
-          <option value="cod">Cash on Delivery</option>
-          <option value="prepaid">Prepaid</option>
-        </select>
-      </div>
-    </div>
-    
-    <div className="p-4 border rounded-lg">
-      <h4 className="font-medium mb-3">Trade References</h4>
-      <p className="text-sm text-muted-foreground mb-4">
-        Provide three trade references for credit verification.
-      </p>
-      <div className="space-y-4">
-        {[1, 2, 3].map((ref) => (
-          <div key={ref} className="grid grid-cols-1 md:grid-cols-3 gap-3 p-3 border rounded">
-            <div>
-              <Label htmlFor={`trade_ref_${ref}_company`}>Company Name</Label>
-              <Input
-                id={`trade_ref_${ref}_company`}
-                placeholder="Reference company"
-              />
+      
+      <div className="p-6 border rounded-lg">
+        <div className="text-center space-y-4">
+          <Lock className="h-12 w-12 text-green-600 mx-auto" />
+          <h3 className="text-xl font-semibold">Protected Credit Application</h3>
+          <p className="text-gray-600 max-w-md mx-auto">
+            Your credit application includes comprehensive security features including data encryption, 
+            audit logging, secure document storage, and detailed terms & conditions.
+          </p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+            <div className="p-4 bg-green-50 rounded-lg">
+              <Shield className="h-8 w-8 text-green-600 mx-auto mb-2" />
+              <h4 className="font-medium">Data Encryption</h4>
+              <p className="text-sm text-gray-600">SSN & Federal ID encrypted</p>
             </div>
-            <div>
-              <Label htmlFor={`trade_ref_${ref}_contact`}>Contact Person</Label>
-              <Input
-                id={`trade_ref_${ref}_contact`}
-                placeholder="Contact name"
-              />
+            
+            <div className="p-4 bg-blue-50 rounded-lg">
+              <FileText className="h-8 w-8 text-blue-600 mx-auto mb-2" />
+              <h4 className="font-medium">Secure Documents</h4>
+              <p className="text-sm text-gray-600">Protected file storage</p>
             </div>
-            <div>
-              <Label htmlFor={`trade_ref_${ref}_phone`}>Phone</Label>
-              <Input
-                id={`trade_ref_${ref}_phone`}
-                placeholder="(555) 123-4567"
-              />
+            
+            <div className="p-4 bg-purple-50 rounded-lg">
+              <Clock className="h-8 w-8 text-purple-600 mx-auto mb-2" />
+              <h4 className="font-medium">Audit Trail</h4>
+              <p className="text-sm text-gray-600">Complete activity logging</p>
             </div>
           </div>
-        ))}
+          
+          <Button 
+            className="mt-6"
+            onClick={() => {
+              // Navigate to the full secure credit application
+              window.location.href = '/credit-application';
+            }}
+          >
+            <CreditCard className="h-4 w-4 mr-2" />
+            Start Secure Credit Application
+          </Button>
+        </div>
+      </div>
+      
+      {/* Basic credit information for the onboarding flow */}
+      <div className="space-y-4">
+        <h4 className="font-medium">Basic Credit Request (Optional)</h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="basic_credit_limit">Estimated Credit Limit ($)</Label>
+            <Input
+              id="basic_credit_limit"
+              type="number"
+              placeholder="100000"
+              min="0"
+              onChange={(e) => updateFormData('basic_credit_limit', e.target.value)}
+            />
+          </div>
+          <div>
+            <Label htmlFor="basic_payment_terms">Preferred Payment Terms</Label>
+            <select 
+              className="w-full px-3 py-2 border rounded-md"
+              onChange={(e) => updateFormData('basic_payment_terms', e.target.value)}
+            >
+              <option value="">Select terms</option>
+              <option value="net_30">Net 30 Days</option>
+              <option value="net_60">Net 60 Days</option>
+              <option value="net_90">Net 90 Days</option>
+              <option value="cod">Cash on Delivery</option>
+              <option value="prepaid">Prepaid</option>
+            </select>
+          </div>
+        </div>
+        
+        <div className="p-4 border rounded-lg bg-yellow-50">
+          <div className="flex items-center space-x-2">
+            <Checkbox id="authorize_basic_credit_check" />
+            <Label htmlFor="authorize_basic_credit_check" className="text-sm">
+              I may be interested in credit terms and authorize preliminary credit evaluation
+            </Label>
+          </div>
+          <p className="text-xs text-gray-600 mt-2">
+            This is optional and for preliminary assessment only. Complete credit application 
+            with full security features will be available separately.
+          </p>
+        </div>
       </div>
     </div>
-    
-    <div className="p-4 border rounded-lg bg-yellow-50">
-      <h4 className="font-medium mb-2">Credit Check Authorization</h4>
-      <div className="flex items-center space-x-2">
-        <Checkbox id="authorize_credit_check" />
-        <Label htmlFor="authorize_credit_check">
-          I authorize a credit check to be performed for this application
-        </Label>
-      </div>
-    </div>
-  </div>
-);
+  );
+};
 
 // DETAILED GPO MEMBERSHIP STEP
 export const DetailedGPOMembershipStep = ({ formData, updateFormData }: any) => (
