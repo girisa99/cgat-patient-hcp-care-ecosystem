@@ -123,6 +123,11 @@ export const TherapyServiceSelector: React.FC<TherapyServiceSelectorProps> = ({
   };
 
   const handleTherapySelect = (therapy: Therapy) => {
+    if (!Array.isArray(selectedTherapies)) {
+      console.error('selectedTherapies is not an array:', selectedTherapies);
+      return;
+    }
+    
     const existingIndex = selectedTherapies.findIndex(s => s.therapy_id === therapy.id);
     
     if (existingIndex >= 0) {
@@ -149,6 +154,11 @@ export const TherapyServiceSelector: React.FC<TherapyServiceSelectorProps> = ({
   };
 
   const updateTherapySelection = (therapyId: string, field: keyof TherapySelection, value: any) => {
+    if (!Array.isArray(selectedTherapies)) {
+      console.error('selectedTherapies is not an array:', selectedTherapies);
+      return;
+    }
+    
     const updated = selectedTherapies.map(selection =>
       selection.therapy_id === therapyId ? { ...selection, [field]: value } : selection
     );
@@ -208,10 +218,10 @@ export const TherapyServiceSelector: React.FC<TherapyServiceSelectorProps> = ({
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {therapies.map((therapy) => {
-                    const isSelected = selectedTherapies.some(s => s.therapy_id === therapy.id);
-                    const therapyProducts = getProductsForTherapy(therapy.id);
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                   {therapies.map((therapy) => {
+                     const isSelected = Array.isArray(selectedTherapies) && selectedTherapies.some(s => s.therapy_id === therapy.id);
+                     const therapyProducts = getProductsForTherapy(therapy.id);
                     
                     return (
                       <Card 
@@ -260,7 +270,7 @@ export const TherapyServiceSelector: React.FC<TherapyServiceSelectorProps> = ({
           </Card>
 
           {/* Selected Therapies Configuration */}
-          {selectedTherapies.length > 0 && (
+          {Array.isArray(selectedTherapies) && selectedTherapies.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle>Configure Selected Therapies</CardTitle>
