@@ -26,7 +26,8 @@ import {
   Package,
   Briefcase,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Signature
 } from 'lucide-react';
 import { TreatmentCenterOnboarding, OnboardingStep } from '@/types/onboarding';
 import { useAutoSave } from '@/hooks/useAutoSave';
@@ -55,6 +56,7 @@ import {
   DetailedTechnologyIntegrationStep
 } from './AdditionalStepComponents';
 import { TherapyServiceSelector } from '@/components/therapy/TherapyServiceSelector';
+import { OnboardingSignatureWorkflow } from './OnboardingSignatureWorkflow';
 
 interface ClusteredOnboardingWizardProps {
   applicationId?: string | null;
@@ -96,7 +98,8 @@ export const ClusteredOnboardingWizard: React.FC<ClusteredOnboardingWizardProps>
     tab3: 0,
     tab4: 0,
     tab5: 0,
-    tab6: 0
+    tab6: 0,
+    tab7: 0
   });
   
   const [formData, setFormData] = useState<Partial<TreatmentCenterOnboarding>>(
@@ -366,6 +369,33 @@ export const ClusteredOnboardingWizard: React.FC<ClusteredOnboardingWizardProps>
           icon: <Check className="h-4 w-4" />,
           required: true,
           component: <ReviewStep formData={formData} />
+        }
+      ]
+    },
+    {
+      id: 'tab7',
+      title: 'Signature Workflow',
+      description: 'Complete signature process for onboarding and credit application',
+      icon: <Signature className="h-5 w-5" />,
+      color: 'bg-purple-600',
+      subSteps: [
+        {
+          id: 'signature_workflow',
+          title: 'Digital Signatures',
+          description: 'Complete multi-party signature workflow',
+          icon: <Signature className="h-4 w-4" />,
+          required: true,
+          component: (
+            <OnboardingSignatureWorkflow
+              onboardingId={applicationId || ''}
+              onboardingData={formData}
+              onComplete={() => {
+                markStepComplete('signature_workflow');
+                // Navigate to completion or update status
+              }}
+              readOnly={false}
+            />
+          )
         }
       ]
     }
