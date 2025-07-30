@@ -67,6 +67,7 @@ export const TherapyServiceSelector: React.FC<TherapyServiceSelectorProps> = ({
   const [commercialProducts, setCommercialProducts] = useState<CommercialProduct[]>([]);
   const [manufacturers, setManufacturers] = useState<Manufacturer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [generatingProducts, setGeneratingProducts] = useState<Set<string>>(new Set());
   const [selectedTherapyId, setSelectedTherapyId] = useState<string>('');
   const [selectedProductId, setSelectedProductId] = useState<string>('');
   const { toast } = useToast();
@@ -138,7 +139,7 @@ export const TherapyServiceSelector: React.FC<TherapyServiceSelectorProps> = ({
     }
   };
 
-  const handleTherapySelect = (therapy: Therapy) => {
+  const handleTherapySelect = async (therapy: Therapy) => {
     console.log('handleTherapySelect called with selectedTherapies:', selectedTherapies);
     
     if (!Array.isArray(selectedTherapies)) {
@@ -153,6 +154,52 @@ export const TherapyServiceSelector: React.FC<TherapyServiceSelectorProps> = ({
       const updated = selectedTherapies.filter(s => s.therapy_id !== therapy.id);
       onTherapySelectionChange(updated);
     } else {
+      // Check if therapy has products, if not generate them
+      const therapyProducts = getProductsForTherapy(therapy.id);
+      
+      if (therapyProducts.length === 0) {
+        setGeneratingProducts(prev => new Set([...prev, therapy.id]));
+        
+        toast({
+          title: "Generating Products",
+          description: `Creating products for ${therapy.name}...`,
+        });
+        
+        try {
+          const response = await supabase.functions.invoke('generate-therapy-products', {
+            body: { therapy_ids: [therapy.id] }
+          });
+          
+          if (response.error) throw response.error;
+          
+          // Refresh product data
+          await fetchTherapyData();
+          
+          setGeneratingProducts(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(therapy.id);
+            return newSet;
+          });
+          
+          toast({
+            title: "Products Generated",
+            description: `Successfully created products for ${therapy.name}`,
+          });
+        } catch (error) {
+          console.error('Error generating products:', error);
+          setGeneratingProducts(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(therapy.id);
+            return newSet;
+          });
+          toast({
+            title: "Generation Error",
+            description: "Failed to generate products. Please try again.",
+            variant: "destructive"
+          });
+        }
+      }
+      
       // Add new selection
       const newSelection: TherapySelection = {
         therapy_id: therapy.id,
@@ -240,19 +287,25 @@ export const TherapyServiceSelector: React.FC<TherapyServiceSelectorProps> = ({
                    {therapies.map((therapy) => {
                      const isSelected = Array.isArray(selectedTherapies) && selectedTherapies.some(s => s.therapy_id === therapy.id);
                      const therapyProducts = getProductsForTherapy(therapy.id);
+                     const isGenerating = generatingProducts.has(therapy.id);
                     
                     return (
                       <Card 
                         key={therapy.id} 
                         className={`cursor-pointer transition-all hover:shadow-md ${
                           isSelected ? 'ring-2 ring-blue-500 bg-blue-50' : ''
-                        }`}
-                        onClick={() => handleTherapySelect(therapy)}
+                        } ${isGenerating ? 'opacity-75' : ''}`}
+                        onClick={() => !isGenerating && handleTherapySelect(therapy)}
                       >
                         <CardContent className="p-4">
                           <div className="flex items-start justify-between mb-3">
                             <h4 className="font-medium">{therapy.name}</h4>
-                            {isSelected && <CheckCircle className="h-5 w-5 text-blue-600" />}
+                            <div className="flex items-center space-x-2">
+                              {isGenerating && (
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600"></div>
+                              )}
+                              {isSelected && <CheckCircle className="h-5 w-5 text-blue-600" />}
+                            </div>
                           </div>
                           
                           <Badge variant="outline" className="mb-2">
@@ -265,19 +318,21 @@ export const TherapyServiceSelector: React.FC<TherapyServiceSelectorProps> = ({
                             </p>
                           )}
                           
-                          <div className="space-y-2 text-sm">
-                            <div className="flex items-center text-muted-foreground">
-                              <Building className="h-4 w-4 mr-2" />
-                              <span>{therapyProducts.length} products available</span>
-                            </div>
-                            
-                            {therapy.indication && (
-                              <div className="flex items-center text-muted-foreground">
-                                <Users className="h-4 w-4 mr-2" />
-                                <span>{therapy.indication}</span>
-                              </div>
-                            )}
-                          </div>
+                           <div className="space-y-2 text-sm">
+                             <div className="flex items-center text-muted-foreground">
+                               <Building className="h-4 w-4 mr-2" />
+                               <span>
+                                 {isGenerating ? 'Generating products...' : `${therapyProducts.length} products available`}
+                               </span>
+                             </div>
+                             
+                             {therapy.indication && (
+                               <div className="flex items-center text-muted-foreground">
+                                 <Users className="h-4 w-4 mr-2" />
+                                 <span>{therapy.indication}</span>
+                               </div>
+                             )}
+                           </div>
                         </CardContent>
                       </Card>
                     );
