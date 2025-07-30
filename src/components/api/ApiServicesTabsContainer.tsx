@@ -24,10 +24,14 @@ import TestingTab from './tabs/TestingTab';
 
 interface ApiServicesTabsContainerProps {
   defaultTab?: string;
+  selectedServiceId?: string | null;
+  onboardingContext?: boolean;
 }
 
 const ApiServicesTabsContainer: React.FC<ApiServicesTabsContainerProps> = ({ 
-  defaultTab = "internal" 
+  defaultTab = "internal",
+  selectedServiceId = null,
+  onboardingContext = false
 }) => {
   const [activeTab, setActiveTab] = useState(defaultTab);
   const { currentRole } = useRoleBasedNavigation();
@@ -227,10 +231,17 @@ const ApiServicesTabsContainer: React.FC<ApiServicesTabsContainerProps> = ({
         </TabsList>
 
         {tabs.map((tab) => {
-          const TabComponent = tab.component;
+          const TabComponent = tab.component as any;
           return (
             <TabsContent key={tab.id} value={tab.id} className="mt-6">
-              <TabComponent />
+              {tab.id === 'internal' ? (
+                <TabComponent 
+                  selectedServiceId={selectedServiceId}
+                  onboardingContext={onboardingContext}
+                />
+              ) : (
+                <TabComponent />
+              )}
             </TabsContent>
           );
         })}

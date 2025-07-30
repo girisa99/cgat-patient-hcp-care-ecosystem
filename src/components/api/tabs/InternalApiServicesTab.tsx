@@ -11,7 +11,15 @@ import {
 import { useMasterApiServices } from '@/hooks/useMasterApiServices';
 import ConfigurationDialog from '../ConfigurationDialog';
 
-const InternalApiServicesTab: React.FC = () => {
+interface InternalApiServicesTabProps {
+  selectedServiceId?: string | null;
+  onboardingContext?: boolean;
+}
+
+const InternalApiServicesTab: React.FC<InternalApiServicesTabProps> = ({
+  selectedServiceId = null,
+  onboardingContext = false
+}) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedService, setSelectedService] = useState<any>(null);
   const { toast } = useToast();
@@ -38,6 +46,13 @@ const InternalApiServicesTab: React.FC = () => {
   // Debug logging
   console.log('🔍 All API Services:', apiServices);
   console.log('🔍 Internal Services:', internalServices);
+  console.log('🔍 Selected Service ID:', selectedServiceId);
+  console.log('🔍 Onboarding Context:', onboardingContext);
+  
+  // Find the selected service if provided
+  const highlightedService = selectedServiceId 
+    ? internalServices.find(service => service.id === selectedServiceId)
+    : null;
   
   // Get filtered services based on search (from internal APIs only)
   const filteredServices = searchQuery 
@@ -47,6 +62,11 @@ const InternalApiServicesTab: React.FC = () => {
         service.category?.toLowerCase().includes(searchQuery.toLowerCase())
       )
     : internalServices;
+
+  // If we have a highlighted service, show it first
+  const orderedServices = highlightedService 
+    ? [highlightedService, ...filteredServices.filter(s => s.id !== selectedServiceId)]
+    : filteredServices;
 
   // Get statistics for internal APIs only
   const stats = {
@@ -152,11 +172,33 @@ const InternalApiServicesTab: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Onboarding Context Notice */}
+      {onboardingContext && highlightedService && (
+        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <h3 className="font-semibold text-blue-900 mb-2">Onboarding API Service</h3>
+          <p className="text-blue-700 text-sm mb-3">
+            You selected this API service for your treatment center onboarding. Review the details below 
+            to understand the integration requirements and capabilities.
+          </p>
+          <div className="p-3 bg-white border rounded">
+            <h4 className="font-medium text-blue-900">{highlightedService.name}</h4>
+            <p className="text-sm text-blue-700">{highlightedService.description}</p>
+          </div>
+        </div>
+      )}
+
       {/* Header Actions */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Internal API Services</h2>
-          <p className="text-gray-600">Manage internal API integrations and services</p>
+          <h2 className="text-2xl font-bold">
+            {onboardingContext ? 'API Service Details' : 'Internal API Services'}
+          </h2>
+          <p className="text-gray-600">
+            {onboardingContext 
+              ? 'Review API service information for your treatment center integration'
+              : 'Manage internal API integrations and services'
+            }
+          </p>
         </div>
         <div className="flex items-center gap-3">
           <Button onClick={handleRefresh} variant="outline" disabled={isLoading}>
@@ -294,16 +336,30 @@ const InternalApiServicesTab: React.FC = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredServices.map((service) => (
-                <Card key={service.id} className="hover:shadow-md transition-shadow">
+              {orderedServices.map((service) => {
+                const isHighlighted = service.id === selectedServiceId;
+                return (
+                <Card 
+                  key={service.id} 
+                  className={`hover:shadow-md transition-shadow ${
+                    isHighlighted ? 'ring-2 ring-blue-500 bg-blue-50 border-blue-200' : ''
+                  }`}
+                >
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium flex items-center space-x-2">
                       <Zap className="h-4 w-4 text-blue-600" />
                       <span className="truncate">{service.name}</span>
                     </CardTitle>
-                    <Badge variant={service.status === 'active' ? "default" : "secondary"}>
-                      {service.status}
-                    </Badge>
+                    <div className="flex items-center space-x-2">
+                      {isHighlighted && (
+                        <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300">
+                          Selected for Onboarding
+                        </Badge>
+                      )}
+                      <Badge variant={service.status === 'active' ? "default" : "secondary"}>
+                        {service.status}
+                      </Badge>
+                    </div>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
@@ -360,8 +416,9 @@ const InternalApiServicesTab: React.FC = () => {
                       </div>
                     </div>
                   </CardContent>
-                </Card>
-              ))}
+                 </Card>
+                );
+              })}
             </div>
           )}
         </CardContent>

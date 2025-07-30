@@ -973,136 +973,336 @@ export const DetailedPurchasingPreferencesStep = ({ formData, updateFormData }: 
   </div>
 );
 
-// TECHNOLOGY INTEGRATION STEP
-export const DetailedTechnologyIntegrationStep = ({ formData, updateFormData }: any) => (
-  <div className="space-y-6">
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div className="p-4 border rounded-lg">
-        <h4 className="font-medium mb-3">Current Systems</h4>
-        <div className="space-y-3">
-          <div>
-            <Label htmlFor="emr_system">EMR System</Label>
-            <Input
-              id="emr_system"
-              placeholder="e.g., Epic, Cerner, Allscripts"
-            />
+// TECHNOLOGY INTEGRATION STEP WITH API SERVICE SELECTION
+export const DetailedTechnologyIntegrationStep = ({ formData, updateFormData }: any) => {
+  const [availableApiServices, setAvailableApiServices] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedApiServices, setSelectedApiServices] = useState<string[]>(
+    formData.selected_api_services || []
+  );
+
+  useEffect(() => {
+    fetchApiServices();
+  }, []);
+
+  const fetchApiServices = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('api_integration_registry')
+        .select('*')
+        .eq('status', 'active')
+        .order('name');
+
+      if (error) throw error;
+      setAvailableApiServices(data || []);
+    } catch (error) {
+      console.error('Error fetching API services:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load API services",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleApiServiceToggle = (serviceId: string) => {
+    const updated = selectedApiServices.includes(serviceId)
+      ? selectedApiServices.filter(id => id !== serviceId)
+      : [...selectedApiServices, serviceId];
+    
+    setSelectedApiServices(updated);
+    updateFormData('selected_api_services', updated);
+  };
+
+  const handleNavigateToApiService = (serviceId: string) => {
+    // Navigate to API service page with onboarding context
+    window.open(`/api-services?service=${serviceId}&context=onboarding`, '_blank');
+  };
+
+  const getApiTypeColor = (type: string) => {
+    const colors = {
+      REST: 'bg-blue-100 text-blue-800',
+      GraphQL: 'bg-purple-100 text-purple-800',
+      SOAP: 'bg-green-100 text-green-800',
+      webhook: 'bg-orange-100 text-orange-800',
+      default: 'bg-gray-100 text-gray-800'
+    };
+    return colors[type as keyof typeof colors] || colors.default;
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Available API Services Section */}
+      <div className="p-4 border rounded-lg bg-blue-50">
+        <h4 className="font-medium mb-2 text-blue-900">Available API Services</h4>
+        <p className="text-sm text-blue-800">
+          Select the API services you need for your treatment center integration. 
+          Click on any service to view detailed information and documentation.
+        </p>
+      </div>
+
+      {loading ? (
+        <div className="flex items-center justify-center p-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <span className="ml-2">Loading API services...</span>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4">
+          {availableApiServices.map((service) => (
+            <div
+              key={service.id}
+              className={`p-4 border-2 rounded-lg transition-all ${
+                selectedApiServices.includes(service.id)
+                  ? 'border-blue-500 bg-blue-50'
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex items-start space-x-3 flex-1">
+                  <Checkbox
+                    id={service.id}
+                    checked={selectedApiServices.includes(service.id)}
+                    onCheckedChange={() => handleApiServiceToggle(service.id)}
+                    className="mt-1"
+                  />
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-3 mb-2">
+                      <Label htmlFor={service.id} className="font-medium cursor-pointer">
+                        {service.name}
+                      </Label>
+                      <span className={`text-xs px-2 py-1 rounded-full ${getApiTypeColor(service.type)}`}>
+                        {service.type}
+                      </span>
+                      <span className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded-full">
+                        {service.status}
+                      </span>
+                    </div>
+                    {service.description && (
+                      <p className="text-sm text-gray-600 mb-2">{service.description}</p>
+                    )}
+                    {service.endpoint && (
+                      <p className="text-xs text-gray-500 font-mono bg-gray-100 p-1 rounded">
+                        {service.endpoint}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleNavigateToApiService(service.id)}
+                  className="ml-3"
+                >
+                  View Details
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {selectedApiServices.length > 0 && (
+        <div className="p-4 border rounded-lg bg-green-50">
+          <h4 className="font-medium mb-2 text-green-900">Selected API Services</h4>
+          <div className="flex flex-wrap gap-2">
+            {selectedApiServices.map((serviceId) => {
+              const service = availableApiServices.find(s => s.id === serviceId);
+              return service ? (
+                <span
+                  key={serviceId}
+                  className="inline-flex items-center px-3 py-1 bg-green-200 text-green-800 rounded-full text-sm"
+                >
+                  {service.name}
+                </span>
+              ) : null;
+            })}
           </div>
-          <div>
-            <Label htmlFor="inventory_system">Inventory Management System</Label>
-            <Input
-              id="inventory_system"
-              placeholder="e.g., RFID, Barcode scanning"
-            />
+          <p className="text-sm text-green-700 mt-2">
+            {selectedApiServices.length} API service{selectedApiServices.length !== 1 ? 's' : ''} selected for integration.
+          </p>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="p-4 border rounded-lg">
+          <h4 className="font-medium mb-3">Current Systems</h4>
+          <div className="space-y-3">
+            <div>
+              <Label htmlFor="emr_system">EMR System</Label>
+              <Input
+                id="emr_system"
+                placeholder="e.g., Epic, Cerner, Allscripts"
+                value={formData.emr_system || ''}
+                onChange={(e) => updateFormData('technology_integration', { 
+                  ...formData.technology_integration, 
+                  emr_system: e.target.value 
+                })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="inventory_system">Inventory Management System</Label>
+              <Input
+                id="inventory_system"
+                placeholder="e.g., RFID, Barcode scanning"
+                value={formData.inventory_system || ''}
+                onChange={(e) => updateFormData('technology_integration', { 
+                  ...formData.technology_integration, 
+                  inventory_system: e.target.value 
+                })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="erp_system">ERP System</Label>
+              <Input
+                id="erp_system"
+                placeholder="e.g., SAP, Oracle, Microsoft"
+                value={formData.erp_system || ''}
+                onChange={(e) => updateFormData('technology_integration', { 
+                  ...formData.technology_integration, 
+                  erp_system: e.target.value 
+                })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="pharmacy_system">Pharmacy System</Label>
+              <Input
+                id="pharmacy_system"
+                placeholder="e.g., Pyxis, Omnicell"
+                value={formData.pharmacy_system || ''}
+                onChange={(e) => updateFormData('technology_integration', { 
+                  ...formData.technology_integration, 
+                  pharmacy_system: e.target.value 
+                })}
+              />
+            </div>
           </div>
-          <div>
-            <Label htmlFor="erp_system">ERP System</Label>
-            <Input
-              id="erp_system"
-              placeholder="e.g., SAP, Oracle, Microsoft"
-            />
-          </div>
-          <div>
-            <Label htmlFor="pharmacy_system">Pharmacy System</Label>
-            <Input
-              id="pharmacy_system"
-              placeholder="e.g., Pyxis, Omnicell"
-            />
+        </div>
+        
+        <div className="p-4 border rounded-lg">
+          <h4 className="font-medium mb-3">Integration Requirements</h4>
+          <div className="space-y-3">
+            <div className="flex items-center space-x-2">
+              <Checkbox id="api_integration" />
+              <Label htmlFor="api_integration">API Integration Required</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox id="edi_integration" />
+              <Label htmlFor="edi_integration">EDI Integration</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox id="real_time_sync" />
+              <Label htmlFor="real_time_sync">Real-time Data Synchronization</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox id="single_sign_on" />
+              <Label htmlFor="single_sign_on">Single Sign-On (SSO)</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox id="automated_ordering" />
+              <Label htmlFor="automated_ordering">Automated Ordering</Label>
+            </div>
           </div>
         </div>
       </div>
       
       <div className="p-4 border rounded-lg">
-        <h4 className="font-medium mb-3">Integration Requirements</h4>
-        <div className="space-y-3">
-          <div className="flex items-center space-x-2">
-            <Checkbox id="api_integration" />
-            <Label htmlFor="api_integration">API Integration Required</Label>
+        <h4 className="font-medium mb-3">Technical Contact</h4>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <Label htmlFor="tech_contact_name">Technical Contact Name</Label>
+            <Input
+              id="tech_contact_name"
+              placeholder="IT Manager or Technical Lead"
+              value={formData.tech_contact_name || ''}
+              onChange={(e) => updateFormData('technology_integration', { 
+                ...formData.technology_integration, 
+                tech_contact_name: e.target.value 
+              })}
+            />
           </div>
-          <div className="flex items-center space-x-2">
-            <Checkbox id="edi_integration" />
-            <Label htmlFor="edi_integration">EDI Integration</Label>
+          <div>
+            <Label htmlFor="tech_contact_email">Email</Label>
+            <Input
+              id="tech_contact_email"
+              type="email"
+              placeholder="tech@facility.com"
+              value={formData.tech_contact_email || ''}
+              onChange={(e) => updateFormData('technology_integration', { 
+                ...formData.technology_integration, 
+                tech_contact_email: e.target.value 
+              })}
+            />
           </div>
-          <div className="flex items-center space-x-2">
-            <Checkbox id="real_time_sync" />
-            <Label htmlFor="real_time_sync">Real-time Data Synchronization</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Checkbox id="single_sign_on" />
-            <Label htmlFor="single_sign_on">Single Sign-On (SSO)</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Checkbox id="automated_ordering" />
-            <Label htmlFor="automated_ordering">Automated Ordering</Label>
+          <div>
+            <Label htmlFor="tech_contact_phone">Phone</Label>
+            <Input
+              id="tech_contact_phone"
+              placeholder="(555) 123-4567"
+              value={formData.tech_contact_phone || ''}
+              onChange={(e) => updateFormData('technology_integration', { 
+                ...formData.technology_integration, 
+                tech_contact_phone: e.target.value 
+              })}
+            />
           </div>
         </div>
       </div>
-    </div>
-    
-    <div className="p-4 border rounded-lg">
-      <h4 className="font-medium mb-3">Technical Contact</h4>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div>
-          <Label htmlFor="tech_contact_name">Technical Contact Name</Label>
-          <Input
-            id="tech_contact_name"
-            placeholder="IT Manager or Technical Lead"
-          />
-        </div>
-        <div>
-          <Label htmlFor="tech_contact_email">Email</Label>
-          <Input
-            id="tech_contact_email"
-            type="email"
-            placeholder="tech@facility.com"
-          />
-        </div>
-        <div>
-          <Label htmlFor="tech_contact_phone">Phone</Label>
-          <Input
-            id="tech_contact_phone"
-            placeholder="(555) 123-4567"
-          />
-        </div>
-      </div>
-    </div>
 
-    <div className="p-4 border rounded-lg">
-      <h4 className="font-medium mb-3">Integration Timeline & Priority</h4>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="integration_timeline">Implementation Timeline</Label>
-          <select 
-            id="integration_timeline"
-            className="w-full px-3 py-2 border rounded-md bg-background"
-          >
-            <option value="">Select timeline</option>
-            <option value="immediate">Immediate (within 30 days)</option>
-            <option value="short_term">Short-term (1-3 months)</option>
-            <option value="medium_term">Medium-term (3-6 months)</option>
-            <option value="long_term">Long-term (6+ months)</option>
-          </select>
-        </div>
-        <div>
-          <Label htmlFor="integration_priority">Integration Priority</Label>
-          <select 
-            id="integration_priority"
-            className="w-full px-3 py-2 border rounded-md bg-background"
-          >
-            <option value="">Select priority</option>
-            <option value="high">High - Critical for operations</option>
-            <option value="medium">Medium - Important but not critical</option>
-            <option value="low">Low - Nice to have</option>
-          </select>
+      <div className="p-4 border rounded-lg">
+        <h4 className="font-medium mb-3">Integration Timeline & Priority</h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="integration_timeline">Implementation Timeline</Label>
+            <select 
+              id="integration_timeline"
+              className="w-full px-3 py-2 border rounded-md bg-background"
+              value={formData.integration_timeline || ''}
+              onChange={(e) => updateFormData('technology_integration', { 
+                ...formData.technology_integration, 
+                integration_timeline: e.target.value 
+              })}
+            >
+              <option value="">Select timeline</option>
+              <option value="immediate">Immediate (within 30 days)</option>
+              <option value="short_term">Short-term (1-3 months)</option>
+              <option value="medium_term">Medium-term (3-6 months)</option>
+              <option value="long_term">Long-term (6+ months)</option>
+            </select>
+          </div>
+          <div>
+            <Label htmlFor="integration_priority">Integration Priority</Label>
+            <select 
+              id="integration_priority"
+              className="w-full px-3 py-2 border rounded-md bg-background"
+              value={formData.integration_priority || ''}
+              onChange={(e) => updateFormData('technology_integration', { 
+                ...formData.technology_integration, 
+                integration_priority: e.target.value 
+              })}
+            >
+              <option value="">Select priority</option>
+              <option value="high">High - Critical for operations</option>
+              <option value="medium">Medium - Important but not critical</option>
+              <option value="low">Low - Nice to have</option>
+            </select>
+          </div>
         </div>
       </div>
-    </div>
 
-    <div className="p-4 border rounded-lg">
-      <h4 className="font-medium mb-3">Additional Integration Notes</h4>
-      <Textarea
-        placeholder="Describe any specific integration requirements, security considerations, or technical constraints..."
-        rows={4}
-      />
+      <div className="p-4 border rounded-lg">
+        <h4 className="font-medium mb-3">Additional Integration Notes</h4>
+        <Textarea
+          placeholder="Describe any specific integration requirements, security considerations, or technical constraints..."
+          rows={4}
+          value={formData.integration_notes || ''}
+          onChange={(e) => updateFormData('technology_integration', { 
+            ...formData.technology_integration, 
+            integration_notes: e.target.value 
+          })}
+        />
+      </div>
     </div>
-  </div>
-);
+  );
+};
