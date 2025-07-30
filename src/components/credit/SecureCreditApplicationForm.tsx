@@ -33,34 +33,7 @@ import {
 import { useDropzone } from 'react-dropzone';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-
-interface CreditApplication {
-  id?: string;
-  requested_credit_limit?: number;
-  payment_terms_requested?: string;
-  business_type: string;
-  encrypted_ssn?: string;
-  encrypted_federal_id?: string;
-  encrypted_bank_account?: string;
-  years_in_business?: number;
-  annual_revenue_range?: string;
-  number_of_employees?: number;
-  business_description?: string;
-  primary_contact_name: string;
-  primary_contact_title?: string;
-  primary_contact_phone?: string;
-  primary_contact_email?: string;
-  trade_references?: any[];
-  bank_references?: any[];
-  terms_accepted: boolean;
-  privacy_policy_accepted: boolean;
-  credit_check_authorized: boolean;
-  application_status?: string;
-  submitted_at?: string;
-  terms_accepted_at?: string;
-  privacy_policy_accepted_at?: string;
-  credit_check_authorized_at?: string;
-}
+import { useCreditApplications, type CreditApplication } from '@/hooks/useCreditApplications';
 
 interface DocumentUpload {
   id?: string;
@@ -170,11 +143,12 @@ export const SecureCreditApplicationForm: React.FC = () => {
         .single();
 
       if (data && !error) {
-        // Convert JSONB fields to arrays for compatibility
-        const convertedData = {
+        // Convert JSONB fields to arrays for compatibility and cast types properly
+        const convertedData: CreditApplication = {
           ...data,
           trade_references: Array.isArray(data.trade_references) ? data.trade_references : [],
-          bank_references: Array.isArray(data.bank_references) ? data.bank_references : []
+          bank_references: Array.isArray(data.bank_references) ? data.bank_references : [],
+          application_status: (data.application_status as CreditApplication['application_status']) || 'draft'
         };
         setApplication(convertedData);
         calculateProgress(convertedData);

@@ -7,20 +7,34 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 export interface CreditApplication {
-  id: string;
-  applicant_user_id: string;
+  id?: string;
+  applicant_user_id?: string;
   business_type: string;
   requested_credit_limit?: number;
   payment_terms_requested?: string;
   primary_contact_name: string;
   primary_contact_email?: string;
-  application_status: 'draft' | 'submitted' | 'under_review' | 'approved' | 'rejected' | 'pending_documents';
+  primary_contact_title?: string;
+  primary_contact_phone?: string;
+  encrypted_ssn?: string;
+  encrypted_federal_id?: string;
+  encrypted_bank_account?: string;
+  years_in_business?: number;
+  annual_revenue_range?: string;
+  number_of_employees?: number;
+  business_description?: string;
+  trade_references?: any[];
+  bank_references?: any[];
+  application_status?: 'draft' | 'submitted' | 'under_review' | 'approved' | 'rejected' | 'pending_documents';
   terms_accepted: boolean;
   privacy_policy_accepted: boolean;
   credit_check_authorized: boolean;
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
   submitted_at?: string;
+  terms_accepted_at?: string;
+  privacy_policy_accepted_at?: string;
+  credit_check_authorized_at?: string;
 }
 
 export const useCreditApplications = () => {
