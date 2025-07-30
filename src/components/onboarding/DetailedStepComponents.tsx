@@ -459,3 +459,499 @@ export const DetailedDocumentsStep = ({ formData, updateFormData }: any) => (
     </div>
   </div>
 );
+
+// DETAILED OWNERSHIP STRUCTURE STEP
+export const DetailedOwnershipStep = ({ formData, updateFormData }: any) => (
+  <div className="space-y-6">
+    <div className="p-4 border rounded-lg">
+      <h4 className="font-medium mb-3">Principal Owners</h4>
+      <p className="text-sm text-muted-foreground mb-4">
+        List all principal owners with 20% or greater ownership interest.
+      </p>
+      
+      <div className="space-y-4">
+        {[1, 2, 3].map((owner) => (
+          <div key={owner} className="grid grid-cols-1 md:grid-cols-3 gap-3 p-3 border rounded">
+            <div>
+              <Label htmlFor={`owner_${owner}_name`}>Owner Name</Label>
+              <Input
+                id={`owner_${owner}_name`}
+                placeholder="Full name"
+              />
+            </div>
+            <div>
+              <Label htmlFor={`owner_${owner}_title`}>Title</Label>
+              <Input
+                id={`owner_${owner}_title`}
+                placeholder="President, CEO, etc."
+              />
+            </div>
+            <div>
+              <Label htmlFor={`owner_${owner}_percentage`}>Ownership %</Label>
+              <Input
+                id={`owner_${owner}_percentage`}
+                type="number"
+                placeholder="25"
+                min="0"
+                max="100"
+              />
+            </div>
+          </div>
+        ))}
+        <Button variant="outline" className="w-full">
+          <Users className="h-4 w-4 mr-2" />
+          Add Principal Owner
+        </Button>
+      </div>
+    </div>
+    
+    <div className="p-4 border rounded-lg">
+      <h4 className="font-medium mb-3">Controlling Entity (If Applicable)</h4>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="controlling_entity_name">Entity Name</Label>
+          <Input
+            id="controlling_entity_name"
+            placeholder="Parent company or controlling entity"
+          />
+        </div>
+        <div>
+          <Label htmlFor="controlling_entity_relationship">Relationship</Label>
+          <Input
+            id="controlling_entity_relationship"
+            placeholder="Parent company, subsidiary, etc."
+          />
+        </div>
+        <div>
+          <Label htmlFor="controlling_entity_phone">Phone</Label>
+          <Input
+            id="controlling_entity_phone"
+            placeholder="(555) 123-4567"
+          />
+        </div>
+      </div>
+    </div>
+
+    <div className="p-4 border rounded-lg">
+      <h4 className="font-medium mb-3">Bankruptcy History</h4>
+      <div className="space-y-3">
+        <div className="flex items-center space-x-2">
+          <Checkbox id="bankruptcy_history" />
+          <Label htmlFor="bankruptcy_history">
+            Has the company or any principal owner filed for bankruptcy in the past 7 years?
+          </Label>
+        </div>
+        <div>
+          <Label htmlFor="bankruptcy_explanation">If yes, please explain</Label>
+          <Textarea
+            id="bankruptcy_explanation"
+            placeholder="Provide details about bankruptcy filing..."
+            rows={3}
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+// DETAILED REFERENCES STEP
+export const DetailedReferencesStep = ({ formData, updateFormData }: any) => (
+  <div className="space-y-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="p-4 border rounded-lg">
+        <h4 className="font-medium mb-3">Primary Bank Reference</h4>
+        <div className="space-y-3">
+          <div>
+            <Label htmlFor="bank_name">Bank Name</Label>
+            <Input
+              id="bank_name"
+              placeholder="Name of primary bank"
+            />
+          </div>
+          <div>
+            <Label htmlFor="bank_contact_name">Bank Contact Name</Label>
+            <Input
+              id="bank_contact_name"
+              placeholder="Contact person at bank"
+            />
+          </div>
+          <div>
+            <Label htmlFor="bank_phone">Bank Phone</Label>
+            <Input
+              id="bank_phone"
+              placeholder="(555) 123-4567"
+            />
+          </div>
+          <div>
+            <Label htmlFor="bank_account_number">Account Number (Optional)</Label>
+            <Input
+              id="bank_account_number"
+              placeholder="Last 4 digits only"
+            />
+          </div>
+        </div>
+      </div>
+      
+      <div className="p-4 border rounded-lg">
+        <h4 className="font-medium mb-3">Primary Supplier Reference</h4>
+        <div className="space-y-3">
+          <div>
+            <Label htmlFor="supplier_name">Supplier Name</Label>
+            <Input
+              id="supplier_name"
+              placeholder="Name of primary supplier"
+            />
+          </div>
+          <div>
+            <Label htmlFor="supplier_contact_name">Supplier Contact Name</Label>
+            <Input
+              id="supplier_contact_name"
+              placeholder="Contact person at supplier"
+            />
+          </div>
+          <div>
+            <Label htmlFor="supplier_phone">Supplier Phone</Label>
+            <Input
+              id="supplier_phone"
+              placeholder="(555) 123-4567"
+            />
+          </div>
+          <div>
+            <Label htmlFor="supplier_account_number">Account Number</Label>
+            <Input
+              id="supplier_account_number"
+              placeholder="Account number with supplier"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div className="p-4 border rounded-lg">
+      <h4 className="font-medium mb-3">Additional References</h4>
+      <p className="text-sm text-muted-foreground mb-4">
+        Provide additional trade or business references.
+      </p>
+      <div className="space-y-4">
+        {[1, 2].map((ref) => (
+          <div key={ref} className="grid grid-cols-1 md:grid-cols-4 gap-3 p-3 border rounded">
+            <div>
+              <Label htmlFor={`additional_ref_${ref}_name`}>Company Name</Label>
+              <Input
+                id={`additional_ref_${ref}_name`}
+                placeholder="Reference company"
+              />
+            </div>
+            <div>
+              <Label htmlFor={`additional_ref_${ref}_contact`}>Contact Name</Label>
+              <Input
+                id={`additional_ref_${ref}_contact`}
+                placeholder="Contact person"
+              />
+            </div>
+            <div>
+              <Label htmlFor={`additional_ref_${ref}_phone`}>Phone</Label>
+              <Input
+                id={`additional_ref_${ref}_phone`}
+                placeholder="(555) 123-4567"
+              />
+            </div>
+            <div>
+              <Label htmlFor={`additional_ref_${ref}_account`}>Account #</Label>
+              <Input
+                id={`additional_ref_${ref}_account`}
+                placeholder="Account number"
+              />
+            </div>
+          </div>
+        ))}
+        <Button variant="outline" className="w-full">
+          <Building className="h-4 w-4 mr-2" />
+          Add Reference
+        </Button>
+      </div>
+    </div>
+
+    <div className="p-4 border rounded-lg">
+      <h4 className="font-medium mb-3">Technology Provider Reference (Optional)</h4>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="tech_provider_name">Technology Provider Name</Label>
+          <Input
+            id="tech_provider_name"
+            placeholder="EMR, PMS, or other tech provider"
+          />
+        </div>
+        <div>
+          <Label htmlFor="tech_provider_contact">Contact Name</Label>
+          <Input
+            id="tech_provider_contact"
+            placeholder="Contact person"
+          />
+        </div>
+        <div>
+          <Label htmlFor="tech_provider_phone">Phone</Label>
+          <Input
+            id="tech_provider_phone"
+            placeholder="(555) 123-4567"
+          />
+        </div>
+        <div>
+          <Label htmlFor="tech_provider_email">Email</Label>
+          <Input
+            id="tech_provider_email"
+            type="email"
+            placeholder="contact@techprovider.com"
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+// DETAILED PAYMENT & BANKING STEP
+export const DetailedPaymentBankingStep = ({ formData, updateFormData }: any) => (
+  <div className="space-y-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="p-4 border rounded-lg">
+        <h4 className="font-medium mb-3">Banking Information</h4>
+        <div className="space-y-3">
+          <div>
+            <Label htmlFor="bank_name_payment">Bank Name</Label>
+            <Input
+              id="bank_name_payment"
+              placeholder="Name of your bank"
+            />
+          </div>
+          <div>
+            <Label htmlFor="bank_routing_number">Routing Number</Label>
+            <Input
+              id="bank_routing_number"
+              placeholder="9-digit routing number"
+            />
+          </div>
+          <div>
+            <Label htmlFor="bank_account_number_payment">Account Number</Label>
+            <Input
+              id="bank_account_number_payment"
+              placeholder="Account number"
+            />
+          </div>
+          <div>
+            <Label htmlFor="bank_phone_payment">Bank Phone</Label>
+            <Input
+              id="bank_phone_payment"
+              placeholder="(555) 123-4567"
+            />
+          </div>
+        </div>
+      </div>
+      
+      <div className="p-4 border rounded-lg">
+        <h4 className="font-medium mb-3">Payment Preferences</h4>
+        <div className="space-y-3">
+          <div>
+            <Label htmlFor="ach_preference">ACH Preference</Label>
+            <select 
+              id="ach_preference"
+              className="w-full px-3 py-2 border rounded-md bg-background"
+            >
+              <option value="">Select preference</option>
+              <option value="direct_debit">Direct Debit</option>
+              <option value="credit_card">Credit Card</option>
+              <option value="wire_transfer">Wire Transfer</option>
+            </select>
+          </div>
+          <div>
+            <Label htmlFor="statement_delivery">Statement Delivery</Label>
+            <select 
+              id="statement_delivery"
+              className="w-full px-3 py-2 border rounded-md bg-background"
+            >
+              <option value="">Select delivery method</option>
+              <option value="email">Email</option>
+              <option value="mail">Mail</option>
+            </select>
+          </div>
+          <div>
+            <Label htmlFor="payment_terms_requested">Payment Terms Requested</Label>
+            <select 
+              id="payment_terms_requested"
+              className="w-full px-3 py-2 border rounded-md bg-background"
+            >
+              <option value="">Select terms</option>
+              <option value="net_30">Net 30 Days</option>
+              <option value="net_60">Net 60 Days</option>
+              <option value="net_90">Net 90 Days</option>
+              <option value="cod">Cash on Delivery</option>
+              <option value="prepaid">Prepaid</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div className="p-4 border rounded-lg">
+      <h4 className="font-medium mb-3">Bank Address</h4>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="bank_street">Street Address</Label>
+          <Input
+            id="bank_street"
+            placeholder="Bank street address"
+          />
+        </div>
+        <div>
+          <Label htmlFor="bank_city">City</Label>
+          <Input
+            id="bank_city"
+            placeholder="Bank city"
+          />
+        </div>
+        <div>
+          <Label htmlFor="bank_state">State</Label>
+          <Input
+            id="bank_state"
+            placeholder="Bank state"
+          />
+        </div>
+        <div>
+          <Label htmlFor="bank_zip">ZIP Code</Label>
+          <Input
+            id="bank_zip"
+            placeholder="Bank ZIP code"
+          />
+        </div>
+      </div>
+    </div>
+
+    <div className="p-4 border rounded-lg bg-yellow-50">
+      <h4 className="font-medium mb-2">Important Banking Information</h4>
+      <p className="text-sm text-yellow-800">
+        🏦 Please attach a voided check to verify banking information. 
+        All ACH transactions will be processed securely and encrypted.
+      </p>
+    </div>
+  </div>
+);
+
+// DETAILED LICENSES STEP  
+export const DetailedLicensesStep = ({ formData, updateFormData }: any) => (
+  <div className="space-y-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="p-4 border rounded-lg">
+        <h4 className="font-medium mb-3">Federal & State Licenses</h4>
+        <div className="space-y-3">
+          <div>
+            <Label htmlFor="dea_number">DEA Number</Label>
+            <Input
+              id="dea_number"
+              placeholder="DEA registration number"
+            />
+          </div>
+          <div>
+            <Label htmlFor="medical_license">Medical License Number</Label>
+            <Input
+              id="medical_license"
+              placeholder="State medical license number"
+            />
+          </div>
+          <div>
+            <Label htmlFor="hin_number">HIN Number</Label>
+            <Input
+              id="hin_number"
+              placeholder="Health Industry Number"
+            />
+          </div>
+          <div>
+            <Label htmlFor="state_pharmacy_license">State Pharmacy License</Label>
+            <Input
+              id="state_pharmacy_license"
+              placeholder="State pharmacy license number"
+            />
+          </div>
+        </div>
+      </div>
+      
+      <div className="p-4 border rounded-lg">
+        <h4 className="font-medium mb-3">Tax & Business Licenses</h4>
+        <div className="space-y-3">
+          <div>
+            <Label htmlFor="resale_tax_exemption">Resale Tax Exemption</Label>
+            <Input
+              id="resale_tax_exemption"
+              placeholder="Tax exemption certificate number"
+            />
+          </div>
+          <div>
+            <Label htmlFor="state_business_license">State Business License</Label>
+            <Input
+              id="state_business_license"
+              placeholder="State business license number"
+            />
+          </div>
+          <div>
+            <Label htmlFor="city_business_license">City Business License</Label>
+            <Input
+              id="city_business_license"
+              placeholder="City business license number"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div className="p-4 border rounded-lg">
+      <h4 className="font-medium mb-3">Additional Licenses</h4>
+      <p className="text-sm text-muted-foreground mb-4">
+        Add any additional professional or specialty licenses.
+      </p>
+      <div className="space-y-4">
+        {[1, 2].map((license) => (
+          <div key={license} className="grid grid-cols-1 md:grid-cols-4 gap-3 p-3 border rounded">
+            <div>
+              <Label htmlFor={`license_${license}_type`}>License Type</Label>
+              <Input
+                id={`license_${license}_type`}
+                placeholder="e.g., Specialty License"
+              />
+            </div>
+            <div>
+              <Label htmlFor={`license_${license}_number`}>License Number</Label>
+              <Input
+                id={`license_${license}_number`}
+                placeholder="License number"
+              />
+            </div>
+            <div>
+              <Label htmlFor={`license_${license}_state`}>Issuing State</Label>
+              <Input
+                id={`license_${license}_state`}
+                placeholder="State"
+              />
+            </div>
+            <div>
+              <Label htmlFor={`license_${license}_expiration`}>Expiration Date</Label>
+              <Input
+                id={`license_${license}_expiration`}
+                type="date"
+              />
+            </div>
+          </div>
+        ))}
+        <Button variant="outline" className="w-full">
+          <FileText className="h-4 w-4 mr-2" />
+          Add License
+        </Button>
+      </div>
+    </div>
+
+    <div className="p-4 border rounded-lg bg-blue-50">
+      <h4 className="font-medium mb-2">License Verification</h4>
+      <p className="text-sm text-blue-800">
+        🔍 All licenses will be verified with appropriate state and federal agencies. 
+        Please ensure all license numbers are current and accurate.
+      </p>
+    </div>
+  </div>
+);

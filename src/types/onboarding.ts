@@ -56,7 +56,8 @@ export type OnboardingStep =
   | 'financial_assessment'
   | 'credit_application'
   | 'gpo_membership'
-  | 'office_hours';
+  | 'office_hours'
+  | 'technology_integration';
 
 export interface CompanyInfo {
   legal_name: string;

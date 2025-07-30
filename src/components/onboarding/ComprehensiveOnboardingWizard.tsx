@@ -40,8 +40,19 @@ import {
   DetailedFinancialAssessmentStep,
   DetailedOperatingHoursStep,
   DetailedAuthorizationsStep,
-  DetailedDocumentsStep
+  DetailedDocumentsStep,
+  DetailedOwnershipStep,
+  DetailedReferencesStep,
+  DetailedPaymentBankingStep,
+  DetailedLicensesStep
 } from './DetailedStepComponents';
+import {
+  DetailedTherapySelectionStep,
+  DetailedServiceSelectionStep,
+  DetailedOnlineServicesStep,
+  DetailedPurchasingPreferencesStep,
+  DetailedTechnologyIntegrationStep
+} from './AdditionalStepComponents';
 
 interface ComprehensiveOnboardingWizardProps {
   applicationId?: string | null;
@@ -220,6 +231,15 @@ export const ComprehensiveOnboardingWizard: React.FC<ComprehensiveOnboardingWiza
       category: 'operations',
       required: false,
       component: <PurchasingPreferencesStep formData={formData} updateFormData={updateFormData} />
+    },
+    {
+      id: 'technology_integration',
+      title: 'Technology Integration',
+      description: 'API requirements and system integration',
+      icon: <Settings className="h-5 w-5" />,
+      category: 'technical',
+      required: false,
+      component: <TechnologyIntegrationStep formData={formData} updateFormData={updateFormData} />
     },
     {
       id: 'financial_assessment',
@@ -546,75 +566,18 @@ const ContactsStep = ({ formData, updateFormData }: any) => (
     </div>
   </div>
 );
-const OwnershipStep = ({ formData, updateFormData }: any) => (
-  <div className="space-y-6">
-    <div className="p-4 border rounded-lg">
-      <h4 className="font-medium mb-3">Principal Owners & Controlling Entities</h4>
-      <Button variant="outline" className="w-full">Add Principal Owner</Button>
-    </div>
-  </div>
-);
-const ReferencesStep = ({ formData, updateFormData }: any) => (
-  <div className="space-y-6">
-    <div className="p-4 border rounded-lg">
-      <h4 className="font-medium mb-3">Business References</h4>
-      <Button variant="outline" className="w-full">Add Reference</Button>
-    </div>
-  </div>
-);
-const PaymentBankingStep = ({ formData, updateFormData }: any) => (
-  <div className="space-y-4">
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div>
-        <Label htmlFor="bank_name">Bank Name</Label>
-        <Input id="bank_name" placeholder="Bank name" />
-      </div>
-      <div>
-        <Label htmlFor="routing_number">Routing Number</Label>
-        <Input id="routing_number" placeholder="9-digit routing number" />
-      </div>
-    </div>
-  </div>
-);
-const LicensesStep = ({ formData, updateFormData }: any) => (
-  <div className="space-y-4">
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div>
-        <Label htmlFor="dea_number">DEA Number</Label>
-        <Input id="dea_number" placeholder="DEA registration number" />
-      </div>
-      <div>
-        <Label htmlFor="medical_license">Medical License</Label>
-        <Input id="medical_license" placeholder="Medical license number" />
-      </div>
-    </div>
-  </div>
-);
+
+// Step component assignments
+const OwnershipStep = DetailedOwnershipStep;
+const ReferencesStep = DetailedReferencesStep;
+const PaymentBankingStep = DetailedPaymentBankingStep;
+const LicensesStep = DetailedLicensesStep;
 const DocumentsStep = DetailedDocumentsStep;
-const TherapySelectionStep = ({ formData, updateFormData }: any) => (
-  <div className="p-4 border rounded-lg">
-    <h4 className="font-medium mb-3">Therapy Areas</h4>
-    <p className="text-sm text-muted-foreground">Select therapeutic areas of focus</p>
-  </div>
-);
-const ServiceSelectionStep = ({ formData, updateFormData }: any) => (
-  <div className="p-4 border rounded-lg">
-    <h4 className="font-medium mb-3">Service Selection</h4>
-    <p className="text-sm text-muted-foreground">Choose required services and programs</p>
-  </div>
-);
-const OnlineServicesStep = ({ formData, updateFormData }: any) => (
-  <div className="p-4 border rounded-lg">
-    <h4 className="font-medium mb-3">Online Platform Setup</h4>
-    <p className="text-sm text-muted-foreground">Configure online ordering and management</p>
-  </div>
-);
-const PurchasingPreferencesStep = ({ formData, updateFormData }: any) => (
-  <div className="p-4 border rounded-lg">
-    <h4 className="font-medium mb-3">Purchasing Preferences</h4>
-    <p className="text-sm text-muted-foreground">Order methods and inventory management</p>
-  </div>
-);
+const TherapySelectionStep = DetailedTherapySelectionStep;
+const ServiceSelectionStep = DetailedServiceSelectionStep;
+const OnlineServicesStep = DetailedOnlineServicesStep;
+const PurchasingPreferencesStep = DetailedPurchasingPreferencesStep;
+const TechnologyIntegrationStep = DetailedTechnologyIntegrationStep;
 const FinancialAssessmentStep = DetailedFinancialAssessmentStep;
 const CreditApplicationStep = DetailedCreditApplicationStep;
 const GPOMembershipStep = DetailedGPOMembershipStep;
