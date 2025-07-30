@@ -61,7 +61,7 @@ export const UsersManagementTable: React.FC = () => {
         lastName: user.last_name,
         email: user.email,
         role: 'none', // Simplified role assignment
-        roles: user.user_roles?.map(ur => ({ name: ur.roles.name })) || []
+        roles: user.user_roles?.map(ur => ({ name: ur.role?.name })) || []
       });
       setAssignRoleOpen(true);
     }
@@ -76,7 +76,7 @@ export const UsersManagementTable: React.FC = () => {
         lastName: user.last_name,
         email: user.email,
         role: 'none', // Simplified role assignment
-        roles: user.user_roles?.map(ur => ({ name: ur.roles.name })) || []
+        roles: user.user_roles?.map(ur => ({ name: ur.role?.name })) || []
       });
       setRemoveRoleOpen(true);
     }
@@ -290,7 +290,7 @@ export const UsersManagementTable: React.FC = () => {
                         <div className="flex gap-1 mt-1">
                           {user.user_roles?.map((ur, index) => (
                             <Badge key={index} variant="outline" className="text-xs">
-                              {ur.roles.name}
+                              {ur.role?.name}
                             </Badge>
                           ))}
                           {(!user.user_roles || user.user_roles.length === 0) && (
@@ -506,7 +506,7 @@ export const UsersManagementTable: React.FC = () => {
                       <div className="flex gap-1 mt-1">
                         {user.user_roles.map((ur, index) => (
                           <Badge key={index} variant="outline" className="text-xs">
-                            {ur.roles.name}
+                            {ur.role?.name}
                           </Badge>
                         ))}
                       </div>
@@ -534,7 +534,7 @@ export const UsersManagementTable: React.FC = () => {
                       <div className="flex gap-1 mt-1">
                         {user.user_roles?.map((ur, index) => (
                           <Badge key={index} variant="outline" className="text-xs">
-                            {ur.roles.name}
+                            {ur.role?.name}
                           </Badge>
                         ))}
                       </div>

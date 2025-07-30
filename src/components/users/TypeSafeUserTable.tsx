@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Users, UserPlus, Settings, RefreshCw } from 'lucide-react';
 import { useMasterUserManagement } from '@/hooks/useMasterUserManagement';
-import { MasterUser } from '@/hooks/useMasterData';
+import type { MasterUser } from '@/types/userManagement';
 
 export const TypeSafeUserTable: React.FC = () => {
   const { 
@@ -96,7 +96,7 @@ export const TypeSafeUserTable: React.FC = () => {
                     <div className="flex gap-1 mt-1">
                       {user.user_roles.map((ur, index) => (
                         <Badge key={index} variant="outline" className="text-xs">
-                          {ur.roles.name}
+                          {ur.role.name}
                         </Badge>
                       ))}
                     </div>

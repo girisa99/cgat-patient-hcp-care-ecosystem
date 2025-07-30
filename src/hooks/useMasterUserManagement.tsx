@@ -33,7 +33,7 @@ export const useMasterUserManagement = () => {
     const byRole = users.reduce((acc: Record<string, number>, user) => {
       if (user.user_roles) {
         user.user_roles.forEach(ur => {
-          const roleName = ur.roles?.name || 'unknown';
+          const roleName = ur.role?.name || 'unknown';
           acc[roleName] = (acc[roleName] || 0) + 1;
         });
       }

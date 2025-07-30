@@ -228,9 +228,9 @@ export const MasterUserManagementTable: React.FC = () => {
                       <div className="text-sm text-muted-foreground">{user.email}</div>
                       <div className="flex gap-1 mt-1">
                         {user.user_roles.map((ur, index) => (
-                          <Badge key={index} variant="outline" className="text-xs">
-                            {ur.roles.name}
-                          </Badge>
+                           <Badge key={index} variant="outline" className="text-xs">
+                             {ur.role?.name}
+                           </Badge>
                         ))}
                         {user.user_roles.length === 0 && (
                           <Badge variant="secondary" className="text-xs">
@@ -367,10 +367,10 @@ export const MasterUserManagementTable: React.FC = () => {
           firstName: selectedUserForActions.first_name,
           lastName: selectedUserForActions.last_name,
           email: selectedUserForActions.email,
-          role: selectedUserForActions.user_roles?.[0]?.roles?.name || 'No Role',
+          role: selectedUserForActions.user_roles?.[0]?.role?.name || 'No Role',
           roles: selectedUserForActions.user_roles?.map((ur: any) => ({
-            name: ur.roles?.name || 'Unknown',
-            description: ur.roles?.description
+            name: ur.role?.name || 'Unknown',
+            description: ur.role?.description
           })) || []
         } : null}
         assignRoleOpen={isRoleModalOpen}

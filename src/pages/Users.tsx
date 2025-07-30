@@ -392,7 +392,7 @@ const UserManagement = () => {
                               <div className="flex gap-1">
                                 {user.user_roles.map((ur, index) => (
                                   <Badge key={index} variant="outline" className="text-xs">
-                                    {ur.roles.name}
+                                    {ur.role?.name}
                                   </Badge>
                                 ))}
                               </div>
@@ -438,7 +438,7 @@ const UserManagement = () => {
                                 {user.user_roles.length > 0 ? (
                                   user.user_roles.map((ur, index) => (
                                     <Badge key={index} variant="outline" className="text-xs">
-                                      {ur.roles.name}
+                                      {ur.role?.name}
                                     </Badge>
                                   ))
                                 ) : (

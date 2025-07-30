@@ -351,7 +351,7 @@ const RoleManagement = () => {
                       <div className="flex gap-2">
                         {user.user_roles.map((userRole, index) => (
                           <Badge key={index} variant="outline">
-                            {userRole.roles.name}
+                            {userRole.role?.name}
                           </Badge>
                         ))}
                         {user.user_roles.length === 0 && (

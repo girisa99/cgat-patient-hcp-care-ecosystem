@@ -7,24 +7,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useMasterToast } from './useMasterToast';
 
-export interface MasterUser {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  created_at: string;
-  updated_at: string;
-  is_active?: boolean;
-  is_email_verified?: boolean;
-  phone?: string;
-  user_roles: {
-    roles: {
-      name: string;
-    };
-  }[];
-}
-
-interface User extends MasterUser {}
+// Import from single source of truth instead of duplicating
+import type { MasterUser } from '@/types/userManagement';
 
 interface ApiService {
   id: string;
@@ -65,7 +49,7 @@ export const useMasterData = (isAuthenticated: boolean = false) => {
   // Fetch users - only when authenticated
   const { data: users = [], isLoading: usersLoading, error: usersError } = useQuery({
     queryKey: ['master-users'],
-    queryFn: async (): Promise<User[]> => {
+    queryFn: async (): Promise<MasterUser[]> => {
       console.log('👥 Fetching users from profiles table');
       
       // First, get profiles
@@ -99,6 +83,9 @@ export const useMasterData = (isAuthenticated: boolean = false) => {
               console.warn('❌ Error fetching roles for user:', profile.id, roleError);
               return {
                 ...profile,
+                firstName: profile.first_name,
+                lastName: profile.last_name,
+                isActive: true,
                 is_active: true,
                 user_roles: []
               };
@@ -106,10 +93,13 @@ export const useMasterData = (isAuthenticated: boolean = false) => {
 
             return {
               ...profile,
+              firstName: profile.first_name,
+              lastName: profile.last_name,
+              isActive: true,
               is_active: true,
               user_roles: Array.isArray(roleNames) 
                 ? roleNames.map((role: any) => ({
-                    roles: { name: typeof role === 'string' ? role : role.role_name }
+                    role: { name: typeof role === 'string' ? role : role.role_name }
                   }))
                 : []
             };
@@ -117,6 +107,9 @@ export const useMasterData = (isAuthenticated: boolean = false) => {
             console.warn('❌ Role fetch failed for user:', profile.id, err);
             return {
               ...profile,
+              firstName: profile.first_name,
+              lastName: profile.last_name,
+              isActive: true,
               is_active: true,
               user_roles: []
             };
@@ -125,7 +118,7 @@ export const useMasterData = (isAuthenticated: boolean = false) => {
       );
 
       console.log('✅ Users with roles combined:', usersWithRoles.length);
-      return usersWithRoles as User[];
+      return usersWithRoles as MasterUser[];
     },
     staleTime: 300000,
     refetchOnWindowFocus: false,
@@ -231,20 +224,20 @@ export const useMasterData = (isAuthenticated: boolean = false) => {
     totalApiServices: apiServices.length,
     activeApiServices: apiServices.filter(s => s.status === 'active'),
     patientUsers: users.filter(u => 
-      u.user_roles.some(ur => ur.roles?.name === 'patientCaregiver')
+      u.user_roles.some(ur => ur.role?.name === 'patientCaregiver')
     ).length,
     totalFacilities: facilities.length,
     activeFacilities: facilities.filter(f => f.is_active).length,
     totalModules: modules.length,
     activeModules: modules.filter(m => m.is_active).length,
     adminCount: users.filter(u => 
-      u.user_roles.some(ur => ur.roles?.name === 'superAdmin')
+      u.user_roles.some(ur => ur.role?.name === 'superAdmin')
     ).length,
     staffCount: users.filter(u => 
-      u.user_roles.some(ur => ['onboardingTeam', 'facilityAdmin'].includes(ur.roles?.name || ''))
+      u.user_roles.some(ur => ['onboardingTeam', 'facilityAdmin'].includes(ur.role?.name || ''))
     ).length,
     patientCount: users.filter(u => 
-      u.user_roles.some(ur => ur.roles?.name === 'patientCaregiver')
+      u.user_roles.some(ur => ur.role?.name === 'patientCaregiver')
     ).length,
   };
 

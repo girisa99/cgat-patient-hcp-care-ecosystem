@@ -43,6 +43,7 @@ export interface MasterUser {
   phone?: string;
   isActive: boolean;
   is_active?: boolean;
+  is_email_verified?: boolean; // Added missing property
   created_at: string; // REQUIRED - made non-optional to match UserWithRoles
   updated_at?: string;
   facility_id?: string;

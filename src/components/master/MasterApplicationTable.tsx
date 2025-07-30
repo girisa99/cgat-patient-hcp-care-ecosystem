@@ -257,7 +257,7 @@ export const MasterApplicationTable: React.FC = () => {
                           <div className="flex gap-1 mt-1">
                             {user.user_roles.map((ur, index) => (
                               <Badge key={index} variant="outline" className="text-xs">
-                                {ur.roles.name}
+                                {ur.role?.name}
                               </Badge>
                             ))}
                           </div>
