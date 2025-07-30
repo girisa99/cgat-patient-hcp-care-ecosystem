@@ -21,7 +21,7 @@ interface ComponentType {
   id: string;
   name: string;
   category: string;
-  icon: React.ComponentType<any>;
+  icon: React.ComponentType<{ className?: string }>;
   description: string;
   configurable: boolean;
 }
@@ -30,7 +30,7 @@ interface AuthMethod {
   id: string;
   name: string;
   description: string;
-  icon: React.ComponentType<any>;
+  icon: React.ComponentType<{ className?: string }>;
 }
 
 interface AgentFormData {

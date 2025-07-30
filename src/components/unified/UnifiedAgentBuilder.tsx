@@ -40,7 +40,7 @@ interface BuilderStep {
   id: AgentSession['current_step'];
   title: string;
   description: string;
-  icon: React.ComponentType<any>;
+  icon: React.ComponentType<{ className?: string }>;
   isCompleted: (session: AgentSession | null) => boolean;
   isRequired: boolean;
 }

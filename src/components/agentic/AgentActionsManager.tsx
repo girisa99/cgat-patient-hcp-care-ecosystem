@@ -160,8 +160,8 @@ export const AgentActionsManager: React.FC<AgentActionsManagerProps> = ({
   const [newTaskTypeInput, setNewTaskTypeInput] = useState('');
   const [showSummary, setShowSummary] = useState(false);
   const [activeTab, setActiveTab] = useState('actions');
-  const [connectorAssignments, setConnectorAssignments] = useState<any[]>([]);
-  const [knowledgeSources, setKnowledgeSources] = useState<any[]>([]);
+  const [connectorAssignments, setConnectorAssignments] = useState<Array<{ id: string; name: string; type: string }>>([]);
+  const [knowledgeSources, setKnowledgeSources] = useState<Array<{ id: string; title: string; type: string }>>([]);
 
   // Load real data from database
   useEffect(() => {

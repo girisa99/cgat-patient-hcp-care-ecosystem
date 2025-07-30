@@ -35,7 +35,7 @@ interface AIModel {
   costPer1kTokens: number;
   responseTime: string;
   availability: 'available' | 'limited' | 'beta';
-  icon: React.ComponentType<any>;
+  icon: React.ComponentType<{ className?: string }>;
 }
 
 const aiModels: AIModel[] = [

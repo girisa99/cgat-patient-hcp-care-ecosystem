@@ -14,7 +14,7 @@ interface AgentTemplate {
   name: string;
   description: string;
   category: string;
-  icon: React.ComponentType<any>;
+  icon: React.ComponentType<{ className?: string }>;
   systems: string[];
   useCase: string;
   estimatedSetupTime: string;

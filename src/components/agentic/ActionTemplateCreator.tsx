@@ -42,7 +42,16 @@ export const ActionTemplateCreator: React.FC<ActionTemplateCreatorProps> = ({
     requires_approval: false
   });
 
-  const [tasks, setTasks] = useState<any[]>([]);
+  const [tasks, setTasks] = useState<Array<{ 
+    id: string;
+    task_name: string; 
+    task_type: string; 
+    task_description?: string; 
+    task_order: number;
+    is_critical?: boolean;
+    timeout_minutes?: number;
+    retry_attempts?: number;
+  }>>([]);
   const [newCategory, setNewCategory] = useState('');
   const [newType, setNewType] = useState('');
   const [newTaskType, setNewTaskType] = useState('');

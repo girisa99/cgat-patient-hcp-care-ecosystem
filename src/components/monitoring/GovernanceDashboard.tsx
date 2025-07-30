@@ -39,7 +39,7 @@ const GovernanceDashboard: React.FC = () => {
     interceptPrompt
   } = useComplianceMonitoring();
 
-  const [promptHistory, setPromptHistory] = useState<any[]>([]);
+  const [promptHistory, setPromptHistory] = useState<Array<any>>([]);
   const [selectedViolation, setSelectedViolation] = useState<PromptViolation | null>(null);
   const [testPrompt, setTestPrompt] = useState('');
 

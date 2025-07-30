@@ -14,7 +14,7 @@ interface RequirementsDocumentationProps {
 
 export function RequirementsDocumentation({ onDownload }: RequirementsDocumentationProps) {
   const [animationActive, setAnimationActive] = useState<string | null>(null);
-  const [realTestData, setRealTestData] = useState<any[]>([]);
+  const [realTestData, setRealTestData] = useState<Array<any>>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Fetch real data from database

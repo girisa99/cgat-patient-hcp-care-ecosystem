@@ -25,7 +25,7 @@ interface Connector {
   id: string;
   name: string;
   category: string;
-  icon: React.ComponentType<any>;
+  icon: React.ComponentType<{ className?: string }>;
   description: string;
   status: 'connected' | 'available' | 'configuring';
   apiEndpoint?: string;

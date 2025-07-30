@@ -35,7 +35,7 @@ interface WizardStep {
   id: string;
   title: string;
   description: string;
-  icon: React.ComponentType<any>;
+  icon: React.ComponentType<{ className?: string }>;
   completed: boolean;
 }
 

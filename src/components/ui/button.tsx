@@ -5,7 +5,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   size?: 'default' | 'sm' | 'lg' | 'icon' | 'xs'
   asChild?: boolean
   loading?: boolean
-  icon?: React.ComponentType<{ className?: string }>
+  icon?: React.ComponentType<{ className?: string; size?: number | string }>
   iconPosition?: 'left' | 'right'
 }
 
