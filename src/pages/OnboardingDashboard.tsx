@@ -25,14 +25,12 @@ import AppLayout from '@/components/layout/AppLayout';
 import { useMasterOnboarding } from '@/hooks/useMasterOnboarding';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
-import { EnhancedOnboardingWizard } from '@/components/onboarding/EnhancedOnboardingWizard';
-import { ComprehensiveOnboardingWizard } from '@/components/onboarding/ComprehensiveOnboardingWizard';
 import { SavedApplicationsList, OnboardingSessionControls } from '@/components/onboarding/OnboardingSessionControls';
 import { OnboardingTable } from '@/components/onboarding/OnboardingTable';
 import { TreatmentCenterOnboarding } from '@/types/onboarding';
 
 const OnboardingDashboard: React.FC = () => {
-  const [view, setView] = useState<'dashboard' | 'wizard' | 'comprehensive'>('dashboard');
+  const [view, setView] = useState<'dashboard' | 'wizard'>('dashboard');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [editingApplicationId, setEditingApplicationId] = useState<string | null>(null);
@@ -67,12 +65,12 @@ const OnboardingDashboard: React.FC = () => {
 
   const handleCreateNew = () => {
     setEditingApplicationId(null);
-    setView('comprehensive'); // Use comprehensive wizard with all therapy and service selections
+    setView('wizard'); // Use comprehensive wizard with all features
   };
 
   const handleEditApplication = (applicationId: string) => {
     setEditingApplicationId(applicationId);
-    setView('comprehensive'); // Use comprehensive wizard with all therapy and service selections
+    setView('wizard'); // Use comprehensive wizard with all features
   };
 
   const handleWizardSubmit = async (data: any) => {
@@ -120,7 +118,7 @@ const OnboardingDashboard: React.FC = () => {
     app.status === 'draft'
   );
 
-  if (view === 'comprehensive') {
+  if (view === 'wizard') {
     const currentApplication = editingApplicationId 
       ? onboardingApplications.find(app => app.id === editingApplicationId)
       : null;
@@ -130,24 +128,12 @@ const OnboardingDashboard: React.FC = () => {
 
     return (
       <AppLayout>
-        <ComprehensiveOnboardingWizard
+        <OnboardingWizard
           applicationId={editingApplicationId}
           onSubmit={handleWizardSubmit}
           onSaveAndExit={handleSaveAndExit}
           onBack={handleBackToDashboard}
           initialData={initialData}
-        />
-      </AppLayout>
-    );
-  }
-
-  if (view === 'wizard') {
-    return (
-      <AppLayout>
-        <OnboardingWizard
-          applicationId={editingApplicationId}
-          onSubmit={handleWizardSubmit}
-          onBack={handleBackToDashboard}
         />
       </AppLayout>
     );
