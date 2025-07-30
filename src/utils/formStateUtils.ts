@@ -20,15 +20,16 @@ export const createMasterFormState = (initialData?: Partial<MasterUserFormState>
   };
 };
 
-export const normalizeMasterFormState = (data: any): MasterUserFormState => {
+export const normalizeMasterFormState = (data: unknown): MasterUserFormState => {
+  const typedData = data as Record<string, unknown>;
   return createMasterFormState({
-    firstName: data?.firstName || data?.first_name || '',
-    lastName: data?.lastName || data?.last_name || '',
-    email: data?.email || '',
-    phone: data?.phone || '',
-    role: data?.role || '',
-    facility_id: data?.facility_id || '',
-    isActive: data?.isActive ?? data?.is_active ?? true,
+    firstName: (typedData?.firstName as string) || (typedData?.first_name as string) || '',
+    lastName: (typedData?.lastName as string) || (typedData?.last_name as string) || '',
+    email: (typedData?.email as string) || '',
+    phone: (typedData?.phone as string) || '',
+    role: (typedData?.role as string) || '',
+    facility_id: (typedData?.facility_id as string) || '',
+    isActive: (typedData?.isActive as boolean) ?? (typedData?.is_active as boolean) ?? true,
   });
 };
 

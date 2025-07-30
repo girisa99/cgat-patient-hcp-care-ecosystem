@@ -66,8 +66,8 @@ export interface VerificationResult {
 // Enhanced Verification Results
 export interface EnhancedVerificationResult extends VerificationResult {
   templateEnforcement?: PatternEnforcementResult;
-  designSystemValidation?: any;
-  roleBasedValidation?: any;
+  designSystemValidation?: Record<string, unknown>;
+  roleBasedValidation?: Record<string, unknown>;
   accessibilityScore?: number;
   timestamp: string;
 }

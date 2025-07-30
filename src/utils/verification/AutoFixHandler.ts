@@ -62,17 +62,17 @@ export class AutoFixHandler {
    */
   hasCriticalIssues(summary: VerificationSummary): boolean {
     // Database critical issues
-    const databaseErrors = summary.databaseValidation?.violations.some(v => v.severity === 'error') || false;
+    const databaseErrors = summary.databaseValidation?.violations.some(v => v.severity === 'critical') || false;
     
     // Schema critical issues
-    const schemaErrors = summary.schemaValidation?.violations.some(v => v.severity === 'error') || false;
+    const schemaErrors = summary.schemaValidation?.violations.some(v => v.severity === 'critical') || false;
     
     // Security critical issues
     const securityCritical = summary.securityScan?.vulnerabilities.some(v => 
       v.severity === 'critical' || v.severity === 'high') || false;
     
     // Code quality critical issues
-    const qualityCritical = summary.codeQuality?.issues.some(i => i.severity === 'error') || false;
+    const qualityCritical = summary.codeQuality?.issues.some(i => i.severity === 'critical') || false;
 
     return summary.criticalIssues > 0 || databaseErrors || schemaErrors || securityCritical || qualityCritical;
   }
