@@ -207,9 +207,26 @@ export const DistributorSelectionStep = ({ formData, updateFormData }: any) => {
 export const DetailedTherapySelectionStep = ({ formData, updateFormData }: any) => {
   const [therapies, setTherapies] = useState<Therapy[]>([]);
   const [loading, setLoading] = useState(true);
-  const [therapySelections, setTherapySelections] = useState<TherapySelection[]>(
+  const [rawTherapySelections, setRawTherapySelections] = useState<TherapySelection[]>(
     formData.therapy_selections || []
   );
+
+  // Convert object-like arrays to proper arrays
+  const therapySelections = React.useMemo(() => {
+    if (!rawTherapySelections) return [];
+    if (Array.isArray(rawTherapySelections)) return rawTherapySelections;
+    
+    // Handle object with numeric keys (common when data comes from forms or storage)
+    if (typeof rawTherapySelections === 'object') {
+      const keys = Object.keys(rawTherapySelections);
+      if (keys.every(key => !isNaN(Number(key)))) {
+        return Object.values(rawTherapySelections) as TherapySelection[];
+      }
+    }
+    
+    console.warn('therapySelections is not in expected format:', rawTherapySelections);
+    return [];
+  }, [rawTherapySelections]);
 
   useEffect(() => {
     fetchTherapies();
@@ -248,7 +265,7 @@ export const DetailedTherapySelectionStep = ({ formData, updateFormData }: any) 
     if (existingIndex >= 0) {
       // Remove therapy
       const updated = therapySelections.filter(t => t.therapy_id !== therapy.id);
-      setTherapySelections(updated);
+      setRawTherapySelections(updated);
       updateFormData('therapy_selections', updated);
     } else {
       // Add therapy with default values
@@ -260,7 +277,7 @@ export const DetailedTherapySelectionStep = ({ formData, updateFormData }: any) 
         patient_volume_estimate: 0
       };
       const updated = [...therapySelections, newSelection];
-      setTherapySelections(updated);
+      setRawTherapySelections(updated);
       updateFormData('therapy_selections', updated);
     }
   };
@@ -274,7 +291,7 @@ export const DetailedTherapySelectionStep = ({ formData, updateFormData }: any) 
     const updated = therapySelections.map(selection =>
       selection.therapy_id === therapyId ? { ...selection, [field]: value } : selection
     );
-    setTherapySelections(updated);
+    setRawTherapySelections(updated);
     updateFormData('therapy_selections', updated);
   };
 

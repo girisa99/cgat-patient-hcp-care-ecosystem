@@ -42,10 +42,26 @@ interface TherapyServiceSelectorProps {
 }
 
 export const TherapyServiceSelector: React.FC<TherapyServiceSelectorProps> = ({
-  selectedTherapies,
+  selectedTherapies: rawSelectedTherapies,
   onTherapySelectionChange,
   facility_id
 }) => {
+  // Convert object-like arrays to proper arrays
+  const selectedTherapies = React.useMemo(() => {
+    if (!rawSelectedTherapies) return [];
+    if (Array.isArray(rawSelectedTherapies)) return rawSelectedTherapies;
+    
+    // Handle object with numeric keys (common when data comes from forms or storage)
+    if (typeof rawSelectedTherapies === 'object') {
+      const keys = Object.keys(rawSelectedTherapies);
+      if (keys.every(key => !isNaN(Number(key)))) {
+        return Object.values(rawSelectedTherapies) as TherapySelection[];
+      }
+    }
+    
+    console.warn('selectedTherapies is not in expected format:', rawSelectedTherapies);
+    return [];
+  }, [rawSelectedTherapies]);
   const [therapies, setTherapies] = useState<Therapy[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [commercialProducts, setCommercialProducts] = useState<CommercialProduct[]>([]);
