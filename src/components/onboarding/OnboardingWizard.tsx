@@ -51,12 +51,12 @@ import {
 } from './DetailedStepComponents';
 import {
   DistributorSelectionStep,
-  DetailedTherapySelectionStep,
   DetailedServiceSelectionStep,
   DetailedOnlineServicesStep,
   DetailedPurchasingPreferencesStep,
   DetailedTechnologyIntegrationStep
 } from './AdditionalStepComponents';
+import { TherapyServiceSelector } from '@/components/therapy/TherapyServiceSelector';
 
 interface OnboardingWizardProps {
   applicationId?: string | null;
@@ -630,7 +630,13 @@ const ReferencesStep = DetailedReferencesStep;
 const PaymentBankingStep = DetailedPaymentBankingStep;
 const LicensesStep = DetailedLicensesStep;
 const DocumentsStep = DetailedDocumentsStep;
-const TherapySelectionStep = DetailedTherapySelectionStep;
+const TherapySelectionStep = ({ formData, updateFormData }: any) => (
+  <TherapyServiceSelector
+    selectedTherapies={formData.therapy_selections || []}
+    onTherapySelectionChange={(selections) => updateFormData('therapy_selections', selections)}
+    facility_id={formData.facility_id}
+  />
+);
 const ServiceSelectionStep = DetailedServiceSelectionStep;
 const OnlineServicesStep = DetailedOnlineServicesStep;
 const PurchasingPreferencesStep = DetailedPurchasingPreferencesStep;
