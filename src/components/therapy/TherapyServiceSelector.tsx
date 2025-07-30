@@ -166,13 +166,20 @@ export const TherapyServiceSelector: React.FC<TherapyServiceSelectorProps> = ({
         });
         
         try {
+          console.log('Calling generate-therapy-products for therapy ID:', therapy.id);
           const response = await supabase.functions.invoke('generate-therapy-products', {
             body: { therapy_ids: [therapy.id] }
           });
           
-          if (response.error) throw response.error;
+          console.log('Edge function response:', response);
+          
+          if (response.error) {
+            console.error('Edge function error:', response.error);
+            throw response.error;
+          }
           
           // Refresh product data
+          console.log('Refreshing product data...');
           await fetchTherapyData();
           
           setGeneratingProducts(prev => {
@@ -194,7 +201,7 @@ export const TherapyServiceSelector: React.FC<TherapyServiceSelectorProps> = ({
           });
           toast({
             title: "Generation Error",
-            description: "Failed to generate products. Please try again.",
+            description: `Failed to generate products: ${error.message || 'Unknown error'}`,
             variant: "destructive"
           });
         }
