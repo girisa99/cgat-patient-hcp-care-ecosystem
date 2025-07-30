@@ -4,7 +4,7 @@
  * Features: Real data, comprehensive workflow, secure policies
  */
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -25,7 +25,7 @@ import AppLayout from '@/components/layout/AppLayout';
 import { useMasterOnboarding } from '@/hooks/useMasterOnboarding';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
-import { SavedApplicationsList, OnboardingSessionControls } from '@/components/onboarding/OnboardingSessionControls';
+import { OnboardingTable } from '@/components/onboarding/OnboardingTable';
 import { OnboardingTable } from '@/components/onboarding/OnboardingTable';
 import { TreatmentCenterOnboarding } from '@/types/onboarding';
 
@@ -107,16 +107,30 @@ const OnboardingDashboard: React.FC = () => {
   };
 
   const filteredApplications = onboardingApplications.filter(app => {
+    // Filter out empty applications (no company name)
+    const hasCompanyName = app.legal_name || app.dba_name;
+    if (!hasCompanyName) return false;
+    
     const matchesSearch = app.legal_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          app.dba_name?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || app.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
-  // Get draft applications for session resume
-  const draftApplications = onboardingApplications.filter(app => 
-    app.status === 'draft'
+  // Get only valid treatment centers (with names) for stats
+  const validApplications = onboardingApplications.filter(app => 
+    app.legal_name || app.dba_name
   );
+
+  // Update stats to reflect only valid applications
+  const updatedOnboardingStats = {
+    total: validApplications.length,
+    draft: validApplications.filter(app => app.status === 'draft').length,
+    submitted: validApplications.filter(app => app.status === 'submitted').length,
+    approved: validApplications.filter(app => app.status === 'approved').length,
+    rejected: validApplications.filter(app => app.status === 'rejected').length,
+    under_review: validApplications.filter(app => app.status === 'under_review').length,
+  };
 
   if (view === 'wizard') {
     const currentApplication = editingApplicationId 
@@ -164,7 +178,7 @@ const OnboardingDashboard: React.FC = () => {
                 <Users className="h-4 w-4 text-blue-500" />
                 <div>
                   <p className="text-sm text-muted-foreground">Treatment Centers</p>
-                  <p className="text-2xl font-bold">{onboardingStats.total}</p>
+                  <p className="text-2xl font-bold">{updatedOnboardingStats.total}</p>
                 </div>
               </div>
             </CardContent>
@@ -176,7 +190,7 @@ const OnboardingDashboard: React.FC = () => {
                 <FileText className="h-4 w-4 text-gray-500" />
                 <div>
                   <p className="text-sm text-muted-foreground">Draft</p>
-                  <p className="text-2xl font-bold">{onboardingStats.draft}</p>
+                  <p className="text-2xl font-bold">{updatedOnboardingStats.draft}</p>
                 </div>
               </div>
             </CardContent>
@@ -188,7 +202,7 @@ const OnboardingDashboard: React.FC = () => {
                 <Clock className="h-4 w-4 text-yellow-500" />
                 <div>
                   <p className="text-sm text-muted-foreground">Submitted</p>
-                  <p className="text-2xl font-bold">{onboardingStats.submitted}</p>
+                  <p className="text-2xl font-bold">{updatedOnboardingStats.submitted}</p>
                 </div>
               </div>
             </CardContent>
@@ -200,7 +214,7 @@ const OnboardingDashboard: React.FC = () => {
                 <AlertCircle className="h-4 w-4 text-orange-500" />
                 <div>
                   <p className="text-sm text-muted-foreground">Under Review</p>
-                  <p className="text-2xl font-bold">{onboardingStats.under_review}</p>
+                  <p className="text-2xl font-bold">{updatedOnboardingStats.under_review}</p>
                 </div>
               </div>
             </CardContent>
@@ -212,7 +226,7 @@ const OnboardingDashboard: React.FC = () => {
                 <CheckCircle className="h-4 w-4 text-green-500" />
                 <div>
                   <p className="text-sm text-muted-foreground">Approved</p>
-                  <p className="text-2xl font-bold">{onboardingStats.approved}</p>
+                  <p className="text-2xl font-bold">{updatedOnboardingStats.approved}</p>
                 </div>
               </div>
             </CardContent>
@@ -224,7 +238,7 @@ const OnboardingDashboard: React.FC = () => {
                 <XCircle className="h-4 w-4 text-red-500" />
                 <div>
                   <p className="text-sm text-muted-foreground">Rejected</p>
-                  <p className="text-2xl font-bold">{onboardingStats.rejected}</p>
+                  <p className="text-2xl font-bold">{updatedOnboardingStats.rejected}</p>
                 </div>
               </div>
             </CardContent>
@@ -242,25 +256,23 @@ const OnboardingDashboard: React.FC = () => {
                 <div className="flex justify-between items-center">
                   <span className="text-sm">Completion Rate</span>
                   <span className="text-sm font-medium">
-                    {Math.round((onboardingStats.approved / Math.max(onboardingStats.total, 1)) * 100)}%
+                    {Math.round((updatedOnboardingStats.approved / Math.max(updatedOnboardingStats.total, 1)) * 100)}%
                   </span>
                 </div>
                 <div className="w-full bg-secondary rounded-full h-2">
                   <div 
                     className="bg-primary h-2 rounded-full transition-all duration-300"
-                    style={{ 
-                      width: `${Math.round((onboardingStats.approved / Math.max(onboardingStats.total, 1)) * 100)}%` 
-                    }}
+                     style={{ width: `${(updatedOnboardingStats.approved / Math.max(updatedOnboardingStats.total, 1)) * 100}%` }}
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <p className="text-muted-foreground">In Progress</p>
-                    <p className="font-medium">{onboardingStats.submitted + onboardingStats.under_review}</p>
+                    <p className="font-medium">{updatedOnboardingStats.submitted + updatedOnboardingStats.under_review}</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground">Pending Start</p>
-                    <p className="font-medium">{onboardingStats.draft}</p>
+                    <p className="font-medium">{updatedOnboardingStats.draft}</p>
                   </div>
                 </div>
               </div>
@@ -290,69 +302,36 @@ const OnboardingDashboard: React.FC = () => {
           </Card>
         </div>
 
-        {/* Saved Applications for Resume */}
-        {draftApplications.length > 0 && (
-          <SavedApplicationsList
-            applications={draftApplications.map(app => ({
-              id: app.id,
-              legal_name: app.legal_name,
-              dba_name: app.dba_name,
-              status: app.status,
-              workflow: {
-                current_step: 'company_info',
-                completed_steps: []
-              },
-              updated_at: app.updated_at,
-              created_at: app.created_at
-            }))}
-            onSelectApplication={(application) => handleEditApplication(application.id)}
-            onDeleteApplication={async (applicationId) => {
-              // You could add a delete function here if needed
-              console.log('Delete application:', applicationId);
-            }}
-          />
-        )}
-
-        {/* Filters and Search */}
+        {/* Treatment Center Applications Table */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Applications</CardTitle>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm">
-                  <Download className="h-4 w-4 mr-2" />
-                  Export
-                </Button>
-              </div>
-            </div>
+            <CardTitle>Treatment Center Onboarding Status</CardTitle>
+            <CardDescription>
+              Track the onboarding progress for each treatment center (One application per center)
+            </CardDescription>
           </CardHeader>
           <CardContent>
+            {/* Search and Filters */}
             <div className="flex gap-4 mb-6">
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search applications..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-9"
-                  />
-                </div>
-              </div>
+              <Input
+                placeholder="Search by center name..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="max-w-sm"
+              />
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 py-2 border rounded-md"
+                className="border rounded px-3 py-2"
               >
                 <option value="all">All Status</option>
-                <option value="draft">Draft</option>
+                <option value="draft">In Progress</option>
                 <option value="submitted">Submitted</option>
                 <option value="under_review">Under Review</option>
                 <option value="approved">Approved</option>
                 <option value="rejected">Rejected</option>
               </select>
             </div>
-
             <OnboardingTable
               applications={filteredApplications}
               isLoading={isLoading}
