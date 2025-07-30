@@ -9,9 +9,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
-import { Building, Users, CreditCard, FileText, Clock, Stethoscope, Settings, Globe, Package, Truck } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Building, Users, CreditCard, FileText, Clock, Stethoscope, Settings, Globe, Package, Truck, X, CheckCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { SERVICE_TYPES } from '@/types/services';
 
 // Types for database entities
 interface Therapy {
@@ -537,99 +539,118 @@ export const DetailedServiceSelectionStep = ({ formData, updateFormData }: any) 
       <div className="p-4 border rounded-lg bg-green-50">
         <h4 className="font-medium mb-2 text-green-900">Service Selection</h4>
         <p className="text-sm text-green-800">
-          Choose the services that will support your treatment center operations. These services 
-          will be coordinated with your selected distributors and therapy areas.
+          Choose the services that will support your treatment center operations using the dropdown below.
         </p>
       </div>
 
-      {Object.entries(groupedServices).map(([serviceType, serviceList]) => (
-        <div key={serviceType} className="space-y-4">
-          <h4 className="font-medium text-lg capitalize flex items-center">
-            <span className={`px-3 py-1 rounded-full text-sm mr-3 ${getServiceTypeColor(serviceType)}`}>
-              {serviceType.replace('_', ' ')}
-            </span>
-            Services
-          </h4>
-          
-          <div className="grid grid-cols-1 gap-4">
-            {serviceList.map((service) => {
-              const isSelected = serviceSelections.some(s => s.service_id === service.id);
-              const selection = serviceSelections.find(s => s.service_id === service.id);
-              
-              return (
-                <div
-                  key={service.id}
-                  className={`p-4 border-2 rounded-lg transition-all ${
-                    isSelected ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  <div className="flex items-start space-x-3">
-                    <Checkbox
-                      id={service.id}
-                      checked={isSelected}
-                      onCheckedChange={() => handleServiceToggle(service)}
-                      className="mt-1"
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <Label htmlFor={service.id} className="font-medium cursor-pointer">
-                          {service.name}
-                        </Label>
-                      </div>
-                      {service.description && (
-                        <p className="text-sm text-gray-600 mb-3">{service.description}</p>
-                      )}
-                      
-                      {isSelected && (
-                        <div className="mt-4 p-3 bg-white border rounded-lg space-y-3">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <div>
-                              <Label htmlFor={`therapy_area_${service.id}`}>Related Therapy Area</Label>
-                              <Input
-                                id={`therapy_area_${service.id}`}
-                                value={selection?.therapy_area || ''}
-                                onChange={(e) => updateServiceSelection(service.id, 'therapy_area', e.target.value)}
-                                placeholder="e.g., Oncology, Cardiology"
-                              />
-                            </div>
-                          </div>
-                          <div>
-                            <Label htmlFor={`service_rationale_${service.id}`}>Selection Rationale</Label>
-                            <Textarea
-                              id={`service_rationale_${service.id}`}
-                              value={selection?.selection_rationale || ''}
-                              onChange={(e) => updateServiceSelection(service.id, 'selection_rationale', e.target.value)}
-                              placeholder="Why do you need this service for your treatment center?"
-                              rows={2}
-                            />
-                          </div>
+      {/* Dropdown Service Selection */}
+      <div className="space-y-4">
+        <Label htmlFor="service-dropdown">Add Service</Label>
+        <Select onValueChange={(serviceId) => {
+          const service = services.find(s => s.id === serviceId);
+          if (service && !serviceSelections.some(s => s.service_id === serviceId)) {
+            handleServiceToggle(service);
+          }
+        }}>
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Select a service to add..." />
+          </SelectTrigger>
+          <SelectContent className="max-h-[300px] bg-background border border-border shadow-lg z-50">
+            {Object.entries(groupedServices).map(([serviceType, serviceList]) => (
+              <div key={serviceType}>
+                <div className="px-3 py-2 text-sm font-medium text-muted-foreground border-b">
+                  {SERVICE_TYPES[serviceType as keyof typeof SERVICE_TYPES] || serviceType.replace('_', ' ')}
+                </div>
+                {serviceList.map((service) => {
+                  const isSelected = serviceSelections.some(s => s.service_id === service.id);
+                  return (
+                    <SelectItem 
+                      key={service.id} 
+                      value={service.id}
+                      disabled={isSelected}
+                      className="focus:bg-accent focus:text-accent-foreground"
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex flex-col min-w-0 flex-1">
+                          <span className="font-medium truncate">{service.name}</span>
+                          {service.description && (
+                            <span className="text-xs text-muted-foreground truncate">{service.description}</span>
+                          )}
                         </div>
-                      )}
+                        {isSelected && <CheckCircle className="h-4 w-4 text-primary ml-2 flex-shrink-0" />}
+                      </div>
+                    </SelectItem>
+                  );
+                })}
+              </div>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Selected Services Display */}
+      {serviceSelections.length > 0 && (
+        <div className="space-y-4">
+          <h4 className="font-medium text-lg">Selected Services</h4>
+          {serviceSelections.map((selection) => {
+            const service = services.find(s => s.id === selection.service_id);
+            if (!service) return null;
+            
+            return (
+              <div key={selection.service_id} className="p-4 border rounded-lg bg-green-50">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center space-x-3">
+                    <span className={`px-3 py-1 rounded-full text-sm ${getServiceTypeColor(service.service_type)}`}>
+                      {SERVICE_TYPES[service.service_type as keyof typeof SERVICE_TYPES] || service.service_type}
+                    </span>
+                    <h5 className="font-medium">{service.name}</h5>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleServiceToggle(service)}
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+                
+                {service.description && (
+                  <p className="text-sm text-gray-600 mb-3">{service.description}</p>
+                )}
+                
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <Label htmlFor={`therapy_area_${service.id}`}>Related Therapy Area</Label>
+                      <Input
+                        id={`therapy_area_${service.id}`}
+                        value={selection?.therapy_area || ''}
+                        onChange={(e) => updateServiceSelection(service.id, 'therapy_area', e.target.value)}
+                        placeholder="e.g., Oncology, Cardiology"
+                      />
                     </div>
                   </div>
+                  <div>
+                    <Label htmlFor={`service_rationale_${service.id}`}>Selection Rationale</Label>
+                    <Textarea
+                      id={`service_rationale_${service.id}`}
+                      value={selection?.selection_rationale || ''}
+                      onChange={(e) => updateServiceSelection(service.id, 'selection_rationale', e.target.value)}
+                      placeholder="Why do you need this service for your treatment center?"
+                      rows={2}
+                    />
+                  </div>
                 </div>
-              );
-            })}
+              </div>
+            );
+          })}
+          
+          <div className="p-4 border rounded-lg bg-blue-50">
+            <p className="text-sm text-blue-700">
+              {serviceSelections.length} service{serviceSelections.length !== 1 ? 's' : ''} selected for your treatment center.
+            </p>
           </div>
-        </div>
-      ))}
-
-      {serviceSelections.length > 0 && (
-        <div className="p-4 border rounded-lg bg-green-50">
-          <h4 className="font-medium mb-2 text-green-900">Selected Services</h4>
-          <div className="flex flex-wrap gap-2">
-            {serviceSelections.map((selection) => (
-              <span
-                key={selection.service_id}
-                className="inline-flex items-center px-3 py-1 bg-green-200 text-green-800 rounded-full text-sm"
-              >
-                {selection.service_name}
-              </span>
-            ))}
-          </div>
-          <p className="text-sm text-green-700 mt-2">
-            {serviceSelections.length} service{serviceSelections.length !== 1 ? 's' : ''} selected for your treatment center.
-          </p>
         </div>
       )}
     </div>
