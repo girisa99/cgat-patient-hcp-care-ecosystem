@@ -24,7 +24,7 @@ import {
 import AppLayout from '@/components/layout/AppLayout';
 import { useMasterOnboarding } from '@/hooks/useMasterOnboarding';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
-import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
+import { ClusteredOnboardingWizard } from '@/components/onboarding/ClusteredOnboardingWizard';
 import { OnboardingTable } from '@/components/onboarding/OnboardingTable';
 import { TreatmentCenterOnboarding } from '@/types/onboarding';
 
@@ -141,7 +141,7 @@ const OnboardingDashboard: React.FC = () => {
 
     return (
       <AppLayout>
-        <OnboardingWizard
+        <ClusteredOnboardingWizard
           applicationId={editingApplicationId}
           onSubmit={handleWizardSubmit}
           onSaveAndExit={handleSaveAndExit}
