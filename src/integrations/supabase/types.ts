@@ -5623,6 +5623,7 @@ export type Database = {
       treatment_center_onboarding: {
         Row: {
           ach_preference: string | null
+          api_requirements: Json | null
           assigned_to: string | null
           authorized_signatory_name: string | null
           authorized_signatory_ssn: string | null
@@ -5685,6 +5686,7 @@ export type Database = {
         }
         Insert: {
           ach_preference?: string | null
+          api_requirements?: Json | null
           assigned_to?: string | null
           authorized_signatory_name?: string | null
           authorized_signatory_ssn?: string | null
@@ -5747,6 +5749,7 @@ export type Database = {
         }
         Update: {
           ach_preference?: string | null
+          api_requirements?: Json | null
           assigned_to?: string | null
           authorized_signatory_name?: string | null
           authorized_signatory_ssn?: string | null
