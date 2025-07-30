@@ -33,6 +33,9 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { TreatmentCenterOnboarding, OnboardingStep } from '@/types/onboarding';
+import { useAutoSave } from '@/hooks/useAutoSave';
+import { useMasterOnboarding } from '@/hooks/useMasterOnboarding';
+import { toast } from '@/hooks/use-toast';
 import { 
   DetailedBusinessClassificationStep,
   DetailedCreditApplicationStep, 
@@ -108,6 +111,14 @@ export const ComprehensiveOnboardingWizard: React.FC<ComprehensiveOnboardingWiza
     }
   );
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
+
+  // Initialize auto-save functionality
+  const { manualSave, isSaving } = useAutoSave({
+    data: formData,
+    currentStep,
+    applicationId: applicationId || undefined,
+    enabled: true
+  });
 
   const updateFormData = (section: string, data: any) => {
     setFormData(prev => {
@@ -328,16 +339,26 @@ export const ComprehensiveOnboardingWizard: React.FC<ComprehensiveOnboardingWiza
     }
   };
 
-  const handleSaveAndExit = () => {
+  const handleSaveAndExit = async () => {
     markStepComplete();
-    onSaveAndExit({
-      ...formData,
-      workflow: {
-        ...formData.workflow!,
-        current_step: currentStepData.id,
-        completed_steps: Array.from(completedSteps).map(i => steps[i].id)
-      }
-    });
+    try {
+      await manualSave();
+      onSaveAndExit({
+        ...formData,
+        workflow: {
+          ...formData.workflow!,
+          current_step: currentStepData.id,
+          completed_steps: Array.from(completedSteps).map(i => steps[i].id)
+        }
+      });
+    } catch (error) {
+      console.error('Error saving and exiting:', error);
+      toast({
+        title: "Save Failed",
+        description: "Could not save your progress. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSubmit = () => {
@@ -465,9 +486,13 @@ export const ComprehensiveOnboardingWizard: React.FC<ComprehensiveOnboardingWiza
             </Button>
 
             <div className="flex gap-2">
-              <Button variant="outline" onClick={handleSaveAndExit}>
+              <Button 
+                variant="outline" 
+                onClick={handleSaveAndExit}
+                disabled={isSaving}
+              >
                 <Save className="h-4 w-4 mr-2" />
-                Save & Exit
+                {isSaving ? 'Saving...' : 'Save & Exit'}
               </Button>
               
               {isLastStep ? (

@@ -27,6 +27,7 @@ import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
 import { EnhancedOnboardingWizard } from '@/components/onboarding/EnhancedOnboardingWizard';
 import { ComprehensiveOnboardingWizard } from '@/components/onboarding/ComprehensiveOnboardingWizard';
+import { SavedApplicationsList, OnboardingSessionControls } from '@/components/onboarding/OnboardingSessionControls';
 import { OnboardingTable } from '@/components/onboarding/OnboardingTable';
 import { TreatmentCenterOnboarding } from '@/types/onboarding';
 
@@ -113,6 +114,11 @@ const OnboardingDashboard: React.FC = () => {
     const matchesStatus = statusFilter === 'all' || app.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+  // Get draft applications for session resume
+  const draftApplications = onboardingApplications.filter(app => 
+    app.status === 'draft'
+  );
 
   if (view === 'comprehensive') {
     const currentApplication = editingApplicationId 
@@ -297,6 +303,29 @@ const OnboardingDashboard: React.FC = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Saved Applications for Resume */}
+        {draftApplications.length > 0 && (
+          <SavedApplicationsList
+            applications={draftApplications.map(app => ({
+              id: app.id,
+              legal_name: app.legal_name,
+              dba_name: app.dba_name,
+              status: app.status,
+              workflow: {
+                current_step: 'company_info',
+                completed_steps: []
+              },
+              updated_at: app.updated_at,
+              created_at: app.created_at
+            }))}
+            onSelectApplication={(application) => handleEditApplication(application.id)}
+            onDeleteApplication={async (applicationId) => {
+              // You could add a delete function here if needed
+              console.log('Delete application:', applicationId);
+            }}
+          />
+        )}
 
         {/* Filters and Search */}
         <Card>

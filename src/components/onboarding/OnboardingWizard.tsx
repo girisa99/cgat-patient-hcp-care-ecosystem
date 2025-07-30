@@ -22,6 +22,8 @@ import {
   Shield
 } from 'lucide-react';
 import { TreatmentCenterOnboarding } from '@/types/onboarding';
+import { useAutoSave } from '@/hooks/useAutoSave';
+import { toast } from '@/hooks/use-toast';
 
 interface OnboardingWizardProps {
   applicationId?: string | null;
@@ -63,6 +65,14 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
       number_of_employees: 0,
       estimated_monthly_purchases: 0
     }
+  });
+
+  // Initialize auto-save functionality
+  const { manualSave, isSaving } = useAutoSave({
+    data: formData,
+    currentStep,
+    applicationId: applicationId || undefined,
+    enabled: true
   });
 
   const updateFormData = (section: string, data: any) => {
@@ -322,9 +332,25 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
         </Button>
 
         <div className="flex gap-2">
-          <Button variant="outline" onClick={onBack}>
+          <Button 
+            variant="outline" 
+            onClick={async () => {
+              try {
+                await manualSave();
+                onBack();
+              } catch (error) {
+                console.error('Save failed:', error);
+                toast({
+                  title: "Save Failed",
+                  description: "Could not save your progress. Please try again.",
+                  variant: "destructive",
+                });
+              }
+            }}
+            disabled={isSaving}
+          >
             <Save className="h-4 w-4 mr-2" />
-            Save Draft
+            {isSaving ? 'Saving...' : 'Save Draft'}
           </Button>
           
           {isLastStep ? (
