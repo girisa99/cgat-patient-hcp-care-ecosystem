@@ -96,7 +96,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
       business_info: {
         business_type: [],
         years_in_business: 0,
-        ownership_type: 'corporation' as any,
+        ownership_type: 'c_corp' as any,
         number_of_employees: 0,
         estimated_monthly_purchases: 0
       },

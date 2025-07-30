@@ -53,15 +53,18 @@ export const DetailedBusinessClassificationStep = ({ formData, updateFormData }:
         <Label htmlFor="ownership_type">Ownership Type</Label>
         <select
           id="ownership_type"
-          value={formData.business_info?.ownership_type || 'corporation'}
+          value={formData.business_info?.ownership_type || 'c_corp'}
           onChange={(e) => updateFormData('business_info', { ownership_type: e.target.value })}
           className="w-full px-3 py-2 border rounded-md"
         >
-          <option value="corporation">Corporation</option>
+          <option value="c_corp">C Corporation</option>
+          <option value="s_corp">S Corporation</option>
+          <option value="professional_corp">Professional Corporation</option>
           <option value="llc">LLC</option>
           <option value="partnership">Partnership</option>
-          <option value="sole_proprietorship">Sole Proprietorship</option>
-          <option value="non_profit">Non-Profit</option>
+          <option value="limited_partnership">Limited Partnership</option>
+          <option value="proprietorship">Sole Proprietorship</option>
+          <option value="non_profit_corp">Non-Profit Corporation</option>
         </select>
       </div>
     </div>
