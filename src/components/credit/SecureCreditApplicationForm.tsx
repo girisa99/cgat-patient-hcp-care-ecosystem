@@ -299,8 +299,8 @@ export const SecureCreditApplicationForm: React.FC = () => {
       });
 
       if (submit) {
-        // Navigate back to financial assistance/onboarding instead of review tab
-        navigate('/onboarding');
+        // Navigate back to Financial Assessment tab (tab5) in onboarding
+        navigate('/onboarding?tab=tab5');
       }
 
     } catch (error) {

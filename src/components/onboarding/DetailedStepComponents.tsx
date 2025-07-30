@@ -181,75 +181,232 @@ export const DetailedCreditApplicationStep = ({ formData, updateFormData }: any)
 };
 
 // DETAILED GPO MEMBERSHIP STEP
-export const DetailedGPOMembershipStep = ({ formData, updateFormData }: any) => (
-  <div className="space-y-6">
-    <div className="p-4 border rounded-lg">
-      <h4 className="font-medium mb-3">Group Purchasing Organization (GPO) Memberships</h4>
-      <p className="text-sm text-muted-foreground mb-4">
-        List your current GPO memberships and contracts.
-      </p>
-      
-      <div className="space-y-4">
-        <div className="flex items-center space-x-2">
-          <Checkbox id="has_gpo_membership" />
-          <Label htmlFor="has_gpo_membership">
-            Our facility has GPO memberships
-          </Label>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="primary_gpo">Primary GPO</Label>
-            <select className="w-full px-3 py-2 border rounded-md">
-              <option value="">Select primary GPO</option>
-              <option value="premier">Premier Inc.</option>
-              <option value="vizient">Vizient</option>
-              <option value="healthtrust">HealthTrust</option>
-              <option value="amerinet">Amerinet</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
-          <div>
-            <Label htmlFor="gpo_contract_number">Contract Number</Label>
-            <Input
-              id="gpo_contract_number"
-              placeholder="GPO contract number"
-            />
-          </div>
-        </div>
-        
-        <div className="space-y-3">
-          <h5 className="font-medium">Additional GPO Memberships</h5>
-          <Button 
-            variant="outline" 
-            className="w-full"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              console.log('GPO Membership button clicked!');
-              // Add GPO membership functionality
-              alert('GPO Membership functionality - coming soon!');
-              // TODO: Implement GPO membership addition logic
-            }}
-          >
-            <Users className="h-4 w-4 mr-2" />
-            Add GPO Membership
-          </Button>
-        </div>
-      </div>
-    </div>
+export const DetailedGPOMembershipStep = ({ formData, updateFormData }: any) => {
+  const [memberships, setMemberships] = React.useState(formData?.gpo_memberships || []);
+  const [showAddForm, setShowAddForm] = React.useState(false);
+  const [editingIndex, setEditingIndex] = React.useState<number | null>(null);
+  const [currentMembership, setCurrentMembership] = React.useState({
+    gpo_name: '',
+    membership_number: '',
+    contract_effective_date: '',
+    contract_expiration_date: '',
+    primary_contact_name: '',
+    primary_contact_email: '',
+    primary_contact_phone: '',
+    tier_level: '',
+    covered_categories: []
+  });
+
+  const addMembership = () => {
+    if (editingIndex !== null) {
+      const updated = [...memberships];
+      updated[editingIndex] = currentMembership;
+      setMemberships(updated);
+      setEditingIndex(null);
+    } else {
+      setMemberships([...memberships, currentMembership]);
+    }
     
-    <div className="p-4 border rounded-lg">
-      <h4 className="font-medium mb-3">340B Program</h4>
-      <div className="flex items-center space-x-2">
-        <Checkbox id="is_340b_entity" />
-        <Label htmlFor="is_340b_entity">
-          Our facility is a 340B covered entity
-        </Label>
+    updateFormData('gpo_memberships', [...memberships, currentMembership]);
+    setCurrentMembership({
+      gpo_name: '',
+      membership_number: '',
+      contract_effective_date: '',
+      contract_expiration_date: '',
+      primary_contact_name: '',
+      primary_contact_email: '',
+      primary_contact_phone: '',
+      tier_level: '',
+      covered_categories: []
+    });
+    setShowAddForm(false);
+  };
+
+  const editMembership = (index: number) => {
+    setCurrentMembership(memberships[index]);
+    setEditingIndex(index);
+    setShowAddForm(true);
+  };
+
+  const removeMembership = (index: number) => {
+    const updated = memberships.filter((_, i) => i !== index);
+    setMemberships(updated);
+    updateFormData('gpo_memberships', updated);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="p-4 border rounded-lg">
+        <h4 className="font-medium mb-3">Group Purchasing Organization (GPO) Memberships</h4>
+        <p className="text-sm text-muted-foreground mb-4">
+          List your current GPO memberships and contracts.
+        </p>
+        
+        <div className="space-y-4">
+          <div className="flex items-center space-x-2">
+            <Checkbox id="has_gpo_membership" checked={memberships.length > 0} disabled />
+            <Label htmlFor="has_gpo_membership">
+              Our facility has GPO memberships
+            </Label>
+          </div>
+          
+          {/* Existing Memberships */}
+          {memberships.length > 0 && (
+            <div className="space-y-3">
+              <h5 className="font-medium">Current GPO Memberships</h5>
+              {memberships.map((membership: any, index: number) => (
+                <div key={index} className="p-3 border rounded-lg bg-gray-50">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h6 className="font-medium">{membership.gpo_name}</h6>
+                      <p className="text-sm text-muted-foreground">
+                        Member #: {membership.membership_number}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Contact: {membership.primary_contact_name}
+                      </p>
+                    </div>
+                    <div className="flex space-x-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => editMembership(index)}
+                      >
+                        Edit
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => removeMembership(index)}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          
+          {/* Add New Membership Button */}
+          {!showAddForm && (
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => setShowAddForm(true)}
+            >
+              <Users className="h-4 w-4 mr-2" />
+              Add GPO Membership
+            </Button>
+          )}
+          
+          {/* Add/Edit Form */}
+          {showAddForm && (
+            <div className="p-4 border rounded-lg bg-blue-50">
+              <h5 className="font-medium mb-3">
+                {editingIndex !== null ? 'Edit' : 'Add'} GPO Membership
+              </h5>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="gpo_name">GPO Name *</Label>
+                  <select 
+                    className="w-full px-3 py-2 border rounded-md"
+                    value={currentMembership.gpo_name}
+                    onChange={(e) => setCurrentMembership({...currentMembership, gpo_name: e.target.value})}
+                  >
+                    <option value="">Select GPO</option>
+                    <option value="Premier Inc.">Premier Inc.</option>
+                    <option value="Vizient">Vizient</option>
+                    <option value="HealthTrust">HealthTrust</option>
+                    <option value="Amerinet">Amerinet</option>
+                    <option value="Intalere">Intalere</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <Label htmlFor="membership_number">Membership Number</Label>
+                  <Input
+                    id="membership_number"
+                    value={currentMembership.membership_number}
+                    onChange={(e) => setCurrentMembership({...currentMembership, membership_number: e.target.value})}
+                    placeholder="Membership number"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="primary_contact_name">Primary Contact Name</Label>
+                  <Input
+                    id="primary_contact_name"
+                    value={currentMembership.primary_contact_name}
+                    onChange={(e) => setCurrentMembership({...currentMembership, primary_contact_name: e.target.value})}
+                    placeholder="Contact name"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="primary_contact_email">Contact Email</Label>
+                  <Input
+                    id="primary_contact_email"
+                    type="email"
+                    value={currentMembership.primary_contact_email}
+                    onChange={(e) => setCurrentMembership({...currentMembership, primary_contact_email: e.target.value})}
+                    placeholder="contact@example.com"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="primary_contact_phone">Contact Phone</Label>
+                  <Input
+                    id="primary_contact_phone"
+                    value={currentMembership.primary_contact_phone}
+                    onChange={(e) => setCurrentMembership({...currentMembership, primary_contact_phone: e.target.value})}
+                    placeholder="(555) 123-4567"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="tier_level">Tier Level</Label>
+                  <select 
+                    className="w-full px-3 py-2 border rounded-md"
+                    value={currentMembership.tier_level}
+                    onChange={(e) => setCurrentMembership({...currentMembership, tier_level: e.target.value})}
+                  >
+                    <option value="">Select tier</option>
+                    <option value="Premier">Premier</option>
+                    <option value="Standard">Standard</option>
+                    <option value="Basic">Basic</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div className="flex space-x-2 mt-4">
+                <Button onClick={addMembership}>
+                  {editingIndex !== null ? 'Update' : 'Add'} Membership
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setShowAddForm(false);
+                    setEditingIndex(null);
+                    setCurrentMembership({
+                      gpo_name: '',
+                      membership_number: '',
+                      contract_effective_date: '',
+                      contract_expiration_date: '',
+                      primary_contact_name: '',
+                      primary_contact_email: '',
+                      primary_contact_phone: '',
+                      tier_level: '',
+                      covered_categories: []
+                    });
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 // DETAILED FINANCIAL ASSESSMENT STEP
 export const DetailedFinancialAssessmentStep = ({ formData, updateFormData }: any) => (
