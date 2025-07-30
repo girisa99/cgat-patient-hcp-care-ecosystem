@@ -268,7 +268,7 @@ export const TherapyServiceSelector: React.FC<TherapyServiceSelectorProps> = ({
   const getCommercialProductsForTherapy = (therapyId: string): Product[] => {
     const therapyProducts = getProductsForTherapy(therapyId);
     return therapyProducts.filter(product => 
-      product.product_status === 'approved' && 
+      product.product_status === 'approved' || 
       commercialProducts.some(cp => cp.product_id === product.id)
     );
   };
@@ -278,6 +278,16 @@ export const TherapyServiceSelector: React.FC<TherapyServiceSelectorProps> = ({
       const product = products.find(p => p.id === trial.product_id);
       return product && product.therapy_id === therapyId;
     });
+  };
+
+  const getTrialProductsForTherapy = (therapyId: string): Product[] => {
+    const therapyProducts = getProductsForTherapy(therapyId);
+    return therapyProducts.filter(product => 
+      product.product_status === 'phase_1' || 
+      product.product_status === 'phase_2' || 
+      product.product_status === 'phase_3' ||
+      clinicalTrials.some(trial => trial.product_id === product.id)
+    );
   };
 
   if (loading) {
@@ -394,6 +404,7 @@ export const TherapyServiceSelector: React.FC<TherapyServiceSelectorProps> = ({
                 const therapy = selection.therapy;
                 const therapyProducts = getProductsForTherapy(selection.therapy_id);
                 const commercialProducts = getCommercialProductsForTherapy(selection.therapy_id);
+                const trialProducts = getTrialProductsForTherapy(selection.therapy_id);
                 const clinicalTrials = getClinicalTrialsForTherapy(selection.therapy_id);
                 const selectedProduct = products.find(p => p.id === selection.product_id);
                 const commercialProduct = selectedProduct ? getCommercialProductForProduct(selectedProduct.id) : undefined;
@@ -463,35 +474,30 @@ export const TherapyServiceSelector: React.FC<TherapyServiceSelectorProps> = ({
                         )}
                       </div>
 
-                      {/* Clinical Trials Section */}
+                      {/* Clinical Trials / Trial Products Section */}
                       <div>
                         <h5 className="font-medium mb-3 flex items-center">
                           <Users className="h-4 w-4 mr-2 text-blue-600" />
-                          Clinical Trials ({clinicalTrials.length})
+                          Trial Products ({trialProducts.length})
                         </h5>
-                        {clinicalTrials.length > 0 ? (
+                        {trialProducts.length > 0 ? (
                           <div className="grid gap-3">
-                            {clinicalTrials.map((trial) => {
-                              const product = products.find(p => p.id === trial.product_id);
-                              const manufacturer = product ? getManufacturerForProduct(product) : undefined;
+                            {trialProducts.map((product) => {
+                              const manufacturer = getManufacturerForProduct(product);
+                              const relatedTrial = clinicalTrials.find(trial => trial.product_id === product.id);
                               return (
-                                <Card key={trial.id} className="p-3 border border-blue-200 bg-blue-50">
+                                <Card key={product.id} className="p-3 border border-blue-200 bg-blue-50">
                                   <div className="flex items-start justify-between">
                                     <div className="flex-1">
                                       <div className="flex items-center space-x-2 mb-2">
-                                        <h6 className="font-medium">{trial.title}</h6>
+                                        <h6 className="font-medium">{product.name}</h6>
                                         <Badge variant="outline" className="text-blue-700 border-blue-300">
-                                          {trial.phase}
+                                          {product.product_status?.replace('_', ' ').toUpperCase()}
                                         </Badge>
                                       </div>
-                                      {trial.nct_number && (
+                                      {product.brand_name && (
                                         <p className="text-sm text-muted-foreground mb-1">
-                                          NCT: {trial.nct_number}
-                                        </p>
-                                      )}
-                                      {product && (
-                                        <p className="text-sm text-muted-foreground mb-1">
-                                          Product: {product.name}
+                                          Brand: {product.brand_name}
                                         </p>
                                       )}
                                       {manufacturer && (
@@ -499,18 +505,23 @@ export const TherapyServiceSelector: React.FC<TherapyServiceSelectorProps> = ({
                                           Sponsor: {manufacturer.name}
                                         </p>
                                       )}
-                                      {trial.enrollment_target && (
+                                      {relatedTrial?.nct_number && (
+                                        <p className="text-sm text-muted-foreground mb-1">
+                                          NCT: {relatedTrial.nct_number}
+                                        </p>
+                                      )}
+                                      {relatedTrial?.enrollment_target && (
                                         <p className="text-sm text-muted-foreground">
-                                          Target Enrollment: {trial.enrollment_target} patients
+                                          Target Enrollment: {relatedTrial.enrollment_target} patients
                                         </p>
                                       )}
                                     </div>
                                     <Button 
                                       size="sm" 
-                                      variant={selection.product_id === trial.product_id ? "default" : "outline"}
-                                      onClick={() => trial.product_id && updateTherapySelection(selection.therapy_id, 'product_id', trial.product_id)}
+                                      variant={selection.product_id === product.id ? "default" : "outline"}
+                                      onClick={() => updateTherapySelection(selection.therapy_id, 'product_id', product.id)}
                                     >
-                                      {selection.product_id === trial.product_id ? 'Selected' : 'Select'}
+                                      {selection.product_id === product.id ? 'Selected' : 'Select'}
                                     </Button>
                                   </div>
                                 </Card>
@@ -518,7 +529,7 @@ export const TherapyServiceSelector: React.FC<TherapyServiceSelectorProps> = ({
                             })}
                           </div>
                         ) : (
-                          <p className="text-sm text-muted-foreground">No clinical trials available</p>
+                          <p className="text-sm text-muted-foreground">No trial products available</p>
                         )}
                       </div>
 
@@ -530,7 +541,12 @@ export const TherapyServiceSelector: React.FC<TherapyServiceSelectorProps> = ({
                         </h5>
                         <Button 
                           variant="outline" 
-                          onClick={() => setShowAddProductForm(selection.therapy_id)}
+                          onClick={() => {
+                            toast({
+                              title: "Custom Product Addition",
+                              description: "Manual product addition feature will be available soon. For now, please use the data generation feature.",
+                            });
+                          }}
                           className="w-full"
                         >
                           <Plus className="h-4 w-4 mr-2" />
