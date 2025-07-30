@@ -7,14 +7,14 @@ import type { UserWithRoles } from '@/types/userManagement';
 
 export const getPatientUsers = (users: UserWithRoles[]): UserWithRoles[] => {
   return users.filter((user: UserWithRoles) => 
-    user.user_roles?.some((userRole: any) => userRole.role?.name === 'patientCaregiver')
+    user.user_roles?.some((userRole) => userRole.role?.name === 'patientCaregiver')
   );
 };
 
 export const getHealthcareStaff = (users: UserWithRoles[]): UserWithRoles[] => {
   const staffRoles = ['nurse', 'provider', 'caseManager', 'socialWorker'];
   return users.filter((user: UserWithRoles) => 
-    user.user_roles?.some((userRole: any) => 
+    user.user_roles?.some((userRole) => 
       staffRoles.includes(userRole.role?.name)
     )
   );
@@ -23,7 +23,7 @@ export const getHealthcareStaff = (users: UserWithRoles[]): UserWithRoles[] => {
 export const getAdminUsers = (users: UserWithRoles[]): UserWithRoles[] => {
   const adminRoles = ['superAdmin', 'onboardingTeam', 'moderator'];
   return users.filter((user: UserWithRoles) => 
-    user.user_roles?.some((userRole: any) => 
+    user.user_roles?.some((userRole) => 
       adminRoles.includes(userRole.role?.name)
     )
   );
@@ -31,7 +31,7 @@ export const getAdminUsers = (users: UserWithRoles[]): UserWithRoles[] => {
 
 export const getRegularUsers = (users: UserWithRoles[]): UserWithRoles[] => {
   return users.filter((user: UserWithRoles) => 
-    user.user_roles?.some((userRole: any) => userRole.role?.name === 'user')
+    user.user_roles?.some((userRole) => userRole.role?.name === 'user')
   );
 };
 

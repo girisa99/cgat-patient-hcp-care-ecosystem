@@ -32,7 +32,7 @@ export const PatientManagementTable: React.FC = () => {
   
   // Filter users to only show patients (those with patientCaregiver role)
   const patients = users.filter(user => 
-    user.user_roles.some(ur => ur.role?.name === 'patientCaregiver')
+    user.user_roles?.some(ur => ur.role?.name === 'patientCaregiver')
   );
   
   const stats = getUserStats();

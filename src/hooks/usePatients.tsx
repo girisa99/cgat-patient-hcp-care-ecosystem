@@ -14,7 +14,7 @@ interface Patient {
   created_at: string;
   updated_at: string;
   user_roles: Array<{
-    roles: {
+    role: {
       name: string;
     };
   }>;
@@ -71,7 +71,7 @@ export const usePatients = () => {
               ...profile,
               user_roles: Array.isArray(roleNames) 
                 ? roleNames.map((role: any) => ({
-                    roles: { name: typeof role === 'string' ? role : role.role_name }
+                    role: { name: typeof role === 'string' ? role : role.role_name }
                   }))
                 : []
             };
