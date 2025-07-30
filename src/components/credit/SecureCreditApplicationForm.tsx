@@ -3,6 +3,7 @@
  * Enhanced with encryption, audit logging, and comprehensive security
  */
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -83,6 +84,7 @@ const DOCUMENT_TYPES = [
 ];
 
 export const SecureCreditApplicationForm: React.FC = () => {
+  const navigate = useNavigate();
   const [application, setApplication] = useState<CreditApplication>({
     business_type: '',
     primary_contact_name: '',
@@ -297,7 +299,8 @@ export const SecureCreditApplicationForm: React.FC = () => {
       });
 
       if (submit) {
-        setCurrentTab('review');
+        // Navigate back to financial assistance/onboarding instead of review tab
+        navigate('/onboarding');
       }
 
     } catch (error) {
@@ -901,7 +904,7 @@ export const SecureCreditApplicationForm: React.FC = () => {
       <Card>
         <CardContent className="p-0">
           <Tabs value={currentTab} onValueChange={setCurrentTab}>
-            <TabsList className="grid w-full grid-cols-6">
+            <TabsList className="grid w-full grid-cols-7">
               <TabsTrigger value="basic">Basic</TabsTrigger>
               <TabsTrigger value="contact">Contact</TabsTrigger>
               <TabsTrigger value="sensitive">Sensitive</TabsTrigger>
