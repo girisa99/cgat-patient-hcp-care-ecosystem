@@ -9,7 +9,164 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
-import { Building, Users, CreditCard, FileText, Clock, Stethoscope, Settings, Globe, Package } from 'lucide-react';
+import { Building, Users, CreditCard, FileText, Clock, Stethoscope, Settings, Globe, Package, Truck } from 'lucide-react';
+
+// DISTRIBUTOR SELECTION STEP
+export const DistributorSelectionStep = ({ formData, updateFormData }: any) => {
+  const distributors = [
+    {
+      id: 'amerisource_bergen',
+      name: 'AmerisourceBergen',
+      description: 'Leading pharmaceutical distribution and healthcare services company',
+      specialties: ['Pharmaceuticals', 'Specialty Medicines', 'Oncology', 'Rare Diseases'],
+      coverage: 'National',
+      logo: '🏥'
+    },
+    {
+      id: 'cardinal_health', 
+      name: 'Cardinal Health',
+      description: 'Healthcare services and products company serving hospitals and pharmacies',
+      specialties: ['Medical Supplies', 'Pharmaceuticals', 'Laboratory Products', 'Surgery'],
+      coverage: 'National',
+      logo: '⚕️'
+    },
+    {
+      id: 'mckesson',
+      name: 'McKesson Corporation', 
+      description: 'Healthcare supply chain management solutions and pharmaceutical distribution',
+      specialties: ['Pharmaceuticals', 'Medical-Surgical', 'Health Technology', 'Retail'],
+      coverage: 'National',
+      logo: '🚛'
+    }
+  ];
+
+  const selectedDistributors = formData.selected_distributors || [];
+
+  const handleDistributorToggle = (distributorId: string) => {
+    const updated = selectedDistributors.includes(distributorId)
+      ? selectedDistributors.filter((id: string) => id !== distributorId)
+      : [...selectedDistributors, distributorId];
+    
+    updateFormData('selected_distributors', updated);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="p-4 border rounded-lg bg-blue-50">
+        <h4 className="font-medium mb-2 text-blue-900">Distribution Partnership Selection</h4>
+        <p className="text-sm text-blue-800">
+          Select the distribution partners you would like to work with. You can choose multiple distributors 
+          to ensure optimal coverage and competitive pricing for your treatment center.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6">
+        {distributors.map((distributor) => (
+          <div
+            key={distributor.id}
+            className={`p-6 border-2 rounded-lg cursor-pointer transition-all ${
+              selectedDistributors.includes(distributor.id)
+                ? 'border-blue-500 bg-blue-50'
+                : 'border-gray-200 hover:border-gray-300'
+            }`}
+            onClick={() => handleDistributorToggle(distributor.id)}
+          >
+            <div className="flex items-start space-x-4">
+              <div className="text-3xl">{distributor.logo}</div>
+              <div className="flex-1">
+                <div className="flex items-center space-x-3 mb-2">
+                  <Checkbox
+                    id={distributor.id}
+                    checked={selectedDistributors.includes(distributor.id)}
+                    onChange={() => handleDistributorToggle(distributor.id)}
+                  />
+                  <h5 className="font-semibold text-lg">{distributor.name}</h5>
+                  <span className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded-full">
+                    {distributor.coverage}
+                  </span>
+                </div>
+                <p className="text-sm text-gray-600 mb-3">{distributor.description}</p>
+                <div className="flex flex-wrap gap-2">
+                  {distributor.specialties.map((specialty, index) => (
+                    <span
+                      key={index}
+                      className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded-full"
+                    >
+                      {specialty}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {selectedDistributors.length > 0 && (
+        <div className="p-4 border rounded-lg bg-green-50">
+          <h4 className="font-medium mb-2 text-green-900">Selected Distribution Partners</h4>
+          <div className="flex flex-wrap gap-2">
+            {selectedDistributors.map((distributorId: string) => {
+              const distributor = distributors.find(d => d.id === distributorId);
+              return distributor ? (
+                <span
+                  key={distributorId}
+                  className="inline-flex items-center px-3 py-1 bg-green-200 text-green-800 rounded-full text-sm"
+                >
+                  {distributor.logo} {distributor.name}
+                </span>
+              ) : null;
+            })}
+          </div>
+          <p className="text-sm text-green-700 mt-2">
+            Great choice! Your selected partners will provide comprehensive coverage for your treatment center's needs.
+          </p>
+        </div>
+      )}
+
+      <div className="p-4 border rounded-lg">
+        <h4 className="font-medium mb-3">Distribution Preferences</h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="preferred_delivery_schedule">Preferred Delivery Schedule</Label>
+            <select
+              id="preferred_delivery_schedule"
+              className="w-full px-3 py-2 border rounded-md bg-background"
+            >
+              <option value="">Select delivery schedule</option>
+              <option value="daily">Daily Delivery</option>
+              <option value="weekly">Weekly Delivery</option>
+              <option value="bi_weekly">Bi-weekly Delivery</option>
+              <option value="monthly">Monthly Delivery</option>
+              <option value="on_demand">On-Demand</option>
+            </select>
+          </div>
+          <div>
+            <Label htmlFor="emergency_delivery_required">Emergency Delivery Capability</Label>
+            <select
+              id="emergency_delivery_required"
+              className="w-full px-3 py-2 border rounded-md bg-background"
+            >
+              <option value="">Select requirement</option>
+              <option value="same_day">Same Day Delivery</option>
+              <option value="next_day">Next Day Delivery</option>
+              <option value="48_hours">Within 48 Hours</option>
+              <option value="not_required">Not Required</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div className="p-4 border rounded-lg">
+        <h4 className="font-medium mb-3">Special Distribution Requirements</h4>
+        <Textarea
+          placeholder="Describe any special requirements for product distribution, storage, handling, or delivery logistics..."
+          rows={3}
+        />
+      </div>
+    </div>
+  );
+};
 
 // THERAPY SELECTION STEP
 export const DetailedTherapySelectionStep = ({ formData, updateFormData }: any) => (

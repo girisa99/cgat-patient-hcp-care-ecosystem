@@ -40,6 +40,7 @@ export type InventoryModel =
 // Fix OnboardingStep to be a string union type instead of interface
 export type OnboardingStep = 
   | 'company_info'
+  | 'distributor_selection'
   | 'business_classification' 
   | 'contacts'
   | 'ownership'

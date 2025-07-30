@@ -50,6 +50,7 @@ import {
   DetailedLicensesStep
 } from './DetailedStepComponents';
 import {
+  DistributorSelectionStep,
   DetailedTherapySelectionStep,
   DetailedServiceSelectionStep,
   DetailedOnlineServicesStep,
@@ -85,6 +86,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState<Partial<TreatmentCenterOnboarding>>(
     initialData || {
+      selected_distributors: [],
       company_info: {
         legal_name: '',
         dba_name: '',
@@ -143,6 +145,15 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
       category: 'basic',
       required: true,
       component: <CompanyInfoStep formData={formData} updateFormData={updateFormData} />
+    },
+    {
+      id: 'distributor_selection',
+      title: 'Distributor Partners',
+      description: 'Select your preferred distribution partners',
+      icon: <Package className="h-5 w-5" />,
+      category: 'basic',
+      required: true,
+      component: <DistributorSelectionStep formData={formData} updateFormData={updateFormData} />
     },
     {
       id: 'business_classification',
