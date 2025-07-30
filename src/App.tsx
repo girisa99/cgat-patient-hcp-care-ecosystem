@@ -36,6 +36,7 @@ import Login from '@/pages/Login';
 import DeploymentManagement from '@/pages/DeploymentManagement';
 import OnboardingDashboard from '@/pages/OnboardingDashboard';
 import TherapySelection from '@/pages/TherapySelection';
+import CreditApplication from '@/pages/CreditApplication';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -134,6 +135,11 @@ const AppContent = () => {
                   <Route path="/therapy-selection" element={
                     <ProtectedRoute requiredRoles={['superAdmin', 'onboardingTeam', 'healthcareProvider']}>
                       <TherapySelection />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/credit-application" element={
+                    <ProtectedRoute requiredRoles={['superAdmin', 'onboardingTeam', 'healthcareProvider', 'admin']}>
+                      <CreditApplication />
                     </ProtectedRoute>
                   } />
                   
