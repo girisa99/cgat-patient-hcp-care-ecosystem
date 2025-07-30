@@ -77,11 +77,12 @@ serve(async (req) => {
       const products = await generateProductsForTherapy(therapy, manufacturers || [], modalities || []);
       
       for (const productData of products) {
-        // Insert product
+        // Insert product - exclude mechanism_of_action as it doesn't exist in the table
+        const { mechanism_of_action, ...productDataWithoutMechanism } = productData;
         const { data: product, error: productError } = await supabaseClient
           .from('products')
           .insert({
-            ...productData,
+            ...productDataWithoutMechanism,
             therapy_id: therapy.id,
             manufacturer_id: manufacturers?.[Math.floor(Math.random() * manufacturers.length)]?.id,
             modality_id: modalities?.[Math.floor(Math.random() * modalities.length)]?.id,
