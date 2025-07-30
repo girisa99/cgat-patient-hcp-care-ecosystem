@@ -65,11 +65,13 @@ export const TherapyServiceSelector: React.FC<TherapyServiceSelectorProps> = ({
   const [therapies, setTherapies] = useState<Therapy[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [commercialProducts, setCommercialProducts] = useState<CommercialProduct[]>([]);
+  const [clinicalTrials, setClinicalTrials] = useState<any[]>([]);
   const [manufacturers, setManufacturers] = useState<Manufacturer[]>([]);
   const [loading, setLoading] = useState(true);
   const [generatingProducts, setGeneratingProducts] = useState<Set<string>>(new Set());
   const [selectedTherapyId, setSelectedTherapyId] = useState<string>('');
   const [selectedProductId, setSelectedProductId] = useState<string>('');
+  const [showAddProductForm, setShowAddProductForm] = useState<string | null>(null);
   const { toast } = useToast();
 
   // Fetch all therapy data
@@ -114,6 +116,14 @@ export const TherapyServiceSelector: React.FC<TherapyServiceSelectorProps> = ({
 
       if (commercialError) throw commercialError;
 
+      // Fetch clinical trials
+      const { data: trialsData, error: trialsError } = await supabase
+        .from('clinical_trials')
+        .select('*')
+        .eq('is_active', true);
+
+      if (trialsError) throw trialsError;
+
       // Fetch manufacturers
       const { data: manufacturerData, error: manufacturerError } = await supabase
         .from('manufacturers')
@@ -125,6 +135,7 @@ export const TherapyServiceSelector: React.FC<TherapyServiceSelectorProps> = ({
       setTherapies(therapyData as Therapy[] || []);
       setProducts(productData as Product[] || []);
       setCommercialProducts(commercialData as CommercialProduct[] || []);
+      setClinicalTrials(trialsData || []);
       setManufacturers(manufacturerData as Manufacturer[] || []);
 
     } catch (error) {
@@ -254,6 +265,21 @@ export const TherapyServiceSelector: React.FC<TherapyServiceSelectorProps> = ({
     return manufacturers.find(m => m.id === product.manufacturer_id);
   };
 
+  const getCommercialProductsForTherapy = (therapyId: string): Product[] => {
+    const therapyProducts = getProductsForTherapy(therapyId);
+    return therapyProducts.filter(product => 
+      product.product_status === 'approved' && 
+      commercialProducts.some(cp => cp.product_id === product.id)
+    );
+  };
+
+  const getClinicalTrialsForTherapy = (therapyId: string): any[] => {
+    return clinicalTrials.filter(trial => {
+      const product = products.find(p => p.id === trial.product_id);
+      return product && product.therapy_id === therapyId;
+    });
+  };
+
   if (loading) {
     return (
       <Card>
@@ -354,53 +380,166 @@ export const TherapyServiceSelector: React.FC<TherapyServiceSelectorProps> = ({
             </CardContent>
           </Card>
 
-          {/* Selected Therapies Configuration */}
-          {Array.isArray(selectedTherapies) && selectedTherapies.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Configure Selected Therapies</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Configure products, dosing, and commercial details for selected therapies
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {selectedTherapies.map((selection) => {
-                  const therapy = selection.therapy;
-                  const therapyProducts = getProductsForTherapy(selection.therapy_id);
-                  const selectedProduct = products.find(p => p.id === selection.product_id);
-                  const commercialProduct = selectedProduct ? getCommercialProductForProduct(selectedProduct.id) : undefined;
-                  const manufacturer = selectedProduct ? getManufacturerForProduct(selectedProduct) : undefined;
+        {/* Selected Therapies Configuration */}
+        {Array.isArray(selectedTherapies) && selectedTherapies.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Configure Selected Therapies</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Configure products, dosing, and commercial details for selected therapies
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {selectedTherapies.map((selection) => {
+                const therapy = selection.therapy;
+                const therapyProducts = getProductsForTherapy(selection.therapy_id);
+                const commercialProducts = getCommercialProductsForTherapy(selection.therapy_id);
+                const clinicalTrials = getClinicalTrialsForTherapy(selection.therapy_id);
+                const selectedProduct = products.find(p => p.id === selection.product_id);
+                const commercialProduct = selectedProduct ? getCommercialProductForProduct(selectedProduct.id) : undefined;
+                const manufacturer = selectedProduct ? getManufacturerForProduct(selectedProduct) : undefined;
 
-                  return (
-                    <Card key={selection.therapy_id} className="p-4">
-                      <h4 className="font-medium mb-4">{therapy?.name}</h4>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {/* Product Selection */}
-                        <div className="space-y-2">
-                          <Label>Select Product</Label>
-                          <Select 
-                            value={selection.product_id} 
-                            onValueChange={(value) => updateTherapySelection(selection.therapy_id, 'product_id', value)}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Choose a product..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {therapyProducts.map((product) => (
-                                <SelectItem key={product.id} value={product.id}>
-                                  <div className="flex flex-col">
-                                    <span>{product.name}</span>
-                                    {product.brand_name && (
-                                      <span className="text-sm text-muted-foreground">Brand: {product.brand_name}</span>
-                                    )}
+                return (
+                  <Card key={selection.therapy_id} className="p-4">
+                    <h4 className="font-medium mb-4">{therapy?.name}</h4>
+                    
+                    <div className="space-y-6">
+                      {/* Commercial Products Section */}
+                      <div>
+                        <h5 className="font-medium mb-3 flex items-center">
+                          <DollarSign className="h-4 w-4 mr-2 text-green-600" />
+                          Commercial Products ({commercialProducts.length})
+                        </h5>
+                        {commercialProducts.length > 0 ? (
+                          <div className="grid gap-3">
+                            {commercialProducts.map((product) => {
+                              const manufacturer = getManufacturerForProduct(product);
+                              const commercial = getCommercialProductForProduct(product.id);
+                              return (
+                                <Card key={product.id} className="p-3 border border-green-200 bg-green-50">
+                                  <div className="flex items-start justify-between">
+                                    <div className="flex-1">
+                                      <div className="flex items-center space-x-2 mb-2">
+                                        <h6 className="font-medium">{product.name}</h6>
+                                        <Badge variant="outline" className="text-green-700 border-green-300">
+                                          Commercial
+                                        </Badge>
+                                      </div>
+                                      {product.brand_name && (
+                                        <p className="text-sm text-muted-foreground mb-1">
+                                          Brand: {product.brand_name}
+                                        </p>
+                                      )}
+                                      {manufacturer && (
+                                        <p className="text-sm text-muted-foreground mb-1">
+                                          Manufacturer: {manufacturer.name}
+                                        </p>
+                                      )}
+                                      {commercial?.launch_date && (
+                                        <p className="text-sm text-muted-foreground mb-1">
+                                          Launch Date: {new Date(commercial.launch_date).toLocaleDateString()}
+                                        </p>
+                                      )}
+                                      {commercial?.market_regions && (
+                                        <p className="text-sm text-muted-foreground">
+                                          Markets: {commercial.market_regions.join(', ')}
+                                        </p>
+                                      )}
+                                    </div>
+                                    <Button 
+                                      size="sm" 
+                                      variant={selection.product_id === product.id ? "default" : "outline"}
+                                      onClick={() => updateTherapySelection(selection.therapy_id, 'product_id', product.id)}
+                                    >
+                                      {selection.product_id === product.id ? 'Selected' : 'Select'}
+                                    </Button>
                                   </div>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
+                                </Card>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">No commercial products available</p>
+                        )}
+                      </div>
 
+                      {/* Clinical Trials Section */}
+                      <div>
+                        <h5 className="font-medium mb-3 flex items-center">
+                          <Users className="h-4 w-4 mr-2 text-blue-600" />
+                          Clinical Trials ({clinicalTrials.length})
+                        </h5>
+                        {clinicalTrials.length > 0 ? (
+                          <div className="grid gap-3">
+                            {clinicalTrials.map((trial) => {
+                              const product = products.find(p => p.id === trial.product_id);
+                              const manufacturer = product ? getManufacturerForProduct(product) : undefined;
+                              return (
+                                <Card key={trial.id} className="p-3 border border-blue-200 bg-blue-50">
+                                  <div className="flex items-start justify-between">
+                                    <div className="flex-1">
+                                      <div className="flex items-center space-x-2 mb-2">
+                                        <h6 className="font-medium">{trial.title}</h6>
+                                        <Badge variant="outline" className="text-blue-700 border-blue-300">
+                                          {trial.phase}
+                                        </Badge>
+                                      </div>
+                                      {trial.nct_number && (
+                                        <p className="text-sm text-muted-foreground mb-1">
+                                          NCT: {trial.nct_number}
+                                        </p>
+                                      )}
+                                      {product && (
+                                        <p className="text-sm text-muted-foreground mb-1">
+                                          Product: {product.name}
+                                        </p>
+                                      )}
+                                      {manufacturer && (
+                                        <p className="text-sm text-muted-foreground mb-1">
+                                          Sponsor: {manufacturer.name}
+                                        </p>
+                                      )}
+                                      {trial.enrollment_target && (
+                                        <p className="text-sm text-muted-foreground">
+                                          Target Enrollment: {trial.enrollment_target} patients
+                                        </p>
+                                      )}
+                                    </div>
+                                    <Button 
+                                      size="sm" 
+                                      variant={selection.product_id === trial.product_id ? "default" : "outline"}
+                                      onClick={() => trial.product_id && updateTherapySelection(selection.therapy_id, 'product_id', trial.product_id)}
+                                    >
+                                      {selection.product_id === trial.product_id ? 'Selected' : 'Select'}
+                                    </Button>
+                                  </div>
+                                </Card>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">No clinical trials available</p>
+                        )}
+                      </div>
+
+                      {/* Manual Product Addition */}
+                      <div>
+                        <h5 className="font-medium mb-3 flex items-center">
+                          <Plus className="h-4 w-4 mr-2 text-purple-600" />
+                          Add Custom Product
+                        </h5>
+                        <Button 
+                          variant="outline" 
+                          onClick={() => setShowAddProductForm(selection.therapy_id)}
+                          className="w-full"
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add New Product
+                        </Button>
+                      </div>
+
+                      {/* Configuration Options */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {/* Priority Level */}
                         <div className="space-y-2">
                           <Label>Priority Level</Label>
@@ -417,7 +556,7 @@ export const TherapyServiceSelector: React.FC<TherapyServiceSelectorProps> = ({
                               ))}
                             </SelectContent>
                           </Select>
-                        </div>
+                         </div>
 
                         {/* Treatment Readiness */}
                         <div className="space-y-2">
@@ -501,14 +640,15 @@ export const TherapyServiceSelector: React.FC<TherapyServiceSelectorProps> = ({
                           placeholder="Why is this therapy important for your facility?"
                           rows={3}
                         />
-                      </div>
-                    </Card>
-                  );
-                })}
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
+                       </div>
+                    </div>
+                  </Card>
+                );
+              })}
+            </CardContent>
+          </Card>
+        )}
+      </TabsContent>
 
         {/* Data Generation Tab */}
         <TabsContent value="generate" className="space-y-6">
