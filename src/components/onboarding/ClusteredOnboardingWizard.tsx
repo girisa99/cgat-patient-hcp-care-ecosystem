@@ -524,25 +524,21 @@ export const ClusteredOnboardingWizard: React.FC<ClusteredOnboardingWizardProps>
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         {/* Tab List */}
-        <TabsList className="grid w-full grid-cols-6 gap-2 h-auto p-2">
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6 gap-1 h-auto p-1">
           {tabClusters.map((tab) => (
             <TabsTrigger
               key={tab.id}
               value={tab.id}
-              className="flex flex-col items-center gap-2 p-4 h-auto data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              className="flex flex-col items-center gap-1 p-2 h-auto text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
             >
-              <div className={`p-2 rounded ${tab.color} text-white`}>
+              <div className={`p-1.5 rounded ${tab.color} text-white`}>
                 {tab.icon}
               </div>
               <div className="text-center">
-                <div className="text-sm font-medium">{tab.title}</div>
-                <div className="text-xs opacity-75 line-clamp-2">
-                  {tab.description}
+                <div className="text-xs font-medium leading-tight">{tab.title}</div>
+                <div className="text-[10px] opacity-75 mt-0.5">
+                  {tab.subSteps.filter(step => completedSteps.has(step.id)).length}/{tab.subSteps.length}
                 </div>
-              </div>
-              {/* Progress indicator for each tab */}
-              <div className="text-xs">
-                {tab.subSteps.filter(step => completedSteps.has(step.id)).length}/{tab.subSteps.length}
               </div>
             </TabsTrigger>
           ))}
