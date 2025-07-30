@@ -139,8 +139,10 @@ export const TherapyServiceSelector: React.FC<TherapyServiceSelectorProps> = ({
   };
 
   const handleTherapySelect = (therapy: Therapy) => {
+    console.log('handleTherapySelect called with selectedTherapies:', selectedTherapies);
+    
     if (!Array.isArray(selectedTherapies)) {
-      console.error('selectedTherapies is not an array:', selectedTherapies);
+      console.error('selectedTherapies is not an array in handleTherapySelect:', selectedTherapies);
       return;
     }
     

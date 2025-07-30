@@ -13,7 +13,25 @@ import { TherapyServiceSelector } from '@/components/therapy/TherapyServiceSelec
 import type { TherapySelection } from '@/types/therapies';
 
 export default function TherapySelection() {
-  const [selectedTherapies, setSelectedTherapies] = useState<TherapySelection[]>([]);
+  const [rawSelectedTherapies, setRawSelectedTherapies] = useState<TherapySelection[]>([]);
+  
+  // Ensure selectedTherapies is always an array
+  const selectedTherapies = React.useMemo(() => {
+    if (!rawSelectedTherapies) return [];
+    if (Array.isArray(rawSelectedTherapies)) return rawSelectedTherapies;
+    
+    // Handle object with numeric keys
+    if (typeof rawSelectedTherapies === 'object') {
+      const keys = Object.keys(rawSelectedTherapies);
+      if (keys.every(key => !isNaN(Number(key)))) {
+        return Object.values(rawSelectedTherapies) as TherapySelection[];
+      }
+    }
+    
+    console.warn('selectedTherapies is not in expected format:', rawSelectedTherapies);
+    return [];
+  }, [rawSelectedTherapies]);
+  
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -74,7 +92,7 @@ export default function TherapySelection() {
       {/* Main Content */}
       <TherapyServiceSelector
         selectedTherapies={selectedTherapies}
-        onTherapySelectionChange={setSelectedTherapies}
+        onTherapySelectionChange={setRawSelectedTherapies}
       />
 
       {/* Summary */}
