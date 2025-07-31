@@ -155,7 +155,7 @@ const AppContent = () => {
                     </ProtectedRoute>
                   } />
                   <Route path="/api-services" element={
-                    <ProtectedRoute requiredRoles={['superAdmin']}>
+                    <ProtectedRoute requiredRoles={['superAdmin', 'onboardingTeam']}>
                       <ApiServices />
                     </ProtectedRoute>
                   } />
@@ -202,7 +202,7 @@ const AppContent = () => {
                     </ProtectedRoute>
                   } />
                   <Route path="/healthcare-ai" element={
-                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'healthcareProvider']}>
+                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'healthcareProvider', 'onboardingTeam']}>
                       <Suspense fallback={<PageLoading message="Loading healthcare AI..." />}>
                         {React.createElement(React.lazy(() => import('@/components/healthcare/HealthcareAIDashboard').then(m => ({ default: m.default }))))}
                       </Suspense>
