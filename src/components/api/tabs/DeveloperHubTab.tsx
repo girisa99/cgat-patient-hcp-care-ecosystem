@@ -13,6 +13,9 @@ import {
 import { useExternalApis } from '@/hooks/useExternalApis';
 import { useMasterApiServices } from '@/hooks/useMasterApiServices';
 import { useApiKeys } from '@/hooks/useApiKeys';
+import { useTesting } from '@/hooks/useTesting';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 const DeveloperHubTab: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -21,6 +24,21 @@ const DeveloperHubTab: React.FC = () => {
   const { apiServices, isLoading } = useMasterApiServices();
   const { publishedApis } = useExternalApis();
   const { apiKeys } = useApiKeys();
+  const { testCases } = useTesting();
+
+  // Get real endpoint count from database
+  const { data: endpointCount = 0 } = useQuery({
+    queryKey: ['endpoint-count'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('api_endpoints')
+        .select('*', { count: 'exact', head: true });
+      
+      if (error) throw error;
+      return count || 0;
+    },
+    staleTime: 300000,
+  });
 
   // Get all active APIs for developer access
   const developerApis = apiServices?.filter(api => 
@@ -82,7 +100,7 @@ const DeveloperHubTab: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-purple-600">Endpoints</p>
-                <p className="text-2xl font-bold text-purple-900">{developerApis.reduce((acc, api) => acc + 5, 0)}</p>
+                <p className="text-2xl font-bold text-purple-900">{endpointCount}</p>
               </div>
               <Zap className="h-8 w-8 text-purple-500" />
             </div>
@@ -94,7 +112,7 @@ const DeveloperHubTab: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-orange-600">Test Cases</p>
-                <p className="text-2xl font-bold text-orange-900">{developerApis.length * 3}</p>
+                <p className="text-2xl font-bold text-orange-900">{testCases?.length || 0}</p>
               </div>
               <TestTube className="h-8 w-8 text-orange-500" />
             </div>
