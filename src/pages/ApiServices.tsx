@@ -36,7 +36,14 @@ const ApiServices = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => window.close()}
+                  onClick={() => {
+                    const from = searchParams.get('from');
+                    if (from === 'onboarding') {
+                      window.history.back();
+                    } else {
+                      window.close();
+                    }
+                  }}
                   className="flex items-center space-x-1"
                 >
                   <ArrowLeft className="h-4 w-4" />

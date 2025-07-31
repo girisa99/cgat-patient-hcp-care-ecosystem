@@ -1017,8 +1017,8 @@ export const DetailedTechnologyIntegrationStep = ({ formData, updateFormData }: 
   };
 
   const handleNavigateToApiService = (serviceId: string) => {
-    // Navigate to API service page with onboarding context
-    window.open(`/api-services?service=${serviceId}&context=onboarding`, '_blank');
+    // Navigate to API service page with onboarding context in the same tab
+    window.location.href = `/api-services?service=${serviceId}&context=onboarding&from=onboarding`;
   };
 
   const getApiTypeColor = (type: string) => {
