@@ -9,122 +9,242 @@ import { toast } from '@/hooks/use-toast';
 
 interface EnhancedArchitectureDocumentationProps {
   onDownload: (type: string) => void;
+  userRole?: string;
 }
 
-export function EnhancedArchitectureDocumentation({ onDownload }: EnhancedArchitectureDocumentationProps) {
+export function EnhancedArchitectureDocumentation({ onDownload, userRole }: EnhancedArchitectureDocumentationProps) {
   const [selectedDiagram, setSelectedDiagram] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState<string | null>(null);
 
-  const architectureDocs = [
-    {
-      id: 'high-level',
-      title: 'High-Level Architecture',
-      description: 'System overview and major component interactions',
-      icon: Network,
-      status: 'Complete',
-      downloadTypes: [
-        { format: 'PDF', icon: FileText, description: 'Detailed PDF documentation' },
-        { format: 'PNG', icon: Image, description: 'High-resolution diagram' },
-        { format: 'Word', icon: File, description: 'Editable Word document' }
-      ],
-      details: {
-        overview: 'Enterprise-level system architecture showing the complete healthcare testing framework with multi-tenant support, role-based access control, and scalable component architecture.',
-        components: ['Frontend UI Layer (React/TypeScript)', 'API Gateway (Supabase Edge Functions)', 'Business Logic Layer', 'Database Layer (PostgreSQL with RLS)', 'External Integrations', 'Authentication & Authorization'],
-        flows: ['User Authentication Flow', 'Test Execution Pipeline', 'Data Processing & Validation', 'Compliance Reporting', 'Multi-tenant Data Isolation'],
-        technicalDetails: 'Built with React 18, TypeScript, Tailwind CSS, and Supabase. Implements design system patterns with semantic tokens for consistent theming across all tenants.'
-      }
-    },
-    {
-      id: 'low-level',
-      title: 'Low-Level Architecture',
-      description: 'Detailed technical implementation and component design',
-      icon: Database,
-      status: 'Complete',
-      downloadTypes: [
-        { format: 'PDF', icon: FileText, description: 'Technical specification' },
-        { format: 'PNG', icon: Image, description: 'Component diagrams' },
-        { format: 'Word', icon: File, description: 'Implementation guide' }
-      ],
-      details: {
-        overview: 'Deep technical implementation covering database schemas, API endpoints, service architecture, and component hierarchy with complete type safety.',
-        components: ['Database Schema Design', 'RESTful API Endpoints', 'React Component Library', 'TypeScript Interfaces', 'Custom Hooks Architecture', 'Utility Functions'],
-        flows: ['Data Model Relationships', 'Component State Management', 'API Request/Response Cycle', 'Error Handling Pipeline', 'Performance Optimization'],
-        technicalDetails: 'Implements Domain-Driven Design principles with clear separation of concerns. All components are typed with TypeScript and follow design system patterns.'
-      }
-    },
-    {
-      id: 'security',
-      title: 'Security Architecture',
-      description: 'Security implementation and compliance framework',
-      icon: Shield,
-      status: 'Complete',
-      downloadTypes: [
-        { format: 'PDF', icon: FileText, description: 'Security compliance report' },
-        { format: 'PNG', icon: Image, description: 'Security flow diagrams' },
-        { format: 'Word', icon: File, description: 'Security policies document' }
-      ],
-      details: {
-        overview: 'Comprehensive security architecture implementing healthcare data protection standards with multi-layered security controls and audit capabilities.',
-        components: ['Authentication Layer (Supabase Auth)', 'Authorization Framework (RBAC)', 'Data Encryption & Protection', 'Audit Trail System', 'Row Level Security (RLS)', 'API Security Controls'],
-        flows: ['User Authentication Process', 'Permission Validation', 'Data Access Controls', 'Security Event Logging', 'Compliance Monitoring'],
-        technicalDetails: 'HIPAA-compliant security measures with encryption at rest and in transit, comprehensive audit logging, and role-based access controls.'
-      }
-    },
-    {
-      id: 'reference',
-      title: 'Reference Architecture',
-      description: 'Standard patterns and best practices implementation',
-      icon: Layers,
-      status: 'Complete',
-      downloadTypes: [
-        { format: 'PDF', icon: FileText, description: 'Best practices guide' },
-        { format: 'PNG', icon: Image, description: 'Pattern diagrams' },
-        { format: 'Word', icon: File, description: 'Implementation templates' }
-      ],
-      details: {
-        overview: 'Reference implementations showcasing architectural patterns, design principles, and best practices for scalable healthcare applications.',
-        components: ['Design Pattern Library', 'Component Architecture Patterns', 'Data Flow Patterns', 'Error Handling Patterns', 'Performance Optimization Patterns', 'Testing Strategies'],
-        flows: ['Component Composition Patterns', 'State Management Flows', 'Data Synchronization', 'Error Recovery Procedures', 'Scaling Strategies'],
-        technicalDetails: 'Implements enterprise-grade patterns including Singleton, Observer, Strategy, and Factory patterns with React-specific optimizations.'
-      }
-    },
-    {
-      id: 'flow-process',
-      title: 'Flow & Process Architecture',
-      description: 'Detailed workflow and process flow documentation',
-      icon: GitBranch,
-      status: 'Complete',
-      downloadTypes: [
-        { format: 'PDF', icon: FileText, description: 'Process documentation' },
-        { format: 'PNG', icon: Image, description: 'Workflow diagrams' },
-        { format: 'Word', icon: File, description: 'Process procedures' }
-      ],
-      details: {
-        overview: 'Comprehensive process flows covering all major system operations from user onboarding to test execution and compliance reporting.',
-        components: ['User Journey Flows', 'Test Creation Process', 'Execution Pipeline', 'Result Processing', 'Compliance Validation', 'Report Generation'],
-        flows: ['End-to-End Testing Workflow', 'User Onboarding Process', 'Data Import/Export', 'Compliance Audit Trail', 'Error Handling & Recovery'],
-        technicalDetails: 'Automated workflows with built-in validation, error handling, and rollback capabilities. Supports both manual and automated test execution.'
-      }
-    },
-    {
-      id: 'deployment',
-      title: 'Deployment Architecture',
-      description: 'Infrastructure and deployment configuration',
-      icon: Server,
-      status: 'Complete',
-      downloadTypes: [
-        { format: 'PDF', icon: FileText, description: 'Deployment guide' },
-        { format: 'PNG', icon: Image, description: 'Infrastructure diagrams' },
-        { format: 'Word', icon: File, description: 'Configuration templates' }
-      ],
-      details: {
-        overview: 'Cloud-native deployment architecture with auto-scaling, high availability, and disaster recovery capabilities.',
-        components: ['Frontend Deployment (CDN)', 'Backend Services (Supabase)', 'Database Clustering', 'Load Balancing', 'Monitoring & Alerting', 'Backup & Recovery'],
-        flows: ['CI/CD Pipeline', 'Auto-scaling Process', 'Disaster Recovery', 'Performance Monitoring', 'Security Scanning'],
-        technicalDetails: 'Containerized deployment with Kubernetes orchestration, automated scaling policies, and comprehensive monitoring stack.'
-      }
+  // Define architecture docs based on user role
+  const getArchitectureDocsForRole = () => {
+    if (userRole === 'onboardingTeam') {
+      return [
+        {
+          id: 'high-level',
+          title: 'Treatment Center Onboarding Architecture',
+          description: 'High-level overview of treatment center onboarding system and workflows',
+          icon: Network,
+          status: 'Complete',
+          downloadTypes: [
+            { format: 'PDF', icon: FileText, description: 'Comprehensive onboarding documentation' },
+            { format: 'PNG', icon: Image, description: 'Onboarding workflow diagrams' },
+            { format: 'Word', icon: File, description: 'Editable onboarding guide' }
+          ],
+          details: {
+            overview: 'Comprehensive onboarding architecture for treatment centers covering enrollment, verification, compliance, and integration processes with automated workflows.',
+            components: ['Onboarding Portal Interface', 'Document Verification Services', 'Compliance Engine', 'Background Check Integration', 'Approval Workflow System', 'Provider Integration APIs'],
+            flows: ['Treatment Center Application Flow', 'Document Verification Pipeline', 'Compliance Validation Process', 'Multi-stage Approval Workflow', 'Provider Network Integration'],
+            technicalDetails: 'Built specifically for healthcare provider onboarding with HIPAA compliance, automated document processing, and seamless integration with verification services.'
+          }
+        },
+        {
+          id: 'low-level',
+          title: 'Onboarding Technical Implementation',
+          description: 'Technical details of treatment center onboarding components and data flows',
+          icon: Database,
+          status: 'Complete',
+          downloadTypes: [
+            { format: 'PDF', icon: FileText, description: 'Technical onboarding specification' },
+            { format: 'PNG', icon: Image, description: 'Database and API diagrams' },
+            { format: 'Word', icon: File, description: 'Implementation guide for onboarding' }
+          ],
+          details: {
+            overview: 'Technical implementation details for onboarding system including database schemas for treatment centers, verification APIs, and compliance workflows.',
+            components: ['Onboarding Database Schema', 'Provider Verification APIs', 'Document Processing Services', 'Compliance Check Utilities', 'Integration Hooks', 'Workflow State Management'],
+            flows: ['Data Model for Treatment Centers', 'API Integration Patterns', 'Document Processing Pipeline', 'State Management Flow', 'Error Handling and Recovery'],
+            technicalDetails: 'Implements healthcare-specific data models with strict validation, automated workflows, and comprehensive audit trails for regulatory compliance.'
+          }
+        },
+        {
+          id: 'security',
+          title: 'Onboarding Security Framework',
+          description: 'Security measures for treatment center onboarding and data protection',
+          icon: Shield,
+          status: 'Complete',
+          downloadTypes: [
+            { format: 'PDF', icon: FileText, description: 'Onboarding security compliance report' },
+            { format: 'PNG', icon: Image, description: 'Security architecture diagrams' },
+            { format: 'Word', icon: File, description: 'Security policies for onboarding' }
+          ],
+          details: {
+            overview: 'Security architecture for onboarding system ensuring protection of treatment center data, compliance with healthcare regulations, and secure document handling.',
+            components: ['Provider Authentication', 'Document Security & Encryption', 'Compliance Monitoring', 'Access Control for Onboarding Data', 'Audit Trail for Onboarding Activities', 'Secure API Communications'],
+            flows: ['Secure Onboarding Authentication', 'Document Upload Security', 'Data Validation and Protection', 'Compliance Audit Logging', 'Secure Provider Communications'],
+            technicalDetails: 'HIPAA-compliant onboarding security with encrypted document storage, secure transmission protocols, and comprehensive audit trails for all onboarding activities.'
+          }
+        },
+        {
+          id: 'reference',
+          title: 'Onboarding Reference Patterns',
+          description: 'Standard patterns and best practices for treatment center onboarding',
+          icon: Layers,
+          status: 'Complete',
+          downloadTypes: [
+            { format: 'PDF', icon: FileText, description: 'Onboarding best practices guide' },
+            { format: 'PNG', icon: Image, description: 'Onboarding pattern diagrams' },
+            { format: 'Word', icon: File, description: 'Implementation templates for onboarding' }
+          ],
+          details: {
+            overview: 'Reference implementations and best practices for healthcare provider onboarding systems with proven patterns and workflows.',
+            components: ['Onboarding Design Patterns', 'Provider Verification Patterns', 'Compliance Check Patterns', 'Workflow Management Patterns', 'Document Processing Patterns', 'Integration Strategies'],
+            flows: ['Provider Enrollment Patterns', 'Document Management Flows', 'Verification Workflows', 'Approval Process Patterns', 'Integration Testing Strategies'],
+            technicalDetails: 'Implements healthcare-specific patterns for provider onboarding with automated workflows, compliance checks, and scalable verification processes.'
+          }
+        },
+        {
+          id: 'flow-process',
+          title: 'Onboarding Process Flows',
+          description: 'Detailed onboarding workflow and process documentation',
+          icon: GitBranch,
+          status: 'Complete',
+          downloadTypes: [
+            { format: 'PDF', icon: FileText, description: 'Process flow documentation' },
+            { format: 'PNG', icon: Image, description: 'Workflow diagrams' },
+            { format: 'Word', icon: File, description: 'Process procedures' }
+          ],
+          details: {
+            overview: 'Comprehensive onboarding process flows covering treatment center enrollment, verification, compliance, and approval workflows.',
+            components: ['Application Submission Flow', 'Document Verification Process', 'Background Check Pipeline', 'Compliance Review Process', 'Final Approval Workflow', 'Integration Setup'],
+            flows: ['End-to-End Onboarding Workflow', 'Provider Application Process', 'Document Processing Pipeline', 'Compliance Audit Trail', 'Error Handling & Recovery'],
+            technicalDetails: 'Automated onboarding workflows with built-in validation, compliance checks, and rollback capabilities for treatment center enrollment.'
+          }
+        },
+        {
+          id: 'deployment',
+          title: 'Onboarding Deployment Strategy',
+          description: 'Infrastructure and deployment configuration for onboarding system',
+          icon: Server,
+          status: 'Complete',
+          downloadTypes: [
+            { format: 'PDF', icon: FileText, description: 'Deployment guide for onboarding' },
+            { format: 'PNG', icon: Image, description: 'Infrastructure diagrams' },
+            { format: 'Word', icon: File, description: 'Configuration templates' }
+          ],
+          details: {
+            overview: 'Deployment architecture for onboarding system with high availability, scalability, and compliance requirements.',
+            components: ['Onboarding Service Deployment', 'Document Storage Infrastructure', 'Verification Service Integration', 'Compliance Monitoring Stack', 'Provider Portal Deployment', 'Backup & Recovery'],
+            flows: ['Onboarding System Deployment Pipeline', 'Auto-scaling for Provider Enrollment', 'Disaster Recovery for Provider Data', 'Performance Monitoring', 'Security Compliance Scanning'],
+            technicalDetails: 'Containerized deployment with healthcare compliance requirements, automated scaling for peak enrollment periods, and comprehensive monitoring.'
+          }
+        }
+      ];
     }
-  ];
+    
+    // Default (superadmin) architecture docs
+    return [
+      {
+        id: 'high-level',
+        title: 'High-Level Architecture',
+        description: 'System overview and major component interactions',
+        icon: Network,
+        status: 'Complete',
+        downloadTypes: [
+          { format: 'PDF', icon: FileText, description: 'Detailed PDF documentation' },
+          { format: 'PNG', icon: Image, description: 'High-resolution diagram' },
+          { format: 'Word', icon: File, description: 'Editable Word document' }
+        ],
+        details: {
+          overview: 'Enterprise-level system architecture showing the complete healthcare testing framework with multi-tenant support, role-based access control, and scalable component architecture.',
+          components: ['Frontend UI Layer (React/TypeScript)', 'API Gateway (Supabase Edge Functions)', 'Business Logic Layer', 'Database Layer (PostgreSQL with RLS)', 'External Integrations', 'Authentication & Authorization'],
+          flows: ['User Authentication Flow', 'Test Execution Pipeline', 'Data Processing & Validation', 'Compliance Reporting', 'Multi-tenant Data Isolation'],
+          technicalDetails: 'Built with React 18, TypeScript, Tailwind CSS, and Supabase. Implements design system patterns with semantic tokens for consistent theming across all tenants.'
+        }
+      },
+      {
+        id: 'low-level',
+        title: 'Low-Level Architecture',
+        description: 'Detailed technical implementation and component design',
+        icon: Database,
+        status: 'Complete',
+        downloadTypes: [
+          { format: 'PDF', icon: FileText, description: 'Technical specification' },
+          { format: 'PNG', icon: Image, description: 'Component diagrams' },
+          { format: 'Word', icon: File, description: 'Implementation guide' }
+        ],
+        details: {
+          overview: 'Deep technical implementation covering database schemas, API endpoints, service architecture, and component hierarchy with complete type safety.',
+          components: ['Database Schema Design', 'RESTful API Endpoints', 'React Component Library', 'TypeScript Interfaces', 'Custom Hooks Architecture', 'Utility Functions'],
+          flows: ['Data Model Relationships', 'Component State Management', 'API Request/Response Cycle', 'Error Handling Pipeline', 'Performance Optimization'],
+          technicalDetails: 'Implements Domain-Driven Design principles with clear separation of concerns. All components are typed with TypeScript and follow design system patterns.'
+        }
+      },
+      {
+        id: 'security',
+        title: 'Security Architecture',
+        description: 'Security implementation and compliance framework',
+        icon: Shield,
+        status: 'Complete',
+        downloadTypes: [
+          { format: 'PDF', icon: FileText, description: 'Security compliance report' },
+          { format: 'PNG', icon: Image, description: 'Security flow diagrams' },
+          { format: 'Word', icon: File, description: 'Security policies document' }
+        ],
+        details: {
+          overview: 'Comprehensive security architecture implementing healthcare data protection standards with multi-layered security controls and audit capabilities.',
+          components: ['Authentication Layer (Supabase Auth)', 'Authorization Framework (RBAC)', 'Data Encryption & Protection', 'Audit Trail System', 'Row Level Security (RLS)', 'API Security Controls'],
+          flows: ['User Authentication Process', 'Permission Validation', 'Data Access Controls', 'Security Event Logging', 'Compliance Monitoring'],
+          technicalDetails: 'HIPAA-compliant security measures with encryption at rest and in transit, comprehensive audit logging, and role-based access controls.'
+        }
+      },
+      {
+        id: 'reference',
+        title: 'Reference Architecture',
+        description: 'Standard patterns and best practices implementation',
+        icon: Layers,
+        status: 'Complete',
+        downloadTypes: [
+          { format: 'PDF', icon: FileText, description: 'Best practices guide' },
+          { format: 'PNG', icon: Image, description: 'Pattern diagrams' },
+          { format: 'Word', icon: File, description: 'Implementation templates' }
+        ],
+        details: {
+          overview: 'Reference implementations showcasing architectural patterns, design principles, and best practices for scalable healthcare applications.',
+          components: ['Design Pattern Library', 'Component Architecture Patterns', 'Data Flow Patterns', 'Error Handling Patterns', 'Performance Optimization Patterns', 'Testing Strategies'],
+          flows: ['Component Composition Patterns', 'State Management Flows', 'Data Synchronization', 'Error Recovery Procedures', 'Scaling Strategies'],
+          technicalDetails: 'Implements enterprise-grade patterns including Singleton, Observer, Strategy, and Factory patterns with React-specific optimizations.'
+        }
+      },
+      {
+        id: 'flow-process',
+        title: 'Flow & Process Architecture',
+        description: 'Detailed workflow and process flow documentation',
+        icon: GitBranch,
+        status: 'Complete',
+        downloadTypes: [
+          { format: 'PDF', icon: FileText, description: 'Process documentation' },
+          { format: 'PNG', icon: Image, description: 'Workflow diagrams' },
+          { format: 'Word', icon: File, description: 'Process procedures' }
+        ],
+        details: {
+          overview: 'Comprehensive process flows covering all major system operations from user onboarding to test execution and compliance reporting.',
+          components: ['User Journey Flows', 'Test Creation Process', 'Execution Pipeline', 'Result Processing', 'Compliance Validation', 'Report Generation'],
+          flows: ['End-to-End Testing Workflow', 'User Onboarding Process', 'Data Import/Export', 'Compliance Audit Trail', 'Error Handling & Recovery'],
+          technicalDetails: 'Automated workflows with built-in validation, error handling, and rollback capabilities. Supports both manual and automated test execution.'
+        }
+      },
+      {
+        id: 'deployment',
+        title: 'Deployment Architecture',
+        description: 'Infrastructure and deployment configuration',
+        icon: Server,
+        status: 'Complete',
+        downloadTypes: [
+          { format: 'PDF', icon: FileText, description: 'Deployment guide' },
+          { format: 'PNG', icon: Image, description: 'Infrastructure diagrams' },
+          { format: 'Word', icon: File, description: 'Configuration templates' }
+        ],
+        details: {
+          overview: 'Cloud-native deployment architecture with auto-scaling, high availability, and disaster recovery capabilities.',
+          components: ['Frontend Deployment (CDN)', 'Backend Services (Supabase)', 'Database Clustering', 'Load Balancing', 'Monitoring & Alerting', 'Backup & Recovery'],
+          flows: ['CI/CD Pipeline', 'Auto-scaling Process', 'Disaster Recovery', 'Performance Monitoring', 'Security Scanning'],
+          technicalDetails: 'Containerized deployment with Kubernetes orchestration, automated scaling policies, and comprehensive monitoring stack.'
+        }
+      }
+    ];
+  };
+
+  const architectureDocs = getArchitectureDocsForRole();
 
   const generateDocument = async (docId: string, format: string) => {
     setIsGenerating(`${docId}-${format}`);

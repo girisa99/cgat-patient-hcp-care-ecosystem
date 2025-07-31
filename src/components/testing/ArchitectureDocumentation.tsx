@@ -8,91 +8,181 @@ import { Download, Eye, Network, Database, Server, Layers, GitBranch, Shield } f
 
 interface ArchitectureDocumentationProps {
   onDownload: (type: string) => void;
+  userRole?: string;
 }
 
-export function ArchitectureDocumentation({ onDownload }: ArchitectureDocumentationProps) {
+export function ArchitectureDocumentation({ onDownload, userRole }: ArchitectureDocumentationProps) {
   const [selectedDiagram, setSelectedDiagram] = useState<string | null>(null);
 
-  const architectureDocs = [
-    {
-      id: 'high-level',
-      title: 'High-Level Architecture',
-      description: 'System overview and major component interactions',
-      icon: Network,
-      status: 'Complete',
-      downloadTypes: ['PDF', 'PNG', 'SVG'],
-      details: {
-        overview: 'Enterprise-level system architecture showing the complete healthcare testing framework',
-        components: ['User Interface Layer', 'API Gateway', 'Business Logic', 'Data Layer', 'External Systems'],
-        flows: ['Authentication Flow', 'Test Execution Flow', 'Data Processing Flow', 'Reporting Flow']
-      }
-    },
-    {
-      id: 'flow-diagrams',
-      title: 'Flow & Process Diagrams',
-      description: 'Detailed workflow and process flow documentation',
-      icon: GitBranch,
-      status: 'Complete',
-      downloadTypes: ['PDF', 'PNG', 'Visio'],
-      details: {
-        overview: 'Comprehensive process flows for all major system operations',
-        components: ['Test Case Creation', 'Execution Pipeline', 'Result Processing', 'Compliance Validation'],
-        flows: ['End-to-End Testing', 'CI/CD Integration', 'Error Handling', 'Data Synchronization']
-      }
-    },
-    {
-      id: 'low-level',
-      title: 'Low-Level Architecture',
-      description: 'Detailed technical implementation and component design',
-      icon: Database,
-      status: 'Complete',
-      downloadTypes: ['PDF', 'PNG', 'Word'],
-      details: {
-        overview: 'Deep technical dive into system internals and implementation details',
-        components: ['Database Schema', 'API Endpoints', 'Service Classes', 'Utility Functions'],
-        flows: ['Data Models', 'Service Interactions', 'Security Layers', 'Performance Optimizations']
-      }
-    },
-    {
-      id: 'reference',
-      title: 'Reference Architecture',
-      description: 'Standard patterns and best practices implementation',
-      icon: Layers,
-      status: 'Complete',
-      downloadTypes: ['PDF', 'PNG', 'PowerPoint'],
-      details: {
-        overview: 'Reference implementations and architectural patterns for healthcare testing',
-        components: ['Design Patterns', 'Security Frameworks', 'Integration Patterns', 'Scalability Patterns'],
-        flows: ['Best Practices', 'Security Guidelines', 'Performance Patterns', 'Compliance Frameworks']
-      }
-    },
-    {
-      id: 'security',
-      title: 'Security Architecture',
-      description: 'Security implementation and compliance framework',
-      icon: Shield,
-      status: 'Complete',
-      downloadTypes: ['PDF', 'PNG', 'Word'],
-      details: {
-        overview: 'Comprehensive security architecture for healthcare data protection',
-        components: ['Authentication Layer', 'Authorization Framework', 'Data Encryption', 'Audit Trail'],
-        flows: ['Security Protocols', 'Access Control', 'Data Protection', 'Compliance Monitoring']
-      }
-    },
-    {
-      id: 'deployment',
-      title: 'Deployment Architecture',
-      description: 'Infrastructure and deployment configuration',
-      icon: Server,
-      status: 'Complete',
-      downloadTypes: ['PDF', 'PNG', 'YAML'],
-      details: {
-        overview: 'Cloud-native deployment architecture with scalability and reliability',
-        components: ['Container Strategy', 'Load Balancing', 'Database Clustering', 'Monitoring Stack'],
-        flows: ['Deployment Pipeline', 'Scaling Strategy', 'Disaster Recovery', 'Performance Monitoring']
-      }
+  // Define architecture docs based on user role
+  const getArchitectureDocsForRole = () => {
+    if (userRole === 'onboardingTeam') {
+      return [
+        {
+          id: 'high-level',
+          title: 'Onboarding System Architecture',
+          description: 'Treatment center onboarding system overview and workflow interactions',
+          icon: Network,
+          status: 'Complete',
+          downloadTypes: ['PDF', 'PNG', 'SVG'],
+          details: {
+            overview: 'High-level architecture for treatment center onboarding system showing enrollment workflows and integrations',
+            components: ['Onboarding Portal', 'Verification Services', 'Compliance Engine', 'Integration Layer', 'Approval Workflow'],
+            flows: ['Application Submission Flow', 'Document Verification Flow', 'Compliance Check Flow', 'Approval Workflow']
+          }
+        },
+        {
+          id: 'flow-diagrams',
+          title: 'Onboarding Process Flows',
+          description: 'Detailed treatment center onboarding workflows and process documentation',
+          icon: GitBranch,
+          status: 'Complete',
+          downloadTypes: ['PDF', 'PNG', 'Visio'],
+          details: {
+            overview: 'Comprehensive onboarding process flows covering enrollment, verification, and approval stages',
+            components: ['Application Intake', 'Document Processing', 'Background Verification', 'Compliance Review', 'Final Approval'],
+            flows: ['End-to-End Onboarding', 'Document Verification Pipeline', 'Compliance Validation', 'Multi-Stage Approval']
+          }
+        },
+        {
+          id: 'low-level',
+          title: 'Onboarding Technical Architecture',
+          description: 'Technical implementation details for treatment center onboarding components',
+          icon: Database,
+          status: 'Complete',
+          downloadTypes: ['PDF', 'PNG', 'Word'],
+          details: {
+            overview: 'Technical architecture for onboarding system including database schema and API design',
+            components: ['Onboarding Database Schema', 'Verification API Endpoints', 'Service Integration Classes', 'Compliance Utilities'],
+            flows: ['Data Models for Treatment Centers', 'API Integration Patterns', 'Security Implementations', 'Performance Optimizations']
+          }
+        },
+        {
+          id: 'reference',
+          title: 'Onboarding Reference Architecture',
+          description: 'Standard patterns and best practices for treatment center onboarding',
+          icon: Layers,
+          status: 'Complete',
+          downloadTypes: ['PDF', 'PNG', 'PowerPoint'],
+          details: {
+            overview: 'Reference architecture and best practices for healthcare provider onboarding systems',
+            components: ['Onboarding Design Patterns', 'Healthcare Security Frameworks', 'Provider Integration Patterns', 'Compliance Patterns'],
+            flows: ['Healthcare Onboarding Best Practices', 'HIPAA Security Guidelines', 'Performance Patterns', 'Regulatory Compliance Frameworks']
+          }
+        },
+        {
+          id: 'security',
+          title: 'Onboarding Security Architecture',
+          description: 'Security implementation for treatment center onboarding and data protection',
+          icon: Shield,
+          status: 'Complete',
+          downloadTypes: ['PDF', 'PNG', 'Word'],
+          details: {
+            overview: 'Security architecture for onboarding system covering data protection and compliance requirements',
+            components: ['Provider Authentication', 'Document Security', 'Data Encryption for PHI', 'Onboarding Audit Trail'],
+            flows: ['Secure Onboarding Protocols', 'Provider Access Control', 'Document Protection', 'Compliance Monitoring']
+          }
+        },
+        {
+          id: 'deployment',
+          title: 'Onboarding Deployment Architecture',
+          description: 'Infrastructure and deployment configuration for onboarding system',
+          icon: Server,
+          status: 'Complete',
+          downloadTypes: ['PDF', 'PNG', 'YAML'],
+          details: {
+            overview: 'Deployment architecture for treatment center onboarding system with high availability',
+            components: ['Onboarding Service Containers', 'Load Balancing for Applications', 'Database Clustering for Onboarding Data', 'Monitoring for Onboarding Workflows'],
+            flows: ['Onboarding Deployment Pipeline', 'Auto-scaling for Peak Enrollment', 'Disaster Recovery for Provider Data', 'Performance Monitoring']
+          }
+        }
+      ];
     }
-  ];
+    
+    // Default (superadmin) architecture docs
+    return [
+      {
+        id: 'high-level',
+        title: 'High-Level Architecture',
+        description: 'System overview and major component interactions',
+        icon: Network,
+        status: 'Complete',
+        downloadTypes: ['PDF', 'PNG', 'SVG'],
+        details: {
+          overview: 'Enterprise-level system architecture showing the complete healthcare testing framework',
+          components: ['User Interface Layer', 'API Gateway', 'Business Logic', 'Data Layer', 'External Systems'],
+          flows: ['Authentication Flow', 'Test Execution Flow', 'Data Processing Flow', 'Reporting Flow']
+        }
+      },
+      {
+        id: 'flow-diagrams',
+        title: 'Flow & Process Diagrams',
+        description: 'Detailed workflow and process flow documentation',
+        icon: GitBranch,
+        status: 'Complete',
+        downloadTypes: ['PDF', 'PNG', 'Visio'],
+        details: {
+          overview: 'Comprehensive process flows for all major system operations',
+          components: ['Test Case Creation', 'Execution Pipeline', 'Result Processing', 'Compliance Validation'],
+          flows: ['End-to-End Testing', 'CI/CD Integration', 'Error Handling', 'Data Synchronization']
+        }
+      },
+      {
+        id: 'low-level',
+        title: 'Low-Level Architecture',
+        description: 'Detailed technical implementation and component design',
+        icon: Database,
+        status: 'Complete',
+        downloadTypes: ['PDF', 'PNG', 'Word'],
+        details: {
+          overview: 'Deep technical dive into system internals and implementation details',
+          components: ['Database Schema', 'API Endpoints', 'Service Classes', 'Utility Functions'],
+          flows: ['Data Models', 'Service Interactions', 'Security Layers', 'Performance Optimizations']
+        }
+      },
+      {
+        id: 'reference',
+        title: 'Reference Architecture',
+        description: 'Standard patterns and best practices implementation',
+        icon: Layers,
+        status: 'Complete',
+        downloadTypes: ['PDF', 'PNG', 'PowerPoint'],
+        details: {
+          overview: 'Reference implementations and architectural patterns for healthcare testing',
+          components: ['Design Patterns', 'Security Frameworks', 'Integration Patterns', 'Scalability Patterns'],
+          flows: ['Best Practices', 'Security Guidelines', 'Performance Patterns', 'Compliance Frameworks']
+        }
+      },
+      {
+        id: 'security',
+        title: 'Security Architecture',
+        description: 'Security implementation and compliance framework',
+        icon: Shield,
+        status: 'Complete',
+        downloadTypes: ['PDF', 'PNG', 'Word'],
+        details: {
+          overview: 'Comprehensive security architecture for healthcare data protection',
+          components: ['Authentication Layer', 'Authorization Framework', 'Data Encryption', 'Audit Trail'],
+          flows: ['Security Protocols', 'Access Control', 'Data Protection', 'Compliance Monitoring']
+        }
+      },
+      {
+        id: 'deployment',
+        title: 'Deployment Architecture',
+        description: 'Infrastructure and deployment configuration',
+        icon: Server,
+        status: 'Complete',
+        downloadTypes: ['PDF', 'PNG', 'YAML'],
+        details: {
+          overview: 'Cloud-native deployment architecture with scalability and reliability',
+          components: ['Container Strategy', 'Load Balancing', 'Database Clustering', 'Monitoring Stack'],
+          flows: ['Deployment Pipeline', 'Scaling Strategy', 'Disaster Recovery', 'Performance Monitoring']
+        }
+      }
+    ];
+  };
+
+  const architectureDocs = getArchitectureDocsForRole();
 
   const ArchitectureDiagram = ({ type }: { type: string }) => {
     const diagramContent: Record<string, any> = {

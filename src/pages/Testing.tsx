@@ -401,12 +401,14 @@ const Testing: React.FC = () => {
                   <TabsContent value="architecture" className="mt-6">
                     <EnhancedArchitectureDocumentation
                       onDownload={handleDocumentDownload}
+                      userRole={currentRole}
                     />
                   </TabsContent>
 
                   <TabsContent value="requirements" className="mt-6">
                     <RequirementsDocumentation
                       onDownload={handleRequirementsDownload}
+                      userRole={currentRole}
                     />
                   </TabsContent>
                 </Tabs>

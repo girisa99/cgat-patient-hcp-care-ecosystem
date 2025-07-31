@@ -10,9 +10,10 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface RequirementsDocumentationProps {
   onDownload: (type: string) => void;
+  userRole?: string;
 }
 
-export function RequirementsDocumentation({ onDownload }: RequirementsDocumentationProps) {
+export function RequirementsDocumentation({ onDownload, userRole }: RequirementsDocumentationProps) {
   const [animationActive, setAnimationActive] = useState<string | null>(null);
   const [realTestData, setRealTestData] = useState<Array<any>>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -60,100 +61,203 @@ export function RequirementsDocumentation({ onDownload }: RequirementsDocumentat
 
   const realStats = generateRequirementsFromData();
 
-  const requirementsDocs = [
-    {
-      id: 'business-requirements',
-      title: 'Business Requirements Specification',
-      description: 'Comprehensive business requirements extracted from real system data',
-      icon: FileText,
-      downloadTypes: ['PDF', 'Word', 'CSV'],
-      animated: true,
-      details: {
-        overview: 'Business requirements specification generated from actual test cases and system functionality',
-        sections: [
-          'User Management Requirements',
-          'System Operations Requirements', 
-          'Business Operations Requirements',
-          'Patient Care Requirements',
-          'Data Exchange Requirements',
-          'Audit Trail Requirements'
-        ],
-        metrics: {
-          totalRequirements: realStats.businessRequirements,
-          activeRequirements: realStats.businessRequirements
+  // Define requirements docs based on user role
+  const getRequirementsDocsForRole = () => {
+    if (userRole === 'onboardingTeam') {
+      return [
+        {
+          id: 'business-requirements',
+          title: 'Treatment Center Onboarding Requirements',
+          description: 'Business requirements for treatment center onboarding and verification processes',
+          icon: FileText,
+          downloadTypes: ['PDF', 'Word', 'CSV'],
+          animated: true,
+          details: {
+            overview: 'Treatment center onboarding requirements covering enrollment, verification, and compliance processes',
+            sections: [
+              'Treatment Center Enrollment Requirements',
+              'Identity Verification Requirements',
+              'Compliance Documentation Requirements',
+              'Service Offering Validation Requirements',
+              'Insurance Network Integration Requirements',
+              'Quality Assurance Requirements'
+            ],
+            metrics: {
+              totalRequirements: realStats.businessRequirements,
+              activeRequirements: realStats.businessRequirements
+            }
+          }
+        },
+        {
+          id: 'functional-requirements',
+          title: 'Onboarding Workflow Requirements',
+          description: 'Functional specifications for treatment center onboarding workflows and processes',
+          icon: CheckCircle,
+          downloadTypes: ['PDF', 'Word', 'XML'],
+          animated: true,
+          details: {
+            overview: 'Functional requirements covering onboarding workflows, API integrations, and validation processes',
+            sections: [
+              'Application Submission Workflow',
+              'Document Upload and Verification',
+              'Background Check Integration',
+              'License Validation Processes',
+              'Service Configuration Requirements',
+              'Integration Testing Requirements'
+            ],
+            metrics: {
+              totalRequirements: realStats.functionalRequirements,
+              activeRequirements: realStats.functionalRequirements
+            }
+          }
+        },
+        {
+          id: 'traceability-matrix',
+          title: 'Onboarding Traceability Matrix',
+          description: 'Mapping between onboarding requirements, test cases, and implementation verification',
+          icon: GitMerge,
+          downloadTypes: ['Excel', 'CSV', 'PDF'],
+          animated: true,
+          details: {
+            overview: 'Complete traceability matrix for treatment center onboarding process validation',
+            sections: [
+              'Onboarding-to-Functional Mapping',
+              'Workflow-to-Test Mapping',
+              'Compliance-to-Verification Mapping',
+              'API-to-Integration Test Mapping',
+              'Documentation-to-Validation Mapping',
+              'End-to-End Process Coverage'
+            ],
+            metrics: {
+              totalMappings: realStats.totalRequirements,
+              verifiedMappings: realStats.totalRequirements
+            }
+          }
+        },
+        {
+          id: 'compliance-reports',
+          title: 'Onboarding Compliance Reports',
+          description: 'Regulatory compliance for treatment center onboarding and healthcare standards',
+          icon: AlertTriangle,
+          downloadTypes: ['PDF', 'Word', 'XML'],
+          animated: false,
+          details: {
+            overview: 'Compliance documentation for treatment center onboarding covering healthcare regulations and standards',
+            sections: [
+              'HIPAA Compliance for Treatment Centers',
+              'State Licensing Validation',
+              'Insurance Network Compliance',
+              'Quality Standards Verification',
+              'Accreditation Requirements',
+              'Onboarding Audit Trail Reports'
+            ],
+            metrics: {
+              totalRequirements: realStats.complianceRequirements,
+              activeRequirements: realStats.complianceRequirements
+            }
+          }
         }
-      }
-    },
-    {
-      id: 'functional-requirements',
-      title: 'Functional Requirements',
-      description: 'Detailed functional specifications extracted from system coverage areas',
-      icon: CheckCircle,
-      downloadTypes: ['PDF', 'Word', 'XML'],
-      animated: true,
-      details: {
-        overview: 'Functional requirements covering all system capabilities based on real test coverage',
-        sections: [
-          'Security Requirements',
-          'Technical Requirements',
-          'Operations Requirements', 
-          'Healthcare Requirements',
-          'User Experience Requirements',
-          'Compliance Requirements'
-        ],
-        metrics: {
-          totalRequirements: realStats.functionalRequirements,
-          activeRequirements: realStats.functionalRequirements
-        }
-      }
-    },
-    {
-      id: 'traceability-matrix',
-      title: 'Requirements Traceability Matrix',
-      description: 'Real mapping between requirements, tests, and implementation from database',
-      icon: GitMerge,
-      downloadTypes: ['Excel', 'CSV', 'PDF'],
-      animated: true,
-      details: {
-        overview: 'Complete traceability matrix generated from actual test cases and system functionality',
-        sections: [
-          'Business-to-Functional Mapping',
-          'Module-to-Test Mapping',
-          'Requirements-to-Tests Mapping',
-          'Coverage Area Analysis',
-          'Validation Level Mapping',
-          'Test Case Distribution'
-        ],
-        metrics: {
-          totalMappings: realStats.totalRequirements,
-          verifiedMappings: realStats.totalRequirements
-        }
-      }
-    },
-    {
-      id: 'compliance-reports',
-      title: 'Compliance Reports',
-      description: 'Real regulatory compliance data from validation levels in test cases',
-      icon: AlertTriangle,
-      downloadTypes: ['PDF', 'Word', 'XML'],
-      animated: false,
-      details: {
-        overview: 'Compliance documentation based on actual validation levels and test case metadata',
-        sections: [
-          '21 CFR Part 11 Compliance (IQ/OQ/PQ)',
-          'Validation Documentation',
-          'Audit Trail Reports',
-          'Risk Assessment by Module',
-          'Test Case Validation Levels',
-          'Compliance Coverage Matrix'
-        ],
-        metrics: {
-          totalRequirements: realStats.complianceRequirements,
-          activeRequirements: realStats.complianceRequirements
-        }
-      }
+      ];
     }
-  ];
+    
+    // Default (superadmin) requirements docs
+    return [
+      {
+        id: 'business-requirements',
+        title: 'Business Requirements Specification',
+        description: 'Comprehensive business requirements extracted from real system data',
+        icon: FileText,
+        downloadTypes: ['PDF', 'Word', 'CSV'],
+        animated: true,
+        details: {
+          overview: 'Business requirements specification generated from actual test cases and system functionality',
+          sections: [
+            'User Management Requirements',
+            'System Operations Requirements', 
+            'Business Operations Requirements',
+            'Patient Care Requirements',
+            'Data Exchange Requirements',
+            'Audit Trail Requirements'
+          ],
+          metrics: {
+            totalRequirements: realStats.businessRequirements,
+            activeRequirements: realStats.businessRequirements
+          }
+        }
+      },
+      {
+        id: 'functional-requirements',
+        title: 'Functional Requirements',
+        description: 'Detailed functional specifications extracted from system coverage areas',
+        icon: CheckCircle,
+        downloadTypes: ['PDF', 'Word', 'XML'],
+        animated: true,
+        details: {
+          overview: 'Functional requirements covering all system capabilities based on real test coverage',
+          sections: [
+            'Security Requirements',
+            'Technical Requirements',
+            'Operations Requirements', 
+            'Healthcare Requirements',
+            'User Experience Requirements',
+            'Compliance Requirements'
+          ],
+          metrics: {
+            totalRequirements: realStats.functionalRequirements,
+            activeRequirements: realStats.functionalRequirements
+          }
+        }
+      },
+      {
+        id: 'traceability-matrix',
+        title: 'Requirements Traceability Matrix',
+        description: 'Real mapping between requirements, tests, and implementation from database',
+        icon: GitMerge,
+        downloadTypes: ['Excel', 'CSV', 'PDF'],
+        animated: true,
+        details: {
+          overview: 'Complete traceability matrix generated from actual test cases and system functionality',
+          sections: [
+            'Business-to-Functional Mapping',
+            'Module-to-Test Mapping',
+            'Requirements-to-Tests Mapping',
+            'Coverage Area Analysis',
+            'Validation Level Mapping',
+            'Test Case Distribution'
+          ],
+          metrics: {
+            totalMappings: realStats.totalRequirements,
+            verifiedMappings: realStats.totalRequirements
+          }
+        }
+      },
+      {
+        id: 'compliance-reports',
+        title: 'Compliance Reports',
+        description: 'Real regulatory compliance data from validation levels in test cases',
+        icon: AlertTriangle,
+        downloadTypes: ['PDF', 'Word', 'XML'],
+        animated: false,
+        details: {
+          overview: 'Compliance documentation based on actual validation levels and test case metadata',
+          sections: [
+            '21 CFR Part 11 Compliance (IQ/OQ/PQ)',
+            'Validation Documentation',
+            'Audit Trail Reports',
+            'Risk Assessment by Module',
+            'Test Case Validation Levels',
+            'Compliance Coverage Matrix'
+          ],
+          metrics: {
+            totalRequirements: realStats.complianceRequirements,
+            activeRequirements: realStats.complianceRequirements
+          }
+        }
+      }
+    ];
+  };
+
+  const requirementsDocs = getRequirementsDocsForRole();
 
   const AnimatedProgress = ({ value, animated }: { value: number; animated: boolean }) => {
     const [currentValue, setCurrentValue] = useState(0);
