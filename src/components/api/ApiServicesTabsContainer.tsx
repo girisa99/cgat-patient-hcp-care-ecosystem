@@ -60,15 +60,15 @@ const ApiServicesTabsContainer: React.FC<ApiServicesTabsContainerProps> = ({
     return apis;
   };
 
-  // Categorize APIs properly - eliminate redundant categorization
+  // Categorize APIs properly - simplified logic
   const allFilteredApis = filterApisByRole(apiServices || []);
   
   const internalApis = allFilteredApis.filter(api => 
-    api.type === 'internal' || api.direction === 'outbound'
+    api.type === 'internal'
   );
   
   const filteredExternalApis = allFilteredApis.filter(api => 
-    api.type === 'external' || api.direction === 'inbound' || api.direction === 'bidirectional'
+    api.type === 'external'
   );
 
   // Simplified tab structure - removed redundant tabs

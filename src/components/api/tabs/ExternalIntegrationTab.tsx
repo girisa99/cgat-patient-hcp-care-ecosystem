@@ -30,12 +30,9 @@ const ExternalIntegrationTab: React.FC = () => {
     publishApi
   } = useExternalApiPublishing();
 
-  // Get external APIs from main registry (direction = 'external' or type = 'external')
+  // Get external APIs from main registry - simplified
   const externalIntegrationApis = apiServices?.filter(api => 
-    api.direction === 'external' || 
-    api.type === 'external' ||
-    api.direction === 'inbound' || 
-    api.direction === 'bidirectional'
+    api.type === 'external'
   ) || [];
 
   // Transform integration APIs to match external API format

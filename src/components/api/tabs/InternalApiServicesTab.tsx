@@ -36,11 +36,9 @@ const InternalApiServicesTab: React.FC<InternalApiServicesTabProps> = ({
     getApiServiceStats
   } = useMasterApiServices();
 
-  // Filter for internal APIs (type = 'internal' or bidirectional internal APIs)
+  // Filter for internal APIs - simplified logic
   const internalServices = apiServices?.filter(api => 
-    api.type === 'internal' || 
-    (api.direction === 'bidirectional' && api.type === 'internal') ||
-    api.direction === 'outbound'
+    api.type === 'internal'
   ) || [];
 
   // Debug logging

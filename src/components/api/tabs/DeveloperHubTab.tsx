@@ -22,10 +22,9 @@ const DeveloperHubTab: React.FC = () => {
   const { publishedApis } = useExternalApis();
   const { apiKeys } = useApiKeys();
 
-  // Get published APIs for developer consumption
+  // Get all active APIs for developer access
   const developerApis = apiServices?.filter(api => 
-    api.status === 'active' && 
-    (api.direction === 'outbound' || api.direction === 'bidirectional')
+    api.status === 'active'
   ) || [];
 
   const handleRefresh = () => {
