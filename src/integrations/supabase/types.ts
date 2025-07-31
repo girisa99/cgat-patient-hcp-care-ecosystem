@@ -6698,7 +6698,9 @@ export type Database = {
         Returns: Json
       }
       generate_role_based_test_cases: {
-        Args: { target_role?: string }
+        Args:
+          | { target_role?: Database["public"]["Enums"]["user_role"] }
+          | { target_role?: string }
         Returns: Json
       }
       get_complete_schema_info: {
@@ -6868,6 +6870,10 @@ export type Database = {
       sync_real_time_testing_updates: {
         Args: Record<PropertyKey, never>
         Returns: Json
+      }
+      sync_role_based_testing: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       test_rls_policies: {
         Args: Record<PropertyKey, never>
