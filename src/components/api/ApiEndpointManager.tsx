@@ -15,6 +15,8 @@ import {
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useMasterToast } from '@/hooks/useMasterToast';
+import ApiSandboxManager from './ApiSandboxManager';
+import ApiDocumentationViewer from './ApiDocumentationViewer';
 
 interface ApiEndpoint {
   id: string;
@@ -36,6 +38,9 @@ const ApiEndpointManager: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showSandbox, setShowSandbox] = useState(false);
+  const [selectedEndpoint, setSelectedEndpoint] = useState<ApiEndpoint | null>(null);
+  const [showDocumentation, setShowDocumentation] = useState(false);
   const [newEndpoint, setNewEndpoint] = useState({
     endpoint_path: '',
     method: 'GET',
@@ -136,54 +141,13 @@ const ApiEndpointManager: React.FC = () => {
   });
 
   const testEndpoint = (endpoint: ApiEndpoint) => {
-    showSuccess(`Testing endpoint: ${endpoint.method} ${endpoint.endpoint_path}`);
-    // This would integrate with the sandbox environment
-    // For now, open sandbox with this endpoint pre-filled
-    const sandboxUrl = `/developer-hub?tab=sandbox&endpoint=${encodeURIComponent(endpoint.endpoint_path)}&method=${endpoint.method}`;
-    window.open(sandboxUrl, '_blank');
+    setSelectedEndpoint(endpoint);
+    setShowSandbox(true);
   };
 
   const viewDocumentation = (endpoint: ApiEndpoint) => {
-    showSuccess(`Viewing documentation for: ${endpoint.endpoint_path}`);
-    // Create a documentation view
-    const docWindow = window.open('', '_blank', 'width=800,height=600');
-    if (docWindow) {
-      docWindow.document.write(`
-        <html>
-          <head>
-            <title>API Documentation - ${endpoint.endpoint_path}</title>
-            <style>
-              body { font-family: Arial, sans-serif; padding: 20px; }
-              .endpoint { background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 10px 0; }
-              .method { padding: 5px 10px; border-radius: 3px; color: white; font-weight: bold; }
-              .get { background: #28a745; }
-              .post { background: #007bff; }
-              .put { background: #ffc107; color: black; }
-              .delete { background: #dc3545; }
-              .patch { background: #6f42c1; }
-            </style>
-          </head>
-          <body>
-            <h1>API Endpoint Documentation</h1>
-            <div class="endpoint">
-              <span class="method ${endpoint.method.toLowerCase()}">${endpoint.method}</span>
-              <strong>${endpoint.endpoint_path}</strong>
-            </div>
-            <h2>Description</h2>
-            <p>${endpoint.description || 'No description available'}</p>
-            <h2>Details</h2>
-            <ul>
-              <li><strong>Category:</strong> ${endpoint.category}</li>
-              <li><strong>Public:</strong> ${endpoint.is_public ? 'Yes' : 'No'}</li>
-              <li><strong>Requires Authentication:</strong> ${endpoint.requires_authentication ? 'Yes' : 'No'}</li>
-              <li><strong>Sandbox Available:</strong> ${endpoint.sandbox_available ? 'Yes' : 'No'}</li>
-              <li><strong>Testing Status:</strong> ${endpoint.testing_status}</li>
-            </ul>
-          </body>
-        </html>
-      `);
-      docWindow.document.close();
-    }
+    setSelectedEndpoint(endpoint);
+    setShowDocumentation(true);
   };
 
   const handleCreateEndpoint = () => {

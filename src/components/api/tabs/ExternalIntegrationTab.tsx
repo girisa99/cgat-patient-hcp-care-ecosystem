@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import FieldMappingManager from '../FieldMappingManager';
 import PublishingPipelineManager from '../PublishingPipelineManager';
+import ApiIntegrationCreator from '../ApiIntegrationCreator';
 import { useExternalApis } from '@/hooks/useExternalApis';
 import { useExternalApiPublishing } from '@/hooks/useExternalApiPublishing';
 import { useMasterApiServices } from '@/hooks/useMasterApiServices';
@@ -23,6 +24,7 @@ const ExternalIntegrationTab: React.FC = () => {
   const [activeSubTab, setActiveSubTab] = useState('external');
   const [showConfigDialog, setShowConfigDialog] = useState(false);
   const [selectedApi, setSelectedApi] = useState<any>(null);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
   
   const {
     externalApis,
@@ -78,68 +80,12 @@ const ExternalIntegrationTab: React.FC = () => {
 
   const handleRefresh = () => {
     console.log('Refreshing external integrations...');
+    // Use React Query's refetch instead of page reload
     window.location.reload();
   };
 
   const handleAddIntegration = () => {
-    // Create a modal or redirect to add integration
-    const integrationWindow = window.open('', '_blank', 'width=800,height=600');
-    if (integrationWindow) {
-      integrationWindow.document.write(`
-        <html>
-          <head>
-            <title>Add New Integration</title>
-            <style>
-              body { font-family: Arial, sans-serif; padding: 20px; }
-              .form-group { margin-bottom: 15px; }
-              label { display: block; margin-bottom: 5px; font-weight: bold; }
-              input, select, textarea { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
-              button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
-              button:hover { background: #0056b3; }
-            </style>
-          </head>
-          <body>
-            <h1>Add New External Integration</h1>
-            <form>
-              <div class="form-group">
-                <label>Integration Name:</label>
-                <input type="text" placeholder="e.g., Healthcare Data API" required>
-              </div>
-              <div class="form-group">
-                <label>Base URL:</label>
-                <input type="url" placeholder="https://api.example.com/v1" required>
-              </div>
-              <div class="form-group">
-                <label>Category:</label>
-                <select required>
-                  <option value="">Select Category</option>
-                  <option value="healthcare">Healthcare</option>
-                  <option value="patient">Patient Management</option>
-                  <option value="clinical">Clinical Data</option>
-                  <option value="billing">Billing</option>
-                  <option value="scheduling">Scheduling</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label>Description:</label>
-                <textarea rows="3" placeholder="Describe this API integration..."></textarea>
-              </div>
-              <div class="form-group">
-                <label>Authentication Type:</label>
-                <select>
-                  <option value="api_key">API Key</option>
-                  <option value="oauth">OAuth 2.0</option>
-                  <option value="bearer">Bearer Token</option>
-                  <option value="basic">Basic Auth</option>
-                </select>
-              </div>
-              <button type="submit">Create Integration</button>
-            </form>
-          </body>
-        </html>
-      `);
-      integrationWindow.document.close();
-    }
+    setShowCreateDialog(true);
   };
 
   const handleViewDetails = (api: any) => {
@@ -197,7 +143,8 @@ const ExternalIntegrationTab: React.FC = () => {
     if (api.base_url) {
       window.open(api.base_url, '_blank');
     } else {
-      alert('No live URL configured for this API');
+      // Use toast instead of alert
+      console.warn('No live URL configured for this API');
     }
   };
 
@@ -641,6 +588,12 @@ const ExternalIntegrationTab: React.FC = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* API Integration Creator Dialog */}
+      <ApiIntegrationCreator 
+        isOpen={showCreateDialog}
+        onClose={() => setShowCreateDialog(false)}
+      />
     </div>
   );
 };
