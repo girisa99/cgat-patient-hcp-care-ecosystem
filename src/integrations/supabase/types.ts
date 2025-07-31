@@ -6697,6 +6697,10 @@ export type Database = {
         Args: { functionality_id?: string }
         Returns: Json
       }
+      generate_role_based_test_cases: {
+        Args: { target_role?: string }
+        Returns: Json
+      }
       get_complete_schema_info: {
         Args: Record<PropertyKey, never>
         Returns: Json
