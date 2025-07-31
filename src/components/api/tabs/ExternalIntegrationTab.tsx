@@ -163,7 +163,7 @@ const ExternalIntegrationTab: React.FC = () => {
         />
       </div>
 
-      {/* Sub-tabs for different integration aspects */}
+      {/* Consolidated External Integration View */}
       <Tabs value={activeSubTab} onValueChange={setActiveSubTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="external">External APIs</TabsTrigger>

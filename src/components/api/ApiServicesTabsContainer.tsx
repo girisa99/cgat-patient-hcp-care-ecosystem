@@ -18,8 +18,6 @@ import { useRoleBasedNavigation } from '@/hooks/useRoleBasedNavigation';
 import InternalApiServicesTab from './tabs/InternalApiServicesTab';
 import ExternalIntegrationTab from './tabs/ExternalIntegrationTab';
 import DeveloperHubTab from './tabs/DeveloperHubTab';
-import MarketplaceTab from './tabs/MarketplaceTab';
-import ApiKeysTab from './tabs/ApiKeysTab';
 import TestingTab from './tabs/TestingTab';
 
 interface ApiServicesTabsContainerProps {
@@ -47,8 +45,7 @@ const ApiServicesTabsContainer: React.FC<ApiServicesTabsContainerProps> = ({
     isLoadingExternalApis 
   } = useExternalApis();
 
-  // Filter APIs by direction and type for proper categorization
-  // For onboarding team, filter to show only onboarding-related APIs
+  // Role-based filtering for API services
   const filterApisByRole = (apis: any[]) => {
     if (currentRole === 'onboardingTeam') {
       return apis.filter(api => 
@@ -63,55 +60,50 @@ const ApiServicesTabsContainer: React.FC<ApiServicesTabsContainerProps> = ({
     return apis;
   };
 
-  const baseInternalApis = apiServices?.filter(api => 
+  // Categorize APIs properly - eliminate redundant categorization
+  const allFilteredApis = filterApisByRole(apiServices || []);
+  
+  const internalApis = allFilteredApis.filter(api => 
     api.type === 'internal' || api.direction === 'outbound'
-  ) || [];
-  const baseExternalApis = apiServices?.filter(api => 
+  );
+  
+  const filteredExternalApis = allFilteredApis.filter(api => 
     api.type === 'external' || api.direction === 'inbound' || api.direction === 'bidirectional'
-  ) || [];
-  const baseTechnicalApis = apiServices?.filter(api => api.category === 'technical') || [];
-  const baseBusinessApis = apiServices?.filter(api => api.category === 'business') || [];
+  );
 
-  const internalApis = filterApisByRole(baseInternalApis);
-  const externalIntegrationApis = filterApisByRole(baseExternalApis);
-  const technicalApis = filterApisByRole(baseTechnicalApis);
-  const businessApis = filterApisByRole(baseBusinessApis);
-
+  // Simplified tab structure - removed redundant tabs
   const tabs = [
     {
       id: "internal",
       label: "Internal APIs",
       icon: Database,
       count: internalApis.length,
-      component: InternalApiServicesTab
+      component: InternalApiServicesTab,
+      description: "Internal system APIs and services"
     },
     {
       id: "external",
       label: "External Integration",
       icon: ExternalLink,
-      count: externalIntegrationApis.length + (publishedApis?.length || 0),
-      component: ExternalIntegrationTab
+      count: filteredExternalApis.length + (publishedApis?.length || 0),
+      component: ExternalIntegrationTab,
+      description: "External API integrations and publishing pipeline"
     },
     {
       id: "developer",
       label: "Developer Hub",
       icon: Code,
       count: (publishedApis?.length || 0) + (apiKeys?.length || 0),
-      component: DeveloperHubTab
-    },
-    {
-      id: "keys",
-      label: "API Keys",
-      icon: Key,
-      count: apiKeys?.length || 0,
-      component: ApiKeysTab
+      component: DeveloperHubTab,
+      description: "Developer portal with API keys and documentation"
     },
     {
       id: "testing",
-      label: "Testing",
+      label: "Testing & Sandbox",
       icon: TestTube,
       count: apiServices?.length || 0,
-      component: TestingTab
+      component: TestingTab,
+      description: "API testing tools and sandbox environments"
     }
   ];
 
@@ -143,14 +135,14 @@ const ApiServicesTabsContainer: React.FC<ApiServicesTabsContainerProps> = ({
         </div>
       )}
 
-      {/* Overview Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+      {/* Simplified Overview Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="bg-blue-50 border-blue-200">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-blue-600">Internal APIs</p>
-                <p className="text-2xl font-bold text-blue-900">{internalApis.length}</p>
+                <p className="text-sm text-blue-600">Total Services</p>
+                <p className="text-2xl font-bold text-blue-900">{allFilteredApis.length}</p>
               </div>
               <Database className="h-6 w-6 text-blue-500" />
             </div>
@@ -161,10 +153,10 @@ const ApiServicesTabsContainer: React.FC<ApiServicesTabsContainerProps> = ({
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-green-600">External Integration</p>
-                <p className="text-2xl font-bold text-green-900">{externalIntegrationApis.length}</p>
+                <p className="text-sm text-green-600">Internal APIs</p>
+                <p className="text-2xl font-bold text-green-900">{internalApis.length}</p>
               </div>
-              <ExternalLink className="h-6 w-6 text-green-500" />
+              <Database className="h-6 w-6 text-green-500" />
             </div>
           </CardContent>
         </Card>
@@ -173,10 +165,10 @@ const ApiServicesTabsContainer: React.FC<ApiServicesTabsContainerProps> = ({
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-orange-600">Published APIs</p>
-                <p className="text-2xl font-bold text-orange-900">{publishedApis?.length || 0}</p>
+                <p className="text-sm text-orange-600">External APIs</p>
+                <p className="text-2xl font-bold text-orange-900">{filteredExternalApis.length}</p>
               </div>
-              <Upload className="h-6 w-6 text-orange-500" />
+              <ExternalLink className="h-6 w-6 text-orange-500" />
             </div>
           </CardContent>
         </Card>
@@ -192,30 +184,19 @@ const ApiServicesTabsContainer: React.FC<ApiServicesTabsContainerProps> = ({
             </div>
           </CardContent>
         </Card>
-
-        <Card className="bg-cyan-50 border-cyan-200">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-cyan-600">Technical APIs</p>
-                <p className="text-2xl font-bold text-cyan-900">{technicalApis.length}</p>
-              </div>
-              <Code className="h-6 w-6 text-cyan-500" />
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
-      {/* Main Tabs Container */}
+      {/* Simplified Main Tabs Container */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-5 gap-1 h-auto p-1">
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 gap-1 h-auto p-1">
           {tabs.map((tab) => {
             const IconComponent = tab.icon;
             return (
               <TabsTrigger 
                 key={tab.id}
                 value={tab.id} 
-                className="flex flex-col items-center gap-1 py-2 px-2 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                className="flex flex-col items-center gap-1 py-3 px-2 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                title={tab.description}
               >
                 <IconComponent className="h-4 w-4" />
                 <span className="hidden lg:inline truncate">{tab.label}</span>
