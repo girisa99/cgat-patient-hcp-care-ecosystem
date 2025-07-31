@@ -319,7 +319,10 @@ const Testing: React.FC = () => {
                 </p>
               </div>
             )}
-            <TestCasesDisplay />
+            <TestCasesDisplay 
+              filteredTestCases={currentRole === 'onboardingTeam' ? filteredTestCases : undefined}
+              roleBasedMode={true}
+            />
           </TabsContent>
 
           {/* Reporting & Analytics Tab */}

@@ -33,10 +33,20 @@ import {
 import useMasterTesting from '@/hooks/useMasterTesting';
 import { TestExecutionStatus } from './TestExecutionStatus';
 import { DatabaseIntegrationTestingFramework } from './DatabaseIntegrationTestingFramework';
+import { useRoleBasedNavigation } from '@/hooks/useRoleBasedNavigation';
 
-const TestCasesDisplay: React.FC = () => {
+interface TestCasesDisplayProps {
+  filteredTestCases?: any[];
+  roleBasedMode?: boolean;
+}
+
+const TestCasesDisplay: React.FC<TestCasesDisplayProps> = ({ 
+  filteredTestCases: propFilteredTestCases,
+  roleBasedMode = false 
+}) => {
   // Use the ultimate consolidated testing hook
   const testing = useMasterTesting();
+  const { currentRole } = useRoleBasedNavigation();
   
   const {
     testCases,
@@ -77,9 +87,28 @@ const TestCasesDisplay: React.FC = () => {
     return Array.from(topics);
   }, [testCases]);
 
+  // Use role-based filtered test cases or apply additional filtering
+  const baseTestCases = roleBasedMode && propFilteredTestCases ? propFilteredTestCases : testCases;
+  
+  // Apply role-based filtering if not already provided
+  const roleFilteredTestCases = useMemo(() => {
+    if (roleBasedMode && !propFilteredTestCases && currentRole === 'onboardingTeam') {
+      return testCases.filter(testCase => 
+        testCase.related_functionality?.toLowerCase().includes('onboarding') ||
+        testCase.test_description?.toLowerCase().includes('onboarding') ||
+        testCase.test_name?.toLowerCase().includes('onboarding') ||
+        testCase.module_name?.toLowerCase().includes('onboarding') ||
+        testCase.coverage_area?.toLowerCase().includes('onboarding') ||
+        testCase.business_function?.toLowerCase().includes('facility') ||
+        testCase.business_function?.toLowerCase().includes('treatment')
+      );
+    }
+    return baseTestCases;
+  }, [baseTestCases, currentRole, roleBasedMode, propFilteredTestCases, testCases]);
+
   // Filter test cases based on search and filters
   const filteredTestCases = useMemo(() => {
-    return testCases.filter(testCase => {
+    return roleFilteredTestCases.filter(testCase => {
       const matchesSearch = !searchTerm || 
         testCase.test_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         testCase.test_description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -92,7 +121,7 @@ const TestCasesDisplay: React.FC = () => {
       
       return matchesSearch && matchesStatus && matchesType && matchesCategory && matchesTopic;
     });
-  }, [testCases, searchTerm, filterStatus, filterType, filterCategory, filterTopic]);
+  }, [roleFilteredTestCases, searchTerm, filterStatus, filterType, filterCategory, filterTopic]);
 
   // Group test cases by test suite type
   const groupedTestCases = useMemo(() => {
@@ -357,7 +386,7 @@ const TestCasesDisplay: React.FC = () => {
                       {!['unit', 'integration', 'system', 'e2e', 'uat', 'regression'].includes(testType) && <Settings className="h-5 w-5 text-gray-600" />}
                       
                       <span className="capitalize">{testType} Tests</span>
-                      <Badge variant="outline">{testCasesInGroup.length}</Badge>
+                      <Badge variant="outline">{Array.isArray(testCasesInGroup) ? testCasesInGroup.length : 0}</Badge>
                       
                       <div className="ml-auto flex gap-2">
                         <Button
@@ -371,9 +400,9 @@ const TestCasesDisplay: React.FC = () => {
                       </div>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>
+                   <CardContent>
                     <div className="grid gap-3">
-                      {testCasesInGroup.map((testCase) => (
+                      {Array.isArray(testCasesInGroup) && testCasesInGroup.map((testCase) => (
                         <Card key={testCase.id} className="hover:shadow-sm transition-shadow">
                           <CardContent className="p-4">
                             <div className="flex items-start justify-between">
