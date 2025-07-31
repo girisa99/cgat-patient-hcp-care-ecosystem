@@ -124,13 +124,23 @@ const ApiServicesTabsContainer: React.FC<ApiServicesTabsContainerProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Role-based Notice for Onboarding Team */}
+      {/* Role-based Notice */}
       {currentRole === 'onboardingTeam' && (
         <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <h3 className="font-semibold text-blue-900 mb-2">Onboarding Treatment Center APIs</h3>
+          <h3 className="font-semibold text-blue-900 mb-2">📋 Onboarding Treatment Center API View</h3>
           <p className="text-blue-700 text-sm">
-            Viewing onboarding-specific API services. This includes treatment center onboarding APIs, 
-            workflow integration services, and customer onboarding endpoints.
+            <strong>Cleaned & Consolidated View:</strong> Showing onboarding-specific API services with streamlined tabs. 
+            Redundant categories removed. Field mappings, publishing pipeline consolidated under External Integration.
+          </p>
+        </div>
+      )}
+
+      {currentRole === 'superAdmin' && (
+        <div className="mb-4 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+          <h3 className="font-semibold text-purple-900 mb-2">🔧 SuperAdmin API Management</h3>
+          <p className="text-purple-700 text-sm">
+            <strong>Consolidated Structure:</strong> Reduced from 5+ tabs to 4 focused areas. 
+            Eliminated redundant Business/Technical API categories. API Keys moved to Developer Hub.
           </p>
         </div>
       )}
