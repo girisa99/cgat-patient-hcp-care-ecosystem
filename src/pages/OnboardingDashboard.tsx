@@ -26,6 +26,7 @@ import { useMasterOnboarding } from '@/hooks/useMasterOnboarding';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { ClusteredOnboardingWizard } from '@/components/onboarding/ClusteredOnboardingWizard';
 import { OnboardingTable } from '@/components/onboarding/OnboardingTable';
+import { OnboardingProgressDashboard } from '@/components/onboarding/OnboardingProgressDashboard';
 import { TreatmentCenterOnboarding } from '@/types/onboarding';
 
 const OnboardingDashboard: React.FC = () => {
@@ -67,9 +68,15 @@ const OnboardingDashboard: React.FC = () => {
     setView('wizard'); // Use comprehensive wizard with all features
   };
 
-  const handleEditApplication = (applicationId: string) => {
+  const handleEditApplication = (applicationId: string, specificStep?: string) => {
     setEditingApplicationId(applicationId);
     setView('wizard'); // Use comprehensive wizard with all features
+  };
+
+  const handleNavigateToStep = (applicationId: string, step: string) => {
+    setEditingApplicationId(applicationId);
+    setView('wizard');
+    // The wizard will automatically navigate to the specific step
   };
 
   const handleWizardSubmit = async (data: any) => {
@@ -301,6 +308,12 @@ const OnboardingDashboard: React.FC = () => {
           </Card>
         </div>
 
+        {/* Enhanced Application Progress Tracking */}
+        <OnboardingProgressDashboard 
+          applications={onboardingApplications}
+          onNavigateToStep={handleNavigateToStep}
+        />
+
         {/* Treatment Center Applications Table */}
         <Card>
           <CardHeader>
@@ -334,7 +347,7 @@ const OnboardingDashboard: React.FC = () => {
             <OnboardingTable
               applications={filteredApplications}
               isLoading={isLoading}
-              onEdit={handleEditApplication}
+              onEdit={(id) => handleEditApplication(id)}
             />
           </CardContent>
         </Card>
