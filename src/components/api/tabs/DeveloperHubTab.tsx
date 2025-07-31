@@ -16,6 +16,10 @@ import { useApiKeys } from '@/hooks/useApiKeys';
 import { useTesting } from '@/hooks/useTesting';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import ApiSandboxEnvironment from '../ApiSandboxEnvironment';
+import ApiEndpointManager from '../ApiEndpointManager';
+import ApiKeyManager from '../ApiKeyManager';
+import PostmanCollectionManager from '../PostmanCollectionManager';
 
 const DeveloperHubTab: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -47,6 +51,13 @@ const DeveloperHubTab: React.FC = () => {
 
   const handleRefresh = () => {
     console.log('Refreshing developer hub...');
+    // Refresh functionality would be implemented here
+    window.location.reload();
+  };
+
+  const handleNewApiKey = () => {
+    // This would open the API key creation dialog
+    console.log('Creating new API key...');
   };
 
   return (
@@ -62,7 +73,7 @@ const DeveloperHubTab: React.FC = () => {
             <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
-          <Button>
+          <Button onClick={handleNewApiKey}>
             <Plus className="h-4 w-4 mr-2" />
             New API Key
           </Button>
@@ -156,31 +167,7 @@ const DeveloperHubTab: React.FC = () => {
         </TabsList>
 
         <TabsContent value="sandbox" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <PlayCircle className="h-5 w-5" />
-                <span>API Sandbox Environment</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-12">
-                <PlayCircle className="h-16 w-16 text-blue-600 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold mb-2">Interactive API Testing</h3>
-                <p className="text-gray-600 mb-6">Test your APIs in a secure sandbox environment with real-time responses</p>
-                <div className="flex items-center justify-center gap-3">
-                  <Button>
-                    <PlayCircle className="h-4 w-4 mr-2" />
-                    Launch Sandbox
-                  </Button>
-                  <Button variant="outline">
-                    <Settings className="h-4 w-4 mr-2" />
-                    Configure
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <ApiSandboxEnvironment />
         </TabsContent>
 
         <TabsContent value="published" className="mt-6">
@@ -236,81 +223,15 @@ const DeveloperHubTab: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="endpoints" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Zap className="h-5 w-5" />
-                <span>API Endpoints</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-12">
-                <Zap className="h-16 w-16 text-purple-600 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold mb-2">Endpoint Management</h3>
-                <p className="text-gray-600 mb-6">View and manage all available API endpoints with detailed specifications</p>
-                <Button>
-                  <Eye className="h-4 w-4 mr-2" />
-                  View All Endpoints
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <ApiEndpointManager />
         </TabsContent>
 
         <TabsContent value="postman" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Download className="h-5 w-5" />
-                <span>Postman Collections</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-12">
-                <Download className="h-16 w-16 text-orange-600 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold mb-2">Ready-to-Use Collections</h3>
-                <p className="text-gray-600 mb-6">Download pre-configured Postman collections for all published APIs</p>
-                <div className="flex items-center justify-center gap-3">
-                  <Button>
-                    <Download className="h-4 w-4 mr-2" />
-                    Download Collection
-                  </Button>
-                  <Button variant="outline">
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    Import to Postman
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <PostmanCollectionManager />
         </TabsContent>
 
         <TabsContent value="keys" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Key className="h-5 w-5" />
-                <span>API Keys ({apiKeys?.length || 0})</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-12">
-                <Key className="h-16 w-16 text-green-600 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold mb-2">API Key Management</h3>
-                <p className="text-gray-600 mb-6">Create and manage API keys for secure access to published APIs</p>
-                <div className="flex items-center justify-center gap-3">
-                  <Button>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Generate New Key
-                  </Button>
-                  <Button variant="outline">
-                    <Settings className="h-4 w-4 mr-2" />
-                    Manage Keys
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <ApiKeyManager />
         </TabsContent>
 
         <TabsContent value="testing" className="mt-6">
