@@ -49,6 +49,7 @@ interface PendingActivity {
 }
 
 export function OnboardingProgressDashboard({ applications, onNavigateToStep }: OnboardingProgressDashboardProps) {
+  console.log('🔍 OnboardingProgressDashboard received applications:', applications?.length || 0, applications);
   
   // Calculate detailed progress for each application
   const calculateApplicationProgress = (app: any): ApplicationProgress => {
@@ -201,13 +202,18 @@ export function OnboardingProgressDashboard({ applications, onNavigateToStep }: 
   };
 
   const progressData = applications
-    .filter(app => app.legal_name || app.dba_name) // Filter out incomplete applications
+    .filter(app => {
+      console.log('🔍 Filtering app:', app.legal_name || app.dba_name, app);
+      return app.legal_name || app.dba_name;
+    }) // Filter out incomplete applications
     .map(calculateApplicationProgress)
     .sort((a, b) => {
       // Sort by urgency first, then by days in process
       const urgencyOrder = { critical: 4, high: 3, medium: 2, low: 1 };
       return urgencyOrder[b.urgencyLevel] - urgencyOrder[a.urgencyLevel] || b.daysInProcess - a.daysInProcess;
     });
+
+  console.log('🔍 Progress data after filtering:', progressData?.length || 0, progressData);
 
   const getUrgencyColor = (urgency: string) => {
     switch (urgency) {
