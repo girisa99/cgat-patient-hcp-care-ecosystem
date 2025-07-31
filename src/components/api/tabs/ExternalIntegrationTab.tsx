@@ -4,11 +4,16 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { 
   ExternalLink, Upload, RefreshCw, Plus, Search,
   Globe, Code, Settings, CheckCircle, Clock,
   Eye, Map, FileText
 } from "lucide-react";
+import FieldMappingManager from '../FieldMappingManager';
+import PublishingPipelineManager from '../PublishingPipelineManager';
 import { useExternalApis } from '@/hooks/useExternalApis';
 import { useExternalApiPublishing } from '@/hooks/useExternalApiPublishing';
 import { useMasterApiServices } from '@/hooks/useMasterApiServices';
@@ -16,6 +21,8 @@ import { useMasterApiServices } from '@/hooks/useMasterApiServices';
 const ExternalIntegrationTab: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeSubTab, setActiveSubTab] = useState('external');
+  const [showConfigDialog, setShowConfigDialog] = useState(false);
+  const [selectedApi, setSelectedApi] = useState<any>(null);
   
   const {
     externalApis,
@@ -181,65 +188,9 @@ const ExternalIntegrationTab: React.FC = () => {
   };
 
   const handleConfigure = (api: any) => {
-    const configWindow = window.open('', '_blank', 'width=800,height=600');
-    if (configWindow) {
-      configWindow.document.write(`
-        <html>
-          <head>
-            <title>Configure ${api.external_name}</title>
-            <style>
-              body { font-family: Arial, sans-serif; padding: 20px; }
-              .form-group { margin-bottom: 15px; }
-              label { display: block; margin-bottom: 5px; font-weight: bold; }
-              input, select, textarea { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
-              button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px; }
-              button:hover { background: #0056b3; }
-              .save-btn { background: #28a745; }
-              .save-btn:hover { background: #1e7e34; }
-            </style>
-          </head>
-          <body>
-            <h1>Configure ${api.external_name}</h1>
-            
-            <form>
-              <div class="form-group">
-                <label>API Name:</label>
-                <input type="text" value="${api.external_name}" required>
-              </div>
-              
-              <div class="form-group">
-                <label>Base URL:</label>
-                <input type="url" value="${api.base_url || ''}" placeholder="https://api.example.com/v1">
-              </div>
-              
-              <div class="form-group">
-                <label>Description:</label>
-                <textarea rows="3">${api.external_description || ''}</textarea>
-              </div>
-              
-              <div class="form-group">
-                <label>Status:</label>
-                <select>
-                  <option value="draft" ${api.status === 'draft' ? 'selected' : ''}>Draft</option>
-                  <option value="active" ${api.status === 'active' ? 'selected' : ''}>Active</option>
-                  <option value="published" ${api.status === 'published' ? 'selected' : ''}>Published</option>
-                  <option value="deprecated" ${api.status === 'deprecated' ? 'selected' : ''}>Deprecated</option>
-                </select>
-              </div>
-              
-              <div class="form-group">
-                <label>Category:</label>
-                <input type="text" value="${api.category || ''}" placeholder="e.g., healthcare, patient">
-              </div>
-              
-              <button type="button" class="save-btn">Save Configuration</button>
-              <button type="button">Cancel</button>
-            </form>
-          </body>
-        </html>
-      `);
-      configWindow.document.close();
-    }
+    // Open an inline configuration dialog instead of a new window
+    setShowConfigDialog(true);
+    setSelectedApi(api);
   };
 
   const handleViewLive = (api: any) => {
@@ -609,100 +560,87 @@ const ExternalIntegrationTab: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="publishing" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Upload className="h-5 w-5" />
-                <span>Publishing Pipeline ({publishedApis?.length || 0})</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {filteredPublishedApis.length === 0 ? (
-                <div className="text-center py-12 text-gray-500">
-                  <Upload className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <h3 className="font-semibold mb-2">No APIs in Publishing Pipeline</h3>
-                  <p className="text-sm mb-4">Start by publishing an internal API to external consumers.</p>
-                  <Button onClick={handlePublishApi}>
-                    <Upload className="h-4 w-4 mr-2" />
-                    Publish API
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {filteredPublishedApis.map((api) => (
-                    <Card key={api.id} className="hover:shadow-md transition-shadow">
-                      <CardContent className="p-6">
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                              <h3 className="font-semibold">{api.external_name}</h3>
-                              <Badge variant="default">
-                                <CheckCircle className="h-3 w-3 mr-1" />
-                                Published
-                              </Badge>
-                              <Badge variant="outline">v{api.version}</Badge>
-                            </div>
-                            
-                            <p className="text-sm text-gray-600 mb-3">
-                              {api.external_description}
-                            </p>
-                            
-                            <div className="flex items-center gap-4 text-sm text-gray-600">
-                              <span>Published: {new Date(api.published_at || api.created_at).toLocaleDateString()}</span>
-                              <span>Visibility: {api.visibility}</span>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center gap-2">
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => handleViewLive(api)}
-                            >
-                              <Globe className="h-4 w-4 mr-1" />
-                              View Live
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => handleConfigure(api)}
-                            >
-                              <Settings className="h-4 w-4 mr-1" />
-                              Manage
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <PublishingPipelineManager />
         </TabsContent>
 
         <TabsContent value="mappings" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Map className="h-5 w-5" />
-                <span>Field Mappings</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-12 text-gray-500">
-                <Map className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <h3 className="font-semibold mb-2">Field Mapping Configuration</h3>
-                <p className="text-sm mb-4">Configure data transformations between internal and external API formats.</p>
-                <Button onClick={handleCreateMapping}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Mapping
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <FieldMappingManager />
         </TabsContent>
       </Tabs>
+
+      {/* Configuration Dialog */}
+      <Dialog open={showConfigDialog} onOpenChange={setShowConfigDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Configure {selectedApi?.external_name}</DialogTitle>
+          </DialogHeader>
+          {selectedApi && (
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">API Name</label>
+                <Input 
+                  defaultValue={selectedApi.external_name}
+                  placeholder="API Name"
+                />
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium mb-2 block">Base URL</label>
+                <Input 
+                  defaultValue={selectedApi.base_url || ''}
+                  placeholder="https://api.example.com/v1"
+                  type="url"
+                />
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium mb-2 block">Description</label>
+                <Textarea 
+                  defaultValue={selectedApi.external_description || ''}
+                  placeholder="Describe this API..."
+                  rows={3}
+                />
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium mb-2 block">Status</label>
+                <Select defaultValue={selectedApi.status}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="draft">Draft</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="published">Published</SelectItem>
+                    <SelectItem value="deprecated">Deprecated</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium mb-2 block">Category</label>
+                <Input 
+                  defaultValue={selectedApi.category || ''}
+                  placeholder="e.g., healthcare, patient"
+                />
+              </div>
+              
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => setShowConfigDialog(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={() => {
+                  // Save configuration logic here
+                  setShowConfigDialog(false);
+                  console.log('Configuration saved for:', selectedApi.external_name);
+                }}>
+                  Save Configuration
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

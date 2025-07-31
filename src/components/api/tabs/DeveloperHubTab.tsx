@@ -56,8 +56,15 @@ const DeveloperHubTab: React.FC = () => {
   };
 
   const handleNewApiKey = () => {
-    // This would open the API key creation dialog
-    console.log('Creating new API key...');
+    // Switch to the API keys tab and trigger create dialog
+    setActiveSubTab('keys');
+    // Add a small delay to ensure tab is active before triggering dialog
+    setTimeout(() => {
+      const createButton = document.querySelector('[data-testid="create-api-key-trigger"]') as HTMLButtonElement;
+      if (createButton) {
+        createButton.click();
+      }
+    }, 100);
   };
 
   return (

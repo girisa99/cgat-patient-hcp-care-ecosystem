@@ -143,7 +143,7 @@ const ApiKeyManager: React.FC = () => {
         </div>
         <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
           <DialogTrigger asChild>
-            <Button>
+            <Button data-testid="create-api-key-trigger">
               <Plus className="h-4 w-4 mr-2" />
               Create API Key
             </Button>
