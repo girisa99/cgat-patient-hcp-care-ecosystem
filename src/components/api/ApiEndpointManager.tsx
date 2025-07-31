@@ -4,11 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { 
   Zap, Plus, Search, Eye, Edit, Trash2, 
   Globe, Lock, Clock, PlayCircle, Code
 } from "lucide-react";
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useMasterToast } from '@/hooks/useMasterToast';
 
@@ -31,7 +35,18 @@ interface ApiEndpoint {
 const ApiEndpointManager: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [newEndpoint, setNewEndpoint] = useState({
+    endpoint_path: '',
+    method: 'GET',
+    description: '',
+    category: '',
+    is_public: false,
+    requires_authentication: true,
+    sandbox_available: true
+  });
   const { showSuccess, showError } = useMasterToast();
+  const queryClient = useQueryClient();
 
   // Fetch endpoints from database
   const { data: endpoints = [], isLoading, refetch } = useQuery({
@@ -80,13 +95,108 @@ const ApiEndpointManager: React.FC = () => {
     }
   };
 
+  // Create endpoint mutation
+  const createEndpointMutation = useMutation({
+    mutationFn: async (endpointData: any) => {
+      const { data, error } = await supabase
+        .from('api_endpoints')
+        .insert([{
+          ...endpointData,
+          rate_limit_config: { period: 'hour', requests: 1000 },
+          request_schema: {},
+          response_schema: {},
+          example_request: {},
+          example_response: {},
+          testing_status: 'pending'
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['api-endpoints'] });
+      setShowCreateDialog(false);
+      setNewEndpoint({
+        endpoint_path: '',
+        method: 'GET',
+        description: '',
+        category: '',
+        is_public: false,
+        requires_authentication: true,
+        sandbox_available: true
+      });
+      showSuccess('Endpoint created successfully');
+    },
+    onError: (error) => {
+      showError('Failed to create endpoint');
+      console.error('Create endpoint error:', error);
+    }
+  });
+
   const testEndpoint = (endpoint: ApiEndpoint) => {
     showSuccess(`Testing endpoint: ${endpoint.method} ${endpoint.endpoint_path}`);
     // This would integrate with the sandbox environment
+    // For now, open sandbox with this endpoint pre-filled
+    const sandboxUrl = `/developer-hub?tab=sandbox&endpoint=${encodeURIComponent(endpoint.endpoint_path)}&method=${endpoint.method}`;
+    window.open(sandboxUrl, '_blank');
   };
 
   const viewDocumentation = (endpoint: ApiEndpoint) => {
     showSuccess(`Viewing documentation for: ${endpoint.endpoint_path}`);
+    // Create a documentation view
+    const docWindow = window.open('', '_blank', 'width=800,height=600');
+    if (docWindow) {
+      docWindow.document.write(`
+        <html>
+          <head>
+            <title>API Documentation - ${endpoint.endpoint_path}</title>
+            <style>
+              body { font-family: Arial, sans-serif; padding: 20px; }
+              .endpoint { background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 10px 0; }
+              .method { padding: 5px 10px; border-radius: 3px; color: white; font-weight: bold; }
+              .get { background: #28a745; }
+              .post { background: #007bff; }
+              .put { background: #ffc107; color: black; }
+              .delete { background: #dc3545; }
+              .patch { background: #6f42c1; }
+            </style>
+          </head>
+          <body>
+            <h1>API Endpoint Documentation</h1>
+            <div class="endpoint">
+              <span class="method ${endpoint.method.toLowerCase()}">${endpoint.method}</span>
+              <strong>${endpoint.endpoint_path}</strong>
+            </div>
+            <h2>Description</h2>
+            <p>${endpoint.description || 'No description available'}</p>
+            <h2>Details</h2>
+            <ul>
+              <li><strong>Category:</strong> ${endpoint.category}</li>
+              <li><strong>Public:</strong> ${endpoint.is_public ? 'Yes' : 'No'}</li>
+              <li><strong>Requires Authentication:</strong> ${endpoint.requires_authentication ? 'Yes' : 'No'}</li>
+              <li><strong>Sandbox Available:</strong> ${endpoint.sandbox_available ? 'Yes' : 'No'}</li>
+              <li><strong>Testing Status:</strong> ${endpoint.testing_status}</li>
+            </ul>
+          </body>
+        </html>
+      `);
+      docWindow.document.close();
+    }
+  };
+
+  const handleCreateEndpoint = () => {
+    if (!newEndpoint.endpoint_path.trim()) {
+      showError('Please enter an endpoint path');
+      return;
+    }
+    if (!newEndpoint.category.trim()) {
+      showError('Please enter a category');
+      return;
+    }
+    
+    createEndpointMutation.mutate(newEndpoint);
   };
 
   return (
@@ -100,10 +210,108 @@ const ApiEndpointManager: React.FC = () => {
           </h2>
           <p className="text-gray-600">Manage and test API endpoints</p>
         </div>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Endpoint
-        </Button>
+        <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Endpoint
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Create New API Endpoint</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Endpoint Path</label>
+                <Input
+                  placeholder="/api/v1/users"
+                  value={newEndpoint.endpoint_path}
+                  onChange={(e) => setNewEndpoint(prev => ({ ...prev, endpoint_path: e.target.value }))}
+                />
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium mb-2 block">HTTP Method</label>
+                <Select 
+                  value={newEndpoint.method} 
+                  onValueChange={(value) => setNewEndpoint(prev => ({ ...prev, method: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="GET">GET</SelectItem>
+                    <SelectItem value="POST">POST</SelectItem>
+                    <SelectItem value="PUT">PUT</SelectItem>
+                    <SelectItem value="DELETE">DELETE</SelectItem>
+                    <SelectItem value="PATCH">PATCH</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-2 block">Category</label>
+                <Input
+                  placeholder="e.g., users, patients, auth"
+                  value={newEndpoint.category}
+                  onChange={(e) => setNewEndpoint(prev => ({ ...prev, category: e.target.value }))}
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-2 block">Description</label>
+                <Textarea
+                  placeholder="Describe what this endpoint does..."
+                  value={newEndpoint.description}
+                  onChange={(e) => setNewEndpoint(prev => ({ ...prev, description: e.target.value }))}
+                  rows={3}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="is_public"
+                    checked={newEndpoint.is_public}
+                    onCheckedChange={(checked) => setNewEndpoint(prev => ({ ...prev, is_public: !!checked }))}
+                  />
+                  <label htmlFor="is_public" className="text-sm">Public endpoint (no authentication required)</label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="requires_authentication"
+                    checked={newEndpoint.requires_authentication}
+                    onCheckedChange={(checked) => setNewEndpoint(prev => ({ ...prev, requires_authentication: !!checked }))}
+                  />
+                  <label htmlFor="requires_authentication" className="text-sm">Requires authentication</label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="sandbox_available"
+                    checked={newEndpoint.sandbox_available}
+                    onCheckedChange={(checked) => setNewEndpoint(prev => ({ ...prev, sandbox_available: !!checked }))}
+                  />
+                  <label htmlFor="sandbox_available" className="text-sm">Available in sandbox</label>
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleCreateEndpoint}
+                  disabled={createEndpointMutation.isPending}
+                >
+                  {createEndpointMutation.isPending ? 'Creating...' : 'Create Endpoint'}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Statistics */}

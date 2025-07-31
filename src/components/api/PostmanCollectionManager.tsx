@@ -43,34 +43,53 @@ const PostmanCollectionManager: React.FC = () => {
   const generateCollection = async (apiId: string, apiName: string) => {
     setIsGenerating(true);
     try {
-      // Simulate collection generation
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const mockCollection = {
+      // Get the actual API service data
+      const apiService = apiServices?.find(api => api.id === apiId);
+      if (!apiService) {
+        throw new Error('API service not found');
+      }
+
+      // Generate realistic collection based on API service data
+      const collection = {
         info: {
           name: `${apiName} API Collection`,
-          description: `Generated collection for ${apiName}`,
+          description: `Generated collection for ${apiName} - ${apiService.description || 'Healthcare API Integration'}`,
           version: '2.1.0',
           schema: 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json'
         },
         item: [
           {
-            name: 'Get Users',
+            name: `Get ${apiService.category} Data`,
             request: {
               method: 'GET',
-              header: [],
+              header: [
+                {
+                  key: 'Authorization',
+                  value: 'Bearer {{apiKey}}',
+                  type: 'text'
+                },
+                {
+                  key: 'Content-Type',
+                  value: 'application/json'
+                }
+              ],
               url: {
-                raw: '{{baseUrl}}/users',
+                raw: `{{baseUrl}}/${apiService.category.toLowerCase()}`,
                 host: ['{{baseUrl}}'],
-                path: ['users']
+                path: [apiService.category.toLowerCase()]
               }
             }
           },
           {
-            name: 'Create User',
+            name: `Create ${apiService.category} Record`,
             request: {
               method: 'POST',
               header: [
+                {
+                  key: 'Authorization',
+                  value: 'Bearer {{apiKey}}',
+                  type: 'text'
+                },
                 {
                   key: 'Content-Type',
                   value: 'application/json'
@@ -79,14 +98,45 @@ const PostmanCollectionManager: React.FC = () => {
               body: {
                 mode: 'raw',
                 raw: JSON.stringify({
-                  name: 'John Doe',
-                  email: 'john@example.com'
+                  name: 'Sample Record',
+                  category: apiService.category,
+                  created_at: new Date().toISOString()
                 }, null, 2)
               },
               url: {
-                raw: '{{baseUrl}}/users',
+                raw: `{{baseUrl}}/${apiService.category.toLowerCase()}`,
                 host: ['{{baseUrl}}'],
-                path: ['users']
+                path: [apiService.category.toLowerCase()]
+              }
+            }
+          },
+          {
+            name: `Update ${apiService.category} Record`,
+            request: {
+              method: 'PUT',
+              header: [
+                {
+                  key: 'Authorization',
+                  value: 'Bearer {{apiKey}}',
+                  type: 'text'
+                },
+                {
+                  key: 'Content-Type',
+                  value: 'application/json'
+                }
+              ],
+              body: {
+                mode: 'raw',
+                raw: JSON.stringify({
+                  id: '{{recordId}}',
+                  name: 'Updated Record',
+                  updated_at: new Date().toISOString()
+                }, null, 2)
+              },
+              url: {
+                raw: `{{baseUrl}}/${apiService.category.toLowerCase()}/{{recordId}}`,
+                host: ['{{baseUrl}}'],
+                path: [apiService.category.toLowerCase(), '{{recordId}}']
               }
             }
           }
@@ -94,16 +144,27 @@ const PostmanCollectionManager: React.FC = () => {
         variable: [
           {
             key: 'baseUrl',
-            value: 'https://api.example.com/v1',
+            value: apiService.base_url || 'https://api.healthcare.com/v1',
+            type: 'string'
+          },
+          {
+            key: 'apiKey',
+            value: 'your-api-key-here',
+            type: 'string'
+          },
+          {
+            key: 'recordId',
+            value: '1',
             type: 'string'
           }
         ]
       };
 
       showSuccess(`Collection generated for ${apiName}`);
-      return mockCollection;
+      return collection;
     } catch (error) {
       showError('Failed to generate collection');
+      throw error;
     } finally {
       setIsGenerating(false);
     }
@@ -131,15 +192,68 @@ const PostmanCollectionManager: React.FC = () => {
     }
   };
 
-  const importToPostman = (collection: PostmanCollection) => {
-    // This would open Postman with the collection
-    const postmanUrl = `https://god.gw.postman.com/run-collection/${collection.id}`;
-    window.open(postmanUrl, '_blank');
-    showSuccess('Redirecting to Postman...');
+  const importToPostman = async (collection: PostmanCollection) => {
+    try {
+      // Generate the collection first
+      const collectionData = await generateCollection(collection.apiId, collection.name);
+      
+      if (collectionData) {
+        // Create a temporary download for Postman import
+        const blob = new Blob([JSON.stringify(collectionData, null, 2)], {
+          type: 'application/json'
+        });
+        const url = URL.createObjectURL(blob);
+        
+        // Try to open Postman import URL
+        const postmanImportUrl = `https://www.postman.com/collections/import?url=${encodeURIComponent(url)}`;
+        window.open(postmanImportUrl, '_blank');
+        
+        showSuccess('Opening Postman for import...');
+        
+        // Clean up the URL after a delay
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+      }
+    } catch (error) {
+      showError('Failed to prepare collection for Postman import');
+    }
   };
 
-  const viewCollection = (collection: PostmanCollection) => {
-    showSuccess(`Viewing collection: ${collection.name}`);
+  const viewCollection = async (collection: PostmanCollection) => {
+    try {
+      const collectionData = await generateCollection(collection.apiId, collection.name);
+      
+      if (collectionData) {
+        // Create a modal or new window to display collection details
+        const detailsWindow = window.open('', '_blank', 'width=800,height=600');
+        if (detailsWindow) {
+          detailsWindow.document.write(`
+            <html>
+              <head>
+                <title>${collection.name} - Collection Details</title>
+                <style>
+                  body { font-family: Arial, sans-serif; padding: 20px; }
+                  pre { background: #f5f5f5; padding: 15px; border-radius: 5px; overflow: auto; }
+                  .header { border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 20px; }
+                </style>
+              </head>
+              <body>
+                <div class="header">
+                  <h1>${collection.name}</h1>
+                  <p>${collection.description}</p>
+                </div>
+                <h2>Collection JSON</h2>
+                <pre>${JSON.stringify(collectionData, null, 2)}</pre>
+              </body>
+            </html>
+          `);
+          detailsWindow.document.close();
+        }
+        
+        showSuccess(`Viewing collection: ${collection.name}`);
+      }
+    } catch (error) {
+      showError('Failed to view collection details');
+    }
   };
 
   const generateAllCollections = async () => {
@@ -153,6 +267,45 @@ const PostmanCollectionManager: React.FC = () => {
       showSuccess('All collections generated successfully');
     } catch (error) {
       showError('Failed to generate all collections');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const downloadAllCollections = async () => {
+    setIsGenerating(true);
+    try {
+      const collections = await Promise.all(
+        apiServices?.map(async (api) => {
+          const collection = await generateCollection(api.id, api.name);
+          return {
+            filename: `${api.name.replace(/\s+/g, '_')}.postman_collection.json`,
+            data: collection
+          };
+        }) || []
+      );
+
+      // Create a zip-like bundle (simplified as multiple downloads)
+      for (const collection of collections) {
+        const blob = new Blob([JSON.stringify(collection.data, null, 2)], {
+          type: 'application/json'
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = collection.filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        // Small delay between downloads
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+
+      showSuccess('All collections downloaded successfully');
+    } catch (error) {
+      showError('Failed to download collections bundle');
     } finally {
       setIsGenerating(false);
     }
@@ -178,7 +331,7 @@ const PostmanCollectionManager: React.FC = () => {
             <RefreshCw className={`h-4 w-4 mr-2 ${isGenerating ? 'animate-spin' : ''}`} />
             Generate All
           </Button>
-          <Button>
+          <Button onClick={downloadAllCollections}>
             <Download className="h-4 w-4 mr-2" />
             Download Bundle
           </Button>
@@ -305,15 +458,29 @@ const PostmanCollectionManager: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Button variant="outline" className="h-20 flex flex-col">
+            <Button 
+              variant="outline" 
+              className="h-20 flex flex-col"
+              onClick={downloadAllCollections}
+              disabled={isGenerating}
+            >
               <Download className="h-6 w-6 mb-2" />
               Download All Collections
             </Button>
-            <Button variant="outline" className="h-20 flex flex-col">
+            <Button 
+              variant="outline" 
+              className="h-20 flex flex-col"
+              onClick={generateAllCollections}
+              disabled={isGenerating}
+            >
               <RefreshCw className="h-6 w-6 mb-2" />
               Regenerate Collections
             </Button>
-            <Button variant="outline" className="h-20 flex flex-col">
+            <Button 
+              variant="outline" 
+              className="h-20 flex flex-col"
+              onClick={() => window.open('https://www.postman.com/', '_blank')}
+            >
               <ExternalLink className="h-6 w-6 mb-2" />
               Open Postman Workspace
             </Button>

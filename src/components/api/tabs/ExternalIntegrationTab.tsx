@@ -71,6 +71,352 @@ const ExternalIntegrationTab: React.FC = () => {
 
   const handleRefresh = () => {
     console.log('Refreshing external integrations...');
+    window.location.reload();
+  };
+
+  const handleAddIntegration = () => {
+    // Create a modal or redirect to add integration
+    const integrationWindow = window.open('', '_blank', 'width=800,height=600');
+    if (integrationWindow) {
+      integrationWindow.document.write(`
+        <html>
+          <head>
+            <title>Add New Integration</title>
+            <style>
+              body { font-family: Arial, sans-serif; padding: 20px; }
+              .form-group { margin-bottom: 15px; }
+              label { display: block; margin-bottom: 5px; font-weight: bold; }
+              input, select, textarea { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+              button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
+              button:hover { background: #0056b3; }
+            </style>
+          </head>
+          <body>
+            <h1>Add New External Integration</h1>
+            <form>
+              <div class="form-group">
+                <label>Integration Name:</label>
+                <input type="text" placeholder="e.g., Healthcare Data API" required>
+              </div>
+              <div class="form-group">
+                <label>Base URL:</label>
+                <input type="url" placeholder="https://api.example.com/v1" required>
+              </div>
+              <div class="form-group">
+                <label>Category:</label>
+                <select required>
+                  <option value="">Select Category</option>
+                  <option value="healthcare">Healthcare</option>
+                  <option value="patient">Patient Management</option>
+                  <option value="clinical">Clinical Data</option>
+                  <option value="billing">Billing</option>
+                  <option value="scheduling">Scheduling</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Description:</label>
+                <textarea rows="3" placeholder="Describe this API integration..."></textarea>
+              </div>
+              <div class="form-group">
+                <label>Authentication Type:</label>
+                <select>
+                  <option value="api_key">API Key</option>
+                  <option value="oauth">OAuth 2.0</option>
+                  <option value="bearer">Bearer Token</option>
+                  <option value="basic">Basic Auth</option>
+                </select>
+              </div>
+              <button type="submit">Create Integration</button>
+            </form>
+          </body>
+        </html>
+      `);
+      integrationWindow.document.close();
+    }
+  };
+
+  const handleViewDetails = (api: any) => {
+    const detailsWindow = window.open('', '_blank', 'width=800,height=600');
+    if (detailsWindow) {
+      detailsWindow.document.write(`
+        <html>
+          <head>
+            <title>${api.external_name} - Details</title>
+            <style>
+              body { font-family: Arial, sans-serif; padding: 20px; }
+              .detail-section { margin-bottom: 20px; padding: 15px; background: #f9f9f9; border-radius: 5px; }
+              .badge { display: inline-block; padding: 4px 8px; background: #007bff; color: white; border-radius: 3px; font-size: 12px; margin-right: 5px; }
+              .status-active { background: #28a745; }
+              .status-draft { background: #6c757d; }
+            </style>
+          </head>
+          <body>
+            <h1>${api.external_name}</h1>
+            
+            <div class="detail-section">
+              <h2>Basic Information</h2>
+              <p><strong>Description:</strong> ${api.external_description || 'No description available'}</p>
+              <p><strong>Category:</strong> ${api.category || 'Not specified'}</p>
+              <p><strong>Version:</strong> ${api.version || '1.0.0'}</p>
+              <p><strong>Status:</strong> <span class="badge status-${api.status}">${api.status}</span></p>
+            </div>
+
+            <div class="detail-section">
+              <h2>Configuration</h2>
+              <p><strong>Base URL:</strong> ${api.base_url || 'Not configured'}</p>
+              <p><strong>Pricing Model:</strong> ${api.pricing_model || 'Not specified'}</p>
+              <p><strong>Visibility:</strong> ${api.visibility || 'Private'}</p>
+            </div>
+
+            <div class="detail-section">
+              <h2>Timestamps</h2>
+              <p><strong>Created:</strong> ${new Date(api.created_at).toLocaleString()}</p>
+              ${api.published_at ? `<p><strong>Published:</strong> ${new Date(api.published_at).toLocaleString()}</p>` : ''}
+            </div>
+          </body>
+        </html>
+      `);
+      detailsWindow.document.close();
+    }
+  };
+
+  const handleConfigure = (api: any) => {
+    const configWindow = window.open('', '_blank', 'width=800,height=600');
+    if (configWindow) {
+      configWindow.document.write(`
+        <html>
+          <head>
+            <title>Configure ${api.external_name}</title>
+            <style>
+              body { font-family: Arial, sans-serif; padding: 20px; }
+              .form-group { margin-bottom: 15px; }
+              label { display: block; margin-bottom: 5px; font-weight: bold; }
+              input, select, textarea { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+              button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px; }
+              button:hover { background: #0056b3; }
+              .save-btn { background: #28a745; }
+              .save-btn:hover { background: #1e7e34; }
+            </style>
+          </head>
+          <body>
+            <h1>Configure ${api.external_name}</h1>
+            
+            <form>
+              <div class="form-group">
+                <label>API Name:</label>
+                <input type="text" value="${api.external_name}" required>
+              </div>
+              
+              <div class="form-group">
+                <label>Base URL:</label>
+                <input type="url" value="${api.base_url || ''}" placeholder="https://api.example.com/v1">
+              </div>
+              
+              <div class="form-group">
+                <label>Description:</label>
+                <textarea rows="3">${api.external_description || ''}</textarea>
+              </div>
+              
+              <div class="form-group">
+                <label>Status:</label>
+                <select>
+                  <option value="draft" ${api.status === 'draft' ? 'selected' : ''}>Draft</option>
+                  <option value="active" ${api.status === 'active' ? 'selected' : ''}>Active</option>
+                  <option value="published" ${api.status === 'published' ? 'selected' : ''}>Published</option>
+                  <option value="deprecated" ${api.status === 'deprecated' ? 'selected' : ''}>Deprecated</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label>Category:</label>
+                <input type="text" value="${api.category || ''}" placeholder="e.g., healthcare, patient">
+              </div>
+              
+              <button type="button" class="save-btn">Save Configuration</button>
+              <button type="button">Cancel</button>
+            </form>
+          </body>
+        </html>
+      `);
+      configWindow.document.close();
+    }
+  };
+
+  const handleViewLive = (api: any) => {
+    if (api.base_url) {
+      window.open(api.base_url, '_blank');
+    } else {
+      alert('No live URL configured for this API');
+    }
+  };
+
+  const handleCreateMapping = () => {
+    const mappingWindow = window.open('', '_blank', 'width=900,height=700');
+    if (mappingWindow) {
+      mappingWindow.document.write(`
+        <html>
+          <head>
+            <title>Create Field Mapping</title>
+            <style>
+              body { font-family: Arial, sans-serif; padding: 20px; }
+              .mapping-container { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+              .form-group { margin-bottom: 15px; }
+              label { display: block; margin-bottom: 5px; font-weight: bold; }
+              input, select, textarea { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+              button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px; }
+              button:hover { background: #0056b3; }
+              .mapping-item { padding: 10px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 10px; }
+              .add-btn { background: #28a745; }
+              .add-btn:hover { background: #1e7e34; }
+            </style>
+          </head>
+          <body>
+            <h1>Create Field Mapping</h1>
+            
+            <div class="mapping-container">
+              <div>
+                <h2>Source System (Internal)</h2>
+                <div class="form-group">
+                  <label>Source Table:</label>
+                  <select>
+                    <option value="">Select Table</option>
+                    <option value="profiles">User Profiles</option>
+                    <option value="patients">Patients</option>
+                    <option value="facilities">Facilities</option>
+                    <option value="appointments">Appointments</option>
+                  </select>
+                </div>
+                
+                <div class="form-group">
+                  <label>Source Field:</label>
+                  <input type="text" placeholder="e.g., first_name">
+                </div>
+              </div>
+              
+              <div>
+                <h2>Target System (External)</h2>
+                <div class="form-group">
+                  <label>Target API:</label>
+                  <select>
+                    <option value="">Select API</option>
+                    ${allExternalApis.map(api => `<option value="${api.id}">${api.external_name}</option>`).join('')}
+                  </select>
+                </div>
+                
+                <div class="form-group">
+                  <label>Target Field:</label>
+                  <input type="text" placeholder="e.g., firstName">
+                </div>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label>Transformation Rule:</label>
+              <select>
+                <option value="direct">Direct Mapping</option>
+                <option value="format">Format Transformation</option>
+                <option value="concat">Concatenation</option>
+                <option value="split">Split Field</option>
+                <option value="custom">Custom Function</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label>Default Value (if source is empty):</label>
+              <input type="text" placeholder="Optional default value">
+            </div>
+            
+            <div class="form-group">
+              <label>Validation Rules:</label>
+              <textarea rows="3" placeholder="JSON validation rules..."></textarea>
+            </div>
+            
+            <button type="button" class="add-btn">Create Mapping</button>
+            <button type="button">Cancel</button>
+          </body>
+        </html>
+      `);
+      mappingWindow.document.close();
+    }
+  };
+
+  const handlePublishApi = () => {
+    const publishWindow = window.open('', '_blank', 'width=800,height=600');
+    if (publishWindow) {
+      publishWindow.document.write(`
+        <html>
+          <head>
+            <title>Publish API</title>
+            <style>
+              body { font-family: Arial, sans-serif; padding: 20px; }
+              .form-group { margin-bottom: 15px; }
+              label { display: block; margin-bottom: 5px; font-weight: bold; }
+              input, select, textarea { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+              button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px; }
+              button:hover { background: #0056b3; }
+              .publish-btn { background: #28a745; }
+              .publish-btn:hover { background: #1e7e34; }
+              .warning { background: #fff3cd; border: 1px solid #ffeaa7; padding: 10px; border-radius: 5px; margin-bottom: 15px; }
+            </style>
+          </head>
+          <body>
+            <h1>Publish API to External Registry</h1>
+            
+            <div class="warning">
+              <strong>Warning:</strong> Publishing will make this API available to external consumers. Ensure all security and compliance requirements are met.
+            </div>
+            
+            <form>
+              <div class="form-group">
+                <label>Source API:</label>
+                <select required>
+                  <option value="">Select Internal API to Publish</option>
+                  ${apiServices?.map(api => `<option value="${api.id}">${api.name}</option>`).join('') || ''}
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label>External Name:</label>
+                <input type="text" placeholder="Public name for this API" required>
+              </div>
+              
+              <div class="form-group">
+                <label>Public Description:</label>
+                <textarea rows="3" placeholder="Description for external consumers..."></textarea>
+              </div>
+              
+              <div class="form-group">
+                <label>Visibility:</label>
+                <select>
+                  <option value="public">Public (discoverable)</option>
+                  <option value="private">Private (invite only)</option>
+                  <option value="partner">Partner (restricted)</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label>Pricing Model:</label>
+                <select>
+                  <option value="free">Free</option>
+                  <option value="freemium">Freemium</option>
+                  <option value="paid">Paid</option>
+                  <option value="enterprise">Enterprise</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label>Rate Limiting:</label>
+                <input type="number" placeholder="Requests per hour" value="1000">
+              </div>
+              
+              <button type="button" class="publish-btn">Publish API</button>
+              <button type="button">Cancel</button>
+            </form>
+          </body>
+        </html>
+      `);
+      publishWindow.document.close();
+    }
   };
 
   return (
@@ -86,7 +432,7 @@ const ExternalIntegrationTab: React.FC = () => {
             <RefreshCw className={`h-4 w-4 mr-2 ${isLoadingExternalApis ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
-          <Button>
+          <Button onClick={handleAddIntegration}>
             <Plus className="h-4 w-4 mr-2" />
             Add Integration
           </Button>
@@ -189,7 +535,7 @@ const ExternalIntegrationTab: React.FC = () => {
                       : 'No external APIs have been integrated yet.'
                     }
                   </p>
-                  <Button>
+                  <Button onClick={handleAddIntegration}>
                     <Plus className="h-4 w-4 mr-2" />
                     Add First Integration
                   </Button>
@@ -227,11 +573,19 @@ const ExternalIntegrationTab: React.FC = () => {
                           </div>
                           
                           <div className="flex items-center gap-2">
-                            <Button variant="outline" size="sm">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleViewDetails(api)}
+                            >
                               <Eye className="h-4 w-4 mr-1" />
                               Details
                             </Button>
-                            <Button variant="outline" size="sm">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleConfigure(api)}
+                            >
                               <Settings className="h-4 w-4 mr-1" />
                               Configure
                             </Button>
@@ -268,7 +622,7 @@ const ExternalIntegrationTab: React.FC = () => {
                   <Upload className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <h3 className="font-semibold mb-2">No APIs in Publishing Pipeline</h3>
                   <p className="text-sm mb-4">Start by publishing an internal API to external consumers.</p>
-                  <Button>
+                  <Button onClick={handlePublishApi}>
                     <Upload className="h-4 w-4 mr-2" />
                     Publish API
                   </Button>
@@ -300,11 +654,19 @@ const ExternalIntegrationTab: React.FC = () => {
                           </div>
                           
                           <div className="flex items-center gap-2">
-                            <Button variant="outline" size="sm">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleViewLive(api)}
+                            >
                               <Globe className="h-4 w-4 mr-1" />
                               View Live
                             </Button>
-                            <Button variant="outline" size="sm">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleConfigure(api)}
+                            >
                               <Settings className="h-4 w-4 mr-1" />
                               Manage
                             </Button>
@@ -332,7 +694,7 @@ const ExternalIntegrationTab: React.FC = () => {
                 <Map className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <h3 className="font-semibold mb-2">Field Mapping Configuration</h3>
                 <p className="text-sm mb-4">Configure data transformations between internal and external API formats.</p>
-                <Button>
+                <Button onClick={handleCreateMapping}>
                   <Plus className="h-4 w-4 mr-2" />
                   Create Mapping
                 </Button>
