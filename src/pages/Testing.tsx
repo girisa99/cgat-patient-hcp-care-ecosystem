@@ -107,10 +107,39 @@ const Testing: React.FC = () => {
         testCase.test_description?.toLowerCase().includes('onboarding') ||
         testCase.test_name?.toLowerCase().includes('onboarding') ||
         testCase.module_name?.toLowerCase().includes('onboarding') ||
-        testCase.coverage_area?.toLowerCase().includes('onboarding')
+        testCase.coverage_area?.toLowerCase().includes('onboarding') ||
+        testCase.business_function?.toLowerCase().includes('facility') ||
+        testCase.business_function?.toLowerCase().includes('treatment') ||
+        testCase.topic?.toLowerCase().includes('onboarding')
+      );
+    } else if (currentRole === 'superAdmin') {
+      // For superAdmin, show admin-related test cases
+      return testing.testCases.filter(testCase => 
+        testCase.related_functionality?.toLowerCase().includes('admin') ||
+        testCase.related_functionality?.toLowerCase().includes('user') ||
+        testCase.related_functionality?.toLowerCase().includes('role') ||
+        testCase.related_functionality?.toLowerCase().includes('security') ||
+        testCase.related_functionality?.toLowerCase().includes('api') ||
+        testCase.related_functionality?.toLowerCase().includes('module') ||
+        testCase.related_functionality?.toLowerCase().includes('system') ||
+        testCase.related_functionality?.toLowerCase().includes('profile') ||
+        testCase.related_functionality?.toLowerCase().includes('facilit') ||
+        testCase.test_description?.toLowerCase().includes('admin') ||
+        testCase.test_description?.toLowerCase().includes('superadmin') ||
+        testCase.test_name?.toLowerCase().includes('admin') ||
+        testCase.module_name?.toLowerCase().includes('admin') ||
+        testCase.module_name?.toLowerCase().includes('user') ||
+        testCase.module_name?.toLowerCase().includes('security') ||
+        testCase.module_name?.toLowerCase().includes('role') ||
+        testCase.module_name?.toLowerCase().includes('management') ||
+        testCase.coverage_area?.toLowerCase().includes('admin') ||
+        testCase.business_function?.toLowerCase().includes('admin') ||
+        testCase.topic?.toLowerCase().includes('admin') ||
+        testCase.topic?.toLowerCase().includes('security') ||
+        testCase.topic?.toLowerCase().includes('management')
       );
     }
-    // For superAdmin and other roles, show all test cases
+    // For other roles, show all test cases
     return testing.testCases;
   }, [testing.testCases, currentRole]);
 
@@ -310,17 +339,39 @@ const Testing: React.FC = () => {
 
           {/* Test Cases Tab */}
           <TabsContent value="test-cases" className="space-y-4">
+            {/* Role-specific information banner */}
             {currentRole === 'onboardingTeam' && (
               <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <h3 className="font-semibold text-blue-900 mb-2">Onboarding Treatment Center Testing</h3>
+                <h3 className="font-semibold text-blue-900 mb-2">🏥 Onboarding Treatment Center Testing</h3>
                 <p className="text-blue-700 text-sm">
                   Viewing onboarding-specific test cases. This includes treatment center onboarding workflows, 
                   API integration tests, and compliance validation for the onboarding process.
                 </p>
+                <div className="mt-2 text-xs text-blue-600">
+                  <strong>Filtered:</strong> Unit, Integration, System, E2E, UAT, Regression, Performance tests specific to treatment center onboarding
+                </div>
               </div>
             )}
+
+            {currentRole === 'superAdmin' && (
+              <div className="mb-4 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                <h3 className="font-semibold text-purple-900 mb-2">👑 SuperAdmin System Testing</h3>
+                <p className="text-purple-700 text-sm">
+                  Viewing superadmin-specific test cases. This includes user management, security, role administration, 
+                  facility management, API security, and system configuration tests.
+                </p>
+                <div className="mt-2 text-xs text-purple-600">
+                  <strong>Filtered:</strong> Unit, Integration, System, E2E, UAT, Regression, Performance tests specific to superadmin functions
+                </div>
+              </div>
+            )}
+
             <TestCasesDisplay 
-              filteredTestCases={currentRole === 'onboardingTeam' ? filteredTestCases : undefined}
+              filteredTestCases={
+                currentRole === 'onboardingTeam' || currentRole === 'superAdmin' 
+                  ? filteredTestCases 
+                  : undefined
+              }
               roleBasedMode={true}
             />
           </TabsContent>

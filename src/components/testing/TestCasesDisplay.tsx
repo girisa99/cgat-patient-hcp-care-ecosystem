@@ -92,16 +92,44 @@ const TestCasesDisplay: React.FC<TestCasesDisplayProps> = ({
   
   // Apply role-based filtering if not already provided
   const roleFilteredTestCases = useMemo(() => {
-    if (roleBasedMode && !propFilteredTestCases && currentRole === 'onboardingTeam') {
-      return testCases.filter(testCase => 
-        testCase.related_functionality?.toLowerCase().includes('onboarding') ||
-        testCase.test_description?.toLowerCase().includes('onboarding') ||
-        testCase.test_name?.toLowerCase().includes('onboarding') ||
-        testCase.module_name?.toLowerCase().includes('onboarding') ||
-        testCase.coverage_area?.toLowerCase().includes('onboarding') ||
-        testCase.business_function?.toLowerCase().includes('facility') ||
-        testCase.business_function?.toLowerCase().includes('treatment')
-      );
+    if (roleBasedMode && !propFilteredTestCases) {
+      if (currentRole === 'onboardingTeam') {
+        return testCases.filter(testCase => 
+          testCase.related_functionality?.toLowerCase().includes('onboarding') ||
+          testCase.test_description?.toLowerCase().includes('onboarding') ||
+          testCase.test_name?.toLowerCase().includes('onboarding') ||
+          testCase.module_name?.toLowerCase().includes('onboarding') ||
+          testCase.coverage_area?.toLowerCase().includes('onboarding') ||
+          testCase.business_function?.toLowerCase().includes('facility') ||
+          testCase.business_function?.toLowerCase().includes('treatment') ||
+          testCase.topic?.toLowerCase().includes('onboarding')
+        );
+      } else if (currentRole === 'superAdmin') {
+        return testCases.filter(testCase => 
+          testCase.related_functionality?.toLowerCase().includes('admin') ||
+          testCase.related_functionality?.toLowerCase().includes('user') ||
+          testCase.related_functionality?.toLowerCase().includes('role') ||
+          testCase.related_functionality?.toLowerCase().includes('security') ||
+          testCase.related_functionality?.toLowerCase().includes('api') ||
+          testCase.related_functionality?.toLowerCase().includes('module') ||
+          testCase.related_functionality?.toLowerCase().includes('system') ||
+          testCase.related_functionality?.toLowerCase().includes('profile') ||
+          testCase.related_functionality?.toLowerCase().includes('facilit') ||
+          testCase.test_description?.toLowerCase().includes('admin') ||
+          testCase.test_description?.toLowerCase().includes('superadmin') ||
+          testCase.test_name?.toLowerCase().includes('admin') ||
+          testCase.module_name?.toLowerCase().includes('admin') ||
+          testCase.module_name?.toLowerCase().includes('user') ||
+          testCase.module_name?.toLowerCase().includes('security') ||
+          testCase.module_name?.toLowerCase().includes('role') ||
+          testCase.module_name?.toLowerCase().includes('management') ||
+          testCase.coverage_area?.toLowerCase().includes('admin') ||
+          testCase.business_function?.toLowerCase().includes('admin') ||
+          testCase.topic?.toLowerCase().includes('admin') ||
+          testCase.topic?.toLowerCase().includes('security') ||
+          testCase.topic?.toLowerCase().includes('management')
+        );
+      }
     }
     return baseTestCases;
   }, [baseTestCases, currentRole, roleBasedMode, propFilteredTestCases, testCases]);
@@ -281,24 +309,25 @@ const TestCasesDisplay: React.FC<TestCasesDisplayProps> = ({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="passed">Passed</SelectItem>
-                  <SelectItem value="failed">Failed</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="passed">✅ Passed</SelectItem>
+                  <SelectItem value="failed">❌ Failed</SelectItem>
+                  <SelectItem value="pending">⏳ Pending</SelectItem>
                 </SelectContent>
               </Select>
 
               <Select value={filterType} onValueChange={setFilterType}>
                 <SelectTrigger>
-                  <SelectValue placeholder="All Types" />
+                  <SelectValue placeholder="Test Types" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="unit">Unit Tests</SelectItem>
-                  <SelectItem value="integration">Integration</SelectItem>
-                  <SelectItem value="system">System</SelectItem>
-                  <SelectItem value="e2e">E2E Tests</SelectItem>
-                  <SelectItem value="uat">UAT Tests</SelectItem>
-                  <SelectItem value="regression">Regression</SelectItem>
+                  <SelectItem value="all">All Test Types</SelectItem>
+                  <SelectItem value="unit">🧪 Unit Tests</SelectItem>
+                  <SelectItem value="integration">🔗 Integration</SelectItem>
+                  <SelectItem value="system">🖥️ System</SelectItem>
+                  <SelectItem value="e2e">🔄 E2E</SelectItem>
+                  <SelectItem value="uat">👤 UAT</SelectItem>
+                  <SelectItem value="regression">🔙 Regression</SelectItem>
+                  <SelectItem value="performance">⚡ Performance</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -338,9 +367,26 @@ const TestCasesDisplay: React.FC<TestCasesDisplayProps> = ({
                 className="w-full"
               >
                 <RefreshCw className="h-4 w-4 mr-2" />
-                Clear All
+                Clear Filters
               </Button>
             </div>
+
+            {/* Role-specific filter info */}
+            {roleBasedMode && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-4">
+                <div className="flex items-center gap-2">
+                  <Info className="h-4 w-4 text-blue-600" />
+                  <span className="text-sm text-blue-800 font-medium">
+                    {currentRole === 'onboardingTeam' 
+                      ? '🏥 Showing Onboarding Treatment Center specific test cases and scripts'
+                      : currentRole === 'superAdmin'
+                      ? '👑 Showing SuperAdmin specific test cases and scripts' 
+                      : '🔧 Showing role-specific test cases and scripts'
+                    }
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
