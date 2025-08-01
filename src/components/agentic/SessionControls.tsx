@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Save, LogOut, RotateCcw, Edit, Trash2 } from 'lucide-react';
 import { useAgentSession } from '@/hooks/useAgentSession';
 import { AgentSession } from '@/types/agent-session';
@@ -24,6 +25,7 @@ export const SessionControls: React.FC<SessionControlsProps> = ({
   onContinue,
   isSaving = false,
 }) => {
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   return (
     <div className="flex items-center gap-2 p-4 bg-muted/50 rounded-lg border">
       {session && (
@@ -63,18 +65,41 @@ export const SessionControls: React.FC<SessionControlsProps> = ({
         </Button>
         
         {onDelete && (
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={() => {
-              if (confirm('Are you sure you want to delete this agent session? This action cannot be undone.')) {
-                onDelete();
-              }
-            }}
-          >
-            <Trash2 className="h-4 w-4 mr-2" />
-            Delete
-          </Button>
+          <>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => setShowDeleteDialog(true)}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete
+            </Button>
+            
+            <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Delete Agent Session</DialogTitle>
+                  <DialogDescription>
+                    Are you sure you want to delete this agent session? This action cannot be undone.
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+                    Cancel
+                  </Button>
+                  <Button 
+                    variant="destructive" 
+                    onClick={() => {
+                      onDelete();
+                      setShowDeleteDialog(false);
+                    }}
+                  >
+                    Delete
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </>
         )}
         
         <Button
