@@ -336,19 +336,27 @@ const AgenticEcosystem = () => {
           </TabsContent>
 
           <TabsContent value="basic_info" className="mt-6">
-            <UnifiedAgentBuilder step="basic_info" />
+            <div className="p-8 text-center">
+              <p>Agent Creation functionality temporarily disabled for debugging</p>
+            </div>
           </TabsContent>
 
           <TabsContent value="canvas" className="mt-6">
-            <UnifiedAgentBuilder step="canvas" />
+            <div className="p-8 text-center">
+              <p>Canvas functionality temporarily disabled for debugging</p>
+            </div>
           </TabsContent>
 
           <TabsContent value="actions" className="mt-6">
-            <UnifiedAgentBuilder step="actions" />
+            <div className="p-8 text-center">
+              <p>Actions functionality temporarily disabled for debugging</p>
+            </div>
           </TabsContent>
 
           <TabsContent value="deploy" className="mt-6">
-            <UnifiedAgentBuilder step="deploy" />
+            <div className="p-8 text-center">
+              <p>Deploy functionality temporarily disabled for debugging</p>
+            </div>
           </TabsContent>
 
       </Tabs>
