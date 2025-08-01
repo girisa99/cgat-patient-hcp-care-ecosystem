@@ -110,6 +110,7 @@ interface UnifiedAgentBuilderProps {
 }
 
 export const UnifiedAgentBuilder: React.FC<UnifiedAgentBuilderProps> = ({ step }) => {
+  console.log('🚀 UnifiedAgentBuilder rendering with step:', step);
   const { user } = useMasterAuth();
   
   // Fix React error #185: Ensure hooks always get the same parameters
