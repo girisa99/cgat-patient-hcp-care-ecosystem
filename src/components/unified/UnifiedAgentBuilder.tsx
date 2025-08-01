@@ -168,6 +168,48 @@ export const UnifiedAgentBuilder: React.FC<UnifiedAgentBuilderProps> = ({ step }
     isLoading,
   } = useAgentSession(stableSessionId || undefined);
 
+  // Session management functions
+  const handleCreateNewSession = () => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to create an agent session.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    createSession.mutate({
+      name: `New Agent ${Date.now()}`,
+      description: 'AI Agent created with Unified Builder',
+      basic_info: {
+        name: `New Agent ${Date.now()}`,
+        description: 'AI Agent created with Unified Builder',
+      }
+    }, {
+      onSuccess: (session) => {
+        setCurrentSessionId(session.id);
+        setCurrentStep('basic_info');
+        setShowNewSessionDialog(false);
+      },
+      onError: (error) => {
+        console.error('Failed to create session:', error);
+        toast({
+          title: "Error",
+          description: "Failed to create agent session. Please try again.",
+          variant: "destructive"
+        });
+      }
+    });
+  };
+
+  // Auto-create session when step is provided but no session exists
+  useEffect(() => {
+    if (step && !currentSessionId && !isLoading && user) {
+      handleCreateNewSession();
+    }
+  }, [step, currentSessionId, isLoading, user]);
+
   // Persist current session ID to localStorage
   useEffect(() => {
     if (currentSessionId) {
@@ -212,40 +254,6 @@ export const UnifiedAgentBuilder: React.FC<UnifiedAgentBuilderProps> = ({ step }
   }, [currentStep, currentSession, currentSessionId, autoSave]);
 
   // Session management functions
-  const handleCreateNewSession = () => {
-    if (!user) {
-      toast({
-        title: "Authentication Required",
-        description: "Please log in to create an agent session.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    createSession.mutate({
-      name: `New Agent ${Date.now()}`,
-      description: 'AI Agent created with Unified Builder',
-      basic_info: {
-        name: `New Agent ${Date.now()}`,
-        description: 'AI Agent created with Unified Builder',
-      }
-    }, {
-      onSuccess: (session) => {
-        setCurrentSessionId(session.id);
-        setCurrentStep('basic_info');
-        setShowNewSessionDialog(false);
-      },
-      onError: (error) => {
-        console.error('Failed to create session:', error);
-        toast({
-          title: "Error",
-          description: "Failed to create agent session. Please try again.",
-          variant: "destructive"
-        });
-      }
-    });
-  };
-
   const handleSelectSession = (session: AgentSession) => {
     setCurrentSessionId(session.id);
     setCurrentStep(session.current_step || 'basic_info');
@@ -312,9 +320,8 @@ export const UnifiedAgentBuilder: React.FC<UnifiedAgentBuilderProps> = ({ step }
     );
   }
 
-  // If step prop is provided but no session exists, auto-create one
+  // Show loading state when auto-creating session
   if (step && !currentSessionId && !isLoading) {
-    handleCreateNewSession();
     return (
       <div className="flex items-center justify-center p-8">
         <div className="text-center">
