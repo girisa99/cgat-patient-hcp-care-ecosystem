@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MinimalAgentBuilder } from '@/components/unified/MinimalAgentBuilder';
+import { MinimalAgentBuilder as EnhancedAgentBuilder } from '@/components/unified/MinimalAgentBuilder';
 import { Bot, Network, Settings, Rocket, Plus, Brain } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
@@ -336,19 +336,19 @@ const AgenticEcosystem = () => {
           </TabsContent>
 
           <TabsContent value="basic_info" className="mt-6">
-            <MinimalAgentBuilder step="basic_info" />
+            <EnhancedAgentBuilder step="basic_info" />
           </TabsContent>
 
           <TabsContent value="canvas" className="mt-6">
-            <MinimalAgentBuilder step="canvas" />
+            <EnhancedAgentBuilder step="canvas" />
           </TabsContent>
 
           <TabsContent value="actions" className="mt-6">
-            <MinimalAgentBuilder step="actions" />
+            <EnhancedAgentBuilder step="actions" />
           </TabsContent>
 
           <TabsContent value="deploy" className="mt-6">
-            <MinimalAgentBuilder step="deploy" />
+            <EnhancedAgentBuilder step="deploy" />
           </TabsContent>
 
       </Tabs>

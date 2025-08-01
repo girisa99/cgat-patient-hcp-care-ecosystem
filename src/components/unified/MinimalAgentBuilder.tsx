@@ -15,7 +15,7 @@ interface MinimalAgentBuilderProps {
 }
 
 export const MinimalAgentBuilder: React.FC<MinimalAgentBuilderProps> = ({ step }) => {
-  console.log('🚀 MinimalAgentBuilder rendering with step:', step);
+  console.log('🚀 ENHANCED MinimalAgentBuilder v2.0 rendering with step:', step);
   
   const { user } = useMasterAuth();
   const { agents, createAgent, isCreating } = useAgents();
