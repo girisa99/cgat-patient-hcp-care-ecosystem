@@ -149,6 +149,8 @@ export const UnifiedAgentBuilder: React.FC<UnifiedAgentBuilderProps> = ({ step }
   }, [step]);
   
   // Always call hook with consistent parameters (fix for React error #185)
+  // Use a stable sessionId parameter to prevent hook ordering issues
+  const stableSessionId = currentSessionId || '';
   const {
     currentSession,
     userSessions,
@@ -158,7 +160,7 @@ export const UnifiedAgentBuilder: React.FC<UnifiedAgentBuilderProps> = ({ step }
     deleteSession,
     deployAgent,
     isLoading,
-  } = useAgentSession(currentSessionId || undefined);
+  } = useAgentSession(stableSessionId || undefined);
 
   // Persist current session ID to localStorage
   useEffect(() => {
