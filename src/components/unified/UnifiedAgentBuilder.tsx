@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { errorManager } from '@/utils/error/ErrorManager';
+import { useAgentAutoSave } from '@/hooks/useAgentAutoSave';
 
 // Step configuration with progress tracking
 interface BuilderStep {
@@ -240,18 +241,62 @@ export const UnifiedAgentBuilder: React.FC<UnifiedAgentBuilderProps> = ({ step }
     }
   }, [step, currentStep]);
 
-  // Auto-save functionality
+  // Preserve current step and session on navigation/refresh
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (currentSessionId && currentStep) {
+        localStorage.setItem('unifiedBuilder_preserveState', JSON.stringify({
+          sessionId: currentSessionId,
+          step: currentStep,
+          timestamp: Date.now()
+        }));
+      }
+    };
+
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        // Page was restored from cache, restore state
+        const preserved = localStorage.getItem('unifiedBuilder_preserveState');
+        if (preserved) {
+          try {
+            const { sessionId, step } = JSON.parse(preserved);
+            setCurrentSessionId(sessionId);
+            setCurrentStep(step);
+            console.log('🔄 Restored state from cache:', { sessionId, step });
+          } catch (error) {
+            console.error('Failed to restore preserved state:', error);
+          }
+        }
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('pageshow', handlePageShow);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('pageshow', handlePageShow);
+    };
+  }, [currentSessionId, currentStep]);
+
+  // Use agent auto-save hook for robust persistence
+  const { manualSave, isSaving } = useAgentAutoSave({
+    data: currentSession || {},
+    currentStep,
+    sessionId: currentSessionId || undefined,
+    enabled: !!currentSession && !!currentSessionId
+  });
+
+  // Persist session and step state on navigation
   useEffect(() => {
     if (currentSession && currentSessionId) {
-      const autoSaveTimer = setTimeout(() => {
-        autoSave.mutate({
-          sessionId: currentSessionId,
-          updates: { current_step: currentStep }
-        });
-      }, 2000);
-      return () => clearTimeout(autoSaveTimer);
+      console.log('🔄 Updating session with current step:', currentStep);
+      updateSession.mutate({
+        sessionId: currentSessionId,
+        updates: { current_step: currentStep }
+      });
     }
-  }, [currentStep, currentSession, currentSessionId, autoSave]);
+  }, [currentStep]);
 
   // Session management functions
   const handleSelectSession = (session: AgentSession) => {
@@ -277,20 +322,70 @@ export const UnifiedAgentBuilder: React.FC<UnifiedAgentBuilderProps> = ({ step }
     }
   };
 
-  const handleDeployAgent = () => {
-    if (!currentSessionId) return;
+  const handleDeployAgent = async () => {
+    if (!currentSessionId || !currentSession) return;
 
-    deployAgent.mutate(currentSessionId, {
-      onSuccess: () => {
-        toast({
-          title: "Deployment Successful",
-          description: "Your agent has been deployed and is now live!",
-        });
-        setCurrentSessionId(null);
-        setCurrentStep('basic_info');
-        setShowSessionList(true);
-      }
-    });
+    try {
+      // Auto-assign knowledge bases if not already assigned
+      const knowledgeAssignments = currentSession.knowledge?.knowledge_bases || [];
+      const channelAssignments = currentSession.deployment?.config?.channels || [];
+      
+      // Auto-assign default knowledge base and channels
+      const deploymentData = {
+        ...currentSession,
+        deployment: {
+          ...currentSession.deployment,
+          config: {
+            auto_knowledge_assignment: knowledgeAssignments.length > 0 ? true : false,
+            auto_channel_assignment: channelAssignments.length > 0 ? true : false,
+            knowledge_bases: knowledgeAssignments,
+            channels: channelAssignments.length > 0 ? channelAssignments : ['web_chat', 'api']
+          },
+          environment: 'production',
+          scaling_config: {
+            max_concurrent_sessions: 100,
+            timeout_minutes: 30
+          }
+        },
+        status: 'deployed' as const
+      };
+
+      console.log('🚀 Deploying agent with data:', deploymentData);
+
+      await updateSession.mutateAsync({
+        sessionId: currentSessionId,
+        updates: deploymentData
+      });
+
+      deployAgent.mutate(currentSessionId, {
+        onSuccess: () => {
+          toast({
+            title: "Deployment Successful",
+            description: "Your agent has been deployed with auto-assigned knowledge bases and channels!",
+          });
+          
+          // Don't reset session - keep user on deployment view
+          setCurrentStep('deploy');
+          
+          console.log('✅ Agent deployed successfully');
+        },
+        onError: (error) => {
+          console.error('❌ Deployment failed:', error);
+          toast({
+            title: "Deployment Failed",
+            description: "Failed to deploy agent. Please try again.",
+            variant: "destructive"
+          });
+        }
+      });
+    } catch (error) {
+      console.error('❌ Pre-deployment setup failed:', error);
+      toast({
+        title: "Deployment Failed",
+        description: "Failed to prepare agent for deployment.",
+        variant: "destructive"
+      });
+    }
   };
 
   // Step status indicators

@@ -1,4 +1,3 @@
-
 import { useEffect, useRef } from 'react';
 import { useMasterOnboarding } from './useMasterOnboarding';
 import { TreatmentCenterOnboarding, OnboardingStep } from '@/types/onboarding';

@@ -13,6 +13,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Target, Info, Plug, Zap, Settings, BookOpen, Database, Brain, CheckCircle, Sparkles, Plus, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { AgentAction } from '@/components/agentic/AgentActionsManager';
+import { useAgentSession } from '@/hooks/useAgentSession';
+import { useAgentAutoSave } from '@/hooks/useAgentAutoSave';
 
 interface ConsolidatedActionsTabProps {
   sessionId: string;
@@ -31,16 +33,42 @@ export const ConsolidatedActionsTab: React.FC<ConsolidatedActionsTabProps> = ({
   agentPurpose,
   agentId
 }) => {
+  const { currentSession, updateSession } = useAgentSession(sessionId);
   const [activeTab, setActiveTab] = useState('actions');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [ragEnabled, setRagEnabled] = useState(false);
-  const [knowledgeBaseIds, setKnowledgeBaseIds] = useState<string[]>([]);
+  const [ragEnabled, setRagEnabled] = useState(currentSession?.rag?.configurations?.compliance_enabled || false);
+  const [knowledgeBaseIds, setKnowledgeBaseIds] = useState<string[]>(currentSession?.knowledge?.knowledge_bases || []);
+
+  // Auto-save hook for persistent data
+  const { manualSave, isSaving } = useAgentAutoSave({
+    data: {
+      actions: {
+        assigned_actions: actions,
+        custom_actions: [],
+        configurations: { activeTab, ragEnabled }
+      },
+      rag: {
+        configurations: { compliance_enabled: ragEnabled },
+        recommendations: []
+      },
+      knowledge: {
+        knowledge_bases: knowledgeBaseIds,
+        documents: [],
+        urls: [],
+        auto_generated_content: []
+      }
+    },
+    currentStep: 'actions',
+    sessionId,
+    enabled: true
+  });
 
   const handleAutoSuggest = async () => {
     setIsGenerating(true);
     try {
       // This would typically call the AgentActionsManager's suggest function
       toast.success('Auto-suggest functionality triggered');
+      await manualSave(); // Persist after suggesting
     } catch (error) {
       toast.error('Failed to generate suggestions');
     } finally {
@@ -48,12 +76,13 @@ export const ConsolidatedActionsTab: React.FC<ConsolidatedActionsTabProps> = ({
     }
   };
 
-  const handleAddAction = () => {
+  const handleAddAction = async () => {
     // This would typically trigger adding a new action
     toast.success('Add action functionality triggered');
+    await manualSave(); // Persist after adding action
   };
 
-  const handleReviewContinue = () => {
+  const handleReviewContinue = async () => {
     if (actions.length === 0) {
       toast.error('Please configure at least one action before continuing');
       return;
@@ -61,12 +90,30 @@ export const ConsolidatedActionsTab: React.FC<ConsolidatedActionsTabProps> = ({
     
     const totalTasks = actions.reduce((sum, action) => sum + (action.tasks?.length || 0), 0);
     
+    // Save all current data before continuing
+    await manualSave();
+    
+    // Update session with completed actions step
+    if (sessionId && updateSession) {
+      updateSession.mutate({
+        sessionId,
+        updates: {
+          actions: {
+            assigned_actions: actions,
+            custom_actions: [],
+            configurations: { activeTab, ragEnabled }
+          },
+          current_step: 'connectors'
+        }
+      });
+    }
+    
     toast.success(`Review completed! ${actions.length} actions with ${totalTasks} tasks ready. You can now configure connectors, knowledge base, and RAG settings.`);
     
     // Auto-switch to connectors tab after review
     setTimeout(() => {
       setActiveTab('connectors');
-    }, 2000);
+    }, 1500);
   };
 
   return (
@@ -268,7 +315,24 @@ export const ConsolidatedActionsTab: React.FC<ConsolidatedActionsTabProps> = ({
                 <RAGComplianceWorkflow
                   knowledgeBaseIds={knowledgeBaseIds}
                   complianceEnabled={ragEnabled}
-                  onComplianceChange={setRagEnabled}
+                  onComplianceChange={(enabled) => {
+                    setRagEnabled(enabled);
+                    // Auto-save RAG settings
+                    if (sessionId && updateSession) {
+                      updateSession.mutate({
+                        sessionId,
+                        updates: {
+                          rag: {
+                            ...currentSession?.rag,
+                            configurations: { 
+                              ...currentSession?.rag?.configurations,
+                              compliance_enabled: enabled 
+                            }
+                          }
+                        }
+                      });
+                    }
+                  }}
                 />
               </CardContent>
             </Card>
