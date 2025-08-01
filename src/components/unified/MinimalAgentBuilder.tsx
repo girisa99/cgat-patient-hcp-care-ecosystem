@@ -1,8 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Bot, Settings, Palette, Zap, Database, Brain, Rocket } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Bot, Settings, Palette, Zap, Database, Brain, Rocket, Plus, Save, User } from 'lucide-react';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
+import { useAgents } from '@/hooks/useAgents';
+import { toast } from '@/hooks/use-toast';
 import { errorManager } from '@/utils/error/ErrorManager';
 
 interface MinimalAgentBuilderProps {
@@ -13,7 +18,47 @@ export const MinimalAgentBuilder: React.FC<MinimalAgentBuilderProps> = ({ step }
   console.log('🚀 MinimalAgentBuilder rendering with step:', step);
   
   const { user } = useMasterAuth();
+  const { agents, createAgent, isCreating } = useAgents();
   const [currentStep, setCurrentStep] = useState(step || 'basic_info');
+  const [agentData, setAgentData] = useState({
+    name: '',
+    description: '',
+    purpose: '',
+    use_case: '',
+    agent_type: 'single',
+    categories: [] as string[],
+    business_units: [] as string[]
+  });
+
+  const handleSaveAgent = async () => {
+    try {
+      if (!agentData.name.trim()) {
+        toast({
+          title: "Validation Error",
+          description: "Agent name is required",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      await createAgent({
+        name: agentData.name,
+        description: agentData.description,
+        purpose: agentData.purpose,
+        use_case: agentData.use_case,
+        agent_type: agentData.agent_type,
+        categories: agentData.categories,
+        business_units: agentData.business_units
+      });
+
+      toast({
+        title: "Success",
+        description: "Agent created successfully!"
+      });
+    } catch (error) {
+      console.error('Error creating agent:', error);
+    }
+  };
 
   const renderBasicInfo = () => (
     <Card>
@@ -26,21 +71,52 @@ export const MinimalAgentBuilder: React.FC<MinimalAgentBuilderProps> = ({ step }
       <CardContent>
         <div className="space-y-4">
           <div>
-            <label className="text-sm font-medium">Agent Name</label>
-            <input 
+            <label className="text-sm font-medium">Agent Name *</label>
+            <Input 
               type="text"
-              className="w-full mt-1 px-3 py-2 border rounded-md"
+              value={agentData.name}
+              onChange={(e) => setAgentData(prev => ({ ...prev, name: e.target.value }))}
               placeholder="Enter agent name"
+              className="mt-1"
             />
           </div>
           <div>
             <label className="text-sm font-medium">Description</label>
-            <textarea 
-              className="w-full mt-1 px-3 py-2 border rounded-md"
+            <Textarea 
+              value={agentData.description}
+              onChange={(e) => setAgentData(prev => ({ ...prev, description: e.target.value }))}
               placeholder="Describe what this agent will do"
+              className="mt-1"
             />
           </div>
-          <Button>Save Agent Info</Button>
+          <div>
+            <label className="text-sm font-medium">Purpose</label>
+            <Input 
+              type="text"
+              value={agentData.purpose}
+              onChange={(e) => setAgentData(prev => ({ ...prev, purpose: e.target.value }))}
+              placeholder="What is the main purpose of this agent?"
+              className="mt-1"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium">Use Case</label>
+            <Input 
+              type="text"
+              value={agentData.use_case}
+              onChange={(e) => setAgentData(prev => ({ ...prev, use_case: e.target.value }))}
+              placeholder="Specific use case for this agent"
+              className="mt-1"
+            />
+          </div>
+          <Button 
+            onClick={handleSaveAgent} 
+            disabled={isCreating}
+            className="w-full"
+          >
+            <Save className="h-4 w-4 mr-2" />
+            {isCreating ? 'Creating...' : 'Save Agent Info'}
+          </Button>
         </div>
       </CardContent>
     </Card>
@@ -106,9 +182,16 @@ export const MinimalAgentBuilder: React.FC<MinimalAgentBuilderProps> = ({ step }
   try {
     return (
       <div className="space-y-6">
+        {/* Agent Overview */}
         <Card>
           <CardHeader>
             <CardTitle>Agent Builder - Step: {currentStep}</CardTitle>
+            {agentData.name && (
+              <div className="flex items-center gap-2">
+                <User className="h-4 w-4" />
+                <span className="text-sm text-muted-foreground">Building: {agentData.name}</span>
+              </div>
+            )}
           </CardHeader>
           <CardContent>
             <div className="flex gap-2 mb-4">
@@ -141,6 +224,42 @@ export const MinimalAgentBuilder: React.FC<MinimalAgentBuilderProps> = ({ step }
                 Deploy
               </Button>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Real Agents Overview */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Database className="h-5 w-5" />
+              Existing Agents ({agents.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {agents.length > 0 ? (
+              <div className="grid gap-2">
+                {agents.slice(0, 3).map((agent) => (
+                  <div key={agent.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div>
+                      <h4 className="font-medium">{agent.name}</h4>
+                      <p className="text-sm text-muted-foreground">{agent.description}</p>
+                    </div>
+                    <Badge variant={agent.status === 'active' ? 'default' : 'secondary'}>
+                      {agent.status}
+                    </Badge>
+                  </div>
+                ))}
+                {agents.length > 3 && (
+                  <p className="text-sm text-muted-foreground text-center">
+                    +{agents.length - 3} more agents
+                  </p>
+                )}
+              </div>
+            ) : (
+              <p className="text-center text-muted-foreground py-4">
+                No agents created yet. Create your first agent above!
+              </p>
+            )}
           </CardContent>
         </Card>
 
