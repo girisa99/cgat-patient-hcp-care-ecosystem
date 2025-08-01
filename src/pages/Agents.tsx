@@ -4,9 +4,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Bot, Network, Users, Settings } from 'lucide-react';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
 
-// Import the ecosystem components
-import AgenticEcosystem from './AgenticEcosystem';
-import AgenticAPIEcosystem from './AgenticAPIEcosystem';
+// Import the ecosystem components - temporarily commented for debugging
+// import AgenticEcosystem from './AgenticEcosystem';
+// import AgenticAPIEcosystem from './AgenticAPIEcosystem';
 
 const Agents = () => {
   console.log('🚀 Agents page rendering...');
@@ -28,7 +28,7 @@ const Agents = () => {
       value: 'agentic-ecosystem',
       label: 'Agentic Ecosystem',
       icon: Bot,
-      component: <AgenticEcosystem />
+      component: <div className="p-8"><p>Agentic Ecosystem - temporarily disabled for debugging</p></div>
     });
 
     // SuperAdmin and Admin only tabs
@@ -37,7 +37,7 @@ const Agents = () => {
         value: 'agentic-api-ecosystem',
         label: 'Agentic API Ecosystem',
         icon: Network,
-        component: <AgenticAPIEcosystem />
+        component: <div className="p-8"><p>Agentic API Ecosystem - temporarily disabled for debugging</p></div>
       });
     }
 
