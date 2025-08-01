@@ -34,6 +34,7 @@ import {
   Target, Plug, BookOpen, Play, Pause, Save
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { errorManager } from '@/utils/error/ErrorManager';
 
 // Step configuration with progress tracking
 interface BuilderStep {
@@ -111,26 +112,42 @@ interface UnifiedAgentBuilderProps {
 export const UnifiedAgentBuilder: React.FC<UnifiedAgentBuilderProps> = ({ step }) => {
   const { user } = useMasterAuth();
   
-  // Initialize state with localStorage persistence
-  const [currentSessionId, setCurrentSessionId] = useState<string | null>(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('unifiedBuilder_currentSessionId') || null;
-    }
-    return null;
-  });
-  
-  const [currentStep, setCurrentStep] = useState<AgentSession['current_step']>(() => {
-    if (typeof window !== 'undefined') {
-      const savedStep = localStorage.getItem('unifiedBuilder_currentStep') as AgentSession['current_step'];
-      return savedStep || step || 'basic_info';
-    }
-    return step || 'basic_info';
-  });
-  
+  // Fix React error #185: Ensure hooks always get the same parameters
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+  const [currentStep, setCurrentStep] = useState<AgentSession['current_step']>(step || 'basic_info');
   const [showNewSessionDialog, setShowNewSessionDialog] = useState(false);
   const [showSessionList, setShowSessionList] = useState(false);
   const [actions, setActions] = useState<AgentAction[]>([]);
+  const [isClient, setIsClient] = useState(false);
   
+  // Client-side initialization effect
+  useEffect(() => {
+    try {
+      setIsClient(true);
+      
+      // Initialize from localStorage only on client side
+      const savedSessionId = localStorage.getItem('unifiedBuilder_currentSessionId');
+      const savedStep = localStorage.getItem('unifiedBuilder_currentStep') as AgentSession['current_step'];
+      
+      if (savedSessionId) {
+        setCurrentSessionId(savedSessionId);
+      }
+      
+      if (savedStep && !step) {
+        setCurrentStep(savedStep);
+      } else if (step) {
+        setCurrentStep(step);
+      }
+    } catch (error) {
+      errorManager.reportError(error as Error, {
+        component: 'UnifiedAgentBuilder',
+        severity: 'medium',
+        additionalContext: { step, action: 'localStorage_initialization' }
+      });
+    }
+  }, [step]);
+  
+  // Always call hook with consistent parameters (fix for React error #185)
   const {
     currentSession,
     userSessions,
