@@ -22,10 +22,16 @@ interface Agent {
 }
 
 const AgenticEcosystem = () => {
+  console.log('🤖 AgenticEcosystem component rendering...');
+  
   const [activeTab, setActiveTab] = useState(() => {
     // Restore tab from localStorage on page load
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('agenticEcosystem_activeTab') || 'overview';
+    try {
+      if (typeof window !== 'undefined') {
+        return localStorage.getItem('agenticEcosystem_activeTab') || 'overview';
+      }
+    } catch (error) {
+      console.error('Error accessing localStorage:', error);
     }
     return 'overview';
   });
@@ -62,32 +68,42 @@ const AgenticEcosystem = () => {
     refetchInterval: 30000, // Refresh every 30 seconds
   });
 
-  // Fetch real ecosystem stats
+  // Fetch real ecosystem stats - always enabled to avoid conditional hook issues
   const { data: ecosystemStats } = useQuery({
-    queryKey: ['ecosystem-stats'],
+    queryKey: ['ecosystem-stats', agents.length],
     queryFn: async () => {
-      const { data: apiServices } = await supabase
-        .from('api_integration_registry')
-        .select('status')
-        .eq('status', 'active');
+      try {
+        const { data: apiServices } = await supabase
+          .from('api_integration_registry')
+          .select('status')
+          .eq('status', 'active');
 
-      const { data: connectors } = await supabase
-        .from('api_endpoints')
-        .select('id');
+        const { data: connectors } = await supabase
+          .from('api_endpoints')
+          .select('id');
 
-      const { data: conversations } = await supabase
-        .from('audit_logs')
-        .select('id')
-        .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
+        const { data: conversations } = await supabase
+          .from('audit_logs')
+          .select('id')
+          .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
 
-      return {
-        activeAgents: agents.filter(a => a.status === 'deployed').length,
-        connectedChannels: connectors?.length || 0,
-        conversationsToday: conversations?.length || 0,
-        uptime: '99.2%'
-      };
+        return {
+          activeAgents: agents.filter(a => a.status === 'deployed').length,
+          connectedChannels: connectors?.length || 0,
+          conversationsToday: conversations?.length || 0,
+          uptime: '99.2%'
+        };
+      } catch (error) {
+        console.error('Error fetching ecosystem stats:', error);
+        return {
+          activeAgents: 0,
+          connectedChannels: 0,
+          conversationsToday: 0,
+          uptime: '99.2%'
+        };
+      }
     },
-    enabled: !agentsLoading,
+    staleTime: 30000,
   });
 
   const handleCreateAgent = () => {

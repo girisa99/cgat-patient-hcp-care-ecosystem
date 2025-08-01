@@ -9,8 +9,10 @@ import AgenticEcosystem from './AgenticEcosystem';
 import AgenticAPIEcosystem from './AgenticAPIEcosystem';
 
 const Agents = () => {
+  console.log('🚀 Agents page rendering...');
   const [activeTab, setActiveTab] = useState('agentic-ecosystem');
   const { userRoles } = useMasterAuth();
+  console.log('🎭 User roles:', userRoles);
 
   // Role-based access control
   const isSuperAdmin = userRoles.includes('superAdmin');
