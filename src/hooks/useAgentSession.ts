@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { AgentSession, AgentSessionUpdate } from '@/types/agent-session';
 import { toast } from '@/hooks/use-toast';
+import { toast as sonnerToast } from 'sonner';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
 
 export const useAgentSession = (sessionId?: string) => {
@@ -165,20 +166,40 @@ export const useAgentSession = (sessionId?: string) => {
   // Delete session
   const deleteSession = useMutation({
     mutationFn: async (sessionId: string) => {
+      console.log('🗑️ Deleting session with ID:', sessionId);
+      
       const { error } = await supabase
         .from('agent_sessions')
         .delete()
         .eq('id', sessionId);
 
       if (error) {
+        console.error('❌ Delete session error:', error);
         throw new Error(`Failed to delete session: ${error.message}`);
       }
+      
+      console.log('✅ Session deleted successfully');
     },
     onSuccess: () => {
+      console.log('🔄 Invalidating queries after successful delete');
       queryClient.invalidateQueries({ queryKey: ['user-agent-sessions'] });
+      
+      // Show both toast types to test which one works
       toast({
         title: "Session Deleted",
         description: "Agent session deleted successfully.",
+      });
+      
+      sonnerToast.success("Session Deleted", {
+        description: "Agent session deleted successfully.",
+      });
+    },
+    onError: (error) => {
+      console.error('❌ Delete session mutation error:', error);
+      toast({
+        title: "Delete Failed",
+        description: error.message,
+        variant: "destructive",
       });
     },
   });

@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { UnifiedAgentBuilder as EnhancedAgentBuilder } from '@/components/unified/UnifiedAgentBuilder';
 import { Bot, Network, Settings, Rocket, Plus, Brain } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { toast as sonnerToast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -122,8 +123,14 @@ const AgenticEcosystem = () => {
     console.log('🚀 Setting activeTab to basic_info');
     setActiveTab('basic_info');
     console.log('🚀 activeTab updated, showing toast');
+    
+    // Show both toast types to test which one works
     toast({
       title: "Agent Builder",
+      description: "Starting agent creation process...",
+    });
+    
+    sonnerToast.success("Agent Builder", {
       description: "Starting agent creation process...",
     });
   };
@@ -186,7 +193,7 @@ const AgenticEcosystem = () => {
             Comprehensive platform for Cell, Gene, Advanced & Personalized treatments with AI orchestration
           </p>
         </div>
-        <Button onClick={handleCreateAgent}>
+        <Button onClick={handleCreateAgent} className="bg-primary hover:bg-primary/90">
           <Plus className="h-4 w-4 mr-2" />
           Create New Agent
         </Button>
