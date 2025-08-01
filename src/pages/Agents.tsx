@@ -4,9 +4,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Bot, Network, Users, Settings } from 'lucide-react';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
 
-// Import the ecosystem components - temporarily commented for debugging
-// import AgenticEcosystem from './AgenticEcosystem';
-// import AgenticAPIEcosystem from './AgenticAPIEcosystem';
+// Import the ecosystem components
+import AgenticEcosystem from './AgenticEcosystem';
+import AgenticAPIEcosystem from './AgenticAPIEcosystem';
 
 const Agents = () => {
   console.log('🚀 Agents page rendering...');
@@ -28,7 +28,7 @@ const Agents = () => {
       value: 'agentic-ecosystem',
       label: 'Agentic Ecosystem',
       icon: Bot,
-      component: <div className="p-8"><p>Agentic Ecosystem - temporarily disabled for debugging</p></div>
+      component: <AgenticEcosystem />
     });
 
     // SuperAdmin and Admin only tabs
@@ -37,7 +37,7 @@ const Agents = () => {
         value: 'agentic-api-ecosystem',
         label: 'Agentic API Ecosystem',
         icon: Network,
-        component: <div className="p-8"><p>Agentic API Ecosystem - temporarily disabled for debugging</p></div>
+        component: <AgenticAPIEcosystem />
       });
     }
 
@@ -84,48 +84,63 @@ const Agents = () => {
     }
   };
 
-  return (
-    <AppLayout>
-      <div className="space-y-6">
-        {/* Role-specific header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">
-              {isOnboardingTeam && !isSuperAdmin ? 'Treatment Center Agents' : 'Agents'}
-            </h1>
-            <p className="text-muted-foreground mt-2">
-              {isOnboardingTeam && !isSuperAdmin 
-                ? 'Manage agents for treatment center onboarding workflows'
-                : 'Manage and deploy intelligent agents for healthcare automation'
-              }
-            </p>
+  // Add error boundary for debugging
+  try {
+    return (
+      <AppLayout>
+        <div className="space-y-6">
+          {/* Role-specific header */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">
+                {isOnboardingTeam && !isSuperAdmin ? 'Treatment Center Agents' : 'Agents'}
+              </h1>
+              <p className="text-muted-foreground mt-2">
+                {isOnboardingTeam && !isSuperAdmin 
+                  ? 'Manage agents for treatment center onboarding workflows'
+                  : 'Manage and deploy intelligent agents for healthcare automation'
+                }
+              </p>
+            </div>
           </div>
-        </div>
 
-        {/* Dynamic Tabs based on role */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className={`grid w-full ${getGridClass(availableTabs.length)}`}>
+          {/* Dynamic Tabs based on role */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className={`grid w-full ${getGridClass(availableTabs.length)}`}>
+              {availableTabs.map((tab) => (
+                <TabsTrigger 
+                  key={tab.value} 
+                  value={tab.value} 
+                  className="flex items-center gap-2"
+                >
+                  <tab.icon className="h-4 w-4" />
+                  {tab.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+
             {availableTabs.map((tab) => (
-              <TabsTrigger 
-                key={tab.value} 
-                value={tab.value} 
-                className="flex items-center gap-2"
-              >
-                <tab.icon className="h-4 w-4" />
-                {tab.label}
-              </TabsTrigger>
+              <TabsContent key={tab.value} value={tab.value} className="space-y-4">
+                {tab.component}
+              </TabsContent>
             ))}
-          </TabsList>
-
-          {availableTabs.map((tab) => (
-            <TabsContent key={tab.value} value={tab.value} className="space-y-4">
-              {tab.component}
-            </TabsContent>
-          ))}
-        </Tabs>
-      </div>
-    </AppLayout>
-  );
+          </Tabs>
+        </div>
+      </AppLayout>
+    );
+  } catch (error) {
+    console.error('🚨 Error in Agents component:', error);
+    return (
+      <AppLayout>
+        <div className="p-8 text-center">
+          <h1 className="text-2xl font-bold text-red-600 mb-4">Error Loading Agents</h1>
+          <p className="text-muted-foreground">
+            There was an error loading the agents interface. Please check the console for details.
+          </p>
+        </div>
+      </AppLayout>
+    );
+  }
 };
 
 // Role-specific components
