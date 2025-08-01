@@ -33,6 +33,16 @@ export const MinimalAgentBuilder: React.FC<MinimalAgentBuilderProps> = ({ step }
     brand: ''
   });
   
+  // Ensure arrays are always defined
+  React.useEffect(() => {
+    setAgentData(prev => ({
+      ...prev,
+      categories: prev.categories || [],
+      business_units: prev.business_units || [],
+      topics: prev.topics || []
+    }));
+  }, []);
+  
   // Available options for multi-select fields - Healthcare focused
   const availableCategories = ['Clinical Operations', 'Patient Management', 'Administrative Services', 'Quality Assurance', 'Compliance Monitoring', 'Healthcare Technology', 'Telemedicine', 'Emergency Care', 'Pharmacy Services', 'Laboratory Services'];
   const availableBusinessUnits = ['Oncology', 'Cardiology', 'Neurology', 'Pediatrics', 'Surgery', 'Emergency Medicine', 'Radiology', 'Laboratory', 'Pharmacy', 'Administration', 'Compliance', 'IT Support'];
@@ -154,7 +164,7 @@ export const MinimalAgentBuilder: React.FC<MinimalAgentBuilderProps> = ({ step }
           <div>
             <label className="text-sm font-medium">Categories</label>
             <Select
-              value={agentData.categories.length > 0 ? agentData.categories[0] : ""}
+              value={(agentData.categories && agentData.categories.length > 0) ? agentData.categories[0] : ""}
               onValueChange={(value) => {
                 if (value === "add_new") {
                   const newCategory = prompt("Enter new category:");
@@ -198,7 +208,7 @@ export const MinimalAgentBuilder: React.FC<MinimalAgentBuilderProps> = ({ step }
                 </SelectItem>
               </SelectContent>
             </Select>
-            {agentData.categories.length > 0 && (
+            {(agentData.categories && agentData.categories.length > 0) && (
               <div className="flex flex-wrap gap-2 mt-2">
                 {agentData.categories.map((category) => (
                   <Badge
@@ -223,7 +233,7 @@ export const MinimalAgentBuilder: React.FC<MinimalAgentBuilderProps> = ({ step }
           <div>
             <label className="text-sm font-medium">Business Units</label>
             <Select
-              value={agentData.business_units.length > 0 ? agentData.business_units[0] : ""}
+              value={(agentData.business_units && agentData.business_units.length > 0) ? agentData.business_units[0] : ""}
               onValueChange={(value) => {
                 if (value === "add_new") {
                   const newUnit = prompt("Enter new business unit:");
@@ -266,7 +276,7 @@ export const MinimalAgentBuilder: React.FC<MinimalAgentBuilderProps> = ({ step }
                 </SelectItem>
               </SelectContent>
             </Select>
-            {agentData.business_units.length > 0 && (
+            {(agentData.business_units && agentData.business_units.length > 0) && (
               <div className="flex flex-wrap gap-2 mt-2">
                 {agentData.business_units.map((unit) => (
                   <Badge
@@ -291,7 +301,7 @@ export const MinimalAgentBuilder: React.FC<MinimalAgentBuilderProps> = ({ step }
           <div>
             <label className="text-sm font-medium">Topics</label>
             <Select
-              value={agentData.topics.length > 0 ? agentData.topics[0] : ""}
+              value={(agentData.topics && agentData.topics.length > 0) ? agentData.topics[0] : ""}
               onValueChange={(value) => {
                 if (value === "add_new") {
                   const newTopic = prompt("Enter new topic:");
@@ -334,7 +344,7 @@ export const MinimalAgentBuilder: React.FC<MinimalAgentBuilderProps> = ({ step }
                 </SelectItem>
               </SelectContent>
             </Select>
-            {agentData.topics.length > 0 && (
+            {(agentData.topics && agentData.topics.length > 0) && (
               <div className="flex flex-wrap gap-2 mt-2">
                 {agentData.topics.map((topic) => (
                   <Badge
@@ -511,9 +521,9 @@ export const MinimalAgentBuilder: React.FC<MinimalAgentBuilderProps> = ({ step }
                     </Badge>
                   </div>
                 ))}
-                {agents.length > 3 && (
+                {(agents?.length || 0) > 3 && (
                   <p className="text-sm text-muted-foreground text-center">
-                    +{agents.length - 3} more agents
+                    +{(agents?.length || 0) - 3} more agents
                   </p>
                 )}
               </div>
