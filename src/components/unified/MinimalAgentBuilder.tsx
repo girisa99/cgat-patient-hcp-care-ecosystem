@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Bot, Settings, Palette, Zap, Database, Brain, Rocket, Plus, Save, User } from 'lucide-react';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { useAgents } from '@/hooks/useAgents';
@@ -149,82 +150,142 @@ export const MinimalAgentBuilder: React.FC<MinimalAgentBuilderProps> = ({ step }
             />
           </div>
           
-          {/* Categories */}
+          {/* Categories Dropdown */}
           <div>
             <label className="text-sm font-medium">Categories</label>
-            <div className="mt-2 space-y-2">
-              <div className="flex flex-wrap gap-2">
+            <Select
+              value={agentData.categories.length > 0 ? agentData.categories[0] : ""}
+              onValueChange={(value) => {
+                if (value && !agentData.categories.includes(value)) {
+                  setAgentData(prev => ({
+                    ...prev,
+                    categories: [...prev.categories, value]
+                  }));
+                }
+              }}
+            >
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="Select categories" />
+              </SelectTrigger>
+              <SelectContent className="bg-background border border-border shadow-md z-50">
                 {availableCategories.map((category) => (
+                  <SelectItem key={category} value={category}>
+                    {category}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {agentData.categories.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {agentData.categories.map((category) => (
                   <Badge
                     key={category}
-                    variant={agentData.categories.includes(category) ? "default" : "outline"}
+                    variant="default"
                     className="cursor-pointer"
                     onClick={() => {
                       setAgentData(prev => ({
                         ...prev,
-                        categories: prev.categories.includes(category)
-                          ? prev.categories.filter(c => c !== category)
-                          : [...prev.categories, category]
+                        categories: prev.categories.filter(c => c !== category)
                       }));
                     }}
                   >
-                    {category}
+                    {category} ×
                   </Badge>
                 ))}
               </div>
-            </div>
+            )}
           </div>
           
-          {/* Business Units */}
+          {/* Business Units Dropdown */}
           <div>
             <label className="text-sm font-medium">Business Units</label>
-            <div className="mt-2 space-y-2">
-              <div className="flex flex-wrap gap-2">
+            <Select
+              value={agentData.business_units.length > 0 ? agentData.business_units[0] : ""}
+              onValueChange={(value) => {
+                if (value && !agentData.business_units.includes(value)) {
+                  setAgentData(prev => ({
+                    ...prev,
+                    business_units: [...prev.business_units, value]
+                  }));
+                }
+              }}
+            >
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="Select business units" />
+              </SelectTrigger>
+              <SelectContent className="bg-background border border-border shadow-md z-50">
                 {availableBusinessUnits.map((unit) => (
+                  <SelectItem key={unit} value={unit}>
+                    {unit}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {agentData.business_units.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {agentData.business_units.map((unit) => (
                   <Badge
                     key={unit}
-                    variant={agentData.business_units.includes(unit) ? "default" : "outline"}
+                    variant="default"
                     className="cursor-pointer"
                     onClick={() => {
                       setAgentData(prev => ({
                         ...prev,
-                        business_units: prev.business_units.includes(unit)
-                          ? prev.business_units.filter(u => u !== unit)
-                          : [...prev.business_units, unit]
+                        business_units: prev.business_units.filter(u => u !== unit)
                       }));
                     }}
                   >
-                    {unit}
+                    {unit} ×
                   </Badge>
                 ))}
               </div>
-            </div>
+            )}
           </div>
           
-          {/* Topics */}
+          {/* Topics Dropdown */}
           <div>
             <label className="text-sm font-medium">Topics</label>
-            <div className="mt-2 space-y-2">
-              <div className="flex flex-wrap gap-2">
+            <Select
+              value={agentData.topics.length > 0 ? agentData.topics[0] : ""}
+              onValueChange={(value) => {
+                if (value && !agentData.topics.includes(value)) {
+                  setAgentData(prev => ({
+                    ...prev,
+                    topics: [...prev.topics, value]
+                  }));
+                }
+              }}
+            >
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="Select topics" />
+              </SelectTrigger>
+              <SelectContent className="bg-background border border-border shadow-md z-50">
                 {availableTopics.map((topic) => (
+                  <SelectItem key={topic} value={topic}>
+                    {topic}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {agentData.topics.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {agentData.topics.map((topic) => (
                   <Badge
                     key={topic}
-                    variant={agentData.topics.includes(topic) ? "default" : "outline"}
+                    variant="default"
                     className="cursor-pointer"
                     onClick={() => {
                       setAgentData(prev => ({
                         ...prev,
-                        topics: prev.topics.includes(topic)
-                          ? prev.topics.filter(t => t !== topic)
-                          : [...prev.topics, topic]
+                        topics: prev.topics.filter(t => t !== topic)
                       }));
                     }}
                   >
-                    {topic}
+                    {topic} ×
                   </Badge>
                 ))}
               </div>
-            </div>
+            )}
           </div>
           
           <Button 
@@ -303,13 +364,24 @@ export const MinimalAgentBuilder: React.FC<MinimalAgentBuilderProps> = ({ step }
         {/* Agent Overview */}
         <Card>
           <CardHeader>
-            <CardTitle>Agent Builder - Step: {currentStep}</CardTitle>
-            {agentData.name && (
-              <div className="flex items-center gap-2">
-                <User className="h-4 w-4" />
-                <span className="text-sm text-muted-foreground">Building: {agentData.name}</span>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Agent Builder - Step: {currentStep}</CardTitle>
+                {agentData.name && (
+                  <div className="flex items-center gap-2 mt-2">
+                    <User className="h-4 w-4" />
+                    <span className="text-sm text-muted-foreground">Building: {agentData.name}</span>
+                  </div>
+                )}
               </div>
-            )}
+              <Button 
+                onClick={() => setCurrentStep('basic_info')}
+                className="flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Create New Agent
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="flex gap-2 mb-4">
