@@ -512,7 +512,7 @@ export const MinimalAgentBuilder: React.FC<MinimalAgentBuilderProps> = ({ step }
               </div>
             ) : agents && agents.length > 0 ? (
               <div className="grid gap-2">
-                {agents.slice(0, 3).map((agent) => (
+                {(agents || []).slice(0, 3).map((agent) => (
                   <div key={agent.id} className="flex items-center justify-between p-3 border rounded-lg">
                     <div>
                       <h4 className="font-medium">{agent.name}</h4>

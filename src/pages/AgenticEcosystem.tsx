@@ -279,7 +279,7 @@ const AgenticEcosystem = () => {
                       <span className="ml-2">Loading agents...</span>
                     </div>
                   ) : (agents?.length || 0) > 0 ? (
-                    agents.map((agent) => (
+                    (agents || []).map((agent) => (
                       <div key={agent.id} className="flex items-center justify-between p-4 border rounded-lg">
                         <div className="flex items-center space-x-4">
                           <Bot className="h-8 w-8 text-primary" />
@@ -293,7 +293,7 @@ const AgenticEcosystem = () => {
                                 {agent.status}
                               </Badge>
                               <span className="text-xs text-muted-foreground">
-                                {agent.connections.length} connections
+                                {(agent.connections || []).length} connections
                               </span>
                             </div>
                           </div>
