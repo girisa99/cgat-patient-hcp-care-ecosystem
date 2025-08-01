@@ -107,6 +107,7 @@ const AgenticEcosystem = () => {
   });
 
   const handleCreateAgent = () => {
+    console.log('🚀 Create New Agent button clicked');
     setActiveTab('basic_info');
     toast({
       title: "Agent Builder",

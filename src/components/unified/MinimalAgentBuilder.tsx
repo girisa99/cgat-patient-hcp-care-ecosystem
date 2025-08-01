@@ -18,7 +18,7 @@ export const MinimalAgentBuilder: React.FC<MinimalAgentBuilderProps> = ({ step }
   console.log('🚀 ENHANCED MinimalAgentBuilder v2.0 rendering with step:', step);
   
   const { user } = useMasterAuth();
-  const { agents, createAgent, isCreating } = useAgents();
+  const { agents = [], createAgent, isCreating, isLoading, error } = useAgents();
   const [currentStep, setCurrentStep] = useState(step || 'basic_info');
   const [agentData, setAgentData] = useState({
     name: '',
@@ -27,8 +27,15 @@ export const MinimalAgentBuilder: React.FC<MinimalAgentBuilderProps> = ({ step }
     use_case: '',
     agent_type: 'single',
     categories: [] as string[],
-    business_units: [] as string[]
+    business_units: [] as string[],
+    topics: [] as string[],
+    brand: ''
   });
+  
+  // Available options for multi-select fields
+  const availableCategories = ['Healthcare', 'Finance', 'Education', 'Technology', 'Manufacturing', 'Retail'];
+  const availableBusinessUnits = ['Clinical Operations', 'Patient Care', 'Administrative', 'Quality Assurance', 'Compliance', 'IT Support'];
+  const availableTopics = ['Patient Management', 'Data Processing', 'Compliance Monitoring', 'Workflow Automation', 'Analytics', 'Communication'];
 
   const handleSaveAgent = async () => {
     try {
@@ -41,6 +48,8 @@ export const MinimalAgentBuilder: React.FC<MinimalAgentBuilderProps> = ({ step }
         return;
       }
 
+      console.log('🚀 Creating agent with data:', agentData);
+
       await createAgent({
         name: agentData.name,
         description: agentData.description,
@@ -48,15 +57,35 @@ export const MinimalAgentBuilder: React.FC<MinimalAgentBuilderProps> = ({ step }
         use_case: agentData.use_case,
         agent_type: agentData.agent_type,
         categories: agentData.categories,
-        business_units: agentData.business_units
+        business_units: agentData.business_units,
+        topics: agentData.topics,
+        brand: agentData.brand
       });
 
       toast({
         title: "Success",
         description: "Agent created successfully!"
       });
+      
+      // Reset form after successful creation
+      setAgentData({
+        name: '',
+        description: '',
+        purpose: '',
+        use_case: '',
+        agent_type: 'single',
+        categories: [],
+        business_units: [],
+        topics: [],
+        brand: ''
+      });
     } catch (error) {
       console.error('Error creating agent:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create agent. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -109,9 +138,98 @@ export const MinimalAgentBuilder: React.FC<MinimalAgentBuilderProps> = ({ step }
               className="mt-1"
             />
           </div>
+          <div>
+            <label className="text-sm font-medium">Brand/Organization</label>
+            <Input 
+              type="text"
+              value={agentData.brand}
+              onChange={(e) => setAgentData(prev => ({ ...prev, brand: e.target.value }))}
+              placeholder="Brand or organization name"
+              className="mt-1"
+            />
+          </div>
+          
+          {/* Categories */}
+          <div>
+            <label className="text-sm font-medium">Categories</label>
+            <div className="mt-2 space-y-2">
+              <div className="flex flex-wrap gap-2">
+                {availableCategories.map((category) => (
+                  <Badge
+                    key={category}
+                    variant={agentData.categories.includes(category) ? "default" : "outline"}
+                    className="cursor-pointer"
+                    onClick={() => {
+                      setAgentData(prev => ({
+                        ...prev,
+                        categories: prev.categories.includes(category)
+                          ? prev.categories.filter(c => c !== category)
+                          : [...prev.categories, category]
+                      }));
+                    }}
+                  >
+                    {category}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          </div>
+          
+          {/* Business Units */}
+          <div>
+            <label className="text-sm font-medium">Business Units</label>
+            <div className="mt-2 space-y-2">
+              <div className="flex flex-wrap gap-2">
+                {availableBusinessUnits.map((unit) => (
+                  <Badge
+                    key={unit}
+                    variant={agentData.business_units.includes(unit) ? "default" : "outline"}
+                    className="cursor-pointer"
+                    onClick={() => {
+                      setAgentData(prev => ({
+                        ...prev,
+                        business_units: prev.business_units.includes(unit)
+                          ? prev.business_units.filter(u => u !== unit)
+                          : [...prev.business_units, unit]
+                      }));
+                    }}
+                  >
+                    {unit}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          </div>
+          
+          {/* Topics */}
+          <div>
+            <label className="text-sm font-medium">Topics</label>
+            <div className="mt-2 space-y-2">
+              <div className="flex flex-wrap gap-2">
+                {availableTopics.map((topic) => (
+                  <Badge
+                    key={topic}
+                    variant={agentData.topics.includes(topic) ? "default" : "outline"}
+                    className="cursor-pointer"
+                    onClick={() => {
+                      setAgentData(prev => ({
+                        ...prev,
+                        topics: prev.topics.includes(topic)
+                          ? prev.topics.filter(t => t !== topic)
+                          : [...prev.topics, topic]
+                      }));
+                    }}
+                  >
+                    {topic}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          </div>
+          
           <Button 
             onClick={handleSaveAgent} 
-            disabled={isCreating}
+            disabled={isCreating || !agentData.name.trim()}
             className="w-full"
           >
             <Save className="h-4 w-4 mr-2" />
@@ -232,20 +350,36 @@ export const MinimalAgentBuilder: React.FC<MinimalAgentBuilderProps> = ({ step }
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Database className="h-5 w-5" />
-              Existing Agents ({agents.length})
+              Existing Agents ({agents?.length || 0})
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {agents.length > 0 ? (
+            {isLoading ? (
+              <div className="flex items-center justify-center p-4">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                <span className="ml-2 text-sm text-muted-foreground">Loading agents...</span>
+              </div>
+            ) : error ? (
+              <div className="text-center p-4">
+                <p className="text-sm text-red-600">Error loading agents: {error.message}</p>
+              </div>
+            ) : agents && agents.length > 0 ? (
               <div className="grid gap-2">
                 {agents.slice(0, 3).map((agent) => (
                   <div key={agent.id} className="flex items-center justify-between p-3 border rounded-lg">
                     <div>
                       <h4 className="font-medium">{agent.name}</h4>
-                      <p className="text-sm text-muted-foreground">{agent.description}</p>
+                      <p className="text-sm text-muted-foreground">{agent.description || 'No description'}</p>
+                      <div className="flex gap-1 mt-1">
+                        {agent.categories && agent.categories.length > 0 && (
+                          <Badge variant="secondary" className="text-xs">
+                            {agent.categories[0]} {agent.categories.length > 1 && `+${agent.categories.length - 1}`}
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                     <Badge variant={agent.status === 'active' ? 'default' : 'secondary'}>
-                      {agent.status}
+                      {agent.status || 'draft'}
                     </Badge>
                   </div>
                 ))}
