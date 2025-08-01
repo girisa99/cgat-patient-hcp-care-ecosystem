@@ -33,10 +33,10 @@ export const MinimalAgentBuilder: React.FC<MinimalAgentBuilderProps> = ({ step }
     brand: ''
   });
   
-  // Available options for multi-select fields
-  const availableCategories = ['Healthcare', 'Finance', 'Education', 'Technology', 'Manufacturing', 'Retail'];
-  const availableBusinessUnits = ['Clinical Operations', 'Patient Care', 'Administrative', 'Quality Assurance', 'Compliance', 'IT Support'];
-  const availableTopics = ['Patient Management', 'Data Processing', 'Compliance Monitoring', 'Workflow Automation', 'Analytics', 'Communication'];
+  // Available options for multi-select fields - Healthcare focused
+  const availableCategories = ['Clinical Operations', 'Patient Management', 'Administrative Services', 'Quality Assurance', 'Compliance Monitoring', 'Healthcare Technology', 'Telemedicine', 'Emergency Care', 'Pharmacy Services', 'Laboratory Services'];
+  const availableBusinessUnits = ['Oncology', 'Cardiology', 'Neurology', 'Pediatrics', 'Surgery', 'Emergency Medicine', 'Radiology', 'Laboratory', 'Pharmacy', 'Administration', 'Compliance', 'IT Support'];
+  const availableTopics = ['Patient Care Coordination', 'Treatment Planning', 'Medication Management', 'Appointment Scheduling', 'Medical Records', 'Billing & Insurance', 'Clinical Documentation', 'Quality Metrics', 'Safety Protocols', 'Regulatory Compliance'];
 
   const handleSaveAgent = async () => {
     try {
@@ -150,13 +150,30 @@ export const MinimalAgentBuilder: React.FC<MinimalAgentBuilderProps> = ({ step }
             />
           </div>
           
-          {/* Categories Dropdown */}
+          {/* Categories Dropdown with Add New & Deactivate */}
           <div>
             <label className="text-sm font-medium">Categories</label>
             <Select
               value={agentData.categories.length > 0 ? agentData.categories[0] : ""}
               onValueChange={(value) => {
-                if (value && !agentData.categories.includes(value)) {
+                if (value === "add_new") {
+                  const newCategory = prompt("Enter new category:");
+                  if (newCategory && newCategory.trim()) {
+                    setAgentData(prev => ({
+                      ...prev,
+                      categories: [...prev.categories, newCategory.trim()]
+                    }));
+                  }
+                } else if (value === "deactivate") {
+                  // Show deactivate options
+                  const categoryToDeactivate = prompt("Enter category name to deactivate:");
+                  if (categoryToDeactivate) {
+                    toast({
+                      title: "Category Deactivated",
+                      description: `${categoryToDeactivate} has been deactivated`,
+                    });
+                  }
+                } else if (value && !agentData.categories.includes(value)) {
                   setAgentData(prev => ({
                     ...prev,
                     categories: [...prev.categories, value]
@@ -173,6 +190,12 @@ export const MinimalAgentBuilder: React.FC<MinimalAgentBuilderProps> = ({ step }
                     {category}
                   </SelectItem>
                 ))}
+                <SelectItem value="add_new" className="text-blue-600 font-medium">
+                  + Add New Category
+                </SelectItem>
+                <SelectItem value="deactivate" className="text-red-600 font-medium">
+                  ⚠ Deactivate Category
+                </SelectItem>
               </SelectContent>
             </Select>
             {agentData.categories.length > 0 && (
@@ -196,13 +219,29 @@ export const MinimalAgentBuilder: React.FC<MinimalAgentBuilderProps> = ({ step }
             )}
           </div>
           
-          {/* Business Units Dropdown */}
+          {/* Business Units Dropdown with Add New & Deactivate */}
           <div>
             <label className="text-sm font-medium">Business Units</label>
             <Select
               value={agentData.business_units.length > 0 ? agentData.business_units[0] : ""}
               onValueChange={(value) => {
-                if (value && !agentData.business_units.includes(value)) {
+                if (value === "add_new") {
+                  const newUnit = prompt("Enter new business unit:");
+                  if (newUnit && newUnit.trim()) {
+                    setAgentData(prev => ({
+                      ...prev,
+                      business_units: [...prev.business_units, newUnit.trim()]
+                    }));
+                  }
+                } else if (value === "deactivate") {
+                  const unitToDeactivate = prompt("Enter business unit name to deactivate:");
+                  if (unitToDeactivate) {
+                    toast({
+                      title: "Business Unit Deactivated",
+                      description: `${unitToDeactivate} has been deactivated`,
+                    });
+                  }
+                } else if (value && !agentData.business_units.includes(value)) {
                   setAgentData(prev => ({
                     ...prev,
                     business_units: [...prev.business_units, value]
@@ -219,6 +258,12 @@ export const MinimalAgentBuilder: React.FC<MinimalAgentBuilderProps> = ({ step }
                     {unit}
                   </SelectItem>
                 ))}
+                <SelectItem value="add_new" className="text-blue-600 font-medium">
+                  + Add New Business Unit
+                </SelectItem>
+                <SelectItem value="deactivate" className="text-red-600 font-medium">
+                  ⚠ Deactivate Business Unit
+                </SelectItem>
               </SelectContent>
             </Select>
             {agentData.business_units.length > 0 && (
@@ -242,13 +287,29 @@ export const MinimalAgentBuilder: React.FC<MinimalAgentBuilderProps> = ({ step }
             )}
           </div>
           
-          {/* Topics Dropdown */}
+          {/* Topics Dropdown with Add New & Deactivate */}
           <div>
             <label className="text-sm font-medium">Topics</label>
             <Select
               value={agentData.topics.length > 0 ? agentData.topics[0] : ""}
               onValueChange={(value) => {
-                if (value && !agentData.topics.includes(value)) {
+                if (value === "add_new") {
+                  const newTopic = prompt("Enter new topic:");
+                  if (newTopic && newTopic.trim()) {
+                    setAgentData(prev => ({
+                      ...prev,
+                      topics: [...prev.topics, newTopic.trim()]
+                    }));
+                  }
+                } else if (value === "deactivate") {
+                  const topicToDeactivate = prompt("Enter topic name to deactivate:");
+                  if (topicToDeactivate) {
+                    toast({
+                      title: "Topic Deactivated",
+                      description: `${topicToDeactivate} has been deactivated`,
+                    });
+                  }
+                } else if (value && !agentData.topics.includes(value)) {
                   setAgentData(prev => ({
                     ...prev,
                     topics: [...prev.topics, value]
@@ -265,6 +326,12 @@ export const MinimalAgentBuilder: React.FC<MinimalAgentBuilderProps> = ({ step }
                     {topic}
                   </SelectItem>
                 ))}
+                <SelectItem value="add_new" className="text-blue-600 font-medium">
+                  + Add New Topic
+                </SelectItem>
+                <SelectItem value="deactivate" className="text-red-600 font-medium">
+                  ⚠ Deactivate Topic
+                </SelectItem>
               </SelectContent>
             </Select>
             {agentData.topics.length > 0 && (
