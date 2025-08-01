@@ -143,6 +143,7 @@ export const UnifiedAgentBuilder: React.FC<UnifiedAgentBuilderProps> = ({ step }
       if (savedStep && !step) {
         setCurrentStep(savedStep);
       } else if (step) {
+        console.log('🎯 Setting currentStep from prop:', step);
         setCurrentStep(step);
       }
     } catch (error) {
@@ -234,9 +235,10 @@ export const UnifiedAgentBuilder: React.FC<UnifiedAgentBuilderProps> = ({ step }
   // Update current step when step prop changes
   useEffect(() => {
     if (step && step !== currentStep) {
+      console.log('🔄 Step prop changed, updating currentStep from', currentStep, 'to', step);
       setCurrentStep(step);
     }
-  }, [step]);
+  }, [step, currentStep]);
 
   // Auto-save functionality
   useEffect(() => {

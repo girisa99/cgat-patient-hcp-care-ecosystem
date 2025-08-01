@@ -37,6 +37,11 @@ const AgenticEcosystem = () => {
     return 'overview';
   });
 
+  // Debug active tab changes
+  React.useEffect(() => {
+    console.log('📋 Active tab is now:', activeTab);
+  }, [activeTab]);
+
   // Fetch real agents data from database - using the same source as MinimalAgentBuilder
   const { data: agents = [], isLoading: agentsLoading, refetch: refetchAgents } = useQuery({
     queryKey: ['agents'],
@@ -255,6 +260,7 @@ const AgenticEcosystem = () => {
 
       {/* Main Interface */}
       <Tabs value={activeTab} onValueChange={(value) => {
+        console.log('🔀 AgenticEcosystem tab changed from', activeTab, 'to', value);
         setActiveTab(value);
         // Persist tab state to localStorage
         localStorage.setItem('agenticEcosystem_activeTab', value);
