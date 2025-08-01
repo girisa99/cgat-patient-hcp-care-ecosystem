@@ -20,6 +20,15 @@ export const MinimalAgentBuilder: React.FC<MinimalAgentBuilderProps> = ({ step }
   
   const { user } = useMasterAuth();
   const { agents = [], createAgent, isCreating, isLoading, error } = useAgents();
+  
+  console.log('🐛 DEBUG: agents data:', { 
+    agents, 
+    agentsType: typeof agents, 
+    agentsLength: agents?.length, 
+    isArray: Array.isArray(agents),
+    isLoading,
+    error: error?.message 
+  });
   const [currentStep, setCurrentStep] = useState(step || 'basic_info');
   const [agentData, setAgentData] = useState({
     name: '',

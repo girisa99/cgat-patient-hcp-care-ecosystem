@@ -48,8 +48,10 @@ export const useAgents = () => {
         throw error;
       }
 
-      console.log('✅ Agents loaded:', data?.length || 0);
-      return data || [];
+      console.log('✅ Agents loaded:', data?.length || 0, 'Raw data:', data);
+      const result = data || [];
+      console.log('🔄 Returning agents array:', result, 'Type:', typeof result, 'Is Array:', Array.isArray(result));
+      return result;
     },
     staleTime: 300000,
     refetchOnWindowFocus: false,
@@ -138,17 +140,18 @@ export const useAgents = () => {
   });
 
   const getAgentStats = () => {
+    const safeAgents = agents || [];
     const stats = {
-      total: agents.length,
-      active: agents.filter(a => a.status === 'active').length,
-      draft: agents.filter(a => a.status === 'draft').length,
-      deployed: agents.filter(a => a.status === 'deployed').length,
+      total: safeAgents.length,
+      active: safeAgents.filter(a => a.status === 'active').length,
+      draft: safeAgents.filter(a => a.status === 'draft').length,
+      deployed: safeAgents.filter(a => a.status === 'deployed').length,
       byType: {} as Record<string, number>,
       byUseCase: {} as Record<string, number>
     };
 
     // Group by type and use case
-    agents.forEach(agent => {
+    safeAgents.forEach(agent => {
       if (agent.agent_type) {
         stats.byType[agent.agent_type] = (stats.byType[agent.agent_type] || 0) + 1;
       }
@@ -160,9 +163,18 @@ export const useAgents = () => {
     return stats;
   };
 
+  console.log('🔥 useAgents hook returning:', {
+    agents,
+    agentsType: typeof agents,
+    agentsLength: agents?.length,
+    isArray: Array.isArray(agents),
+    isLoading,
+    error: error?.message
+  });
+
   return {
     // Core data
-    agents,
+    agents: agents || [],
     
     // Loading states
     isLoading,
@@ -180,15 +192,15 @@ export const useAgents = () => {
     
     // Utilities
     getAgentStats,
-    getAgentsByStatus: (status: string) => agents.filter(a => a.status === status),
-    getAgentsByType: (type: string) => agents.filter(a => a.agent_type === type),
-    getAgentById: (id: string) => agents.find(a => a.id === id),
+    getAgentsByStatus: (status: string) => (agents || []).filter(a => a.status === status),
+    getAgentsByType: (type: string) => (agents || []).filter(a => a.agent_type === type),
+    getAgentById: (id: string) => (agents || []).find(a => a.id === id),
     
     // Meta
     meta: {
       dataSource: 'agents table',
       version: 'agents-v1.0.0',
-      totalAgents: agents.length
+      totalAgents: (agents || []).length
     }
   };
 };

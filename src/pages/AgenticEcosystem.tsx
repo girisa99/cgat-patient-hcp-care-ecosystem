@@ -40,12 +40,14 @@ const AgenticEcosystem = () => {
   const { data: agents = [], isLoading: agentsLoading, refetch: refetchAgents } = useQuery({
     queryKey: ['agents'],
     queryFn: async () => {
-      console.log('🤖 Fetching agents from agents table...');
+      console.log('🤖 AgenticEcosystem: Fetching agents from agents table...');
       
       const { data, error } = await supabase
         .from('agents')
         .select('*')
         .order('created_at', { ascending: false });
+      
+      console.log('🐛 AgenticEcosystem DEBUG: query result:', { data, error, dataType: typeof data, isArray: Array.isArray(data) });
       
       if (error) {
         console.error('Error fetching agents:', error);
@@ -70,7 +72,7 @@ const AgenticEcosystem = () => {
 
   // Fetch real ecosystem stats - always enabled to avoid conditional hook issues
   const { data: ecosystemStats } = useQuery({
-    queryKey: ['ecosystem-stats', agents.length],
+    queryKey: ['ecosystem-stats', agents?.length || 0],
     queryFn: async () => {
       try {
         const { data: apiServices } = await supabase
@@ -88,7 +90,7 @@ const AgenticEcosystem = () => {
           .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
 
         return {
-          activeAgents: agents.filter(a => a.status === 'deployed').length,
+          activeAgents: (agents || []).filter(a => a.status === 'deployed').length,
           connectedChannels: connectors?.length || 0,
           conversationsToday: conversations?.length || 0,
           uptime: '99.2%'
@@ -276,7 +278,7 @@ const AgenticEcosystem = () => {
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                       <span className="ml-2">Loading agents...</span>
                     </div>
-                  ) : agents.length > 0 ? (
+                  ) : (agents?.length || 0) > 0 ? (
                     agents.map((agent) => (
                       <div key={agent.id} className="flex items-center justify-between p-4 border rounded-lg">
                         <div className="flex items-center space-x-4">
