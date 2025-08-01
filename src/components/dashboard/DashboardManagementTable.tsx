@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -140,26 +141,32 @@ export const DashboardManagementTable: React.FC = () => {
                   <Button 
                     className="w-full justify-start" 
                     variant="outline"
-                    onClick={() => { window.location.href = '/users'; }}  // Using window.location for full reload
+                    asChild
                   >
-                    <Users className="h-4 w-4 mr-2" />
-                    Manage Users
+                    <Link to="/users">
+                      <Users className="h-4 w-4 mr-2" />
+                      Manage Users
+                    </Link>
                   </Button>
                   <Button 
                     className="w-full justify-start" 
                     variant="outline"
-                    onClick={() => { window.location.href = '/facilities'; }}  // Using window.location for full reload
+                    asChild
                   >
-                    <Building className="h-4 w-4 mr-2" />
-                    Add Facility
+                    <Link to="/facilities">
+                      <Building className="h-4 w-4 mr-2" />
+                      Add Facility
+                    </Link>
                   </Button>
                   <Button 
                     className="w-full justify-start" 
                     variant="outline"
-                    onClick={() => { window.location.href = '/modules'; }}  // Using window.location for full reload
+                    asChild
                   >
-                    <Package className="h-4 w-4 mr-2" />
-                    Configure Modules
+                    <Link to="/modules">
+                      <Package className="h-4 w-4 mr-2" />
+                      Configure Modules
+                    </Link>
                   </Button>
                 </>
               )}

@@ -1119,8 +1119,8 @@ export const UnifiedAgentBuilder: React.FC<UnifiedAgentBuilderProps> = ({ step }
                 setCurrentSessionId(null);
                 setCurrentStep('basic_info');
                 // Go back to overview after deleting
+                setCurrentStep('basic_info');
                 window.localStorage.setItem('agenticEcosystem_activeTab', 'overview');
-                window.location.reload(); // Refresh to show overview
               }
             });
           }
@@ -1129,8 +1129,8 @@ export const UnifiedAgentBuilder: React.FC<UnifiedAgentBuilderProps> = ({ step }
           setCurrentSessionId(null);
           setCurrentStep('basic_info');
           // Go back to overview when exiting
+          setCurrentStep('basic_info');
           window.localStorage.setItem('agenticEcosystem_activeTab', 'overview');
-          window.location.reload(); // Refresh to show overview
         }}
         isSaving={updateSession.isPending}
       />
