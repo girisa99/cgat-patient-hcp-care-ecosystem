@@ -364,24 +364,13 @@ export const MinimalAgentBuilder: React.FC<MinimalAgentBuilderProps> = ({ step }
         {/* Agent Overview */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Agent Builder - Step: {currentStep}</CardTitle>
-                {agentData.name && (
-                  <div className="flex items-center gap-2 mt-2">
-                    <User className="h-4 w-4" />
-                    <span className="text-sm text-muted-foreground">Building: {agentData.name}</span>
-                  </div>
-                )}
+            <CardTitle>Agent Builder - Step: {currentStep}</CardTitle>
+            {agentData.name && (
+              <div className="flex items-center gap-2 mt-2">
+                <User className="h-4 w-4" />
+                <span className="text-sm text-muted-foreground">Building: {agentData.name}</span>
               </div>
-              <Button 
-                onClick={() => setCurrentStep('basic_info')}
-                className="flex items-center gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                Create New Agent
-              </Button>
-            </div>
+            )}
           </CardHeader>
           <CardContent>
             <div className="flex gap-2 mb-4">

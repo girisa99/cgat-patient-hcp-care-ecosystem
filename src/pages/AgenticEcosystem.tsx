@@ -36,16 +36,16 @@ const AgenticEcosystem = () => {
     return 'overview';
   });
 
-  // Fetch real agents data from database
+  // Fetch real agents data from database - using the same source as MinimalAgentBuilder
   const { data: agents = [], isLoading: agentsLoading, refetch: refetchAgents } = useQuery({
     queryKey: ['agents'],
     queryFn: async () => {
-      // For now, we'll use a table structure. In a real implementation, 
-      // you might want to create an 'agents' table in your database
+      console.log('🤖 Fetching agents from agents table...');
+      
       const { data, error } = await supabase
-        .from('api_integration_registry')
+        .from('agents')
         .select('*')
-        .eq('category', 'agent');
+        .order('created_at', { ascending: false });
       
       if (error) {
         console.error('Error fetching agents:', error);
@@ -55,12 +55,12 @@ const AgenticEcosystem = () => {
       // Transform the data to match our Agent interface
       return (data || []).map(item => ({
         id: item.id,
-        name: item.name,
+        name: item.name || 'Unnamed Agent',
         description: item.description || '',
         status: item.status === 'active' ? 'deployed' : 'draft',
-        connections: item.rate_limits ? Object.keys(item.rate_limits) : [],
-        role: item.type || 'general',
-        template: item.category || 'default',
+        connections: item.categories || [],
+        role: item.agent_type || 'general',
+        template: item.brand || 'default',
         created_at: item.created_at,
         updated_at: item.updated_at
       })) as Agent[];
@@ -117,9 +117,9 @@ const AgenticEcosystem = () => {
 
   const handleDeployAgent = async (agentId: string) => {
     try {
-      // Update agent status in database
+      // Update agent status in the correct agents table
       const { error } = await supabase
-        .from('api_integration_registry')
+        .from('agents')
         .update({ status: 'active' })
         .eq('id', agentId);
 
@@ -143,7 +143,7 @@ const AgenticEcosystem = () => {
   const handlePauseAgent = async (agentId: string) => {
     try {
       const { error } = await supabase
-        .from('api_integration_registry')
+        .from('agents')
         .update({ status: 'paused' })
         .eq('id', agentId);
 
