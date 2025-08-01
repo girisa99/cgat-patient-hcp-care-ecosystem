@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MinimalAgentBuilder as EnhancedAgentBuilder } from '@/components/unified/MinimalAgentBuilder';
+import { UnifiedAgentBuilder as EnhancedAgentBuilder } from '@/components/unified/UnifiedAgentBuilder';
 import { Bot, Network, Settings, Rocket, Plus, Brain } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
