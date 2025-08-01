@@ -192,7 +192,7 @@ export const MinimalAgentBuilder: React.FC<MinimalAgentBuilderProps> = ({ step }
                       description: `${categoryToDeactivate} has been deactivated`,
                     });
                   }
-                } else if (value && !agentData.categories.includes(value)) {
+                } else if (value && !(agentData.categories || []).includes(value)) {
                   setAgentData(prev => ({
                     ...prev,
                     categories: [...prev.categories, value]
@@ -219,7 +219,7 @@ export const MinimalAgentBuilder: React.FC<MinimalAgentBuilderProps> = ({ step }
             </Select>
             {(agentData.categories && agentData.categories.length > 0) && (
               <div className="flex flex-wrap gap-2 mt-2">
-                {agentData.categories.map((category) => (
+                {(agentData.categories || []).map((category) => (
                   <Badge
                     key={category}
                     variant="default"
@@ -260,7 +260,7 @@ export const MinimalAgentBuilder: React.FC<MinimalAgentBuilderProps> = ({ step }
                       description: `${unitToDeactivate} has been deactivated`,
                     });
                   }
-                } else if (value && !agentData.business_units.includes(value)) {
+                } else if (value && !(agentData.business_units || []).includes(value)) {
                   setAgentData(prev => ({
                     ...prev,
                     business_units: [...prev.business_units, value]
@@ -287,7 +287,7 @@ export const MinimalAgentBuilder: React.FC<MinimalAgentBuilderProps> = ({ step }
             </Select>
             {(agentData.business_units && agentData.business_units.length > 0) && (
               <div className="flex flex-wrap gap-2 mt-2">
-                {agentData.business_units.map((unit) => (
+                {(agentData.business_units || []).map((unit) => (
                   <Badge
                     key={unit}
                     variant="default"
@@ -328,7 +328,7 @@ export const MinimalAgentBuilder: React.FC<MinimalAgentBuilderProps> = ({ step }
                       description: `${topicToDeactivate} has been deactivated`,
                     });
                   }
-                } else if (value && !agentData.topics.includes(value)) {
+                } else if (value && !(agentData.topics || []).includes(value)) {
                   setAgentData(prev => ({
                     ...prev,
                     topics: [...prev.topics, value]
@@ -355,7 +355,7 @@ export const MinimalAgentBuilder: React.FC<MinimalAgentBuilderProps> = ({ step }
             </Select>
             {(agentData.topics && agentData.topics.length > 0) && (
               <div className="flex flex-wrap gap-2 mt-2">
-                {agentData.topics.map((topic) => (
+                {(agentData.topics || []).map((topic) => (
                   <Badge
                     key={topic}
                     variant="default"
@@ -443,6 +443,21 @@ export const MinimalAgentBuilder: React.FC<MinimalAgentBuilderProps> = ({ step }
         return renderBasicInfo();
     }
   };
+
+  // Add additional debugging and safety checks
+  console.log('🔍 Complete state check:', {
+    step,
+    currentStep,
+    user,
+    agents: agents || [],
+    agentData,
+    agentDataCategories: agentData?.categories,
+    agentDataBusinessUnits: agentData?.business_units,
+    agentDataTopics: agentData?.topics,
+    availableCategories,
+    availableBusinessUnits,
+    availableTopics
+  });
 
   try {
     return (

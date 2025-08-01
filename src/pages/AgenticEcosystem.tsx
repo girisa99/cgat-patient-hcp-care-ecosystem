@@ -54,18 +54,27 @@ const AgenticEcosystem = () => {
         return [];
       }
       
-      // Transform the data to match our Agent interface
-      return (data || []).map(item => ({
-        id: item.id,
-        name: item.name || 'Unnamed Agent',
-        description: item.description || '',
-        status: item.status === 'active' ? 'deployed' : 'draft',
-        connections: item.categories || [],
-        role: item.agent_type || 'general',
-        template: item.brand || 'default',
-        created_at: item.created_at,
-        updated_at: item.updated_at
-      })) as Agent[];
+      // Transform the data to match our Agent interface with comprehensive null safety
+      const safeData = data || [];
+      console.log('🔄 Transforming data:', { safeData, length: safeData.length });
+      
+      return safeData.map((item: any) => {
+        // Ensure item is defined and has basic properties
+        const safeItem = item || {};
+        console.log('🔧 Processing item:', safeItem);
+        
+        return {
+          id: safeItem.id || `agent-${Date.now()}-${Math.random()}`,
+          name: safeItem.name || 'Unnamed Agent',
+          description: safeItem.description || '',
+          status: safeItem.status === 'active' ? 'deployed' : 'draft',
+          connections: Array.isArray(safeItem.categories) ? safeItem.categories : [],
+          role: safeItem.agent_type || 'general',
+          template: safeItem.brand || 'default',
+          created_at: safeItem.created_at || new Date().toISOString(),
+          updated_at: safeItem.updated_at || new Date().toISOString()
+        };
+      }) as Agent[];
     },
     refetchInterval: 30000, // Refresh every 30 seconds
   });
