@@ -121,6 +121,14 @@ export const UnifiedAgentBuilder: React.FC<UnifiedAgentBuilderProps> = ({ step }
   const [actions, setActions] = useState<AgentAction[]>([]);
   const [isClient, setIsClient] = useState(false);
   
+  // Debug logging
+  console.log('🔍 About to call useAgentSession with:', currentSessionId);
+  
+  // Always call hook with consistent parameters (fix for React error #185)
+  // Use a stable sessionId parameter to prevent hook ordering issues
+  const stableSessionId = currentSessionId || '';
+  console.log('🔍 Using stable sessionId:', stableSessionId);
+  
   // Client-side initialization effect
   useEffect(() => {
     try {
@@ -149,8 +157,6 @@ export const UnifiedAgentBuilder: React.FC<UnifiedAgentBuilderProps> = ({ step }
   }, [step]);
   
   // Always call hook with consistent parameters (fix for React error #185)
-  // Use a stable sessionId parameter to prevent hook ordering issues
-  const stableSessionId = currentSessionId || '';
   const {
     currentSession,
     userSessions,
