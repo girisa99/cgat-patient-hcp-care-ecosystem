@@ -111,9 +111,11 @@ interface UnifiedAgentBuilderProps {
 
 export const UnifiedAgentBuilder: React.FC<UnifiedAgentBuilderProps> = ({ step }) => {
   console.log('🚀 UnifiedAgentBuilder rendering with step:', step);
+  
+  // Always call hooks in the same order - CRITICAL for React hook rules
   const { user } = useMasterAuth();
   
-  // Fix React error #185: Ensure hooks always get the same parameters
+  // STABLE state initialization - these must always be declared in the same order
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState<AgentSession['current_step']>(step || 'basic_info');
   const [showNewSessionDialog, setShowNewSessionDialog] = useState(false);
@@ -121,11 +123,7 @@ export const UnifiedAgentBuilder: React.FC<UnifiedAgentBuilderProps> = ({ step }
   const [actions, setActions] = useState<AgentAction[]>([]);
   const [isClient, setIsClient] = useState(false);
   
-  // Debug logging
-  console.log('🔍 About to call useAgentSession with:', currentSessionId);
-  
-  // Always call hook with consistent parameters (fix for React error #185)
-  // Use a stable sessionId parameter to prevent hook ordering issues
+  // STABLE sessionId for hook consistency
   const stableSessionId = currentSessionId || '';
   console.log('🔍 Using stable sessionId:', stableSessionId);
   
