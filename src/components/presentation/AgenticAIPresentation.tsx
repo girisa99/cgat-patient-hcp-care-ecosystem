@@ -2980,130 +2980,135 @@ const slides: Slide[] = [
     ),
     animation: 'fade'
   }
-  },
 ];
 
 export const AgenticAIPresentation: React.FC = () => {
-        <div className="text-center space-y-6">
-          <div className="w-32 h-32 mx-auto bg-gradient-to-br from-primary to-primary/60 rounded-full flex items-center justify-center">
-            <div className="text-5xl">🚀</div>
-          </div>
-          <div>
-            <h2 className="text-3xl font-bold text-primary mb-2">Ready to Get Started?</h2>
-            <p className="text-xl text-muted-foreground">
-              Transform your treatment center with AI-powered automation
-            </p>
-          </div>
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const { exportHTML, exportPDF, exportPPT } = usePresentationExporter();
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isPlaying) {
+      interval = setInterval(() => {
+        setCurrentSlide((prev) => (prev + 1) % slides.length);
+      }, 5000); // 5 seconds per slide
+    }
+    return () => clearInterval(interval);
+  }, [isPlaying]);
+
+  const nextSlide = () => {
+    setCurrentSlide((prev) => (prev + 1) % slides.length);
+  };
+
+  const prevSlide = () => {
+    setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
+  };
+
+  const togglePlay = () => {
+    setIsPlaying(!isPlaying);
+  };
+
+  const resetPresentation = () => {
+    setCurrentSlide(0);
+    setIsPlaying(false);
+  };
+
+  const toggleFullscreen = () => {
+    setIsFullscreen(!isFullscreen);
+  };
+
+  const containerClass = cn(
+    "bg-background border rounded-lg",
+    isFullscreen ? "fixed inset-0 z-50" : "max-w-6xl mx-auto"
+  );
+
+  return (
+    <div className={containerClass} data-presentation-content data-current-slide={currentSlide}>
+      {/* Slide Navigation Header */}
+      <div className="flex items-center justify-between p-4 border-b">
+        <div className="flex items-center gap-4">
+          <Badge variant="secondary">{currentSlide + 1} / {slides.length}</Badge>
         </div>
-
-        <div className="grid grid-cols-2 gap-8">
-          <Card className="p-6 bg-gradient-to-br from-blue-500/20 to-blue-500/5 border-blue-500/20">
-            <div className="text-center space-y-4">
-              <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center mx-auto">
-                <span className="text-white text-2xl">📞</span>
-              </div>
-              <h3 className="text-xl font-bold text-blue-600">Schedule a Demo</h3>
-              <p className="text-sm text-muted-foreground">
-                See the platform in action with a personalized demonstration
-              </p>
-              <div className="space-y-2">
-                <div className="bg-white/50 rounded-lg p-3">
-                  <div className="font-medium">Available Times</div>
-                  <div className="text-sm text-muted-foreground">Monday - Friday, 9 AM - 5 PM EST</div>
-                </div>
-                <div className="bg-white/50 rounded-lg p-3">
-                  <div className="font-medium">Duration</div>
-                  <div className="text-sm text-muted-foreground">30-45 minutes</div>
-                </div>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="p-6 bg-gradient-to-br from-green-500/20 to-green-500/5 border-green-500/20">
-            <div className="text-center space-y-4">
-              <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto">
-                <span className="text-white text-2xl">🎯</span>
-              </div>
-              <h3 className="text-xl font-bold text-green-600">Start a Pilot</h3>
-              <p className="text-sm text-muted-foreground">
-                Begin with a focused pilot project to prove value
-              </p>
-              <div className="space-y-2">
-                <div className="bg-white/50 rounded-lg p-3">
-                  <div className="font-medium">Pilot Duration</div>
-                  <div className="text-sm text-muted-foreground">30-90 days</div>
-                </div>
-                <div className="bg-white/50 rounded-lg p-3">
-                  <div className="font-medium">Limited Risk</div>
-                  <div className="text-sm text-muted-foreground">Controlled scope & budget</div>
-                </div>
-              </div>
-            </div>
-          </Card>
-        </div>
-
-        <Card className="p-6 bg-gradient-to-br from-purple-500/20 to-purple-500/5 border-purple-500/20">
-          <h3 className="text-xl font-bold text-purple-600 mb-6 flex items-center gap-2">
-            <span className="text-2xl">📞</span> Contact Information
-          </h3>
-          <div className="grid grid-cols-3 gap-6">
-            <div className="text-center">
-              <div className="text-3xl mb-2">📧</div>
-              <h4 className="font-semibold">Email</h4>
-              <p className="text-sm text-muted-foreground">contact@ai-platform.com</p>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl mb-2">📱</div>
-              <h4 className="font-semibold">Phone</h4>
-              <p className="text-sm text-muted-foreground">(555) 123-4567</p>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl mb-2">💬</div>
-              <h4 className="font-semibold">Support</h4>
-              <p className="text-sm text-muted-foreground">24/7 Live Chat</p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-6 bg-gradient-to-br from-orange-500/20 to-orange-500/5 border-orange-500/20">
-          <h3 className="text-xl font-bold text-orange-600 mb-4 flex items-center gap-2">
-            <span className="text-2xl">🎁</span> Special Launch Offer
-          </h3>
-          <div className="bg-white/50 rounded-lg p-6 text-center">
-            <div className="text-2xl font-bold text-orange-600 mb-2">50% OFF</div>
-            <div className="text-lg font-medium mb-2">Implementation Services</div>
-            <div className="text-sm text-muted-foreground mb-4">
-              For the first 20 treatment centers to sign up in Q1 2024
-            </div>
-            <div className="flex justify-center gap-4 text-sm">
-              <div className="flex items-center gap-1">
-                <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                <span>Free setup & training</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                <span>3 months support included</span>
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        <div className="text-center space-y-4">
-          <h3 className="text-2xl font-bold">Thank You!</h3>
-          <p className="text-lg text-muted-foreground">
-            Thank you for your time and interest in our AI automation platform.
-          </p>
-          <p className="text-sm text-muted-foreground">
-            We look forward to helping you transform your treatment center operations.
-          </p>
+        
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => exportHTML(slides, setCurrentSlide)}>
+            <Download className="w-4 h-4 mr-2" />
+            HTML
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => exportPDF(slides, setCurrentSlide)}>
+            <FileText className="w-4 h-4 mr-2" />
+            PDF
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => exportPPT(slides, setCurrentSlide)}>
+            <Presentation className="w-4 h-4 mr-2" />
+            PPT
+          </Button>
+          <Button variant="outline" size="sm" onClick={resetPresentation}>
+            <RotateCcw className="w-4 h-4 mr-2" />
+            Reset
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={toggleFullscreen}
+          >
+            <Maximize2 className="w-4 h-4" />
+          </Button>
         </div>
       </div>
-    ),
-    animation: 'fade'
-  }
-];
 
-export const AgenticAIPresentation: React.FC = () => {
+      {/* Slide Container */}
+      <div className={`relative ${isFullscreen ? 'h-[calc(100vh-140px)]' : 'h-[700px]'}`}>
+        <div
+          key={currentSlide}
+          className="absolute inset-0 p-6 flex flex-col transition-opacity duration-500 overflow-y-auto"
+          data-slide-content
+          data-slide-index={currentSlide}
+        >
+          <div className="text-center mb-6 flex-shrink-0">
+            <h1 className="text-3xl lg:text-4xl font-bold text-primary mb-2">
+              {slides[currentSlide].title}
+            </h1>
+            {slides[currentSlide].subtitle && (
+              <p className="text-lg lg:text-xl text-muted-foreground">
+                {slides[currentSlide].subtitle}
+              </p>
+            )}
+          </div>
+          <div className="flex-1">
+            {slides[currentSlide].content}
+          </div>
+        </div>
+      </div>
+
+      {/* Navigation Controls */}
+      <div className="flex items-center justify-between p-4 border-t">
+        <Button variant="outline" size="sm" onClick={prevSlide}>
+          <ChevronLeft className="w-4 h-4 mr-2" />
+          Previous
+        </Button>
+        
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={togglePlay}>
+            {isPlaying ? (
+              <Pause className="w-4 h-4 mr-2" />
+            ) : (
+              <Play className="w-4 h-4 mr-2" />
+            )}
+            {isPlaying ? 'Pause' : 'Play'}
+          </Button>
+        </div>
+        
+        <Button variant="outline" size="sm" onClick={nextSlide}>
+          Next
+          <ChevronRight className="w-4 h-4 ml-2" />
+        </Button>
+      </div>
+  );
+};
+    ),
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
