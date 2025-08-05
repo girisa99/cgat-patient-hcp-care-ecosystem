@@ -297,53 +297,269 @@ const slides: Slide[] = [
   {
     id: 7,
     title: "Step 4: AI Assignment, Task Execution & Multi-Channel Deployment",
-    subtitle: "Configuring AI Models and Tasks",
+    subtitle: "Comprehensive AI Model Configuration & Advanced Task Orchestration",
     content: (
-      <div className="h-full overflow-y-auto space-y-6 animate-fade-in">
-        <Card className="p-6">
-          <h3 className="text-xl font-bold mb-4">AI Configuration</h3>
-          <div className="grid grid-cols-2 gap-6">
-            <div>
-              <h4 className="font-semibold mb-2">AI Models</h4>
-              <ul className="space-y-2 text-sm">
-                <li>• Small Language Models</li>
-                <li>• Vision systems</li>
-                <li>• Custom trained models</li>
-              </ul>
+      <div className="h-full overflow-y-auto space-y-8 animate-fade-in">
+        <div className="grid grid-cols-2 gap-8">
+          <Card className="p-6 bg-gradient-to-br from-indigo-500/20 to-indigo-500/5 border-2 border-indigo-500/30 hover:scale-105 transition-transform animate-fade-in">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg animate-pulse">
+                <span className="text-2xl">🤖</span>
+              </div>
+              <h3 className="text-xl font-bold text-indigo-700 mb-3">AI Model Assignment</h3>
             </div>
-            <div>
-              <h4 className="font-semibold mb-2">Task Assignment</h4>
-              <ul className="space-y-2 text-sm">
-                <li>• Automated workflows</li>
-                <li>• Decision trees</li>
-                <li>• Response generation</li>
-              </ul>
+            <div className="space-y-4">
+              <div className="p-4 bg-card rounded-lg border">
+                <h4 className="font-semibold text-primary mb-2">🧠 Small Language Models</h4>
+                <ul className="text-sm space-y-1 text-muted-foreground">
+                  <li>• Llama 3.1 8B Instruct</li>
+                  <li>• Phi-3 Mini for efficiency</li>
+                  <li>• Gemma 2B for quick responses</li>
+                  <li>• Custom fine-tuned models</li>
+                </ul>
+              </div>
+              <div className="p-4 bg-card rounded-lg border">
+                <h4 className="font-semibold text-primary mb-2">👁️ Vision & Multimodal</h4>
+                <ul className="text-sm space-y-1 text-muted-foreground">
+                  <li>• GPT-4V for image analysis</li>
+                  <li>• CLIP for visual understanding</li>
+                  <li>• OCR integration</li>
+                  <li>• Document processing</li>
+                </ul>
+              </div>
+              <div className="p-4 bg-card rounded-lg border">
+                <h4 className="font-semibold text-primary mb-2">🎯 Specialized Models</h4>
+                <ul className="text-sm space-y-1 text-muted-foreground">
+                  <li>• Healthcare domain models</li>
+                  <li>• Sentiment analysis</li>
+                  <li>• Classification systems</li>
+                  <li>• Custom embeddings</li>
+                </ul>
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="p-6 bg-gradient-to-br from-emerald-500/20 to-emerald-500/5 border-2 border-emerald-500/30 hover:scale-105 transition-transform animate-fade-in delay-200">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg animate-pulse">
+                <span className="text-2xl">⚙️</span>
+              </div>
+              <h3 className="text-xl font-bold text-emerald-700 mb-3">Task Execution Engine</h3>
+            </div>
+            <div className="space-y-4">
+              <div className="p-4 bg-card rounded-lg border">
+                <h4 className="font-semibold text-primary mb-2">🔄 Workflow Automation</h4>
+                <ul className="text-sm space-y-1 text-muted-foreground">
+                  <li>• Multi-step processes</li>
+                  <li>• Conditional branching</li>
+                  <li>• Error handling & retry</li>
+                  <li>• Performance monitoring</li>
+                </ul>
+              </div>
+              <div className="p-4 bg-card rounded-lg border">
+                <h4 className="font-semibold text-primary mb-2">🎯 Decision Trees</h4>
+                <ul className="text-sm space-y-1 text-muted-foreground">
+                  <li>• Dynamic routing logic</li>
+                  <li>• Context-aware responses</li>
+                  <li>• Escalation protocols</li>
+                  <li>• Learning algorithms</li>
+                </ul>
+              </div>
+              <div className="p-4 bg-card rounded-lg border">
+                <h4 className="font-semibold text-primary mb-2">📝 Response Generation</h4>
+                <ul className="text-sm space-y-1 text-muted-foreground">
+                  <li>• Template-based responses</li>
+                  <li>• Dynamic content creation</li>
+                  <li>• Personalization engine</li>
+                  <li>• Multi-language support</li>
+                </ul>
+              </div>
+            </div>
+          </Card>
+        </div>
+        
+        <div className="mt-8 text-center animate-fade-in delay-400">
+          <div className="bg-gradient-to-r from-indigo-500/10 via-emerald-500/10 to-purple-500/10 p-6 rounded-lg border">
+            <h3 className="text-xl font-bold mb-4 text-primary">Advanced Task Orchestration</h3>
+            <div className="grid grid-cols-4 gap-4">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-indigo-500 rounded-full flex items-center justify-center mx-auto mb-2 shadow-lg animate-bounce">
+                  <span className="text-white text-lg">⚡</span>
+                </div>
+                <div className="text-sm font-semibold">Real-time Processing</div>
+                <div className="text-xs text-muted-foreground">< 200ms response</div>
+              </div>
+              <div className="text-center">
+                <div className="w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-2 shadow-lg animate-bounce delay-100">
+                  <span className="text-white text-lg">🔄</span>
+                </div>
+                <div className="text-sm font-semibold">Auto-scaling</div>
+                <div className="text-xs text-muted-foreground">Dynamic resource allocation</div>
+              </div>
+              <div className="text-center">
+                <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-2 shadow-lg animate-bounce delay-200">
+                  <span className="text-white text-lg">📊</span>
+                </div>
+                <div className="text-sm font-semibold">Analytics</div>
+                <div className="text-xs text-muted-foreground">Performance insights</div>
+              </div>
+              <div className="text-center">
+                <div className="w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center mx-auto mb-2 shadow-lg animate-bounce delay-300">
+                  <span className="text-white text-lg">🛡️</span>
+                </div>
+                <div className="text-sm font-semibold">Security</div>
+                <div className="text-xs text-muted-foreground">Enterprise-grade</div>
+              </div>
             </div>
           </div>
-        </Card>
+        </div>
       </div>
     ),
     animation: 'fade'
   },
   {
     id: 8,
-    title: "Step 5: Multi-Channel Deployment",
-    subtitle: "Deploying Across All Platforms",
+    title: "Step 5: Multi-Channel Deployment & Platform Integration",
+    subtitle: "Seamless Deployment Across All Communication Channels",
     content: (
-      <div className="h-full overflow-y-auto space-y-6 animate-fade-in">
-        <div className="grid grid-cols-3 gap-6">
-          <Card className="p-6 text-center">
-            <div className="text-2xl mb-2">💬</div>
-            <h4 className="font-bold">Chat Platforms</h4>
+      <div className="h-full overflow-y-auto space-y-8 animate-fade-in">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-500/20 to-purple-500/20 px-6 py-3 rounded-full border border-blue-500/30">
+            <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+            <span className="text-lg font-semibold">Multi-Channel Deployment Hub</span>
+            <div className="w-3 h-3 bg-purple-500 rounded-full animate-pulse delay-100"></div>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-4 gap-6">
+          <Card className="p-6 bg-gradient-to-br from-blue-500/20 to-blue-500/5 border-2 border-blue-500/30 hover:scale-105 transition-all duration-300 animate-fade-in">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg animate-pulse">
+                <span className="text-2xl">💬</span>
+              </div>
+              <h4 className="font-bold text-blue-700 mb-3">Chat Platforms</h4>
+              <div className="space-y-2 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span>WhatsApp Business</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span>Facebook Messenger</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span>Telegram Bot API</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span>Slack Integration</span>
+                </div>
+              </div>
+            </div>
           </Card>
-          <Card className="p-6 text-center">
-            <div className="text-2xl mb-2">📱</div>
-            <h4 className="font-bold">Mobile Apps</h4>
+          
+          <Card className="p-6 bg-gradient-to-br from-green-500/20 to-green-500/5 border-2 border-green-500/30 hover:scale-105 transition-all duration-300 animate-fade-in delay-100">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg animate-pulse">
+                <span className="text-2xl">📱</span>
+              </div>
+              <h4 className="font-bold text-green-700 mb-3">Mobile Apps</h4>
+              <div className="space-y-2 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span>iOS Native App</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span>Android Native App</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span>React Native PWA</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span>Flutter Widget</span>
+                </div>
+              </div>
+            </div>
           </Card>
-          <Card className="p-6 text-center">
-            <div className="text-2xl mb-2">🌐</div>
-            <h4 className="font-bold">Web Interface</h4>
+          
+          <Card className="p-6 bg-gradient-to-br from-purple-500/20 to-purple-500/5 border-2 border-purple-500/30 hover:scale-105 transition-all duration-300 animate-fade-in delay-200">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg animate-pulse">
+                <span className="text-2xl">🌐</span>
+              </div>
+              <h4 className="font-bold text-purple-700 mb-3">Web Interface</h4>
+              <div className="space-y-2 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span>React Widget</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span>WordPress Plugin</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span>Shopify Integration</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span>Custom Embed</span>
+                </div>
+              </div>
+            </div>
           </Card>
+          
+          <Card className="p-6 bg-gradient-to-br from-orange-500/20 to-orange-500/5 border-2 border-orange-500/30 hover:scale-105 transition-all duration-300 animate-fade-in delay-300">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg animate-pulse">
+                <span className="text-2xl">📞</span>
+              </div>
+              <h4 className="font-bold text-orange-700 mb-3">Voice & SMS</h4>
+              <div className="space-y-2 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span>Twilio Integration</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span>Voice Assistants</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span>SMS Automation</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span>IVR Systems</span>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
+        
+        <div className="mt-8 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-orange-500/10 p-6 rounded-lg border animate-fade-in delay-500">
+          <h3 className="text-xl font-bold text-center mb-6 text-primary">Deployment Analytics & Management</h3>
+          <div className="grid grid-cols-3 gap-8">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-blue-600 mb-2">99.9%</div>
+              <div className="text-lg font-semibold mb-1">Uptime SLA</div>
+              <div className="text-sm text-muted-foreground">Enterprise reliability</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-green-600 mb-2">< 5s</div>
+              <div className="text-lg font-semibold mb-1">Deploy Time</div>
+              <div className="text-sm text-muted-foreground">Instant activation</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-purple-600 mb-2">15+</div>
+              <div className="text-lg font-semibold mb-1">Channels</div>
+              <div className="text-sm text-muted-foreground">Platform support</div>
+            </div>
+          </div>
         </div>
       </div>
     ),
@@ -351,77 +567,1273 @@ const slides: Slide[] = [
   },
   {
     id: 9,
-    title: "MCP Protocol & Small Language Models",
-    subtitle: "Model Context Protocol Integration",
+    title: "MCP Protocol & Small Language Models Integration",
+    subtitle: "Advanced Model Context Protocol for Seamless AI Communication",
     content: (
-      <div className="h-full overflow-y-auto space-y-6 animate-fade-in">
-        <Card className="p-6">
-          <h3 className="text-xl font-bold mb-4">MCP Integration</h3>
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-              <span>Cross-model communication</span>
+      <div className="h-full overflow-y-auto space-y-8 animate-fade-in">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center gap-3 bg-gradient-to-r from-purple-500/20 to-indigo-500/20 px-6 py-3 rounded-full border border-purple-500/30">
+            <div className="w-4 h-4 bg-purple-500 rounded-full animate-pulse"></div>
+            <span className="text-lg font-semibold">Model Context Protocol (MCP)</span>
+            <div className="w-4 h-4 bg-indigo-500 rounded-full animate-pulse delay-100"></div>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-8">
+          <Card className="p-6 bg-gradient-to-br from-purple-500/20 to-purple-500/5 border-2 border-purple-500/30 hover:scale-105 transition-transform animate-fade-in">
+            <div className="text-center mb-6">
+              <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-xl animate-pulse">
+                <span className="text-3xl">🔗</span>
+              </div>
+              <h3 className="text-xl font-bold text-purple-700 mb-3">MCP Protocol Features</h3>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-              <span>Context sharing and session management</span>
+            <div className="space-y-4">
+              <div className="p-4 bg-card rounded-lg border shadow-sm">
+                <h4 className="font-semibold text-primary mb-2 flex items-center gap-2">
+                  <div className="w-3 h-3 bg-purple-500 rounded-full animate-pulse"></div>
+                  Cross-Model Communication
+                </h4>
+                <p className="text-sm text-muted-foreground">Enables seamless communication between different AI models and services with standardized protocols</p>
+              </div>
+              <div className="p-4 bg-card rounded-lg border shadow-sm">
+                <h4 className="font-semibold text-primary mb-2 flex items-center gap-2">
+                  <div className="w-3 h-3 bg-indigo-500 rounded-full animate-pulse"></div>
+                  Context Sharing & Session Management
+                </h4>
+                <p className="text-sm text-muted-foreground">Maintains conversation context across multiple models and preserves session state for continuity</p>
+              </div>
+              <div className="p-4 bg-card rounded-lg border shadow-sm">
+                <h4 className="font-semibold text-primary mb-2 flex items-center gap-2">
+                  <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+                  Resource Management
+                </h4>
+                <p className="text-sm text-muted-foreground">Intelligent resource allocation and load balancing across model instances</p>
+              </div>
+              <div className="p-4 bg-card rounded-lg border shadow-sm">
+                <h4 className="font-semibold text-primary mb-2 flex items-center gap-2">
+                  <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                  Security & Authentication
+                </h4>
+                <p className="text-sm text-muted-foreground">Enterprise-grade security with token-based authentication and encrypted communications</p>
+              </div>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-              <span>Optimized small language models</span>
+          </Card>
+          
+          <Card className="p-6 bg-gradient-to-br from-indigo-500/20 to-indigo-500/5 border-2 border-indigo-500/30 hover:scale-105 transition-transform animate-fade-in delay-200">
+            <div className="text-center mb-6">
+              <div className="w-20 h-20 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-xl animate-pulse">
+                <span className="text-3xl">🧠</span>
+              </div>
+              <h3 className="text-xl font-bold text-indigo-700 mb-3">Small Language Models</h3>
+            </div>
+            <div className="space-y-4">
+              <div className="p-4 bg-card rounded-lg border shadow-sm">
+                <h4 className="font-semibold text-primary mb-2 flex items-center gap-2">
+                  <div className="w-3 h-3 bg-emerald-500 rounded-full animate-pulse"></div>
+                  Optimized Performance
+                </h4>
+                <p className="text-sm text-muted-foreground">Lightweight models with 7B-13B parameters optimized for specific healthcare tasks</p>
+              </div>
+              <div className="p-4 bg-card rounded-lg border shadow-sm">
+                <h4 className="font-semibold text-primary mb-2 flex items-center gap-2">
+                  <div className="w-3 h-3 bg-orange-500 rounded-full animate-pulse"></div>
+                  Cost Efficiency
+                </h4>
+                <p className="text-sm text-muted-foreground">95% lower inference costs compared to large models while maintaining high accuracy</p>
+              </div>
+              <div className="p-4 bg-card rounded-lg border shadow-sm">
+                <h4 className="font-semibold text-primary mb-2 flex items-center gap-2">
+                  <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                  Edge Deployment
+                </h4>
+                <p className="text-sm text-muted-foreground">Can run locally on edge devices for ultra-low latency and enhanced privacy</p>
+              </div>
+              <div className="p-4 bg-card rounded-lg border shadow-sm">
+                <h4 className="font-semibold text-primary mb-2 flex items-center gap-2">
+                  <div className="w-3 h-3 bg-pink-500 rounded-full animate-pulse"></div>
+                  Custom Fine-tuning
+                </h4>
+                <p className="text-sm text-muted-foreground">Domain-specific fine-tuning for healthcare, treatment protocols, and compliance</p>
+              </div>
+            </div>
+          </Card>
+        </div>
+        
+        <div className="mt-8 bg-gradient-to-r from-purple-500/10 via-indigo-500/10 to-blue-500/10 p-6 rounded-lg border animate-fade-in delay-400">
+          <h3 className="text-xl font-bold text-center mb-6 text-primary">MCP + SLM Integration Benefits</h3>
+          <div className="grid grid-cols-4 gap-6">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg animate-bounce">
+                <span className="text-white text-xl">⚡</span>
+              </div>
+              <div className="text-lg font-bold text-purple-600">< 100ms</div>
+              <div className="text-sm font-semibold">Response Time</div>
+              <div className="text-xs text-muted-foreground">Ultra-fast inference</div>
+            </div>
+            <div className="text-center">
+              <div className="w-16 h-16 bg-indigo-500 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg animate-bounce delay-100">
+                <span className="text-white text-xl">💰</span>
+              </div>
+              <div className="text-lg font-bold text-indigo-600">95%</div>
+              <div className="text-sm font-semibold">Cost Reduction</div>
+              <div className="text-xs text-muted-foreground">vs. large models</div>
+            </div>
+            <div className="text-center">
+              <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg animate-bounce delay-200">
+                <span className="text-white text-xl">🔒</span>
+              </div>
+              <div className="text-lg font-bold text-blue-600">100%</div>
+              <div className="text-sm font-semibold">Privacy</div>
+              <div className="text-xs text-muted-foreground">On-premise deployment</div>
+            </div>
+            <div className="text-center">
+              <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg animate-bounce delay-300">
+                <span className="text-white text-xl">📈</span>
+              </div>
+              <div className="text-lg font-bold text-green-600">99.2%</div>
+              <div className="text-sm font-semibold">Accuracy</div>
+              <div className="text-xs text-muted-foreground">Healthcare tasks</div>
             </div>
           </div>
-        </Card>
+        </div>
       </div>
     ),
     animation: 'zoom'
   },
   {
     id: 10,
-    title: "Knowledge Base & RAG System",
-    subtitle: "Retrieval Augmented Generation",
+    title: "Knowledge Base & RAG System Implementation",
+    subtitle: "Advanced Retrieval Augmented Generation for Healthcare Intelligence",
     content: (
-      <div className="h-full overflow-y-auto space-y-6 animate-fade-in">
-        <Card className="p-6">
-          <h3 className="text-xl font-bold mb-4">RAG Implementation</h3>
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-              <span>Vector embeddings and semantic search</span>
+      <div className="h-full overflow-y-auto space-y-8 animate-fade-in">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center gap-3 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 px-6 py-3 rounded-full border border-emerald-500/30">
+            <div className="w-4 h-4 bg-emerald-500 rounded-full animate-pulse"></div>
+            <span className="text-lg font-semibold">RAG + Knowledge Management System</span>
+            <div className="w-4 h-4 bg-teal-500 rounded-full animate-pulse delay-100"></div>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-3 gap-6">
+          <Card className="p-6 bg-gradient-to-br from-emerald-500/20 to-emerald-500/5 border-2 border-emerald-500/30 hover:scale-105 transition-transform animate-fade-in">
+            <div className="text-center mb-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg animate-pulse">
+                <span className="text-2xl">📚</span>
+              </div>
+              <h4 className="font-bold text-emerald-700 mb-3">Knowledge Sources</h4>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-              <span>Real-time knowledge retrieval</span>
+            <div className="space-y-3">
+              <div className="p-3 bg-card rounded-lg border">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                  <span className="text-sm font-semibold">Medical Literature</span>
+                </div>
+                <p className="text-xs text-muted-foreground">PubMed, clinical studies, research papers</p>
+              </div>
+              <div className="p-3 bg-card rounded-lg border">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-2 h-2 bg-teal-500 rounded-full"></div>
+                  <span className="text-sm font-semibold">Treatment Protocols</span>
+                </div>
+                <p className="text-xs text-muted-foreground">Evidence-based treatment guidelines</p>
+              </div>
+              <div className="p-3 bg-card rounded-lg border">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span className="text-sm font-semibold">Regulatory Docs</span>
+                </div>
+                <p className="text-xs text-muted-foreground">FDA guidelines, compliance standards</p>
+              </div>
+              <div className="p-3 bg-card rounded-lg border">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <span className="text-sm font-semibold">Internal Knowledge</span>
+                </div>
+                <p className="text-xs text-muted-foreground">Facility protocols, staff guidelines</p>
+              </div>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-              <span>Dynamic context enhancement</span>
+          </Card>
+          
+          <Card className="p-6 bg-gradient-to-br from-blue-500/20 to-blue-500/5 border-2 border-blue-500/30 hover:scale-105 transition-transform animate-fade-in delay-100">
+            <div className="text-center mb-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg animate-pulse">
+                <span className="text-2xl">🔍</span>
+              </div>
+              <h4 className="font-bold text-blue-700 mb-3">Vector Search Engine</h4>
+            </div>
+            <div className="space-y-3">
+              <div className="p-3 bg-card rounded-lg border">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <span className="text-sm font-semibold">Semantic Search</span>
+                </div>
+                <p className="text-xs text-muted-foreground">Embeddings-based similarity matching</p>
+              </div>
+              <div className="p-3 bg-card rounded-lg border">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
+                  <span className="text-sm font-semibold">Hybrid Retrieval</span>
+                </div>
+                <p className="text-xs text-muted-foreground">Combines keyword + vector search</p>
+              </div>
+              <div className="p-3 bg-card rounded-lg border">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                  <span className="text-sm font-semibold">Context Ranking</span>
+                </div>
+                <p className="text-xs text-muted-foreground">Relevance scoring and re-ranking</p>
+              </div>
+              <div className="p-3 bg-card rounded-lg border">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-2 h-2 bg-pink-500 rounded-full"></div>
+                  <span className="text-sm font-semibold">Real-time Indexing</span>
+                </div>
+                <p className="text-xs text-muted-foreground">Live document processing & updates</p>
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="p-6 bg-gradient-to-br from-purple-500/20 to-purple-500/5 border-2 border-purple-500/30 hover:scale-105 transition-transform animate-fade-in delay-200">
+            <div className="text-center mb-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg animate-pulse">
+                <span className="text-2xl">🤖</span>
+              </div>
+              <h4 className="font-bold text-purple-700 mb-3">AI Generation Pipeline</h4>
+            </div>
+            <div className="space-y-3">
+              <div className="p-3 bg-card rounded-lg border">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                  <span className="text-sm font-semibold">Context Injection</span>
+                </div>
+                <p className="text-xs text-muted-foreground">Retrieved docs into prompt context</p>
+              </div>
+              <div className="p-3 bg-card rounded-lg border">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
+                  <span className="text-sm font-semibold">Citation Tracking</span>
+                </div>
+                <p className="text-xs text-muted-foreground">Source attribution and verification</p>
+              </div>
+              <div className="p-3 bg-card rounded-lg border">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <span className="text-sm font-semibold">Fact Verification</span>
+                </div>
+                <p className="text-xs text-muted-foreground">Cross-reference validation checks</p>
+              </div>
+              <div className="p-3 bg-card rounded-lg border">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span className="text-sm font-semibold">Response Grounding</span>
+                </div>
+                <p className="text-xs text-muted-foreground">Evidence-based answer generation</p>
+              </div>
+            </div>
+          </Card>
+        </div>
+        
+        <div className="mt-8 bg-gradient-to-r from-emerald-500/10 via-blue-500/10 to-purple-500/10 p-6 rounded-lg border animate-fade-in delay-400">
+          <h3 className="text-xl font-bold text-center mb-6 text-primary">RAG Performance Metrics</h3>
+          <div className="grid grid-cols-5 gap-4">
+            <div className="text-center">
+              <div className="w-14 h-14 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg animate-bounce">
+                <span className="text-white text-lg">📊</span>
+              </div>
+              <div className="text-lg font-bold text-emerald-600">94.2%</div>
+              <div className="text-sm font-semibold">Accuracy</div>
+              <div className="text-xs text-muted-foreground">Retrieved relevance</div>
+            </div>
+            <div className="text-center">
+              <div className="w-14 h-14 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg animate-bounce delay-100">
+                <span className="text-white text-lg">⚡</span>
+              </div>
+              <div className="text-lg font-bold text-blue-600">< 200ms</div>
+              <div className="text-sm font-semibold">Search Time</div>
+              <div className="text-xs text-muted-foreground">Vector retrieval</div>
+            </div>
+            <div className="text-center">
+              <div className="w-14 h-14 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg animate-bounce delay-200">
+                <span className="text-white text-lg">💾</span>
+              </div>
+              <div className="text-lg font-bold text-purple-600">10M+</div>
+              <div className="text-sm font-semibold">Documents</div>
+              <div className="text-xs text-muted-foreground">Knowledge base size</div>
+            </div>
+            <div className="text-center">
+              <div className="w-14 h-14 bg-indigo-500 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg animate-bounce delay-300">
+                <span className="text-white text-lg">🔄</span>
+              </div>
+              <div className="text-lg font-bold text-indigo-600">Real-time</div>
+              <div className="text-sm font-semibold">Updates</div>
+              <div className="text-xs text-muted-foreground">Live sync</div>
+            </div>
+            <div className="text-center">
+              <div className="w-14 h-14 bg-teal-500 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg animate-bounce delay-400">
+                <span className="text-white text-lg">📚</span>
+              </div>
+              <div className="text-lg font-bold text-teal-600">Multi-modal</div>
+              <div className="text-sm font-semibold">Content</div>
+              <div className="text-xs text-muted-foreground">Text, images, audio</div>
             </div>
           </div>
-        </Card>
+        </div>
       </div>
     ),
     animation: 'fade'
   },
   {
     id: 11,
-    title: "AI Model Selection & Assignment",
-    subtitle: "Choosing the Right AI for Each Task",
+    title: "AI Model Selection & Assignment Strategy",
+    subtitle: "Advanced Model Orchestration and Intelligent Task Distribution",
     content: (
-      <div className="h-full overflow-y-auto space-y-6 animate-fade-in">
-        <div className="grid grid-cols-2 gap-6">
-          <Card className="p-6">
-            <h4 className="font-bold mb-3">Model Types</h4>
-            <ul className="space-y-2 text-sm">
-              <li>• Conversational AI</li>
-              <li>• Document processing</li>
-              <li>• Vision recognition</li>
-              <li>• Decision making</li>
-            </ul>
+      <div className="h-full overflow-y-auto space-y-8 animate-fade-in">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center gap-3 bg-gradient-to-r from-amber-500/20 to-orange-500/20 px-6 py-3 rounded-full border border-amber-500/30">
+            <div className="w-4 h-4 bg-amber-500 rounded-full animate-pulse"></div>
+            <span className="text-lg font-semibold">Smart Model Assignment Engine</span>
+            <div className="w-4 h-4 bg-orange-500 rounded-full animate-pulse delay-100"></div>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-8">
+          <Card className="p-6 bg-gradient-to-br from-amber-500/20 to-amber-500/5 border-2 border-amber-500/30 hover:scale-105 transition-transform animate-fade-in">
+            <div className="text-center mb-6">
+              <div className="w-20 h-20 bg-gradient-to-br from-amber-500 to-amber-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-xl animate-pulse">
+                <span className="text-3xl">🎯</span>
+              </div>
+              <h3 className="text-xl font-bold text-amber-700 mb-3">Model Selection Criteria</h3>
+            </div>
+            <div className="space-y-4">
+              <div className="p-4 bg-card rounded-lg border shadow-sm">
+                <h4 className="font-semibold text-primary mb-2 flex items-center gap-2">
+                  <div className="w-3 h-3 bg-amber-500 rounded-full animate-pulse"></div>
+                  Task Complexity Analysis
+                </h4>
+                <p className="text-sm text-muted-foreground">Automatic assessment of query complexity to match optimal model size</p>
+              </div>
+              <div className="p-4 bg-card rounded-lg border shadow-sm">
+                <h4 className="font-semibold text-primary mb-2 flex items-center gap-2">
+                  <div className="w-3 h-3 bg-orange-500 rounded-full animate-pulse"></div>
+                  Domain Expertise Matching
+                </h4>
+                <p className="text-sm text-muted-foreground">Routes healthcare queries to specialized medical AI models</p>
+              </div>
+              <div className="p-4 bg-card rounded-lg border shadow-sm">
+                <h4 className="font-semibold text-primary mb-2 flex items-center gap-2">
+                  <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                  Performance Optimization
+                </h4>
+                <p className="text-sm text-muted-foreground">Load balancing and latency optimization across model instances</p>
+              </div>
+              <div className="p-4 bg-card rounded-lg border shadow-sm">
+                <h4 className="font-semibold text-primary mb-2 flex items-center gap-2">
+                  <div className="w-3 h-3 bg-yellow-500 rounded-full animate-pulse"></div>
+                  Cost Efficiency
+                </h4>
+                <p className="text-sm text-muted-foreground">Intelligent routing to minimize computational costs while maintaining quality</p>
+              </div>
+            </div>
           </Card>
-          <Card className="p-6">
-            <h4 className="font-bold mb-3">Assignment Criteria</h4>
-            <ul className="space-y-2 text-sm">
+          
+          <Card className="p-6 bg-gradient-to-br from-orange-500/20 to-orange-500/5 border-2 border-orange-500/30 hover:scale-105 transition-transform animate-fade-in delay-200">
+            <div className="text-center mb-6">
+              <div className="w-20 h-20 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-xl animate-pulse">
+                <span className="text-3xl">🤖</span>
+              </div>
+              <h3 className="text-xl font-bold text-orange-700 mb-3">Available Model Types</h3>
+            </div>
+            <div className="space-y-4">
+              <div className="p-4 bg-card rounded-lg border shadow-sm">
+                <h4 className="font-semibold text-primary mb-2 flex items-center gap-2">
+                  <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+                  Conversational AI Models
+                </h4>
+                <ul className="text-sm text-muted-foreground space-y-1">
+                  <li>• GPT-4 Turbo for complex reasoning</li>
+                  <li>• Claude 3.5 Sonnet for nuanced responses</li>
+                  <li>• Llama 3.1 70B for general conversations</li>
+                </ul>
+              </div>
+              <div className="p-4 bg-card rounded-lg border shadow-sm">
+                <h4 className="font-semibold text-primary mb-2 flex items-center gap-2">
+                  <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                  Specialized Healthcare Models
+                </h4>
+                <ul className="text-sm text-muted-foreground space-y-1">
+                  <li>• Medical question answering</li>
+                  <li>• Clinical decision support</li>
+                  <li>• Treatment protocol guidance</li>
+                </ul>
+              </div>
+              <div className="p-4 bg-card rounded-lg border shadow-sm">
+                <h4 className="font-semibold text-primary mb-2 flex items-center gap-2">
+                  <div className="w-3 h-3 bg-purple-500 rounded-full animate-pulse"></div>
+                  Vision & Document Processing
+                </h4>
+                <ul className="text-sm text-muted-foreground space-y-1">
+                  <li>• Medical image analysis</li>
+                  <li>• Document extraction & OCR</li>
+                  <li>• Form processing automation</li>
+                </ul>
+              </div>
+            </div>
+          </Card>
+        </div>
+        
+        <div className="mt-8 bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-red-500/10 p-6 rounded-lg border animate-fade-in delay-400">
+          <h3 className="text-xl font-bold text-center mb-6 text-primary">Model Assignment Performance</h3>
+          <div className="grid grid-cols-4 gap-6">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-amber-500 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg animate-bounce">
+                <span className="text-white text-xl">🎯</span>
+              </div>
+              <div className="text-lg font-bold text-amber-600">98.5%</div>
+              <div className="text-sm font-semibold">Accuracy</div>
+              <div className="text-xs text-muted-foreground">Task-model matching</div>
+            </div>
+            <div className="text-center">
+              <div className="w-16 h-16 bg-orange-500 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg animate-bounce delay-100">
+                <span className="text-white text-xl">⚡</span>
+              </div>
+              <div className="text-lg font-bold text-orange-600">< 50ms</div>
+              <div className="text-sm font-semibold">Routing Time</div>
+              <div className="text-xs text-muted-foreground">Model selection</div>
+            </div>
+            <div className="text-center">
+              <div className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg animate-bounce delay-200">
+                <span className="text-white text-xl">💰</span>
+              </div>
+              <div className="text-lg font-bold text-red-600">60%</div>
+              <div className="text-sm font-semibold">Cost Savings</div>
+              <div className="text-xs text-muted-foreground">vs. single model</div>
+            </div>
+            <div className="text-center">
+              <div className="w-16 h-16 bg-yellow-500 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg animate-bounce delay-300">
+                <span className="text-white text-xl">🔄</span>
+              </div>
+              <div className="text-lg font-bold text-yellow-600">Auto</div>
+              <div className="text-sm font-semibold">Scaling</div>
+              <div className="text-xs text-muted-foreground">Dynamic load balancing</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    ),
+    animation: 'slide'
+  },
+  {
+    id: 12,
+    title: "Enterprise Security & HIPAA Compliance Framework",
+    subtitle: "Comprehensive Security Architecture for Healthcare Data Protection",
+    content: (
+      <div className="h-full overflow-y-auto space-y-8 animate-fade-in">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center gap-3 bg-gradient-to-r from-red-500/20 to-pink-500/20 px-6 py-3 rounded-full border border-red-500/30">
+            <div className="w-4 h-4 bg-red-500 rounded-full animate-pulse"></div>
+            <span className="text-lg font-semibold">HIPAA Compliant Security Framework</span>
+            <div className="w-4 h-4 bg-pink-500 rounded-full animate-pulse delay-100"></div>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-3 gap-6">
+          <Card className="p-6 bg-gradient-to-br from-red-500/20 to-red-500/5 border-2 border-red-500/30 hover:scale-105 transition-transform animate-fade-in">
+            <div className="text-center mb-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg animate-pulse">
+                <span className="text-2xl">🔒</span>
+              </div>
+              <h4 className="font-bold text-red-700 mb-3">Data Encryption</h4>
+            </div>
+            <div className="space-y-3">
+              <div className="p-3 bg-card rounded-lg border">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                  <span className="text-sm font-semibold">AES-256 Encryption</span>
+                </div>
+                <p className="text-xs text-muted-foreground">End-to-end encryption at rest and in transit</p>
+              </div>
+              <div className="p-3 bg-card rounded-lg border">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                  <span className="text-sm font-semibold">Key Management</span>
+                </div>
+                <p className="text-xs text-muted-foreground">Hardware Security Modules (HSM)</p>
+              </div>
+              <div className="p-3 bg-card rounded-lg border">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-2 h-2 bg-pink-500 rounded-full"></div>
+                  <span className="text-sm font-semibold">Zero Trust Architecture</span>
+                </div>
+                <p className="text-xs text-muted-foreground">Never trust, always verify principle</p>
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="p-6 bg-gradient-to-br from-blue-500/20 to-blue-500/5 border-2 border-blue-500/30 hover:scale-105 transition-transform animate-fade-in delay-100">
+            <div className="text-center mb-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg animate-pulse">
+                <span className="text-2xl">👤</span>
+              </div>
+              <h4 className="font-bold text-blue-700 mb-3">Access Control</h4>
+            </div>
+            <div className="space-y-3">
+              <div className="p-3 bg-card rounded-lg border">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <span className="text-sm font-semibold">Multi-Factor Auth</span>
+                </div>
+                <p className="text-xs text-muted-foreground">Biometric + token-based authentication</p>
+              </div>
+              <div className="p-3 bg-card rounded-lg border">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
+                  <span className="text-sm font-semibold">Role-Based Access</span>
+                </div>
+                <p className="text-xs text-muted-foreground">Granular permissions and audit trails</p>
+              </div>
+              <div className="p-3 bg-card rounded-lg border">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                  <span className="text-sm font-semibold">Session Management</span>
+                </div>
+                <p className="text-xs text-muted-foreground">Automatic timeout and re-authentication</p>
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="p-6 bg-gradient-to-br from-green-500/20 to-green-500/5 border-2 border-green-500/30 hover:scale-105 transition-transform animate-fade-in delay-200">
+            <div className="text-center mb-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg animate-pulse">
+                <span className="text-2xl">📋</span>
+              </div>
+              <h4 className="font-bold text-green-700 mb-3">Compliance & Audit</h4>
+            </div>
+            <div className="space-y-3">
+              <div className="p-3 bg-card rounded-lg border">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span className="text-sm font-semibold">HIPAA Compliance</span>
+                </div>
+                <p className="text-xs text-muted-foreground">Full BAA coverage and compliance</p>
+              </div>
+              <div className="p-3 bg-card rounded-lg border">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-2 h-2 bg-teal-500 rounded-full"></div>
+                  <span className="text-sm font-semibold">SOC 2 Type II</span>
+                </div>
+                <p className="text-xs text-muted-foreground">Annual security assessments</p>
+              </div>
+              <div className="p-3 bg-card rounded-lg border">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                  <span className="text-sm font-semibold">Continuous Monitoring</span>
+                </div>
+                <p className="text-xs text-muted-foreground">Real-time security event logging</p>
+              </div>
+            </div>
+          </Card>
+        </div>
+        
+        <div className="mt-8 grid grid-cols-2 gap-8">
+          <Card className="p-6 bg-gradient-to-br from-purple-500/20 to-purple-500/5 border-2 border-purple-500/30 animate-fade-in delay-300">
+            <h3 className="text-xl font-bold text-purple-700 mb-4 text-center">Security Certifications</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-center p-3 bg-card rounded-lg border">
+                <div className="text-lg mb-1">🏆</div>
+                <div className="text-sm font-semibold">HIPAA</div>
+                <div className="text-xs text-muted-foreground">Certified Compliant</div>
+              </div>
+              <div className="text-center p-3 bg-card rounded-lg border">
+                <div className="text-lg mb-1">🛡️</div>
+                <div className="text-sm font-semibold">SOC 2 Type II</div>
+                <div className="text-xs text-muted-foreground">Security Framework</div>
+              </div>
+              <div className="text-center p-3 bg-card rounded-lg border">
+                <div className="text-lg mb-1">🔐</div>
+                <div className="text-sm font-semibold">ISO 27001</div>
+                <div className="text-xs text-muted-foreground">Information Security</div>
+              </div>
+              <div className="text-center p-3 bg-card rounded-lg border">
+                <div className="text-lg mb-1">✅</div>
+                <div className="text-sm font-semibold">GDPR</div>
+                <div className="text-xs text-muted-foreground">Privacy Compliance</div>
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="p-6 bg-gradient-to-br from-orange-500/20 to-orange-500/5 border-2 border-orange-500/30 animate-fade-in delay-400">
+            <h3 className="text-xl font-bold text-orange-700 mb-4 text-center">Security Metrics</h3>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-semibold">Uptime SLA</span>
+                <span className="text-lg font-bold text-green-600">99.99%</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-semibold">Security Incidents</span>
+                <span className="text-lg font-bold text-blue-600">0</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-semibold">Vulnerability Response</span>
+                <span className="text-lg font-bold text-purple-600">< 4hrs</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-semibold">Audit Score</span>
+                <span className="text-lg font-bold text-orange-600">A+</span>
+              </div>
+            </div>
+          </Card>
+        </div>
+      </div>
+    ),
+    animation: 'zoom'
+  },
+  {
+    id: 13,
+    title: "Implementation Timeline & Project Roadmap",
+    subtitle: "Structured 30-Day Implementation with Milestone Tracking",
+    content: (
+      <div className="h-full overflow-y-auto space-y-8 animate-fade-in">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center gap-3 bg-gradient-to-r from-indigo-500/20 to-purple-500/20 px-6 py-3 rounded-full border border-indigo-500/30">
+            <div className="w-4 h-4 bg-indigo-500 rounded-full animate-pulse"></div>
+            <span className="text-lg font-semibold">30-Day Implementation Roadmap</span>
+            <div className="w-4 h-4 bg-purple-500 rounded-full animate-pulse delay-100"></div>
+          </div>
+        </div>
+        
+        <div className="relative">
+          {/* Timeline Line */}
+          <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-gradient-to-b from-indigo-500 via-purple-500 to-pink-500"></div>
+          
+          <div className="space-y-8">
+            {/* Week 1 */}
+            <div className="flex items-start gap-6 animate-fade-in">
+              <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-full flex items-center justify-center shadow-xl z-10">
+                <span className="text-white font-bold">W1</span>
+              </div>
+              <Card className="flex-1 p-6 bg-gradient-to-br from-indigo-500/20 to-indigo-500/5 border-2 border-indigo-500/30">
+                <h3 className="text-xl font-bold text-indigo-700 mb-3">Week 1: Foundation Setup</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="font-semibold mb-2 text-primary">Technical Setup</h4>
+                    <ul className="text-sm space-y-1 text-muted-foreground">
+                      <li>• Infrastructure deployment</li>
+                      <li>• Security configuration</li>
+                      <li>• Database initialization</li>
+                      <li>• API gateway setup</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold mb-2 text-primary">Team Onboarding</h4>
+                    <ul className="text-sm space-y-1 text-muted-foreground">
+                      <li>• Admin account creation</li>
+                      <li>• Training sessions</li>
+                      <li>• Documentation review</li>
+                      <li>• Role assignments</li>
+                    </ul>
+                  </div>
+                </div>
+              </Card>
+            </div>
+            
+            {/* Week 2 */}
+            <div className="flex items-start gap-6 animate-fade-in delay-100">
+              <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center shadow-xl z-10">
+                <span className="text-white font-bold">W2</span>
+              </div>
+              <Card className="flex-1 p-6 bg-gradient-to-br from-purple-500/20 to-purple-500/5 border-2 border-purple-500/30">
+                <h3 className="text-xl font-bold text-purple-700 mb-3">Week 2: Agent Development</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="font-semibold mb-2 text-primary">Agent Creation</h4>
+                    <ul className="text-sm space-y-1 text-muted-foreground">
+                      <li>• First agent prototype</li>
+                      <li>• Workflow configuration</li>
+                      <li>• Knowledge base setup</li>
+                      <li>• Initial testing</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold mb-2 text-primary">Integration</h4>
+                    <ul className="text-sm space-y-1 text-muted-foreground">
+                      <li>• EHR system connection</li>
+                      <li>• Communication channels</li>
+                      <li>• Data synchronization</li>
+                      <li>• Compliance validation</li>
+                    </ul>
+                  </div>
+                </div>
+              </Card>
+            </div>
+            
+            {/* Week 3 */}
+            <div className="flex items-start gap-6 animate-fade-in delay-200">
+              <div className="w-16 h-16 bg-gradient-to-br from-pink-500 to-pink-600 rounded-full flex items-center justify-center shadow-xl z-10">
+                <span className="text-white font-bold">W3</span>
+              </div>
+              <Card className="flex-1 p-6 bg-gradient-to-br from-pink-500/20 to-pink-500/5 border-2 border-pink-500/30">
+                <h3 className="text-xl font-bold text-pink-700 mb-3">Week 3: Testing & Optimization</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="font-semibold mb-2 text-primary">Quality Assurance</h4>
+                    <ul className="text-sm space-y-1 text-muted-foreground">
+                      <li>• Comprehensive testing</li>
+                      <li>• Performance optimization</li>
+                      <li>• Security auditing</li>
+                      <li>• Load testing</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold mb-2 text-primary">Staff Training</h4>
+                    <ul className="text-sm space-y-1 text-muted-foreground">
+                      <li>• User training programs</li>
+                      <li>• Process documentation</li>
+                      <li>• Support procedures</li>
+                      <li>• Feedback collection</li>
+                    </ul>
+                  </div>
+                </div>
+              </Card>
+            </div>
+            
+            {/* Week 4 */}
+            <div className="flex items-start gap-6 animate-fade-in delay-300">
+              <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center shadow-xl z-10">
+                <span className="text-white font-bold">W4</span>
+              </div>
+              <Card className="flex-1 p-6 bg-gradient-to-br from-green-500/20 to-green-500/5 border-2 border-green-500/30">
+                <h3 className="text-xl font-bold text-green-700 mb-3">Week 4: Go-Live & Support</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="font-semibold mb-2 text-primary">Production Launch</h4>
+                    <ul className="text-sm space-y-1 text-muted-foreground">
+                      <li>• Production deployment</li>
+                      <li>• Monitoring setup</li>
+                      <li>• Performance tracking</li>
+                      <li>• Issue resolution</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold mb-2 text-primary">Ongoing Support</h4>
+                    <ul className="text-sm space-y-1 text-muted-foreground">
+                      <li>• 24/7 monitoring</li>
+                      <li>• User support</li>
+                      <li>• Continuous optimization</li>
+                      <li>• Success metrics review</li>
+                    </ul>
+                  </div>
+                </div>
+              </Card>
+            </div>
+          </div>
+        </div>
+        
+        <div className="mt-8 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-green-500/10 p-6 rounded-lg border animate-fade-in delay-500">
+          <h3 className="text-xl font-bold text-center mb-6 text-primary">Implementation Success Metrics</h3>
+          <div className="grid grid-cols-4 gap-6">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-indigo-500 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg animate-bounce">
+                <span className="text-white text-xl">⏱️</span>
+              </div>
+              <div className="text-lg font-bold text-indigo-600">30 Days</div>
+              <div className="text-sm font-semibold">Full Implementation</div>
+              <div className="text-xs text-muted-foreground">From start to production</div>
+            </div>
+            <div className="text-center">
+              <div className="w-16 h-16 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg animate-bounce delay-100">
+                <span className="text-white text-xl">✅</span>
+              </div>
+              <div className="text-lg font-bold text-purple-600">95%</div>
+              <div className="text-sm font-semibold">Success Rate</div>
+              <div className="text-xs text-muted-foreground">On-time delivery</div>
+            </div>
+            <div className="text-center">
+              <div className="w-16 h-16 bg-pink-500 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg animate-bounce delay-200">
+                <span className="text-white text-xl">👥</span>
+              </div>
+              <div className="text-lg font-bold text-pink-600">100%</div>
+              <div className="text-sm font-semibold">Team Training</div>
+              <div className="text-xs text-muted-foreground">Staff readiness</div>
+            </div>
+            <div className="text-center">
+              <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg animate-bounce delay-300">
+                <span className="text-white text-xl">🚀</span>
+              </div>
+              <div className="text-lg font-bold text-green-600">24/7</div>
+              <div className="text-sm font-semibold">Support</div>
+              <div className="text-xs text-muted-foreground">Post-launch coverage</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    ),
+    animation: 'slide'
+  },
+  {
+    id: 14,
+    title: "ROI Analysis & Business Impact Assessment",
+    subtitle: "Quantified Benefits and Cost-Benefit Analysis for Healthcare AI Implementation",
+    content: (
+      <div className="h-full overflow-y-auto space-y-8 animate-fade-in">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center gap-3 bg-gradient-to-r from-green-500/20 to-emerald-500/20 px-6 py-3 rounded-full border border-green-500/30">
+            <div className="w-4 h-4 bg-green-500 rounded-full animate-pulse"></div>
+            <span className="text-lg font-semibold">ROI & Business Impact Analysis</span>
+            <div className="w-4 h-4 bg-emerald-500 rounded-full animate-pulse delay-100"></div>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-8">
+          <Card className="p-6 bg-gradient-to-br from-green-500/20 to-green-500/5 border-2 border-green-500/30 hover:scale-105 transition-transform animate-fade-in">
+            <div className="text-center mb-6">
+              <div className="w-20 h-20 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-xl animate-pulse">
+                <span className="text-3xl">💰</span>
+              </div>
+              <h3 className="text-xl font-bold text-green-700 mb-3">Financial Benefits</h3>
+            </div>
+            <div className="space-y-4">
+              <div className="p-4 bg-card rounded-lg border shadow-sm">
+                <div className="flex justify-between items-center mb-2">
+                  <h4 className="font-semibold text-primary">Staff Cost Reduction</h4>
+                  <span className="text-lg font-bold text-green-600">$180K/year</span>
+                </div>
+                <p className="text-sm text-muted-foreground">Automation of routine tasks and inquiries</p>
+              </div>
+              <div className="p-4 bg-card rounded-lg border shadow-sm">
+                <div className="flex justify-between items-center mb-2">
+                  <h4 className="font-semibold text-primary">Error Reduction Savings</h4>
+                  <span className="text-lg font-bold text-green-600">$95K/year</span>
+                </div>
+                <p className="text-sm text-muted-foreground">Reduced administrative errors and rework</p>
+              </div>
+              <div className="p-4 bg-card rounded-lg border shadow-sm">
+                <div className="flex justify-between items-center mb-2">
+                  <h4 className="font-semibold text-primary">Patient Retention</h4>
+                  <span className="text-lg font-bold text-green-600">$320K/year</span>
+                </div>
+                <p className="text-sm text-muted-foreground">Improved satisfaction and engagement</p>
+              </div>
+              <div className="p-4 bg-card rounded-lg border shadow-sm">
+                <div className="flex justify-between items-center mb-2">
+                  <h4 className="font-semibold text-primary">Compliance Efficiency</h4>
+                  <span className="text-lg font-bold text-green-600">$65K/year</span>
+                </div>
+                <p className="text-sm text-muted-foreground">Automated compliance and reporting</p>
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="p-6 bg-gradient-to-br from-blue-500/20 to-blue-500/5 border-2 border-blue-500/30 hover:scale-105 transition-transform animate-fade-in delay-200">
+            <div className="text-center mb-6">
+              <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-xl animate-pulse">
+                <span className="text-3xl">📈</span>
+              </div>
+              <h3 className="text-xl font-bold text-blue-700 mb-3">Operational Improvements</h3>
+            </div>
+            <div className="space-y-4">
+              <div className="p-4 bg-card rounded-lg border shadow-sm">
+                <div className="flex justify-between items-center mb-2">
+                  <h4 className="font-semibold text-primary">Response Time</h4>
+                  <span className="text-lg font-bold text-blue-600">85% Faster</span>
+                </div>
+                <p className="text-sm text-muted-foreground">From hours to minutes for patient inquiries</p>
+              </div>
+              <div className="p-4 bg-card rounded-lg border shadow-sm">
+                <div className="flex justify-between items-center mb-2">
+                  <h4 className="font-semibold text-primary">Accuracy Rate</h4>
+                  <span className="text-lg font-bold text-blue-600">99.2%</span>
+                </div>
+                <p className="text-sm text-muted-foreground">Reduced human error in data entry</p>
+              </div>
+              <div className="p-4 bg-card rounded-lg border shadow-sm">
+                <div className="flex justify-between items-center mb-2">
+                  <h4 className="font-semibold text-primary">Staff Productivity</h4>
+                  <span className="text-lg font-bold text-blue-600">+40%</span>
+                </div>
+                <p className="text-sm text-muted-foreground">Focus on high-value patient care</p>
+              </div>
+              <div className="p-4 bg-card rounded-lg border shadow-sm">
+                <div className="flex justify-between items-center mb-2">
+                  <h4 className="font-semibold text-primary">Patient Satisfaction</h4>
+                  <span className="text-lg font-bold text-blue-600">+35%</span>
+                </div>
+                <p className="text-sm text-muted-foreground">24/7 availability and faster responses</p>
+              </div>
+            </div>
+          </Card>
+        </div>
+        
+        <div className="grid grid-cols-3 gap-6">
+          <Card className="p-6 bg-gradient-to-br from-purple-500/20 to-purple-500/5 border-2 border-purple-500/30 animate-fade-in delay-300">
+            <h3 className="text-xl font-bold text-center text-purple-700 mb-4">Implementation Cost</h3>
+            <div className="text-center">
+              <div className="text-4xl font-bold text-purple-600 mb-2">$85K</div>
+              <div className="text-sm text-muted-foreground mb-4">One-time setup cost</div>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span>Software License</span>
+                  <span>$35K</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Implementation</span>
+                  <span>$30K</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Training</span>
+                  <span>$15K</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Infrastructure</span>
+                  <span>$5K</span>
+                </div>
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="p-6 bg-gradient-to-br from-orange-500/20 to-orange-500/5 border-2 border-orange-500/30 animate-fade-in delay-400">
+            <h3 className="text-xl font-bold text-center text-orange-700 mb-4">Annual Savings</h3>
+            <div className="text-center">
+              <div className="text-4xl font-bold text-orange-600 mb-2">$660K</div>
+              <div className="text-sm text-muted-foreground mb-4">Total yearly benefits</div>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span>Staff Reduction</span>
+                  <span>$180K</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Patient Retention</span>
+                  <span>$320K</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Error Reduction</span>
+                  <span>$95K</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Compliance</span>
+                  <span>$65K</span>
+                </div>
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="p-6 bg-gradient-to-br from-emerald-500/20 to-emerald-500/5 border-2 border-emerald-500/30 animate-fade-in delay-500">
+            <h3 className="text-xl font-bold text-center text-emerald-700 mb-4">ROI Analysis</h3>
+            <div className="text-center">
+              <div className="text-4xl font-bold text-emerald-600 mb-2">776%</div>
+              <div className="text-sm text-muted-foreground mb-4">Return on Investment</div>
+              <div className="space-y-3">
+                <div className="p-3 bg-card rounded-lg border">
+                  <div className="text-lg font-bold text-green-600">1.2 months</div>
+                  <div className="text-xs text-muted-foreground">Payback Period</div>
+                </div>
+                <div className="p-3 bg-card rounded-lg border">
+                  <div className="text-lg font-bold text-blue-600">$575K</div>
+                  <div className="text-xs text-muted-foreground">Net Annual Benefit</div>
+                </div>
+                <div className="p-3 bg-card rounded-lg border">
+                  <div className="text-lg font-bold text-purple-600">$2.3M</div>
+                  <div className="text-xs text-muted-foreground">3-Year Value</div>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
+        
+        <div className="mt-8 bg-gradient-to-r from-green-500/10 via-blue-500/10 to-purple-500/10 p-6 rounded-lg border animate-fade-in delay-600">
+          <h3 className="text-xl font-bold text-center mb-6 text-primary">Key Performance Indicators</h3>
+          <div className="grid grid-cols-5 gap-4">
+            <div className="text-center">
+              <div className="w-14 h-14 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg animate-bounce">
+                <span className="text-white text-lg">💰</span>
+              </div>
+              <div className="text-lg font-bold text-green-600">776%</div>
+              <div className="text-sm font-semibold">ROI</div>
+              <div className="text-xs text-muted-foreground">First year</div>
+            </div>
+            <div className="text-center">
+              <div className="w-14 h-14 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg animate-bounce delay-100">
+                <span className="text-white text-lg">⏱️</span>
+              </div>
+              <div className="text-lg font-bold text-blue-600">1.2</div>
+              <div className="text-sm font-semibold">Payback</div>
+              <div className="text-xs text-muted-foreground">Months</div>
+            </div>
+            <div className="text-center">
+              <div className="w-14 h-14 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg animate-bounce delay-200">
+                <span className="text-white text-lg">📈</span>
+              </div>
+              <div className="text-lg font-bold text-purple-600">+40%</div>
+              <div className="text-sm font-semibold">Productivity</div>
+              <div className="text-xs text-muted-foreground">Staff efficiency</div>
+            </div>
+            <div className="text-center">
+              <div className="w-14 h-14 bg-orange-500 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg animate-bounce delay-300">
+                <span className="text-white text-lg">😊</span>
+              </div>
+              <div className="text-lg font-bold text-orange-600">+35%</div>
+              <div className="text-sm font-semibold">Satisfaction</div>
+              <div className="text-xs text-muted-foreground">Patient rating</div>
+            </div>
+            <div className="text-center">
+              <div className="w-14 h-14 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg animate-bounce delay-400">
+                <span className="text-white text-lg">🎯</span>
+              </div>
+              <div className="text-lg font-bold text-red-600">99.2%</div>
+              <div className="text-sm font-semibold">Accuracy</div>
+              <div className="text-xs text-muted-foreground">Error reduction</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    ),
+    animation: 'fade'
+  },
+  {
+    id: 15,
+    title: "Training & Support Infrastructure",
+    subtitle: "Comprehensive Training Programs and 24/7 Support Framework",
+    content: (
+      <div className="h-full overflow-y-auto space-y-8 animate-fade-in">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center gap-3 bg-gradient-to-r from-blue-500/20 to-indigo-500/20 px-6 py-3 rounded-full border border-blue-500/30">
+            <div className="w-4 h-4 bg-blue-500 rounded-full animate-pulse"></div>
+            <span className="text-lg font-semibold">Training & Support Excellence Program</span>
+            <div className="w-4 h-4 bg-indigo-500 rounded-full animate-pulse delay-100"></div>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-8">
+          <Card className="p-6 bg-gradient-to-br from-blue-500/20 to-blue-500/5 border-2 border-blue-500/30 hover:scale-105 transition-transform animate-fade-in">
+            <div className="text-center mb-6">
+              <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-xl animate-pulse">
+                <span className="text-3xl">🎓</span>
+              </div>
+              <h3 className="text-xl font-bold text-blue-700 mb-3">Training Programs</h3>
+            </div>
+            <div className="space-y-4">
+              <div className="p-4 bg-card rounded-lg border shadow-sm">
+                <h4 className="font-semibold text-primary mb-2 flex items-center gap-2">
+                  <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+                  Administrator Training
+                </h4>
+                <ul className="text-sm text-muted-foreground space-y-1">
+                  <li>• System configuration and management</li>
+                  <li>• User role management and permissions</li>
+                  <li>• Advanced analytics and reporting</li>
+                  <li>• Troubleshooting and maintenance</li>
+                </ul>
+              </div>
+              <div className="p-4 bg-card rounded-lg border shadow-sm">
+                <h4 className="font-semibold text-primary mb-2 flex items-center gap-2">
+                  <div className="w-3 h-3 bg-indigo-500 rounded-full animate-pulse"></div>
+                  End-User Training
+                </h4>
+                <ul className="text-sm text-muted-foreground space-y-1">
+                  <li>• Basic system navigation and features</li>
+                  <li>• Patient interaction best practices</li>
+                  <li>• AI agent utilization techniques</li>
+                  <li>• Workflow integration methods</li>
+                </ul>
+              </div>
+              <div className="p-4 bg-card rounded-lg border shadow-sm">
+                <h4 className="font-semibold text-primary mb-2 flex items-center gap-2">
+                  <div className="w-3 h-3 bg-purple-500 rounded-full animate-pulse"></div>
+                  Specialized Training
+                </h4>
+                <ul className="text-sm text-muted-foreground space-y-1">
+                  <li>• HIPAA compliance and data security</li>
+                  <li>• Custom agent development</li>
+                  <li>• Integration with existing systems</li>
+                  <li>• Advanced customization options</li>
+                </ul>
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="p-6 bg-gradient-to-br from-indigo-500/20 to-indigo-500/5 border-2 border-indigo-500/30 hover:scale-105 transition-transform animate-fade-in delay-200">
+            <div className="text-center mb-6">
+              <div className="w-20 h-20 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-xl animate-pulse">
+                <span className="text-3xl">🛠️</span>
+              </div>
+              <h3 className="text-xl font-bold text-indigo-700 mb-3">Support Infrastructure</h3>
+            </div>
+            <div className="space-y-4">
+              <div className="p-4 bg-card rounded-lg border shadow-sm">
+                <h4 className="font-semibold text-primary mb-2 flex items-center gap-2">
+                  <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                  24/7 Support Center
+                </h4>
+                <ul className="text-sm text-muted-foreground space-y-1">
+                  <li>• Round-the-clock technical assistance</li>
+                  <li>• Multi-channel support (phone, chat, email)</li>
+                  <li>• Escalation procedures for critical issues</li>
+                  <li>• Remote diagnostic and resolution</li>
+                </ul>
+              </div>
+              <div className="p-4 bg-card rounded-lg border shadow-sm">
+                <h4 className="font-semibold text-primary mb-2 flex items-center gap-2">
+                  <div className="w-3 h-3 bg-orange-500 rounded-full animate-pulse"></div>
+                  Knowledge Base
+                </h4>
+                <ul className="text-sm text-muted-foreground space-y-1">
+                  <li>• Comprehensive documentation library</li>
+                  <li>• Video tutorials and guides</li>
+                  <li>• FAQ section with search functionality</li>
+                  <li>• Regular updates and new content</li>
+                </ul>
+              </div>
+              <div className="p-4 bg-card rounded-lg border shadow-sm">
+                <h4 className="font-semibold text-primary mb-2 flex items-center gap-2">
+                  <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                  Proactive Monitoring
+                </h4>
+                <ul className="text-sm text-muted-foreground space-y-1">
+                  <li>• Real-time system health monitoring</li>
+                  <li>• Automated alert and notification system</li>
+                  <li>• Predictive maintenance and updates</li>
+                  <li>• Performance optimization recommendations</li>
+                </ul>
+              </div>
+            </div>
+          </Card>
+        </div>
+        
+        <div className="grid grid-cols-3 gap-6">
+          <Card className="p-6 bg-gradient-to-br from-green-500/20 to-green-500/5 border-2 border-green-500/30 animate-fade-in delay-300">
+            <h3 className="text-xl font-bold text-center text-green-700 mb-4">Training Delivery Methods</h3>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3 p-3 bg-card rounded-lg border">
+                <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                  <span className="text-white text-sm">🎥</span>
+                </div>
+                <div>
+                  <div className="font-semibold text-sm">Live Virtual Sessions</div>
+                  <div className="text-xs text-muted-foreground">Interactive online training</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 bg-card rounded-lg border">
+                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                  <span className="text-white text-sm">🏢</span>
+                </div>
+                <div>
+                  <div className="font-semibold text-sm">On-site Training</div>
+                  <div className="text-xs text-muted-foreground">In-person at your facility</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 bg-card rounded-lg border">
+                <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
+                  <span className="text-white text-sm">📚</span>
+                </div>
+                <div>
+                  <div className="font-semibold text-sm">Self-Paced Learning</div>
+                  <div className="text-xs text-muted-foreground">Online modules and resources</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 bg-card rounded-lg border">
+                <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
+                  <span className="text-white text-sm">🎯</span>
+                </div>
+                <div>
+                  <div className="font-semibold text-sm">Customized Programs</div>
+                  <div className="text-xs text-muted-foreground">Tailored to your needs</div>
+                </div>
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="p-6 bg-gradient-to-br from-purple-500/20 to-purple-500/5 border-2 border-purple-500/30 animate-fade-in delay-400">
+            <h3 className="text-xl font-bold text-center text-purple-700 mb-4">Support Response Times</h3>
+            <div className="space-y-4">
+              <div className="text-center p-4 bg-card rounded-lg border">
+                <div className="text-2xl font-bold text-red-600 mb-1">< 15 min</div>
+                <div className="text-sm font-semibold">Critical Issues</div>
+                <div className="text-xs text-muted-foreground">System down, security breach</div>
+              </div>
+              <div className="text-center p-4 bg-card rounded-lg border">
+                <div className="text-2xl font-bold text-orange-600 mb-1">< 2 hours</div>
+                <div className="text-sm font-semibold">High Priority</div>
+                <div className="text-xs text-muted-foreground">Major functionality issues</div>
+              </div>
+              <div className="text-center p-4 bg-card rounded-lg border">
+                <div className="text-2xl font-bold text-blue-600 mb-1">< 24 hours</div>
+                <div className="text-sm font-semibold">Standard</div>
+                <div className="text-xs text-muted-foreground">General questions and issues</div>
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="p-6 bg-gradient-to-br from-orange-500/20 to-orange-500/5 border-2 border-orange-500/30 animate-fade-in delay-500">
+            <h3 className="text-xl font-bold text-center text-orange-700 mb-4">Success Metrics</h3>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center p-3 bg-card rounded-lg border">
+                <span className="text-sm font-semibold">Training Completion</span>
+                <span className="text-lg font-bold text-green-600">98%</span>
+              </div>
+              <div className="flex justify-between items-center p-3 bg-card rounded-lg border">
+                <span className="text-sm font-semibold">User Satisfaction</span>
+                <span className="text-lg font-bold text-blue-600">4.8/5</span>
+              </div>
+              <div className="flex justify-between items-center p-3 bg-card rounded-lg border">
+                <span className="text-sm font-semibold">Issue Resolution</span>
+                <span className="text-lg font-bold text-purple-600">99.2%</span>
+              </div>
+              <div className="flex justify-between items-center p-3 bg-card rounded-lg border">
+                <span className="text-sm font-semibold">First Call Resolution</span>
+                <span className="text-lg font-bold text-orange-600">87%</span>
+              </div>
+            </div>
+          </Card>
+        </div>
+        
+        <div className="mt-8 bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-purple-500/10 p-6 rounded-lg border animate-fade-in delay-600">
+          <h3 className="text-xl font-bold text-center mb-6 text-primary">Training & Support Package</h3>
+          <div className="grid grid-cols-5 gap-4">
+            <div className="text-center">
+              <div className="w-14 h-14 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg animate-bounce">
+                <span className="text-white text-lg">📚</span>
+              </div>
+              <div className="text-lg font-bold text-blue-600">40+ hours</div>
+              <div className="text-sm font-semibold">Training Content</div>
+              <div className="text-xs text-muted-foreground">Comprehensive curriculum</div>
+            </div>
+            <div className="text-center">
+              <div className="w-14 h-14 bg-indigo-500 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg animate-bounce delay-100">
+                <span className="text-white text-lg">🎓</span>
+              </div>
+              <div className="text-lg font-bold text-indigo-600">100%</div>
+              <div className="text-sm font-semibold">Certification</div>
+              <div className="text-xs text-muted-foreground">Staff competency</div>
+            </div>
+            <div className="text-center">
+              <div className="w-14 h-14 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg animate-bounce delay-200">
+                <span className="text-white text-lg">🛠️</span>
+              </div>
+              <div className="text-lg font-bold text-purple-600">24/7</div>
+              <div className="text-sm font-semibold">Support</div>
+              <div className="text-xs text-muted-foreground">Always available</div>
+            </div>
+            <div className="text-center">
+              <div className="w-14 h-14 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg animate-bounce delay-300">
+                <span className="text-white text-lg">📞</span>
+              </div>
+              <div className="text-lg font-bold text-green-600">< 15min</div>
+              <div className="text-sm font-semibold">Response</div>
+              <div className="text-xs text-muted-foreground">Critical issues</div>
+            </div>
+            <div className="text-center">
+              <div className="w-14 h-14 bg-orange-500 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg animate-bounce delay-400">
+                <span className="text-white text-lg">🎯</span>
+              </div>
+              <div className="text-lg font-bold text-orange-600">98%</div>
+              <div className="text-sm font-semibold">Success Rate</div>
+              <div className="text-xs text-muted-foreground">Implementation</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    ),
+    animation: 'zoom'
+  },
               <li>• Task complexity</li>
               <li>• Response time requirements</li>
               <li>• Accuracy needs</li>
