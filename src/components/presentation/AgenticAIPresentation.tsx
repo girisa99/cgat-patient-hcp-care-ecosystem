@@ -19,35 +19,222 @@ const slides: Slide[] = [
     title: "Agentic AI & Automation Platform",
     subtitle: "Complete AI Agent Implementation for Healthcare Onboarding",
     content: (
-      <div className="text-center space-y-8 animate-fade-in">
-        <div className="w-32 h-32 mx-auto bg-gradient-to-br from-primary to-primary/60 rounded-full flex items-center justify-center animate-pulse">
-          <div className="text-4xl">🤖</div>
+      <div className="h-full overflow-y-auto space-y-8 animate-fade-in">
+        {/* Header Section */}
+        <div className="text-center space-y-6">
+          <div className="w-32 h-32 mx-auto bg-gradient-to-br from-primary to-primary/60 rounded-full flex items-center justify-center animate-pulse">
+            <div className="text-4xl">🤖</div>
+          </div>
+          <div className="space-y-4">
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+              Advanced AI agent platform that combines autonomous decision-making, intelligent automation, 
+              and seamless integration to transform healthcare onboarding processes
+            </p>
+          </div>
         </div>
-        <div className="space-y-4">
-          <p className="text-xl text-muted-foreground">
-            End-to-end AI agent platform with MCP, RAG, and intelligent automation
-          </p>
-          <div className="flex justify-center gap-4 flex-wrap">
-            <Badge variant="secondary" className="px-4 py-2">MCP Integration</Badge>
-            <Badge variant="secondary" className="px-4 py-2">RAG Knowledge Base</Badge>
-            <Badge variant="secondary" className="px-4 py-2">Small Language Models</Badge>
-            <Badge variant="secondary" className="px-4 py-2">Channel Deployment</Badge>
-            <Badge variant="secondary" className="px-4 py-2">AI Autosuggest</Badge>
+
+        {/* What is Agentic AI Section */}
+        <div className="grid grid-cols-2 gap-8 mb-8">
+          <Card className="p-6 bg-gradient-to-br from-blue-500/15 to-blue-500/5 border-l-4 border-blue-500">
+            <h3 className="text-xl font-bold text-blue-600 mb-4 flex items-center gap-2">
+              <span className="text-2xl">🧠</span> What is Agentic AI?
+            </h3>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Agentic AI refers to autonomous AI systems that can make independent decisions, 
+                take actions, and adapt to changing environments without constant human oversight.
+              </p>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                  <span className="text-sm">Autonomous decision-making capabilities</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                  <span className="text-sm">Goal-oriented task execution</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                  <span className="text-sm">Context-aware reasoning</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                  <span className="text-sm">Self-improving through feedback</span>
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-6 bg-gradient-to-br from-green-500/15 to-green-500/5 border-l-4 border-green-500">
+            <h3 className="text-xl font-bold text-green-600 mb-4 flex items-center gap-2">
+              <span className="text-2xl">⚡</span> Intelligent Automation
+            </h3>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Our platform combines multiple AI technologies to create sophisticated automation 
+                that adapts, learns, and optimizes healthcare workflows.
+              </p>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  <span className="text-sm">Workflow orchestration & optimization</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  <span className="text-sm">Real-time decision automation</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  <span className="text-sm">Multi-system integration</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  <span className="text-sm">Continuous learning & improvement</span>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Core Technologies */}
+        <div className="space-y-6">
+          <h3 className="text-2xl font-bold text-center text-primary">Core Technologies & Capabilities</h3>
+          <div className="grid grid-cols-4 gap-6">
+            <Card className="p-6 bg-gradient-to-br from-purple-500/20 to-purple-500/5 border-2 border-purple-500/30 hover:border-purple-500/50 transition-all duration-300 hover:scale-105">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-gradient-to-br from-purple-600 to-purple-700 rounded-full flex items-center justify-center mx-auto mb-3 animate-pulse">
+                  <span className="text-white text-2xl">🔗</span>
+                </div>
+                <h4 className="font-bold text-purple-700 text-base mb-2">MCP Integration</h4>
+                <p className="text-sm text-muted-foreground mb-3">Model Context Protocol</p>
+                <div className="space-y-1 text-xs">
+                  <div>• Cross-model communication</div>
+                  <div>• Context sharing</div>
+                  <div>• Session management</div>
+                </div>
+              </div>
+            </Card>
+            
+            <Card className="p-6 bg-gradient-to-br from-orange-500/20 to-orange-500/5 border-2 border-orange-500/30 hover:border-orange-500/50 transition-all duration-300 hover:scale-105">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-gradient-to-br from-orange-600 to-orange-700 rounded-full flex items-center justify-center mx-auto mb-3 animate-pulse">
+                  <span className="text-white text-2xl">🧠</span>
+                </div>
+                <h4 className="font-bold text-orange-700 text-base mb-2">RAG Knowledge Base</h4>
+                <p className="text-sm text-muted-foreground mb-3">Retrieval Augmented Generation</p>
+                <div className="space-y-1 text-xs">
+                  <div>• Vector embeddings</div>
+                  <div>• Semantic search</div>
+                  <div>• Real-time retrieval</div>
+                </div>
+              </div>
+            </Card>
+            
+            <Card className="p-6 bg-gradient-to-br from-red-500/20 to-red-500/5 border-2 border-red-500/30 hover:border-red-500/50 transition-all duration-300 hover:scale-105">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-gradient-to-br from-red-600 to-red-700 rounded-full flex items-center justify-center mx-auto mb-3 animate-pulse">
+                  <span className="text-white text-2xl">🚀</span>
+                </div>
+                <h4 className="font-bold text-red-700 text-base mb-2">Small Language Models</h4>
+                <p className="text-sm text-muted-foreground mb-3">Optimized Performance</p>
+                <div className="space-y-1 text-xs">
+                  <div>• Fast response times</div>
+                  <div>• Cost-effective</div>
+                  <div>• Domain-specific</div>
+                </div>
+              </div>
+            </Card>
+            
+            <Card className="p-6 bg-gradient-to-br from-teal-500/20 to-teal-500/5 border-2 border-teal-500/30 hover:border-teal-500/50 transition-all duration-300 hover:scale-105">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-gradient-to-br from-teal-600 to-teal-700 rounded-full flex items-center justify-center mx-auto mb-3 animate-pulse">
+                  <span className="text-white text-2xl">📱</span>
+                </div>
+                <h4 className="font-bold text-teal-700 text-base mb-2">Multi-Channel Deploy</h4>
+                <p className="text-sm text-muted-foreground mb-3">Universal Accessibility</p>
+                <div className="space-y-1 text-xs">
+                  <div>• Web & mobile</div>
+                  <div>• Chat platforms</div>
+                  <div>• Voice & SMS</div>
+                </div>
+              </div>
+            </Card>
           </div>
-          <div className="grid grid-cols-3 gap-4 mt-6 max-w-2xl mx-auto">
-            <Card className="p-3 bg-gradient-to-br from-primary/10 to-primary/5">
-              <div className="text-sm font-semibold">🔗 MCP Protocol</div>
-              <div className="text-xs text-muted-foreground">Model Context Protocol</div>
-            </Card>
-            <Card className="p-3 bg-gradient-to-br from-secondary/10 to-secondary/5">
-              <div className="text-sm font-semibold">🧠 RAG System</div>
-              <div className="text-xs text-muted-foreground">Knowledge Retrieval</div>
-            </Card>
-            <Card className="p-3 bg-gradient-to-br from-accent/10 to-accent/5">
-              <div className="text-sm font-semibold">🚀 Auto-Deploy</div>
-              <div className="text-xs text-muted-foreground">Multi-Channel</div>
-            </Card>
-          </div>
+        </div>
+
+        {/* Platform Benefits */}
+        <div className="grid grid-cols-3 gap-6">
+          <Card className="p-6 bg-gradient-to-br from-indigo-500/15 to-indigo-500/5 border-l-4 border-indigo-500">
+            <h4 className="font-bold text-indigo-600 mb-4 flex items-center gap-2">
+              <span className="text-xl">🎯</span> Healthcare-Focused
+            </h4>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-indigo-500 rounded-full"></div>
+                <span className="text-sm">Patient onboarding optimization</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-indigo-500 rounded-full"></div>
+                <span className="text-sm">HIPAA-compliant processes</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-indigo-500 rounded-full"></div>
+                <span className="text-sm">EHR system integration</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-indigo-500 rounded-full"></div>
+                <span className="text-sm">Regulatory compliance automation</span>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-6 bg-gradient-to-br from-emerald-500/15 to-emerald-500/5 border-l-4 border-emerald-500">
+            <h4 className="font-bold text-emerald-600 mb-4 flex items-center gap-2">
+              <span className="text-xl">⚡</span> Advanced Automation
+            </h4>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-emerald-500 rounded-full"></div>
+                <span className="text-sm">Intelligent task routing</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-emerald-500 rounded-full"></div>
+                <span className="text-sm">Predictive workflow optimization</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-emerald-500 rounded-full"></div>
+                <span className="text-sm">Real-time decision making</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-emerald-500 rounded-full"></div>
+                <span className="text-sm">Exception handling & escalation</span>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-6 bg-gradient-to-br from-rose-500/15 to-rose-500/5 border-l-4 border-rose-500">
+            <h4 className="font-bold text-rose-600 mb-4 flex items-center gap-2">
+              <span className="text-xl">🛡️</span> Enterprise Ready
+            </h4>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-rose-500 rounded-full"></div>
+                <span className="text-sm">Scalable architecture</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-rose-500 rounded-full"></div>
+                <span className="text-sm">Security & compliance</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-rose-500 rounded-full"></div>
+                <span className="text-sm">Performance monitoring</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-rose-500 rounded-full"></div>
+                <span className="text-sm">24/7 reliability</span>
+              </div>
+            </div>
+          </Card>
         </div>
       </div>
     ),
