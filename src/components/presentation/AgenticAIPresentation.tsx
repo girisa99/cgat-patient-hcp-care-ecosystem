@@ -295,260 +295,678 @@ const slides: Slide[] = [
   },
   {
     id: 3,
-    title: "Complete AI Agent Creation Journey",
-    subtitle: "Structured Wizard-Based Creation with Automated AI Assignment",
+    title: "Agent Creation Journey Overview",
+    subtitle: "Complete Step-by-Step Guide to Building Your AI Agent",
     content: (
-      <div className="h-full overflow-y-auto space-y-6 animate-zoom-in">
-        {/* Main Creation Workflow */}
-        <div className="bg-gradient-to-r from-primary/10 via-secondary/10 to-accent/10 rounded-xl p-6 border-2 border-primary/20">
-          <h3 className="text-2xl font-bold text-center mb-6">Agent Creation Wizard Journey</h3>
-          <div className="relative">
-            <div className="absolute top-1/2 left-0 right-0 h-2 bg-gradient-to-r from-primary via-secondary to-accent rounded-full"></div>
-            <div className="relative flex justify-between">
-              {[
-                { step: 1, title: "Wizard Setup", icon: "🧙‍♂️", color: "bg-gradient-to-br from-blue-600 to-blue-700", desc: "Initial configuration" },
-                { step: 2, title: "Canvas Design", icon: "🎨", color: "bg-gradient-to-br from-purple-600 to-purple-700", desc: "Visual branding" },
-                { step: 3, title: "Actions Config", icon: "⚙️", color: "bg-gradient-to-br from-green-600 to-green-700", desc: "Core functionality" },
-                { step: 4, title: "AI Assignment", icon: "🤖", color: "bg-gradient-to-br from-orange-600 to-orange-700", desc: "Smart model selection" },
-                { step: 5, title: "Deployment", icon: "🚀", color: "bg-gradient-to-br from-red-600 to-red-700", desc: "Multi-channel launch" }
-              ].map((item, index) => (
-                <div
-                  key={item.step}
-                  className="flex flex-col items-center hover:scale-110 transition-all duration-300 animate-bounce"
-                  style={{ animationDelay: `${index * 0.2}s` }}
-                >
-                  <div className={`w-16 h-16 ${item.color} rounded-full flex items-center justify-center text-white text-2xl shadow-xl border-4 border-white`}>
-                    {item.icon}
-                  </div>
-                  <p className="mt-3 font-bold text-sm text-center">{item.title}</p>
-                  <p className="text-xs text-muted-foreground text-center">{item.desc}</p>
-                  <Badge variant="outline" className="mt-2 text-xs font-bold">{item.step}</Badge>
-                </div>
-              ))}
-            </div>
-          </div>
+      <div className="text-center space-y-8 animate-fade-in">
+        <div className="w-32 h-32 mx-auto bg-gradient-to-br from-primary to-primary/60 rounded-full flex items-center justify-center">
+          <div className="text-4xl">🛠️</div>
         </div>
-
-        {/* Detailed Step Breakdown */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Left Column - Creation Steps */}
-          <div className="space-y-6">
-            <h3 className="text-2xl font-bold text-primary mb-4">Creation Process Detail</h3>
-            
-            {/* Step 1: Wizard Setup */}
-            <Card className="p-5 bg-gradient-to-r from-blue-500/15 to-blue-500/5 border-l-4 border-blue-500 hover:from-blue-500/20 transition-all duration-300">
-              <h4 className="font-bold text-blue-600 mb-3 flex items-center gap-2">
-                <span className="text-xl">🧙‍♂️</span> Agent Creation Wizard
-              </h4>
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <span>Template selection & customization</span>
+        <div className="space-y-6">
+          <p className="text-xl text-muted-foreground">
+            Follow our structured wizard to create powerful AI agents in 5 simple steps
+          </p>
+          <div className="grid grid-cols-5 gap-4 max-w-4xl mx-auto">
+            <Card className="p-4 bg-gradient-to-br from-blue-500/20 to-blue-500/5 border-2 border-blue-500/30">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <span className="text-white text-xl">🧙‍♂️</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <span>Business requirements gathering</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <span>Use case definition & validation</span>
-                </div>
+                <div className="text-sm font-semibold">Step 1</div>
+                <div className="text-xs text-muted-foreground">Wizard Setup</div>
               </div>
             </Card>
-
-            {/* Step 2: Canvas Design */}
-            <Card className="p-5 bg-gradient-to-r from-purple-500/15 to-purple-500/5 border-l-4 border-purple-500 hover:from-purple-500/20 transition-all duration-300">
-              <h4 className="font-bold text-purple-600 mb-3 flex items-center gap-2">
-                <span className="text-xl">🎨</span> Canvas & Branding
-              </h4>
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                  <span>Visual identity & color schemes</span>
+            <Card className="p-4 bg-gradient-to-br from-purple-500/20 to-purple-500/5 border-2 border-purple-500/30">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <span className="text-white text-xl">🎨</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                  <span>UI/UX component customization</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                  <span>Workflow visual designer</span>
-                </div>
+                <div className="text-sm font-semibold">Step 2</div>
+                <div className="text-xs text-muted-foreground">Canvas Design</div>
               </div>
             </Card>
-
-            {/* Step 3: Actions Configuration */}
-            <Card className="p-5 bg-gradient-to-r from-green-500/15 to-green-500/5 border-l-4 border-green-500 hover:from-green-500/20 transition-all duration-300">
-              <h4 className="font-bold text-green-600 mb-3 flex items-center gap-2">
-                <span className="text-xl">⚙️</span> Actions & Configuration
-              </h4>
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div className="space-y-2">
-                  <h5 className="font-semibold text-green-700">Core Actions:</h5>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span>Agent actions setup</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span>Template customization</span>
-                  </div>
+            <Card className="p-4 bg-gradient-to-br from-green-500/20 to-green-500/5 border-2 border-green-500/30">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <span className="text-white text-xl">⚙️</span>
                 </div>
-                <div className="space-y-2">
-                  <h5 className="font-semibold text-green-700">Integrations:</h5>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span>System connectors</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span>Knowledge base & RAG</span>
-                  </div>
+                <div className="text-sm font-semibold">Step 3</div>
+                <div className="text-xs text-muted-foreground">Actions Config</div>
+              </div>
+            </Card>
+            <Card className="p-4 bg-gradient-to-br from-orange-500/20 to-orange-500/5 border-2 border-orange-500/30">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-orange-600 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <span className="text-white text-xl">🤖</span>
                 </div>
+                <div className="text-sm font-semibold">Step 4</div>
+                <div className="text-xs text-muted-foreground">AI Assignment</div>
+              </div>
+            </Card>
+            <Card className="p-4 bg-gradient-to-br from-red-500/20 to-red-500/5 border-2 border-red-500/30">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <span className="text-white text-xl">🚀</span>
+                </div>
+                <div className="text-sm font-semibold">Step 5</div>
+                <div className="text-xs text-muted-foreground">Deployment</div>
               </div>
             </Card>
           </div>
-
-          {/* Right Column - AI Assignment & Deployment */}
-          <div className="space-y-6">
-            <h3 className="text-2xl font-bold text-secondary mb-4">AI Assignment System</h3>
-            
-            {/* AI Model Assignment */}
-            <Card className="p-5 bg-gradient-to-r from-orange-500/15 to-orange-500/5 border-l-4 border-orange-500 hover:from-orange-500/20 transition-all duration-300">
-              <h4 className="font-bold text-orange-600 mb-3 flex items-center gap-2">
-                <span className="text-xl">🤖</span> Intelligent AI Assignment
-              </h4>
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="p-3 bg-white/50 rounded-lg">
-                    <h5 className="font-semibold text-orange-700 mb-2">Manual Selection</h5>
-                    <div className="space-y-1 text-xs">
-                      <div>• Choose specific LLM models</div>
-                      <div>• Custom MCP configurations</div>
-                      <div>• Fine-tuned parameters</div>
-                    </div>
-                  </div>
-                  <div className="p-3 bg-white/50 rounded-lg">
-                    <h5 className="font-semibold text-orange-700 mb-2">Auto-Suggest</h5>
-                    <div className="space-y-1 text-xs">
-                      <div>• AI recommends best models</div>
-                      <div>• Optimized configurations</div>
-                      <div>• Performance-based selection</div>
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-gradient-to-r from-orange-100 to-orange-50 p-3 rounded-lg">
-                  <h5 className="font-semibold text-orange-700 mb-2">Model Types Available:</h5>
-                  <div className="grid grid-cols-3 gap-2 text-xs">
-                    <Badge variant="outline" className="justify-center">MCP Protocol</Badge>
-                    <Badge variant="outline" className="justify-center">Small LLMs</Badge>
-                    <Badge variant="outline" className="justify-center">Large LLMs</Badge>
-                  </div>
-                </div>
-              </div>
-            </Card>
-
-            {/* Task & Action Assignment */}
-            <Card className="p-5 bg-gradient-to-r from-teal-500/15 to-teal-500/5 border-l-4 border-teal-500 hover:from-teal-500/20 transition-all duration-300">
-              <h4 className="font-bold text-teal-600 mb-3 flex items-center gap-2">
-                <span className="text-xl">📋</span> Task & Action Assignment
-              </h4>
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div>
-                    <h5 className="font-semibold text-teal-700 mb-2">Automated Tasks:</h5>
-                    <div className="space-y-1 text-xs">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-teal-500 rounded-full"></div>
-                        <span>Patient intake forms</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-teal-500 rounded-full"></div>
-                        <span>Document processing</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-teal-500 rounded-full"></div>
-                        <span>Compliance checking</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div>
-                    <h5 className="font-semibold text-teal-700 mb-2">Manual Actions:</h5>
-                    <div className="space-y-1 text-xs">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-teal-500 rounded-full"></div>
-                        <span>Custom workflows</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-teal-500 rounded-full"></div>
-                        <span>Approval processes</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-teal-500 rounded-full"></div>
-                        <span>Escalation rules</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </Card>
-
-            {/* Channel Deployment */}
-            <Card className="p-5 bg-gradient-to-r from-red-500/15 to-red-500/5 border-l-4 border-red-500 hover:from-red-500/20 transition-all duration-300">
-              <h4 className="font-bold text-red-600 mb-3 flex items-center gap-2">
-                <span className="text-xl">🚀</span> Multi-Channel Deployment
-              </h4>
-              <div className="grid grid-cols-4 gap-2 text-center">
-                <div className="p-2 bg-white/50 rounded-lg">
-                  <div className="text-lg">🌐</div>
-                  <div className="text-xs font-semibold">Web Portal</div>
-                </div>
-                <div className="p-2 bg-white/50 rounded-lg">
-                  <div className="text-lg">📱</div>
-                  <div className="text-xs font-semibold">Mobile App</div>
-                </div>
-                <div className="p-2 bg-white/50 rounded-lg">
-                  <div className="text-lg">💬</div>
-                  <div className="text-xs font-semibold">Chat Bots</div>
-                </div>
-                <div className="p-2 bg-white/50 rounded-lg">
-                  <div className="text-lg">🎤</div>
-                  <div className="text-xs font-semibold">Voice AI</div>
-                </div>
-              </div>
-            </Card>
-          </div>
-        </div>
-
-        {/* Interactive Journey Summary */}
-        <div className="bg-gradient-to-r from-primary/5 via-secondary/5 to-accent/5 rounded-xl p-6 border border-primary/20">
-          <h3 className="text-xl font-bold text-center mb-6">Complete Agent Creation Process</h3>
-          <div className="flex items-center justify-between text-center">
-            {[
-              { phase: "Wizard", desc: "Template selection\n& requirements", time: "5 min", icon: "🧙‍♂️" },
-              { phase: "Canvas", desc: "Visual design\n& branding", time: "10 min", icon: "🎨" },
-              { phase: "Actions", desc: "Functionality\n& integrations", time: "15 min", icon: "⚙️" },
-              { phase: "AI Setup", desc: "Model assignment\n& optimization", time: "5 min", icon: "🤖" },
-              { phase: "Deploy", desc: "Multi-channel\nlaunch", time: "2 min", icon: "🚀" }
-            ].map((item, index) => (
-              <div key={index} className="flex flex-col items-center hover:scale-105 transition-transform duration-300">
-                <div className="w-16 h-16 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center text-2xl mb-2 shadow-lg">
-                  {item.icon}
-                </div>
-                <p className="font-bold text-sm">{item.phase}</p>
-                <p className="text-xs text-muted-foreground text-center whitespace-pre-line">{item.desc}</p>
-                <Badge variant="secondary" className="mt-2 text-xs">{item.time}</Badge>
-                {index < 4 && <div className="mt-4 text-primary text-xl">→</div>}
-              </div>
-            ))}
-          </div>
-          <div className="text-center mt-6">
-            <Badge variant="default" className="text-sm px-4 py-2">Total Time: ~37 minutes</Badge>
+          <div className="mt-8">
+            <p className="text-lg font-semibold text-primary">Next: Detailed Step-by-Step Walkthrough</p>
+            <p className="text-sm text-muted-foreground">Each step will be explained in detail across the following slides</p>
           </div>
         </div>
       </div>
     ),
-    animation: 'zoom'
+    animation: 'fade'
+  },
+  {
+    id: 4,
+    title: "Step 1: Wizard Setup & Initial Configuration",
+    subtitle: "Foundation Setup for Your AI Agent",
+    content: (
+      <div className="h-full overflow-y-auto space-y-6 animate-slide-in-right">
+        <div className="text-center mb-6">
+          <div className="w-24 h-24 bg-gradient-to-br from-blue-600 to-blue-700 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-white text-3xl">🧙‍♂️</span>
+          </div>
+          <h3 className="text-2xl font-bold text-blue-600">Wizard Setup</h3>
+          <p className="text-muted-foreground">Configure your agent's basic parameters and settings</p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-6">
+          <Card className="p-6 bg-gradient-to-br from-blue-500/15 to-blue-500/5 border-l-4 border-blue-500">
+            <h4 className="font-bold text-blue-600 mb-4 flex items-center gap-2">
+              <span className="text-xl">📝</span> Basic Configuration
+            </h4>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                <span className="text-sm">Agent name and description</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                <span className="text-sm">Purpose and objectives</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                <span className="text-sm">Target audience definition</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                <span className="text-sm">Operating environment</span>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-6 bg-gradient-to-br from-purple-500/15 to-purple-500/5 border-l-4 border-purple-500">
+            <h4 className="font-bold text-purple-600 mb-4 flex items-center gap-2">
+              <span className="text-xl">🎯</span> Template Selection
+            </h4>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                <span className="text-sm">Healthcare onboarding templates</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                <span className="text-sm">Patient management workflows</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                <span className="text-sm">Custom template creation</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                <span className="text-sm">Pre-built integrations</span>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-xl p-6 border-2 border-blue-500/20">
+          <h4 className="text-xl font-bold mb-4 text-center">Setup Process Flow</h4>
+          <div className="flex items-center justify-between">
+            <div className="text-center space-y-2">
+              <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">1</div>
+              <p className="text-sm font-medium">Choose Template</p>
+            </div>
+            <div className="text-2xl text-blue-600">→</div>
+            <div className="text-center space-y-2">
+              <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">2</div>
+              <p className="text-sm font-medium">Configure Settings</p>
+            </div>
+            <div className="text-2xl text-blue-600">→</div>
+            <div className="text-center space-y-2">
+              <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">3</div>
+              <p className="text-sm font-medium">Set Objectives</p>
+            </div>
+            <div className="text-2xl text-blue-600">→</div>
+            <div className="text-center space-y-2">
+              <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center text-white font-bold">✓</div>
+              <p className="text-sm font-medium">Ready for Design</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    ),
+    animation: 'slide'
+  },
+  {
+    id: 5,
+    title: "Step 2: Canvas Design & Visual Branding",
+    subtitle: "Create Your Agent's Visual Identity and Interface",
+    content: (
+      <div className="h-full overflow-y-auto space-y-6 animate-slide-in-right">
+        <div className="text-center mb-6">
+          <div className="w-24 h-24 bg-gradient-to-br from-purple-600 to-purple-700 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-white text-3xl">🎨</span>
+          </div>
+          <h3 className="text-2xl font-bold text-purple-600">Canvas Design</h3>
+          <p className="text-muted-foreground">Design your agent's visual interface and branding</p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-6">
+          <Card className="p-6 bg-gradient-to-br from-purple-500/15 to-purple-500/5 border-l-4 border-purple-500">
+            <h4 className="font-bold text-purple-600 mb-4 flex items-center gap-2">
+              <span className="text-xl">🎨</span> Visual Design Elements
+            </h4>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                <span className="text-sm">Color scheme and themes</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                <span className="text-sm">Typography and fonts</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                <span className="text-sm">Logo and branding assets</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                <span className="text-sm">Custom UI components</span>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-6 bg-gradient-to-br from-pink-500/15 to-pink-500/5 border-l-4 border-pink-500">
+            <h4 className="font-bold text-pink-600 mb-4 flex items-center gap-2">
+              <span className="text-xl">📱</span> Interface Layout
+            </h4>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-pink-500 rounded-full"></div>
+                <span className="text-sm">Responsive design templates</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-pink-500 rounded-full"></div>
+                <span className="text-sm">Widget arrangement</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-pink-500 rounded-full"></div>
+                <span className="text-sm">Navigation structure</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-pink-500 rounded-full"></div>
+                <span className="text-sm">User experience flow</span>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-xl p-6 border-2 border-purple-500/20">
+          <h4 className="text-xl font-bold mb-4 text-center">Design Workflow</h4>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="text-center space-y-3">
+              <div className="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center text-white text-2xl mx-auto">🎨</div>
+              <p className="text-sm font-medium">Visual Elements</p>
+              <p className="text-xs text-muted-foreground">Colors, fonts, logos</p>
+            </div>
+            <div className="text-center space-y-3">
+              <div className="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center text-white text-2xl mx-auto">📐</div>
+              <p className="text-sm font-medium">Layout Design</p>
+              <p className="text-xs text-muted-foreground">Structure and components</p>
+            </div>
+            <div className="text-center space-y-3">
+              <div className="w-16 h-16 bg-pink-600 rounded-full flex items-center justify-center text-white text-2xl mx-auto">👀</div>
+              <p className="text-sm font-medium">Preview & Test</p>
+              <p className="text-xs text-muted-foreground">Real-time preview</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    ),
+    animation: 'slide'
+  },
+  {
+    id: 6,
+    title: "Step 3: Actions Configuration",
+    subtitle: "Define Your Agent's Capabilities and Integrations",
+    content: (
+      <div className="h-full overflow-y-auto space-y-6 animate-slide-in-right">
+        <div className="text-center mb-6">
+          <div className="w-24 h-24 bg-gradient-to-br from-green-600 to-green-700 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-white text-3xl">⚙️</span>
+          </div>
+          <h3 className="text-2xl font-bold text-green-600">Actions Configuration</h3>
+          <p className="text-muted-foreground">Set up your agent's core functionality and system integrations</p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <Card className="p-6 bg-gradient-to-br from-green-500/15 to-green-500/5 border-l-4 border-green-500">
+              <h4 className="font-bold text-green-600 mb-4 flex items-center gap-2">
+                <span className="text-xl">🔧</span> Core Actions
+              </h4>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  <span className="text-sm">Patient data processing</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  <span className="text-sm">Onboarding workflows</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  <span className="text-sm">Document generation</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  <span className="text-sm">Notification systems</span>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-6 bg-gradient-to-br from-blue-500/15 to-blue-500/5 border-l-4 border-blue-500">
+              <h4 className="font-bold text-blue-600 mb-4 flex items-center gap-2">
+                <span className="text-xl">🔗</span> System Connectors
+              </h4>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                  <span className="text-sm">Electronic Health Records</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                  <span className="text-sm">Payment processing systems</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                  <span className="text-sm">Communication platforms</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                  <span className="text-sm">Third-party APIs</span>
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          <div className="space-y-4">
+            <Card className="p-6 bg-gradient-to-br from-purple-500/15 to-purple-500/5 border-l-4 border-purple-500">
+              <h4 className="font-bold text-purple-600 mb-4 flex items-center gap-2">
+                <span className="text-xl">🧠</span> Knowledge Base Setup
+              </h4>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                  <span className="text-sm">Document upload and processing</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                  <span className="text-sm">Vector embeddings creation</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                  <span className="text-sm">RAG system configuration</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                  <span className="text-sm">Semantic search optimization</span>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-6 bg-gradient-to-br from-orange-500/15 to-orange-500/5 border-l-4 border-orange-500">
+              <h4 className="font-bold text-orange-600 mb-4 flex items-center gap-2">
+                <span className="text-xl">📋</span> Templates & Workflows
+              </h4>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                  <span className="text-sm">Pre-built healthcare templates</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                  <span className="text-sm">Custom workflow builder</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                  <span className="text-sm">Conditional logic setup</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                  <span className="text-sm">Approval workflows</span>
+                </div>
+              </div>
+            </Card>
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-r from-green-500/10 to-blue-500/10 rounded-xl p-6 border-2 border-green-500/20">
+          <h4 className="text-xl font-bold mb-4 text-center">Configuration Flow</h4>
+          <div className="flex items-center justify-between">
+            <div className="text-center space-y-2">
+              <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center text-white font-bold">1</div>
+              <p className="text-sm font-medium">Define Actions</p>
+            </div>
+            <div className="text-2xl text-green-600">→</div>
+            <div className="text-center space-y-2">
+              <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">2</div>
+              <p className="text-sm font-medium">Connect Systems</p>
+            </div>
+            <div className="text-2xl text-blue-600">→</div>
+            <div className="text-center space-y-2">
+              <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center text-white font-bold">3</div>
+              <p className="text-sm font-medium">Setup Knowledge</p>
+            </div>
+            <div className="text-2xl text-purple-600">→</div>
+            <div className="text-center space-y-2">
+              <div className="w-12 h-12 bg-orange-600 rounded-full flex items-center justify-center text-white font-bold">✓</div>
+              <p className="text-sm font-medium">Ready for AI</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    ),
+    animation: 'slide'
+  },
+  {
+    id: 7,
+    title: "Step 4: AI Assignment & Model Selection",
+    subtitle: "Intelligent Model Assignment with Manual Override Options",
+    content: (
+      <div className="h-full overflow-y-auto space-y-6 animate-slide-in-right">
+        <div className="text-center mb-6">
+          <div className="w-24 h-24 bg-gradient-to-br from-orange-600 to-orange-700 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-white text-3xl">🤖</span>
+          </div>
+          <h3 className="text-2xl font-bold text-orange-600">AI Assignment</h3>
+          <p className="text-muted-foreground">Intelligent model selection and task assignment configuration</p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-6">
+          <Card className="p-6 bg-gradient-to-br from-orange-500/15 to-orange-500/5 border-l-4 border-orange-500">
+            <h4 className="font-bold text-orange-600 mb-4 flex items-center gap-2">
+              <span className="text-xl">🧠</span> Auto-Suggest AI Models
+            </h4>
+            <div className="space-y-4">
+              <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                <h5 className="font-semibold text-orange-700 mb-2">Intelligent Selection</h5>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                    <span className="text-sm">Analyzes your agent's requirements</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                    <span className="text-sm">Suggests optimal model combinations</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                    <span className="text-sm">Considers performance and cost</span>
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Badge className="bg-orange-100 text-orange-700">Small LLMs for Speed</Badge>
+                <Badge className="bg-orange-100 text-orange-700">Large LLMs for Complex Tasks</Badge>
+                <Badge className="bg-orange-100 text-orange-700">Specialized Models for Domain Tasks</Badge>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-6 bg-gradient-to-br from-blue-500/15 to-blue-500/5 border-l-4 border-blue-500">
+            <h4 className="font-bold text-blue-600 mb-4 flex items-center gap-2">
+              <span className="text-xl">⚙️</span> Manual Override Options
+            </h4>
+            <div className="space-y-4">
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <h5 className="font-semibold text-blue-700 mb-2">Full Control</h5>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <span className="text-sm">Override AI suggestions</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <span className="text-sm">Custom model selection</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <span className="text-sm">Fine-tune parameters</span>
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Badge className="bg-blue-100 text-blue-700">Expert Mode</Badge>
+                <Badge className="bg-blue-100 text-blue-700">Custom Configurations</Badge>
+                <Badge className="bg-blue-100 text-blue-700">Advanced Settings</Badge>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-2 gap-6">
+          <Card className="p-6 bg-gradient-to-br from-purple-500/15 to-purple-500/5 border-l-4 border-purple-500">
+            <h4 className="font-bold text-purple-600 mb-4 flex items-center gap-2">
+              <span className="text-xl">📋</span> Task Assignment Strategy
+            </h4>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                <span className="text-sm">Role-based task distribution</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                <span className="text-sm">Workload balancing algorithms</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                <span className="text-sm">Priority-based assignment</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                <span className="text-sm">Automated escalation rules</span>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-6 bg-gradient-to-br from-green-500/15 to-green-500/5 border-l-4 border-green-500">
+            <h4 className="font-bold text-green-600 mb-4 flex items-center gap-2">
+              <span className="text-xl">🎯</span> Performance Optimization
+            </h4>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                <span className="text-sm">Real-time performance monitoring</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                <span className="text-sm">Adaptive model switching</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                <span className="text-sm">Cost optimization algorithms</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                <span className="text-sm">Quality assurance metrics</span>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        <div className="bg-gradient-to-r from-orange-500/10 to-purple-500/10 rounded-xl p-6 border-2 border-orange-500/20">
+          <h4 className="text-xl font-bold mb-4 text-center">AI Assignment Process</h4>
+          <div className="flex items-center justify-between">
+            <div className="text-center space-y-2">
+              <div className="w-12 h-12 bg-orange-600 rounded-full flex items-center justify-center text-white font-bold">🔍</div>
+              <p className="text-sm font-medium">Analyze Requirements</p>
+            </div>
+            <div className="text-2xl text-orange-600">→</div>
+            <div className="text-center space-y-2">
+              <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">🤖</div>
+              <p className="text-sm font-medium">AI Suggestions</p>
+            </div>
+            <div className="text-2xl text-blue-600">→</div>
+            <div className="text-center space-y-2">
+              <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center text-white font-bold">⚙️</div>
+              <p className="text-sm font-medium">Manual Override</p>
+            </div>
+            <div className="text-2xl text-purple-600">→</div>
+            <div className="text-center space-y-2">
+              <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center text-white font-bold">✓</div>
+              <p className="text-sm font-medium">Optimized Setup</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    ),
+    animation: 'slide'
+  },
+  {
+    id: 8,
+    title: "Step 5: Multi-Channel Deployment",
+    subtitle: "Launch Your Agent Across Multiple Platforms",
+    content: (
+      <div className="h-full overflow-y-auto space-y-6 animate-slide-in-right">
+        <div className="text-center mb-6">
+          <div className="w-24 h-24 bg-gradient-to-br from-red-600 to-red-700 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-white text-3xl">🚀</span>
+          </div>
+          <h3 className="text-2xl font-bold text-red-600">Multi-Channel Deployment</h3>
+          <p className="text-muted-foreground">Deploy your AI agent across web, mobile, and communication platforms</p>
+        </div>
+
+        <div className="grid grid-cols-3 gap-4 mb-6">
+          <Card className="p-4 bg-gradient-to-br from-blue-500/20 to-blue-500/5 border-2 border-blue-500/30 hover:scale-105 transition-transform">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span className="text-white text-2xl">🌐</span>
+              </div>
+              <h4 className="font-bold text-blue-600 mb-2">Web Platform</h4>
+              <p className="text-xs text-muted-foreground">Responsive web application</p>
+            </div>
+          </Card>
+          
+          <Card className="p-4 bg-gradient-to-br from-green-500/20 to-green-500/5 border-2 border-green-500/30 hover:scale-105 transition-transform">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span className="text-white text-2xl">📱</span>
+              </div>
+              <h4 className="font-bold text-green-600 mb-2">Mobile App</h4>
+              <p className="text-xs text-muted-foreground">Native mobile experience</p>
+            </div>
+          </Card>
+          
+          <Card className="p-4 bg-gradient-to-br from-purple-500/20 to-purple-500/5 border-2 border-purple-500/30 hover:scale-105 transition-transform">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span className="text-white text-2xl">💬</span>
+              </div>
+              <h4 className="font-bold text-purple-600 mb-2">Chat Platforms</h4>
+              <p className="text-xs text-muted-foreground">Slack, Teams, WhatsApp</p>
+            </div>
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-2 gap-6">
+          <Card className="p-6 bg-gradient-to-br from-red-500/15 to-red-500/5 border-l-4 border-red-500">
+            <h4 className="font-bold text-red-600 mb-4 flex items-center gap-2">
+              <span className="text-xl">🚀</span> Deployment Options
+            </h4>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                <span className="text-sm">One-click deployment</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                <span className="text-sm">Staged rollout options</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                <span className="text-sm">A/B testing framework</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                <span className="text-sm">Rollback capabilities</span>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-6 bg-gradient-to-br from-blue-500/15 to-blue-500/5 border-l-4 border-blue-500">
+            <h4 className="font-bold text-blue-600 mb-4 flex items-center gap-2">
+              <span className="text-xl">📊</span> Monitoring & Analytics
+            </h4>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                <span className="text-sm">Real-time performance metrics</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                <span className="text-sm">User engagement tracking</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                <span className="text-sm">Error monitoring and alerts</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                <span className="text-sm">Usage analytics dashboard</span>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        <div className="bg-gradient-to-r from-red-500/10 to-blue-500/10 rounded-xl p-6 border-2 border-red-500/20">
+          <h4 className="text-xl font-bold mb-6 text-center">Deployment Journey Complete!</h4>
+          <div className="grid grid-cols-5 gap-4">
+            <div className="text-center space-y-2">
+              <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center text-white font-bold">✓</div>
+              <p className="text-sm font-medium">Setup</p>
+            </div>
+            <div className="text-center space-y-2">
+              <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center text-white font-bold">✓</div>
+              <p className="text-sm font-medium">Design</p>
+            </div>
+            <div className="text-center space-y-2">
+              <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center text-white font-bold">✓</div>
+              <p className="text-sm font-medium">Actions</p>
+            </div>
+            <div className="text-center space-y-2">
+              <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center text-white font-bold">✓</div>
+              <p className="text-sm font-medium">AI Assignment</p>
+            </div>
+            <div className="text-center space-y-2">
+              <div className="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center text-white text-xl">🚀</div>
+              <p className="text-sm font-medium">Deployed!</p>
+            </div>
+          </div>
+          <div className="text-center mt-6">
+            <Badge className="bg-green-100 text-green-700 px-4 py-2">Your AI Agent is Live and Ready!</Badge>
+          </div>
+        </div>
+      </div>
+    ),
+    animation: 'slide'
   },
   {
     id: 4,
