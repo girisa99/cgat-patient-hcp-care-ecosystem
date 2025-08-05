@@ -56,87 +56,192 @@ const slides: Slide[] = [
   {
     id: 2,
     title: "Complete AI Agent Architecture",
-    subtitle: "MCP Protocol + RAG + Small Language Models",
+    subtitle: "Comprehensive System Design & Data Flow",
     content: (
       <div className="space-y-8 animate-fade-in">
-        <div className="text-center">
-          <div className="relative mx-auto w-full max-w-5xl">
-            <svg viewBox="0 0 900 600" className="w-full h-auto">
-              {/* Background */}
-              <defs>
-                <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="hsl(var(--primary) / 0.1)" />
-                  <stop offset="100%" stopColor="hsl(var(--secondary) / 0.1)" />
-                </linearGradient>
-              </defs>
-              <rect width="900" height="600" fill="url(#bgGradient)" rx="20" />
-              
-              {/* Agent Creation Interface */}
-              <rect x="50" y="50" width="200" height="80" rx="10" fill="hsl(var(--primary))" />
-              <text x="150" y="85" textAnchor="middle" fill="white" className="text-sm font-bold">Agent Builder UI</text>
-              <text x="150" y="105" textAnchor="middle" fill="white" className="text-xs">Template Configuration</text>
-              
-              {/* MCP Protocol Layer */}
-              <rect x="300" y="50" width="180" height="80" rx="10" fill="hsl(var(--secondary))" />
-              <text x="390" y="85" textAnchor="middle" fill="white" className="text-sm font-bold">MCP Protocol</text>
-              <text x="390" y="105" textAnchor="middle" fill="white" className="text-xs">Model Context Protocol</text>
-              
-              {/* Small Language Models */}
-              <rect x="520" y="50" width="180" height="80" rx="10" fill="hsl(var(--accent))" />
-              <text x="610" y="85" textAnchor="middle" fill="white" className="text-sm font-bold">Small LLMs</text>
-              <text x="610" y="105" textAnchor="middle" fill="white" className="text-xs">Efficient AI Processing</text>
-              
-              {/* Channel Deployment */}
-              <rect x="720" y="50" width="150" height="80" rx="10" fill="hsl(var(--primary))" />
-              <text x="795" y="85" textAnchor="middle" fill="white" className="text-sm font-bold">Multi-Channel</text>
-              <text x="795" y="105" textAnchor="middle" fill="white" className="text-xs">Auto-Deploy</text>
-              
-              {/* Knowledge Base & RAG */}
-              <rect x="100" y="180" width="300" height="100" rx="15" fill="hsl(var(--secondary) / 0.8)" />
-              <text x="250" y="215" textAnchor="middle" fill="white" className="text-lg font-bold">Knowledge Base + RAG</text>
-              <text x="250" y="235" textAnchor="middle" fill="white" className="text-sm">Retrieval Augmented Generation</text>
-              <text x="250" y="255" textAnchor="middle" fill="white" className="text-xs">Vector DB • Embeddings • Context Retrieval</text>
-              
-              {/* Actions & Tasks Engine */}
-              <rect x="450" y="180" width="300" height="100" rx="15" fill="hsl(var(--accent) / 0.8)" />
-              <text x="600" y="215" textAnchor="middle" fill="white" className="text-lg font-bold">Actions & Tasks Engine</text>
-              <text x="600" y="235" textAnchor="middle" fill="white" className="text-sm">Intelligent Task Assignment</text>
-              <text x="600" y="255" textAnchor="middle" fill="white" className="text-xs">Auto-categorize • Priority • Execution</text>
-              
-              {/* AI Autosuggest System */}
-              <rect x="200" y="320" width="400" height="80" rx="12" fill="hsl(var(--primary) / 0.9)" />
-              <text x="400" y="355" textAnchor="middle" fill="white" className="text-lg font-bold">AI Autosuggest System</text>
-              <text x="400" y="375" textAnchor="middle" fill="white" className="text-xs">Real-time Suggestions • Context-aware • Learning Algorithm</text>
-              
-              {/* Connector & System Assignment */}
-              <rect x="100" y="450" width="250" height="80" rx="10" fill="hsl(var(--secondary))" />
-              <text x="225" y="485" textAnchor="middle" fill="white" className="text-sm font-bold">Connector Assignment</text>
-              <text x="225" y="505" textAnchor="middle" fill="white" className="text-xs">System Integration • API Mapping</text>
-              
-              {/* Template Configuration */}
-              <rect x="400" y="450" width="250" height="80" rx="10" fill="hsl(var(--accent))" />
-              <text x="525" y="485" textAnchor="middle" fill="white" className="text-sm font-bold">Template Config</text>
-              <text x="525" y="505" textAnchor="middle" fill="white" className="text-xs">Dynamic Templates • AI Customization</text>
-              
-              {/* Database Layer */}
-              <rect x="100" y="560" width="650" height="40" rx="8" fill="hsl(var(--primary) / 0.7)" />
-              <text x="425" y="585" textAnchor="middle" fill="white" className="text-sm font-bold">Supabase + Vector Database + Real-time Sync</text>
-              
-              {/* Connection Lines */}
-              <path d="M150 130 L250 180" stroke="hsl(var(--primary))" strokeWidth="2" fill="none" />
-              <path d="M390 130 L250 180" stroke="hsl(var(--secondary))" strokeWidth="2" fill="none" />
-              <path d="M610 130 L600 180" stroke="hsl(var(--accent))" strokeWidth="2" fill="none" />
-              <path d="M795 130 L600 180" stroke="hsl(var(--primary))" strokeWidth="2" fill="none" />
-              
-              <path d="M250 280 L350 320" stroke="hsl(var(--secondary))" strokeWidth="2" fill="none" />
-              <path d="M600 280 L450 320" stroke="hsl(var(--accent))" strokeWidth="2" fill="none" />
-              
-              <path d="M400 400 L225 450" stroke="hsl(var(--primary))" strokeWidth="2" fill="none" />
-              <path d="M400 400 L525 450" stroke="hsl(var(--primary))" strokeWidth="2" fill="none" />
-              
-              <path d="M225 530 L350 560" stroke="hsl(var(--secondary))" strokeWidth="2" fill="none" />
-              <path d="M525 530 L500 560" stroke="hsl(var(--accent))" strokeWidth="2" fill="none" />
-            </svg>
+        {/* Architecture Overview Cards */}
+        <div className="grid grid-cols-4 gap-4 mb-8">
+          <Card className="p-4 bg-gradient-to-br from-blue-500/20 to-blue-500/5 border-blue-500/30">
+            <div className="text-center">
+              <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-2">
+                <span className="text-white text-lg">🎨</span>
+              </div>
+              <h4 className="font-bold text-blue-700 text-sm">Frontend Layer</h4>
+              <p className="text-xs text-muted-foreground">Agent Builder UI</p>
+            </div>
+          </Card>
+          
+          <Card className="p-4 bg-gradient-to-br from-green-500/20 to-green-500/5 border-green-500/30">
+            <div className="text-center">
+              <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-2">
+                <span className="text-white text-lg">🔗</span>
+              </div>
+              <h4 className="font-bold text-green-700 text-sm">Protocol Layer</h4>
+              <p className="text-xs text-muted-foreground">MCP Integration</p>
+            </div>
+          </Card>
+          
+          <Card className="p-4 bg-gradient-to-br from-purple-500/20 to-purple-500/5 border-purple-500/30">
+            <div className="text-center">
+              <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-2">
+                <span className="text-white text-lg">🧠</span>
+              </div>
+              <h4 className="font-bold text-purple-700 text-sm">AI Processing</h4>
+              <p className="text-xs text-muted-foreground">Small LLMs + RAG</p>
+            </div>
+          </Card>
+          
+          <Card className="p-4 bg-gradient-to-br from-orange-500/20 to-orange-500/5 border-orange-500/30">
+            <div className="text-center">
+              <div className="w-12 h-12 bg-orange-600 rounded-full flex items-center justify-center mx-auto mb-2">
+                <span className="text-white text-lg">💾</span>
+              </div>
+              <h4 className="font-bold text-orange-700 text-sm">Data Layer</h4>
+              <p className="text-xs text-muted-foreground">Supabase + Vector DB</p>
+            </div>
+          </Card>
+        </div>
+
+        {/* Detailed Architecture Description */}
+        <div className="grid grid-cols-2 gap-8">
+          <div className="space-y-6">
+            <h3 className="text-2xl font-bold text-primary">System Components</h3>
+            
+            <Card className="p-4 bg-gradient-to-r from-blue-500/10 to-blue-500/5 border-l-4 border-blue-500">
+              <h4 className="font-bold text-blue-600 mb-2">🎨 Agent Builder Interface</h4>
+              <p className="text-sm text-muted-foreground mb-2">
+                Visual drag-and-drop interface for creating AI agents without coding
+              </p>
+              <div className="text-xs space-y-1">
+                <div>• Template selection and customization</div>
+                <div>• Real-time preview and testing</div>
+                <div>• Visual workflow designer</div>
+                <div>• Component library integration</div>
+              </div>
+            </Card>
+            
+            <Card className="p-4 bg-gradient-to-r from-green-500/10 to-green-500/5 border-l-4 border-green-500">
+              <h4 className="font-bold text-green-600 mb-2">🔗 MCP Protocol Engine</h4>
+              <p className="text-sm text-muted-foreground mb-2">
+                Model Context Protocol handles communication between AI components
+              </p>
+              <div className="text-xs space-y-1">
+                <div>• Context sharing across models</div>
+                <div>• Session state management</div>
+                <div>• Real-time synchronization</div>
+                <div>• Multi-model coordination</div>
+              </div>
+            </Card>
+            
+            <Card className="p-4 bg-gradient-to-r from-purple-500/10 to-purple-500/5 border-l-4 border-purple-500">
+              <h4 className="font-bold text-purple-600 mb-2">🧠 Knowledge Processing</h4>
+              <p className="text-sm text-muted-foreground mb-2">
+                RAG system with vector database for intelligent knowledge retrieval
+              </p>
+              <div className="text-xs space-y-1">
+                <div>• Document ingestion and processing</div>
+                <div>• Vector embedding generation</div>
+                <div>• Semantic search capabilities</div>
+                <div>• Context-aware response generation</div>
+              </div>
+            </Card>
+          </div>
+          
+          <div className="space-y-6">
+            <h3 className="text-2xl font-bold text-secondary">Data Flow Architecture</h3>
+            
+            <Card className="p-4 bg-gradient-to-r from-orange-500/10 to-orange-500/5 border-l-4 border-orange-500">
+              <h4 className="font-bold text-orange-600 mb-2">⚡ Processing Pipeline</h4>
+              <p className="text-sm text-muted-foreground mb-2">
+                End-to-end data processing from user input to intelligent response
+              </p>
+              <div className="text-xs space-y-1">
+                <div>1. User input captured via multiple channels</div>
+                <div>2. MCP protocol routes to appropriate AI model</div>
+                <div>3. RAG system retrieves relevant context</div>
+                <div>4. Small LLM generates contextual response</div>
+                <div>5. Response delivered via optimized channel</div>
+              </div>
+            </Card>
+            
+            <Card className="p-4 bg-gradient-to-r from-teal-500/10 to-teal-500/5 border-l-4 border-teal-500">
+              <h4 className="font-bold text-teal-600 mb-2">🚀 Deployment Channels</h4>
+              <p className="text-sm text-muted-foreground mb-2">
+                Multi-platform deployment with channel-specific optimization
+              </p>
+              <div className="text-xs space-y-1">
+                <div>• Web Portal: Responsive interface</div>
+                <div>• Mobile App: Native iOS/Android</div>
+                <div>• Voice AI: Alexa, Google, Phone</div>
+                <div>• Chat: Slack, Teams, WhatsApp</div>
+              </div>
+            </Card>
+            
+            <Card className="p-4 bg-gradient-to-r from-red-500/10 to-red-500/5 border-l-4 border-red-500">
+              <h4 className="font-bold text-red-600 mb-2">🔒 Security & Compliance</h4>
+              <p className="text-sm text-muted-foreground mb-2">
+                Healthcare-grade security with HIPAA compliance
+              </p>
+              <div className="text-xs space-y-1">
+                <div>• End-to-end encryption</div>
+                <div>• Role-based access control</div>
+                <div>• Audit logging and monitoring</div>
+                <div>• On-premise deployment option</div>
+              </div>
+            </Card>
+          </div>
+        </div>
+        
+        {/* Simplified Visual Architecture */}
+        <div className="bg-gradient-to-r from-primary/5 via-secondary/5 to-accent/5 rounded-lg p-6">
+          <h3 className="text-xl font-bold text-center mb-6">System Architecture Flow</h3>
+          <div className="flex items-center justify-between text-center">
+            <div className="flex flex-col items-center space-y-2">
+              <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center text-white text-xl">
+                👤
+              </div>
+              <p className="font-semibold text-sm">User Input</p>
+              <p className="text-xs text-muted-foreground">Multiple Channels</p>
+            </div>
+            
+            <div className="flex items-center">
+              <div className="w-8 h-1 bg-blue-600"></div>
+              <div className="text-blue-600 text-lg">→</div>
+            </div>
+            
+            <div className="flex flex-col items-center space-y-2">
+              <div className="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center text-white text-xl">
+                🔗
+              </div>
+              <p className="font-semibold text-sm">MCP Router</p>
+              <p className="text-xs text-muted-foreground">Context Protocol</p>
+            </div>
+            
+            <div className="flex items-center">
+              <div className="w-8 h-1 bg-green-600"></div>
+              <div className="text-green-600 text-lg">→</div>
+            </div>
+            
+            <div className="flex flex-col items-center space-y-2">
+              <div className="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center text-white text-xl">
+                🧠
+              </div>
+              <p className="font-semibold text-sm">AI Processing</p>
+              <p className="text-xs text-muted-foreground">RAG + Small LLM</p>
+            </div>
+            
+            <div className="flex items-center">
+              <div className="w-8 h-1 bg-purple-600"></div>
+              <div className="text-purple-600 text-lg">→</div>
+            </div>
+            
+            <div className="flex flex-col items-center space-y-2">
+              <div className="w-16 h-16 bg-orange-600 rounded-full flex items-center justify-center text-white text-xl">
+                📱
+              </div>
+              <p className="font-semibold text-sm">Response</p>
+              <p className="text-xs text-muted-foreground">Optimized Output</p>
+            </div>
           </div>
         </div>
       </div>
