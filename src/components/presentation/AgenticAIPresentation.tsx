@@ -451,6 +451,263 @@ const slides: Slide[] = [
     animation: 'fade'
   },
   {
+    id: 8,
+    title: "AI Model Selection & Assignment",
+    subtitle: "Auto-Assignment vs Manual Configuration",
+    content: (
+      <div className="space-y-8 animate-slide-in-left">
+        <div className="grid grid-cols-2 gap-8">
+          <div className="space-y-6">
+            <h3 className="text-2xl font-bold text-primary">Available AI Models</h3>
+            <div className="space-y-4">
+              <Card className="p-4 bg-gradient-to-r from-blue-500/10 to-blue-500/5 border-l-4 border-blue-500">
+                <h4 className="font-bold text-blue-600">🤖 Small Language Models</h4>
+                <p className="text-sm text-muted-foreground mt-2">Specialized healthcare models for specific tasks</p>
+                <div className="mt-2 text-xs space-y-1">
+                  <Badge variant="outline">Patient Intake Model</Badge>
+                  <Badge variant="outline" className="ml-2">Compliance Model</Badge>
+                  <Badge variant="outline" className="ml-2">Document Processing</Badge>
+                </div>
+              </Card>
+              
+              <Card className="p-4 bg-gradient-to-r from-green-500/10 to-green-500/5 border-l-4 border-green-500">
+                <h4 className="font-bold text-green-600">🎙️ Voice AI Models</h4>
+                <p className="text-sm text-muted-foreground mt-2">ElevenLabs integration for voice interactions</p>
+                <div className="mt-2 text-xs space-y-1">
+                  <Badge variant="outline">Multilingual v2</Badge>
+                  <Badge variant="outline" className="ml-2">Turbo v2.5</Badge>
+                  <Badge variant="outline" className="ml-2">English v2</Badge>
+                </div>
+              </Card>
+              
+              <Card className="p-4 bg-gradient-to-r from-purple-500/10 to-purple-500/5 border-l-4 border-purple-500">
+                <h4 className="font-bold text-purple-600">🧠 RAG Models</h4>
+                <p className="text-sm text-muted-foreground mt-2">Knowledge retrieval and context understanding</p>
+                <div className="mt-2 text-xs space-y-1">
+                  <Badge variant="outline">Vector Embeddings</Badge>
+                  <Badge variant="outline" className="ml-2">Semantic Search</Badge>
+                  <Badge variant="outline" className="ml-2">Context Ranking</Badge>
+                </div>
+              </Card>
+            </div>
+          </div>
+          
+          <div className="space-y-6">
+            <h3 className="text-2xl font-bold text-secondary">Assignment Methods</h3>
+            <div className="space-y-4">
+              <Card className="p-4 bg-gradient-to-r from-orange-500/10 to-orange-500/5 border-l-4 border-orange-500">
+                <h4 className="font-bold text-orange-600">🤖 Auto-Assignment</h4>
+                <p className="text-sm text-muted-foreground mt-2">AI automatically selects optimal models based on:</p>
+                <div className="mt-2 text-xs space-y-1">
+                  <div>• Treatment center type</div>
+                  <div>• Patient demographics</div>
+                  <div>• Interaction complexity</div>
+                  <div>• Performance metrics</div>
+                </div>
+              </Card>
+              
+              <Card className="p-4 bg-gradient-to-r from-red-500/10 to-red-500/5 border-l-4 border-red-500">
+                <h4 className="font-bold text-red-600">👤 Manual Assignment</h4>
+                <p className="text-sm text-muted-foreground mt-2">Administrators can manually configure:</p>
+                <div className="mt-2 text-xs space-y-1">
+                  <div>• Specific model selection</div>
+                  <div>• Custom voice assignments</div>
+                  <div>• Template configurations</div>
+                  <div>• Performance thresholds</div>
+                </div>
+              </Card>
+              
+              <Card className="p-4 bg-gradient-to-r from-teal-500/10 to-teal-500/5 border-l-4 border-teal-500">
+                <h4 className="font-bold text-teal-600">⚖️ Hybrid Approach</h4>
+                <p className="text-sm text-muted-foreground mt-2">Best of both worlds:</p>
+                <div className="mt-2 text-xs space-y-1">
+                  <div>• AI suggestions with human override</div>
+                  <div>• Fallback model chains</div>
+                  <div>• A/B testing capabilities</div>
+                  <div>• Performance-based switching</div>
+                </div>
+              </Card>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-gradient-to-r from-primary/10 via-secondary/10 to-accent/10 rounded-lg p-6">
+          <h3 className="text-xl font-bold text-center mb-6">Model Assignment Workflow</h3>
+          <div className="flex items-center justify-between">
+            {[
+              { step: "Request Analysis", icon: "🔍", desc: "Analyze interaction type" },
+              { step: "Model Selection", icon: "🎯", desc: "Auto or manual choice" },
+              { step: "Performance Check", icon: "📊", desc: "Validate capabilities" },
+              { step: "Template Match", icon: "📋", desc: "Match with templates" },
+              { step: "Deploy Config", icon: "🚀", desc: "Apply configuration" },
+              { step: "Monitor & Adapt", icon: "📈", desc: "Track performance" }
+            ].map((item, index) => (
+              <div key={index} className="flex flex-col items-center text-center">
+                <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center mb-2">
+                  <span className="text-xl">{item.icon}</span>
+                </div>
+                <p className="font-semibold text-sm">{item.step}</p>
+                <p className="text-xs text-muted-foreground">{item.desc}</p>
+                {index < 5 && <div className="mt-2 text-primary">→</div>}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    ),
+    animation: 'slide'
+  },
+  {
+    id: 9,
+    title: "Template Configuration Deep Dive",
+    subtitle: "Dynamic AI Agent Template System",
+    content: (
+      <div className="space-y-8 animate-zoom-in">
+        <div className="grid grid-cols-3 gap-6">
+          <Card className="p-6 bg-gradient-to-br from-blue-500/20 to-blue-500/5 border-blue-500/20">
+            <div className="text-center space-y-4">
+              <div className="text-4xl">🎨</div>
+              <h4 className="text-lg font-semibold text-blue-600">Template Builder</h4>
+              <p className="text-sm text-muted-foreground">Visual drag-and-drop interface for creating AI agent templates</p>
+              <div className="space-y-1">
+                <Badge variant="outline" className="text-xs">Visual Editor</Badge>
+                <Badge variant="outline" className="text-xs">Live Preview</Badge>
+                <Badge variant="outline" className="text-xs">Component Library</Badge>
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="p-6 bg-gradient-to-br from-green-500/20 to-green-500/5 border-green-500/20">
+            <div className="text-center space-y-4">
+              <div className="text-4xl">🔧</div>
+              <h4 className="text-lg font-semibold text-green-600">Auto-Configuration</h4>
+              <p className="text-sm text-muted-foreground">AI analyzes requirements and auto-generates optimal templates</p>
+              <div className="space-y-1">
+                <Badge variant="outline" className="text-xs">Smart Defaults</Badge>
+                <Badge variant="outline" className="text-xs">Best Practices</Badge>
+                <Badge variant="outline" className="text-xs">Industry Standards</Badge>
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="p-6 bg-gradient-to-br from-purple-500/20 to-purple-500/5 border-purple-500/20">
+            <div className="text-center space-y-4">
+              <div className="text-4xl">🎯</div>
+              <h4 className="text-lg font-semibold text-purple-600">Template Optimization</h4>
+              <p className="text-sm text-muted-foreground">Continuous learning and template improvement based on performance</p>
+              <div className="space-y-1">
+                <Badge variant="outline" className="text-xs">A/B Testing</Badge>
+                <Badge variant="outline" className="text-xs">Performance Analytics</Badge>
+                <Badge variant="outline" className="text-xs">Auto-Refinement</Badge>
+              </div>
+            </div>
+          </Card>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-8">
+          <div className="space-y-4">
+            <h3 className="text-xl font-bold text-primary">Template Categories</h3>
+            <div className="space-y-3">
+              <Card className="p-3 bg-gradient-to-r from-primary/10 to-primary/5">
+                <h4 className="font-bold text-sm">🏥 Treatment Center Types</h4>
+                <div className="text-xs text-muted-foreground space-y-1 mt-2">
+                  <div>• Rehabilitation Centers</div>
+                  <div>• Mental Health Facilities</div>
+                  <div>• Substance Abuse Centers</div>
+                  <div>• Outpatient Clinics</div>
+                </div>
+              </Card>
+              
+              <Card className="p-3 bg-gradient-to-r from-secondary/10 to-secondary/5">
+                <h4 className="font-bold text-sm">👥 Patient Demographics</h4>
+                <div className="text-xs text-muted-foreground space-y-1 mt-2">
+                  <div>• Adult Treatment</div>
+                  <div>• Adolescent Care</div>
+                  <div>• Senior Programs</div>
+                  <div>• Family Support</div>
+                </div>
+              </Card>
+              
+              <Card className="p-3 bg-gradient-to-r from-accent/10 to-accent/5">
+                <h4 className="font-bold text-sm">🔧 Interaction Types</h4>
+                <div className="text-xs text-muted-foreground space-y-1 mt-2">
+                  <div>• Initial Intake</div>
+                  <div>• Progress Tracking</div>
+                  <div>• Crisis Support</div>
+                  <div>• Discharge Planning</div>
+                </div>
+              </Card>
+            </div>
+          </div>
+          
+          <div className="space-y-4">
+            <h3 className="text-xl font-bold text-secondary">Assignment Logic</h3>
+            <div className="space-y-3">
+              <Card className="p-4 bg-gradient-to-r from-orange-500/10 to-orange-500/5">
+                <h4 className="font-bold text-orange-600 text-sm">🤖 Intelligent Matching</h4>
+                <p className="text-xs text-muted-foreground mt-1">AI analyzes 50+ parameters including:</p>
+                <div className="text-xs space-y-1 mt-2">
+                  <div>• Facility specifications</div>
+                  <div>• Patient complexity scores</div>
+                  <div>• Historical performance data</div>
+                  <div>• Regulatory requirements</div>
+                  <div>• Staff expertise levels</div>
+                </div>
+              </Card>
+              
+              <Card className="p-4 bg-gradient-to-r from-teal-500/10 to-teal-500/5">
+                <h4 className="font-bold text-teal-600 text-sm">⚡ Real-time Adaptation</h4>
+                <p className="text-xs text-muted-foreground mt-1">Dynamic template switching based on:</p>
+                <div className="text-xs space-y-1 mt-2">
+                  <div>• Conversation flow changes</div>
+                  <div>• Patient response patterns</div>
+                  <div>• Emergency situations</div>
+                  <div>• Staff availability</div>
+                  <div>• System load balancing</div>
+                </div>
+              </Card>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-gradient-to-r from-primary/10 via-secondary/10 to-accent/10 rounded-lg p-6">
+          <h3 className="text-xl font-bold text-center mb-4">Template Assignment Decision Tree</h3>
+          <div className="grid grid-cols-4 gap-4 text-center">
+            <div className="space-y-2">
+              <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center mx-auto">
+                <span className="text-lg">🏥</span>
+              </div>
+              <p className="font-semibold text-sm">Facility Analysis</p>
+              <p className="text-xs text-muted-foreground">Type, size, specialization</p>
+            </div>
+            <div className="space-y-2">
+              <div className="w-12 h-12 bg-secondary rounded-full flex items-center justify-center mx-auto">
+                <span className="text-lg">👤</span>
+              </div>
+              <p className="font-semibold text-sm">Patient Profiling</p>
+              <p className="text-xs text-muted-foreground">Demographics, needs, history</p>
+            </div>
+            <div className="space-y-2">
+              <div className="w-12 h-12 bg-accent rounded-full flex items-center justify-center mx-auto">
+                <span className="text-lg">🎯</span>
+              </div>
+              <p className="font-semibold text-sm">Template Matching</p>
+              <p className="text-xs text-muted-foreground">AI selects best fit template</p>
+            </div>
+            <div className="space-y-2">
+              <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center mx-auto">
+                <span className="text-lg">🚀</span>
+              </div>
+              <p className="font-semibold text-sm">Deploy & Monitor</p>
+              <p className="text-xs text-muted-foreground">Launch with performance tracking</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    ),
+    animation: 'zoom'
+  },
+  {
     id: 6,
     title: "Actions, Tasks & AI Autosuggest",
     subtitle: "Intelligent Task Management & Real-time Suggestions",

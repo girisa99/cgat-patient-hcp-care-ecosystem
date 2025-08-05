@@ -129,8 +129,30 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
 
+        {/* AI Presentation Section */}
+        {showPresentation && (
+          <div className="mb-8">
+            <AgenticAIPresentation />
+          </div>
+        )}
+        
         {/* Quick Stats with Real Data */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          {/* AI Presentation Card */}
+          <Card className="bg-gradient-to-br from-primary/20 to-primary/5 border-primary/20 hover:shadow-lg transition-all cursor-pointer" onClick={() => setShowPresentation(!showPresentation)}>
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-2">
+                <Presentation className="h-8 w-8 text-primary" />
+                <div>
+                  <p className="text-2xl font-bold text-primary">9</p>
+                  <p className="text-xs text-muted-foreground">AI Slides</p>
+                </div>
+              </div>
+              <Button variant="outline" size="sm" className="mt-2 w-full">
+                {showPresentation ? 'Hide' : 'View'} AI Presentation
+              </Button>
+            </CardContent>
+          </Card>
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
