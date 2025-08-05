@@ -56,191 +56,236 @@ const slides: Slide[] = [
   {
     id: 2,
     title: "Complete AI Agent Architecture",
-    subtitle: "Comprehensive System Design & Data Flow",
+    subtitle: "Comprehensive System Design & Interactive Data Flow",
     content: (
-      <div className="space-y-8 animate-fade-in">
-        {/* Architecture Overview Cards */}
-        <div className="grid grid-cols-4 gap-4 mb-8">
-          <Card className="p-4 bg-gradient-to-br from-blue-500/20 to-blue-500/5 border-blue-500/30">
+      <div className="h-full overflow-y-auto space-y-6 animate-fade-in">
+        {/* Clear Component Overview Cards */}
+        <div className="grid grid-cols-4 gap-6 mb-6">
+          <Card className="p-6 bg-gradient-to-br from-blue-500/20 to-blue-500/5 border-2 border-blue-500/30 hover:border-blue-500/50 transition-all duration-300 hover:scale-105">
             <div className="text-center">
-              <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-2">
-                <span className="text-white text-lg">🎨</span>
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-700 rounded-full flex items-center justify-center mx-auto mb-3 animate-pulse">
+                <span className="text-white text-2xl">🎨</span>
               </div>
-              <h4 className="font-bold text-blue-700 text-sm">Frontend Layer</h4>
-              <p className="text-xs text-muted-foreground">Agent Builder UI</p>
+              <h4 className="font-bold text-blue-700 text-base mb-2">Frontend Layer</h4>
+              <p className="text-sm text-muted-foreground">Visual Agent Builder</p>
+              <div className="mt-2">
+                <Badge variant="outline" className="text-xs">React + TypeScript</Badge>
+              </div>
             </div>
           </Card>
           
-          <Card className="p-4 bg-gradient-to-br from-green-500/20 to-green-500/5 border-green-500/30">
+          <Card className="p-6 bg-gradient-to-br from-green-500/20 to-green-500/5 border-2 border-green-500/30 hover:border-green-500/50 transition-all duration-300 hover:scale-105">
             <div className="text-center">
-              <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-2">
-                <span className="text-white text-lg">🔗</span>
+              <div className="w-16 h-16 bg-gradient-to-br from-green-600 to-green-700 rounded-full flex items-center justify-center mx-auto mb-3 animate-pulse">
+                <span className="text-white text-2xl">🔗</span>
               </div>
-              <h4 className="font-bold text-green-700 text-sm">Protocol Layer</h4>
-              <p className="text-xs text-muted-foreground">MCP Integration</p>
+              <h4 className="font-bold text-green-700 text-base mb-2">Protocol Layer</h4>
+              <p className="text-sm text-muted-foreground">MCP Integration Hub</p>
+              <div className="mt-2">
+                <Badge variant="outline" className="text-xs">Model Context Protocol</Badge>
+              </div>
             </div>
           </Card>
           
-          <Card className="p-4 bg-gradient-to-br from-purple-500/20 to-purple-500/5 border-purple-500/30">
+          <Card className="p-6 bg-gradient-to-br from-purple-500/20 to-purple-500/5 border-2 border-purple-500/30 hover:border-purple-500/50 transition-all duration-300 hover:scale-105">
             <div className="text-center">
-              <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-2">
-                <span className="text-white text-lg">🧠</span>
+              <div className="w-16 h-16 bg-gradient-to-br from-purple-600 to-purple-700 rounded-full flex items-center justify-center mx-auto mb-3 animate-pulse">
+                <span className="text-white text-2xl">🧠</span>
               </div>
-              <h4 className="font-bold text-purple-700 text-sm">AI Processing</h4>
-              <p className="text-xs text-muted-foreground">Small LLMs + RAG</p>
+              <h4 className="font-bold text-purple-700 text-base mb-2">AI Processing</h4>
+              <p className="text-sm text-muted-foreground">Small LLMs + RAG</p>
+              <div className="mt-2">
+                <Badge variant="outline" className="text-xs">Vector Intelligence</Badge>
+              </div>
             </div>
           </Card>
           
-          <Card className="p-4 bg-gradient-to-br from-orange-500/20 to-orange-500/5 border-orange-500/30">
+          <Card className="p-6 bg-gradient-to-br from-orange-500/20 to-orange-500/5 border-2 border-orange-500/30 hover:border-orange-500/50 transition-all duration-300 hover:scale-105">
             <div className="text-center">
-              <div className="w-12 h-12 bg-orange-600 rounded-full flex items-center justify-center mx-auto mb-2">
-                <span className="text-white text-lg">💾</span>
+              <div className="w-16 h-16 bg-gradient-to-br from-orange-600 to-orange-700 rounded-full flex items-center justify-center mx-auto mb-3 animate-pulse">
+                <span className="text-white text-2xl">💾</span>
               </div>
-              <h4 className="font-bold text-orange-700 text-sm">Data Layer</h4>
-              <p className="text-xs text-muted-foreground">Supabase + Vector DB</p>
+              <h4 className="font-bold text-orange-700 text-base mb-2">Data Layer</h4>
+              <p className="text-sm text-muted-foreground">Supabase + Vector DB</p>
+              <div className="mt-2">
+                <Badge variant="outline" className="text-xs">Real-time Sync</Badge>
+              </div>
             </div>
           </Card>
         </div>
 
-        {/* Detailed Architecture Description */}
+        {/* Detailed System Components & Data Flow */}
         <div className="grid grid-cols-2 gap-8">
-          <div className="space-y-6">
-            <h3 className="text-2xl font-bold text-primary">System Components</h3>
+          <div className="space-y-4">
+            <h3 className="text-2xl font-bold text-primary mb-4">System Components</h3>
             
-            <Card className="p-4 bg-gradient-to-r from-blue-500/10 to-blue-500/5 border-l-4 border-blue-500">
-              <h4 className="font-bold text-blue-600 mb-2">🎨 Agent Builder Interface</h4>
-              <p className="text-sm text-muted-foreground mb-2">
+            <Card className="p-5 bg-gradient-to-r from-blue-500/15 to-blue-500/5 border-l-4 border-blue-500 hover:from-blue-500/20 hover:to-blue-500/10 transition-all duration-300">
+              <h4 className="font-bold text-blue-600 mb-3 flex items-center gap-2">
+                <span className="text-xl">🎨</span> Agent Builder Interface
+              </h4>
+              <p className="text-sm text-muted-foreground mb-3">
                 Visual drag-and-drop interface for creating AI agents without coding
               </p>
-              <div className="text-xs space-y-1">
-                <div>• Template selection and customization</div>
-                <div>• Real-time preview and testing</div>
-                <div>• Visual workflow designer</div>
-                <div>• Component library integration</div>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  Template selection
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  Real-time preview
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  Workflow designer
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  Component library
+                </div>
               </div>
             </Card>
             
-            <Card className="p-4 bg-gradient-to-r from-green-500/10 to-green-500/5 border-l-4 border-green-500">
-              <h4 className="font-bold text-green-600 mb-2">🔗 MCP Protocol Engine</h4>
-              <p className="text-sm text-muted-foreground mb-2">
+            <Card className="p-5 bg-gradient-to-r from-green-500/15 to-green-500/5 border-l-4 border-green-500 hover:from-green-500/20 hover:to-green-500/10 transition-all duration-300">
+              <h4 className="font-bold text-green-600 mb-3 flex items-center gap-2">
+                <span className="text-xl">🔗</span> MCP Protocol Engine
+              </h4>
+              <p className="text-sm text-muted-foreground mb-3">
                 Model Context Protocol handles communication between AI components
               </p>
-              <div className="text-xs space-y-1">
-                <div>• Context sharing across models</div>
-                <div>• Session state management</div>
-                <div>• Real-time synchronization</div>
-                <div>• Multi-model coordination</div>
-              </div>
-            </Card>
-            
-            <Card className="p-4 bg-gradient-to-r from-purple-500/10 to-purple-500/5 border-l-4 border-purple-500">
-              <h4 className="font-bold text-purple-600 mb-2">🧠 Knowledge Processing</h4>
-              <p className="text-sm text-muted-foreground mb-2">
-                RAG system with vector database for intelligent knowledge retrieval
-              </p>
-              <div className="text-xs space-y-1">
-                <div>• Document ingestion and processing</div>
-                <div>• Vector embedding generation</div>
-                <div>• Semantic search capabilities</div>
-                <div>• Context-aware response generation</div>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  Context sharing
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  Session management
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  Real-time sync
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  Multi-model coordination
+                </div>
               </div>
             </Card>
           </div>
           
-          <div className="space-y-6">
-            <h3 className="text-2xl font-bold text-secondary">Data Flow Architecture</h3>
+          <div className="space-y-4">
+            <h3 className="text-2xl font-bold text-secondary mb-4">Interactive Data Flow</h3>
             
-            <Card className="p-4 bg-gradient-to-r from-orange-500/10 to-orange-500/5 border-l-4 border-orange-500">
-              <h4 className="font-bold text-orange-600 mb-2">⚡ Processing Pipeline</h4>
-              <p className="text-sm text-muted-foreground mb-2">
+            <Card className="p-5 bg-gradient-to-r from-purple-500/15 to-purple-500/5 border-l-4 border-purple-500 hover:from-purple-500/20 hover:to-purple-500/10 transition-all duration-300">
+              <h4 className="font-bold text-purple-600 mb-3 flex items-center gap-2">
+                <span className="text-xl">🧠</span> Knowledge Processing
+              </h4>
+              <p className="text-sm text-muted-foreground mb-3">
+                RAG system with vector database for intelligent knowledge retrieval
+              </p>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                  Document ingestion
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                  Vector embeddings
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                  Semantic search
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                  Context responses
+                </div>
+              </div>
+            </Card>
+            
+            <Card className="p-5 bg-gradient-to-r from-orange-500/15 to-orange-500/5 border-l-4 border-orange-500 hover:from-orange-500/20 hover:to-orange-500/10 transition-all duration-300">
+              <h4 className="font-bold text-orange-600 mb-3 flex items-center gap-2">
+                <span className="text-xl">⚡</span> Processing Pipeline
+              </h4>
+              <p className="text-sm text-muted-foreground mb-3">
                 End-to-end data processing from user input to intelligent response
               </p>
-              <div className="text-xs space-y-1">
-                <div>1. User input captured via multiple channels</div>
-                <div>2. MCP protocol routes to appropriate AI model</div>
-                <div>3. RAG system retrieves relevant context</div>
-                <div>4. Small LLM generates contextual response</div>
-                <div>5. Response delivered via optimized channel</div>
-              </div>
-            </Card>
-            
-            <Card className="p-4 bg-gradient-to-r from-teal-500/10 to-teal-500/5 border-l-4 border-teal-500">
-              <h4 className="font-bold text-teal-600 mb-2">🚀 Deployment Channels</h4>
-              <p className="text-sm text-muted-foreground mb-2">
-                Multi-platform deployment with channel-specific optimization
-              </p>
-              <div className="text-xs space-y-1">
-                <div>• Web Portal: Responsive interface</div>
-                <div>• Mobile App: Native iOS/Android</div>
-                <div>• Voice AI: Alexa, Google, Phone</div>
-                <div>• Chat: Slack, Teams, WhatsApp</div>
-              </div>
-            </Card>
-            
-            <Card className="p-4 bg-gradient-to-r from-red-500/10 to-red-500/5 border-l-4 border-red-500">
-              <h4 className="font-bold text-red-600 mb-2">🔒 Security & Compliance</h4>
-              <p className="text-sm text-muted-foreground mb-2">
-                Healthcare-grade security with HIPAA compliance
-              </p>
-              <div className="text-xs space-y-1">
-                <div>• End-to-end encryption</div>
-                <div>• Role-based access control</div>
-                <div>• Audit logging and monitoring</div>
-                <div>• On-premise deployment option</div>
+              <div className="space-y-2 text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs">1</span>
+                  <span>User input captured via multiple channels</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs">2</span>
+                  <span>MCP protocol routes to appropriate AI model</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs">3</span>
+                  <span>RAG system retrieves relevant context</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs">4</span>
+                  <span>Small LLM generates contextual response</span>
+                </div>
               </div>
             </Card>
           </div>
         </div>
         
-        {/* Simplified Visual Architecture */}
-        <div className="bg-gradient-to-r from-primary/5 via-secondary/5 to-accent/5 rounded-lg p-6">
-          <h3 className="text-xl font-bold text-center mb-6">System Architecture Flow</h3>
-          <div className="flex items-center justify-between text-center">
-            <div className="flex flex-col items-center space-y-2">
-              <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center text-white text-xl">
+        {/* Enhanced Visual Architecture Flow */}
+        <div className="bg-gradient-to-r from-primary/10 via-secondary/10 to-accent/10 rounded-xl p-8 border-2 border-primary/20">
+          <h3 className="text-2xl font-bold text-center mb-8">Interactive System Architecture Flow</h3>
+          <div className="flex items-center justify-between">
+            <div className="flex flex-col items-center space-y-3 hover:scale-110 transition-transform duration-300">
+              <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-blue-700 rounded-full flex items-center justify-center text-white text-2xl shadow-lg animate-pulse">
                 👤
               </div>
-              <p className="font-semibold text-sm">User Input</p>
-              <p className="text-xs text-muted-foreground">Multiple Channels</p>
+              <p className="font-bold text-base">User Input</p>
+              <p className="text-sm text-muted-foreground text-center">Web, Mobile,<br/>Voice, Chat</p>
+              <Badge variant="secondary" className="text-xs">Multi-Channel</Badge>
             </div>
             
-            <div className="flex items-center">
-              <div className="w-8 h-1 bg-blue-600"></div>
-              <div className="text-blue-600 text-lg">→</div>
+            <div className="flex items-center animate-pulse">
+              <div className="w-12 h-1 bg-gradient-to-r from-blue-600 to-green-600"></div>
+              <div className="text-blue-600 text-2xl">→</div>
             </div>
             
-            <div className="flex flex-col items-center space-y-2">
-              <div className="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center text-white text-xl">
+            <div className="flex flex-col items-center space-y-3 hover:scale-110 transition-transform duration-300">
+              <div className="w-20 h-20 bg-gradient-to-br from-green-600 to-green-700 rounded-full flex items-center justify-center text-white text-2xl shadow-lg animate-pulse">
                 🔗
               </div>
-              <p className="font-semibold text-sm">MCP Router</p>
-              <p className="text-xs text-muted-foreground">Context Protocol</p>
+              <p className="font-bold text-base">MCP Router</p>
+              <p className="text-sm text-muted-foreground text-center">Context Protocol<br/>Intelligence</p>
+              <Badge variant="secondary" className="text-xs">Smart Routing</Badge>
             </div>
             
-            <div className="flex items-center">
-              <div className="w-8 h-1 bg-green-600"></div>
-              <div className="text-green-600 text-lg">→</div>
+            <div className="flex items-center animate-pulse">
+              <div className="w-12 h-1 bg-gradient-to-r from-green-600 to-purple-600"></div>
+              <div className="text-green-600 text-2xl">→</div>
             </div>
             
-            <div className="flex flex-col items-center space-y-2">
-              <div className="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center text-white text-xl">
+            <div className="flex flex-col items-center space-y-3 hover:scale-110 transition-transform duration-300">
+              <div className="w-20 h-20 bg-gradient-to-br from-purple-600 to-purple-700 rounded-full flex items-center justify-center text-white text-2xl shadow-lg animate-pulse">
                 🧠
               </div>
-              <p className="font-semibold text-sm">AI Processing</p>
-              <p className="text-xs text-muted-foreground">RAG + Small LLM</p>
+              <p className="font-bold text-base">AI Processing</p>
+              <p className="text-sm text-muted-foreground text-center">RAG + Small LLM<br/>Vector Search</p>
+              <Badge variant="secondary" className="text-xs">Intelligent</Badge>
             </div>
             
-            <div className="flex items-center">
-              <div className="w-8 h-1 bg-purple-600"></div>
-              <div className="text-purple-600 text-lg">→</div>
+            <div className="flex items-center animate-pulse">
+              <div className="w-12 h-1 bg-gradient-to-r from-purple-600 to-orange-600"></div>
+              <div className="text-purple-600 text-2xl">→</div>
             </div>
             
-            <div className="flex flex-col items-center space-y-2">
-              <div className="w-16 h-16 bg-orange-600 rounded-full flex items-center justify-center text-white text-xl">
+            <div className="flex flex-col items-center space-y-3 hover:scale-110 transition-transform duration-300">
+              <div className="w-20 h-20 bg-gradient-to-br from-orange-600 to-orange-700 rounded-full flex items-center justify-center text-white text-2xl shadow-lg animate-pulse">
                 📱
               </div>
-              <p className="font-semibold text-sm">Response</p>
-              <p className="text-xs text-muted-foreground">Optimized Output</p>
+              <p className="font-bold text-base">Smart Response</p>
+              <p className="text-sm text-muted-foreground text-center">Optimized Output<br/>Channel Specific</p>
+              <Badge variant="secondary" className="text-xs">Adaptive</Badge>
             </div>
           </div>
         </div>
@@ -250,96 +295,256 @@ const slides: Slide[] = [
   },
   {
     id: 3,
-    title: "AI Agent Creation Journey",
-    subtitle: "From Template to Deployed AI Agent",
+    title: "Complete AI Agent Creation Journey",
+    subtitle: "Structured Wizard-Based Creation with Automated AI Assignment",
     content: (
-      <div className="space-y-8 animate-zoom-in">
-        <div className="relative">
-          <div className="absolute top-1/2 left-0 right-0 h-1 bg-gradient-to-r from-primary via-secondary to-accent"></div>
-          <div className="relative flex justify-between">
+      <div className="h-full overflow-y-auto space-y-6 animate-zoom-in">
+        {/* Main Creation Workflow */}
+        <div className="bg-gradient-to-r from-primary/10 via-secondary/10 to-accent/10 rounded-xl p-6 border-2 border-primary/20">
+          <h3 className="text-2xl font-bold text-center mb-6">Agent Creation Wizard Journey</h3>
+          <div className="relative">
+            <div className="absolute top-1/2 left-0 right-0 h-2 bg-gradient-to-r from-primary via-secondary to-accent rounded-full"></div>
+            <div className="relative flex justify-between">
+              {[
+                { step: 1, title: "Wizard Setup", icon: "🧙‍♂️", color: "bg-gradient-to-br from-blue-600 to-blue-700", desc: "Initial configuration" },
+                { step: 2, title: "Canvas Design", icon: "🎨", color: "bg-gradient-to-br from-purple-600 to-purple-700", desc: "Visual branding" },
+                { step: 3, title: "Actions Config", icon: "⚙️", color: "bg-gradient-to-br from-green-600 to-green-700", desc: "Core functionality" },
+                { step: 4, title: "AI Assignment", icon: "🤖", color: "bg-gradient-to-br from-orange-600 to-orange-700", desc: "Smart model selection" },
+                { step: 5, title: "Deployment", icon: "🚀", color: "bg-gradient-to-br from-red-600 to-red-700", desc: "Multi-channel launch" }
+              ].map((item, index) => (
+                <div
+                  key={item.step}
+                  className="flex flex-col items-center hover:scale-110 transition-all duration-300 animate-bounce"
+                  style={{ animationDelay: `${index * 0.2}s` }}
+                >
+                  <div className={`w-16 h-16 ${item.color} rounded-full flex items-center justify-center text-white text-2xl shadow-xl border-4 border-white`}>
+                    {item.icon}
+                  </div>
+                  <p className="mt-3 font-bold text-sm text-center">{item.title}</p>
+                  <p className="text-xs text-muted-foreground text-center">{item.desc}</p>
+                  <Badge variant="outline" className="mt-2 text-xs font-bold">{item.step}</Badge>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Detailed Step Breakdown */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Left Column - Creation Steps */}
+          <div className="space-y-6">
+            <h3 className="text-2xl font-bold text-primary mb-4">Creation Process Detail</h3>
+            
+            {/* Step 1: Wizard Setup */}
+            <Card className="p-5 bg-gradient-to-r from-blue-500/15 to-blue-500/5 border-l-4 border-blue-500 hover:from-blue-500/20 transition-all duration-300">
+              <h4 className="font-bold text-blue-600 mb-3 flex items-center gap-2">
+                <span className="text-xl">🧙‍♂️</span> Agent Creation Wizard
+              </h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <span>Template selection & customization</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <span>Business requirements gathering</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <span>Use case definition & validation</span>
+                </div>
+              </div>
+            </Card>
+
+            {/* Step 2: Canvas Design */}
+            <Card className="p-5 bg-gradient-to-r from-purple-500/15 to-purple-500/5 border-l-4 border-purple-500 hover:from-purple-500/20 transition-all duration-300">
+              <h4 className="font-bold text-purple-600 mb-3 flex items-center gap-2">
+                <span className="text-xl">🎨</span> Canvas & Branding
+              </h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                  <span>Visual identity & color schemes</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                  <span>UI/UX component customization</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                  <span>Workflow visual designer</span>
+                </div>
+              </div>
+            </Card>
+
+            {/* Step 3: Actions Configuration */}
+            <Card className="p-5 bg-gradient-to-r from-green-500/15 to-green-500/5 border-l-4 border-green-500 hover:from-green-500/20 transition-all duration-300">
+              <h4 className="font-bold text-green-600 mb-3 flex items-center gap-2">
+                <span className="text-xl">⚙️</span> Actions & Configuration
+              </h4>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="space-y-2">
+                  <h5 className="font-semibold text-green-700">Core Actions:</h5>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span>Agent actions setup</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span>Template customization</span>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <h5 className="font-semibold text-green-700">Integrations:</h5>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span>System connectors</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span>Knowledge base & RAG</span>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          {/* Right Column - AI Assignment & Deployment */}
+          <div className="space-y-6">
+            <h3 className="text-2xl font-bold text-secondary mb-4">AI Assignment System</h3>
+            
+            {/* AI Model Assignment */}
+            <Card className="p-5 bg-gradient-to-r from-orange-500/15 to-orange-500/5 border-l-4 border-orange-500 hover:from-orange-500/20 transition-all duration-300">
+              <h4 className="font-bold text-orange-600 mb-3 flex items-center gap-2">
+                <span className="text-xl">🤖</span> Intelligent AI Assignment
+              </h4>
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 bg-white/50 rounded-lg">
+                    <h5 className="font-semibold text-orange-700 mb-2">Manual Selection</h5>
+                    <div className="space-y-1 text-xs">
+                      <div>• Choose specific LLM models</div>
+                      <div>• Custom MCP configurations</div>
+                      <div>• Fine-tuned parameters</div>
+                    </div>
+                  </div>
+                  <div className="p-3 bg-white/50 rounded-lg">
+                    <h5 className="font-semibold text-orange-700 mb-2">Auto-Suggest</h5>
+                    <div className="space-y-1 text-xs">
+                      <div>• AI recommends best models</div>
+                      <div>• Optimized configurations</div>
+                      <div>• Performance-based selection</div>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-gradient-to-r from-orange-100 to-orange-50 p-3 rounded-lg">
+                  <h5 className="font-semibold text-orange-700 mb-2">Model Types Available:</h5>
+                  <div className="grid grid-cols-3 gap-2 text-xs">
+                    <Badge variant="outline" className="justify-center">MCP Protocol</Badge>
+                    <Badge variant="outline" className="justify-center">Small LLMs</Badge>
+                    <Badge variant="outline" className="justify-center">Large LLMs</Badge>
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            {/* Task & Action Assignment */}
+            <Card className="p-5 bg-gradient-to-r from-teal-500/15 to-teal-500/5 border-l-4 border-teal-500 hover:from-teal-500/20 transition-all duration-300">
+              <h4 className="font-bold text-teal-600 mb-3 flex items-center gap-2">
+                <span className="text-xl">📋</span> Task & Action Assignment
+              </h4>
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <h5 className="font-semibold text-teal-700 mb-2">Automated Tasks:</h5>
+                    <div className="space-y-1 text-xs">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-teal-500 rounded-full"></div>
+                        <span>Patient intake forms</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-teal-500 rounded-full"></div>
+                        <span>Document processing</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-teal-500 rounded-full"></div>
+                        <span>Compliance checking</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <h5 className="font-semibold text-teal-700 mb-2">Manual Actions:</h5>
+                    <div className="space-y-1 text-xs">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-teal-500 rounded-full"></div>
+                        <span>Custom workflows</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-teal-500 rounded-full"></div>
+                        <span>Approval processes</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-teal-500 rounded-full"></div>
+                        <span>Escalation rules</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            {/* Channel Deployment */}
+            <Card className="p-5 bg-gradient-to-r from-red-500/15 to-red-500/5 border-l-4 border-red-500 hover:from-red-500/20 transition-all duration-300">
+              <h4 className="font-bold text-red-600 mb-3 flex items-center gap-2">
+                <span className="text-xl">🚀</span> Multi-Channel Deployment
+              </h4>
+              <div className="grid grid-cols-4 gap-2 text-center">
+                <div className="p-2 bg-white/50 rounded-lg">
+                  <div className="text-lg">🌐</div>
+                  <div className="text-xs font-semibold">Web Portal</div>
+                </div>
+                <div className="p-2 bg-white/50 rounded-lg">
+                  <div className="text-lg">📱</div>
+                  <div className="text-xs font-semibold">Mobile App</div>
+                </div>
+                <div className="p-2 bg-white/50 rounded-lg">
+                  <div className="text-lg">💬</div>
+                  <div className="text-xs font-semibold">Chat Bots</div>
+                </div>
+                <div className="p-2 bg-white/50 rounded-lg">
+                  <div className="text-lg">🎤</div>
+                  <div className="text-xs font-semibold">Voice AI</div>
+                </div>
+              </div>
+            </Card>
+          </div>
+        </div>
+
+        {/* Interactive Journey Summary */}
+        <div className="bg-gradient-to-r from-primary/5 via-secondary/5 to-accent/5 rounded-xl p-6 border border-primary/20">
+          <h3 className="text-xl font-bold text-center mb-6">Complete Agent Creation Process</h3>
+          <div className="flex items-center justify-between text-center">
             {[
-              { step: 1, title: "Template Select", icon: "📋", color: "bg-primary", desc: "Choose AI template" },
-              { step: 2, title: "MCP Setup", icon: "🔗", color: "bg-secondary", desc: "Protocol configuration" },
-              { step: 3, title: "Knowledge Base", icon: "🧠", color: "bg-accent", desc: "RAG integration" },
-              { step: 4, title: "Actions Config", icon: "⚙️", color: "bg-primary", desc: "Task assignment" },
-              { step: 5, title: "Channel Deploy", icon: "🚀", color: "bg-secondary", desc: "Multi-platform" },
-              { step: 6, title: "AI Autosuggest", icon: "💡", color: "bg-accent", desc: "Smart suggestions" }
+              { phase: "Wizard", desc: "Template selection\n& requirements", time: "5 min", icon: "🧙‍♂️" },
+              { phase: "Canvas", desc: "Visual design\n& branding", time: "10 min", icon: "🎨" },
+              { phase: "Actions", desc: "Functionality\n& integrations", time: "15 min", icon: "⚙️" },
+              { phase: "AI Setup", desc: "Model assignment\n& optimization", time: "5 min", icon: "🤖" },
+              { phase: "Deploy", desc: "Multi-channel\nlaunch", time: "2 min", icon: "🚀" }
             ].map((item, index) => (
-              <div
-                key={item.step}
-                className="flex flex-col items-center animate-bounce"
-                style={{ animationDelay: `${index * 0.15}s` }}
-              >
-                <div className={`w-14 h-14 ${item.color} rounded-full flex items-center justify-center text-xl shadow-lg`}>
+              <div key={index} className="flex flex-col items-center hover:scale-105 transition-transform duration-300">
+                <div className="w-16 h-16 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center text-2xl mb-2 shadow-lg">
                   {item.icon}
                 </div>
-                <p className="mt-2 font-semibold text-xs">{item.title}</p>
-                <p className="text-xs text-muted-foreground text-center">{item.desc}</p>
-                <Badge variant="outline" className="mt-1 text-xs">{item.step}</Badge>
+                <p className="font-bold text-sm">{item.phase}</p>
+                <p className="text-xs text-muted-foreground text-center whitespace-pre-line">{item.desc}</p>
+                <Badge variant="secondary" className="mt-2 text-xs">{item.time}</Badge>
+                {index < 4 && <div className="mt-4 text-primary text-xl">→</div>}
               </div>
             ))}
           </div>
-        </div>
-        
-        <div className="grid grid-cols-2 gap-8 mt-12">
-          <div className="space-y-4">
-            <h3 className="text-xl font-bold text-primary">Traditional Agent Setup</h3>
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-red-500 text-sm">
-                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                <span>Manual template configuration (weeks)</span>
-              </div>
-              <div className="flex items-center gap-2 text-red-500 text-sm">
-                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                <span>Complex MCP protocol setup</span>
-              </div>
-              <div className="flex items-center gap-2 text-red-500 text-sm">
-                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                <span>Manual knowledge base integration</span>
-              </div>
-              <div className="flex items-center gap-2 text-red-500 text-sm">
-                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                <span>Individual channel deployment</span>
-              </div>
-            </div>
+          <div className="text-center mt-6">
+            <Badge variant="default" className="text-sm px-4 py-2">Total Time: ~37 minutes</Badge>
           </div>
-          
-          <div className="space-y-4">
-            <h3 className="text-xl font-bold text-secondary">Our AI-Powered Process</h3>
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-green-500 text-sm">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span>One-click template deployment</span>
-              </div>
-              <div className="flex items-center gap-2 text-green-500 text-sm">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span>Auto-configured MCP integration</span>
-              </div>
-              <div className="flex items-center gap-2 text-green-500 text-sm">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span>Intelligent RAG system setup</span>
-              </div>
-              <div className="flex items-center gap-2 text-green-500 text-sm">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span>Multi-channel auto-deployment</span>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <div className="grid grid-cols-3 gap-4 mt-8">
-          <Card className="p-4 bg-gradient-to-br from-primary/20 to-primary/5">
-            <h4 className="font-bold text-primary mb-2 text-sm">Template Engine</h4>
-            <p className="text-xs text-muted-foreground">Pre-built AI agent templates with industry-specific configurations</p>
-          </Card>
-          <Card className="p-4 bg-gradient-to-br from-secondary/20 to-secondary/5">
-            <h4 className="font-bold text-secondary mb-2 text-sm">Smart Deployment</h4>
-            <p className="text-xs text-muted-foreground">Automatic multi-channel deployment with optimization</p>
-          </Card>
-          <Card className="p-4 bg-gradient-to-br from-accent/20 to-accent/5">
-            <h4 className="font-bold text-accent mb-2 text-sm">Learning System</h4>
-            <p className="text-xs text-muted-foreground">Continuous improvement through user interaction data</p>
-          </Card>
         </div>
       </div>
     ),
@@ -1325,23 +1530,23 @@ export const AgenticAIPresentation: React.FC = () => {
       </div>
 
       {/* Slide Container */}
-      <div className={`relative overflow-hidden ${isFullscreen ? 'h-[calc(100vh-80px)]' : 'h-[600px]'}`}>
+      <div className={`relative ${isFullscreen ? 'h-[calc(100vh-140px)]' : 'h-[700px]'}`}>
         <div
           key={currentSlide}
-          className="absolute inset-0 p-8 flex flex-col justify-center transition-opacity duration-500"
+          className="absolute inset-0 p-6 flex flex-col transition-opacity duration-500 overflow-y-auto"
         >
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-primary mb-2">
+          <div className="text-center mb-6 flex-shrink-0">
+            <h1 className="text-3xl lg:text-4xl font-bold text-primary mb-2">
               {slides[currentSlide].title}
             </h1>
             {slides[currentSlide].subtitle && (
-              <p className="text-xl text-muted-foreground">
+              <p className="text-lg lg:text-xl text-muted-foreground">
                 {slides[currentSlide].subtitle}
               </p>
             )}
           </div>
           
-          <div className="flex-1 flex items-center justify-center">
+          <div className="flex-1 min-h-0">
             {slides[currentSlide].content}
           </div>
         </div>
