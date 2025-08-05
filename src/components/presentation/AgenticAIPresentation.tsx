@@ -271,35 +271,170 @@ const slides: Slide[] = [
   {
     id: 3,
     title: "Agent Creation Journey Overview",
-    subtitle: "5-Step Process for Building AI Agents",
+    subtitle: "Comprehensive 8-Step Process for Building Intelligent AI Agents",
     content: (
-      <div className="h-full overflow-y-auto space-y-8 animate-fade-in">
-        <div className="text-center mb-8">
+      <div className="h-full overflow-y-auto space-y-6 animate-fade-in">
+        <div className="text-center mb-6">
           <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full">
             <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-            <span className="text-sm font-medium">Complete Implementation Journey</span>
+            <span className="text-sm font-medium">End-to-End Implementation Journey</span>
           </div>
         </div>
         
-        <div className="grid grid-cols-5 gap-4">
+        {/* Main Process Overview */}
+        <div className="grid grid-cols-4 gap-3 mb-6">
           {[
-            { step: 1, title: "Wizard Setup", icon: "🧙‍♂️", description: "Initial Configuration" },
-            { step: 2, title: "Canvas Design", icon: "🎨", description: "Visual Interface" },
-            { step: 3, title: "Actions Config", icon: "⚙️", description: "System Integration" },
-            { step: 4, title: "AI Assignment", icon: "🤖", description: "Model Selection" },
-            { step: 5, title: "Multi-Channel", icon: "📡", description: "Deployment" }
+            { step: 1, title: "Wizard Setup", icon: "🧙‍♂️", details: "Session initialization, user authentication, role assignment" },
+            { step: 2, title: "Agent Creation", icon: "🤖", details: "Core agent definition, personality, objectives, constraints" },
+            { step: 3, title: "Canvas Setup", icon: "🎨", details: "Visual interface design, component layout, user experience" },
+            { step: 4, title: "Actions Config", icon: "⚙️", details: "Task assignment, workflow automation, business logic" }
           ].map((item) => (
-            <Card key={item.step} className="p-6 text-center hover:scale-105 transition-all duration-300">
-              <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary/80 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-                <span className="text-2xl">{item.icon}</span>
+            <Card key={item.step} className="p-4 text-center hover:scale-105 transition-all duration-300">
+              <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary/80 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span className="text-lg">{item.icon}</span>
               </div>
-              <div className="text-lg font-bold text-primary mb-2">{item.title}</div>
-              <div className="text-xs text-muted-foreground mb-3">{item.description}</div>
-              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center mx-auto">
-                <span className="text-white text-sm font-bold">{item.step}</span>
+              <div className="text-sm font-bold text-primary mb-1">{item.title}</div>
+              <div className="text-xs text-muted-foreground mb-2">{item.details}</div>
+              <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center mx-auto">
+                <span className="text-white text-xs font-bold">{item.step}</span>
               </div>
             </Card>
           ))}
+        </div>
+
+        {/* Advanced Configuration Steps */}
+        <div className="grid grid-cols-4 gap-3 mb-6">
+          {[
+            { step: 5, title: "AI Auto-Suggest", icon: "🧠", details: "ML-powered recommendations, intelligent task routing" },
+            { step: 6, title: "Templates & Connectors", icon: "🔗", details: "Pre-built workflows, system integrations, APIs" },
+            { step: 7, title: "Knowledge Base", icon: "📚", details: "RAG implementation, document ingestion, semantic search" },
+            { step: 8, title: "Deployment", icon: "🚀", details: "Multi-channel publishing, monitoring, optimization" }
+          ].map((item) => (
+            <Card key={item.step} className="p-4 text-center hover:scale-105 transition-all duration-300">
+              <div className="w-12 h-12 bg-gradient-to-br from-secondary to-secondary/80 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span className="text-lg">{item.icon}</span>
+              </div>
+              <div className="text-sm font-bold text-secondary mb-1">{item.title}</div>
+              <div className="text-xs text-muted-foreground mb-2">{item.details}</div>
+              <div className="w-6 h-6 bg-secondary rounded-full flex items-center justify-center mx-auto">
+                <span className="text-white text-xs font-bold">{item.step}</span>
+              </div>
+            </Card>
+          ))}
+        </div>
+
+        {/* Detailed Components Breakdown */}
+        <div className="grid grid-cols-2 gap-4">
+          <Card className="p-4">
+            <h4 className="font-bold text-primary mb-3 flex items-center gap-2">
+              <span>⚙️</span> Actions & Task Management
+            </h4>
+            <div className="space-y-2 text-xs">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <span><strong>Task Assignment:</strong> Automatic routing based on complexity & priority</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <span><strong>Action Templates:</strong> Pre-configured workflows for common scenarios</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <span><strong>Approval Workflows:</strong> Multi-step validation for critical tasks</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <span><strong>Performance Monitoring:</strong> Real-time task execution tracking</span>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-4">
+            <h4 className="font-bold text-primary mb-3 flex items-center gap-2">
+              <span>🔗</span> API & System Integration
+            </h4>
+            <div className="space-y-2 text-xs">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span><strong>Internal APIs:</strong> Direct database access, user management, analytics</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span><strong>External APIs:</strong> Third-party services, payment gateways, messaging</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span><strong>System Connectors:</strong> EHR, CRM, email systems, cloud storage</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span><strong>Security Layer:</strong> OAuth, API keys, rate limiting, encryption</span>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-4">
+            <h4 className="font-bold text-primary mb-3 flex items-center gap-2">
+              <span>🧠</span> AI Auto-Suggestion Engine
+            </h4>
+            <div className="space-y-2 text-xs">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                <span><strong>Context Analysis:</strong> Real-time conversation understanding</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                <span><strong>Smart Routing:</strong> Optimal action selection based on intent</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                <span><strong>Learning Loop:</strong> Continuous improvement from interactions</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                <span><strong>Personalization:</strong> User-specific recommendations & preferences</span>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-4">
+            <h4 className="font-bold text-primary mb-3 flex items-center gap-2">
+              <span>📚</span> Knowledge Base & RAG System
+            </h4>
+            <div className="space-y-2 text-xs">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                <span><strong>Document Ingestion:</strong> PDF, Word, web content, databases</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                <span><strong>Vector Embeddings:</strong> Semantic search & content understanding</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                <span><strong>RAG Pipeline:</strong> Retrieval → Augmentation → Generation workflow</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                <span><strong>Context Relevance:</strong> Dynamic knowledge retrieval & ranking</span>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Process Flow Indicator */}
+        <div className="flex items-center justify-center mt-4">
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            <span>📋 Setup</span>
+            <div className="w-4 h-0.5 bg-muted"></div>
+            <span>🎨 Design</span>
+            <div className="w-4 h-0.5 bg-muted"></div>
+            <span>⚙️ Configure</span>
+            <div className="w-4 h-0.5 bg-muted"></div>
+            <span>🧠 Optimize</span>
+            <div className="w-4 h-0.5 bg-muted"></div>
+            <span>🚀 Deploy</span>
+          </div>
         </div>
       </div>
     ),
