@@ -24,6 +24,36 @@ import { toast } from '@/hooks/use-toast';
 
 export const Dashboard: React.FC = () => {
   const [showPresentation, setShowPresentation] = React.useState(false);
+  
+  // Download functions
+  const downloadPDF = () => {
+    // Create PDF download
+    const link = document.createElement('a');
+    link.href = '/api/download-presentation-pdf';
+    link.download = 'Agentic-AI-Implementation-Presentation.pdf';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast({
+      title: "PDF Download",
+      description: "AI Implementation presentation PDF download started",
+    });
+  };
+
+  const downloadPPT = () => {
+    // Create PPT download
+    const link = document.createElement('a');
+    link.href = '/api/download-presentation-ppt';
+    link.download = 'Agentic-AI-Implementation-Presentation.pptx';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast({
+      title: "PowerPoint Download",
+      description: "AI Implementation presentation PPT download started",
+    });
+  };
+
   const { data: userStats, isLoading: userStatsLoading } = useRealTimeUserStats();
   
   // Fetch real activity data from audit logs
@@ -120,6 +150,55 @@ export const Dashboard: React.FC = () => {
   return (
     <AppLayout>
       <div className="space-y-6">
+        {/* AI Presentation Banner */}
+        <Card className="bg-gradient-to-r from-primary/20 via-secondary/20 to-accent/20 border-primary/30">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center">
+                  <Presentation className="w-8 h-8 text-white" />
+                </div>
+                <div>
+                  <CardTitle className="text-2xl text-primary">Agentic AI Implementation Presentation</CardTitle>
+                  <p className="text-muted-foreground">
+                    Complete 9-slide presentation covering MCP, RAG, Templates, and AI Architecture
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <Button 
+                  onClick={() => setShowPresentation(!showPresentation)}
+                  className="flex items-center gap-2"
+                >
+                  <Presentation className="w-4 h-4" />
+                  {showPresentation ? 'Hide' : 'View'} Presentation
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => downloadPDF()}
+                  className="flex items-center gap-2"
+                >
+                  📄 Download PDF
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => downloadPPT()}
+                  className="flex items-center gap-2"
+                >
+                  📊 Download PPT
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+        </Card>
+
+        {/* Presentation Display */}
+        {showPresentation && (
+          <div className="mb-8">
+            <AgenticAIPresentation />
+          </div>
+        )}
+
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
