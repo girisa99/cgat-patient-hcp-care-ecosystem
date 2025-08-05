@@ -2822,7 +2822,7 @@ export const AgenticAIPresentation: React.FC = () => {
     : "w-full max-w-6xl mx-auto";
 
   return (
-    <div className={containerClass} data-presentation-content>
+    <div className={containerClass} data-presentation-content data-current-slide={currentSlide}>
       {/* Presentation Header */}
       <div className="flex items-center justify-between p-4 border-b">
         <div className="flex items-center gap-4">
@@ -2865,6 +2865,8 @@ export const AgenticAIPresentation: React.FC = () => {
         <div
           key={currentSlide}
           className="absolute inset-0 p-6 flex flex-col transition-opacity duration-500 overflow-y-auto"
+          data-slide-content
+          data-slide-index={currentSlide}
         >
           <div className="text-center mb-6 flex-shrink-0">
             <h1 className="text-3xl lg:text-4xl font-bold text-primary mb-2">
@@ -2895,6 +2897,7 @@ export const AgenticAIPresentation: React.FC = () => {
             <button
               key={index}
               onClick={() => setCurrentSlide(index)}
+              data-slide-index={index}
               className={`w-3 h-3 rounded-full transition-colors ${
                 index === currentSlide 
                   ? 'bg-primary' 

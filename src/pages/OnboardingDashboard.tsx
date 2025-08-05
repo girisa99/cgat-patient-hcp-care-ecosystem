@@ -116,60 +116,6 @@ const OnboardingDashboard: React.FC = () => {
     setEditingApplicationId(null);
   };
 
-  // Download functions for presentation
-  const downloadPDF = () => {
-    const content = `TREATMENT CENTER AI ONBOARDING PRESENTATION
-    
-Complete 9-slide presentation covering:
-• MCP Protocol Integration for Treatment Centers
-• RAG Knowledge Base for Patient Data
-• AI Autosuggest for Treatment Planning
-• Multi-Channel Deployment (Web, Mobile, Voice)
-• Template Configuration for Different Treatment Types
-• Intelligent Task Assignment for Patient Care
-• 95% Accuracy, 200ms Response Time, 99.9% Reliability`;
-    
-    const blob = new Blob([content], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'Treatment-Center-AI-Implementation.txt';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    toast({
-      title: "Treatment Center AI Guide Downloaded",
-      description: "AI implementation guide for treatment centers ready",
-    });
-  };
-
-  const downloadPPT = () => {
-    const content = `TREATMENT CENTER AI IMPLEMENTATION
-    
-SPECIALIZED FOR TREATMENT CENTERS:
-• Patient Intake Automation
-• Treatment Protocol AI Assistance  
-• Compliance Monitoring
-• Staff Training Integration
-• Crisis Support Systems
-• Discharge Planning Automation`;
-    
-    const blob = new Blob([content], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'Treatment-Center-AI-Implementation.ppt';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    toast({
-      title: "Treatment Center PPT Downloaded",
-      description: "PowerPoint presentation ready for your team",
-    });
-  };
-
   const filteredApplications = onboardingApplications.filter(app => {
     // Filter out empty applications (no company name)
     const hasCompanyName = app.legal_name || app.dba_name;
@@ -241,20 +187,6 @@ SPECIALIZED FOR TREATMENT CENTERS:
               >
                 <div className="text-lg">🎯</div>
                 {showPresentation ? 'Hide' : 'View'} AI Guide
-              </Button>
-              <Button 
-                variant="outline"
-                onClick={downloadPDF}
-                className="flex items-center gap-2"
-              >
-                📄 Download PDF
-              </Button>
-              <Button 
-                variant="outline"
-                onClick={downloadPPT}
-                className="flex items-center gap-2"
-              >
-                📊 Download PPT
               </Button>
             </div>
           </div>
