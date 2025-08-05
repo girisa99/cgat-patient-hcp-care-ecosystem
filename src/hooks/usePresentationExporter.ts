@@ -23,6 +23,7 @@ export const usePresentationExporter = () => {
         await new Promise(resolve => setTimeout(resolve, 500));
 
         const slideElement = document.querySelector('[data-slide-content]');
+        console.log('📍 Found slide element:', !!slideElement);
         if (slideElement) {
           const clonedSlide = slideElement.cloneNode(true) as HTMLElement;
           

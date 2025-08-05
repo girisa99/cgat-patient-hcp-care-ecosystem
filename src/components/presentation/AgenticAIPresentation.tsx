@@ -2979,13 +2979,11 @@ const slides: Slide[] = [
       </div>
     ),
     animation: 'fade'
+  }
   },
-  {
-    id: 16,
-    title: "Contact & Support Information",
-    subtitle: "Get Started with Your AI Implementation Journey",
-    content: (
-      <div className="h-full overflow-y-auto space-y-8 animate-slide-in-right">
+];
+
+export const AgenticAIPresentation: React.FC = () => {
         <div className="text-center space-y-6">
           <div className="w-32 h-32 mx-auto bg-gradient-to-br from-primary to-primary/60 rounded-full flex items-center justify-center">
             <div className="text-5xl">🚀</div>
