@@ -443,8 +443,205 @@ export const usePresentationCapture = () => {
     }
   }, [captureActualHTML, toast]);
 
+  const downloadActualPPT = useCallback((slides: any[]) => {
+    try {
+      const presentationElement = document.querySelector('[data-presentation-content]') as HTMLElement;
+      if (!presentationElement) {
+        throw new Error('Could not find presentation content');
+      }
+
+      const { styles, tailwindStyles } = captureActualHTML(presentationElement);
+      
+      // Create individual slide elements for PPT format
+      const slideElements = Array.from(presentationElement.children);
+      
+      const slidesHTML = slideElements.map((slideEl, index) => {
+        const slideHTML = slideEl.outerHTML;
+        return `
+          <div class="ppt-slide" style="
+            width: 1920px; 
+            height: 1080px; 
+            background: white; 
+            margin: 0 auto 40px auto; 
+            padding: 60px; 
+            border-radius: 16px; 
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); 
+            border: 1px solid #e2e8f0;
+            page-break-after: always;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            box-sizing: border-box;
+            position: relative;
+          ">
+            <div class="ppt-slide-header" style="
+              text-align: center; 
+              margin-bottom: 3rem; 
+              padding-bottom: 2rem; 
+              border-bottom: 4px solid #4f46e5;
+            ">
+              <div style="
+                font-size: 3rem; 
+                font-weight: 800; 
+                margin-bottom: 1.5rem; 
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                -webkit-background-clip: text; 
+                -webkit-text-fill-color: transparent; 
+                background-clip: text;
+                line-height: 1.2;
+              ">
+                ${slides[index]?.title || `Slide ${index + 1}`}
+              </div>
+              ${slides[index]?.subtitle ? `<div style="font-size: 1.75rem; color: #64748b; font-weight: 500; line-height: 1.3;">${slides[index].subtitle}</div>` : ''}
+            </div>
+            <div class="ppt-slide-content" style="
+              flex: 1; 
+              font-size: 1.25rem; 
+              line-height: 1.8; 
+              overflow: hidden;
+            ">
+              ${slideHTML}
+            </div>
+            <div class="ppt-slide-footer" style="
+              position: absolute;
+              bottom: 30px;
+              right: 60px;
+              font-size: 1rem;
+              color: #64748b;
+              font-weight: 500;
+            ">
+              ${index + 1} / ${slides.length}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      const fullHTML = `
+        <!DOCTYPE html>
+        <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Agentic AI Presentation - PPT Format (${slides.length} Slides)</title>
+            ${tailwindStyles}
+            <style>
+              ${styles}
+              
+              body {
+                margin: 0;
+                padding: 40px;
+                background: #f7fafc;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+              }
+              
+              .ppt-container {
+                max-width: 1920px;
+                margin: 0 auto;
+              }
+              
+              .ppt-title-page {
+                width: 1920px;
+                height: 1080px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 60px;
+                border-radius: 16px;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                text-align: center;
+                margin: 0 auto 40px auto;
+                box-shadow: 0 20px 50px rgba(102, 126, 234, 0.3);
+                page-break-after: always;
+                box-sizing: border-box;
+              }
+              
+              .ppt-title-page h1 {
+                font-size: 4.5rem;
+                font-weight: 800;
+                margin-bottom: 2rem;
+                text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+              }
+              
+              .ppt-title-page p {
+                font-size: 2rem;
+                opacity: 0.95;
+                margin: 1rem 0;
+                text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+              }
+              
+              .ppt-slide:last-child {
+                page-break-after: avoid;
+              }
+              
+              /* Print styles for PPT format */
+              @media print {
+                body { 
+                  margin: 0; 
+                  padding: 0; 
+                  background: white !important; 
+                }
+                .ppt-slide, .ppt-title-page { 
+                  page-break-after: always; 
+                  margin: 0;
+                  box-shadow: none;
+                }
+                .ppt-slide:last-child, .ppt-title-page:last-child { 
+                  page-break-after: avoid; 
+                }
+                * { 
+                  -webkit-print-color-adjust: exact !important; 
+                  color-adjust: exact !important; 
+                }
+              }
+            </style>
+          </head>
+          <body>
+            <div class="ppt-container">
+              <div class="ppt-title-page">
+                <h1>🤖 Agentic AI & Automation Platform</h1>
+                <p>Complete AI Agent Implementation</p>
+                <p>Healthcare Onboarding Solution</p>
+                <p><strong>PowerPoint Format Export - ${slides.length} Slides</strong></p>
+                <p>Generated: ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}</p>
+              </div>
+              ${slidesHTML}
+            </div>
+          </body>
+        </html>
+      `;
+
+      // Create and download the PPT-formatted HTML file
+      const blob = new Blob([fullHTML], { type: 'text/html;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `agentic-ai-presentation-ppt-format-${slides.length}-slides-${new Date().toISOString().split('T')[0]}.html`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "📊 PPT Format Export Complete",
+        description: "Presentation exported in PowerPoint-compatible format with preserved styling",
+        variant: "default",
+      });
+
+    } catch (error) {
+      console.error('Error capturing presentation for PPT:', error);
+      toast({
+        title: "❌ PPT Export Failed",
+        description: "Could not capture presentation in PowerPoint format",
+        variant: "destructive",
+      });
+    }
+  }, [captureActualHTML, toast]);
+
   return {
     downloadActualPDF,
-    downloadActualHTML
+    downloadActualHTML,
+    downloadActualPPT
   };
 };

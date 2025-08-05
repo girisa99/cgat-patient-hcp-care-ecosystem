@@ -2557,7 +2557,7 @@ export const AgenticAIPresentation: React.FC = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const { downloadActualPDF, downloadActualHTML } = usePresentationCapture();
+  const { downloadActualPDF, downloadActualHTML, downloadActualPPT } = usePresentationCapture();
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -2838,6 +2838,10 @@ export const AgenticAIPresentation: React.FC = () => {
           <Button variant="outline" size="sm" onClick={() => downloadActualPDF(slides)}>
             <FileText className="w-4 h-4 mr-2" />
             PDF
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => downloadActualPPT(slides)}>
+            <Presentation className="w-4 h-4 mr-2" />
+            PPT
           </Button>
           <Button variant="outline" size="sm" onClick={resetPresentation}>
             <RotateCcw className="w-4 h-4 mr-2" />
